@@ -84,6 +84,7 @@
     {% include 'components/modal_confirm.html' %}
     {% include 'components/modal_cash_voucher_print.html' %}
     {% include 'components/modal_report_print.html' %}
+    {% include 'components/modal_customer_freight_statement.html' %}
     {% include 'components/modal_profile_settings.html' %}
 
     <!-- 3.1. CHAT BUBBLE & TEAM MESSAGING (In-App Floating Chat) -->
@@ -184,7 +185,7 @@
         window.SYSTEM_COMPANY = {{ company_profile_json|default:"{}"|safe }};
     </script>
     <script src="{% static 'js/column_manager.js' %}?v=2.9.86"></script>
-    <script src="{% static 'js/app.js' %}?v=2.9.86"></script>
+    <script src="{% static 'js/app.js' %}?v=2.9.87"></script>
     <script src="{% static 'js/collaboration.js' %}?v=1.5.4"></script>
     {% block extra_scripts %}{% endblock %}
 </body>

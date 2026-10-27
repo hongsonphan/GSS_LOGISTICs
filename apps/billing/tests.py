@@ -464,3 +464,99 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(unsettle_res.status_code, status.HTTP_200_OK)
         self.trip1.refresh_from_db()
         self.assertEqual(self.trip1.subcontractor_settlement_status, 'PENDING')
+
+
+class CustomerMonthlyStatementTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='acc_statement_user', password='password123')
+        self.emp = Employee.objects.create(
+            user=self.user,
+            code='NV-ACC-STATEMENT',
+            full_name='Kế Toán Đối Soát',
+            department=Department.ACCOUNTING,
+            role=EmployeeRole.ACCOUNTANT
+        )
+        self.customer = Customer.objects.create(
+            code='SONG_THANH',
+            name='CÔNG TY CỔ PHẦN SONG THANH',
+            short_name='SONG THANH',
+            tax_code='0301234567',
+            address='KCN Sóng Thần, Bình Dương'
+        )
+        self.vehicle = Vehicle.objects.create(license_plate='51C-60193', vehicle_type='TRACTOR')
+        from apps.dispatch.models import ShipmentType
+        self.trip = DispatchTrip.objects.create(
+            trip_code='TVL-ST-2022-001',
+            customer=self.customer,
+            vehicle=self.vehicle,
+            container_number='CULU6019376',
+            container_type='40HC',
+            shipment_type=ShipmentType.EXPORT,
+            pickup_location='GFORTUNE ĐỒNG AN',
+            warehouse_location='MINH HƯNG',
+            dropoff_location='CÁT LÁI',
+            loading_date=datetime.date(2022, 6, 19),
+            cached_revenue=4100000,
+            status=TripStatus.COMPLETED
+        )
+        TripExpense.objects.create(
+            trip=self.trip,
+            category=ExpenseCategory.LIFT_ON,
+            invoice_number='HD-NANG-01',
+            amount=350000,
+            is_on_behalf_of_customer=True
+        )
+        TripExpense.objects.create(
+            trip=self.trip,
+            category=ExpenseCategory.LIFT_OFF,
+            invoice_number='HD-HA-01',
+            amount=250000,
+            is_on_behalf_of_customer=True
+        )
+
+    def test_number_to_words(self):
+        from apps.billing.customer_statement_service import vietnamese_number_to_words
+        w1 = vietnamese_number_to_words(4100000)
+        self.assertIn('Bốn triệu một trăm nghìn', w1)
+        w0 = vietnamese_number_to_words(0)
+        self.assertEqual(w0, 'Không đồng.')
+
+    def test_statement_data_structure(self):
+        from apps.billing.customer_statement_service import get_customer_monthly_statement_data
+        data = get_customer_monthly_statement_data(self.customer.id, month=6, year=2022, vat_rate=10)
+        self.assertEqual(data['customer']['code'], 'SONG_THANH')
+        self.assertEqual(len(data['rows']), 1)
+        row = data['rows'][0]
+        self.assertEqual(row['stt'], 1)
+        self.assertEqual(row['ngay'], '2022-06-19')
+        self.assertEqual(row['ten_khach_hang'], 'SONG THANH')
+        self.assertEqual(row['kho'], 'MINH HƯNG')
+        self.assertEqual(row['noi_lay'], 'GFORTUNE ĐỒNG AN')
+        self.assertEqual(row['noi_ha'], 'CÁT LÁI')
+        self.assertEqual(row['nx_code'], 'X')
+        self.assertEqual(row['cont_20'], 0)
+        self.assertEqual(row['cont_40'], 1)
+        self.assertEqual(row['so_cont'], 'CULU6019376')
+        self.assertEqual(row['don_gia'], 4100000)
+        self.assertEqual(row['cong_cuoc'], 4100000)
+        self.assertEqual(row['vat_tien'], 410000)
+        self.assertEqual(row['thanh_tien_cuoc'], 4510000)
+        self.assertEqual(row['hd_nang'], 'HD-NANG-01')
+        self.assertEqual(row['tien_nang'], 350000)
+        self.assertEqual(row['hd_ha'], 'HD-HA-01')
+        self.assertEqual(row['tien_ha'], 250000)
+
+    def test_api_customer_statement_json(self):
+        self.client.force_authenticate(user=self.user)
+        res = self.client.get(f'/api/accounting/customer-statement/?customer_id={self.customer.id}&month=6&year=2022&vat_rate=10')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data['success'])
+        self.assertEqual(len(res.data['data']['rows']), 1)
+
+    def test_api_customer_statement_excel_download(self):
+        self.client.force_authenticate(user=self.user)
+        res = self.client.get(f'/api/accounting/customer-statement/export-excel/?customer_id={self.customer.id}&month=6&year=2022&vat_rate=10')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertGreater(len(res.content), 2000)

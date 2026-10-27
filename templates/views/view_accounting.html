@@ -1196,96 +1196,136 @@
     <!-- ========================================================================= -->
 
         <!-- SUBTAB 5: QUYẾT TOÁN CÔNG NỢ KHÁCH HÀNG (CUSTOMER AR SOA & SETTLEMENT) -->
-    <div id="subtab-acct-customer-settlements" class="acct-subtab-content hidden space-y-4">
-        <!-- 1. BỘ LỌC ĐIỀU KIỆN QUYẾT TOÁN KHÁCH HÀNG -->
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
-                <div class="w-64">
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Khách Hàng</label>
-                    <select id="cust-settle-filter-customer" onchange="loadCustomerSettlementsData()"
-                        class="w-full h-9 px-2.5 py-1 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 transition-all">
-                        <option value="">-- Tất Cả Khách Hàng --</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Từ Ngày</label>
-                    <input type="date" id="cust-settle-filter-from-date" onchange="loadCustomerSettlementsData()"
-                        class="h-9 px-2.5 py-1 text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Đến Ngày</label>
-                    <input type="date" id="cust-settle-filter-to-date" onchange="loadCustomerSettlementsData()"
-                        class="h-9 px-2.5 py-1 text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Trạng Thái Quyết Toán</label>
-                    <select id="cust-settle-filter-status" onchange="loadCustomerSettlementsData()"
-                        class="h-9 px-2.5 py-1 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600">
-                        <option value="ALL">Tất cả chuyến xe</option>
-                        <option value="PENDING" selected>Chờ quyết toán khách hàng</option>
-                        <option value="SETTLED">Đã chốt quyết toán (SOA)</option>
-                    </select>
-                </div>
+    <div id="subtab-acct-customer-settlements" class="acct-subtab-content hidden space-y-6">
+
+        <!-- 4 KPI Cards Quyết Toán Khách Hàng -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Cước Vận Chuyển Khách Hàng</span>
+                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading mt-1" id="cust-settle-stat-freight">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Doanh thu cước vận tải theo tuyến</p>
             </div>
 
-            <!-- Cụm nút thao tác quyết toán & xuất bảng kê -->
-            <div class="flex items-center gap-2 self-end">
-                <button type="button" onclick="openSelectedCustomerSOAView()"
-                    class="h-9 px-3 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
-                    title="Mở Bảng Kê Đối Soát SOA Chi Tiết Cho Khách Hàng Đã Chọn">
-                    <i class="ph-bold ph-file-text text-teal-600 text-sm"></i>
-                    <span>Xem Bảng Kê SOA</span>
-                </button>
-                <button type="button" onclick="executeBatchCustomerSettlement()"
-                    class="h-9 px-3.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
-                    title="Xác nhận chốt quyết toán các chuyến xe đã tick chọn">
-                    <i class="ph-bold ph-check-circle text-sm"></i>
-                    <span>Chốt Quyết Toán Khách Hàng</span>
-                </button>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Khoản Chi Hộ (Reimbursable)</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="cust-settle-stat-reimb">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Nâng hạ, cược vỏ, hải quan, kiểm hóa</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Công Nợ Cần Quyết Toán</span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="cust-settle-stat-total">0 đ</p>
+                <p class="text-xs text-indigo-700 font-medium mt-1.5">Cước vận chuyển + Chi hộ</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Số Chuyến Chờ / Đã Quyết Toán</span>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="cust-settle-stat-trips">0 / 0 Chuyến</p>
+                <p class="text-xs text-emerald-700 font-medium mt-1.5" id="cust-settle-stat-trips-sub">Chờ quyết toán: 0 | Đã chốt: 0</p>
             </div>
         </div>
 
-        <!-- 2. BỘ 4 THẺ TỔNG KẾT QUYẾT TOÁN KHÁCH HÀNG -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
-                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Cước Vận Chuyển Khách Hàng</span>
-                <p class="text-2xl font-black text-teal-800 tabular-nums font-heading mt-1" id="cust-settle-stat-freight">0 đ</p>
-                <p class="text-[11px] text-slate-500 font-medium mt-1">Doanh thu cước vận tải theo tuyến</p>
+        <!-- Bảng Quyết Toán Doanh Thu Cước & Chi Hộ Khách Hàng -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                        <i class="ph-bold ph-receipt text-teal-600 text-sm"></i>
+                        <span>Bảng Quản Lý: <strong>Quyết Toán Doanh Thu Cước &amp; Chi Hộ Khách Hàng (SOA)</strong></span>
+                        <span id="cust-settle-count-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800 border border-teal-200 ml-1">
+                            0 chuyến
+                        </span>
+                    </div>
+
+                    <!-- Cụm nút thao tác quyết toán & xuất bảng kê -->
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="openSelectedCustomerSOAView()"
+                            class="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Mở Bảng Kê Đối Soát SOA Chi Tiết Cho Khách Hàng Đã Chọn">
+                            <i class="ph-bold ph-file-text text-teal-600 text-xs"></i>
+                            <span>Xem Bảng Kê SOA</span>
+                        </button>
+                        <button type="button" onclick="executeBatchCustomerSettlement()"
+                            class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Xác nhận chốt quyết toán các chuyến xe đã tick chọn">
+                            <i class="ph-bold ph-check-circle text-xs"></i>
+                            <span>⚡ Chốt Quyết Toán Khách Hàng</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dòng Bộ Lọc Quyết Toán Khách Hàng -->
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 pt-1 text-xs items-center">
+                    <div>
+                        <select id="cust-settle-filter-customer" onchange="loadCustomerSettlementsData()"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
+                            <option value="">-- Tất Cả Khách Hàng --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <input type="date" id="cust-settle-filter-from-date" onchange="loadCustomerSettlementsData()"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800" title="Từ Ngày">
+                    </div>
+                    <div>
+                        <input type="date" id="cust-settle-filter-to-date" onchange="loadCustomerSettlementsData()"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800" title="Đến Ngày">
+                    </div>
+                    <div>
+                        <select id="cust-settle-filter-status" onchange="loadCustomerSettlementsData()"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
+                            <option value="ALL">-- Tất cả Chuyến xe --</option>
+                            <option value="PENDING" selected>Chờ quyết toán khách hàng</option>
+                            <option value="SETTLED">Đã chốt quyết toán (SOA)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-end gap-2">
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-700 select-none mr-1">
+                            <input type="checkbox" id="cust-settle-check-all" onchange="toggleAllCustomerSettleChecks(this.checked)" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+                            <span>Chọn tất cả</span>
+                        </label>
+                        <!-- Nút Tùy Chỉnh Cột Quyết Toán Khách Hàng -->
+                        <button type="button" onclick="openColumnCustomizer('customer-settlements-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
+                            title="Tùy chỉnh ẩn/hiện và kéo rộng các cột">
+                            <i class="ph-bold ph-columns text-teal-700"></i>
+                            <span>Cột</span>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
-                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tổng Khoản Chi Hộ (Reimbursable)</span>
-                <p class="text-2xl font-black text-amber-700 tabular-nums font-heading mt-1" id="cust-settle-stat-reimb">0 đ</p>
-                <p class="text-[11px] text-slate-500 font-medium mt-1">Nâng hạ, cược vỏ, hải quan, kiểm hóa</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
-                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tổng Công Nợ Cần Quyết Toán</span>
-                <p class="text-2xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="cust-settle-stat-total">0 đ</p>
-                <p class="text-[11px] text-slate-500 font-medium mt-1">Cước vận chuyển + Chi hộ</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
-                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Số Chuyến Chờ / Đã Quyết Toán</span>
-                <p class="text-2xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="cust-settle-stat-trips">0 / 0 Chuyến</p>
-                <p class="text-[11px] text-slate-500 font-medium mt-1" id="cust-settle-stat-trips-sub">Chờ quyết toán: 0</p>
+
+            <div class="overflow-x-auto max-h-[580px]">
+                <table class="erp-table whitespace-nowrap" id="customer-settlements-table" data-table-title="Bảng Quyết Toán Doanh Thu Cước & Chi Hộ Khách Hàng">
+                    <thead>
+                        <tr>
+                            <th data-col-key="chk" data-col-name="Chọn" data-col-locked="true" class="w-10 text-center select-none">#</th>
+                            <th data-col-key="code" data-col-name="Mã Chuyến" data-col-locked="true" class="w-28 font-mono">Mã Chuyến</th>
+                            <th data-col-key="loading_date" data-col-name="Ngày Đóng" class="w-24 text-center">Ngày Đóng</th>
+                            <th data-col-key="customer" data-col-name="Khách Hàng">Khách Hàng</th>
+                            <th data-col-key="container_number" data-col-name="Số Cont / B/L" class="w-32 font-mono">Số Cont / B/L</th>
+                            <th data-col-key="route" data-col-name="Lộ Trình">Lộ Trình</th>
+                            <th data-col-key="revenue" data-col-name="Cước Bán (VNĐ)" class="w-28 text-right">Cước Bán (VNĐ)</th>
+                            <th data-col-key="reimbursable" data-col-name="Chi Hộ (VNĐ)" class="w-28 text-right">Chi Hộ (VNĐ)</th>
+                            <th data-col-key="total_receivable" data-col-name="Tổng Thu (VNĐ)" class="w-32 text-right">Tổng Thu (VNĐ)</th>
+                            <th data-col-key="pod" data-col-name="Chứng Từ POD" class="w-28 text-center">Chứng Từ POD</th>
+                            <th data-col-key="status" data-col-name="Trạng Thái" class="w-32 text-center">Trạng Thái</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="w-[230px] min-w-[230px] text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cust-settle-tbody" class="divide-y divide-slate-100 text-slate-800">
+                        <tr>
+                            <td colspan="12" class="p-8 text-center text-slate-400 italic">
+                                <i class="ph-bold ph-spinner animate-spin text-lg block mb-1"></i>
+                                Đang tải danh sách quyết toán khách hàng...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
+    </div>
 
-        <!-- 3. BẢNG DANH SÁCH CHUYẾN XE CẦN QUYẾT TOÁN VỚI KHÁCH HÀNG -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
-                <div class="flex items-center gap-2">
-                    <span class="font-bold text-xs uppercase tracking-wider text-slate-800 font-heading">
-                        Danh Sách Chuyến Xe Quyết Toán Khách Hàng (SOA)
-                    </span>
-                    <span id="cust-settle-table-count" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
-                        0 chuyến
-                    </span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-700 select-none mr-1">
-                        <input type="checkbox" id="cust-settle-check-all" onchange="toggleAllCustomerSettleChecks(this.checked)" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-                        <span>Chọn tất cả</span>
-                    </label>
-                    <!-- Nút Tùy Chỉnh Cột Quyết Toán Khách Hàng (Hình 2) -->
+    <!-- Nút Tùy Chỉnh Cột Quyết Toán Khách Hàng (Hình 2) -->
                     <button type="button" onclick="openColumnCustomizer('customer-settlements-table')" 
                         class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
                         title="Tùy chỉnh ẩn/hiện và kéo rộng các cột">

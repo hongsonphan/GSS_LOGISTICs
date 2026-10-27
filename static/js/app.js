@@ -30284,6 +30284,10 @@ function applyReport13Filters() {
                 <td class="text-right text-xs font-bold text-rose-700 tabular-nums">${agingOver90Disp}</td>
                 <td class="text-center">
                     <div class="flex items-center justify-center gap-1">
+                        <button type="button" onclick="openCustomerFreightStatementModal('${custIdSafe}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1" title="Lập Bảng Kê Vận Chuyển Tháng (Mẫu 26 cột đối soát cước & nâng hạ)">
+                            <i class="ph-bold ph-file-spreadsheet text-xs"></i>
+                            <span>Bảng Kê</span>
+                        </button>
                         <button type="button" onclick="viewCustomerARStatement('${custIdSafe}')" class="px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1" title="Xem bảng kê đối soát công nợ chi tiết (SOA)">
                             <i class="ph-bold ph-eye text-xs"></i>
                             <span>Đối Soát</span>
@@ -30768,6 +30772,250 @@ window.viewCustomerARStatement = viewCustomerARStatement;
 window.closeCustomerARStatementModal = closeCustomerARStatementModal;
 window.printCurrentCustomerStatement = printCurrentCustomerStatement;
 window.printCustomerARStatement = printCustomerARStatement;
+
+// =========================================================================
+// BẢNG KÊ VẬN CHUYỂN THÁNG ĐỐI SOÁT VỚI KHÁCH HÀNG (26 CỘT CHUẨN TRIỂN VÕ)
+// =========================================================================
+let currentFreightStatementCustomerId = null;
+let currentFreightStatementData = null;
+
+function openCustomerFreightStatementForCurrent() {
+    if (!currentStatementCustomer) {
+        showToast('warning', 'Chưa có thông tin khách hàng đang chọn', 'Thông Báo');
+        return;
+    }
+    const custId = currentStatementCustomer.customer_id || currentStatementCustomer.customer_code;
+    openCustomerFreightStatementModal(custId);
+}
+window.openCustomerFreightStatementForCurrent = openCustomerFreightStatementForCurrent;
+
+function openCustomerFreightStatementModal(customerId, month = null, year = null, vatRate = 10) {
+    if (!customerId) {
+        showToast('warning', 'Vui lòng chọn khách hàng để lập bảng kê vận chuyển', 'Chưa Chọn Khách');
+        return;
+    }
+    currentFreightStatementCustomerId = customerId;
+
+    const modal = document.getElementById('modal-customer-freight-statement');
+    if (!modal) return;
+
+    const now = new Date();
+    const selMonth = document.getElementById('cfs-filter-month');
+    const selYear = document.getElementById('cfs-filter-year');
+    const selVat = document.getElementById('cfs-filter-vat');
+
+    let targetMonth = month || (now.getMonth() + 1);
+    let targetYear = year || now.getFullYear();
+
+    if (!month && currentStatementCustomer && currentStatementCustomer.trips && currentStatementCustomer.trips.length > 0) {
+        const firstTrip = currentStatementCustomer.trips[0];
+        if (firstTrip.loading_date) {
+            const parts = firstTrip.loading_date.split('/');
+            if (parts.length === 3) {
+                targetMonth = parseInt(parts[1], 10);
+                targetYear = parseInt(parts[2], 10);
+            }
+        }
+    }
+
+    if (selMonth) selMonth.value = String(targetMonth);
+    if (selYear) selYear.value = String(targetYear);
+    if (selVat) selVat.value = String(vatRate);
+
+    modal.classList.remove('hidden');
+    reloadCustomerFreightStatement();
+}
+window.openCustomerFreightStatementModal = openCustomerFreightStatementModal;
+
+function closeCustomerFreightStatementModal() {
+    const modal = document.getElementById('modal-customer-freight-statement');
+    if (modal) modal.classList.add('hidden');
+}
+window.closeCustomerFreightStatementModal = closeCustomerFreightStatementModal;
+
+async function reloadCustomerFreightStatement() {
+    if (!currentFreightStatementCustomerId) return;
+
+    const month = document.getElementById('cfs-filter-month')?.value || (new Date().getMonth() + 1);
+    const year = document.getElementById('cfs-filter-year')?.value || new Date().getFullYear();
+    const vatRate = document.getElementById('cfs-filter-vat')?.value || 10;
+
+    const tbody = document.getElementById('cfs-table-tbody');
+    if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="26" class="text-center py-8 text-slate-500 font-medium"><i class="ph-bold ph-spinner-gap animate-spin text-xl inline-block mr-2 text-teal-600"></i> Đang trích xuất dữ liệu vận chuyển tháng ${month}/${year}...</td></tr>`;
+    }
+
+    try {
+        const url = `/api/accounting/customer-statement/?customer_id=${encodeURIComponent(currentFreightStatementCustomerId)}&month=${month}&year=${year}&vat_rate=${vatRate}`;
+        const res = await fetchWithAuth(url);
+        const json = await res.json();
+
+        if (res.ok && json.success) {
+            currentFreightStatementData = json.data;
+            renderCustomerFreightStatementUI(json.data);
+        } else {
+            showToast('error', json.error || 'Không thể tải bảng kê vận chuyển', 'Lỗi');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="26" class="text-center py-6 text-rose-600 font-medium"><i class="ph-bold ph-warning text-lg inline-block mr-1"></i> ${escapeHtml(json.error || 'Lỗi tải dữ liệu')}</td></tr>`;
+            }
+        }
+    } catch (err) {
+        console.error('Lỗi tải bảng kê vận chuyển:', err);
+        showToast('error', 'Lỗi kết nối máy chủ', 'Lỗi Mạng');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="26" class="text-center py-6 text-rose-600 font-medium">Lỗi kết nối máy chủ khi trích xuất bảng kê</td></tr>`;
+        }
+    }
+}
+window.reloadCustomerFreightStatement = reloadCustomerFreightStatement;
+
+function renderCustomerFreightStatementUI(data) {
+    if (!data) return;
+
+    const comp = data.company || {};
+    const cust = data.customer || {};
+    const totals = data.totals || {};
+    const rows = data.rows || [];
+    const period = data.period || {};
+
+    const elCompName = document.getElementById('cfs-view-comp-name');
+    if (elCompName) elCompName.innerText = comp.company_name || 'CÔNG TY TNHH DỊCH VỤ GIAO NHẬN VẬN TẢI TRIỂN VÕ';
+
+    const elCompAddress = document.getElementById('cfs-view-comp-address');
+    if (elCompAddress) elCompAddress.innerText = `ĐỊA CHỈ: ${comp.address || ''}`;
+
+    const elCompTax = document.getElementById('cfs-view-comp-tax');
+    if (elCompTax) elCompTax.innerText = `MST: ${comp.tax_code || '0315001374'}`;
+
+    const elPeriodCode = document.getElementById('cfs-view-period-code');
+    if (elPeriodCode) elPeriodCode.innerText = `THÁNG ${period.month || ''}/${period.year || ''}`;
+
+    const elTitle = document.getElementById('cfs-view-title');
+    if (elTitle) elTitle.innerText = data.statement_title ? data.statement_title.toUpperCase() : `BẢNG KÊ VẬN CHUYỂN THÁNG ${period.month}/${period.year}`;
+
+    const elCustName = document.getElementById('cfs-view-customer-name');
+    if (elCustName) elCustName.innerText = `KHÁCH HÀNG: ${(cust.name || cust.short_name || '').toUpperCase()}`;
+
+    const elSignCust = document.getElementById('cfs-sign-customer-title');
+    if (elSignCust) elSignCust.innerText = `ĐẠI DIỆN ${(cust.name || cust.short_name || 'KHÁCH HÀNG').toUpperCase()}`;
+
+    const elSignComp = document.getElementById('cfs-sign-company-title');
+    if (elSignComp) elSignComp.innerText = comp.company_name || 'CÔNG TY TNHH DỊCH VỤ GIAO NHẬN VẬN TẢI TRIỂN VÕ';
+
+    const elRepName = document.getElementById('cfs-sign-representative-name');
+    if (elRepName) elRepName.innerText = comp.representative_name || 'Võ Văn Triền';
+
+    const elThVat = document.getElementById('cfs-th-vat-rate');
+    if (elThVat) elThVat.innerText = period.vat_rate > 0 ? `VAT ${period.vat_rate}%` : 'VAT 0%';
+
+    const tbody = document.getElementById('cfs-table-tbody');
+    if (tbody) {
+        if (rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="26" class="text-center py-8 text-slate-400 font-medium italic"><i class="ph-bold ph-info text-xl block mb-1"></i> Không có chuyến xe nào phát sinh trong tháng ${period.month}/${period.year} của khách hàng này</td></tr>`;
+        } else {
+            tbody.innerHTML = rows.map(r => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="border border-slate-900 p-1 text-center font-bold">${r.stt}</td>
+                    <td class="border border-slate-900 p-1 text-center font-mono">${escapeHtml(r.ngay)}</td>
+                    <td class="border border-slate-900 p-1 max-w-[120px] truncate" title="${escapeHtml(r.ten_khach_hang)}">${escapeHtml(r.ten_khach_hang)}</td>
+                    <td class="border border-slate-900 p-1 max-w-[100px] truncate" title="${escapeHtml(r.kho)}">${escapeHtml(r.kho)}</td>
+                    <td class="border border-slate-900 p-1 max-w-[110px] truncate" title="${escapeHtml(r.noi_lay)}">${escapeHtml(r.noi_lay)}</td>
+                    <td class="border border-slate-900 p-1 max-w-[110px] truncate" title="${escapeHtml(r.noi_ha)}">${escapeHtml(r.noi_ha)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-bold ${r.nx_code === 'X' ? 'text-blue-800' : (r.nx_code === 'N' ? 'text-emerald-800' : 'text-slate-800')}">${r.nx_code}</td>
+                    <td class="border border-slate-900 p-1 text-center font-bold">${r.cont_20 > 0 ? r.cont_20 : ''}</td>
+                    <td class="border border-slate-900 p-1 text-center font-bold">${r.cont_40 > 0 ? r.cont_40 : ''}</td>
+                    <td class="border border-slate-900 p-1 text-center font-mono font-bold">${escapeHtml(r.so_cont)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-mono">${escapeHtml(r.booking_or_bill)}</td>
+                    <td class="border border-slate-900 p-1 text-right font-mono">${r.don_gia > 0 ? formatMoneyVND(r.don_gia) : ''}</td>
+                    <td class="border border-slate-900 p-1 text-right font-mono">${r.ha_xa > 0 ? formatMoneyVND(r.ha_xa) : ''}</td>
+                    <td class="border border-slate-900 p-1 text-right font-mono">${r.neo > 0 ? formatMoneyVND(r.neo) : ''}</td>
+                    <td class="border border-slate-900 p-1 text-right font-mono">${r.phu_thu > 0 ? formatMoneyVND(r.phu_thu) : ''}</td>
+                    <td class="border border-slate-900 p-1 text-right font-mono font-bold bg-amber-50/50">${formatMoneyVND(r.cong_cuoc)}</td>
+                    <td class="border border-slate-900 p-1 text-right font-mono">${r.vat_tien > 0 ? formatMoneyVND(r.vat_tien) : ''}</td>
+                    <td class="border border-slate-900 p-1 text-right font-mono font-black bg-amber-100/60">${formatMoneyVND(r.thanh_tien_cuoc)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-mono text-[9px]">${escapeHtml(r.hd_nang || '')}</td>
+                    <td class="border border-slate-900 p-1 text-right font-mono">${r.tien_nang > 0 ? formatMoneyVND(r.tien_nang) : '0'}</td>
+                    <td class="border border-slate-900 p-1 text-center font-mono text-[9px]">${escapeHtml(r.hd_ha || '')}</td>
+                    <td class="border border-slate-900 p-1 text-right font-mono">${r.tien_ha > 0 ? formatMoneyVND(r.tien_ha) : '0'}</td>
+                    <td class="border border-slate-900 p-1 text-right font-mono">${r.tien_cuoc > 0 ? formatMoneyVND(r.tien_cuoc) : '0'}</td>
+                    <td class="border border-slate-900 p-1 max-w-[120px] truncate" title="${escapeHtml(r.ghi_chu)}">${escapeHtml(r.ghi_chu)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-mono">${escapeHtml(r.so_xe)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-medium ${r.is_settled ? 'text-emerald-700 font-bold' : 'text-slate-400'}">${escapeHtml(r.da_tra)}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    const tfoot = document.getElementById('cfs-table-tfoot');
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-amber-100/80 font-bold border-t-2 border-slate-900">
+                <td colspan="7" class="border border-slate-900 p-1.5 text-right font-heading uppercase">CỘNG :</td>
+                <td class="border border-slate-900 p-1 text-center font-bold">${totals.total_cont_20 || 0}</td>
+                <td class="border border-slate-900 p-1 text-center font-bold">${totals.total_cont_40 || 0}</td>
+                <td colspan="2" class="border border-slate-900 p-1"></td>
+                <td class="border border-slate-900 p-1 text-right font-mono">${formatMoneyVND(totals.don_gia || 0)}</td>
+                <td class="border border-slate-900 p-1 text-right font-mono">${totals.ha_xa > 0 ? formatMoneyVND(totals.ha_xa) : '0'}</td>
+                <td class="border border-slate-900 p-1 text-right font-mono">${totals.neo > 0 ? formatMoneyVND(totals.neo) : '0'}</td>
+                <td class="border border-slate-900 p-1 text-right font-mono">${totals.phu_thu > 0 ? formatMoneyVND(totals.phu_thu) : '0'}</td>
+                <td class="border border-slate-900 p-1 text-right font-mono font-bold">${formatMoneyVND(totals.cong_cuoc || 0)}</td>
+                <td class="border border-slate-900 p-1 text-right font-mono">${totals.vat_tien > 0 ? formatMoneyVND(totals.vat_tien) : '0'}</td>
+                <td class="border border-slate-900 p-1 text-right font-mono font-black">${formatMoneyVND(totals.thanh_tien_cuoc || 0)}</td>
+                <td class="border border-slate-900 p-1"></td>
+                <td class="border border-slate-900 p-1 text-right font-mono">${formatMoneyVND(totals.tien_nang || 0)}</td>
+                <td class="border border-slate-900 p-1"></td>
+                <td class="border border-slate-900 p-1 text-right font-mono">${formatMoneyVND(totals.tien_ha || 0)}</td>
+                <td class="border border-slate-900 p-1 text-right font-mono">${formatMoneyVND(totals.tien_cuoc || 0)}</td>
+                <td colspan="3" class="border border-slate-900 p-1"></td>
+            </tr>
+            <tr class="bg-amber-200/90 font-black border-t border-slate-900 text-[11px]">
+                <td colspan="7" class="border border-slate-900 p-1.5 text-right font-heading uppercase text-slate-950">THÀNH TIỀN :</td>
+                <td colspan="4" class="border border-slate-900 p-1"></td>
+                <td colspan="7" class="border border-slate-900 p-1 text-right font-mono font-black text-slate-950 text-xs bg-amber-300/60">${formatMoneyVND(totals.grand_total || 0)}</td>
+                <td colspan="8" class="border border-slate-900 p-1 text-left italic text-[10px] text-slate-700 font-normal pl-2">(Đã bao gồm cước + nâng + hạ + cược cont)</td>
+            </tr>
+        `;
+    }
+
+    const elWords = document.getElementById('cfs-view-words');
+    if (elWords) elWords.innerText = totals.grand_total_words || 'Không đồng.';
+}
+window.renderCustomerFreightStatementUI = renderCustomerFreightStatementUI;
+
+function exportCustomerFreightStatementExcel() {
+    if (!currentFreightStatementCustomerId) {
+        showToast('warning', 'Chưa có thông tin khách hàng để xuất file', 'Thông Báo');
+        return;
+    }
+    const month = document.getElementById('cfs-filter-month')?.value || (new Date().getMonth() + 1);
+    const year = document.getElementById('cfs-filter-year')?.value || new Date().getFullYear();
+    const vatRate = document.getElementById('cfs-filter-vat')?.value || 10;
+
+    const url = `/api/accounting/customer-statement/export-excel/?customer_id=${encodeURIComponent(currentFreightStatementCustomerId)}&month=${month}&year=${year}&vat_rate=${vatRate}`;
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Bang_Ke_Van_Chuyen_Thang_${month}_${year}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('success', `Đang tải Bảng Kê Vận Chuyển Tháng ${month}/${year}...`, 'Xuất Excel');
+}
+window.exportCustomerFreightStatementExcel = exportCustomerFreightStatementExcel;
+
+function printCustomerFreightStatement() {
+    window.print();
+}
+window.printCustomerFreightStatement = printCustomerFreightStatement;
+
+function printCustomerSettlementVoucher(tripId, customerId) {
+    if (customerId) {
+        openCustomerFreightStatementModal(customerId);
+    } else {
+        openCustomerFreightStatementForCurrent();
+    }
+}
+window.printCustomerSettlementVoucher = printCustomerSettlementVoucher;
 
 function toggleReport13Sort(col) {
     if (rep13SortCol === col) {
@@ -37727,6 +37975,22 @@ function renderCustomerSettlementsTable() {
             </tr>
         `;
     }).join('');
+
+    if (window.BimTableFooter && Array.isArray(customerSettlementsCache)) {
+        const totalRev = customerSettlementsCache.reduce((sum, i) => sum + (Number(i.revenue) || 0), 0);
+        const totalReimb = customerSettlementsCache.reduce((sum, i) => sum + (Number(i.reimbursable) || 0), 0);
+        const totalRec = customerSettlementsCache.reduce((sum, i) => sum + (Number(i.total_receivable) || 0), 0);
+        window.BimTableFooter.render('customer-settlements-table', {
+            cells: [
+                { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
+                { html: `${customerSettlementsCache.length} chuyến`, colspan: 5 },
+                { html: `<span class="text-teal-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalRev)}</span>`, align: 'right' },
+                { html: `<span class="text-amber-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalReimb)}</span>`, align: 'right' },
+                { html: `<span class="text-slate-900 font-black tabular-nums font-mono">${formatMoneyVND(totalRec)}</span>`, align: 'right' },
+                { text: '', align: 'center', colspan: 3 }
+            ]
+        });
+    }
 
     if (window.BimTableColumnManager && typeof window.BimTableColumnManager.register === 'function') {
         window.BimTableColumnManager.register('customer-settlements-table');

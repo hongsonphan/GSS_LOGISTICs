@@ -58,6 +58,9 @@ class AccountingAdvancesAPIView(APIView):
             refunds = f.total_refunds_returned
             bal = f.remaining_balance
 
+            # Số tiền hoàn ứng của quỹ này: Nếu đã đóng sổ SETTLED thì số tiền hoàn ứng bằng f.amount (20tr)
+            fund_settled_amount = int(f.amount) if f.status == FundStatus.SETTLED else int(settled_spent)
+
             # Tổng các phiếu quỹ do công ty cấp (khớp 100% với dòng TỔNG bảng quỹ)
             if f.status != FundStatus.REJECTED:
                 total_dispatcher_funds += int(f.amount)
@@ -68,10 +71,7 @@ class AccountingAdvancesAPIView(APIView):
                 total_fund_remaining += int(bal)
 
             # Đã hoàn ứng về công ty: gồm quỹ đã đóng sổ tất toán (SETTLED) + chi phí hoàn ứng từ các chuyến
-            if f.status == FundStatus.SETTLED:
-                total_fund_settled += int(f.amount)
-            else:
-                total_fund_settled += int(settled_spent)
+            total_fund_settled += fund_settled_amount
 
             funds_data.append({
                 'id': f.id,
@@ -83,7 +83,7 @@ class AccountingAdvancesAPIView(APIView):
                 'status': f.status,
                 'status_label': f.get_status_display(),
                 'disbursed_amount': int(disbursed),
-                'settled_amount': int(settled_spent),
+                'settled_amount': fund_settled_amount,
                 'refunds_returned': int(refunds),
                 'remaining_balance': int(bal),
                 'approved_by': (f.approved_by.nickname or f.approved_by.full_name) if f.approved_by else '',

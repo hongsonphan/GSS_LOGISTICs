@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.16] - 2026-10-27 (Hiển Thị Số Tiền Hoàn Ứng 20 Triệu & Đồng Bộ Layout Chuẩn Tab Quyết Toán Khách Hàng)
+
+### 1. Phân Hệ Tài Chính - Kế Toán (Quỹ Điều Vận - Cột Đã Hoàn Ứng Về Cty):
+- **Khắc Phục Cột Đã Hoàn Ứng Hiển Thị 0 đ Dù Trạng Thái Là "Đã Hoàn Ứng":**
+  * Trong `apps/billing/advance_views.py`:
+    - Xác định logic tính số tiền hoàn ứng của từng phiếu quỹ:
+      `fund_settled_amount = int(f.amount) if f.status == FundStatus.SETTLED else int(settled_spent)`
+    - Khi phiếu quỹ đã hoàn ứng đóng sổ (`SETTLED` - ví dụ `QDV-202610-002`), số tiền hoàn ứng của dòng này sẽ hiển thị đúng chuẩn **20.000.000 đ** (thay vì 0 đ do trước đây chỉ tính tổng các khoản chi lẻ con `settled_spent`).
+    - Dòng tổng chân bảng cột "ĐÃ HOÀN ỨNG VỀ CTY" cộng dồn chính xác **20.000.000 đ**.
+
+### 2. Phân Hệ Tài Chính - Kế Toán (Đồng Bộ Layout Tab Quyết Toán Khách Hàng Chuẩn ERP Quốc Tế):
+- **Chuẩn Hóa Cấu Trúc Khối Giao Diện Tab Quyết Toán Khách Hàng (`subtab-acct-customer-settlements`):**
+  * Đưa cụm 4 Thẻ KPI thống kê doanh thu cước & đối soát SOA lên trên cùng (`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`).
+  * Gom toàn bộ bảng và thanh công cụ điều khiển vào một khung chứa hợp nhất `erp-table-container flex flex-col shadow-sm`:
+    - **Header Bar Card:** Tiêu đề phân hệ *"Quyết Toán Doanh Thu Cước & Chi Hộ Khách Hàng (SOA)"*, huy hiệu đếm chuyến, cùng cụm nút hành động bên phải: *"Xem Bảng Kê SOA"* và *"Chốt Quyết Toán Khách Hàng"*.
+    - **Thanh Lọc Đơn Hàng & Thao Tác:** Lọc theo Khách hàng, Từ ngày - Đến ngày, Trạng thái quyết toán, Checkbox "Chọn tất cả", và nút *"⚙️ Cột"* (`openColumnCustomizer('customer-settlements-table')`).
+    - **Bảng Dữ Liệu Co Giãn & Ghim Chân Bảng:** Bảng `customer-settlements-table` hỗ trợ co giãn độ rộng cột, thanh cuộn mượt mà `max-h-[580px]`, cùng dòng TỔNG cố định (`BimTableFooter.render`) tự động tính tổng Doanh thu cước, Chi hộ nâng hạ và Tổng phải thu.
+
+### 3. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset cache version lên `?v=2.9.87` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` (100% Passed).
+- Chạy toàn bộ bộ kiểm thử tự động của dự án: `python manage.py test --keepdb` (152/152 tests Passed).
+
 ## [v4.7.15] - 2026-10-27 (Khắc Phục Toàn Diện Logic Tính Số Liệu KPI Quỹ Điều Vận & Tạm Ứng Tài Xế)
 
 ### 1. Phân Hệ Tài Chính - Kế Toán (Đồng Bộ Số Liệu KPI & Chân Bảng Quỹ Điều Vận):

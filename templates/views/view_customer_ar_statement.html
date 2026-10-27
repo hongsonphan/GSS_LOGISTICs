@@ -25,15 +25,20 @@
             </div>
 
             <div class="flex items-center gap-2">
+                <button type="button" onclick="openCustomerFreightStatementForCurrent()" 
+                    class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-sm transition-all cursor-pointer" title="Lập Bảng Kê Vận Chuyển Tháng (Mẫu 26 cột đối soát cước & nâng hạ)">
+                    <i class="ph-bold ph-file-spreadsheet text-sm"></i>
+                    <span>Bảng Kê Vận Chuyển Tháng</span>
+                </button>
                 <button type="button" onclick="printCurrentCustomerStatement()" 
                     class="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
                     <i class="ph-bold ph-printer text-sm"></i>
-                    <span>In</span>
+                    <span>In SOA</span>
                 </button>
                 <button type="button" onclick="exportCustomerStatementExcel()" 
                     class="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer">
                     <i class="ph-bold ph-microsoft-excel-logo text-sm text-emerald-600"></i>
-                    <span>Xuất Excel</span>
+                    <span>Xuất CSV</span>
                 </button>
             </div>
         </div>
@@ -189,10 +194,15 @@
                     <p class="italic text-[11px] text-slate-400">Thời hạn khiếu nại đối soát: trong vòng 05 ngày làm việc kể từ ngày nhận bảng kê.</p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="openCustomerFreightStatementForCurrent()" 
+                        class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-file-spreadsheet text-sm"></i>
+                        <span>Bảng Kê Vận Chuyển Tháng</span>
+                    </button>
                     <button type="button" onclick="printCurrentCustomerStatement()" 
                         class="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
                         <i class="ph-bold ph-printer text-sm"></i>
-                        <span>In</span>
+                        <span>In SOA</span>
                     </button>
                 </div>
             </div>
