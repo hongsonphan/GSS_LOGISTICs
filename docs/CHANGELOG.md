@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.12] - 2026-10-27 (Tinh Gọn Bảng Sổ Quỹ Kế Toán - Loại Bỏ Khối Badge Pill Cột Loại & Kênh Quỹ)
+
+### 1. Tinh Gọn Giao Diện Bảng Sổ Quỹ Thu - Chi (Clean Typography & iOS Standard):
+- **Loại Bỏ Badge Pill Gây Rối Mắt Tại 2 Cột "Loại" & "Kênh Quỹ":**
+  * Trong `static/js/app.js` và `static/js/modules/accounting.js` (`renderCashBookTable`):
+    - **Cột Loại:** Gỡ bỏ các khối badge pill bo tròn nền màu `rounded-full border bg-emerald-100 / bg-rose-100`. Chuyển sang định dạng văn bản trực quan thanh thoát với icon nhỏ cùng hàng:
+      * `Thu Tiền`: Chữ xanh ngọc đậm `text-emerald-600 font-bold text-xs` kèm icon `ph-plus-circle`.
+      * `Chi Tiền`: Chữ đỏ hồng đậm `text-rose-600 font-bold text-xs` kèm icon `ph-minus-circle`.
+    - **Cột Kênh Quỹ:** Gỡ bỏ các khối badge bo hộp `rounded-lg border bg-teal-50 / bg-amber-50`. Chuyển sang văn bản tinh giản:
+      * `Ngân Hàng`: Chữ màu `text-slate-700 font-bold text-xs` kèm icon ngân hàng `ph-bank text-teal-600`.
+      * `Tiền Mặt`: Chữ màu `text-slate-700 font-bold text-xs` kèm icon tiền mặt `ph-money text-amber-600`.
+  * Giúp bảng dữ liệu thoáng đãng, các dòng văn bản thẳng hàng, dễ đọc số liệu và tinh tế chuẩn trải nghiệm ứng dụng hiện đại.
+
+### 2. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset version lên `?v=2.9.83` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js`, `node -c static/js/modules/accounting.js` (100% Passed).
+- Chạy kiểm thử: `python manage.py test apps.dispatch.test_booking_settlement_flow --keepdb` (4/4 tests Passed).
+
 ## [v4.7.11] - 2026-10-27 (Tự Động Tra Cứu Giá Booking, Kính Lúp Tìm Kiếm Điều Độ & Chuẩn Hóa Phân Hệ Tài Chính 3 Trụ Cột)
 
 ### 1. Phân Hệ Kinh Doanh (Sales CRM) - Tự Động Tra Cứu Giá Cước & Bắt Buộc Nhập Giá:

@@ -19627,12 +19627,12 @@ function renderCashBookTable(list) {
     tbody.innerHTML = list.map((item, index) => {
         const isInflow = item.transaction_type === 'INFLOW';
         const typeBadge = isInflow
-            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">➕ Thu Tiền</span>`
-            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">➖ Chi Tiền</span>`;
+            ? `<span class="font-bold text-xs text-emerald-600 inline-flex items-center justify-center gap-1"><i class="ph-bold ph-plus-circle text-xs"></i> Thu Tiền</span>`
+            : `<span class="font-bold text-xs text-rose-600 inline-flex items-center justify-center gap-1"><i class="ph-bold ph-minus-circle text-xs"></i> Chi Tiền</span>`;
 
         const methodBadge = item.payment_method === 'BANK'
-            ? `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200"><i class="ph-bold ph-bank"></i> Ngân Hàng</span>`
-            : `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200"><i class="ph-bold ph-money"></i> Tiền Mặt</span>`;
+            ? `<span class="font-bold text-xs text-slate-700 inline-flex items-center gap-1.5"><i class="ph-bold ph-bank text-teal-600 text-sm"></i> Ngân Hàng</span>`
+            : `<span class="font-bold text-xs text-slate-700 inline-flex items-center gap-1.5"><i class="ph-bold ph-money text-amber-600 text-sm"></i> Tiền Mặt</span>`;
 
         const amountClass = isInflow ? 'text-emerald-700' : 'text-rose-700';
         const sign = isInflow ? '+' : '-';
