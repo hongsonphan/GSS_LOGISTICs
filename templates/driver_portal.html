@@ -218,7 +218,7 @@
           Vui lòng xác nhận nhận chuyến. Nếu không thể nhận, bấm <strong class="text-rose-300">Từ chối</strong> để điều độ phân xe lại.
         </p>
         <div class="grid grid-cols-2 gap-2.5 pt-1">
-          <button type="button" onclick="const reason = prompt('Lý do bác tài không nhận chuyến:'); if(reason !== null) reportMilestone('DECLINED_TRIP', reason || 'Tài xế từ chối chuyến');"
+          <button type="button" onclick="reportMilestone('DECLINED_TRIP', 'Từ Chối Nhận Chuyến', 'Bác tài xác nhận muốn từ chối chuyến này để Điều độ phân xe khác? Vui lòng nhập lý do:')"
             class="touch-btn py-4 rounded-xl border border-rose-500/70 bg-rose-950/40 text-rose-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-rose-950/70">
             <i class="ph-bold ph-x-circle text-lg"></i>
             <span>Từ Chối</span>
@@ -251,7 +251,7 @@
           <span>XUẤT PHÁT ĐI LẤY CONT / HÀNG</span>
         </button>
         <!-- Nút Đổi Ý Nếu Bấm Nhầm (Trong 30-60 phút) -->
-        <button type="button" onclick="if(confirm('Bác tài xác nhận muốn ĐỔI Ý TỪ CHỐI chuyến này để điều độ phân xe khác?')) { const r = prompt('Lý do đổi ý:'); if(r !== null) reportMilestone('DECLINED_TRIP', r || 'Tài xế đổi ý từ chối chuyến'); }"
+        <button type="button" onclick="reportMilestone('DECLINED_TRIP', 'Đổi Ý Từ Chối Chuyến', 'Bác tài xác nhận muốn đổi ý từ chối chuyến này để Điều độ phân xe khác? Vui lòng nhập lý do:')"
           class="touch-btn w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/60 text-slate-400 hover:text-rose-300 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors">
           <i class="ph-bold ph-arrow-u-up-left text-sm"></i>
           <span>Bấm nhầm? Đổi ý từ chối chuyến</span>
@@ -379,6 +379,12 @@
         </div>
         <div class="text-lg font-black text-teal-300">CHUYẾN XE ĐÃ HOÀN TẤT!</div>
         <p class="text-xs sm:text-sm text-slate-400">Toàn bộ chứng từ và chi phí đã được chuyển cho Điều Độ và Kế Toán đối soát.</p>
+        {% if portal_expire_seconds is not None and portal_expire_seconds > 0 %}
+        <div class="mt-3 p-3 rounded-2xl bg-slate-800/90 border border-amber-500/40 text-slate-200 text-xs flex items-center justify-center gap-2 font-medium shadow-sm">
+          <i class="ph-bold ph-clock-countdown text-amber-400 text-lg"></i>
+          <span>Link tài xế sẽ tự động đóng sau: <strong id="portalExpireTimer" class="font-mono text-amber-300 font-bold text-sm">--:--</strong></span>
+        </div>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -1092,6 +1098,46 @@
     </div>
   </div>
 
+  <!-- MODAL XÁC NHẬN CẬP NHẬT MỐC TIẾN ĐỘ CHO TÀI XẾ (NÚT TO RÕ DỄ CHẠM) -->
+  <div id="milestoneConfirmModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-xs z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain transition-opacity duration-200">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 shadow-2xl text-center space-y-4 animate-in fade-in slide-in-from-bottom duration-200">
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto -mt-2 mb-2 sm:hidden"></div>
+      
+      <!-- Icon mốc to rõ -->
+      <div id="confirmModalIconBox" class="w-16 h-16 rounded-2xl bg-teal-500/20 text-teal-400 border border-teal-500/40 flex items-center justify-center text-3xl mx-auto shadow-inner">
+        <i id="confirmModalIcon" class="ph-bold ph-check-circle"></i>
+      </div>
+
+      <!-- Tiêu đề & nội dung -->
+      <div>
+        <h3 id="confirmModalTitle" class="text-lg sm:text-xl font-black text-white leading-tight">
+          Xác Nhận Cập Nhật Mốc?
+        </h3>
+        <p id="confirmModalDesc" class="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed px-2">
+          Hệ thống sẽ lưu mốc thời gian thực tế và đồng bộ ngay tới Điều Độ.
+        </p>
+      </div>
+
+      <!-- Ô nhập lý do (nếu là từ chối hoặc cần ghi chú thêm) -->
+      <div id="confirmModalInputGroup" class="hidden text-left pt-1">
+        <label id="confirmModalInputLabel" class="block text-xs font-bold text-slate-300 mb-1.5">Lý do từ chối:</label>
+        <textarea id="confirmModalInput" rows="2" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rose-400" placeholder="Nhập lý do..."></textarea>
+      </div>
+
+      <!-- 2 Nút thao tác TO RÕ DỄ BẤM -->
+      <div class="space-y-2.5 pt-2">
+        <button type="button" id="btnConfirmModalAgree" onclick="executePendingMilestone()" class="touch-btn w-full py-4.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xl transition-all cursor-pointer">
+          <i class="ph-bold ph-check-circle text-2xl"></i>
+          <span id="btnConfirmModalAgreeText">ĐỒNG Ý XÁC NHẬN</span>
+        </button>
+        <button type="button" onclick="closeMilestoneConfirmModal()" class="touch-btn w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer">
+          <i class="ph-bold ph-x text-base"></i>
+          <span>Quay Lại / Chưa Bấm</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL 4: CHỤP & TẢI LÊN CHỨNG TỪ THÔNG MINH (POD, EIR, GIÁM ĐỊNH VỎ, SEAL - HỖ TRỢ CHỤP NHIỀU ẢNH) -->
   <div id="docModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain">
     <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md p-5 max-h-[92vh] overflow-y-auto shadow-2xl space-y-4 overscroll-contain">
@@ -1653,18 +1699,69 @@
       listEl.innerHTML = html;
     }
 
-    // 1. BÁO MỐC 1-CHẠM + AUTO RELOAD DỮ LIỆU TỨC THÌ
-    async function reportMilestone(milestoneCode, title) {
+    // 1. BÁO MỐC 1-CHẠM + POPUP XÁC NHẬN NÚT TO RÕ DỄ CHẠM
+    let pendingMilestone = null;
+
+    function reportMilestone(milestoneCode, title, desc = '') {
       if (TRIP_STATUS === 'COMPLETED') {
         alert("Chuyến xe đã hoàn tất! Toàn bộ mốc thời gian đã được chốt và khóa cố định.");
         return;
       }
 
-      if (navigator.vibrate) navigator.vibrate(30);
-      if (!confirm(`Xác nhận cập nhật mốc: "${title}"?`)) {
-        return;
+      pendingMilestone = { code: milestoneCode, title: title, desc: desc };
+      const modal = document.getElementById('milestoneConfirmModal');
+      const titleEl = document.getElementById('confirmModalTitle');
+      const descEl = document.getElementById('confirmModalDesc');
+      const iconEl = document.getElementById('confirmModalIcon');
+      const iconBox = document.getElementById('confirmModalIconBox');
+      const agreeBtn = document.getElementById('btnConfirmModalAgree');
+      const agreeText = document.getElementById('btnConfirmModalAgreeText');
+      const inputGroup = document.getElementById('confirmModalInputGroup');
+      const inputEl = document.getElementById('confirmModalInput');
+
+      if (inputEl) inputEl.value = '';
+
+      if (milestoneCode === 'DECLINED_TRIP') {
+        titleEl.innerText = title || "Xác Nhận Từ Chối Chuyến";
+        descEl.innerText = desc || "Bác tài vui lòng nhập lý do từ chối để Điều độ kịp thời phân xe khác:";
+        iconBox.className = "w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center text-3xl mx-auto shadow-inner";
+        iconEl.className = "ph-bold ph-x-circle";
+        agreeBtn.className = "touch-btn w-full py-4.5 rounded-2xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xl transition-all cursor-pointer";
+        agreeText.innerText = "XÁC NHẬN TỪ CHỐI";
+        if (inputGroup) inputGroup.classList.remove('hidden');
+      } else {
+        titleEl.innerText = title || "Xác Nhận Cập Nhật Mốc?";
+        descEl.innerText = desc || "Hệ thống sẽ lưu mốc thời gian thực tế và đồng bộ ngay tới Điều Độ.";
+        iconBox.className = "w-16 h-16 rounded-2xl bg-teal-500/20 text-teal-400 border border-teal-500/40 flex items-center justify-center text-3xl mx-auto shadow-inner";
+        iconEl.className = "ph-bold ph-check-circle";
+        agreeBtn.className = "touch-btn w-full py-4.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xl transition-all cursor-pointer";
+        agreeText.innerText = "ĐỒNG Ý XÁC NHẬN";
+        if (inputGroup) inputGroup.classList.add('hidden');
       }
 
+      if (navigator.vibrate) navigator.vibrate(25);
+      modal.classList.remove('hidden');
+      lockBodyScroll();
+    }
+
+    function closeMilestoneConfirmModal() {
+      const modal = document.getElementById('milestoneConfirmModal');
+      if (modal) modal.classList.add('hidden');
+      unlockBodyScroll();
+      pendingMilestone = null;
+    }
+
+    async function executePendingMilestone() {
+      if (!pendingMilestone) return;
+      const { code, title } = pendingMilestone;
+      const inputEl = document.getElementById('confirmModalInput');
+      const notes = inputEl ? inputEl.value.trim() : '';
+
+      closeMilestoneConfirmModal();
+      await doReportMilestone(code, title, notes);
+    }
+
+    async function doReportMilestone(milestoneCode, title, notes = '') {
       showToast("Đang gửi báo cáo mốc...", false);
 
       try {
@@ -1680,7 +1777,7 @@
           headers: headers,
           body: JSON.stringify({
             milestone: milestoneCode,
-            notes: ''
+            notes: notes
           })
         });
 
@@ -1692,7 +1789,6 @@
             const badge = document.getElementById('headerStatusBadge');
             if (badge) badge.innerText = data.new_status_label;
           }
-          // Cập nhật ngay trạng thái tức thì và reload bước tiếp theo
           if (data.new_status) TRIP_STATUS = data.new_status;
           setTimeout(() => {
             window.location.reload();
@@ -3048,6 +3144,29 @@
     });
 
     // Tự động rà soát hàng đợi & khởi tạo trạng thái khóa nút mốc
+    // Đếm ngược tự động vô hiệu hóa link sau 10 phút khi chuyến hoàn tất
+    const portalExpireSecs = {{ portal_expire_seconds|default:"null" }};
+    if (portalExpireSecs !== null && portalExpireSecs > 0) {
+      let remainingTime = portalExpireSecs;
+      const timerEl = document.getElementById('portalExpireTimer');
+      const updateTimerDisplay = () => {
+        if (!timerEl) return;
+        const mins = String(Math.floor(remainingTime / 60)).padStart(2, '0');
+        const secs = String(remainingTime % 60).padStart(2, '0');
+        timerEl.innerText = `${mins}:${secs}`;
+      };
+      updateTimerDisplay();
+      const interval = setInterval(() => {
+        remainingTime--;
+        if (remainingTime <= 0) {
+          clearInterval(interval);
+          window.location.reload();
+          return;
+        }
+        updateTimerDisplay();
+      }, 1000);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       initDriverMilestoneButtons();
       if (navigator.onLine) syncOfflineQueue();

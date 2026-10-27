@@ -2,6 +2,30 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.7] - 2026-10-27 (Tự Động Vô Hiệu Hóa Link Driver Portal Sau 10 Phút Hoàn Tất Chuyến & Modal Xác Nhận Nút To Rõ Cho Tài Xế)
+
+### 1. Tự Động Vô Hiệu Hóa Link Tài Xế Sau 10 Phút Kể Từ Khi Hoàn Tất Chuyến:
+- **Cơ Chế Bảo Mật & Đóng Hồ Sơ Tự Động (Auto-Expiry Security):**
+  * Bổ sung hàm kiểm tra `is_driver_portal_expired()` và `get_driver_portal_seconds_left()` trên Model `DispatchTrip` (`apps/dispatch/models.py`). Khi chuyến chuyển sang trạng thái `COMPLETED` (hoàn tất bước 10 hạ cont), hệ thống bắt đầu tính thời gian 10 phút.
+  * Trong `driver_portal_view` (`apps/dispatch/views.py`): Nếu tài xế truy cập sau 10 phút, hệ thống tự động chặn và trả về màn hình `driver_portal_revoked.html` (HTTP 403) với giao diện đóng hồ sơ chuyên biệt: *"Chuyến Xe Đã Hoàn Tất & Đóng Hồ Sơ"*, thông báo chứng từ và chi phí đã được chốt cố định gửi về kế toán.
+  * Trong `core/permissions.py`: Chặn toàn bộ các API ghi (mốc tiến độ, tải chứng từ, kê chi phí) từ Capability Token của tài xế sau 10 phút.
+  * Trong `driver_portal.html`: Tích hợp đồng hồ đếm ngược trực quan trong khoảng 10 phút hoàn tất, tự động tải lại trang khi hết hạn.
+  * Nhân viên nội bộ / Điều độ viên có tài khoản đăng nhập vẫn có quyền truy cập để tra cứu và hỗ trợ.
+
+### 2. Modal Xác Nhận Nút To Rõ Cho Màn Hình Tài Xế (Mobile Touch Bottom Sheet):
+- **Triệt Tiêu Hộp Thoại Trình Duyệt Nhỏ & Khó Bấm:**
+  * Thay thế hoàn toàn các lệnh `confirm()` và `prompt()` mặc định bằng Modal Bottom Sheet chuyên biệt `#milestoneConfirmModal` trên `templates/driver_portal.html`.
+  * Thiết kế theo chuẩn giao diện tài xế xe tải hiện trường:
+    - Icon mốc to bản 3xl trực quan.
+    - Tiêu đề và mô tả giải thích mốc hành trình rõ ràng.
+    - Nút bấm chính siêu to `py-4.5` (màu ngọc lục bảo **`ĐỒNG Ý XÁC NHẬN`** cho mốc tiến độ hoặc màu đỏ rose **`XÁC NHẬN TỪ CHỐI`** kèm ô nhập lý do trực tiếp).
+    - Nút phụ `py-3.5` **`Quay Lại / Chưa Bấm`** giúp tài xế dễ dàng sửa sai nếu bấm nhầm.
+
+### 3. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset version lên `?v=2.9.78` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/column_manager.js` (100% Passed).
+- Chạy toàn bộ bộ kiểm thử tự động của dự án: **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.7.6] - 2026-10-27 (Đồng Nhất Tuyệt Đối Màn Hình Giả Lập & Màn Hình Tài Xế, Bỏ Cột Thao Tác Điều Độ Trên Timeline & Cập Nhật Trạng Thái Tức Thì)
 
 ### 1. Khắc Phục Lỗi Chuyển Trạng Thái & Đồng Nhất 100% Giả Lập Desktop Với Mobile Driver:

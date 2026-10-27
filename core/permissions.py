@@ -309,6 +309,8 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
         # Kiểm tra Capability Token chống IDOR cho tài xế truy cập trực tiếp (Tuyệt đối không nhận Tracking Token hay Token cũ đã thu hồi)
         trip_identifier = view.kwargs.get('trip_code') or request.headers.get('X-Trip-Hash') or request.GET.get('trip_hash')
         if trip_identifier:
+            if hasattr(obj, 'is_driver_portal_expired') and obj.is_driver_portal_expired():
+                return False
             if hasattr(obj, 'driver_token') and obj.driver_token and obj.driver_token == trip_identifier:
                 return True
             from core.security import decode_driver_hashid, decode_trip_hashid

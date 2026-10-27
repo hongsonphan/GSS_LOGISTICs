@@ -380,6 +380,34 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
             self.save(update_fields=['driver_token', 'revoked_driver_tokens'])
         return self.driver_token
 
+    def is_driver_portal_expired(self):
+        """
+        Kiểm tra xem link tài xế đã hết hạn chưa.
+        Đối với tài xế, khi chuyến đã hoàn tất (xong bước 10), thì 10 phút sau link sẽ tự động bị vô hiệu.
+        """
+        if self.status == TripStatus.COMPLETED:
+            from django.utils import timezone
+            import datetime
+            completion_time = self.actual_end_time or self.actual_dropoff_at or self.updated_at
+            if completion_time and timezone.now() > completion_time + datetime.timedelta(minutes=10):
+                return True
+        return False
+
+    def get_driver_portal_seconds_left(self):
+        """
+        Số giây còn lại trước khi link tài xế tự động bị vô hiệu hóa sau khi hoàn tất.
+        Trả về None nếu chuyến chưa hoàn tất.
+        """
+        if self.status == TripStatus.COMPLETED:
+            from django.utils import timezone
+            import datetime
+            completion_time = self.actual_end_time or self.actual_dropoff_at or self.updated_at
+            if completion_time:
+                expire_at = completion_time + datetime.timedelta(minutes=10)
+                seconds = int((expire_at - timezone.now()).total_seconds())
+                return max(0, seconds)
+        return None
+
     def save(self, *args, **kwargs):
         if not self.driver_token:
             import secrets

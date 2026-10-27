@@ -292,6 +292,25 @@ def driver_portal_view(request, trip_hash):
     if not trip:
         return render(request, 'driver_portal_404.html', {'trip_hash': trip_hash}, status=404)
 
+    # 4. Kiểm tra Link Tài Xế Tự Động Vô Hiệu 10 Phút Sau Khi Chuyến Hoàn Tất (Xong Bước 10)
+    from apps.personnel.models import EmployeeRole
+    is_internal_dispatcher = bool(
+        request.user.is_authenticated and (
+            request.user.is_superuser or request.user.is_staff or (
+                hasattr(request.user, 'employee') and request.user.employee.role in [
+                    EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH, EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT
+                ]
+            )
+        )
+    )
+
+    if not is_internal_dispatcher and trip.is_driver_portal_expired():
+        return render(request, 'driver_portal_revoked.html', {
+            'trip': trip,
+            'trip_hash': trip_hash,
+            'is_completed_expired': True
+        }, status=403)
+
     # Google Maps URL cho 3 điểm lộ trình
     pickup_target = trip.pickup_depot or trip.pickup_location
     warehouse_target = trip.delivery_warehouse or trip.warehouse_location
@@ -382,6 +401,7 @@ def driver_portal_view(request, trip_hash):
         'total_driver_expenses': total_driver_expenses,
         'documents': documents,
         'timelines': timelines,
+        'portal_expire_seconds': trip.get_driver_portal_seconds_left(),
     }
     return render(request, 'driver_portal.html', context)
 

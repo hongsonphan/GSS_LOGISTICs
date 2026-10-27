@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Lệnh Điều Xe Đã Thay Đổi - BIM Logistics</title>
+  <title>{% if is_completed_expired %}Chuyến Xe Đã Hoàn Tất - BIM Logistics{% else %}Lệnh Điều Xe Đã Thay Đổi - BIM Logistics{% endif %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"/>
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css"/>
@@ -15,7 +15,55 @@
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col justify-between text-slate-800 p-4">
   <div class="flex-1 flex flex-col items-center justify-center text-center py-10 max-w-md mx-auto w-full">
-    <!-- Icon Cảnh Báo -->
+    {% if is_completed_expired %}
+    <!-- Icon Hoàn Tất Khóa Hồ Sơ -->
+    <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mb-5 shadow-inner border border-emerald-200">
+      <i class="ph-bold ph-lock-key text-4xl text-emerald-600"></i>
+    </div>
+
+    <!-- Tiêu Đề -->
+    <h1 class="text-xl font-black text-slate-900 mb-2 leading-tight uppercase tracking-tight">
+      Chuyến Xe Đã Hoàn Tất & Đóng Hồ Sơ
+    </h1>
+    
+    <p class="text-xs text-slate-600 mb-5 leading-relaxed px-2">
+      Chuyến xe <strong class="text-teal-800 font-mono font-bold">{{ trip.trip_code }}</strong> đã hoàn tất giao hàng và hạ bãi cont thành công. Đường link truy cập đã tự động vô hiệu hóa sau 10 phút để bảo mật dữ liệu.
+    </p>
+
+    <!-- Khung Chi Tiết Thông Báo -->
+    <div class="bg-white border border-emerald-200 rounded-2xl p-4 w-full mb-6 shadow-sm text-left space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <span class="text-[11px] font-bold text-slate-500 uppercase">Mã chuyến:</span>
+        <span class="font-mono font-black text-sm text-teal-800">{{ trip.trip_code }}</span>
+      </div>
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <span class="text-[11px] font-bold text-slate-500 uppercase">Khách hàng:</span>
+        <span class="font-bold text-xs text-slate-800">{{ trip.customer.name }}</span>
+      </div>
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <span class="text-[11px] font-bold text-slate-500 uppercase">Bác tài hoàn tất:</span>
+        <span class="font-bold text-xs text-indigo-800">{{ trip.driver.nickname|default:trip.driver.full_name }}</span>
+      </div>
+      <div class="p-2.5 bg-emerald-50 rounded-xl text-[11px] text-emerald-900 border border-emerald-200/80 leading-normal flex items-start gap-2">
+        <i class="ph-bold ph-check-circle text-emerald-700 text-base shrink-0 mt-0.5"></i>
+        <span>Toàn bộ mốc thời gian, chứng từ (EIR, POD) và chi phí đã được chốt cố định và bàn giao cho bộ phận Điều độ & Kế toán đối soát.</span>
+      </div>
+    </div>
+
+    <!-- Hướng Dẫn & Nút Hành Động -->
+    <div class="w-full space-y-2.5">
+      <a href="tel:0908123456" class="inline-flex items-center justify-center gap-2 w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3.5 px-5 rounded-xl shadow-md transition-all active:scale-[0.98] text-xs uppercase tracking-wider">
+        <i class="ph-bold ph-phone-call text-base"></i>
+        <span>Gọi Hotline Điều Độ (Nếu Cần Hỗ Trợ)</span>
+      </a>
+      
+      <p class="text-[11px] text-slate-500 italic">
+        Cảm ơn bác tài đã hoàn thành tốt chuyến hàng an toàn và đúng tiến độ!
+      </p>
+    </div>
+
+    {% else %}
+    <!-- Icon Cảnh Báo Thu Hồi Link Cũ -->
     <div class="w-20 h-20 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center mb-5 shadow-inner border border-amber-200">
       <i class="ph-bold ph-arrows-clockwise text-4xl animate-spin-slow"></i>
     </div>
@@ -60,6 +108,7 @@
         Nếu bác tài vừa được phân chuyến mới, vui lòng mở lại đường link trong tin nhắn Zalo gần nhất.
       </p>
     </div>
+    {% endif %}
   </div>
 
   <footer class="text-center text-[11px] text-slate-400 py-3">
