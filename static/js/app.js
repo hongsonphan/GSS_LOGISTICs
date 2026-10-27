@@ -4773,23 +4773,6 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                             <td class="py-3 px-3 align-top whitespace-nowrap">
                                 <span class="${actorTextClass}">${actorDisplay}</span>
                             </td>
-                            <td class="py-3 px-3 text-center align-top whitespace-nowrap">
-                                ${item.active ? `
-                                    <button type="button" onclick="confirmDispatcherMilestone('${item.step}')" 
-                                        class="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold font-heading shadow-2xs flex items-center justify-center gap-1 mx-auto transition-colors cursor-pointer" 
-                                        title="Điều độ xác nhận thay tài xế">
-                                        <i class="ph-bold ph-check"></i>
-                                        <span>Xác nhận</span>
-                                    </button>
-                                ` : (item.done ? `
-                                    <span class="text-emerald-700 font-bold text-xs flex items-center justify-center gap-1">
-                                        <i class="ph-bold ph-check-circle text-sm"></i>
-                                        <span>Đã xong</span>
-                                    </span>
-                                ` : `
-                                    <span class="text-slate-300 text-xs">—</span>
-                                `)}
-                            </td>
                         </tr>
                     `;
                 });
@@ -5610,14 +5593,24 @@ function renderDriverMobileApp(trip) {
                     </button>
                 </div>
             `;
-        } else if (st === 'IN_TRANSIT' || st === 'AT_WAREHOUSE') {
-            if (nextStepLabel) nextStepLabel.innerText = 'Bước 6/10';
-            if (nextActionTitle) nextActionTitle.innerText = 'Tại kho — Chờ gọi vào Dock';
-            if (nextActionDesc) nextActionDesc.innerText = 'Khi xe lùi vào dock mở cửa cont, bấm bắt đầu dỡ/đóng hàng.';
+        } else if (st === 'IN_TRANSIT') {
+            if (nextStepLabel) nextStepLabel.innerText = 'Bước 5/10';
+            if (nextActionTitle) nextActionTitle.innerText = 'Sắp đến cổng kho — Chuẩn bị Check-in';
+            if (nextActionDesc) nextActionDesc.innerText = 'Vào đến cổng kho khách hàng, bấm Check-in ngay để ghi nhận giờ chờ bốc hàng.';
             nextActionBtns.innerHTML = `
-                <button type="button" onclick="driverReportMilestone('START_UNLOADING')" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all">
+                <button type="button" onclick="driverReportMilestone('ARRIVED_WAREHOUSE')" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all">
+                    <i class="ph-bold ph-map-pin text-base"></i>
+                    <span>ĐÃ ĐẾN CỔNG KHO — CHECK-IN</span>
+                </button>
+            `;
+        } else if (st === 'AT_WAREHOUSE') {
+            if (nextStepLabel) nextStepLabel.innerText = 'Bước 6/10';
+            if (nextActionTitle) nextActionTitle.innerText = 'Đang chờ tại cổng kho';
+            if (nextActionDesc) nextActionDesc.innerText = 'Khi bảo vệ/thủ kho gọi xe vào dock, bấm nút để bắt đầu đóng/dỡ hàng.';
+            nextActionBtns.innerHTML = `
+                <button type="button" onclick="driverReportMilestone('START_UNLOADING')" class="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all">
                     <i class="ph-bold ph-package text-base"></i>
-                    <span>BẮT ĐẦU ĐÓNG / DỠ HÀNG</span>
+                    <span>VÀO DOCK — BẮT ĐẦU ĐÓNG / DỠ HÀNG</span>
                 </button>
             `;
         } else if (st === 'UNLOADING') {
@@ -7192,7 +7185,22 @@ async function driverReportMilestone(milestoneCode) {
         const data = await res.json();
         if (res.ok && data.success) {
             showToast('success', data.message, 'Cập nhật tiến độ');
-            await viewTripDetail(currentActiveTripCode);
+            // Cập nhật ngay trạng thái tức thì trên app
+            if (currentActiveTripData) {
+                currentActiveTripData.status = data.new_status;
+                currentActiveTripData.status_label = data.new_status_label;
+            }
+            const appStatusBadge = document.getElementById('app-status-badge');
+            if (appStatusBadge && data.new_status_label) {
+                appStatusBadge.innerText = data.new_status_label;
+            }
+            const detailBadge = document.getElementById('detail-status-badge');
+            if (detailBadge && data.new_status_label) {
+                detailBadge.innerText = data.new_status_label;
+                const statusCls = (typeof STATUS_STYLE_MAP !== 'undefined' && STATUS_STYLE_MAP[data.new_status]) || 'bg-slate-100 text-slate-700 border-slate-300';
+                detailBadge.className = `px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${statusCls}`;
+            }
+            await viewTripDetail(currentActiveTripCode, false);
             if (typeof loadTripsData === 'function') {
                 loadTripsData();
             }

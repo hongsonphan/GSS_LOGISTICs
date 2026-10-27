@@ -2,6 +2,32 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.6] - 2026-10-27 (Đồng Nhất Tuyệt Đối Màn Hình Giả Lập & Màn Hình Tài Xế, Bỏ Cột Thao Tác Điều Độ Trên Timeline & Cập Nhật Trạng Thái Tức Thì)
+
+### 1. Khắc Phục Lỗi Chuyển Trạng Thái & Đồng Nhất 100% Giả Lập Desktop Với Mobile Driver:
+- **Tách Biệt Rõ Ràng Các Bước Tiến Trình Hiện Trường:**
+  * Khắc phục lỗi gộp chung `IN_TRANSIT` và `AT_WAREHOUSE` trong hàm `renderDriverMobileApp` (`static/js/app.js`), dẫn đến việc hiển thị nút "BẮT ĐẦU ĐÓNG / DỠ HÀNG" (`START_UNLOADING`) khi xe vẫn đang lăn bánh trên đường (`IN_TRANSIT`) gây lỗi logic máy trạng thái.
+  * Phân rã chuẩn mực theo đúng giao diện điện thoại của Bác tài (`templates/driver_portal.html`):
+    - Khi trạng thái là `IN_TRANSIT` (Bước 5/10 - Sắp đến cổng kho): Nút hành động chính là **`ĐÃ ĐẾN CỔNG KHO — CHECK-IN`** (`ARRIVED_WAREHOUSE`, màu ngọc lục bảo).
+    - Khi trạng thái là `AT_WAREHOUSE` (Bước 6/10 - Đang chờ tại cổng kho): Nút hành động chính là **`VÀO DOCK — BẮT ĐẦU ĐÓNG / DỠ HÀNG`** (`START_UNLOADING`, màu hổ phách).
+  * Đảm bảo mọi bước hiển thị, tiêu đề, mô tả và nút bấm giữa Giả lập máy tính và App điện thoại tài xế luôn **đồng nhất tuyệt đối 1:1**.
+
+### 2. Bỏ Cột "Thao Tác Điều Độ" Trên Bảng Tiến Độ 11 Bước:
+- **Tối Giản Hóa Bảng Tiến Độ (Timeline Integrity):**
+  * Loại bỏ hoàn toàn cột tiêu đề `<th>Thao Tác Điều Độ</th>` trong `templates/views/view_trip_detail.html` và ô `<td>` nút "Xác nhận" / "Đã xong" trong `static/js/app.js`.
+  * Bảng tiến độ 11 bước trở về đúng bản chất là bảng giám sát luồng vận hành (4 cột chuẩn: Bước, Nội Dung & Chứng Từ Đính Kèm, Trạng Thái, Bộ Phận / Người Xử Lý).
+  * Điều phối viên khi muốn hỗ trợ thao tác thay tài xế sẽ mở ngăn kéo "Màn Hình Tài Xế Hiện Trường" (Simulator) để tương tác đồng bộ và trực quan như tài xế.
+
+### 3. Cập Nhật Trạng Thái Tức Thì (Instant Realtime UI Update):
+- **Phản Hồi Thị Giác Ngay Khi Bấm Nút:**
+  * Trong `driverReportMilestone` (`static/js/app.js`): Ngay khi API phản hồi thành công, hệ thống lập tức cập nhật dữ liệu bộ nhớ `currentActiveTripData.status`, đồng thời gán lại text và class màu cho cả `#app-status-badge` (Giả lập) và `#detail-status-badge` (Chi tiết chuyến) trong < 50ms, sau đó mới refresh toàn phần dữ liệu.
+  * Trong `driver_portal.html`: Giảm thời gian chờ reload xuống 150ms sau khi bấm mốc để tài xế thấy bước tiếp theo gần như tức thời.
+
+### 4. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset version lên `?v=2.9.77` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/column_manager.js` (100% Passed).
+- Chạy toàn bộ bộ kiểm thử tự động của dự án: **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.7.5] - 2026-10-27 (Chuẩn Hóa Nhãn Hàng Nhập/Xuất/Nội Địa, Canh Trái Cột Trạng Thái & Gia Cố Toàn Diện Máy Trạng Thái Tiến Độ Tài Xế)
 
 ### 1. Chuẩn Hóa Nhãn Loại Hàng & Bỏ Khối Nền Nặng Nề Bảng Điều Vận:

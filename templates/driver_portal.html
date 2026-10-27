@@ -1692,10 +1692,11 @@
             const badge = document.getElementById('headerStatusBadge');
             if (badge) badge.innerText = data.new_status_label;
           }
-          // Auto reload trang sau 600ms để hiển thị chính xác trạng thái tiếp theo
+          // Cập nhật ngay trạng thái tức thì và reload bước tiếp theo
+          if (data.new_status) TRIP_STATUS = data.new_status;
           setTimeout(() => {
             window.location.reload();
-          }, 600);
+          }, 150);
         } else {
           showToast(`Lỗi: ${data.error || 'Không thể cập nhật mốc'}`, false);
         }
