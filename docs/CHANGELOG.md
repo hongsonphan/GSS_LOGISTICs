@@ -2,6 +2,34 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.4] - 2026-10-27 (Tối Ưu Chế Độ Cắt Kéo: Cho Phép Bỏ Trống Tài 2 & Đầu Kéo Chặng 2 Khi Tạo Lệnh Để Gán Bổ Sung Sau Khi Hạ Cont)
+
+### 1. Bản Chất Nghiệp Vụ Vận Hành Cắt Kéo (Drop & Hook):
+- **Phát Lệnh Nhanh Đi Lấy Vỏ:**
+  * Ở thời điểm Điều độ phát lệnh chặng 1 (Lấy Cont -> Giao Kho cắt mooc), hàng đang trong quá trình đóng hoặc dỡ tại kho, chưa biết chính xác thời điểm hoàn thành và chưa thể chốt tài xế/đầu kéo nào sẽ móc mooc kéo đi hạ.
+  * Việc bắt buộc nhập Tài 2 và Xe 2 ngay tại màn hình tạo lệnh gây cản trở và không đúng thực tế hiện trường.
+- **Cho Phép Bỏ Trống Tài 2 & Xe 2 Khi Tạo Lệnh:**
+  * Bỏ thuộc tính 
+equired và bỏ dấu sao đỏ * tại các ô chọn **Tài xế Hạ Cont** (inp-dropoff-driver) và **Đầu kéo Hạ Cont** (inp-dropoff-vehicle) trên cả 2 màn hình iew_create_trip.html và modal_create_trip.html.
+  * Điều chỉnh placeholder thành -- Bỏ trống (Phân công gán sau khi hạ cont) --.
+  * Trong hàm submitNewTrip(), loại bỏ ràng buộc bắt buộc của Tài 2 & Xe 2, chỉ yêu cầu bắt buộc Tài xế và Xe Chặng 1 (inp-driver-leg1, inp-vehicle-leg1).
+
+### 2. Gán Bổ Sung Tài 2 Linh Hoạt Sau Khi Hạ Cont:
+- **Tích Hợp Khối Chặng 2 Vào Modal Sửa Chuyến Xe (modal_edit_trip.html):**
+  * Bổ sung khối giao diện chuyên biệt #edit-section-drop-hook trong Modal Sửa để Điều độ viên có thể gán hoặc thay đổi Tài xế & Đầu kéo Chặng 2 bất kỳ lúc nào.
+  * Tự động gợi ý biển số xe mặc định khi chọn tài xế (onEditDropoffDriverChange).
+- **Giao Diện Chi Tiết Chuyến Xe (iew_trip_detail.html):**
+  * Khi Chặng 2 chưa gán tài xế, hiển thị huy hiệu trực quan Chưa gán tài xế kèm nút bấm nhanh [+ Gán Tài 2 Ngay], bấm vào sẽ mở ngay Modal để phân công tài xế hạ bãi trong 1 chạm.
+- **Backend API Defensive (pps/dispatch/api_views.py):**
+  * Phương thức patch của TripDetailAPIView xử lý an toàn cho dropoff_driver_id và dropoff_vehicle_id, chống lỗi ValueError khi truyền rỗng hoặc null.
+
+### 3. Kỹ Thuật & Đảm Bảo Khả Năng Vận Hành:
+- Cập nhật các template: iew_create_trip.html, modal_create_trip.html, modal_edit_trip.html, ase.html.
+- Nâng asset cache version lên ?v=2.9.75.
+- Kiểm thử cú pháp JS: 
+ode -c static/js/app.js (100% Passed).
+- Chạy bộ kiểm thử tự động toàn diện: **148/148 unit tests PASSED 100%** (python manage.py test --keepdb).
+
 ## [v4.7.3] - 2026-10-27 (Chuẩn Hóa Đồng Bộ Giao Diện Toàn Ứng Dụng: Xe & Bãi, Hành Chính & Nhân Sự, Kế Toán, Dịch Vụ Hải Quan - Thanh Điều Khiển 1 Dòng Cố Định h-10, Zero Layout Shift & Bỏ Tiêu Đề Thừa)
 
 ### 1. Đồng Nhất Cấu Trúc Bố Trí Từ Trên Xuống Toàn Toàn Bộ Ứng Dụng (Top-Down SaaS Hierarchy):
@@ -30,6 +58,34 @@ ounded-xl, order-2, ox-border.
 ode -c static/js/app.js và static/js/modules/*.js đạt chuẩn 100%.
   * Nâng version asset cache: ?v=2.9.73 trong 	emplates/base.html.
   * Chạy toàn bộ bộ kiểm thử tự động của dự án: **148/148 unit tests PASSED 100%** (python manage.py test --keepdb).
+
+## [v4.7.4] - 2026-10-27 (Tối Ưu Chế Độ Cắt Kéo: Cho Phép Bỏ Trống Tài 2 & Đầu Kéo Chặng 2 Khi Tạo Lệnh Để Gán Bổ Sung Sau Khi Hạ Cont)
+
+### 1. Bản Chất Nghiệp Vụ Vận Hành Cắt Kéo (Drop & Hook):
+- **Phát Lệnh Nhanh Đi Lấy Vỏ:**
+  * Ở thời điểm Điều độ phát lệnh chặng 1 (Lấy Cont -> Giao Kho cắt mooc), hàng đang trong quá trình đóng hoặc dỡ tại kho, chưa biết chính xác thời điểm hoàn thành và chưa thể chốt tài xế/đầu kéo nào sẽ móc mooc kéo đi hạ.
+  * Việc bắt buộc nhập Tài 2 và Xe 2 ngay tại màn hình tạo lệnh gây cản trở và không đúng thực tế hiện trường.
+- **Cho Phép Bỏ Trống Tài 2 & Xe 2 Khi Tạo Lệnh:**
+  * Bỏ thuộc tính 
+equired và bỏ dấu sao đỏ * tại các ô chọn **Tài xế Hạ Cont** (inp-dropoff-driver) và **Đầu kéo Hạ Cont** (inp-dropoff-vehicle) trên cả 2 màn hình iew_create_trip.html và modal_create_trip.html.
+  * Điều chỉnh placeholder thành -- Bỏ trống (Phân công gán sau khi hạ cont) --.
+  * Trong hàm submitNewTrip(), loại bỏ ràng buộc bắt buộc của Tài 2 & Xe 2, chỉ yêu cầu bắt buộc Tài xế và Xe Chặng 1 (inp-driver-leg1, inp-vehicle-leg1).
+
+### 2. Gán Bổ Sung Tài 2 Linh Hoạt Sau Khi Hạ Cont:
+- **Tích Hợp Khối Chặng 2 Vào Modal Sửa Chuyến Xe (modal_edit_trip.html):**
+  * Bổ sung khối giao diện chuyên biệt #edit-section-drop-hook trong Modal Sửa để Điều độ viên có thể gán hoặc thay đổi Tài xế & Đầu kéo Chặng 2 bất kỳ lúc nào.
+  * Tự động gợi ý biển số xe mặc định khi chọn tài xế (onEditDropoffDriverChange).
+- **Giao Diện Chi Tiết Chuyến Xe (iew_trip_detail.html):**
+  * Khi Chặng 2 chưa gán tài xế, hiển thị huy hiệu trực quan Chưa gán tài xế kèm nút bấm nhanh [+ Gán Tài 2 Ngay], bấm vào sẽ mở ngay Modal để phân công tài xế hạ bãi trong 1 chạm.
+- **Backend API Defensive (pps/dispatch/api_views.py):**
+  * Phương thức patch của TripDetailAPIView xử lý an toàn cho dropoff_driver_id và dropoff_vehicle_id, chống lỗi ValueError khi truyền rỗng hoặc null.
+
+### 3. Kỹ Thuật & Đảm Bảo Khả Năng Vận Hành:
+- Cập nhật các template: iew_create_trip.html, modal_create_trip.html, modal_edit_trip.html, ase.html.
+- Nâng asset cache version lên ?v=2.9.75.
+- Kiểm thử cú pháp JS: 
+ode -c static/js/app.js (100% Passed).
+- Chạy bộ kiểm thử tự động toàn diện: **148/148 unit tests PASSED 100%** (python manage.py test --keepdb).
 
 ## [v4.7.3] - 2026-10-27 (Chuẩn Hóa Nghiệp Vụ Nhân Bản Lệnh Điều Vận: Kế Thừa Khách Hàng & Điểm Đầu, Bỏ Trống Điểm Đóng/Hạ & Toàn Bộ Đội Xe)
 

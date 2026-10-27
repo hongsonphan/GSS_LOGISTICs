@@ -4401,7 +4401,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                             <span class="text-[10.5px] bg-amber-200/80 px-1.5 py-0.2 rounded font-black">2 Chặng</span>
                         </div>
                         <p class="pt-0.5">• <strong>Chặng 1 (Lấy Cont):</strong> ${trip.driver} (Xe: ${trip.vehicle}) · Chia lương: ${trip.driver_split_ratio}%</p>
-                        <p>• <strong>Chặng 2 (Hạ Bãi):</strong> ${trip.dropoff_driver || 'Chưa gán tài xế'} (Xe: ${trip.dropoff_vehicle || '-'}) · Chia lương: ${100 - trip.driver_split_ratio}%</p>
+                        <p>• <strong>Chặng 2 (Hạ Bãi):</strong> ${trip.dropoff_driver ? `${trip.dropoff_driver} (Xe: ${trip.dropoff_vehicle || '-'})` : '<span class="text-amber-800 bg-amber-100 font-bold px-2 py-0.5 rounded border border-amber-300">Chưa gán tài xế</span> <button type="button" onclick="openModalEditTrip()" class="ml-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-200 cursor-pointer shadow-2xs transition-all"><i class="ph-bold ph-user-plus mr-0.5"></i> Gán Tài 2 Ngay</button>'} · Chia lương: ${100 - (trip.driver_split_ratio || 50)}%</p>
                     </div>
                 `;
                 dropoffVehEl.classList.remove('hidden');
@@ -6207,6 +6207,23 @@ async function openModalEditTrip(tripCode = null) {
                 trailers.map(t => `<option value="${t.id}">${escapeHtml(t.label || t.plate)}</option>`).join('');
             if (curVal) trlSel.value = curVal;
         }
+
+        const dropDrvSel = document.getElementById('edit-inp-dropoff-driver');
+        if (dropDrvSel && Array.isArray(drivers)) {
+            const curVal = dropDrvSel.value;
+            dropDrvSel.innerHTML = '<option value="">-- Bỏ trống (Chưa gán) --</option>' +
+                drivers.map(d => `<option value="${d.id}">${escapeHtml(d.label || d.nickname || d.full_name)}</option>`).join('');
+            if (curVal) dropDrvSel.value = curVal;
+        }
+
+        const dropVehSel = document.getElementById('edit-inp-dropoff-vehicle');
+        if (dropVehSel && Array.isArray(vehicles)) {
+            const curVal = dropVehSel.value;
+            const ownedList = vehicles.filter(v => v.ownership_code === 'OWNED');
+            dropVehSel.innerHTML = '<option value="">-- Chọn Đầu kéo Chặng 2 --</option>' +
+                ownedList.map(v => `<option value="${v.id}">${escapeHtml(v.label || v.plate)}</option>`).join('');
+            if (curVal) dropVehSel.value = curVal;
+        }
     }
 
     // Lấy thông tin chuyến xe
@@ -6304,6 +6321,39 @@ async function openModalEditTrip(tripCode = null) {
     const trlSel = document.getElementById('edit-inp-trailer');
     if (trlSel && trip.trailer_id) trlSel.value = trip.trailer_id;
 
+    // Chặng 2 (Cắt kéo)
+    const editDropDrvSel = document.getElementById('edit-inp-dropoff-driver');
+    if (editDropDrvSel) {
+        if (trip.dropoff_driver_id) {
+            editDropDrvSel.value = trip.dropoff_driver_id;
+        } else if (trip.dropoff_driver) {
+            for (let i = 0; i < editDropDrvSel.options.length; i++) {
+                if (editDropDrvSel.options[i].text.toLowerCase().includes(trip.dropoff_driver.toLowerCase())) {
+                    editDropDrvSel.selectedIndex = i;
+                    break;
+                }
+            }
+        } else {
+            editDropDrvSel.value = '';
+        }
+    }
+
+    const editDropVehSel = document.getElementById('edit-inp-dropoff-vehicle');
+    if (editDropVehSel) {
+        if (trip.dropoff_vehicle_id) {
+            editDropVehSel.value = trip.dropoff_vehicle_id;
+        } else if (trip.dropoff_vehicle) {
+            for (let i = 0; i < editDropVehSel.options.length; i++) {
+                if (editDropVehSel.options[i].text.toLowerCase().includes(trip.dropoff_vehicle.toLowerCase())) {
+                    editDropVehSel.selectedIndex = i;
+                    break;
+                }
+            }
+        } else {
+            editDropVehSel.value = '';
+        }
+    }
+
     // Phụ & Ghi chú
     setVal('edit-inp-invoice', trip.commercial_invoice);
     setVal('edit-inp-free-det', trip.det_free_days || 3);
@@ -6319,6 +6369,20 @@ async function openModalEditTrip(tripCode = null) {
     }
 }
 window.openModalEditTrip = openModalEditTrip;
+function onEditDropoffDriverChange(driverId) {
+    if (!masterDataFormOptionsCache || !driverId) return;
+    const { drivers, vehicles } = masterDataFormOptionsCache;
+    const driver = (drivers || []).find(d => String(d.id) === String(driverId));
+    const vehSel = document.getElementById('edit-inp-dropoff-vehicle');
+    if (driver && vehSel && !vehSel.value) {
+        const matchedVeh = (vehicles || []).find(v => v.ownership_code === 'OWNED' && (v.driver_id === driver.id || v.driver_name === driver.nickname || v.driver_name === driver.full_name));
+        if (matchedVeh) {
+            vehSel.value = matchedVeh.id;
+        }
+    }
+}
+window.onEditDropoffDriverChange = onEditDropoffDriverChange;
+
 
 async function submitEditTripForm() {
     const trip = window.currentTripDetail;
@@ -6350,6 +6414,8 @@ async function submitEditTripForm() {
         driver_id: document.getElementById('edit-inp-driver')?.value || null,
         vehicle_id: document.getElementById('edit-inp-vehicle')?.value || null,
         trailer_id: document.getElementById('edit-inp-trailer')?.value || null,
+        dropoff_driver_id: document.getElementById('edit-inp-dropoff-driver')?.value || null,
+        dropoff_vehicle_id: document.getElementById('edit-inp-dropoff-vehicle')?.value || null,
         commercial_invoice: document.getElementById('edit-inp-invoice')?.value?.trim() || '',
         free_det_days: document.getElementById('edit-inp-free-det')?.value || 3,
         cont_location_type: document.getElementById('edit-inp-location-type')?.value || 'BÃI TVL',
@@ -8391,8 +8457,7 @@ async function submitNewTrip(sourceEl = null) {
         if (is_split_trip) {
             requiredFields.push({ id: 'inp-driver-leg1', errId: 'err-driver-leg1', label: 'Tài xế lấy cont (Chặng 1)' });
             requiredFields.push({ id: 'inp-vehicle-leg1', errId: 'err-vehicle-leg1', label: 'Đầu kéo/ Xe tải lấy cont (Chặng 1)' });
-            requiredFields.push({ id: 'inp-dropoff-driver', errId: 'err-dropoff-driver', label: 'Tài xế hạ cont (Chặng 2)' });
-            requiredFields.push({ id: 'inp-dropoff-vehicle', errId: 'err-dropoff-vehicle', label: 'Đầu kéo/ Xe tải hạ cont (Chặng 2)' });
+            // Chặng 2 (Tài xế hạ cont & Xe hạ cont) cho phép bỏ trống để phân công gán sau khi hạ cont
         } else {
             requiredFields.push({ id: 'inp-driver', errId: 'err-driver', label: 'Tài xế nhận lệnh' });
             requiredFields.push({ id: 'inp-vehicle', errId: 'err-vehicle', label: 'Đầu kéo/ Xe tải TVL' });
@@ -16789,9 +16854,13 @@ function populateMasterDataDropdowns() {
 
     // Chế độ Cắt Kéo (Drop & Hook)
     fillSelect('inp-driver-leg1', drivers, '-- Chọn tài xế lấy cont --', 'nickname', 'label');
-    fillSelect('inp-dropoff-driver', drivers, '-- Chọn tài xế hạ cont --', 'nickname', 'label');
+    fillSelect('inp-dropoff-driver', drivers, '-- Bỏ trống (Phân công gán sau khi hạ cont) --', 'nickname', 'label');
     fillSelect('inp-vehicle-leg1', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải lấy cont --', 'plate', 'label');
-    fillSelect('inp-dropoff-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải hạ cont --', 'plate', 'label');
+    fillSelect('inp-dropoff-vehicle', ownedVehicles, '-- Tự động theo tài xế hoặc gán sau --', 'plate', 'label');
+
+    // Đổ danh sách Chặng 2 cho Modal Sửa Lệnh Điều Vận
+    fillSelect('edit-inp-dropoff-driver', drivers, '-- Bỏ trống (Chưa gán) --', 'id', 'label');
+    fillSelect('edit-inp-dropoff-vehicle', ownedVehicles, '-- Chọn Đầu kéo Chặng 2 --', 'id', 'label');
 
     // Modal Báo Giá (modal-quotation & fullpage view)
     fillSelect('quote-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
@@ -17085,7 +17154,8 @@ function toggleDropHookMode(isDropHook) {
         if (isDropHook) {
             mainDriver.removeAttribute('required');
             if (leg1Driver) leg1Driver.setAttribute('required', 'required');
-            if (leg2Driver) leg2Driver.setAttribute('required', 'required');
+            // Chặng 2 (Tài 2 & Xe 2) cho phép bỏ trống để gán sau
+            if (leg2Driver) leg2Driver.removeAttribute('required');
             
             // Kế thừa giá trị tài xế nếu đã chọn ở direct
             if (mainDriver && mainDriver.value && leg1Driver && !leg1Driver.value) {

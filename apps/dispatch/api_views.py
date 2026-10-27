@@ -3495,9 +3495,17 @@ class TripDetailAPIView(APIView):
             if veh:
                 trip.vehicle = veh
         if 'dropoff_driver_id' in data:
-            trip.dropoff_driver = Employee.objects.filter(id=data['dropoff_driver_id']).first()
+            drop_drv_id = data.get('dropoff_driver_id')
+            if drop_drv_id and str(drop_drv_id).isdigit():
+                trip.dropoff_driver = Employee.objects.filter(id=int(drop_drv_id)).first()
+            else:
+                trip.dropoff_driver = None
         if 'dropoff_vehicle_id' in data:
-            trip.dropoff_vehicle = Vehicle.objects.filter(id=data['dropoff_vehicle_id']).first()
+            drop_veh_id = data.get('dropoff_vehicle_id')
+            if drop_veh_id and str(drop_veh_id).isdigit():
+                trip.dropoff_vehicle = Vehicle.objects.filter(id=int(drop_veh_id)).first()
+            else:
+                trip.dropoff_vehicle = None
         if 'is_twin_container' in data:
             trip.is_twin_container = bool(data['is_twin_container'])
         if 'container_2' in data:

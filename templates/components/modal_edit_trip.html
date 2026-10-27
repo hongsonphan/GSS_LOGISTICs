@@ -152,13 +152,13 @@
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <div>
-              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-driver">Bác Tài Lái Xe</label>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-driver">Bác Tài (Chặng 1 / Toàn trình)</label>
               <select id="edit-inp-driver" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-900 text-xs w-full">
                 <option value="">-- Chọn Bác Tài --</option>
               </select>
             </div>
             <div>
-              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-vehicle">Đầu kéo/ Xe tải</label>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-vehicle">Đầu kéo/ Xe tải (Chặng 1 / Toàn trình)</label>
               <select id="edit-inp-vehicle" class="form-select h-8.5 px-2 py-1 font-mono font-bold text-slate-900 text-xs w-full">
                 <option value="">-- Chọn Đầu kéo/ Xe tải --</option>
               </select>
@@ -168,6 +168,30 @@
               <select id="edit-inp-trailer" class="form-select h-8.5 px-2 py-1 font-mono text-slate-800 text-xs w-full">
                 <option value="">-- Chọn Rơ-Moóc --</option>
               </select>
+            </div>
+          </div>
+
+          <!-- Phân công Chặng 2 cho Chế độ Cắt Kéo (Drop & Hook) -->
+          <div id="edit-section-drop-hook" class="p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2 mt-2">
+            <div class="flex items-center justify-between border-b border-indigo-200/80 pb-1">
+              <span class="text-[11.5px] font-bold uppercase tracking-wider text-indigo-950 flex items-center gap-1 font-heading">
+                <i class="ph-bold ph-arrows-split text-indigo-700"></i> Chặng 2: Tài Xế & Xe Móc Mooc Hạ Bãi (Cắt Kéo)
+              </span>
+              <span class="text-[10px] font-bold text-indigo-800 bg-indigo-100 px-2 py-0.5 rounded-full border border-indigo-200">Gán bổ sung khi hạ cont</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-indigo-950 text-xs mb-1" for="edit-inp-dropoff-driver">Bác Tài Hạ Cont (Chặng 2)</label>
+                <select id="edit-inp-dropoff-driver" onchange="onEditDropoffDriverChange(this.value)" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-900 text-xs w-full">
+                  <option value="">-- Bỏ trống (Chưa gán) --</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-indigo-950 text-xs mb-1" for="edit-inp-dropoff-vehicle">Đầu kéo/ Xe tải Hạ Cont (Chặng 2)</label>
+                <select id="edit-inp-dropoff-vehicle" class="form-select h-8.5 px-2 py-1 font-mono font-bold text-slate-900 text-xs w-full">
+                  <option value="">-- Chọn Đầu kéo Chặng 2 --</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
