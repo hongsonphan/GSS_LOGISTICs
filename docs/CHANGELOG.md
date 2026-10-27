@@ -31,6 +31,30 @@ ode -c static/js/app.js và static/js/modules/*.js đạt chuẩn 100%.
   * Nâng version asset cache: ?v=2.9.73 trong 	emplates/base.html.
   * Chạy toàn bộ bộ kiểm thử tự động của dự án: **148/148 unit tests PASSED 100%** (python manage.py test --keepdb).
 
+## [v4.7.3] - 2026-10-27 (Chuẩn Hóa Nghiệp Vụ Nhân Bản Lệnh Điều Vận: Kế Thừa Khách Hàng & Điểm Đầu, Bỏ Trống Điểm Đóng/Hạ & Toàn Bộ Đội Xe)
+
+### 1. Phân Tích & Chuẩn Hóa Logic Nhân Bản Lệnh Điều Vận (TMS Duplicate Trip):
+- **Bản Chất Nghiệp Vụ Vận Tải Container (Multi-Container Booking):**
+  * **Kế thừa Thông tin Khách hàng & Lô hàng:** Khách hàng (inp-customer), Loại hình vận chuyển (inp-type), Quy cách Cont (inp-cont-type), Số Booking / B/L (inp-booking), Hãng tàu (inp-shipping-line), Tàu/Chuyến và Cắt CY/SI hoặc Free DEM/DET là thuộc tính chung của cả lô hàng.
+  * **Chuẩn Hóa Tuyến Đường:**
+    - **Điểm 1 (Nơi lấy - inp-pickup): KẾ THỪA**. Hãng tàu cấp vỏ rỗng tại cùng 1 Cảng/Depot cho cả lô hàng.
+    - **Điểm 2 (Nơi đóng/trả - inp-warehouse): BỎ TRỐNG**. Một khách hàng có thể có nhiều kho/nhà máy; từng container trong booking có thể điều về kho khác nhau. Bỏ trống để Điều độ bắt buộc chọn lại, tránh chạy nhầm kho.
+    - **Điểm 3 (Nơi hạ - inp-dropoff): BỎ TRỐNG**. Bãi hạ xuất hoặc bãi trả rỗng có thể thay đổi tùy tình trạng tiếp nhận của cảng tại thời điểm hạ vỏ.
+  * **Bỏ Trống Toàn Bộ Đội Xe & Tài Xế (Zero Conflict Dispatch):**
+    - Container tiếp theo hầu như do tài xế khác và đầu kéo khác vận chuyển. Nếu tự động gán xe cũ sẽ gây ra lỗi gán trùng xe (Double Booking) hoặc gửi nhầm lệnh Zalo.
+    - Bỏ trống toàn bộ: Tài 1, Xe 1, Tài 2, Xe 2 (Cắt kéo), Tài xế chạy thẳng, Nhà xe 3PL và Ghi chú điều độ.
+  * **Bỏ Trống Thuộc Tính Cont & Doanh Thu:**
+    - Số Cont, Số Seal, VGM, Hóa đơn, Dock kho, Phiếu EIR được reset trống 100%.
+    - Doanh thu & Chi phí 3PL bỏ trống vì cước phụ thuộc vào điểm đến thực tế của kho/nơi hạ vừa chọn.
+  * **Trải Nghiệm Thao Tác (Ergonomics):**
+    - Con trỏ chuột tự động focus ngay vào ô 2. Nơi Đóng/Trả (Kho KH) (inp-warehouse) sau khi nhân bản để Điều độ chọn ngay kho hàng.
+
+### 2. Kỹ Thuật & Đảm Bảo Khả Năng Vận Hành:
+- Cập nhật hàm duplicateCurrentTrip() và populateTripFormForDuplicate() trong static/js/app.js.
+- Nâng asset cache version lên ?v=2.9.74 trong 	emplates/base.html.
+- Kiểm thử cú pháp JS: 100% Passed.
+- Chạy bộ kiểm thử tự động toàn diện: **148/148 unit tests PASSED 100%** (python manage.py test --keepdb).
+
 ## [v4.7.2] - 2026-10-27 (Tái Cấu Trúc Điều Vận: Tối Ưu Loại Hình Xuất/Nhập/Nội Địa, Nhân Bản Lệnh Điều Xe, Mặc Định Cắt Kéo & Tạo Nhanh Tài Xế Hiện Trường)
 
 ### 1. Tinh Gọn & Chuẩn Hóa Nghiệp Vụ Màn Hình Tạo Lệnh Điều Vận:

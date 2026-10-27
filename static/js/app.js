@@ -7530,9 +7530,13 @@ async function submitQuickCreateDriver() {
 }
 window.submitQuickCreateDriver = submitQuickCreateDriver;
 
-// =========================================================================
+// ========================================================================
 // 1.3 NHÂN BẢN LỆNH ĐIỀU VẬN (DUPLICATE TRIP / MULTI-CONT BOOKING)
-// =========================================================================
+// Quy chuẩn nghiệp vụ Logistics TMS:
+// - Kế thừa thông tin Khách hàng & Lô hàng (Khách hàng, Loại hình, Quy cách Cont, Booking, Hãng tàu).
+// - Tuyến vận chuyển: CHỈ kế thừa Điểm đầu (1. Nơi lấy); 2 điểm sau (Nơi đóng/trả và Nơi hạ) BỎ TRỐNG để chọn lại.
+// - Toàn bộ Tài xế, Xe, Doanh thu, Chi phí, Số Cont, Số Seal, VGM, Ghi chú BỎ TRỐNG 100% để tránh xung đột lịch trình và sai lệch cước.
+// ========================================================================
 async function duplicateCurrentTrip() {
     const trip = window.currentTripDetail || currentActiveTripData;
     if (!trip) {
@@ -7540,22 +7544,22 @@ async function duplicateCurrentTrip() {
         return;
     }
 
-    // 1. Mở trang tạo lệnh điều vận
-    await openCreateTripPage(trip.booking_id || null);
+    // 1. Mở trang tạo lệnh điều vận (truyền null để không tự nạp đè điểm đến từ Sale Booking)
+    await openCreateTripPage(null);
 
-    // 2. Điền dữ liệu kế thừa từ chuyến cũ
+    // 2. Điền dữ liệu kế thừa từ chuyến cũ theo chuẩn phân tích
     populateTripFormForDuplicate(trip);
 
     // 3. Thông báo trực quan
-    const tripCode = trip.id || trip.trip_code || 'hiện tại';
-    showToast('info', `Đã nhân bản thông tin từ lệnh ${tripCode}. Vui lòng nhập Số Cont mới và bấm Tạo Lệnh.`);
+    const tripCode = trip.trip_code || trip.id || 'hiện tại';
+    showToast('info', `Đã nhân bản Khách hàng & Điểm đầu từ lệnh ${tripCode}. Vui lòng chọn Kho/Điểm hạ và nhập Số Cont.`);
 }
 window.duplicateCurrentTrip = duplicateCurrentTrip;
 
 function populateTripFormForDuplicate(trip) {
     if (!trip) return;
 
-    // 1. Khách hàng, Loại hình, Quy cách Cont
+    // 1. KẾ THỪA THÔNG TIN KHÁCH HÀNG & LÔ HÀNG (Customer Context)
     const custEl = document.getElementById('inp-customer');
     if (custEl) setSelectValueCaseInsensitive(custEl, trip.customer || trip.customer_name);
 
@@ -7568,7 +7572,7 @@ function populateTripFormForDuplicate(trip) {
     const contTypeEl = document.getElementById('inp-cont-type');
     if (contTypeEl) setSelectValueCaseInsensitive(contTypeEl, trip.container_type || trip.container_size || '40HC');
 
-    // 2. Booking / Vận đơn, Hãng tàu, Tàu chuyến
+    // 2. Booking / Vận đơn, Hãng tàu, Tàu chuyến (Thông tin dùng chung của lô cont)
     const bookingEl = document.getElementById('inp-booking');
     if (bookingEl) bookingEl.value = trip.booking_or_bill || trip.booking || '';
 
@@ -7581,98 +7585,130 @@ function populateTripFormForDuplicate(trip) {
     const voyageEl = document.getElementById('inp-voyage');
     if (voyageEl) voyageEl.value = trip.voyage_number || trip.voyage || '';
 
-    // Cắt CY/SI
+    // Cắt CY/SI (nếu hàng xuất)
     if (trip.cutoff_time) {
         parseAndSetDateTimeFields(trip.cutoff_time, 'inp-cutoff-date', 'inp-cutoff-time', 'inp-cutoff', '17:00');
     }
 
-    // Invoice, Cửa Dock, Giờ đóng/trả hàng, Trọng lượng
-    const invEl = document.getElementById('inp-invoice');
-    if (invEl) invEl.value = trip.invoice_number || trip.invoice || '';
-
-    const dockEl = document.getElementById('inp-dock');
-    if (dockEl) dockEl.value = trip.loading_dock || trip.dock || '';
-
-    const loadTimeEl = document.getElementById('inp-load-time');
-    if (loadTimeEl) loadTimeEl.value = trip.loading_time || '';
-
-    const weightEl = document.getElementById('inp-cargo-weight');
-    if (weightEl) weightEl.value = trip.vgm_weight || trip.weight || '';
-
-    // Free DEM/DET
+    // Free DEM/DET (nếu hàng nhập)
     if (trip.free_det_days) {
         const detEl = document.getElementById('inp-det-free-days');
         if (detEl) detEl.value = trip.free_det_days;
     }
 
-    // 3. Lộ trình 3 điểm
+    // 3. TUYẾN ĐƯỜNG: CHỈ KẾ THỪA ĐIỂM ĐẦU, 2 ĐIỂM SAU BỎ TRỐNG ĐỂ CHỌN LẠI
+    // Điểm 1: Nơi lấy cont / Depot rỗng -> KẾ THỪA
     const pickupEl = document.getElementById('inp-pickup');
     if (pickupEl) setSelectValueCaseInsensitive(pickupEl, trip.pickup_location || trip.pickup_depot);
 
+    // Điểm 2: Nơi đóng/trả (Kho KH) -> BỎ TRỐNG
     const warehouseEl = document.getElementById('inp-warehouse');
-    if (warehouseEl) setSelectValueCaseInsensitive(warehouseEl, trip.warehouse_location || trip.delivery_warehouse);
+    if (warehouseEl) warehouseEl.value = '';
 
+    // Điểm 3: Nơi hạ (Bãi rỗng / Cảng) -> BỎ TRỐNG
     const dropoffEl = document.getElementById('inp-dropoff');
-    if (dropoffEl) setSelectValueCaseInsensitive(dropoffEl, trip.dropoff_location || trip.dropoff_depot);
+    if (dropoffEl) dropoffEl.value = '';
 
-    // 4. Doanh thu & Cước
-    const revEl = document.getElementById('inp-revenue');
-    if (revEl && trip.freight_revenue) revEl.value = new Intl.NumberFormat('vi-VN').format(trip.freight_revenue);
+    // 4. BỎ TRỐNG TOÀN BỘ CÁC TRƯỜNG RIÊNG CỦA TỪNG CONT (Số cont, seal, cân nặng, invoice, dock, EIR)
+    const contEl = document.getElementById('inp-cont');
+    if (contEl) contEl.value = '';
+    const contNoEl = document.getElementById('inp-cont-no');
+    if (contNoEl) contNoEl.value = '';
 
-    const revAdjEl = document.getElementById('inp-revenue-adj');
-    if (revAdjEl && trip.revenue_adjustment) revAdjEl.value = new Intl.NumberFormat('vi-VN').format(trip.revenue_adjustment);
-
-    // 5. Nguồn xe & Phân công (Mặc định Cắt kéo là Bật)
-    const isSub = (trip.carrier_mode === 'SUBCONTRACTOR' || trip.carrier_type === 'SUBCONTRACTOR');
-    const chkDropHook = document.getElementById('chk-drop-hook');
-
-    if (isSub) {
-        if (typeof setCarrierMode === 'function') setCarrierMode('SUBCONTRACTOR');
-        const subSel = document.getElementById('inp-subcontractor');
-        if (subSel) setSelectValueCaseInsensitive(subSel, trip.subcontractor_id || trip.subcontractor_name);
-        const subCostEl = document.getElementById('inp-sub-cost');
-        if (subCostEl && trip.subcontractor_cost) subCostEl.value = new Intl.NumberFormat('vi-VN').format(trip.subcontractor_cost);
-    } else {
-        if (typeof setCarrierMode === 'function') setCarrierMode('OWNED');
-        const isSplit = trip.is_split_trip !== undefined ? trip.is_split_trip : true;
-        if (chkDropHook) {
-            chkDropHook.checked = isSplit;
-            toggleDropHookMode(isSplit);
-        }
-        if (isSplit) {
-            const drv1 = document.getElementById('inp-driver-leg1');
-            if (drv1) setSelectValueCaseInsensitive(drv1, trip.driver_leg1_name || trip.driver_name || trip.driver);
-            const drv2 = document.getElementById('inp-dropoff-driver');
-            if (drv2) setSelectValueCaseInsensitive(drv2, trip.dropoff_driver_name || trip.dropoff_driver);
-            const veh1 = document.getElementById('inp-vehicle-leg1');
-            if (veh1) setSelectValueCaseInsensitive(veh1, trip.vehicle_leg1_plate || trip.vehicle_plate || trip.vehicle);
-            const veh2 = document.getElementById('inp-dropoff-vehicle');
-            if (veh2) setSelectValueCaseInsensitive(veh2, trip.dropoff_vehicle_plate || trip.dropoff_vehicle);
-        } else {
-            const drv = document.getElementById('inp-driver');
-            if (drv) setSelectValueCaseInsensitive(drv, trip.driver_name || trip.driver);
-            const veh = document.getElementById('inp-vehicle');
-            if (veh) setSelectValueCaseInsensitive(veh, trip.vehicle_plate || trip.vehicle);
-        }
-    }
-
-    // 6. Ghi chú
-    const notesEl = document.getElementById('inp-notes');
-    if (notesEl && trip.notes) notesEl.value = trip.notes;
-
-    // 7. File Booking đính kèm
-    if (trip.booking_file_url) {
-        showInheritedBookingFile(trip.booking_file_url, trip.booking_file_name || `Booking_${trip.booking_or_bill}`);
-    }
-
-    // 8. RESET CONT & SEAL ĐỂ NHẬP MỚI
-    const contEl = document.getElementById('inp-cont-no');
-    if (contEl) {
-        contEl.value = '';
-        setTimeout(() => contEl.focus(), 150);
-    }
-    const sealEl = document.getElementById('inp-seal-no');
+    const sealEl = document.getElementById('inp-seal');
     if (sealEl) sealEl.value = '';
+    const sealNoEl = document.getElementById('inp-seal-no');
+    if (sealNoEl) sealNoEl.value = '';
+
+    const vgmEl = document.getElementById('inp-vgm');
+    if (vgmEl) vgmEl.value = '';
+
+    const invEl = document.getElementById('inp-invoice');
+    if (invEl) invEl.value = '';
+
+    const dockEl = document.getElementById('inp-dock');
+    if (dockEl) dockEl.value = '';
+
+    const loadTimeEl = document.getElementById('inp-load-time');
+    if (loadTimeEl) loadTimeEl.value = '08:00';
+
+    const condEl = document.getElementById('select-container-condition');
+    if (condEl) condEl.value = 'GOOD';
+
+    const damageEl = document.getElementById('inp-damage-desc');
+    if (damageEl) damageEl.value = '';
+
+    // Tắt twin cont (nếu có)
+    const chkTwin = document.getElementById('chk-twin-cont');
+    if (chkTwin) {
+        chkTwin.checked = false;
+        if (typeof toggleTwinContMode === 'function') toggleTwinContMode(false);
+    }
+
+    // 5. BỎ TRỐNG TOÀN BỘ ĐIỀU ĐỘ XE & TÀI XẾ (Tránh xung đột lịch trình & điều trùng xe)
+    // Mặc định Cắt Kéo Bật
+    const chkDropHook = document.getElementById('chk-drop-hook');
+    if (chkDropHook) {
+        chkDropHook.checked = true;
+        if (typeof toggleDropHookMode === 'function') toggleDropHookMode(true);
+    }
+
+    // Reset Tài xế & Xe Chặng 1 và Chặng 2
+    const drv1 = document.getElementById('inp-driver-leg1');
+    if (drv1) drv1.value = '';
+    const veh1 = document.getElementById('inp-vehicle-leg1');
+    if (veh1) veh1.value = '';
+
+    const drv2 = document.getElementById('inp-dropoff-driver');
+    if (drv2) drv2.value = '';
+    const veh2 = document.getElementById('inp-dropoff-vehicle');
+    if (veh2) veh2.value = '';
+
+    // Reset Tài xế & Xe Chạy thẳng
+    const drv = document.getElementById('inp-driver');
+    if (drv) drv.value = '';
+    const veh = document.getElementById('inp-vehicle');
+    if (veh) veh.value = '';
+
+    // Reset 3PL
+    const subSel = document.getElementById('inp-subcontractor');
+    if (subSel) subSel.value = '';
+    const subVeh = document.getElementById('inp-sub-vehicle');
+    if (subVeh) subVeh.value = '';
+    const subDrv = document.getElementById('inp-sub-driver');
+    if (subDrv) subDrv.value = '';
+    const subCost = document.getElementById('inp-sub-cost');
+    if (subCost) subCost.value = '';
+    const subAdv = document.getElementById('inp-sub-advance');
+    if (subAdv) subAdv.value = '';
+    const subNotes = document.getElementById('inp-sub-notes');
+    if (subNotes) subNotes.value = '';
+
+    // Reset Ghi chú chuyến
+    const notesEl = document.getElementById('inp-notes');
+    if (notesEl) notesEl.value = '';
+    const notesDh = document.getElementById('inp-notes-drop-hook');
+    if (notesDh) notesDh.value = '';
+
+    // Reset Doanh thu & Cước (vì chưa chốt 2 điểm giao/hạ)
+    const revEl = document.getElementById('inp-revenue');
+    if (revEl) revEl.value = '';
+    const revAdjEl = document.getElementById('inp-revenue-adj');
+    if (revAdjEl) revAdjEl.value = '';
+
+    // 6. Kế thừa file Booking đính kèm (nếu có)
+    if (trip.booking_file_url) {
+        showInheritedBookingFile(trip.booking_file_url, trip.booking_file_name || `Booking_${trip.booking_or_bill || ''}`);
+    }
+
+    // 7. TỰ ĐỘNG FOCUS VÀO Ô 2. NƠI ĐÓNG/TRẢ HÀNG
+    setTimeout(() => {
+        if (warehouseEl) {
+            warehouseEl.focus();
+        } else if (contEl) {
+            contEl.focus();
+        }
+    }, 200);
 }
 window.populateTripFormForDuplicate = populateTripFormForDuplicate;
 
