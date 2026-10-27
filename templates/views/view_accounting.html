@@ -679,6 +679,13 @@
 
                     </div>
 
+                    <!-- Nút Tùy Chỉnh Cột Quỹ Điều Vận -->
+                    <button type="button" onclick="openColumnCustomizer('accounting-fund-table')" 
+                        class="text-xs font-bold text-slate-700 hover:text-indigo-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
+                        title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                        <i class="ph-bold ph-columns text-indigo-700"></i>
+                        <span>Cột</span>
+                    </button>
                     <button type="button" onclick="openDispatcherFundModal()" class="px-3.5 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
 
                         <i class="ph-bold ph-plus text-xs"></i>
@@ -700,29 +707,17 @@
                     <thead>
 
                         <tr>
-
-                            <th class="w-12 text-center select-none font-bold text-slate-700">STT</th>
-
-                            <th>Mã Quỹ</th>
-
-                            <th>Điều Phối Viên Nhận</th>
-
-                            <th>Ngày Tạm Ứng</th>
-
-                            <th class="text-right">Tiền Cty Tạm Ứng</th>
-
-                            <th class="text-right">Đã Cấp Tài Xế</th>
-
-                            <th class="text-right">Đã Hoàn Ứng Về Cty</th>
-
-                            <th class="text-right">Số Dư Khả Dụng</th>
-
-                            <th class="text-center">Trạng Thái</th>
-
-                            <th>Người Duyệt</th>
-
-                            <th class="text-center">Thao Tác Kế Toán</th>
-
+                            <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
+                            <th data-col-key="code" data-col-name="Mã Quỹ" data-col-locked="true" class="w-28 font-mono">Mã Quỹ</th>
+                            <th data-col-key="dispatcher" data-col-name="Điều Phối Viên Nhận">Điều Phối Viên Nhận</th>
+                            <th data-col-key="advance_date" data-col-name="Ngày Tạm Ứng" class="w-24 text-center">Ngày Tạm Ứng</th>
+                            <th data-col-key="amount" data-col-name="Tiền Cty Tạm Ứng" class="text-right">Tiền Cty Tạm Ứng</th>
+                            <th data-col-key="disbursed" data-col-name="Đã Cấp Tài Xế" class="text-right">Đã Cấp Tài Xế</th>
+                            <th data-col-key="settled" data-col-name="Đã Hoàn Ứng Về Cty" class="text-right">Đã Hoàn Ứng Về Cty</th>
+                            <th data-col-key="remaining" data-col-name="Số Dư Khả Dụng" class="text-right">Số Dư Khả Dụng</th>
+                            <th data-col-key="status" data-col-name="Trạng Thái" class="text-center">Trạng Thái</th>
+                            <th data-col-key="approved_by" data-col-name="Người Duyệt">Người Duyệt</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="w-[230px] min-w-[230px] text-center">Thao Tác</th>
                         </tr>
 
                     </thead>

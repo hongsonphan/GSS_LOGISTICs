@@ -683,57 +683,122 @@ function renderDispatcherFundsTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Chưa có phiếu Quỹ tạm ứng điều vận nào</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Chưa có phiếu Quỹ tạm ứng điều vận nào</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = list.map(item => {
+    tbody.innerHTML = list.map((item, index) => {
         let statusBadge = '';
-        if (item.status === 'APPROVED') {
-            statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Đang Lưu Hành</span>`;
+        if (item.status === 'APPROVED' || item.status === 'ACTIVE') {
+            statusBadge = `<span class="text-xs font-bold text-emerald-700 flex items-center justify-center gap-1"><i class="ph-bold ph-check-circle text-xs"></i> Đang Lưu Hành</span>`;
         } else if (item.status === 'PENDING') {
-            statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Chờ Cty Duyệt</span>`;
+            statusBadge = `<span class="text-xs font-bold text-amber-600 flex items-center justify-center gap-1"><i class="ph-bold ph-clock text-xs"></i> Chờ Cty Duyệt</span>`;
         } else if (item.status === 'SETTLED') {
-            statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">Đã Hoàn Ứng Xong</span>`;
+            statusBadge = `<span class="text-xs font-bold text-slate-600 flex items-center justify-center gap-1"><i class="ph-bold ph-lock-key text-xs"></i> Đã Hoàn Ứng</span>`;
         } else {
-            statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200">Từ Chối</span>`;
+            statusBadge = `<span class="text-xs font-bold text-rose-600 flex items-center justify-center gap-1"><i class="ph-bold ph-x-circle text-xs"></i> Từ Chối</span>`;
+        }
+
+        let settleBtn = '';
+        if (item.status === 'PENDING') {
+            settleBtn = `
+                <button type="button" onclick="approveDispatcherFund(${item.id})"
+                    class="h-7 px-2.5 text-[11px] font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Kế toán duyệt xuất quỹ điều vận">
+                    <i class="ph-bold ph-check-circle text-xs"></i>
+                    <span>Duyệt Quỹ</span>
+                </button>
+            `;
+        } else if (item.status === 'APPROVED' || item.status === 'ACTIVE') {
+            settleBtn = `
+                <button type="button" onclick="settleDispatcherFund(${item.id})"
+                    class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Quyết toán hoàn tất quỹ về công ty">
+                    <i class="ph-bold ph-check-circle text-xs"></i>
+                    <span>Quyết Toán</span>
+                </button>
+            `;
+        } else if (item.status === 'SETTLED') {
+            settleBtn = `
+                <button type="button" onclick="viewDispatcherFundDetail(${item.id})"
+                    class="h-7 px-2.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Đã hoàn ứng quyết toán xong (bấm xem lại)">
+                    <i class="ph-bold ph-check text-xs text-emerald-600"></i>
+                    <span>Đã Xong</span>
+                </button>
+            `;
+        } else {
+            settleBtn = `
+                <button type="button" onclick="confirmDeleteDispatcherFund(${item.id})"
+                    class="h-7 px-2.5 text-[11px] font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 rounded-lg transition-colors border border-rose-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Xóa quỹ bị từ chối">
+                    <i class="ph-bold ph-trash text-xs"></i>
+                    <span>Xóa</span>
+                </button>
+            `;
         }
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
+                <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">
+                    ${index + 1}
+                </td>
                 <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.code)}</td>
                 <td class="text-xs font-bold text-indigo-900">${escapeHtml(item.dispatcher_name)}</td>
-                <td class="text-xs text-slate-600 tabular-nums">${item.advance_date}</td>
+                <td class="text-xs text-slate-600 tabular-nums text-center">${item.advance_date}</td>
                 <td class="text-right font-black text-slate-900 text-xs tabular-nums">${formatMoneyVND(item.amount)}</td>
                 <td class="text-right font-semibold text-amber-700 text-xs tabular-nums">${formatMoneyVND(item.disbursed_amount)}</td>
                 <td class="text-right font-semibold text-emerald-700 text-xs tabular-nums">${formatMoneyVND(item.settled_amount)}</td>
                 <td class="text-right font-black text-teal-800 text-xs tabular-nums">${formatMoneyVND(item.remaining_balance)}</td>
                 <td class="text-center">${statusBadge}</td>
                 <td class="text-xs text-slate-500">${escapeHtml(item.approved_by || '-')}</td>
-                <td class="text-center">
-                    <div class="flex items-center justify-center space-x-1.5">
-                        ${item.status === 'PENDING' ? `
-                            <button onclick="approveDispatcherFund(${item.id})" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs flex items-center gap-1 transition-all">
-                                <i class="ph-bold ph-check text-xs"></i>
-                                <span>Duyệt Cấp Quỹ</span>
-                            </button>
-                        ` : ''}
-                        ${item.status === 'APPROVED' ? `
-                            <button onclick="settleDispatcherFund(${item.id})" class="px-2.5 py-1 bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs flex items-center gap-1 transition-all">
-                                <i class="ph-bold ph-lock-key text-xs"></i>
-                                <span>Quyết Toán Về Cty</span>
-                            </button>
-                        ` : ''}
+                <td class="text-center cell-actions whitespace-nowrap">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <!-- 1. Quyết toán -->
+                        ${settleBtn}
+                        <!-- 2. Xem -->
+                        <button type="button" onclick="viewDispatcherFundDetail(${item.id})"
+                            class="h-7 px-2.5 text-[11px] font-bold text-teal-800 hover:text-teal-950 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
+                            title="Xem chi tiết & quản lý quỹ điều vận">
+                            <i class="ph-bold ph-eye text-xs"></i>
+                            <span>Xem</span>
+                        </button>
+                        <!-- 3. In -->
+                        <button type="button" onclick="printDispatcherFundVoucher(${item.id})"
+                            class="h-7 px-2.5 text-[11px] font-bold text-slate-700 hover:text-slate-950 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 shadow-2xs inline-flex items-center gap-1 cursor-pointer shrink-0"
+                            title="In phiếu cấp quỹ điều vận khổ A4">
+                            <i class="ph-bold ph-printer text-xs text-slate-500"></i>
+                            <span>In</span>
+                        </button>
                     </div>
                 </td>
             </tr>
         `;
     }).join('');
+
+    if (window.BimTableFooter && Array.isArray(list)) {
+        const totalAmount = list.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+        const totalDisbursed = list.reduce((sum, i) => sum + (Number(i.disbursed_amount) || 0), 0);
+        const totalSettled = list.reduce((sum, i) => sum + (Number(i.settled_amount) || 0), 0);
+        const totalBalance = list.reduce((sum, i) => sum + (Number(i.remaining_balance) || 0), 0);
+        window.BimTableFooter.render('accounting-fund-table', {
+            cells: [
+                { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
+                { html: `${list.length} quỹ điều vận`, colspan: 3 },
+                { html: `<span class="text-slate-900 font-bold tabular-nums font-mono">${formatMoneyVND(totalAmount)}</span>`, align: 'right' },
+                { html: `<span class="text-amber-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalDisbursed)}</span>`, align: 'right' },
+                { html: `<span class="text-emerald-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalSettled)}</span>`, align: 'right' },
+                { html: `<span class="text-teal-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalBalance)}</span>`, align: 'right' },
+                { text: '', align: 'center', colspan: 3 }
+            ]
+        });
+    }
+
+    if (window.BimTableColumnManager && typeof window.BimTableColumnManager.register === 'function') {
+        window.BimTableColumnManager.register('accounting-fund-table');
+    }
 }
 
-// -------------------------------------------------------------
-// MODAL CẤP TẠM ỨNG CHUYẾN CHO TÀI XẾ
-// -------------------------------------------------------------
 function populateAdvanceModalOptions(data) {
     // Dropdown Chuyến xe
     const tripSelect = document.getElementById('adv-inp-trip');

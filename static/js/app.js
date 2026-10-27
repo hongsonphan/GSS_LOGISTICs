@@ -18171,13 +18171,52 @@ function renderDispatcherFundsTable(list) {
     tbody.innerHTML = list.map((item, index) => {
         let statusBadge = '';
         if (item.status === 'APPROVED' || item.status === 'ACTIVE') {
-            statusBadge = `<span class="text-xs font-bold text-emerald-700 uppercase">Đang Lưu Hành</span>`;
+            statusBadge = `<span class="text-xs font-bold text-emerald-700 flex items-center justify-center gap-1"><i class="ph-bold ph-check-circle text-xs"></i> Đang Lưu Hành</span>`;
         } else if (item.status === 'PENDING') {
-            statusBadge = `<span class="text-xs font-bold text-amber-700 uppercase">Chờ Cty Duyệt</span>`;
+            statusBadge = `<span class="text-xs font-bold text-amber-600 flex items-center justify-center gap-1"><i class="ph-bold ph-clock text-xs"></i> Chờ Cty Duyệt</span>`;
         } else if (item.status === 'SETTLED') {
-            statusBadge = `<span class="text-xs font-bold text-slate-700 uppercase">Đã Hoàn Ứng Xong</span>`;
+            statusBadge = `<span class="text-xs font-bold text-slate-600 flex items-center justify-center gap-1"><i class="ph-bold ph-lock-key text-xs"></i> Đã Hoàn Ứng</span>`;
         } else {
-            statusBadge = `<span class="text-xs font-bold text-rose-700 uppercase">Từ Chối</span>`;
+            statusBadge = `<span class="text-xs font-bold text-rose-600 flex items-center justify-center gap-1"><i class="ph-bold ph-x-circle text-xs"></i> Từ Chối</span>`;
+        }
+
+        let settleBtn = '';
+        if (item.status === 'PENDING') {
+            settleBtn = `
+                <button type="button" onclick="approveDispatcherFund(${item.id})"
+                    class="h-7 px-2.5 text-[11px] font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Kế toán duyệt xuất quỹ điều vận">
+                    <i class="ph-bold ph-check-circle text-xs"></i>
+                    <span>Duyệt Quỹ</span>
+                </button>
+            `;
+        } else if (item.status === 'APPROVED' || item.status === 'ACTIVE') {
+            settleBtn = `
+                <button type="button" onclick="settleDispatcherFund(${item.id})"
+                    class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Quyết toán hoàn tất quỹ về công ty">
+                    <i class="ph-bold ph-check-circle text-xs"></i>
+                    <span>Quyết Toán</span>
+                </button>
+            `;
+        } else if (item.status === 'SETTLED') {
+            settleBtn = `
+                <button type="button" onclick="viewDispatcherFundDetail(${item.id})"
+                    class="h-7 px-2.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Đã hoàn ứng quyết toán xong (bấm xem lại)">
+                    <i class="ph-bold ph-check text-xs text-emerald-600"></i>
+                    <span>Đã Xong</span>
+                </button>
+            `;
+        } else {
+            settleBtn = `
+                <button type="button" onclick="confirmDeleteDispatcherFund(${item.id})"
+                    class="h-7 px-2.5 text-[11px] font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 rounded-lg transition-colors border border-rose-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Xóa quỹ bị từ chối">
+                    <i class="ph-bold ph-trash text-xs"></i>
+                    <span>Xóa</span>
+                </button>
+            `;
         }
 
         return `
@@ -18187,53 +18226,31 @@ function renderDispatcherFundsTable(list) {
                 </td>
                 <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.code)}</td>
                 <td class="text-xs font-bold text-indigo-900">${escapeHtml(item.dispatcher_name)}</td>
-                <td class="text-xs text-slate-600 tabular-nums">${item.advance_date}</td>
+                <td class="text-xs text-slate-600 tabular-nums text-center">${item.advance_date}</td>
                 <td class="text-right font-black text-slate-900 text-xs tabular-nums">${formatMoneyVND(item.amount)}</td>
                 <td class="text-right font-semibold text-amber-700 text-xs tabular-nums">${formatMoneyVND(item.disbursed_amount)}</td>
                 <td class="text-right font-semibold text-emerald-700 text-xs tabular-nums">${formatMoneyVND(item.settled_amount)}</td>
                 <td class="text-right font-black text-teal-800 text-xs tabular-nums">${formatMoneyVND(item.remaining_balance)}</td>
                 <td class="text-center">${statusBadge}</td>
                 <td class="text-xs text-slate-500">${escapeHtml(item.approved_by || '-')}</td>
-                <td class="text-center">
-                    <div class="inline-flex items-center gap-1.5 justify-center">
+                <td class="text-center cell-actions whitespace-nowrap">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <!-- 1. Quyết toán -->
+                        ${settleBtn}
+                        <!-- 2. Xem -->
                         <button type="button" onclick="viewDispatcherFundDetail(${item.id})"
-                            class="px-2.5 py-1 bg-transparent hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
-                            title="Xem chi tiết, Sửa, Lưu, In & Xóa Quỹ Điều Vận">
-                            <i class="ph-bold ph-eye"></i>
+                            class="h-7 px-2.5 text-[11px] font-bold text-teal-800 hover:text-teal-950 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
+                            title="Xem chi tiết & quản lý quỹ điều vận">
+                            <i class="ph-bold ph-eye text-xs"></i>
                             <span>Xem</span>
                         </button>
-                        ${item.status === 'PENDING' ? `
-                            <button type="button" onclick="approveDispatcherFund(${item.id})"
-                                class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs inline-flex items-center gap-1 transition-all cursor-pointer"
-                                title="Kế toán duyệt xuất quỹ điều vận">
-                                <i class="ph-bold ph-check text-xs"></i>
-                                <span>Duyệt Quỹ</span>
-                            </button>
-                        ` : ''}
-                        ${item.status === 'APPROVED' ? `
-                            <button type="button" onclick="settleDispatcherFund(${item.id})"
-                                class="px-2.5 py-1 bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs inline-flex items-center gap-1 transition-all cursor-pointer"
-                                title="Quyết toán hoàn tất quỹ về công ty">
-                                <i class="ph-bold ph-lock-key text-xs"></i>
-                                <span>Quyết Toán</span>
-                            </button>
-                        ` : ''}
-                        ${item.status === 'SETTLED' ? `
-                            <button type="button" onclick="printDispatcherFundVoucher(${item.id})"
-                                class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
-                                title="In phiếu cấp quỹ điều vận khổ A4">
-                                <i class="ph-bold ph-printer"></i>
-                                <span>In</span>
-                            </button>
-                        ` : ''}
-                        ${item.status === 'REJECTED' ? `
-                            <button type="button" onclick="confirmDeleteDispatcherFund(${item.id})"
-                                class="px-2.5 py-1 bg-transparent hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
-                                title="Xóa quỹ bị từ chối">
-                                <i class="ph-bold ph-trash"></i>
-                                <span>Xóa</span>
-                            </button>
-                        ` : ''}
+                        <!-- 3. In -->
+                        <button type="button" onclick="printDispatcherFundVoucher(${item.id})"
+                            class="h-7 px-2.5 text-[11px] font-bold text-slate-700 hover:text-slate-950 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 shadow-2xs inline-flex items-center gap-1 cursor-pointer shrink-0"
+                            title="In phiếu cấp quỹ điều vận khổ A4">
+                            <i class="ph-bold ph-printer text-xs text-slate-500"></i>
+                            <span>In</span>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -18257,11 +18274,12 @@ function renderDispatcherFundsTable(list) {
             ]
         });
     }
+
+    if (window.BimTableColumnManager && typeof window.BimTableColumnManager.register === 'function') {
+        window.BimTableColumnManager.register('accounting-fund-table');
+    }
 }
 
-// -------------------------------------------------------------
-// MODAL CẤP TẠM ỨNG CHUYẾN CHO TÀI XẾ
-// -------------------------------------------------------------
 function populateAdvanceModalOptions(data) {
     if (!data) return;
     // Dropdown Chuyến xe

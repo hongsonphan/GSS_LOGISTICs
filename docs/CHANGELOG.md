@@ -2,6 +2,31 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.14] - 2026-10-27 (Chuẩn Hóa Bộ 3 Nút Thao Tác Quyết Toán | Xem | In & Tùy Chỉnh Cột Cho Bảng Quỹ Điều Vận Đội Xe)
+
+### 1. Phân Hệ Tài Chính - Kế Toán (Bảng Quỹ Tạm Ứng Điều Vận - `subtab-acct-dispatcher-funds`):
+- **Chuẩn Hóa Bộ 3 Nút Thao Tác Tại Cột Thao Tác Kế Toán (`h-7 px-2.5 text-[11px] font-bold rounded-lg`):**
+  * **1. Nút Quyết Toán / Duyệt Quỹ / Đã Xong:**
+    - Trạng thái `Chờ Cty Duyệt` (`PENDING`): Hiển thị nút `Duyệt Quỹ` (màu hổ phách `bg-amber-600 hover:bg-amber-700` kèm icon `ph-check-circle`) để kế toán kích hoạt xuất quỹ.
+    - Trạng thái `Đang Lưu Hành` (`APPROVED` / `ACTIVE`): Hiển thị nút `Quyết Toán` (xanh ngọc đậm `bg-emerald-700 hover:bg-emerald-800` kèm icon `ph-check-circle`) để đối soát hoàn ứng quỹ về công ty.
+    - Trạng thái `Đã Hoàn Ứng Xong` (`SETTLED`): Hiển thị nút `Đã Xong` (xám `bg-slate-100 hover:bg-slate-200 border border-slate-200` kèm icon xanh `ph-check text-emerald-600`) cho phép bấm xem lại lịch sử hoàn ứng.
+    - Trạng thái `Từ Chối` (`REJECTED`): Hiển thị nút `Xóa` (`bg-rose-50 text-rose-700 hover:bg-rose-600 border-rose-200`) để dọn dẹp phiếu quỹ bị hủy.
+  * **2. Nút Xem:**
+    - Nút outline xanh ngọc (`bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200` kèm icon `ph-eye`) để mở modal chi tiết, sửa hoặc tra cứu lịch sử cấp quỹ.
+  * **3. Nút In:**
+    - Nút outline trắng/xám (`bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs` kèm icon `ph-printer`) gọi trực tiếp hàm in phiếu cấp & theo dõi hoàn ứng quỹ khổ A4 (`printDispatcherFundVoucher`).
+- **Tích Hợp Tùy Chỉnh Cột & Kéo Dãn (Column Manager & Resizable Columns):**
+  * Bổ sung nút bấm `⚙️ Cột` (`openColumnCustomizer('accounting-fund-table')`) cạnh ô tìm kiếm quỹ điều vận.
+  * Gán đầy đủ `data-col-key`, `data-col-name` và `data-col-locked="true"` cho toàn bộ thẻ `<th>` của bảng `accounting-fund-table`.
+  * Tự động đăng ký kéo rộng cột với `window.BimTableColumnManager.register('accounting-fund-table')`.
+- **Tinh Gọn Typography Trạng Thái (Bỏ Hoàn Toàn Badge Pill Thô):**
+  * Chuyển trạng thái sang text màu kèm icon tinh tế: `Đang Lưu Hành`, `Chờ Cty Duyệt`, `Đã Hoàn Ứng`, `Từ Chối`.
+
+### 2. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset cache version lên `?v=2.9.85` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/modules/accounting.js` (100% Passed).
+- Chạy toàn bộ 152 unit test: `python manage.py test --keepdb` (152/152 tests Passed).
+
 ## [v4.7.13] - 2026-10-27 (Chuẩn Hóa Giao Diện Bảng Quyết Toán Khách Hàng, Bỏ Badge, Tùy Chỉnh Kéo Rộng Cột & Bộ 3 Nút Thao Tác Quyết Toán | Xem | In)
 
 ### 1. Phân Hệ Tài Chính - Kế Toán (Bảng Quyết Toán Khách Hàng):
