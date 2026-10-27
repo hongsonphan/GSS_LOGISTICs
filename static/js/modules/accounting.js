@@ -142,25 +142,29 @@ function renderAccountingTable(list) {
                 ` : ''}
             </td>
             <td class="p-3.5 text-center cell-actions">
-                <div class="flex items-center justify-center space-x-1.5">
-                    <!-- Xem chi tiết đối soát -->
-                    <button onclick="viewTripDetail('${item.trip_code}')" title="Soi chứng từ & chi tiết khoản chi" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-700 transition-colors">
-                        <i class="ph-bold ph-eye text-sm"></i>
-                    </button>
-                    <!-- Chốt sổ / Mở chốt sổ -->
+                <div class="flex items-center justify-center gap-1.5">
+                    <!-- 1. Quyết toán -->
                     ${item.is_settled ? `
-                        <button onclick="toggleSettleTrip('${item.trip_code}', true)" title="Mở khóa sổ kế toán (Cho phép sửa chi phí)" 
-                            class="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-600 hover:text-amber-700 transition-colors">
-                            <i class="ph-bold ph-lock-key-open text-sm"></i>
+                        <button type="button" onclick="toggleSettleTrip('${item.trip_code}', true)" title="Mở khóa sổ chuyến xe" 
+                            class="h-7 px-2.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 inline-flex items-center gap-1 cursor-pointer">
+                            <i class="ph-bold ph-arrow-counter-clockwise text-xs"></i><span>Mở Lại</span>
                         </button>
                     ` : `
-                        <button onclick="toggleSettleTrip('${item.trip_code}', false)" title="Chốt sổ kế toán (Khóa cứng chi phí)" 
-                            class="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center gap-1 font-heading">
-                            <i class="ph-bold ph-lock-key text-xs"></i>
-                            <span>Chốt Sổ</span>
+                        <button type="button" onclick="toggleSettleTrip('${item.trip_code}', false)" title="Chốt sổ quyết toán tài xế" 
+                            class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer">
+                            <i class="ph-bold ph-check-circle text-xs"></i><span>Quyết Toán</span>
                         </button>
                     `}
+                    <!-- 2. Xem -->
+                    <button type="button" onclick="viewTripDetail('${item.trip_code}')" title="Xem chi tiết chuyến xe & chứng từ" 
+                        class="h-7 px-2.5 text-[11px] font-bold text-teal-800 hover:text-teal-950 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200 inline-flex items-center gap-1 cursor-pointer">
+                        <i class="ph-bold ph-eye text-xs"></i><span>Xem</span>
+                    </button>
+                    <!-- 3. In -->
+                    <button type="button" onclick="printTripSettlementVoucher('${item.trip_code}')" title="In phiếu quyết toán chuyến xe tài xế" 
+                        class="h-7 px-2.5 text-[11px] font-bold text-slate-700 hover:text-slate-950 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 shadow-2xs inline-flex items-center gap-1 cursor-pointer">
+                        <i class="ph-bold ph-printer text-xs text-slate-500"></i><span>In</span>
+                    </button>
                 </div>
             </td>
         `;
@@ -628,29 +632,38 @@ function renderDriverAdvancesTable(list) {
                 <td class="text-right font-semibold text-slate-800 text-xs tabular-nums">${formatMoneyVND(item.actual_spent)}</td>
                 <td class="text-center">${diffText}</td>
                 <td class="text-center">${statusText}</td>
-                <td class="text-center">
-                    <div class="inline-flex items-center justify-center gap-2">
-                        <button type="button" onclick="viewDriverAdvanceDetail(${item.id})"
-                            class="w-[70px] h-7 px-2 py-1 bg-white hover:bg-teal-50 text-teal-700 border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-1 cursor-pointer shrink-0"
-                            title="Xem chi tiết, Sửa, Lưu, In & Xóa phiếu tạm ứng">
-                            <i class="ph-bold ph-eye"></i>
-                            <span>Xem</span>
-                        </button>
+                <td class="text-center cell-actions">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <!-- 1. Quyết toán -->
                         ${!isSettled ? `
                             <button type="button" onclick="openSettleAdvanceModal(${item.id})"
-                                class="w-[96px] h-7 px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-2xs inline-flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0"
+                                class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer shrink-0"
                                 title="Đối soát chi phí thực tế & quyết toán hoàn ứng chuyến xe">
-                                <i class="ph-bold ph-calculator text-xs"></i>
+                                <i class="ph-bold ph-check-circle text-xs"></i>
                                 <span>Quyết Toán</span>
                             </button>
                         ` : `
-                            <button type="button" onclick="printDriverAdvanceVoucher(${item.id})"
-                                class="w-[96px] h-7 px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0"
-                                title="In phiếu chi tạm ứng chuyến xe khổ A4/A5">
-                                <i class="ph-bold ph-printer"></i>
-                                <span>In Phiếu</span>
+                            <button type="button" onclick="openSettleAdvanceModal(${item.id})"
+                                class="h-7 px-2.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
+                                title="Đã hoàn ứng quyết toán (bấm xem lại)">
+                                <i class="ph-bold ph-check text-xs text-emerald-600"></i>
+                                <span>Đã Xong</span>
                             </button>
                         `}
+                        <!-- 2. Xem -->
+                        <button type="button" onclick="viewDriverAdvanceDetail(${item.id})"
+                            class="h-7 px-2.5 text-[11px] font-bold text-teal-800 hover:text-teal-950 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
+                            title="Xem chi tiết, Sửa & Quản lý phiếu tạm ứng">
+                            <i class="ph-bold ph-eye text-xs"></i>
+                            <span>Xem</span>
+                        </button>
+                        <!-- 3. In -->
+                        <button type="button" onclick="printDriverAdvanceVoucher(${item.id})"
+                            class="h-7 px-2.5 text-[11px] font-bold text-slate-700 hover:text-slate-950 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 shadow-2xs inline-flex items-center gap-1 cursor-pointer shrink-0"
+                            title="In phiếu chi tạm ứng chuyến xe khổ A4/A5">
+                            <i class="ph-bold ph-printer text-xs text-slate-500"></i>
+                            <span>In</span>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -3031,16 +3044,24 @@ function renderSubcontractorTable(list) {
                 </td>
                 <td class="text-center">
                     <div class="flex items-center justify-center gap-1.5">
-                        <button type="button" onclick="openSubcontractorModal(${item.trip_id}, 'update_cost')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors" title="Sửa thỏa thuận cước & tạm ứng">
-                            <i class="ph-bold ph-pencil text-xs"></i>
-                        </button>
+                        <!-- 1. Quyết toán -->
                         ${!isSettled ? `
-                            <button type="button" onclick="openSubcontractorModal(${item.trip_id}, 'settle')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-colors" title="Quyết toán cước xe bạn & lập phiếu chi">
-                                <i class="ph-bold ph-check text-xs"></i> Quyết Toán
+                            <button type="button" onclick="openSubcontractorModal(${item.trip_id}, 'settle')" class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer" title="Quyết toán cước xe bạn">
+                                <i class="ph-bold ph-check-circle text-xs"></i><span>Quyết Toán</span>
                             </button>
                         ` : `
-                            <span class="text-xs text-emerald-600 font-bold"><i class="ph-bold ph-check-circle"></i> Đã Xong</span>
+                            <button type="button" onclick="openSubcontractorModal(${item.trip_id}, 'settle')" class="h-7 px-2.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 inline-flex items-center gap-1 cursor-pointer" title="Đã quyết toán (bấm để xem lại)">
+                                <i class="ph-bold ph-check text-xs text-emerald-600"></i><span>Đã Xong</span>
+                            </button>
                         `}
+                        <!-- 2. Xem -->
+                        <button type="button" onclick="viewTripDetail('${item.trip_code}')" class="h-7 px-2.5 text-[11px] font-bold text-teal-800 hover:text-teal-950 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200 inline-flex items-center gap-1 cursor-pointer" title="Xem chi tiết chuyến xe">
+                            <i class="ph-bold ph-eye text-xs"></i><span>Xem</span>
+                        </button>
+                        <!-- 3. In -->
+                        <button type="button" onclick="printSubcontractorVoucher(${item.trip_id})" class="h-7 px-2.5 text-[11px] font-bold text-slate-700 hover:text-slate-950 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 shadow-2xs inline-flex items-center gap-1 cursor-pointer" title="In phiếu đối soát cước xe bạn A4">
+                            <i class="ph-bold ph-printer text-xs text-slate-500"></i><span>In</span>
+                        </button>
                     </div>
                 </td>
             </tr>

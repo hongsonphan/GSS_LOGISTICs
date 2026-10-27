@@ -2,6 +2,42 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.13] - 2026-10-27 (Chuẩn Hóa Giao Diện Bảng Quyết Toán Khách Hàng, Bỏ Badge, Tùy Chỉnh Kéo Rộng Cột & Bộ 3 Nút Thao Tác Quyết Toán | Xem | In)
+
+### 1. Phân Hệ Tài Chính - Kế Toán (Bảng Quyết Toán Khách Hàng):
+- **Loại Bỏ Badge Pill Gây Nặng Nề Tại Cột "Trạng Thái" & "Chứng Từ POD":**
+  * Chuyển đổi trạng thái từ dạng pill bo tròn nhiều viền sang typography tinh gọn chuẩn iOS / Modern ERP:
+    * `TRẠNG THÁI`: Text xanh ngọc đậm `text-emerald-700 font-bold text-xs` kèm icon `ph-check-circle` khi Đã Quyết Toán; text màu hổ phách `text-amber-600 font-bold text-xs` kèm icon `ph-clock` khi Chờ Quyết Toán.
+    * `CHỨNG TỪ POD`: Text xanh ngọc đậm `text-emerald-700 font-bold text-xs` kèm icon `ph-check-circle` khi Đầy đủ; text màu xám `text-slate-400 font-medium text-xs` kèm icon `ph-clock` khi Chưa có.
+- **Tích Hợp Tùy Chỉnh Ẩn/Hiện & Kéo Rộng Cột (Column Manager & Resizable Columns):**
+  * Bổ sung nút bấm `⚙️ Cột` (`openColumnCustomizer('customer-settlements-table')`) tại góc phải card điều khiển.
+  * Chuẩn hóa bảng sang lớp `erp-table whitespace-nowrap`, gán đầy đủ `data-col-key`, `data-col-name` và các cột cố định `data-col-locked="true"`.
+  * Tự động đăng ký với `window.BimTableColumnManager.register('customer-settlements-table')` sau mỗi lần render để cho phép người dùng kéo thả độ rộng các cột linh hoạt.
+
+### 2. Chuẩn Hóa Bộ 3 Nút Thao Tác (Quyết toán | Xem | In) Đồng Bộ Toàn Bộ Các Bảng Quyết Toán:
+- **Cột Thao Tác Chuẩn 3 Nút (`h-7 px-2.5 text-[11px] font-bold rounded-lg`):**
+  * **5. Quyết Toán Khách Hàng (`customer-settlements-table`):**
+    - `Quyết Toán`: Chốt SOA doanh thu khách hàng (`toggleCustomerSettleSingle` `SETTLE`) / `Mở Lại` (`UNSETTLE`).
+    - `Xem`: Soi chi tiết chuyến xe và chứng từ điện tử đính kèm (`viewTripDetail`).
+    - `In`: In bảng kê đối soát công nợ khách hàng (`printCustomerSettlementVoucher`).
+  * **4. Quyết Toán Tài Xế (`accounting-pnl-table`):**
+    - `Quyết Toán`: Khóa sổ chuyến xe tài xế (`toggleSettleTrip` Chốt Sổ) / `Mở Lại`.
+    - `Xem`: Chi tiết chuyến xe (`viewTripDetail`).
+    - `In`: In bảng kê quyết toán chuyến xe tài xế khổ A4 (`printTripSettlementVoucher`).
+  * **7. Quyết Toán Đối Tác 3PL (`accounting-subcon-table`):**
+    - `Quyết Toán`: Đối soát quyết toán cước xe bạn & lập phiếu chi (`openSubcontractorModal` `settle`) / `Đã Xong`.
+    - `Xem`: Chi tiết chuyến xe (`viewTripDetail`).
+    - `In`: In phiếu đối soát cước thầu phụ 3PL khổ A4 (`printSubcontractorVoucher`).
+  * **2. Tạm Ứng Tài Xế (`accounting-advances-table`):**
+    - `Quyết Toán`: Quyết toán hoàn ứng chuyến xe (`openSettleAdvanceModal`) / `Đã Xong`.
+    - `Xem`: Xem và sửa chi tiết phiếu tạm ứng (`viewDriverAdvanceDetail`).
+    - `In`: In phiếu chi tạm ứng khổ A4/A5 (`printDriverAdvanceVoucher`).
+
+### 3. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset cache version lên `?v=2.9.84` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/modules/accounting.js` (100% Passed).
+- Chạy toàn bộ 152 unit test: `python manage.py test --keepdb` (152/152 tests Passed).
+
 ## [v4.7.12] - 2026-10-27 (Tinh Gọn Bảng Sổ Quỹ Kế Toán - Loại Bỏ Khối Badge Pill Cột Loại & Kênh Quỹ)
 
 ### 1. Tinh Gọn Giao Diện Bảng Sổ Quỹ Thu - Chi (Clean Typography & iOS Standard):

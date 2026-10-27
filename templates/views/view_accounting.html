@@ -343,7 +343,7 @@
 
                             <th data-col-key="reason" data-col-name="Diễn Giải Lý Do">Diễn Giải Lý Do</th>
 
-                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="w-[230px] min-w-[230px] text-center">Thao Tác</th>
 
                         </tr>
 
@@ -571,7 +571,7 @@
 
                             <th data-col-key="status" data-col-name="Trạng Thái" class="text-center">Trạng Thái</th>
 
-                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="w-[190px] min-w-[190px] text-center">Thao Tác</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="w-[230px] min-w-[230px] text-center">Thao Tác</th>
 
                         </tr>
 
@@ -1169,7 +1169,7 @@
 
 
 
-                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác Kế Toán</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="w-[230px] min-w-[230px] text-center">Thao Tác</th>
 
                         </tr>
 
@@ -1283,29 +1283,36 @@
                     </span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-700 select-none">
+                    <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-700 select-none mr-1">
                         <input type="checkbox" id="cust-settle-check-all" onchange="toggleAllCustomerSettleChecks(this.checked)" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
                         <span>Chọn tất cả</span>
                     </label>
+                    <!-- Nút Tùy Chỉnh Cột Quyết Toán Khách Hàng (Hình 2) -->
+                    <button type="button" onclick="openColumnCustomizer('customer-settlements-table')" 
+                        class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
+                        title="Tùy chỉnh ẩn/hiện và kéo rộng các cột">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
                 </div>
             </div>
 
             <div class="overflow-x-auto max-h-[520px]">
-                <table class="w-full text-xs text-left">
-                    <thead class="bg-slate-50 text-slate-600 uppercase font-black text-[11px] tracking-wider border-b border-slate-200 sticky top-0 z-10 font-heading">
+                <table class="erp-table whitespace-nowrap" id="customer-settlements-table" data-table-title="Bảng Quyết Toán Doanh Thu Cước & Chi Hộ Khách Hàng">
+                    <thead>
                         <tr>
-                            <th class="p-3 w-10 text-center">#</th>
-                            <th class="p-3 w-28">Mã Chuyến</th>
-                            <th class="p-3 w-24">Ngày Đóng</th>
-                            <th class="p-3">Khách Hàng</th>
-                            <th class="p-3 w-32">Số Cont / B/L</th>
-                            <th class="p-3">Lộ Trình</th>
-                            <th class="p-3 w-28 text-right">Cước Bán (VNĐ)</th>
-                            <th class="p-3 w-28 text-right">Chi Hộ (VNĐ)</th>
-                            <th class="p-3 w-32 text-right">Tổng Thu (VNĐ)</th>
-                            <th class="p-3 w-28 text-center">Chứng Từ POD</th>
-                            <th class="p-3 w-32 text-center">Trạng Thái</th>
-                            <th class="p-3 w-28 text-center">Thao Tác</th>
+                            <th data-col-key="chk" data-col-name="Chọn" data-col-locked="true" class="w-10 text-center select-none">#</th>
+                            <th data-col-key="code" data-col-name="Mã Chuyến" data-col-locked="true" class="w-28 font-mono">Mã Chuyến</th>
+                            <th data-col-key="loading_date" data-col-name="Ngày Đóng" class="w-24 text-center">Ngày Đóng</th>
+                            <th data-col-key="customer" data-col-name="Khách Hàng">Khách Hàng</th>
+                            <th data-col-key="container_number" data-col-name="Số Cont / B/L" class="w-32 font-mono">Số Cont / B/L</th>
+                            <th data-col-key="route" data-col-name="Lộ Trình">Lộ Trình</th>
+                            <th data-col-key="revenue" data-col-name="Cước Bán (VNĐ)" class="w-28 text-right">Cước Bán (VNĐ)</th>
+                            <th data-col-key="reimbursable" data-col-name="Chi Hộ (VNĐ)" class="w-28 text-right">Chi Hộ (VNĐ)</th>
+                            <th data-col-key="total_receivable" data-col-name="Tổng Thu (VNĐ)" class="w-32 text-right">Tổng Thu (VNĐ)</th>
+                            <th data-col-key="pod" data-col-name="Chứng Từ POD" class="w-28 text-center">Chứng Từ POD</th>
+                            <th data-col-key="status" data-col-name="Trạng Thái" class="w-32 text-center">Trạng Thái</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="w-[230px] min-w-[230px] text-center">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody id="cust-settle-tbody" class="divide-y divide-slate-100 text-slate-800">
@@ -1583,7 +1590,7 @@
 
                             <th data-col-key="settle_date" data-col-name="Ngày Hoàn Tiền">Ngày Hoàn Tiền</th>
 
-                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="w-[230px] min-w-[230px] text-center">Thao Tác</th>
 
                         </tr>
 
@@ -1825,7 +1832,7 @@
 
                             <th data-col-key="notes" data-col-name="Ghi Chú">Ghi Chú</th>
 
-                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="w-[230px] min-w-[230px] text-center">Thao Tác</th>
 
                         </tr>
 
