@@ -2,6 +2,21 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.0] - 2026-10-27 (Tối Ưu Không Gian Chiều Dọc Phân Hệ Kinh Doanh: Tích Hợp Subtabs 1 Dòng Trực Tiếp & Loại Bỏ Header Lặp Lại)
+
+### 1. Tinh Gọn Giao Diện Tab Con Phân Hệ Kinh Doanh (Subtabs Compact Integration):
+- **Tích Hợp 1 Dòng Điều Khiển Trực Tiếp:**
+  * Gom thanh chuyển tab `1. Báo Giá & Hợp Đồng Khách Hàng` và `2. Booking / Đơn Đặt Hàng` cùng cụm bộ lọc kỳ và nút hành động nhanh (`Tạo Báo Giá` / `Tạo Booking`) lên cùng 1 hàng duy nhất (`p-2.5 rounded-2xl border border-slate-200 shadow-xs`).
+  * Loại bỏ hoàn toàn khối tiêu đề to và dòng mô tả dài chiếm dụng diện tích dọc màn hình (`1 Báo Giá & Hợp Đồng Khách Hàng - NVKD chủ động tìm kiếm...` và `2 Danh Sách Booking...`).
+- **Trải Nghiệm Liền Mạch Liền Kề Dàn Thẻ Quy Trình:**
+  * Ngay khi bấm chuyển đổi giữa 2 tab, dàn 5 thẻ phễu trạng thái tương ứng (`1. Đã gửi báo giá`, `2. Đang đàm phán`, `3. Chờ ký hợp đồng`... hoặc `1. Chờ điều xe`, `2. Đang điều xe`...) hiển thị trực tiếp ngay dưới thanh tab, sạch sẽ và chuẩn mực như giao diện ứng dụng iOS / ERP quốc tế.
+
+### 2. Kỹ Thuật & Đảm Bảo Khả Năng Vận Hành:
+- Cập nhật hàm `switchSalesSubTab` trong `static/js/app.js` và `static/js/modules/sales.js` để tự động chuyển đổi hiển thị bộ lọc kỳ (`quote-filter-period` vs `booking-filter-period`) và nút tạo mới tương ứng.
+- Nâng asset cache version lên `?v=2.9.71` trong `templates/base.html`.
+- Kiểm thử cú pháp JS: `node -c static/js/app.js; node -c static/js/modules/sales.js` (100% Passed).
+- Chạy bộ kiểm thử tự động toàn diện: **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.6.9] - 2026-10-27 (Chuẩn Hóa Đồng Bộ Bố Cục Phân Tầng Toàn App & Style Thẻ KPI Toàn Hệ Sinh Thái)
 
 ### 1. Thống Nhất Quy Chuẩn Bố Cục Phân Tầng Từ Trên Xuống (Standard Hierarchical Page Architecture):

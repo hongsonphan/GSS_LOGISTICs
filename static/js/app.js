@@ -14536,6 +14536,10 @@ function switchSalesSubTab(tabName) {
     if (tabName === 'quotations') {
         if (subtabQuotes) subtabQuotes.classList.remove('hidden');
         if (subtabBookings) subtabBookings.classList.add('hidden');
+        const quoteActions = document.getElementById('sales-quote-top-actions');
+        const bookingActions = document.getElementById('sales-booking-top-actions');
+        if (quoteActions) quoteActions.classList.remove('hidden');
+        if (bookingActions) bookingActions.classList.add('hidden');
 
         if (tabQuotesBtn) {
             tabQuotesBtn.className = 'flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-bold font-heading flex items-center justify-center space-x-2.5 transition-all shadow-sm bg-indigo-700 text-white';
@@ -14563,6 +14567,10 @@ function switchSalesSubTab(tabName) {
     } else if (tabName === 'bookings') {
         if (subtabQuotes) subtabQuotes.classList.add('hidden');
         if (subtabBookings) subtabBookings.classList.remove('hidden');
+        const quoteActions = document.getElementById('sales-quote-top-actions');
+        const bookingActions = document.getElementById('sales-booking-top-actions');
+        if (quoteActions) quoteActions.classList.add('hidden');
+        if (bookingActions) bookingActions.classList.remove('hidden');
 
         if (tabBookingsBtn) {
             tabBookingsBtn.className = 'flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-xs font-bold font-heading flex items-center justify-center space-x-2.5 transition-all shadow-sm bg-teal-700 text-white';
