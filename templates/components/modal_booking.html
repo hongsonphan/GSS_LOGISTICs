@@ -56,7 +56,7 @@
                                 <i class="ph-bold ph-plus text-[9.5px]"></i> Tạo mới
                             </button>
                         </div>
-                        <select id="booking-customer" required 
+                        <select id="booking-customer" required onchange="if(typeof lookupBookingPrice==='function')lookupBookingPrice();" 
                             class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg focus:border-teal-600 font-bold text-slate-900 text-xs transition-all"
                             data-searchable="true">
                             <option value="">-- Chọn Khách Hàng --</option>
@@ -108,7 +108,7 @@
                                 Loại Cont / Xe <span class="text-rose-500">*</span>
                             </label>
                         </div>
-                        <select id="booking-container-size" 
+                        <select id="booking-container-size" onchange="if(typeof lookupBookingPrice==='function')lookupBookingPrice();" 
                             class="w-full h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs">
                             <option value="40HC">Cont 40HC (Cao 9ft6)</option>
                             <option value="20GP">Cont 20GP (Thường)</option>
@@ -168,7 +168,7 @@
                                 Tạo mới
                             </button>
                         </div>
-                        <select id="booking-pickup" required 
+                        <select id="booking-pickup" required onchange="if(typeof lookupBookingPrice==='function')lookupBookingPrice();" 
                             class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
                             <option value="">-- Chọn Điểm Lấy --</option>
                         </select>
@@ -182,7 +182,7 @@
                                 Tạo mới
                             </button>
                         </div>
-                        <select id="booking-delivery" required 
+                        <select id="booking-delivery" required onchange="if(typeof lookupBookingPrice==='function')lookupBookingPrice();" 
                             class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
                             <option value="">-- Chọn Kho Khách --</option>
                         </select>
@@ -324,10 +324,11 @@
                             <label id="label-booking-price" class="block font-bold text-slate-700 text-xs truncate">Cước Vận Chuyển <span class="text-rose-500">*</span></label>
                         </div>
                         <div class="relative">
-                            <input type="text" inputmode="numeric" id="booking-price" required value="4.000.000" placeholder="VD: 4.000.000"
+                            <input type="text" inputmode="numeric" id="booking-price" required value="" placeholder="VD: 4.000.000" oninput="if(typeof onBookingPriceManualInput==='function')onBookingPriceManualInput();"
                                 class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-mono font-bold text-teal-800 text-xs tabular-nums pr-10">
                             <span class="absolute right-2 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">VNĐ</span>
                         </div>
+                        <div id="booking-price-hint" class="text-[11px] font-semibold mt-1 hidden transition-all"></div>
                     </div>
 
                     <div class="md:col-span-3">

@@ -38,7 +38,7 @@
         novalidate
       >
         <!-- Khối Kế Thừa Dữ Liệu Từ Booking (Sale / Báo Giá) -->
-        <div class="bg-teal-50/90 p-3 rounded-xl border border-teal-200 shadow-xs">
+        <div class="bg-teal-50/90 p-3 rounded-xl border border-teal-200 shadow-xs space-y-2">
           <div class="flex items-center justify-between mb-1">
             <label class="form-label text-teal-950 font-black text-xs uppercase tracking-wider flex items-center mb-0" for="select-booking-order">
               <i class="ph-bold ph-handshake text-teal-700 text-sm mr-1"></i>
@@ -52,6 +52,21 @@
               <span class="text-[10px] font-bold text-teal-700 bg-teal-100/90 px-2 py-0.2 rounded-full font-heading border border-teal-200">Tự điền 9 trường</span>
             </div>
           </div>
+
+          <!-- Ô Tìm Kiếm Kính Lúp Theo Tên Khách Hàng / Mã Booking (Hình 2) -->
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-teal-700">
+              <i class="ph-bold ph-magnifying-glass text-xs"></i>
+            </div>
+            <input type="text" id="modal-search-booking-order" oninput="filterBookingOrderOptions(this.value)"
+              placeholder="Gõ tên khách hàng, mã booking, số B/L để lọc nhanh..."
+              class="w-full pl-7 pr-7 py-1.5 text-xs font-semibold bg-white border border-teal-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 shadow-2xs placeholder:text-slate-400 placeholder:italic transition-all">
+            <button type="button" onclick="clearBookingOrderSearch()" id="modal-btn-clear-booking-search" title="Xóa tìm kiếm"
+              class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-rose-500 transition-colors hidden">
+              <i class="ph-bold ph-x text-xs"></i>
+            </button>
+          </div>
+
           <div class="relative">
             <select id="select-booking-order" onchange="onBookingSelected(this.value)" class="form-select text-xs font-bold text-slate-800 bg-white border-teal-300 focus:ring-teal-500 py-1.5 h-8.5 rounded-lg">
               <option value="">-- Chọn Booking / Đơn Hàng Đang Chờ Điều Xe (Hoặc Nhập Thủ Công) --</option>

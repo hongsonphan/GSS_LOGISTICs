@@ -2,6 +2,43 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.11] - 2026-10-27 (Tự Động Tra Cứu Giá Booking, Kính Lúp Tìm Kiếm Điều Độ & Chuẩn Hóa Phân Hệ Tài Chính 3 Trụ Cột)
+
+### 1. Phân Hệ Kinh Doanh (Sales CRM) - Tự Động Tra Cứu Giá Cước & Bắt Buộc Nhập Giá:
+- **Tự Động Nạp Giá Cước Từ Báo Giá & Biểu Cước Đã Ký (Auto-Lookup Pricing):**
+  * Xây dựng API chuyên dụng `BookingPriceLookupAPIView` (`/api/sales/price-lookup/`):
+    - Khi chọn Khách Hàng hoặc thay đổi Lộ Trình (Điểm lấy, Điểm giao, Quy cách cont), hệ thống tự động quét cơ sở dữ liệu Báo giá (`Quotation`, `QuotationItem`) đã duyệt (`APPROVED`) và Biểu cước khách hàng (`RouteTariff`).
+    - Nếu tìm thấy: tự động điền đơn giá vào ô `Cước Vận Chuyển` kèm thông báo màu xanh ngọc xác nhận nguồn báo giá.
+    - Nếu chưa có báo giá ký kết: hiển thị cảnh báo màu hổ phách yêu cầu kiểm tra kỹ và **bắt buộc phải nhập giá cước bán**.
+- **Defensive Validation Bắt Buộc Giá Bán > 0 (Zero-Empty-Price Standard):**
+  * Tại Frontend (`modal_booking.html`, `app.js`, `sales.js`): Chặn gửi form khi giá cước để trống hoặc `<= 0`, tự động viền đỏ và focus vào trường cước vận chuyển kèm toast thông báo rõ ràng.
+  * Tại Backend (`SalesAPIView.post`, `BookingOrderDetailAPIView.put`): Tự động nạp giá từ báo giá nếu client không gửi, đồng thời trả về HTTP 400 nếu tuyến chưa có báo giá và không có đơn giá bán hợp lệ.
+
+### 2. Phân Hệ Điều Vận (Dispatch) - Kế Thừa Booking & Sắp Xếp Ngày Mới Nhất:
+- **Sắp Xếp Booking Mới Tạo Lên Trên Cùng:**
+  * Cập nhật `BookingActiveAPIView` (`apps/dispatch/api_views.py`): Chuyển sang sắp xếp theo `-created_at`, `-id`. Đảm bảo các phiếu booking do bộ phận Sale/CS vừa tiếp nhận sẽ lập tức xuất hiện ngay đầu danh sách kế thừa cho Điều độ viên.
+- **Thanh Tìm Kiếm Kính Lúp Thuận Tiện (Instant Filter by Customer/BL):**
+  * Tích hợp thanh tìm kiếm kèm icon kính lúp (`ph-magnifying-glass`) chuẩn giao diện tại `view_create_trip.html` và `modal_create_trip.html`.
+  * Hỗ trợ gõ nhanh tên khách hàng, mã đơn, số booking/BL hoặc địa chỉ kho dỡ hàng để lọc tức thì danh sách kế thừa không cần cuộn tìm thủ công.
+
+### 3. Phân Hệ Tài Chính & Kế Toán - Chuẩn Hóa 3 Trụ Cột Quyết Toán Vận Tải:
+- **Tái Cấu Trúc Subtabs Kế Toán Rõ Ràng & Chuẩn Nghiệp Vụ:**
+  * Đổi tên Tab 4: `4. Khóa Sổ Chuyến Xe` ➔ **`4. Quyết Toán Tài Xế`** (Quản lý lương chuyến, tạm ứng, hoàn ứng và chi phí dọc đường của tài xế).
+  * Bổ sung Tab 5 mới: **`5. Quyết Toán Khách Hàng`** (Tích hợp công nợ AR, bảng kê đối soát SOA và xác nhận chốt doanh thu cước + khoản chi hộ).
+  * Đổi tên Tab 6 cũ: `Xe Bạn (3PL)` ➔ **`7. Quyết Toán Đối Tác 3PL`** (Quản lý công nợ nhà xe thuê ngoài).
+  * Giữ nguyên các tab nghiệp vụ khác: `1. Sổ Quỹ Thu - Chi`, `2. Tạm Ứng Tài Xế`, `3. Quỹ Điều Vận`, `6. Khoản Chi Hộ`, `8. Vé BOT Tuyến`.
+- **Giao Diện & Chức Năng Quyết Toán Khách Hàng (Customer Settlement SOA):**
+  * Bộ lọc linh hoạt: Khách hàng, khoảng thời gian (Từ ngày - Đến ngày), Trạng thái quyết toán (Tất cả / Chờ quyết toán / Đã chốt SOA).
+  * Bộ 4 thẻ KPI tài chính: Cước vận chuyển, Tiền chi hộ (Reimbursable), Tổng công nợ cần quyết toán, Số chuyến chờ/đã chốt.
+  * Bảng danh sách chuyến xe kèm trạng thái chứng từ POD, thao tác chốt SOA hàng loạt hoặc mở lại quyết toán trực quan.
+  * Nút "Xem Bảng Kê SOA" liên kết trực tiếp toàn màn hình với module In & Xuất Excel đối soát công nợ khách hàng.
+
+### 4. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset version lên `?v=2.9.82` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js`, `node -c static/js/modules/accounting.js` (100% Passed).
+- Bổ sung bộ kiểm thử chuyên biệt `apps/dispatch/test_booking_settlement_flow.py` (4/4 tests Passed).
+- Chạy toàn bộ bộ kiểm thử tự động của dự án: **152/152 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.7.10] - 2026-10-27 (Đồng Bộ Hiển Thị Bước 11 Xám Mờ Trên Màn Hình Tài Xế & Bỏ Nút Báo Thức)
 
 ### 1. Đồng Bộ Hiển Thị Bước 11 Xám Mờ Lên Màn Hình Tài Xế (Driver Portal):

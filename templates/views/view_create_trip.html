@@ -6,8 +6,8 @@
             
             <form id="form-create-trip" onsubmit="event.preventDefault(); submitNewTrip();" class="space-y-4" novalidate>
                 <!-- Khối Kế Thừa Dữ Liệu Từ Booking (Sale / Báo Giá) -->
-                <div class="bg-teal-50/90 p-4 rounded-2xl border border-teal-200 shadow-xs">
-                    <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <div class="bg-teal-50/90 p-4 rounded-2xl border border-teal-200 shadow-xs space-y-2.5">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
                         <label class="form-label text-teal-950 font-black text-xs uppercase tracking-wider flex items-center mb-0" for="select-booking-order">
                             <i class="ph-bold ph-handshake text-teal-700 text-base mr-1.5"></i>
                             Kế Thừa Thông Tin Từ Booking (Sale / Báo Giá)
@@ -22,6 +22,22 @@
                             </span>
                         </div>
                     </div>
+
+                    <!-- Ô Tìm Kiếm Kính Lúp Theo Tên Khách Hàng / Mã Booking (Hình 2) -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-teal-700">
+                            <i class="ph-bold ph-magnifying-glass text-sm"></i>
+                        </div>
+                        <input type="text" id="search-booking-order" oninput="filterBookingOrderOptions(this.value)"
+                            placeholder="Gõ tên khách hàng, mã booking, số B/L, kho dỡ để lọc nhanh..."
+                            class="w-full pl-9 pr-9 py-2 text-xs font-semibold bg-white border border-teal-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 shadow-2xs placeholder:text-slate-400 placeholder:italic transition-all">
+                        <button type="button" onclick="clearBookingOrderSearch()" id="btn-clear-booking-search" title="Xóa tìm kiếm"
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-rose-500 transition-colors hidden">
+                            <i class="ph-bold ph-x text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Danh Sách Dropdown Booking Kế Thừa -->
                     <div class="relative">
                         <select id="select-booking-order" onchange="onBookingSelected(this.value)" class="form-select text-xs font-bold text-slate-800 bg-white border-teal-300 focus:ring-teal-500 py-2 h-10 rounded-xl w-full">
                             <option value="">-- Chọn Booking / Đơn Hàng Đang Chờ Điều Xe (Hoặc Nhập Thủ Công) --</option>

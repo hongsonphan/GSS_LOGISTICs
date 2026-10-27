@@ -4539,21 +4539,12 @@ class FleetAPIView(APIView):
 
 class BookingActiveAPIView(APIView):
     """API lấy danh sách các Booking đang hoạt động để Điều độ viên chọn kế thừa khi tạo lệnh."""
-    permission_classes = [IsDispatcher]
+    permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
-        # Sắp xếp theo ngày đóng hàng gấp gần nhất lên trên đầu
+        # Sắp xếp phiếu mới tạo nhất lên trên đầu (mới nhất theo ngày tạo và id)
         bookings = BookingOrder.objects.select_related('customer').filter(
             status__in=[BookingStatus.PENDING_DISPATCH, BookingStatus.PARTIALLY_DISPATCHED]
-        ).order_by(
-            models.Case(
-                models.When(status=BookingStatus.PENDING_DISPATCH, then=models.Value(1)),
-                models.When(status=BookingStatus.PARTIALLY_DISPATCHED, then=models.Value(2)),
-                default=models.Value(3),
-                output_field=models.IntegerField()
-            ),
-            models.F('loading_date').asc(nulls_last=True),
-            '-created_at'
-        )
+        ).order_by('-created_at', '-id')
         results = []
         for b in bookings:
             results.append({
@@ -4588,6 +4579,127 @@ class BookingActiveAPIView(APIView):
                 'booking_file_name': os.path.basename(b.booking_file.name) if b.booking_file else '',
             })
         return Response(results)
+
+class BookingPriceLookupAPIView(APIView):
+    """
+    API tự động tra cứu giá cước khi lập Booking dựa trên Khách hàng và Tuyến đường/Khu vực.
+    Nguồn tra cứu ưu tiên:
+    1. Báo giá ký kết (Quotation / QuotationItem) của khách hàng
+    2. Biểu cước khách hàng (RouteTariff)
+    3. Chuyến xe gần nhất của khách hàng trên cùng tuyến
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        customer_param = request.GET.get('customer') or request.GET.get('customer_id') or ''
+        pickup = (request.GET.get('pickup') or request.GET.get('pickup_location') or '').strip()
+        delivery = (request.GET.get('delivery') or request.GET.get('delivery_location') or '').strip()
+        container_size = (request.GET.get('container_size') or '40HC').strip().upper()
+
+        customer = resolve_customer(customer_param)
+        if not customer:
+            return Response({
+                'found': False,
+                'price': None,
+                'message': 'Vui lòng chọn khách hàng trước khi tra cứu giá cước.'
+            })
+
+        # 1. Tra cứu trong Báo Giá (Quotation) của khách hàng
+        quotes = Quotation.objects.filter(customer=customer, is_deleted=False).order_by(
+            models.Case(
+                models.When(status='APPROVED', then=models.Value(1)),
+                models.When(status='PENDING_APPROVAL', then=models.Value(2)),
+                default=models.Value(3),
+                output_field=models.IntegerField()
+            ),
+            '-created_at'
+        )
+
+        for q in quotes:
+            items = q.items.filter(is_deleted=False)
+            if items.exists():
+                for it in items:
+                    r_desc = (it.route_description or '').upper()
+                    dest_z = (it.destination_zone or '').upper()
+                    orig_z = (it.origin_zone or '').upper()
+                    deliv_upper = delivery.upper()
+
+                    match_dest = deliv_upper and (deliv_upper in r_desc or deliv_upper in dest_z or dest_z in deliv_upper)
+                    if match_dest:
+                        price = int(it.unit_price)
+                        if price > 0:
+                            return Response({
+                                'found': True,
+                                'price': price,
+                                'source': f"Báo giá #{q.quotation_code} ({q.get_status_display()})",
+                                'quotation_code': q.quotation_code,
+                                'route': it.route_description,
+                                'message': f"Đã tự động áp dụng giá theo Báo giá #{q.quotation_code}"
+                            })
+
+            r_desc = (q.route_description or '').upper()
+            dest_z = (q.destination_zone or '').upper()
+            deliv_upper = delivery.upper()
+            if deliv_upper and (deliv_upper in r_desc or deliv_upper in dest_z or dest_z in deliv_upper):
+                price = int(q.unit_price)
+                if price > 0:
+                    return Response({
+                        'found': True,
+                        'price': price,
+                        'source': f"Báo giá #{q.quotation_code} ({q.get_status_display()})",
+                        'quotation_code': q.quotation_code,
+                        'route': q.route_description,
+                        'message': f"Đã tự động áp dụng giá theo Báo giá #{q.quotation_code}"
+                    })
+
+        # 2. Tra cứu trong Biểu Cước Khách Hàng (RouteTariff)
+        tariffs = customer.tariffs.filter(is_deleted=False)
+        if delivery:
+            matched_tar = tariffs.filter(
+                Q(delivery_location__icontains=delivery) | Q(destination_zone__icontains=delivery)
+            )
+            if container_size:
+                size_tar = matched_tar.filter(container_size__iexact=container_size).first()
+                if size_tar and size_tar.freight_price > 0:
+                    return Response({
+                        'found': True,
+                        'price': int(size_tar.freight_price),
+                        'source': f"Biểu cước khách hàng [{size_tar.pickup_location} ➔ {size_tar.delivery_location}]",
+                        'route': f"{size_tar.pickup_location} ➔ {size_tar.delivery_location}",
+                        'message': "Đã tự động áp dụng giá theo Biểu cước hợp đồng"
+                    })
+            first_tar = matched_tar.first()
+            if first_tar and first_tar.freight_price > 0:
+                return Response({
+                    'found': True,
+                    'price': int(first_tar.freight_price),
+                    'source': f"Biểu cước khách hàng [{first_tar.pickup_location} ➔ {first_tar.delivery_location}]",
+                    'route': f"{first_tar.pickup_location} ➔ {first_tar.delivery_location}",
+                    'message': "Đã tự động áp dụng giá theo Biểu cước hợp đồng"
+                })
+
+        # 3. Tra cứu lịch sử chuyến xe gần nhất của khách
+        if delivery:
+            recent_trip = Trip.objects.filter(
+                customer=customer,
+                is_deleted=False,
+                delivery_location__icontains=delivery
+            ).exclude(cached_revenue=0).order_by('-created_at').first()
+            if recent_trip and recent_trip.cached_revenue > 0:
+                return Response({
+                    'found': True,
+                    'price': int(recent_trip.cached_revenue),
+                    'source': f"Lịch sử chuyến #{recent_trip.trip_code}",
+                    'route': f"{recent_trip.pickup_location} ➔ {recent_trip.delivery_location}",
+                    'message': f"Áp dụng theo chuyến gần nhất #{recent_trip.trip_code}"
+                })
+
+        return Response({
+            'found': False,
+            'price': None,
+            'message': 'Chưa có báo giá ký kết cho tuyến này. Vui lòng kiểm tra kỹ và nhập đơn giá cước bán (Bắt buộc)!'
+        })
+
 
 class SalesAPIView(APIView):
     """API Báo giá & Quản lý Đơn hàng Booking Sale CRM."""
@@ -5004,6 +5116,41 @@ class SalesAPIView(APIView):
             if loading_time_str.upper() in ['8H', '8']:
                 loading_time_str = '08:00'
 
+            selling_freight_price = float(data.get('selling_freight_price') or 0)
+            if selling_freight_price <= 0:
+                # Tự động tra cứu giá từ Báo giá ký kết hoặc Biểu cước của khách hàng theo yêu cầu
+                auto_price = 0
+                quotes = Quotation.objects.filter(customer=customer, is_deleted=False).order_by(
+                    models.Case(
+                        models.When(status='APPROVED', then=models.Value(1)),
+                        models.When(status='PENDING_APPROVAL', then=models.Value(2)),
+                        default=models.Value(3),
+                        output_field=models.IntegerField()
+                    ),
+                    '-created_at'
+                )
+                for q in quotes:
+                    for it in q.items.filter(is_deleted=False):
+                        if delivery_str and (delivery_str.upper() in (it.route_description or '').upper() or delivery_str.upper() in (it.destination_zone or '').upper()):
+                            if it.unit_price > 0:
+                                auto_price = float(it.unit_price)
+                                break
+                    if auto_price > 0:
+                        break
+                    if q.unit_price > 0:
+                        auto_price = float(q.unit_price)
+                        break
+
+                if auto_price <= 0:
+                    tar = customer.tariffs.filter(is_deleted=False).first()
+                    if tar and tar.freight_price > 0:
+                        auto_price = float(tar.freight_price)
+
+                if auto_price > 0:
+                    selling_freight_price = auto_price
+                else:
+                    return Response({'error': 'Đơn giá cước vận chuyển là bắt buộc và phải lớn hơn 0! Vui lòng kiểm tra và nhập giá cước bán.'}, status=status.HTTP_400_BAD_REQUEST)
+
             curr_emp = getattr(request.user, 'employee', None)
             booking = BookingOrder.objects.create(
                 booking_code=booking_code,
@@ -5030,7 +5177,7 @@ class SalesAPIView(APIView):
                 loading_time=loading_time_str,
                 free_time_detention=int(data.get('free_time_detention') or 7),
                 free_time_demurrage=int(data.get('free_time_demurrage') or 7),
-                selling_freight_price=float(data.get('selling_freight_price') or 0),
+                selling_freight_price=selling_freight_price,
                 booking_file=uploaded_bk_file,
                 status=data.get('status', BookingStatus.PENDING_DISPATCH),
                 notes=data.get('notes', '')
@@ -5657,8 +5804,14 @@ class BookingOrderDetailAPIView(APIView):
             b.free_time_detention = int(data['free_time_detention'])
         if 'free_time_demurrage' in data and data['free_time_demurrage'] is not None:
             b.free_time_demurrage = int(data['free_time_demurrage'])
-        if 'selling_freight_price' in data and data['selling_freight_price']:
-            b.selling_freight_price = float(data['selling_freight_price'])
+        if 'selling_freight_price' in data:
+            try:
+                price_val = float(data.get('selling_freight_price') or 0)
+                if price_val <= 0:
+                    return Response({'error': 'Đơn giá cước vận chuyển là bắt buộc và phải lớn hơn 0! Vui lòng kiểm tra và nhập giá cước bán.'}, status=status.HTTP_400_BAD_REQUEST)
+                b.selling_freight_price = price_val
+            except (ValueError, TypeError):
+                return Response({'error': 'Đơn giá cước không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
         if 'status' in data and data['status']:
             b.status = data['status']
         if 'notes' in data:

@@ -427,6 +427,7 @@ function switchAccountingSubTab(subtabId) {
     if (subtabId === 'acct-driver-advances') { btnId = 'acct-tab-btn-2'; brandColor = 'amber'; }
     else if (subtabId === 'acct-dispatcher-funds') { btnId = 'acct-tab-btn-3'; brandColor = 'indigo'; }
     else if (subtabId === 'acct-settlements') { btnId = 'acct-tab-btn-4'; brandColor = 'teal'; }
+    else if (subtabId === 'acct-customer-settlements') { btnId = 'acct-tab-btn-customer-settlements'; brandColor = 'teal'; }
     else if (subtabId === 'acct-reimbursables') { btnId = 'acct-tab-btn-5'; brandColor = 'sky'; }
     else if (subtabId === 'acct-subcontractors') { btnId = 'acct-tab-btn-6'; brandColor = 'rose'; }
     else if (subtabId === 'acct-bot-audit') { btnId = 'acct-tab-btn-7'; brandColor = 'emerald'; }
@@ -446,6 +447,8 @@ function switchAccountingSubTab(subtabId) {
         loadAccountingAdvancesData();
     } else if (subtabId === 'acct-settlements') {
         loadAccountingData();
+    } else if (subtabId === 'acct-customer-settlements') {
+        if (typeof loadCustomerSettlementsData === 'function') loadCustomerSettlementsData();
     } else if (subtabId === 'acct-reimbursables') {
         loadReimbursablesData();
     } else if (subtabId === 'acct-subcontractors') {

@@ -14834,6 +14834,21 @@ async function saveBooking(e) {
         return;
     }
 
+    if (!price || price <= 0) {
+        showToast('warning', 'Đơn giá cước vận chuyển là bắt buộc và phải lớn hơn 0! Vui lòng kiểm tra và nhập giá cước bán.', 'Chưa Nhập Giá Cước');
+        const priceInput = document.getElementById('booking-price');
+        if (priceInput) {
+            priceInput.focus();
+            priceInput.classList.add('border-rose-500', 'bg-rose-50');
+            const hintEl = document.getElementById('booking-price-hint');
+            if (hintEl) {
+                hintEl.innerHTML = '<span class="text-rose-600 font-bold flex items-center gap-1"><i class="ph-bold ph-warning text-xs"></i> Bắt buộc nhập đơn giá cước vận chuyển (> 0 đ)!</span>';
+                hintEl.classList.remove('hidden');
+            }
+        }
+        return;
+    }
+
     const submitBtn = document.getElementById('btn-submit-booking');
     const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
     if (submitBtn) {
@@ -17284,16 +17299,7 @@ async function loadActiveBookingsForModal(selectedBookingId = null) {
         if (!res.ok) throw new Error('Lỗi tải booking');
         activeBookingsCache = await res.json();
         
-        sel.innerHTML = '<option value="">-- Chọn Booking / Đơn Hàng Từ Sale (Hoặc Nhập Thủ Công) --</option>';
-        activeBookingsCache.forEach(b => {
-            const opt = document.createElement('option');
-            opt.value = b.id;
-            opt.innerText = `[${b.booking_code}] ${b.customer_name} | B/L: ${b.booking_number} (${b.container_size} - Còn ${b.remaining_containers} cont) | Kho: ${b.delivery_location}`;
-            if (selectedBookingId && String(selectedBookingId) === String(b.id)) {
-                opt.selected = true;
-            }
-            sel.appendChild(opt);
-        });
+        renderBookingOrderOptions(activeBookingsCache, selectedBookingId);
 
         if (selectedBookingId) {
             onBookingSelected(selectedBookingId);
@@ -17868,6 +17874,7 @@ function switchAccountingSubTab(subtabId) {
     if (subtabId === 'acct-driver-advances') { btnId = 'acct-tab-btn-2'; brandColor = 'amber'; }
     else if (subtabId === 'acct-dispatcher-funds') { btnId = 'acct-tab-btn-3'; brandColor = 'indigo'; }
     else if (subtabId === 'acct-settlements') { btnId = 'acct-tab-btn-4'; brandColor = 'teal'; }
+    else if (subtabId === 'acct-customer-settlements') { btnId = 'acct-tab-btn-customer-settlements'; brandColor = 'teal'; }
     else if (subtabId === 'acct-reimbursables') { btnId = 'acct-tab-btn-5'; brandColor = 'sky'; }
     else if (subtabId === 'acct-subcontractors') { btnId = 'acct-tab-btn-6'; brandColor = 'rose'; }
     else if (subtabId === 'acct-bot-audit') { btnId = 'acct-tab-btn-7'; brandColor = 'emerald'; }
@@ -17887,6 +17894,8 @@ function switchAccountingSubTab(subtabId) {
         loadAccountingAdvancesData();
     } else if (subtabId === 'acct-settlements') {
         loadAccountingData();
+    } else if (subtabId === 'acct-customer-settlements') {
+        loadCustomerSettlementsData();
     } else if (subtabId === 'acct-reimbursables') {
         loadReimbursablesData();
     } else if (subtabId === 'acct-subcontractors') {
@@ -37406,3 +37415,326 @@ window.printDriverAdvanceVoucher = printDriverAdvanceVoucher;
 window.printSettlementAdvanceVoucher = printSettlementAdvanceVoucher;
 window.openDriverAdvanceModal = openDriverAdvanceModal;
 window.setDriverAdvanceFormDisabled = setDriverAdvanceFormDisabled;
+
+
+// =========================================================================
+// CÁC HÀM XỬ LÝ BOOKING PRICE & SEARCH & QUYẾT TOÁN KHÁCH HÀNG (v4.7.5)
+// =========================================================================
+
+function renderBookingOrderOptions(bookingsList, selectedBookingId = null) {
+    const selects = document.querySelectorAll('#select-booking-order');
+    selects.forEach(sel => {
+        sel.innerHTML = '<option value="">-- Chọn Booking / Đơn Hàng Đang Chờ Điều Xe (Hoặc Nhập Thủ Công) --</option>';
+        (bookingsList || []).forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.id;
+            opt.innerText = `[${b.booking_code}] ${b.customer_name} | B/L: ${b.booking_number} (${b.container_size} - Còn ${b.remaining_containers} cont) | Kho: ${b.delivery_location}`;
+            if (selectedBookingId && String(selectedBookingId) === String(b.id)) {
+                opt.selected = true;
+            }
+            sel.appendChild(opt);
+        });
+    });
+}
+
+function filterBookingOrderOptions(query) {
+    const q = (query || '').toLowerCase().trim();
+    const clearBtn1 = document.getElementById('btn-clear-booking-search');
+    const clearBtn2 = document.getElementById('modal-btn-clear-booking-search');
+    if (clearBtn1) clearBtn1.classList.toggle('hidden', !q);
+    if (clearBtn2) clearBtn2.classList.toggle('hidden', !q);
+
+    if (!q) {
+        renderBookingOrderOptions(activeBookingsCache);
+        return;
+    }
+
+    const filtered = (activeBookingsCache || []).filter(b => {
+        const cust = (b.customer_name || '').toLowerCase();
+        const code = (b.booking_code || '').toLowerCase();
+        const num = (b.booking_number || '').toLowerCase();
+        const deliv = (b.delivery_location || '').toLowerCase();
+        const pick = (b.pickup_location || '').toLowerCase();
+        return cust.includes(q) || code.includes(q) || num.includes(q) || deliv.includes(q) || pick.includes(q);
+    });
+
+    renderBookingOrderOptions(filtered);
+    if (filtered.length === 1) {
+        const sel = document.getElementById('select-booking-order');
+        if (sel) {
+            sel.value = filtered[0].id;
+            onBookingSelected(filtered[0].id);
+        }
+    }
+}
+
+function clearBookingOrderSearch() {
+    const inp1 = document.getElementById('search-booking-order');
+    const inp2 = document.getElementById('modal-search-booking-order');
+    if (inp1) inp1.value = '';
+    if (inp2) inp2.value = '';
+    filterBookingOrderOptions('');
+}
+
+let isBookingPriceAutoFilled = false;
+
+async function lookupBookingPrice() {
+    const custEl = document.getElementById('booking-customer');
+    const custVal = custEl ? custEl.value.trim() : '';
+    const pickEl = document.getElementById('booking-pickup');
+    const pickVal = pickEl ? pickEl.value.trim() : '';
+    const delivEl = document.getElementById('booking-delivery');
+    const delivVal = delivEl ? delivEl.value.trim() : '';
+    const sizeEl = document.getElementById('booking-container-size');
+    const sizeVal = sizeEl ? sizeEl.value.trim() : '40HC';
+    const priceInput = document.getElementById('booking-price');
+    const hintEl = document.getElementById('booking-price-hint');
+
+    if (!custVal) {
+        if (hintEl) {
+            hintEl.innerText = '';
+            hintEl.classList.add('hidden');
+        }
+        return;
+    }
+
+    if (priceInput) priceInput.classList.remove('border-rose-500', 'bg-rose-50');
+
+    try {
+        const params = new URLSearchParams({
+            customer: custVal,
+            pickup: pickVal,
+            delivery: delivVal,
+            container_size: sizeVal
+        });
+        const res = await fetchWithAuth(`/api/sales/price-lookup/?${params.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.found && data.price > 0) {
+            if (priceInput && (!priceInput.value || isBookingPriceAutoFilled)) {
+                priceInput.value = formatNumberVN(data.price);
+                isBookingPriceAutoFilled = true;
+            }
+            if (hintEl) {
+                hintEl.innerHTML = `<span class="text-teal-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle text-xs"></i> ${data.message || data.source} (${formatMoneyVND(data.price)})</span>`;
+                hintEl.classList.remove('hidden');
+            }
+        } else {
+            isBookingPriceAutoFilled = false;
+            if (hintEl) {
+                hintEl.innerHTML = `<span class="text-amber-700 font-bold flex items-center gap-1"><i class="ph-bold ph-warning-circle text-xs"></i> Tuyến này chưa có báo giá ký kết. Vui lòng kiểm tra kỹ và nhập đơn giá cước bán (Bắt buộc)!</span>`;
+                hintEl.classList.remove('hidden');
+            }
+        }
+    } catch (err) {
+        console.error('Error looking up booking price:', err);
+    }
+}
+
+function onBookingPriceManualInput() {
+    isBookingPriceAutoFilled = false;
+    const priceInput = document.getElementById('booking-price');
+    if (priceInput) priceInput.classList.remove('border-rose-500', 'bg-rose-50');
+    const hintEl = document.getElementById('booking-price-hint');
+    if (hintEl && hintEl.innerHTML.includes('Bắt buộc')) {
+        hintEl.classList.add('hidden');
+    }
+}
+
+let customerSettlementsCache = [];
+let customerSettlementsSummary = {};
+
+async function loadCustomerSettlementsData() {
+    const custId = document.getElementById('cust-settle-filter-customer')?.value || '';
+    const fromDate = document.getElementById('cust-settle-filter-from-date')?.value || '';
+    const toDate = document.getElementById('cust-settle-filter-to-date')?.value || '';
+    const statusVal = document.getElementById('cust-settle-filter-status')?.value || 'ALL';
+
+    const tbody = document.getElementById('cust-settle-tbody');
+    if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 italic"><i class="ph-bold ph-spinner animate-spin text-lg block mb-1"></i> Đang tải dữ liệu quyết toán khách hàng...</td></tr>`;
+    }
+
+    try {
+        const params = new URLSearchParams({
+            customer_id: custId,
+            from_date: fromDate,
+            to_date: toDate,
+            status: statusVal
+        });
+        const res = await fetchWithAuth(`/api/accounting/customer-reconciliation/?${params.toString()}`);
+        if (!res.ok) throw new Error('Không thể tải dữ liệu quyết toán khách hàng');
+        const data = await res.json();
+        customerSettlementsCache = data.trips || [];
+        customerSettlementsSummary = data.summary || {};
+
+        const elFreight = document.getElementById('cust-settle-stat-freight');
+        if (elFreight) elFreight.innerText = formatMoneyVND(data.summary?.total_revenue || 0);
+
+        const elReimb = document.getElementById('cust-settle-stat-reimb');
+        if (elReimb) elReimb.innerText = formatMoneyVND(data.summary?.total_reimbursable || 0);
+
+        const elTotal = document.getElementById('cust-settle-stat-total');
+        if (elTotal) elTotal.innerText = formatMoneyVND(data.summary?.total_receivable || 0);
+
+        const elTrips = document.getElementById('cust-settle-stat-trips');
+        if (elTrips) elTrips.innerText = `${data.summary?.pending_trips || 0} / ${data.summary?.total_trips || 0} Chuyến`;
+
+        const elTripsSub = document.getElementById('cust-settle-stat-trips-sub');
+        if (elTripsSub) elTripsSub.innerText = `Chờ quyết toán: ${data.summary?.pending_trips || 0} | Đã chốt: ${data.summary?.settled_trips || 0}`;
+
+        const badgeTab = document.getElementById('badge-acct-customer-settlements');
+        if (badgeTab) badgeTab.innerText = data.summary?.pending_trips || 0;
+
+        const countEl = document.getElementById('cust-settle-table-count');
+        if (countEl) countEl.innerText = `${customerSettlementsCache.length} chuyến`;
+
+        populateCustomerSettleFilter();
+        renderCustomerSettlementsTable();
+    } catch (err) {
+        console.error('Error loading customer settlements:', err);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-rose-500 font-bold"><i class="ph-bold ph-warning text-lg block mb-1"></i> Lỗi nạp dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
+        }
+    }
+}
+
+function populateCustomerSettleFilter() {
+    const sel = document.getElementById('cust-settle-filter-customer');
+    if (!sel || sel.children.length > 1) return;
+    const custMap = new Map();
+    customerSettlementsCache.forEach(t => {
+        if (t.customer_id && t.customer_name) {
+            custMap.set(String(t.customer_id), t.customer_name);
+        }
+    });
+    custMap.forEach((name, id) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.innerText = name;
+        sel.appendChild(opt);
+    });
+}
+
+function renderCustomerSettlementsTable() {
+    const tbody = document.getElementById('cust-settle-tbody');
+    if (!tbody) return;
+
+    if (!customerSettlementsCache || customerSettlementsCache.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 italic">Không có chuyến xe nào theo điều kiện lọc đã chọn</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = customerSettlementsCache.map((t, idx) => {
+        const statusBadge = t.is_customer_settled
+            ? `<span class="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 justify-center"><i class="ph-bold ph-check"></i> Đã Quyết Toán</span>`
+            : `<span class="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Chờ Quyết Toán</span>`;
+
+        const podBadge = t.has_pod
+            ? `<span class="text-emerald-700 font-bold flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đầy đủ</span>`
+            : `<span class="text-slate-400 font-medium flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Chưa có</span>`;
+
+        const actionBtn = t.is_customer_settled
+            ? `<button type="button" onclick="toggleCustomerSettleSingle(${t.id}, 'UNSETTLE')" class="px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 cursor-pointer">Mở Lại</button>`
+            : `<button type="button" onclick="toggleCustomerSettleSingle(${t.id}, 'SETTLE')" class="px-2.5 py-1 text-[11px] font-bold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition-colors shadow-2xs cursor-pointer">Chốt SOA</button>`;
+
+        return `
+            <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="p-3 text-center">
+                    <input type="checkbox" class="cust-settle-row-chk rounded border-slate-300 text-teal-600 focus:ring-teal-500" value="${t.id}" data-settled="${t.is_customer_settled}">
+                </td>
+                <td class="p-3 font-mono font-bold text-teal-900">${escapeHtml(t.trip_code)}</td>
+                <td class="p-3 font-semibold text-slate-700 whitespace-nowrap">${escapeHtml(t.loading_date)}</td>
+                <td class="p-3 font-bold text-slate-900 max-w-[200px] truncate" title="${escapeHtml(t.customer_name)}">${escapeHtml(t.customer_name)}</td>
+                <td class="p-3 font-mono text-slate-700">${escapeHtml(t.container_number || '-')}</td>
+                <td class="p-3 text-slate-600 text-[11px] max-w-[220px] truncate" title="${escapeHtml(t.route)}">${escapeHtml(t.route)}</td>
+                <td class="p-3 font-mono font-bold text-teal-800 text-right tabular-nums">${formatMoneyVND(t.revenue || 0)}</td>
+                <td class="p-3 font-mono font-semibold text-amber-700 text-right tabular-nums">${formatMoneyVND(t.reimbursable || 0)}</td>
+                <td class="p-3 font-mono font-black text-slate-900 text-right tabular-nums bg-slate-50/50">${formatMoneyVND(t.total_receivable || 0)}</td>
+                <td class="p-3 text-center">${podBadge}</td>
+                <td class="p-3 text-center">${statusBadge}</td>
+                <td class="p-3 text-center whitespace-nowrap">${actionBtn}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleAllCustomerSettleChecks(checked) {
+    document.querySelectorAll('.cust-settle-row-chk').forEach(chk => {
+        chk.checked = checked;
+    });
+}
+
+async function toggleCustomerSettleSingle(tripId, action) {
+    try {
+        const res = await fetchWithAuth('/api/accounting/customer-reconciliation/', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: action,
+                trip_ids: [tripId]
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || data.error || 'Lỗi cập nhật quyết toán');
+        showToast('success', data.message || 'Cập nhật quyết toán khách hàng thành công!', 'Thành Công');
+        loadCustomerSettlementsData();
+    } catch (err) {
+        showToast('error', err.message || 'Lỗi thao tác quyết toán', 'Lỗi');
+    }
+}
+
+async function executeBatchCustomerSettlement() {
+    const selectedIds = Array.from(document.querySelectorAll('.cust-settle-row-chk:checked')).map(el => parseInt(el.value));
+    if (selectedIds.length === 0) {
+        showToast('warning', 'Vui lòng chọn ít nhất một chuyến xe để chốt quyết toán với khách hàng!', 'Chưa Chọn Chuyến Xe');
+        return;
+    }
+
+    if (!confirm(`Xác nhận chốt quyết toán đối soát (SOA) cho ${selectedIds.length} chuyến xe đã chọn?`)) {
+        return;
+    }
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/customer-reconciliation/', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'SETTLE',
+                trip_ids: selectedIds
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || data.error || 'Lỗi chốt quyết toán');
+        showToast('success', data.message || `Đã chốt quyết toán thành công ${selectedIds.length} chuyến xe!`, 'Thành Công');
+        loadCustomerSettlementsData();
+    } catch (err) {
+        showToast('error', err.message || 'Lỗi chốt quyết toán', 'Lỗi');
+    }
+}
+
+function openSelectedCustomerSOAView() {
+    const custId = document.getElementById('cust-settle-filter-customer')?.value;
+    if (!custId) {
+        const first = customerSettlementsCache[0];
+        if (first && first.customer_id) {
+            viewCustomerARStatement(first.customer_id);
+            return;
+        }
+        showToast('warning', 'Vui lòng chọn một khách hàng để xem bảng kê đối soát SOA!', 'Chọn Khách Hàng');
+        return;
+    }
+    viewCustomerARStatement(custId);
+}
+
+window.renderBookingOrderOptions = renderBookingOrderOptions;
+window.filterBookingOrderOptions = filterBookingOrderOptions;
+window.clearBookingOrderSearch = clearBookingOrderSearch;
+window.lookupBookingPrice = lookupBookingPrice;
+window.onBookingPriceManualInput = onBookingPriceManualInput;
+window.loadCustomerSettlementsData = loadCustomerSettlementsData;
+window.populateCustomerSettleFilter = populateCustomerSettleFilter;
+window.renderCustomerSettlementsTable = renderCustomerSettlementsTable;
+window.toggleAllCustomerSettleChecks = toggleAllCustomerSettleChecks;
+window.toggleCustomerSettleSingle = toggleCustomerSettleSingle;
+window.executeBatchCustomerSettlement = executeBatchCustomerSettlement;
+window.openSelectedCustomerSOAView = openSelectedCustomerSOAView;

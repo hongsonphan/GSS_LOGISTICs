@@ -99,27 +99,34 @@
             <button id="acct-tab-btn-4" onclick="switchAccountingSubTab('acct-settlements')"
                 class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
                 <i class="ph-bold ph-receipt text-base text-slate-500"></i>
-                <span>4. Khóa Sổ Chuyến Xe</span>
+                <span>4. Quyết Toán Tài Xế</span>
+            </button>
+
+            <button id="acct-tab-btn-customer-settlements" onclick="switchAccountingSubTab('acct-customer-settlements')"
+                class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
+                <i class="ph-bold ph-user-check text-base text-slate-500"></i>
+                <span>5. Quyết Toán Khách Hàng</span>
+                <span id="badge-acct-customer-settlements" class="px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200">0</span>
             </button>
 
             <button id="acct-tab-btn-5" onclick="switchAccountingSubTab('acct-reimbursables')"
                 class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
                 <i class="ph-bold ph-file-text text-base text-slate-500"></i>
-                <span>5. Khoản Chi Hộ</span>
+                <span>6. Khoản Chi Hộ</span>
                 <span id="badge-acct-reimbursables" class="px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200">0</span>
             </button>
 
             <button id="acct-tab-btn-6" onclick="switchAccountingSubTab('acct-subcontractors')"
                 class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
                 <i class="ph-bold ph-truck text-base text-slate-500"></i>
-                <span>6. Xe Bạn (3PL)</span>
+                <span>7. Quyết Toán Đối Tác 3PL</span>
                 <span id="badge-acct-subcontractors" class="px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200">0</span>
             </button>
 
             <button id="acct-tab-btn-7" onclick="switchAccountingSubTab('acct-bot-audit')"
                 class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
                 <i class="ph-bold ph-barcode text-base text-slate-500"></i>
-                <span>7. Vé BOT Tuyến</span>
+                <span>8. Vé BOT Tuyến</span>
             </button>
         </div>
 
@@ -1189,6 +1196,130 @@
     <!-- SUBTAB 5: ĐỐI SOÁT & THU HỒI CHI HỘ KHÁCH HÀNG (DEBIT NOTE / REIMBURSABLES) -->
 
     <!-- ========================================================================= -->
+
+        <!-- SUBTAB 5: QUYẾT TOÁN CÔNG NỢ KHÁCH HÀNG (CUSTOMER AR SOA & SETTLEMENT) -->
+    <div id="subtab-acct-customer-settlements" class="acct-subtab-content hidden space-y-4">
+        <!-- 1. BỘ LỌC ĐIỀU KIỆN QUYẾT TOÁN KHÁCH HÀNG -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+                <div class="w-64">
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Khách Hàng</label>
+                    <select id="cust-settle-filter-customer" onchange="loadCustomerSettlementsData()"
+                        class="w-full h-9 px-2.5 py-1 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 transition-all">
+                        <option value="">-- Tất Cả Khách Hàng --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Từ Ngày</label>
+                    <input type="date" id="cust-settle-filter-from-date" onchange="loadCustomerSettlementsData()"
+                        class="h-9 px-2.5 py-1 text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Đến Ngày</label>
+                    <input type="date" id="cust-settle-filter-to-date" onchange="loadCustomerSettlementsData()"
+                        class="h-9 px-2.5 py-1 text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Trạng Thái Quyết Toán</label>
+                    <select id="cust-settle-filter-status" onchange="loadCustomerSettlementsData()"
+                        class="h-9 px-2.5 py-1 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600">
+                        <option value="ALL">Tất cả chuyến xe</option>
+                        <option value="PENDING" selected>Chờ quyết toán khách hàng</option>
+                        <option value="SETTLED">Đã chốt quyết toán (SOA)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Cụm nút thao tác quyết toán & xuất bảng kê -->
+            <div class="flex items-center gap-2 self-end">
+                <button type="button" onclick="openSelectedCustomerSOAView()"
+                    class="h-9 px-3 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Mở Bảng Kê Đối Soát SOA Chi Tiết Cho Khách Hàng Đã Chọn">
+                    <i class="ph-bold ph-file-text text-teal-600 text-sm"></i>
+                    <span>Xem Bảng Kê SOA</span>
+                </button>
+                <button type="button" onclick="executeBatchCustomerSettlement()"
+                    class="h-9 px-3.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Xác nhận chốt quyết toán các chuyến xe đã tick chọn">
+                    <i class="ph-bold ph-check-circle text-sm"></i>
+                    <span>Chốt Quyết Toán Khách Hàng</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. BỘ 4 THẺ TỔNG KẾT QUYẾT TOÁN KHÁCH HÀNG -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Cước Vận Chuyển Khách Hàng</span>
+                <p class="text-2xl font-black text-teal-800 tabular-nums font-heading mt-1" id="cust-settle-stat-freight">0 đ</p>
+                <p class="text-[11px] text-slate-500 font-medium mt-1">Doanh thu cước vận tải theo tuyến</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tổng Khoản Chi Hộ (Reimbursable)</span>
+                <p class="text-2xl font-black text-amber-700 tabular-nums font-heading mt-1" id="cust-settle-stat-reimb">0 đ</p>
+                <p class="text-[11px] text-slate-500 font-medium mt-1">Nâng hạ, cược vỏ, hải quan, kiểm hóa</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tổng Công Nợ Cần Quyết Toán</span>
+                <p class="text-2xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="cust-settle-stat-total">0 đ</p>
+                <p class="text-[11px] text-slate-500 font-medium mt-1">Cước vận chuyển + Chi hộ</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Số Chuyến Chờ / Đã Quyết Toán</span>
+                <p class="text-2xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="cust-settle-stat-trips">0 / 0 Chuyến</p>
+                <p class="text-[11px] text-slate-500 font-medium mt-1" id="cust-settle-stat-trips-sub">Chờ quyết toán: 0</p>
+            </div>
+        </div>
+
+        <!-- 3. BẢNG DANH SÁCH CHUYẾN XE CẦN QUYẾT TOÁN VỚI KHÁCH HÀNG -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-xs uppercase tracking-wider text-slate-800 font-heading">
+                        Danh Sách Chuyến Xe Quyết Toán Khách Hàng (SOA)
+                    </span>
+                    <span id="cust-settle-table-count" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                        0 chuyến
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-700 select-none">
+                        <input type="checkbox" id="cust-settle-check-all" onchange="toggleAllCustomerSettleChecks(this.checked)" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+                        <span>Chọn tất cả</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto max-h-[520px]">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-50 text-slate-600 uppercase font-black text-[11px] tracking-wider border-b border-slate-200 sticky top-0 z-10 font-heading">
+                        <tr>
+                            <th class="p-3 w-10 text-center">#</th>
+                            <th class="p-3 w-28">Mã Chuyến</th>
+                            <th class="p-3 w-24">Ngày Đóng</th>
+                            <th class="p-3">Khách Hàng</th>
+                            <th class="p-3 w-32">Số Cont / B/L</th>
+                            <th class="p-3">Lộ Trình</th>
+                            <th class="p-3 w-28 text-right">Cước Bán (VNĐ)</th>
+                            <th class="p-3 w-28 text-right">Chi Hộ (VNĐ)</th>
+                            <th class="p-3 w-32 text-right">Tổng Thu (VNĐ)</th>
+                            <th class="p-3 w-28 text-center">Chứng Từ POD</th>
+                            <th class="p-3 w-32 text-center">Trạng Thái</th>
+                            <th class="p-3 w-28 text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cust-settle-tbody" class="divide-y divide-slate-100 text-slate-800">
+                        <tr>
+                            <td colspan="12" class="p-8 text-center text-slate-400 italic">
+                                <i class="ph-bold ph-spinner animate-spin text-lg block mb-1"></i>
+                                Đang tải danh sách quyết toán khách hàng...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <div id="subtab-acct-reimbursables" class="acct-subtab-content hidden space-y-6">
 
