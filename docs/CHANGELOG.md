@@ -161,6 +161,13 @@ equired và bỏ dấu sao đỏ * tại các ô chọn **Tài xế Hạ Cont** 
 ode -c static/js/app.js (100% Passed).
 - Chạy bộ kiểm thử tự động toàn diện: **148/148 unit tests PASSED 100%** (python manage.py test --keepdb).
 
+## [v4.7.4] - 2026-10-27 (Sửa Lỗi Lọc Quyết Toán Gom Chuyến: Fallback Ngày Tạo created_at Cho Chuyến Thiếu loading_date)
+
+### 1. Khắc Phục Lỗi Ẩn Chuyến Xe Tại Màn Hình Quyết Toán:
+- **Nguyên nhân cốt lõi:** Tại API truy vấn gom chuyến quyết toán (DriverBatchSettlementQueryAPIView), hệ thống lọc nghiêm ngặt loading_date mà không có fallback sang created_at khi loading_date là NULL. Do đó, các chuyến xe tạo nhanh tại hiện trường chưa kịp nhập ngày hẹn đóng hàng bị rơi vào khoảng trống dữ liệu khi áp dụng bộ lọc kỳ (Tháng này, Hôm nay...).
+- **Giải pháp xử lý:** Bổ sung điều kiện fallback đồng bộ với AccountingAPIView: Q(loading_date__gte=from_date) | Q(loading_date__isnull=True, created_at__date__gte=from_date).
+- **Kết quả:** Chuyến xe hoàn tất (như DV.2610.011) lập tức xuất hiện đầy đủ trong danh sách Quyết toán gom chuyến, hỗ trợ cả 3 chế độ gom nhóm: Theo Tài Xế, Theo Khách Hàng và Theo Đầu Xe.
+
 ## [v4.7.3] - 2026-10-27 (Chuẩn Hóa Đồng Bộ Giao Diện Toàn Ứng Dụng: Xe & Bãi, Hành Chính & Nhân Sự, Kế Toán, Dịch Vụ Hải Quan - Thanh Điều Khiển 1 Dòng Cố Định h-10, Zero Layout Shift & Bỏ Tiêu Đề Thừa)
 
 ### 1. Đồng Nhất Cấu Trúc Bố Trí Từ Trên Xuống Toàn Toàn Bộ Ứng Dụng (Top-Down SaaS Hierarchy):

@@ -890,18 +890,18 @@ class DriverBatchSettlementQueryAPIView(APIView):
             'expenses', 'driver_advances', 'documents'
         ).order_by('-loading_date', '-id')
 
-        # TUYỆT ĐỐI KHÔNG FALLBACK created_at: Chỉ lọc đúng ngày vận hành loading_date
+        # Lọc theo ngày đóng hàng (loading_date), fallback sang ngày tạo (created_at) nếu chuyến chưa có loading_date
         if from_date_str:
             try:
                 from_date = datetime.datetime.strptime(from_date_str, '%Y-%m-%d').date()
-                trips_qs = trips_qs.filter(loading_date__gte=from_date)
+                trips_qs = trips_qs.filter(Q(loading_date__gte=from_date) | Q(loading_date__isnull=True, created_at__date__gte=from_date))
             except ValueError:
                 pass
 
         if to_date_str:
             try:
                 to_date = datetime.datetime.strptime(to_date_str, '%Y-%m-%d').date()
-                trips_qs = trips_qs.filter(loading_date__lte=to_date)
+                trips_qs = trips_qs.filter(Q(loading_date__lte=to_date) | Q(loading_date__isnull=True, created_at__date__lte=to_date))
             except ValueError:
                 pass
 
