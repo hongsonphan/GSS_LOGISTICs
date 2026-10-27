@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.1] - 2026-10-27 (Tối Ưu Thị Giác Phân Hệ Kinh Doanh: Bỏ Tiêu Đề Thừa, Đồng Nhất Hiệu Ứng Hover & Triệt Tiêu Xê Dịch Chiều Cao Tab)
+
+### 1. Tinh Gọn Giao Diện & Đồng Nhất Bố Cục:
+- **Loại Bỏ Tiêu Đề Lặp Lại:**
+  * Bỏ hoàn toàn dòng tiêu đề `📈 Tổng Hợp Chỉ Số Kinh Doanh & Kế Hoạch Vận Chuyển` trên đầu phân hệ Kinh Doanh. 5 thẻ KPI chiến lược được đẩy lên đầu trang, đồng bộ 100% với phong cách phân hệ Điều Vận.
+  * Tích hợp nút `Làm Mới` nhỏ gọn trực tiếp vào thanh điều khiển subtabs bên phải.
+
+### 2. Triệt Tiêu Hiện Tượng Nhảy Chiều Cao & Đồng Nhất Hover Tab (Zero Layout Shift):
+- **Cố Định Kích Thước Pixel-Perfect:**
+  * Cố định chiều cao `h-10` (40px) và `box-border` cho cả 2 nút tab (`1. Báo Giá & Hợp Đồng Khách Hàng` và `2. Booking / Đơn Đặt Hàng`).
+  * Sử dụng `border-2` cho cả 2 trạng thái: Active có viền màu thương hiệu (`border-indigo-600` hoặc `border-teal-600`), Inactive có `border-transparent`. Nhờ đó, việc chuyển đổi giữa 2 tab không làm tăng giảm độ dày viền hay padding, triệt tiêu 100% hiện tượng xê dịch/nhảy giật chiều cao màn hình.
+- **Đồng Nhất Hiệu Ứng Hover & Active Chuẩn Hình 2:**
+  * Đồng nhất style active theo phong cách viền màu nổi bật và nền sáng nhẹ (`border-2 bg-indigo-50/70 text-indigo-900` và `border-2 bg-teal-50/70 text-teal-900`).
+  * Trạng thái inactive khi hover đều chuyển màu mượt mà: `hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 transition-all`.
+
+### 3. Kỹ Thuật & Đảm Bảo Khả Năng Vận Hành:
+- Cập nhật đồng bộ trong `templates/views/view_sales.html`, `static/js/app.js` và `static/js/modules/sales.js`.
+- Nâng asset cache version lên `?v=2.9.72` trong `templates/base.html`.
+- Kiểm thử cú pháp JS: 100% Passed.
+- Chạy bộ kiểm thử tự động toàn diện: **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.7.0] - 2026-10-27 (Tối Ưu Không Gian Chiều Dọc Phân Hệ Kinh Doanh: Tích Hợp Subtabs 1 Dòng Trực Tiếp & Loại Bỏ Header Lặp Lại)
 
 ### 1. Tinh Gọn Giao Diện Tab Con Phân Hệ Kinh Doanh (Subtabs Compact Integration):
