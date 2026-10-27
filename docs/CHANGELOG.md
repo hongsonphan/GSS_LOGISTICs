@@ -55,6 +55,13 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 - Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/column_manager.js` (100% Passed).
 - Chạy toàn bộ bộ kiểm thử tự động của dự án: **156/156 unit tests PASSED 100%** (`python manage.py test --keepdb`).
 
+## [v4.7.17] - 2026-10-27 (Dọn Dẹp Thẻ HTML Bị Lặp & Phục Hồi Toàn Vẹn Bố Cục Trang Kế Toán)
+
+### 1. Phân Hệ Tài Chính - Kế Toán (Khắc Phục Vỡ Bố Cục Giao Diện):
+- **Nguyên Nhân:** Khi thay thế Subtab 5, một khối bảng HTML cũ kèm 3 thẻ đóng </div> bị sót lại bên dưới Subtab 5, làm đóng sớm khối container chính của toàn trang, dẫn đến Dashboard Ban Giám Đốc và Trang Kế toán bị render song song sang hai bên.
+- **Khắc Phục:** Loại bỏ triệt để 41 dòng HTML trùng lặp dư thừa trong 	emplates/views/view_accounting.html. Cân bằng chính xác các thẻ đóng mở <div>, khôi phục layout chuẩn của toàn bộ hệ thống.
+- **Cache Buster:** Nâng version lên ?v=2.9.88 trong 	emplates/base.html.
+
 ## [v4.7.16] - 2026-10-27 (Hiển Thị Số Tiền Hoàn Ứng 20 Triệu & Đồng Bộ Layout Chuẩn Tab Quyết Toán Khách Hàng)
 
 ### 1. Phân Hệ Tài Chính - Kế Toán (Quỹ Điều Vận - Cột Đã Hoàn Ứng Về Cty):
