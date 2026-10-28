@@ -88,8 +88,21 @@ jobs:
       - name: Semgrep (p/django, p/python)
         run: |
           pip install semgrep
-          semgrep scan --config p/django --config p/python --metrics=off --error \
-            --exclude 'tests*' --exclude 'test_*' --exclude migrations --exclude static apps core config
+          semgrep scan --config p/django --config p/python --metrics=off --json -o semgrep.json \
+            --exclude 'tests*' --exclude 'test_*' --exclude migrations --exclude static apps core config || true
+          # Mỗi phát hiện thành một annotation (xem được trong tab Actions và qua API check-runs)
+          python3 - <<'PY'
+          import json, sys, collections
+          r = json.load(open('semgrep.json'))['results']
+          g = collections.defaultdict(list)
+          for x in r:
+              g[x['check_id'].split('.')[-1]].append(f"{x['path']}:{x['start']['line']}")
+          # GitHub giới hạn ~10 annotation/bước -> gom theo luật
+          for rule, locs in sorted(g.items(), key=lambda kv: -len(kv[1])):
+              print(f"::warning title=semgrep {rule}::{len(locs)} chỗ: {', '.join(locs[:8])}")
+          print(f'Semgrep: {len(r)} phát hiện, {len(g)} luật')
+          sys.exit(1 if r else 0)
+          PY
 
   secrets:
     runs-on: ubuntu-latest
