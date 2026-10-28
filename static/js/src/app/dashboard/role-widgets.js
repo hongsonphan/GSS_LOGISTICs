@@ -50,11 +50,11 @@ function renderRoleKpiCards(cards) {
             </div>
             
             <div class="space-y-1 mt-2 pt-2 border-t border-slate-100">
-                <div class="flex items-center justify-between text-[11px] 2xl:text-xs font-semibold text-slate-600 gap-1 truncate">
-                    <span class="truncate">${card.line_1 || ''}</span>
+                <div class="flex items-center justify-between text-[11px] 2xl:text-xs font-semibold text-slate-600 gap-1 leading-snug">
+                    <span class="min-w-0">${card.line_1 || ''}</span>
                 </div>
-                <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
-                    <span class="truncate">${card.line_2 || ''}</span>
+                <div class="flex items-end justify-between gap-1 text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60 leading-snug">
+                    <span class="min-w-0">${card.line_2 || ''}</span>
                     <span class="${t.link} font-black group-hover:translate-x-0.5 transition-transform flex items-center font-heading shrink-0 ml-1">
                         ${card.action_label || 'Xem'} <i class="ph ph-arrow-right ml-0.5 font-bold text-[11px]"></i>
                     </span>

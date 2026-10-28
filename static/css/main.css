@@ -743,6 +743,21 @@ button[class*="bg-red-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled
     background-color: #f0fdfa !important;
 }
 
+/* Ô dữ liệu của cột Thao tác ghim theo tiêu đề: áp cho mọi bảng có tiêu đề cột cuối là "actions",
+   không phụ thuộc việc từng dòng có gắn class cell-actions hay không (trước đây chỉ tiêu đề được ghim). */
+.erp-table:has(thead th[data-col-key="actions"]:last-child) tbody tr > td:last-child:not([colspan]),
+.bim-table:has(thead th[data-col-key="actions"]:last-child) tbody tr > td:last-child:not([colspan]) {
+    position: sticky;
+    right: 0;
+    z-index: 5;
+    background-color: #ffffff;
+    box-shadow: -2px 0 5px -1px rgba(0, 0, 0, 0.06);
+}
+.erp-table:has(thead th[data-col-key="actions"]:last-child) tbody tr:hover > td:last-child:not([colspan]),
+.bim-table:has(thead th[data-col-key="actions"]:last-child) tbody tr:hover > td:last-child:not([colspan]) {
+    background-color: #f0fdfa;
+}
+
 /* Hàng dữ liệu đơn (Single-line row): chiều cao chuẩn ~34px - 36px */
 .erp-table tbody td, .bim-table tbody td, table.erp-table tbody td, table.bim-table tbody td {
     padding: 6px 12px;
@@ -1612,4 +1627,32 @@ body.bim-col-resizing * {
 .erp-table td .truncate,
 .erp-table td [class*="max-w-"] {
     max-width: 100% !important;
+}
+
+/* =====================================================================
+   CHUẨN HOÁ TRÌNH BÀY (rà soát giao diện 10/2026): chữ trên nút không rớt dòng, cụm nút tự xuống hàng
+   ===================================================================== */
+#detail-id, #detail-status-badge { white-space: nowrap; }
+#trip-detail-header-actions > button,
+#trip-detail-header-actions > a { white-space: nowrap; }
+
+.report-period-btn,
+#btn-back-to-trips { white-space: nowrap; }
+@media (max-width: 639px) {
+    /* Điện thoại: nút quay lại chỉ còn biểu tượng (đã có tooltip) để đầu trang chi tiết chuyến không bị chật */
+    #trip-detail-back-label { display: none; }
+    #btn-back-to-trips { margin-right: 0.5rem; }
+}
+
+/* Thông báo "chưa có dữ liệu" trong bảng cuộn ngang: ghim theo khung nhìn, không căn giữa theo toàn bộ bề rộng bảng */
+.erp-table tbody td[colspan] > div,
+.bim-table tbody td[colspan] > div {
+    position: sticky;
+    left: 0;
+    max-width: calc(100vw - 360px);
+    white-space: normal;
+}
+@media (max-width: 1023px) {
+    .erp-table tbody td[colspan] > div,
+    .bim-table tbody td[colspan] > div { max-width: calc(100vw - 48px); }
 }
