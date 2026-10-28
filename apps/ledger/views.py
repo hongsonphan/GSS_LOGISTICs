@@ -6,8 +6,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import get_default_company
 from core.permissions import CanViewFinancialReports
+from core.tenant import company_for_user
 
 from . import reports
 from .models import Account
@@ -16,8 +16,7 @@ XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 
 def _company(request):
-    employee = getattr(request.user, 'employee', None)
-    return getattr(employee, 'company', None) or get_default_company()
+    return company_for_user(request.user)
 
 
 def _period(request):

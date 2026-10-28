@@ -71,3 +71,36 @@ class AuditLogTestCase(TestCase):
         self.client.force_login(user)
         self.client.get("/healthz/")
         self.assertEqual(AuditLog.objects.filter(object_id=str(c.pk), action="create").first().actor_label, "hệ thống")
+
+
+class TenantContextTests(TestCase):
+    def test_new_records_follow_user_company(self):
+        from django.contrib.auth.models import User
+        from django.test import RequestFactory
+
+        from apps.customers.models import Customer
+        from apps.personnel.models import Employee, EmployeeRole
+        from core.models import Company, get_default_company
+        from core.tenant import TenantMiddleware, scope_queryset
+
+        default = get_default_company()
+        other = Company.objects.create(code='KHAC', name='Công ty khác')
+        user = User.objects.create_user('nv_khac', password='Pw-Tenant#2026')
+        Employee.objects.create(user=user, code='NVK1', full_name='NV công ty khác', phone_number='0900000201',
+                                role=EmployeeRole.SALESMAN, company=other)
+        request = RequestFactory().get('/')
+        request.user = user
+        created = {}
+
+        def view(req):
+            created['c'] = Customer.objects.create(code='KH_KHAC', name='Khách công ty khác')
+            created['company'] = req.company
+            return None
+
+        TenantMiddleware(view)(request)
+        self.assertEqual(created['c'].company, other)
+        self.assertEqual(created['company'], other)
+        self.assertEqual(Customer.objects.create(code='KH_MD', name='Ngoài request').company, default)
+        with self.settings(TENANT_ENFORCE=True):
+            self.assertEqual(list(scope_queryset(Customer.objects.all(), request)), [created['c']])
+        self.assertEqual(scope_queryset(Customer.objects.all(), request).count(), 2)

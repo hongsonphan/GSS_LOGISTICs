@@ -265,7 +265,7 @@ class BimLogisticsCoreTestCase(TestCase):
             'password': 'Password@2026',
         })
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'localStorage.setItem')
+        self.assertContains(response, 'window.location.replace')
 
         # Kiểm tra đăng xuất
         logout_res = self.client.get('/logout/')

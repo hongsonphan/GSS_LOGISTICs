@@ -444,12 +444,11 @@ async function submitCustomsDeclarationForm(e) {
     const method = isEdit ? 'PUT' : 'POST';
 
     try {
-        const token = localStorage.getItem('access_token');
+        const headers = getAuthHeaders();
+        delete headers['Content-Type']; // để trình duyệt tự đặt multipart boundary
         const res = await fetch(url, {
             method: method,
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
+            headers: headers,
             body: formData
         });
 

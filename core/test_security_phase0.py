@@ -128,4 +128,12 @@ class Phase0SecurityTestCase(TestCase):
     def test_login_success(self):
         res = Client().post("/login/", {"username": "sec_staff", "password": "Str0ng-Pass-2026!"})
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, "localStorage.setItem('access_token'")
+        self.assertNotContains(res, "localStorage.setItem('access_token'")
+        self.assertIn('sessionid', res.cookies)
+        self.assertTrue(res.cookies['sessionid']['httponly'])
+
+    def test_session_api_requires_csrf(self):
+        c = Client(enforce_csrf_checks=True)
+        c.force_login(User.objects.get(username="sec_staff"))
+        self.assertEqual(c.get("/api/auth/me/").status_code, 200)
+        self.assertEqual(c.post("/api/collaboration/news/posts/", {}, content_type="application/json").status_code, 403)

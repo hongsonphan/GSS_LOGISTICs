@@ -136,7 +136,8 @@ class CompanyOwnedModel(models.Model):
 
     def save(self, *args, **kwargs):
         if self.company_id is None:
-            self.company = get_default_company()
+            from core.tenant import current_company
+            self.company = current_company() or get_default_company()
             update_fields = kwargs.get('update_fields')
             if update_fields is not None and 'company' not in update_fields:
                 kwargs['update_fields'] = list(update_fields) + ['company']

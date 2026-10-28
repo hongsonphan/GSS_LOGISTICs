@@ -79,6 +79,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'core.audit.AuditContextMiddleware',
+    'core.tenant.TenantMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -330,3 +331,7 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAdminUser'],
 }
+
+# Đa doanh nghiệp: bật để mọi truy vấn qua core.tenant.scope_queryset chỉ thấy dữ liệu công ty của người dùng
+TENANT_ENFORCE = _env_bool('TENANT_ENFORCE', False)
+LEDGER_AUTO_POST = _env_bool('LEDGER_AUTO_POST', True)

@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse, Http404
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
-from rest_framework_simplejwt.tokens import RefreshToken
 from apps.personnel.models import Employee
 from apps.master_data.models import CompanyProfile
 
@@ -78,26 +77,18 @@ def login_view(request):
             else:
                 request.session.set_expiry(0)  # Hết hạn khi đóng trình duyệt
 
-            # Cấp cặp JWT Token cho client SPA
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            refresh_token = str(refresh)
-
-            # JSON dumps an toàn tuyệt đối, chống XSS injection
-            safe_access = json.dumps(access_token)
-            safe_refresh = json.dumps(refresh_token)
+            # Web dùng phiên đăng nhập (cookie HttpOnly + CSRF), không lưu JWT trong localStorage nữa
+            # (JWT vẫn cấp qua /api/auth/token/ cho ứng dụng di động / tích hợp).
+            # Trang trung gian dọn token cũ còn sót trong trình duyệt rồi chuyển tiếp.
             safe_redirect_target = json.dumps(next_url)
-
-            # Trả về trang trung gian lưu token vào localStorage và chuyển tiếp
             html_redirect = f"""<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <title>Đang đăng nhập...</title>
     <script>
-        localStorage.setItem('access_token', {safe_access});
-        localStorage.setItem('refresh_token', {safe_refresh});
-        window.location.href = {safe_redirect_target};
+        try {{ localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); }} catch (e) {{}}
+        window.location.replace({safe_redirect_target});
     </script>
 </head>
 <body style="font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0fdfa; color: #0d9488;">
