@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'drf_spectacular',
     
     # Core platform
     'core',
@@ -213,6 +214,7 @@ REST_FRAMEWORK = {
         'gps': '30/minute',
     },
     'EXCEPTION_HANDLER': 'core.exceptions.custom_exception_handler',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DATETIME_FORMAT': '%d/%m/%Y %H:%M',
@@ -311,3 +313,11 @@ LOGGING = {
     },
 }
 
+# Tài liệu API tự sinh (OpenAPI 3) — chỉ quản trị viên xem được tại /api/docs/
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'BIM Logistics API',
+    'DESCRIPTION': 'API nội bộ hệ thống quản lý vận tải BIM Logistics',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAdminUser'],
+}

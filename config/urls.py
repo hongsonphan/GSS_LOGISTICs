@@ -67,11 +67,15 @@ from rest_framework_simplejwt.views import (
 )
 from core.auth_views import CurrentUserAPIView
 from core.health import healthz
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework.permissions import IsAdminUser
 
 urlpatterns = [
     path('favicon.ico', RedirectView.as_view(url='/static/favicon.ico', permanent=True)),
     path('robots.txt', RedirectView.as_view(url='/static/robots.txt', permanent=True)),
     path('healthz/', healthz, name='healthz'),
+    path('api/schema/', SpectacularAPIView.as_view(permission_classes=[IsAdminUser]), name='api-schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='api-schema', permission_classes=[IsAdminUser]), name='api-docs'),
     path('admin/', admin.site.urls),
     
     # Giao diện Web SPA & Xác thực
