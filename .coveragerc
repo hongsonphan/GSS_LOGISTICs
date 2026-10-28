@@ -1,0 +1,14 @@
+[run]
+source = apps,core,config
+omit =
+    */migrations/*
+    */tests*
+    */test_*
+    config/asgi.py
+    config/wsgi.py
+
+[report]
+# Ngưỡng nghiệm thu: không được giảm dưới mức này (hiện ~74%)
+fail_under = 72
+skip_covered = True
+sort = Cover

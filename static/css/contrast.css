@@ -1,0 +1,7 @@
+/* =====================================================================
+   ĐỘ TƯƠNG PHẢN CHỮ (WCAG 2.1 AA ≥ 4.5:1) — chỉ áp cho chữ, biểu tượng giữ màu cũ
+   slate-400 (2.6:1) -> slate-500, teal-600 (3.7:1) -> teal-700, amber-600 (3.2:1) -> amber-700
+   ===================================================================== */
+.text-slate-400:not(i):not(svg):not(input):not(textarea) { color: #64748b !important; }
+.text-teal-600:not(i):not(svg) { color: #0f766e !important; }
+.text-amber-600:not(i):not(svg) { color: #b45309 !important; }

@@ -44,7 +44,7 @@ jobs:
           node-version: "22"
 
       - name: Cài thư viện
-        run: pip install -r requirements.txt pip-audit ruff
+        run: pip install -r requirements.txt pip-audit ruff bandit coverage
 
       - name: app.js khớp mã nguồn module
         run: python scripts/build_app_js.py --check
@@ -64,11 +64,32 @@ jobs:
       - name: Django system check (cấu hình production)
         run: python manage.py check --deploy --fail-level ERROR
 
-      - name: Chạy toàn bộ test
-        run: python manage.py test --noinput --parallel 4
+      - name: Chạy toàn bộ test + đo độ phủ (ngưỡng trong .coveragerc)
+        run: |
+          coverage run manage.py test --noinput
+          coverage report > coverage.txt || { tail -30 coverage.txt; exit 1; }
+          tail -30 coverage.txt
+
+      - name: Quét bảo mật mã nguồn (Bandit, chặn mức Medium trở lên)
+        run: bandit -q -r apps core config -x '*/tests*,*/test_*,*/migrations/*' -ll
 
       - name: Lỗ hổng thư viện đã biết
         run: pip-audit -r requirements.txt
+
+  semgrep:
+    runs-on: ubuntu-latest
+    # Bộ luật cộng đồng thay đổi theo thời gian: báo cáo, không chặn triển khai
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Semgrep (p/django, p/python)
+        run: |
+          pip install semgrep
+          semgrep scan --config p/django --config p/python --metrics=off --error \
+            --exclude 'tests*' --exclude 'test_*' --exclude migrations --exclude static apps core config
 
   secrets:
     runs-on: ubuntu-latest

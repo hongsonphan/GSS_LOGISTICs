@@ -14,6 +14,7 @@ core/time-picker.js
 core/router.js
 core/fit-text.js
 core/mobile.js
+core/a11y.js
 # 2. Dashboard
 dashboard/period-filter.js
 dashboard/role-widgets.js
