@@ -4193,7 +4193,8 @@ window.addEventListener('popstate', (event) => {
 /**
  * Tự co chữ số liệu KPI cho vừa khung (không rớt dòng, không bị cắt).
  * Chỉ giảm cỡ chữ khi số không vừa; số ngắn giữ nguyên cỡ thiết kế. Tự canh lại khi đổi kích thước
- * cửa sổ hoặc khi số liệu được cập nhật. Thêm thuộc tính data-fit-text để áp cho phần tử khác.
+ * cửa sổ hoặc khi số liệu được cập nhật. Thêm thuộc tính data-fit-text để áp cho phần tử khác,
+ * data-fit-min="9" để đặt cỡ chữ nhỏ nhất (mặc định 15px).
  */
 (function () {
     const SELECTOR = 'p.text-3xl.tabular-nums, p.text-2xl.tabular-nums, p.text-xl.tabular-nums.font-black, [data-fit-text]';
@@ -4205,8 +4206,9 @@ window.addEventListener('popstate', (event) => {
         el.style.fontSize = '';
         if (!el.clientWidth) return;
         let size = parseFloat(getComputedStyle(el).fontSize);
+        const minPx = parseFloat(el.dataset.fitMin) || MIN_PX;
         let guard = 30;
-        while (el.scrollWidth > el.clientWidth + 1 && size > MIN_PX && guard-- > 0) {
+        while (el.scrollWidth > el.clientWidth + 1 && size > minPx && guard-- > 0) {
             size -= 1;
             el.style.fontSize = size + 'px';
         }

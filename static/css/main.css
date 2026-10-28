@@ -1650,12 +1650,15 @@ body.bim-col-resizing * {
 .bim-table tbody td[colspan] > div {
     position: sticky;
     left: 0;
-    max-width: calc(100vw - 360px);
+    width: calc(100vw - 360px) !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     white-space: normal;
 }
 @media (max-width: 1023px) {
     .erp-table tbody td[colspan] > div,
-    .bim-table tbody td[colspan] > div { max-width: calc(100vw - 48px); }
+    .bim-table tbody td[colspan] > div { width: calc(100vw - 48px) !important; }
 }
 
 /* Nút chỉ gồm chữ + biểu tượng: không rớt dòng trên màn hình từ 640px (nút dạng thẻ có khối div/p bên trong không bị ảnh hưởng) */
