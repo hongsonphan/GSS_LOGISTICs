@@ -2,7 +2,7 @@
 # =============================================================================
 # TRIỂN KHAI BIM LOGISTICS TRÊN VPS (chạy trong thư mục repo, sau khi đã git pull bản mới)
 #   bash scripts/deploy_vps.sh
-# Các bước: kiểm tra .env -> sao lưu CSDL + media -> cập nhật Nginx (media có kiểm quyền, gzip)
+# Các bước: kiểm tra .env -> sao lưu CSDL + media -> chạy thử trên bản sao CSDL -> cập nhật Nginx (media có kiểm quyền, gzip)
 #           -> build lại image -> khởi động (migrate + collectstatic) -> kiểm tra /healthz/
 # Nếu web không lên được: tự quay về commit cũ (ghi trong ../BIM_LOGISTICS_rollback_commit.txt).
 # =============================================================================
@@ -31,6 +31,22 @@ grep -q '^SECURE_SSL_REDIRECT=' .env || printf 'SECURE_SSL_REDIRECT=True\n' >> .
 
 step "2/7 Sao lưu CSDL và media trước khi cập nhật"
 bash scripts/backup_vps.sh
+
+step "2b/7 Build image mới và CHẠY THỬ trên bản sao CSDL production (chưa đụng dữ liệu thật)"
+$DC build web
+PG="$DC exec -T db"
+$PG dropdb -U bim_logistics_user --if-exists bim_preflight
+$PG createdb -U bim_logistics_user bim_preflight
+$PG sh -c 'pg_dump -U bim_logistics_user -d bim_logistics_db --no-owner | psql -q -U bim_logistics_user -d bim_preflight' >/dev/null
+if $DC run --rm --no-deps -T -e DB_NAME=bim_preflight web sh -c \
+    "python manage.py migrate --noinput && python manage.py assign_default_company && python manage.py sync_trip_data && python manage.py rebuild_ledger && python manage.py check"; then
+    echo "Chạy thử trên bản sao CSDL: ĐẠT"
+    $PG dropdb -U bim_logistics_user bim_preflight
+else
+    echo "CHẠY THỬ THẤT BẠI -> DỪNG, hệ thống đang chạy KHÔNG bị thay đổi (CSDL bản sao: bim_preflight để kiểm tra)"
+    [ -f "$ROLLBACK_FILE" ] && git checkout -B master "$(cat "$ROLLBACK_FILE")" || true
+    exit 1
+fi
 
 step "3/7 Cập nhật Nginx: /media/ phải qua Django kiểm quyền, bật gzip"
 NGINX_FILE="$($SUDO grep -rl 'server_name logistics.bim.info.vn' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1 || true)"
@@ -70,14 +86,13 @@ step "4/7 Quyền thư mục cho container chạy bằng user thường (UID 100
 mkdir -p media staticfiles
 $SUDO chown -R 1000:1000 media staticfiles
 
-step "5/7 Build lại image và khởi động (tự migrate + collectstatic)"
-$DC build web
+step "5/7 Khởi động bản mới (tự migrate + collectstatic)"
 $DC up -d web
 
 step "6/7 Kiểm tra hệ thống"
 ok=""
 for i in $(seq 1 30); do
-    if curl -fsS http://127.0.0.1:8085/healthz/ >/dev/null 2>&1; then ok=1; break; fi
+    if curl -fsS -H "Host: logistics.bim.info.vn" -H "X-Forwarded-Proto: https" http://127.0.0.1:8085/healthz/ >/dev/null 2>&1; then ok=1; break; fi
     sleep 4
 done
 if [ -z "$ok" ]; then

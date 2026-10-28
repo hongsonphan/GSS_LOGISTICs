@@ -283,6 +283,7 @@ def _env_bool(name, default):
     return os.environ.get(name, str(default)).lower() in ('true', '1')
 
 SECURE_SSL_REDIRECT = _env_bool('SECURE_SSL_REDIRECT', False)
+SECURE_REDIRECT_EXEMPT = [r'^healthz/$']  # kiểm tra nội bộ (Docker/script triển khai) gọi qua HTTP
 # Cookie chỉ gửi qua HTTPS khi chạy production (mặc định theo DEBUG, ghi đè được bằng .env)
 SESSION_COOKIE_SECURE = _env_bool('SESSION_COOKIE_SECURE', not DEBUG)
 CSRF_COOKIE_SECURE = _env_bool('CSRF_COOKIE_SECURE', not DEBUG)
