@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'apps.master_data',
     'apps.customs',
     'apps.collaboration',
+    'apps.ledger',
 ]
 
 MIDDLEWARE = [

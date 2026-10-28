@@ -137,6 +137,7 @@ urlpatterns = [
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('api/auth/token/verify/', TokenVerifyView.as_view(), name='token-verify'),
     path('api/auth/token/blacklist/', TokenBlacklistView.as_view(), name='token-blacklist'),
+    path('api/ledger/', include('apps.ledger.urls')),
     path('api/auth/me/', CurrentUserAPIView.as_view(), name='auth-me'),
 
     # REST APIs

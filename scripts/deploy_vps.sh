@@ -86,6 +86,8 @@ if [ -z "$ok" ]; then
     exit 1
 fi
 $DC exec -T web python manage.py assign_default_company
+$DC exec -T web python manage.py sync_trip_data
+$DC exec -T web python manage.py rebuild_ledger
 
 step "7/7 Lịch sao lưu hằng ngày (2h sáng)"
 CRON_LINE="0 2 * * * $APP_DIR/scripts/backup_vps.sh >> /home/ubuntu/backups/backup.log 2>&1"

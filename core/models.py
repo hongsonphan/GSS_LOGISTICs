@@ -99,6 +99,13 @@ class Company(TimeStampedModel):
     tax_code = models.CharField(max_length=30, blank=True, default='')
     is_default = models.BooleanField(default=False, help_text='Công ty mặc định gán cho dữ liệu mới khi chưa chọn công ty')
     is_active = models.BooleanField(default=True)
+    accounting_regime = models.CharField(
+        max_length=10, default='TT133',
+        choices=[('TT133', 'Thông tư 133/2016 (DN nhỏ và vừa)'), ('TT200', 'Thông tư 200/2014')],
+        help_text='Chế độ kế toán áp dụng: quyết định hệ thống tài khoản và mẫu sổ sách')
+    ledger_account_overrides = models.JSONField(
+        default=dict, blank=True,
+        help_text='Ghi đè tài khoản hạch toán mặc định, vd {"fuel": "1521"} (xem apps/ledger/charts.py)')
 
     class Meta:
         verbose_name = 'Doanh nghiệp (tenant)'
