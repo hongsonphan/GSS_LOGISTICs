@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth.views import redirect_to_login
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.http import HttpResponse, Http404
@@ -149,7 +150,7 @@ def logout_view(request):
 def index_view(request, *args, **kwargs):
     """Giao diện Quản trị Điều vận Bim Logistics (Hỗ trợ SPA Clean Semantic Routes)."""
     if not request.user.is_authenticated:
-        return redirect(f"/login/?next={request.path}")
+        return redirect_to_login(request.get_full_path(), "/login/")
 
     employee = getattr(request.user, 'employee', None)
 
@@ -247,7 +248,7 @@ def help_view(request):
     Bảo mật: Yêu cầu nhân viên đăng nhập hệ thống trước khi xem tài liệu SOP nội bộ.
     """
     if not request.user.is_authenticated:
-        return redirect(f"/login/?next={request.path}")
+        return redirect_to_login(request.get_full_path(), "/login/")
 
     employee = getattr(request.user, 'employee', None)
     return render(request, 'help.html', {
@@ -549,7 +550,7 @@ def news_detail_page_view(request, post_identifier):
 
     # 3. Yêu cầu đăng nhập hệ thống
     if not request.user.is_authenticated:
-        return redirect(f"/login/?next={request.path}")
+        return redirect_to_login(request.get_full_path(), "/login/")
 
     employee = getattr(request.user, 'employee', None)
     is_privileged = (
