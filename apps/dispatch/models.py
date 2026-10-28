@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from core.models import TimeStampedModel, SoftDeleteModel
+from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
 class ShipmentType(models.TextChoices):
     IMPORT = 'IMPORT', 'Hàng Nhập'
@@ -20,7 +20,7 @@ class TripStatus(models.TextChoices):
     COMPLETED = 'COMPLETED', 'Đã hoàn tất chuyến'
     CANCELLED = 'CANCELLED', 'Đã hủy'
 
-class DispatchTrip(TimeStampedModel, SoftDeleteModel):
+class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Bảng hạt nhân của toàn bộ hệ thống điều độ vận tải Bim Logistics.
     Quản lý luồng 10 bước, đối soát chứng từ và lợi nhuận chuyến xe.

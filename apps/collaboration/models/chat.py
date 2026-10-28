@@ -2,7 +2,7 @@ from datetime import timedelta
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from core.models import TimeStampedModel, SoftDeleteModel
+from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 from apps.personnel.models import Department, Employee
 
 
@@ -14,7 +14,7 @@ class RoomType(models.TextChoices):
     GROUP = 'GROUP', 'Nhóm Dự án / Tự tạo'
 
 
-class ChatRoom(TimeStampedModel, SoftDeleteModel):
+class ChatRoom(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Phòng trò chuyện & Kênh thảo luận văn phòng."""
     name = models.CharField(max_length=255, verbose_name="Tên phòng chat")
     room_type = models.CharField(

@@ -1,7 +1,7 @@
 from django.db import models
-from core.models import TimeStampedModel, SoftDeleteModel
+from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
-class Customer(TimeStampedModel, SoftDeleteModel):
+class Customer(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     CUSTOMER_GROUP_CHOICES = [
         ('COMMERCIAL_TRADING', 'Thương mại / Xuất nhập khẩu (Trading/XNK)'),
         ('FDI_ENTERPRISE', 'Doanh nghiệp FDI / Nhà máy sản xuất'),
@@ -50,7 +50,7 @@ class Customer(TimeStampedModel, SoftDeleteModel):
         display_name = f"[{self.short_name}] {self.name}" if self.short_name else self.name
         return f"{display_name} ({self.code})"
 
-class RouteTariff(TimeStampedModel, SoftDeleteModel):
+class RouteTariff(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Biểu cước vận tải theo tuyến của khách hàng."""
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='tariffs')
     pickup_location = models.CharField(max_length=150) # CÁT LÁI, SPITC, VSIP 2...
@@ -97,7 +97,7 @@ class RouteTariff(TimeStampedModel, SoftDeleteModel):
         km_info = f" (~{self.estimated_km}km)" if self.estimated_km else ""
         return f"{self.customer.name}:{zone_info} {self.pickup_location} -> {self.delivery_location}{km_info} ({self.freight_price:,} đ)"
 
-class Quotation(TimeStampedModel, SoftDeleteModel):
+class Quotation(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Báo giá và Phễu bán hàng (CRM / Sales)."""
     quotation_code = models.CharField(max_length=30, unique=True, db_index=True) # BG-0916-01
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='quotations')
@@ -244,7 +244,7 @@ class BookingStatus(models.TextChoices):
     COMPLETED = 'COMPLETED', 'Đã điều đủ xe'
     CANCELLED = 'CANCELLED', 'Đã hủy'
 
-class BookingOrder(TimeStampedModel, SoftDeleteModel):
+class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Đơn hàng vận chuyển / Booking hãng tàu do bộ phận Sale / CS tiếp nhận.
     Là căn cứ để bộ phận Điều Vận kế thừa dữ liệu và phát lệnh điều xe.

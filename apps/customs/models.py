@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from core.models import TimeStampedModel, SoftDeleteModel
+from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 from apps.customers.models import Customer
 
 
@@ -25,7 +25,7 @@ class CustomsDirection(models.TextChoices):
     EXPORT = 'EXPORT', 'Xuất Khẩu'
 
 
-class CustomsDeclaration(TimeStampedModel, SoftDeleteModel):
+class CustomsDeclaration(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Quản lý Tờ Khai Hải Quan Điện Tử (VNACCS/VCIS).
     Phục vụ dịch vụ khai thuê hải quan, theo dõi phân luồng và liên kết chuyến xe/đơn hàng.

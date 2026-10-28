@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import TimeStampedModel, SoftDeleteModel
+from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
 class LocationType(models.TextChoices):
     PORT = 'PORT', 'Cảng Biển'
@@ -8,7 +8,7 @@ class LocationType(models.TextChoices):
     WAREHOUSE = 'WAREHOUSE', 'Kho Hàng / Nhà Máy'
     YARD = 'YARD', 'Bãi Đỗ Xe Công Ty'
 
-class Location(TimeStampedModel, SoftDeleteModel):
+class Location(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Danh mục Địa điểm, Cảng, ICD, Depot cont rỗng và Kho khách hàng.
     Chuẩn hóa lộ trình 3 điểm (Nơi lấy -> Kho giao -> Nơi hạ).
@@ -168,7 +168,7 @@ class PartnerType(models.TextChoices):
     GARAGE = 'GARAGE', 'Gara sửa chữa / Bảo dưỡng'
     SUPPLIER = 'SUPPLIER', 'Nhà cung cấp vật tư / Dịch vụ khác'
 
-class Subcontractor(TimeStampedModel, SoftDeleteModel):
+class Subcontractor(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Danh mục Nhà Xe Thầu Phụ / Đối Tác Vận Tải 3PL (Xe Bạn), Gara và Nhà Cung Cấp.
     Quản lý thông tin nhà xe, người điều hành và tài khoản ngân hàng phục vụ đối soát cước.
@@ -270,7 +270,7 @@ class SubcontractorDriver(TimeStampedModel, SoftDeleteModel):
         return f"{self.full_name} ({self.phone}) - {self.subcontractor.name}"
 
 
-class CompanyProfile(TimeStampedModel, SoftDeleteModel):
+class CompanyProfile(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Khai báo Thông tin Công ty & Tham số Hệ thống Cài đặt Tổng thể (System Settings).
     Lưu trữ pháp nhân doanh nghiệp, thông tin thuế, tài khoản ngân hàng và tham số tính cước.
@@ -388,7 +388,7 @@ class OpeningBalanceCategory(models.TextChoices):
     OTHER = 'OTHER', 'Số dư tài khoản khác'
 
 
-class OpeningBalance(TimeStampedModel, SoftDeleteModel):
+class OpeningBalance(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Số dư đầu kỳ tài chính theo Chuẩn Mực Kế Toán Doanh Nghiệp (TT 200/2014 & TT 133/2016).
     Cung cấp số dư ban đầu cho Sổ Quỹ (111, 112), Sổ Công nợ (131, 331), Tạm ứng (141) và Bảng Cân Đối Phát Sinh.

@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+from core.sequences import next_code
 from django.db import models, transaction
 from django.db.models import Sum, Count, Q, Avg
 from django.utils import timezone
@@ -2806,11 +2807,7 @@ class TripListCreateAPIView(APIView):
         now = timezone.now()
         yymm = now.strftime('%y%m')
         prefix = f"DV.{yymm}."
-        counter = DispatchTrip.all_objects.filter(trip_code__startswith=prefix).count() + 1
-        trip_code = f"{prefix}{counter:03d}"
-        while DispatchTrip.all_objects.filter(trip_code=trip_code).exists():
-            counter += 1
-            trip_code = f"{prefix}{counter:03d}"
+        trip_code = next_code(DispatchTrip, 'trip_code', prefix, 3)  # mã tuần tự an toàn, không trùng
 
         shipment_type_input = data.get('type', 'Nhập')
         type_mapping = {
@@ -5088,11 +5085,7 @@ class SalesAPIView(APIView):
             now = timezone.now()
             yymm = now.strftime('%y%m')
             bk_prefix = f"BK.{yymm}."
-            b_counter = BookingOrder.all_objects.filter(booking_code__startswith=bk_prefix).count() + 1
-            booking_code = f"{bk_prefix}{b_counter:03d}"
-            while BookingOrder.all_objects.filter(booking_code=booking_code).exists():
-                b_counter += 1
-                booking_code = f"{bk_prefix}{b_counter:03d}"
+            booking_code = next_code(BookingOrder, 'booking_code', bk_prefix, 3)  # mã tuần tự an toàn, không trùng
             
             loading_date = data.get('loading_date')
             if not loading_date:
@@ -5212,11 +5205,7 @@ class SalesAPIView(APIView):
             now = timezone.now()
             yymm = now.strftime('%y%m')
             q_prefix = f"BG.{yymm}."
-            q_counter = Quotation.all_objects.filter(quotation_code__startswith=q_prefix).count() + 1
-            q_code = f"{q_prefix}{q_counter:03d}"
-            while Quotation.all_objects.filter(quotation_code=q_code).exists():
-                q_counter += 1
-                q_code = f"{q_prefix}{q_counter:03d}"
+            q_code = next_code(Quotation, 'quotation_code', q_prefix, 3)  # mã tuần tự an toàn, không trùng
 
             valid_until_d = None
             if data.get('valid_until'):

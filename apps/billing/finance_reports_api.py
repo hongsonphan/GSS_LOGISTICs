@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+from core.sequences import next_code
 from django.db import transaction
 from django.db.models import Sum, Q, F, Count
 from django.utils import timezone
@@ -240,11 +241,7 @@ class CustomerReimbursablesAPIView(APIView):
             # Tự động tạo 1 phiếu thu vào Sổ Quỹ Thu - Chi (CashTransaction)
             yymm = now.strftime('%y%m')
             tx_prefix = f"PT.{yymm}."
-            last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
-            seq = 1
-            if last_tx and last_tx.code.split('.')[-1].isdigit():
-                seq = int(last_tx.code.split('.')[-1]) + 1
-            pt_code = f"{tx_prefix}{seq:03d}"
+            pt_code = next_code(CashTransaction, 'code', f"{tx_prefix}", 3)  # mã tuần tự an toàn, không trùng
             ref = debit_note_number or f"EXP-{len(expense_ids)}-ITEMS"
 
             CashTransaction.objects.create(
@@ -415,14 +412,7 @@ class CashBookAPIView(APIView):
         prefix = "PT" if t_type == TransactionType.INFLOW else "PC"
         yymm = t_date.strftime('%y%m')
         prefix_full = f"{prefix}.{yymm}."
-        last_tx = CashTransaction.all_objects.filter(code__startswith=prefix_full).order_by('-id').first()
-        seq = 1
-        if last_tx and last_tx.code.split('.')[-1].isdigit():
-            seq = int(last_tx.code.split('.')[-1]) + 1
-        code = f"{prefix_full}{seq:03d}"
-        while CashTransaction.all_objects.filter(code=code).exists():
-            seq += 1
-            code = f"{prefix_full}{seq:03d}"
+        code = next_code(CashTransaction, 'code', f"{prefix_full}", 3)  # mã tuần tự an toàn, không trùng
 
         tx = CashTransaction.objects.create(
             code=code,
@@ -815,11 +805,7 @@ class SubcontractorSettlementsAPIView(APIView):
             if rem > 0:
                 yymm = now.strftime('%y%m')
                 tx_prefix = f"PC.{yymm}."
-                last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
-                seq = 1
-                if last_tx and last_tx.code.split('.')[-1].isdigit():
-                    seq = int(last_tx.code.split('.')[-1]) + 1
-                pt_code = f"{tx_prefix}{seq:03d}"
+                pt_code = next_code(CashTransaction, 'code', f"{tx_prefix}", 3)  # mã tuần tự an toàn, không trùng
                 CashTransaction.objects.create(
                     code=pt_code,
                     transaction_type=TransactionType.OUTFLOW,

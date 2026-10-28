@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from core.models import TimeStampedModel, SoftDeleteModel
+from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
 class Department(models.TextChoices):
     ADMIN_ACC = 'ADMIN_ACC', 'Phòng Hành Chính & Kế Toán'
@@ -76,7 +76,7 @@ class PayrollPeriodStatus(models.TextChoices):
     PAID = 'PAID', 'Đã thanh toán (Chi quỹ)'
 
 
-class Employee(TimeStampedModel, SoftDeleteModel):
+class Employee(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Hồ sơ nhân sự toàn diện 360° Triền Võ Logistics.
     Quản lý đầy đủ định danh pháp lý, ngân hàng, BHXH, thuế TNCN, giấy phép lái xe và phân quyền.
@@ -415,7 +415,7 @@ class EmployeeDependent(TimeStampedModel, SoftDeleteModel):
         return f"{self.full_name} ({self.relationship}) - NV: {self.employee.full_name}"
 
 
-class LaborContract(TimeStampedModel, SoftDeleteModel):
+class LaborContract(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Hợp đồng lao động Triền Võ Logistics.
     Lưu vết thời hạn, mức lương, chế độ bảo hiểm và file scan hợp đồng có chữ ký.
@@ -860,7 +860,7 @@ class AllowanceType(TimeStampedModel):
         return f"[{self.code}] {self.name} ({self.get_category_display()})"
 
 
-class PayrollPeriod(TimeStampedModel, SoftDeleteModel):
+class PayrollPeriod(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Kỳ tính lương hàng tháng của Triền Võ Logistics (Payroll Period).
     Vòng đời quản lý: DRAFT ➔ REVIEWED ➔ LOCKED ➔ PAID.

@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import TimeStampedModel, SoftDeleteModel
+from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
 class ExpenseCategory(models.TextChoices):
     """
@@ -52,7 +52,7 @@ class ReimbursementStatus(models.TextChoices):
     BILLED = 'BILLED', 'Đã xuất Debit Note'
     COLLECTED = 'COLLECTED', 'Đã thu hồi tiền từ khách'
 
-class TripExpense(TimeStampedModel, SoftDeleteModel):
+class TripExpense(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Chi phí phát sinh hiện trường theo Bảng Kê Chi Phí thực tế của Triền Võ Logistics.
     Lưu vết đầy đủ hóa đơn điện tử, mã tra cứu, link tra cứu, tiền thuế VAT và ảnh chứng từ.
@@ -263,7 +263,7 @@ class SettlementDiffType(models.TextChoices):
     COMPANY_REIMBURSE = 'COMPANY_REIMBURSE', 'Công ty/Điều vận chi bù thêm'
 
 
-class DispatcherAdvanceFund(TimeStampedModel, SoftDeleteModel):
+class DispatcherAdvanceFund(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Quỹ Tạm Ứng Cấp 1: Công ty tạm ứng cho Điều vận để phục vụ chi phí đội xe.
     """
@@ -330,7 +330,7 @@ class DispatcherAdvanceFund(TimeStampedModel, SoftDeleteModel):
         return self.amount - self.total_disbursed + self.total_refunds_returned
 
 
-class DriverTripAdvance(TimeStampedModel, SoftDeleteModel):
+class DriverTripAdvance(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Quỹ Tạm Ứng Cấp 2: Tạm ứng theo từng Chuyến xe cho Tài xế để xử lý chi phát sinh hoặc chi hộ.
     """
@@ -461,7 +461,7 @@ class CashFlowCategory(models.TextChoices):
     PAYROLL_SALARY = 'PAYROLL_SALARY', 'Chi trả lương nhân viên & tài xế'
     OTHER_OUTFLOW = 'OTHER_OUTFLOW', 'Chi phí khác'
 
-class CashTransaction(TimeStampedModel, SoftDeleteModel):
+class CashTransaction(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Sổ Quỹ Thu - Chi Tổng Hợp & Quản Trị Dòng Tiền Vận Tải (Mẫu S03a-DN).
     Ghi nhận minh bạch dòng tiền thực tế qua Quỹ Tiền Mặt và Tài Khoản Ngân Hàng.
@@ -522,7 +522,7 @@ class SettlementStatus(models.TextChoices):
     CANCELLED = 'CANCELLED', 'Đã hủy'
 
 
-class CustomerInvoice(TimeStampedModel, SoftDeleteModel):
+class CustomerInvoice(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Bảng Kê Vận Chuyển & Hóa Đơn Khách Hàng (Accounts Receivable - AR).
     Gom nhiều chuyến xe (DispatchTrip) và các khoản chi hộ trong kỳ đối soát của 1 Khách hàng.
@@ -582,7 +582,7 @@ class CustomerInvoice(TimeStampedModel, SoftDeleteModel):
         return max(0, self.grand_total - self.paid_amount)
 
 
-class SubcontractorSettlement(TimeStampedModel, SoftDeleteModel):
+class SubcontractorSettlement(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Bảng Kê Đối Soát Nhà Xe Thầu Phụ / Xe Bạn (Accounts Payable - AP).
     Gom các chuyến xe chạy thuê ngoài để chốt công nợ phải trả cho Đối tác 3PL (TK 331).
@@ -632,7 +632,7 @@ class SubcontractorSettlement(TimeStampedModel, SoftDeleteModel):
         return f"[{self.code}] {self.subcontractor.name}: {self.payable_amount:,} đ ({self.get_status_display()})"
 
 
-class DriverPayrollSettlement(TimeStampedModel, SoftDeleteModel):
+class DriverPayrollSettlement(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Bảng Chốt Lương Chuyến & Quyết Toán Thu Nhập Tài Xế (Payroll Settlement).
     Cố định số liệu thu nhập sản lượng theo kỳ cho tài xế, trừ các khoản tạm ứng còn tồn.
@@ -685,7 +685,7 @@ class DriverPayrollSettlement(TimeStampedModel, SoftDeleteModel):
         return f"[{self.code}] {self.driver.full_name}: {self.net_salary:,} đ ({self.get_status_display()})"
 
 
-class DebitNote(TimeStampedModel, SoftDeleteModel):
+class DebitNote(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Bảng Kê Chi Hộ Riêng Biệt (Debit Note / Phí Nâng Hạ, Cược Cont, Kiểm Hóa).
     Tập hợp các khoản TripExpense có cờ is_on_behalf_of_customer để gửi chủ hàng thu tiền hoàn ứng.

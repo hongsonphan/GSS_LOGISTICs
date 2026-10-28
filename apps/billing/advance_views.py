@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+from core.sequences import next_code
 from django.db import transaction
 from django.db.models import Sum, Q, F
 from django.utils import timezone
@@ -257,11 +258,7 @@ class DispatcherFundCreateAPIView(APIView):
         # Sinh mã phiếu TUDV-YYYYMM-XXXX
         today = timezone.now().date()
         date_prefix = f"TUDV-{today.strftime('%Y%m')}"
-        last_fund = DispatcherAdvanceFund.objects.filter(code__startswith=date_prefix).order_by('-id').first()
-        seq = 1
-        if last_fund and last_fund.code.split('-')[-1].isdigit():
-            seq = int(last_fund.code.split('-')[-1]) + 1
-        code = f"{date_prefix}-{seq:04d}"
+        code = next_code(DispatcherAdvanceFund, 'code', f"{date_prefix}-", 4)  # mã tuần tự an toàn, không trùng
         # Mặc định tạo phiếu là PENDING (chờ duyệt xuất quỹ), trừ khi có cờ auto_approve
         auto_approve = request.data.get('auto_approve', False)
         curr_emp = getattr(request.user, 'employee', None)
@@ -362,11 +359,7 @@ class DriverAdvanceCreateAPIView(APIView):
         # Sinh mã phiếu TUTX-YYYYMM-XXXX
         today = timezone.now().date()
         date_prefix = f"TUTX-{today.strftime('%Y%m')}"
-        last_adv = DriverTripAdvance.objects.filter(code__startswith=date_prefix).order_by('-id').first()
-        seq = 1
-        if last_adv and last_adv.code.split('-')[-1].isdigit():
-            seq = int(last_adv.code.split('-')[-1]) + 1
-        code = f"{date_prefix}-{seq:04d}"
+        code = next_code(DriverTripAdvance, 'code', f"{date_prefix}-", 4)  # mã tuần tự an toàn, không trùng
 
         with transaction.atomic():
             trip = DispatchTrip.objects.select_for_update().filter(id=trip_id, is_deleted=False).first()
@@ -510,11 +503,7 @@ class DriverAdvanceSettleAPIView(APIView):
                 partner_name = advance.driver.full_name if advance.driver else 'Tài xế'
                 tx_notes = f"Thu hoàn ứng đối soát cân bằng (0 đ) chuyến {advance.trip.trip_code}: {advance.code}"
 
-            last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
-            seq = 1
-            if last_tx and last_tx.code.split('.')[-1].isdigit():
-                seq = int(last_tx.code.split('.')[-1]) + 1
-            cash_tx_code = f"{tx_prefix}{seq:03d}"
+            cash_tx_code = next_code(CashTransaction, 'code', f"{tx_prefix}", 3)  # mã tuần tự an toàn, không trùng
 
             cash_tx = CashTransaction.objects.create(
                 code=cash_tx_code,
@@ -1161,11 +1150,7 @@ class DriverBatchSettlementExecuteAPIView(APIView):
                     partner_name = (trips.first().driver.full_name if (trips.first() and trips.first().driver) else 'Tài xế')
                     tx_notes = f"Thu hoàn ứng đối soát cân bằng (0 đ) quyết toán gom {len(trip_ids)} chuyến: {', '.join(settled_trip_codes[:5])}"
 
-                last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
-                seq = 1
-                if last_tx and last_tx.code.split('.')[-1].isdigit():
-                    seq = int(last_tx.code.split('.')[-1]) + 1
-                cash_tx_code = f"{tx_prefix}{seq:03d}"
+                cash_tx_code = next_code(CashTransaction, 'code', f"{tx_prefix}", 3)  # mã tuần tự an toàn, không trùng
 
                 cash_tx = CashTransaction.objects.create(
                     code=cash_tx_code,

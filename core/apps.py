@@ -3,3 +3,6 @@ from django.apps import AppConfig
 class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'core'
+
+    def ready(self):
+        from core import audit  # noqa: F401  (đăng ký tín hiệu ghi nhật ký kiểm toán)

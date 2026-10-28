@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from core.models import TimeStampedModel, SoftDeleteModel
+from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 from apps.personnel.models import Department, Employee
 
 
@@ -21,7 +21,7 @@ class PostCategory(TimeStampedModel, SoftDeleteModel):
         return self.name
 
 
-class CompanyPost(TimeStampedModel, SoftDeleteModel):
+class CompanyPost(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Bài viết / Thông báo bản tin công ty dành cho nhân viên văn phòng & quản lý."""
     title = models.CharField(max_length=255, verbose_name="Tiêu đề thông báo")
     category = models.ForeignKey(

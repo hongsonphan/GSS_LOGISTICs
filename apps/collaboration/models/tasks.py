@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from core.models import TimeStampedModel, SoftDeleteModel
+from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 from apps.personnel.models import Department, Employee
 
 
@@ -27,7 +27,7 @@ class TaskExtensionStatus(models.TextChoices):
     REJECTED = 'REJECTED', 'Đã từ chối gia hạn'
 
 
-class OfficeTask(TimeStampedModel, SoftDeleteModel):
+class OfficeTask(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Công việc văn phòng nội bộ & Quản lý điều hành (Chuẩn Jira / Asana).
     Áp dụng riêng cho Ban Giám Đốc, Quản lý và Nhân viên Văn phòng các phòng ban.

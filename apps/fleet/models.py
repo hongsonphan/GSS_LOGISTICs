@@ -1,7 +1,7 @@
 import re
 from django.db import models
 from django.utils import timezone
-from core.models import TimeStampedModel, SoftDeleteModel
+from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
 def parse_payload_input(val):
     """
@@ -72,7 +72,7 @@ class VehicleOwnership(models.TextChoices):
     OWNED = 'OWNED', 'Xe nhà (Đội xe công ty)'
     SUBCONTRACTOR = 'SUBCONTRACTOR', 'Xe bạn (Thuê ngoài / 3PL)'
 
-class Vehicle(TimeStampedModel, SoftDeleteModel):
+class Vehicle(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     license_plate = models.CharField(max_length=20, unique=True, db_index=True) # 51C-123.45, 61C-393.29...
     vehicle_type = models.CharField(max_length=20, choices=VehicleType.choices, default=VehicleType.TRACTOR)
     ownership_type = models.CharField(max_length=20, choices=VehicleOwnership.choices, default=VehicleOwnership.OWNED, help_text="Xe nhà hay Xe bạn/3PL")
@@ -131,7 +131,7 @@ class Vehicle(TimeStampedModel, SoftDeleteModel):
         delta = (self.next_maintenance_date - timezone.now().date()).days
         return delta <= 7
 
-class Trailer(TimeStampedModel, SoftDeleteModel):
+class Trailer(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     license_plate = models.CharField(max_length=20, unique=True, db_index=True) # 51R-444.22
     trailer_type = models.CharField(max_length=100, default='Moóc Xương 40ft (3 Trục)', help_text="Moóc xương 40, Moóc cổ cò, Moóc sàn...")
     brand = models.CharField(max_length=50, blank=True)
