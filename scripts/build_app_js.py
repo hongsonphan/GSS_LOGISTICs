@@ -42,13 +42,15 @@ def build():
         body = (SRC / f).read_text(encoding="utf-8").replace("\r\n", "\n")
         parts.append(f"\n// ---- src/app/{f} ----\n")
         parts.append(body if body.endswith("\n") else body + "\n")
-    return "".join(parts).replace("\n", "\r\n")
+    # Luôn ghi xuống dòng kiểu LF; Git tự chuyển CRLF trên Windows nếu cấu hình autocrlf
+    return "".join(parts)
 
 
 def main():
     content = build()
     if "--check" in sys.argv:
-        current = OUT.read_bytes().decode("utf-8") if OUT.exists() else ""
+        current = OUT.read_bytes().decode("utf-8").replace("\r\n", "\n") if OUT.exists() else ""
+        # So sánh không phân biệt CRLF/LF (máy Windows và máy chủ Linux checkout khác nhau)
         if current != content:
             sys.exit("static/js/app.js không khớp với static/js/src/app/. Chạy: python scripts/build_app_js.py")
         print("app.js khớp với mã nguồn.")
