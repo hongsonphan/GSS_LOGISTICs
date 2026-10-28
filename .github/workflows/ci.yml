@@ -49,6 +49,9 @@ jobs:
       - name: app.js khớp mã nguồn module
         run: python scripts/build_app_js.py --check
 
+      - name: Tailwind CSS khớp mã nguồn giao diện
+        run: python scripts/build_css.py --check
+
       - name: Cú pháp JavaScript
         run: node --check static/js/app.js
 
