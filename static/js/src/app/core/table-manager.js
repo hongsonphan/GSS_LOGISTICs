@@ -7,6 +7,7 @@
  * - Tùy biến Thứ tự cột (Column Reordering via Drag & Drop / Up & Down Arrows)
  * - Tự động ghi nhớ cấu hình vào localStorage theo từng bảng và người dùng
  * - Tự động đồng bộ ngay lập tức khi bảng tải lại dữ liệu mới (MutationObserver)
+ * - Cố định (ghim) cột trái/phải khi cuộn ngang, cho/không cho kéo chỉnh độ rộng từng cột
  * - Nút Khôi Phục Mặc Định (1-Click Reset to Default)
  * =========================================================================================
  */
@@ -114,12 +115,14 @@
         this.options = Object.assign({
             tableName: table.getAttribute('data-table-title') || this.detectTableName(),
             storagePrefix: 'bim_table_cols_',
-            lockedKeys: ['actions', 'thao_tac', 'action', 'stt', 'check', 'select']
+            lockedKeys: ['actions', 'thao_tac', 'action', 'stt', 'check', 'select'],
+            // Cột mặc định được cố định (ghim) bên phải khi cuộn ngang
+            rightPinKeys: ['actions', 'thao_tac', 'action']
         }, options);
 
         this.storageKey = this.getStorageKey();
         this.tableName = this.getTableName();
-        this.columns = [];         // Cấu hình hiện tại [{ key, label, visible, locked, origIdx }]
+        this.columns = [];         // Cấu hình hiện tại [{ key, label, visible, locked, pin, resizable, origIdx }]
         this.defaultColumns = [];  // Cấu hình mặc định ban đầu
         this.isApplying = false;
 
@@ -219,11 +222,19 @@
             const isLocked = th.getAttribute('data-col-locked') === 'true' || 
                              self.options.lockedKeys.includes(key.toLowerCase());
 
+            // Cố định (ghim) cột: 'left' | 'right' | null — khai báo qua data-col-pin trên th
+            let pin = th.getAttribute('data-col-pin');
+            if (pin !== 'left' && pin !== 'right') {
+                pin = self.options.rightPinKeys.includes(key.toLowerCase()) ? 'right' : null;
+            }
+
             const colObj = {
                 key: key,
                 label: label,
                 visible: true,
                 locked: isLocked,
+                pin: pin,
+                resizable: th.getAttribute('data-col-resizable') !== 'false',
                 origIdx: idx
             };
 
@@ -264,6 +275,8 @@
                                 label: defaultMap[s.key].label,
                                 visible: s.visible !== false,
                                 locked: defaultMap[s.key].locked,
+                                pin: (s.pin === 'left' || s.pin === 'right' || s.pin === null) ? s.pin : defaultMap[s.key].pin,
+                                resizable: typeof s.resizable === 'boolean' ? s.resizable : defaultMap[s.key].resizable,
                                 origIdx: defaultMap[s.key].origIdx
                             });
                             delete defaultMap[s.key];
@@ -316,6 +329,8 @@
                 return {
                     key: c.key,
                     visible: c.visible,
+                    pin: c.pin || null,
+                    resizable: c.resizable !== false,
                     origIdx: c.origIdx
                 };
             });
@@ -488,11 +503,171 @@
                     }
                 });
             }
+            this.applyColumnOptions();
         } catch (err) {
             console.error('[BimColumnManager] Lỗi áp dụng cấu hình cột:', err);
         } finally {
             this.isApplying = false;
         }
+    };
+
+    /**
+     * Áp dụng tùy chọn từng cột: cố định (ghim trái/phải khi cuộn ngang) và cho/không cho kéo chỉnh độ rộng
+     */
+    TableColumnInstance.prototype.applyColumnOptions = function() {
+        const table = this.table;
+        const trHead = table.querySelector(':scope > thead > tr:first-child');
+        if (!trHead) return;
+
+        const colMap = {};
+        this.columns.forEach(function(c) { colMap[c.key] = c; });
+
+        const ths = Array.from(trHead.children);
+        const visibleThs = ths.filter(function(th) { return th.style.display !== 'none'; });
+        const lastVisible = visibleThs[visibleThs.length - 1];
+
+        ths.forEach(function(th) {
+            const c = colMap[th.getAttribute('data-col-key')];
+            const resizable = !c || c.resizable !== false;
+            th.setAttribute('data-col-resizable', resizable ? 'true' : 'false');
+            const handle = th.querySelector('.bim-col-resizer');
+            if (handle) {
+                handle.style.display = (resizable && th !== lastVisible) ? '' : 'none';
+            }
+            th.setAttribute('data-col-pin', (c && c.pin) || 'none');
+        });
+
+        this.updatePinOffsets();
+        this.observeHeaderSizes();
+    };
+
+    /**
+     * Tính lại vị trí dính (left/right) cho các cột được cố định. Gọi lại khi độ rộng cột thay đổi.
+     */
+    TableColumnInstance.prototype.updatePinOffsets = function() {
+        const table = this.table;
+        const trHead = table.querySelector(':scope > thead > tr:first-child');
+        if (!trHead) return;
+
+        const colMap = {};
+        this.columns.forEach(function(c) { colMap[c.key] = c; });
+
+        const ths = Array.from(trHead.children).filter(function(th) { return th.style.display !== 'none'; });
+        const offsets = {};   // key -> { side, px, edge }
+        let acc = 0;
+        let lastLeft = null;
+        ths.forEach(function(th) {
+            const key = th.getAttribute('data-col-key');
+            const c = colMap[key];
+            if (c && c.pin === 'left') {
+                offsets[key] = { side: 'left', px: acc, edge: false };
+                acc += th.getBoundingClientRect().width;
+                lastLeft = key;
+            }
+        });
+        if (lastLeft) offsets[lastLeft].edge = true;
+        acc = 0;
+        let firstRight = null;
+        for (let i = ths.length - 1; i >= 0; i--) {
+            const key = ths[i].getAttribute('data-col-key');
+            const c = colMap[key];
+            if (c && c.pin === 'right') {
+                offsets[key] = { side: 'right', px: acc, edge: false };
+                acc += ths[i].getBoundingClientRect().width;
+                firstRight = key;
+            }
+        }
+        if (firstRight) offsets[firstRight].edge = true;
+
+        const setCell = function(cell, key) {
+            const o = offsets[key];
+            cell.classList.remove('bim-pin', 'bim-pin-left', 'bim-pin-right', 'bim-pin-edge', 'bim-unpin');
+            cell.style.left = '';
+            cell.style.right = '';
+            if (o) {
+                cell.classList.add('bim-pin', o.side === 'left' ? 'bim-pin-left' : 'bim-pin-right');
+                if (o.edge) cell.classList.add('bim-pin-edge');
+                cell.style[o.side] = Math.round(o.px) + 'px';
+            } else {
+                // Gỡ ghim mặc định của CSS (vd. cột Thao tác) khi người dùng chọn không cố định
+                cell.classList.add('bim-unpin');
+            }
+        };
+
+        Array.from(trHead.children).forEach(function(th) {
+            setCell(th, th.getAttribute('data-col-key'));
+        });
+        table.querySelectorAll(':scope > tbody > tr, :scope > tfoot > tr').forEach(function(tr) {
+            Array.from(tr.children).forEach(function(td) {
+                const key = td.getAttribute('data-col-key');
+                if (!key || td.hasAttribute('colspan')) return;
+                setCell(td, key);
+            });
+        });
+    };
+
+    /**
+     * Theo dõi kích thước tiêu đề cột để cập nhật vị trí cột cố định (khi kéo độ rộng, đổi tab, co giãn cửa sổ)
+     */
+    TableColumnInstance.prototype.observeHeaderSizes = function() {
+        if (typeof ResizeObserver === 'undefined') return;
+        const self = this;
+        if (!this._ro) {
+            let raf = null;
+            this._ro = new ResizeObserver(function() {
+                if (raf) return;
+                raf = requestAnimationFrame(function() {
+                    raf = null;
+                    self.updatePinOffsets();
+                });
+            });
+        }
+        const trHead = this.table.querySelector(':scope > thead > tr:first-child');
+        if (!trHead) return;
+        const ro = this._ro;
+        Array.from(trHead.children).forEach(function(th) {
+            if (!th._bimObserved) {
+                th._bimObserved = true;
+                ro.observe(th);
+            }
+        });
+    };
+
+    /**
+     * Đổi trạng thái cố định của cột: Không cố định → Cố định trái → Cố định phải → Không cố định.
+     * Cột cố định trái được xếp về nhóm đầu bảng, cố định phải về nhóm cuối bảng.
+     */
+    TableColumnInstance.prototype.togglePin = function(index) {
+        const col = this.columns[index];
+        if (!col) return;
+        const next = col.pin === 'left' ? 'right' : (col.pin === 'right' ? null : 'left');
+        col.pin = next;
+
+        this.columns.splice(index, 1);
+        if (next === 'left') {
+            let pos = 0;
+            while (pos < this.columns.length && this.columns[pos].pin === 'left') pos++;
+            this.columns.splice(pos, 0, col);
+        } else if (next === 'right') {
+            let pos = this.columns.length;
+            while (pos > 0 && this.columns[pos - 1].pin === 'right') pos--;
+            this.columns.splice(pos, 0, col);
+        } else {
+            this.columns.splice(index, 0, col);
+        }
+
+        this.saveConfig();
+        this.apply();
+        this.buildModalUI();
+    };
+
+    TableColumnInstance.prototype.toggleResizable = function(index) {
+        const col = this.columns[index];
+        if (!col) return;
+        col.resizable = col.resizable === false;
+        this.saveConfig();
+        this.apply();
+        this.buildModalUI();
     };
 
     /**
@@ -591,7 +766,24 @@
                         </span>
                     </label>
 
-                    ${col.locked ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">Cố định</span>' : ''}
+                    ${col.locked ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 shrink-0" title="Cột bắt buộc, không ẩn được">Luôn hiện</span>' : ''}
+                </div>
+
+                <!-- Cố định cột & cho chỉnh độ rộng -->
+                <div class="flex items-center gap-1 shrink-0 mr-1">
+                    <button type="button"
+                        class="h-6 px-1.5 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-colors ${col.pin ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' : 'bg-white text-slate-400 border-slate-200 hover:text-teal-700 hover:border-teal-300'}"
+                        title="${col.pin === 'left' ? 'Đang cố định bên trái khi cuộn ngang. Bấm để chuyển sang cố định bên phải' : (col.pin === 'right' ? 'Đang cố định bên phải khi cuộn ngang. Bấm để bỏ cố định' : 'Không cố định. Bấm để cố định cột bên trái khi cuộn ngang')}"
+                        onclick="window.BimColumnManager_togglePin('${self.tableId}', ${idx})">
+                        <i class="ph-bold ph-push-pin text-xs"></i>
+                        <span>${col.pin === 'left' ? 'Trái' : (col.pin === 'right' ? 'Phải' : 'Ghim')}</span>
+                    </button>
+                    <button type="button"
+                        class="h-6 w-7 rounded-lg border flex items-center justify-center transition-colors ${col.resizable === false ? 'bg-slate-100 text-slate-500 border-slate-300 hover:bg-slate-200' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'}"
+                        title="${col.resizable === false ? 'Đang khoá độ rộng. Bấm để cho phép kéo chỉnh độ rộng cột' : 'Đang cho kéo chỉnh độ rộng. Bấm để khoá độ rộng cột'}"
+                        onclick="window.BimColumnManager_toggleResize('${self.tableId}', ${idx})">
+                        <i class="ph-bold ${col.resizable === false ? 'ph-lock-simple' : 'ph-arrows-horizontal'} text-xs"></i>
+                    </button>
                 </div>
 
                 <!-- Điều khiển Mũi tên Lên / Xuống -->
@@ -686,6 +878,16 @@
         if (mgr) {
             mgr.moveColumn(fromIdx, delta);
         }
+    };
+
+    window.BimColumnManager_togglePin = function(tableId, idx) {
+        const mgr = BimTableColumnManager.instances[tableId];
+        if (mgr) mgr.togglePin(idx);
+    };
+
+    window.BimColumnManager_toggleResize = function(tableId, idx) {
+        const mgr = BimTableColumnManager.instances[tableId];
+        if (mgr) mgr.toggleResizable(idx);
     };
 
     window.BimColumnManager_reset = function() {
@@ -1017,6 +1219,7 @@
             ths.forEach(function(th, idx) {
                 // Không gắn resizer cho cột cuối cùng
                 if (idx === ths.length - 1) return;
+                const canResize = th.getAttribute('data-col-resizable') !== 'false';
 
                 th.style.position = 'relative';
 
@@ -1036,6 +1239,7 @@
                     resizer.className = 'bim-col-resizer';
                     resizer.setAttribute('title', 'Kéo sang trái/phải để chỉnh độ rộng cột • Nhấp đúp để tự vừa khít chữ');
                     th.appendChild(resizer);
+                    if (!canResize) resizer.style.display = 'none';
 
                     resizer.addEventListener('mousedown', function(e) {
                         self.onMouseDown(e, th, table);
@@ -1075,6 +1279,7 @@
         onMouseDown: function(e, th, table) {
             e.preventDefault();
             e.stopPropagation();
+            if (th.getAttribute('data-col-resizable') === 'false') return;
 
             this.currentTh = th;
             this.currentTable = table;
@@ -1160,6 +1365,7 @@
 
         autoFitColumn: function(th, table) {
             if (!th || !table) return;
+            if (th.getAttribute('data-col-resizable') === 'false') return;
             const colKey = th.getAttribute('data-col-key');
             if (!colKey) return;
 

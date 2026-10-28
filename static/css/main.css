@@ -1784,3 +1784,18 @@ body.bim-col-resizing * {
     /* --- Nút chat nổi nhỏ gọn hơn --- */
     #chat-bubble-btn { width: 48px !important; height: 48px !important; }
 }
+
+/* Cố định (ghim) cột & khoá độ rộng — chọn trong "Tùy chỉnh cột" của từng bảng (core/table-manager.js) */
+table th.bim-pin, table td.bim-pin { position: sticky !important; }
+table td.bim-pin { z-index: 5; background-color: #ffffff; }
+table thead th.bim-pin { z-index: 16 !important; background-color: #f2f5f8; }
+table tfoot td.bim-pin { background-color: #f1f5f9; }
+table tbody tr:hover > td.bim-pin { background-color: #f0fdfa; }
+table .bim-pin-left.bim-pin-edge { box-shadow: 2px 0 5px -1px rgba(0, 0, 0, 0.08) !important; }
+table .bim-pin-right.bim-pin-edge { box-shadow: -2px 0 5px -1px rgba(0, 0, 0, 0.08) !important; }
+table .bim-pin:not(.bim-pin-edge) { box-shadow: none !important; }
+table tbody td.bim-unpin, table tfoot td.bim-unpin { position: static !important; box-shadow: none !important; }
+table thead th.bim-unpin { right: auto !important; box-shadow: none !important; }
+@media (max-width: 767px) {
+    table.m-cards td.bim-pin { position: static !important; box-shadow: none !important; background: transparent !important; }
+}
