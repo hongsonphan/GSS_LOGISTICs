@@ -157,7 +157,7 @@ async function viewCashVoucherDetail(voucherIdentifier, updateHistory = true) {
         const formBadge = document.getElementById('fullpage-voucher-form-badge');
         if (formBadge) {
             formBadge.innerText = 'Xem & Hiệu Chỉnh';
-            formBadge.className = 'text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
+            formBadge.className = 'm-hide text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
         }
 
         // 4. HIỂN THỊ BỘ 4 NÚT THAO TÁC Ở CHÂN FORM
@@ -321,7 +321,7 @@ function setFullpageVoucherReadOnly(isReadOnly) {
         }
         if (formBadge) {
             formBadge.innerText = 'Chế độ: Đang Xem';
-            formBadge.className = 'text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200';
+            formBadge.className = 'm-hide text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200';
         }
     } else {
         if (editBtn) {
@@ -334,7 +334,7 @@ function setFullpageVoucherReadOnly(isReadOnly) {
         }
         if (formBadge) {
             formBadge.innerText = 'Chế độ: Đang Chỉnh Sửa';
-            formBadge.className = 'text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
+            formBadge.className = 'm-hide text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
         }
     }
 }
@@ -519,8 +519,8 @@ function openCreateCashVoucherPage(defaultType = 'INFLOW') {
     if (formBadge) {
         formBadge.innerText = 'Tạo Phiếu Mới';
         formBadge.className = isInflow 
-            ? 'text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200'
-            : 'text-xs font-bold text-rose-800 bg-rose-50 px-3 py-1 rounded-full border border-rose-200';
+            ? 'm-hide text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200'
+            : 'm-hide text-xs font-bold text-rose-800 bg-rose-50 px-3 py-1 rounded-full border border-rose-200';
     }
 
     // 4. Ở chế độ TẠO MỚI: Chỉ hiển thị nút "Lưu Phiếu" bên phải (Ẩn các nút Xóa và In)

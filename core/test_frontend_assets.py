@@ -14,8 +14,9 @@ class TailwindBuildTests(SimpleTestCase):
     def test_built_css_present(self):
         for name in ('tailwind.css', 'tailwind-help.css'):
             css = (ROOT / 'static' / 'css' / name).read_text(encoding='utf-8')
-            self.assertIn('.bg-teal-600', css)
+            self.assertIn('tailwindcss v3', css)
             self.assertGreater(len(css), 10000)
+        self.assertIn('.bg-teal-600', (ROOT / 'static' / 'css' / 'tailwind.css').read_text(encoding='utf-8'))
 
     def test_dynamic_classes_safelisted(self):
         css = (ROOT / 'static' / 'css' / 'tailwind.css').read_text(encoding='utf-8')

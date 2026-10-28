@@ -103,6 +103,13 @@ urlpatterns = [
     path('accounting/vouchers/<str:voucher_id>/', index_view, name='spa-accounting-voucher-slash'),
     path('accounting/vouchers/<str:voucher_id>', index_view, name='spa-accounting-voucher'),
     path('customs/', index_view, name='spa-customs'),
+    # Trang riêng (tải lại / mở link trực tiếp không bị 404): tờ khai, hồ sơ nhân sự, hợp đồng lao động
+    path('customs/declarations/<str:declaration_id>/', index_view, name='spa-customs-declaration-slash'),
+    path('customs/declarations/<str:declaration_id>', index_view, name='spa-customs-declaration'),
+    path('personnel/employees/<str:employee_id>/', index_view, name='spa-personnel-employee-slash'),
+    path('personnel/employees/<str:employee_id>', index_view, name='spa-personnel-employee'),
+    path('personnel/contracts/<str:contract_id>/', index_view, name='spa-personnel-contract-slash'),
+    path('personnel/contracts/<str:contract_id>', index_view, name='spa-personnel-contract'),
     path('reports/', index_view, name='spa-reports'),
     path('settings/', index_view, name='spa-settings'),
     path('master-data/', index_view, name='spa-master-data'),

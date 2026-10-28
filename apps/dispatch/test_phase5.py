@@ -58,3 +58,15 @@ class TripContainerSyncTests(TestCase):
         trip.refresh_from_db()
         self.assertEqual(timezone.localtime(trip.actual_gate_in_at).replace(tzinfo=None),
                          datetime.datetime(2026, 10, 27, 14, 5))
+
+
+class SpaDeepLinkTests(TestCase):
+    """Mở link trực tiếp / tải lại các trang riêng của ứng dụng không được 404."""
+
+    def test_fullpage_routes_render_app(self):
+        from django.contrib.auth.models import User
+        self.client.force_login(User.objects.create_superuser('spa_qa', 's@example.com', 'Pw-Spa#2026'))
+        for url in ('/personnel/employees/new', '/personnel/employees/12/', '/personnel/contracts/3',
+                    '/customs/declarations/new', '/customs/declarations/7/', '/accounting/vouchers/new',
+                    '/sales/quotations/new', '/dispatch/trips/new'):
+            self.assertEqual(self.client.get(url).status_code, 200, url)

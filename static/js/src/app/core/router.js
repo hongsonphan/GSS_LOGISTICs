@@ -343,12 +343,26 @@ function resolveInitialRoute() {
     if (voucherMatch && voucherMatch[1]) {
         const voucherIdentifier = voucherMatch[1];
         switchTab('ke-toan', false);
+        if (voucherIdentifier === 'new') {
+            // Tải lại trang tạo phiếu: mở lại form tạo mới theo ?type=inflow|outflow
+            const t = (new URLSearchParams(window.location.search).get('type') || 'inflow').toUpperCase();
+            if (typeof openCreateCashVoucherPage === 'function') openCreateCashVoucherPage(t === 'OUTFLOW' ? 'OUTFLOW' : 'INFLOW');
+            return;
+        }
         if (typeof viewCashVoucherDetail === 'function') {
             viewCashVoucherDetail(voucherIdentifier, false);
         }
         if (window.history && window.history.replaceState) {
             window.history.replaceState({ view: 'cash-voucher-detail', voucherIdentifier }, '', `/accounting/vouchers/${voucherIdentifier}`);
         }
+        return;
+    }
+
+    // 1.3b. Deep-link tờ khai hải quan trang riêng: /customs/declarations/<id|new>
+    const customsMatch = pathname.match(/^\/customs\/declarations\/([a-zA-Z0-9_-]+)/);
+    if (customsMatch && customsMatch[1]) {
+        switchTab('hai-quan', false);
+        if (typeof openCustomsPage === 'function') openCustomsPage(customsMatch[1] === 'new' ? null : customsMatch[1], false);
         return;
     }
 
@@ -438,6 +452,11 @@ function resolveInitialRoute() {
 window.addEventListener('popstate', (event) => {
     const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
     if (pathname.match(/^\/news\/([a-zA-Z0-9_-]+)/)) {
+        return;
+    }
+    // Trang riêng có xử lý đầy đủ trong resolveInitialRoute (tạo phiếu thu/chi, tờ khai, hồ sơ nhân sự, hợp đồng)
+    if (/^\/(accounting\/vouchers\/new|customs\/declarations\/|personnel\/(employees|contracts)\/)/.test(pathname)) {
+        resolveInitialRoute();
         return;
     }
     const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/);

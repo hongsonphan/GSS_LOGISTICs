@@ -3,7 +3,7 @@
     <div class="max-w-5xl mx-auto px-2 sm:px-4 space-y-4">
         
         <!-- Thanh Header Tiêu Đề Toàn Màn Hình (Ẩn khi in ấn qua no-print) -->
-        <div id="fullpage-voucher-top-toolbar" class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 no-print">
+        <div id="fullpage-voucher-top-toolbar" class="m-hide bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 no-print">
             <div class="flex items-center space-x-3">
                 <button type="button" onclick="backToAccountingCashbook()" 
                     class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 font-heading border border-slate-200">
@@ -32,7 +32,7 @@
                         <p class="text-xs text-slate-500 font-medium" id="fullpage-voucher-form-subtitle">Điền đầy đủ thông tin hạch toán nghiệp vụ sổ quỹ</p>
                     </div>
                 </div>
-                <span id="fullpage-voucher-form-badge" class="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">Đang ở chế độ Sửa</span>
+                <span id="fullpage-voucher-form-badge" class="m-hide text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">Đang ở chế độ Sửa</span>
             </div>
 
             <form id="form-fullpage-voucher" onsubmit="event.preventDefault(); saveFullpageVoucher();" class="space-y-4 text-xs font-semibold text-slate-700">

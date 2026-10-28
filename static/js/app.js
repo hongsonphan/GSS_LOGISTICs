@@ -4239,12 +4239,26 @@ function resolveInitialRoute() {
     if (voucherMatch && voucherMatch[1]) {
         const voucherIdentifier = voucherMatch[1];
         switchTab('ke-toan', false);
+        if (voucherIdentifier === 'new') {
+            // Tải lại trang tạo phiếu: mở lại form tạo mới theo ?type=inflow|outflow
+            const t = (new URLSearchParams(window.location.search).get('type') || 'inflow').toUpperCase();
+            if (typeof openCreateCashVoucherPage === 'function') openCreateCashVoucherPage(t === 'OUTFLOW' ? 'OUTFLOW' : 'INFLOW');
+            return;
+        }
         if (typeof viewCashVoucherDetail === 'function') {
             viewCashVoucherDetail(voucherIdentifier, false);
         }
         if (window.history && window.history.replaceState) {
             window.history.replaceState({ view: 'cash-voucher-detail', voucherIdentifier }, '', `/accounting/vouchers/${voucherIdentifier}`);
         }
+        return;
+    }
+
+    // 1.3b. Deep-link tờ khai hải quan trang riêng: /customs/declarations/<id|new>
+    const customsMatch = pathname.match(/^\/customs\/declarations\/([a-zA-Z0-9_-]+)/);
+    if (customsMatch && customsMatch[1]) {
+        switchTab('hai-quan', false);
+        if (typeof openCustomsPage === 'function') openCustomsPage(customsMatch[1] === 'new' ? null : customsMatch[1], false);
         return;
     }
 
@@ -4334,6 +4348,11 @@ function resolveInitialRoute() {
 window.addEventListener('popstate', (event) => {
     const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
     if (pathname.match(/^\/news\/([a-zA-Z0-9_-]+)/)) {
+        return;
+    }
+    // Trang riêng có xử lý đầy đủ trong resolveInitialRoute (tạo phiếu thu/chi, tờ khai, hồ sơ nhân sự, hợp đồng)
+    if (/^\/(accounting\/vouchers\/new|customs\/declarations\/|personnel\/(employees|contracts)\/)/.test(pathname)) {
+        resolveInitialRoute();
         return;
     }
     const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/);
@@ -4471,7 +4490,7 @@ window.addEventListener('popstate', (event) => {
 (function () {
     const MQ = window.matchMedia('(max-width: 767px)');
 
-    const ACTION_RE = /^\s*(?:event\.stopPropagation\(\);\s*)?(?:open\w*(?:Create|New|Add|Edit|Import|Batch|Settle|Cash|Voucher|Fund|Advance|Column|Customizer|Upload|Ocr|OCR|Modal)\w*|create\w*|add\w*|export\w*|download\w*|print\w*|import\w*|delete\w*|remove\w*|duplicate\w*|copy\w*|send\w*|settle\w*|unsettle\w*|save\w*|reset\w*|load\w*|refresh\w*|reload\w*|batch\w*|approve\w*|reject\w*|lock\w*|unlock\w*|upload\w*|quick\w*|mark\w*|generate\w*|calculate\w*|auto\w*|confirm\w*|decline\w*|accept\w*|reassign\w*|toggleDriverPhone|deleteOrCancelTrip|submit\w*)\s*\(/i;
+    const ACTION_RE = /^\s*(?:event\.stopPropagation\(\);\s*)?(?:open\w*(?:Create|New|Add|Edit|Import|Batch|Settle|Cash|Voucher|Fund|Advance|Column|Customizer|Upload|Ocr|OCR|Modal|Page)\w*|create\w*|add\w*|export\w*|download\w*|print\w*|import\w*|delete\w*|remove\w*|duplicate\w*|copy\w*|send\w*|settle\w*|unsettle\w*|save\w*|reset\w*|load\w*|fetch\w*|refresh\w*|reload\w*|batch\w*|approve\w*|reject\w*|lock\w*|unlock\w*|upload\w*|quick\w*|mark\w*|generate\w*|calculate\w*|auto\w*|confirm\w*|decline\w*|accept\w*|reassign\w*|toggleDriverPhone|deleteOrCancelTrip|submit\w*)\s*\(/i;
     const KEEP_RE = /(Detail|switch\w*|Period|period|filter|Filter|search|Search|sort|Sort|toggleSidebar|collapseSidebar|Dropdown|Chat|chat|backTo|goBack)/;
     const MONEY_RE = /(VNĐ|\(Đ\)|\bĐ\b|TIỀN|DOANH THU|TỔNG|CHI PHÍ|LỢI NHUẬN|SỐ DƯ|CƯỚC|LƯƠNG|THỰC NHẬN|ĐƠN GIÁ)/i;
     const KEY_RE = /(KHÁCH|ĐỐI TÁC|TÀI XẾ|NHÂN VIÊN|HỌ VÀ TÊN|HỌ TÊN|BIỂN SỐ|TUYẾN|TRẠNG THÁI|TÌNH TRẠNG|NHÀ XE|THẦU PHỤ)/i;
@@ -24618,7 +24637,7 @@ async function viewCashVoucherDetail(voucherIdentifier, updateHistory = true) {
         const formBadge = document.getElementById('fullpage-voucher-form-badge');
         if (formBadge) {
             formBadge.innerText = 'Xem & Hiệu Chỉnh';
-            formBadge.className = 'text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
+            formBadge.className = 'm-hide text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
         }
 
         // 4. HIỂN THỊ BỘ 4 NÚT THAO TÁC Ở CHÂN FORM
@@ -24782,7 +24801,7 @@ function setFullpageVoucherReadOnly(isReadOnly) {
         }
         if (formBadge) {
             formBadge.innerText = 'Chế độ: Đang Xem';
-            formBadge.className = 'text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200';
+            formBadge.className = 'm-hide text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200';
         }
     } else {
         if (editBtn) {
@@ -24795,7 +24814,7 @@ function setFullpageVoucherReadOnly(isReadOnly) {
         }
         if (formBadge) {
             formBadge.innerText = 'Chế độ: Đang Chỉnh Sửa';
-            formBadge.className = 'text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
+            formBadge.className = 'm-hide text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
         }
     }
 }
@@ -24980,8 +24999,8 @@ function openCreateCashVoucherPage(defaultType = 'INFLOW') {
     if (formBadge) {
         formBadge.innerText = 'Tạo Phiếu Mới';
         formBadge.className = isInflow 
-            ? 'text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200'
-            : 'text-xs font-bold text-rose-800 bg-rose-50 px-3 py-1 rounded-full border border-rose-200';
+            ? 'm-hide text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200'
+            : 'm-hide text-xs font-bold text-rose-800 bg-rose-50 px-3 py-1 rounded-full border border-rose-200';
     }
 
     // 4. Ở chế độ TẠO MỚI: Chỉ hiển thị nút "Lưu Phiếu" bên phải (Ẩn các nút Xóa và In)

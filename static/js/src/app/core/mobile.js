@@ -13,7 +13,7 @@
 (function () {
     const MQ = window.matchMedia('(max-width: 767px)');
 
-    const ACTION_RE = /^\s*(?:event\.stopPropagation\(\);\s*)?(?:open\w*(?:Create|New|Add|Edit|Import|Batch|Settle|Cash|Voucher|Fund|Advance|Column|Customizer|Upload|Ocr|OCR|Modal)\w*|create\w*|add\w*|export\w*|download\w*|print\w*|import\w*|delete\w*|remove\w*|duplicate\w*|copy\w*|send\w*|settle\w*|unsettle\w*|save\w*|reset\w*|load\w*|refresh\w*|reload\w*|batch\w*|approve\w*|reject\w*|lock\w*|unlock\w*|upload\w*|quick\w*|mark\w*|generate\w*|calculate\w*|auto\w*|confirm\w*|decline\w*|accept\w*|reassign\w*|toggleDriverPhone|deleteOrCancelTrip|submit\w*)\s*\(/i;
+    const ACTION_RE = /^\s*(?:event\.stopPropagation\(\);\s*)?(?:open\w*(?:Create|New|Add|Edit|Import|Batch|Settle|Cash|Voucher|Fund|Advance|Column|Customizer|Upload|Ocr|OCR|Modal|Page)\w*|create\w*|add\w*|export\w*|download\w*|print\w*|import\w*|delete\w*|remove\w*|duplicate\w*|copy\w*|send\w*|settle\w*|unsettle\w*|save\w*|reset\w*|load\w*|fetch\w*|refresh\w*|reload\w*|batch\w*|approve\w*|reject\w*|lock\w*|unlock\w*|upload\w*|quick\w*|mark\w*|generate\w*|calculate\w*|auto\w*|confirm\w*|decline\w*|accept\w*|reassign\w*|toggleDriverPhone|deleteOrCancelTrip|submit\w*)\s*\(/i;
     const KEEP_RE = /(Detail|switch\w*|Period|period|filter|Filter|search|Search|sort|Sort|toggleSidebar|collapseSidebar|Dropdown|Chat|chat|backTo|goBack)/;
     const MONEY_RE = /(VNĐ|\(Đ\)|\bĐ\b|TIỀN|DOANH THU|TỔNG|CHI PHÍ|LỢI NHUẬN|SỐ DƯ|CƯỚC|LƯƠNG|THỰC NHẬN|ĐƠN GIÁ)/i;
     const KEY_RE = /(KHÁCH|ĐỐI TÁC|TÀI XẾ|NHÂN VIÊN|HỌ VÀ TÊN|HỌ TÊN|BIỂN SỐ|TUYẾN|TRẠNG THÁI|TÌNH TRẠNG|NHÀ XE|THẦU PHỤ)/i;
