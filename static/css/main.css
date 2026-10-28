@@ -1632,7 +1632,8 @@ body.bim-col-resizing * {
 /* =====================================================================
    CHUẨN HOÁ TRÌNH BÀY (rà soát giao diện 10/2026): chữ trên nút không rớt dòng, cụm nút tự xuống hàng
    ===================================================================== */
-#detail-id, #detail-status-badge { white-space: nowrap; }
+#detail-id { white-space: nowrap; }
+@media (min-width: 640px) { #detail-status-badge { white-space: nowrap; } }
 #trip-detail-header-actions > button,
 #trip-detail-header-actions > a { white-space: nowrap; }
 
