@@ -704,3 +704,24 @@ class PersonnelHRMAPITestCase(TestCase):
         self.assertEqual(emp.full_name, "Nguyễn Minh Thuận")
         self.assertEqual(emp.email, "dieudo.tvl@trienvo.com")
 
+
+
+class PayrollCalculateFreshInstallTestCase(TestCase):
+    """Hệ thống mới chưa có cấu hình tỷ lệ BHXH: tính lương không được lỗi 500 (Decimal x float)."""
+
+    def test_calculate_without_existing_rates(self):
+        from apps.personnel.models import PayrollPolicyConfig, SalaryDeductionRate
+        PayrollPolicyConfig.objects.all().delete()
+        SalaryDeductionRate.objects.all().delete()
+        client = APIClient()
+        user = User.objects.create_superuser(username='hr_fresh', password='Password123!', email='hr@bim.test')
+        Employee.objects.create(user=user, code='NV-FRESH', full_name='Nhân viên mới', phone_number='0907777777',
+                                department=Department.MANAGEMENT, role=EmployeeRole.DIRECTOR, base_salary=15000000,
+                                insurance_salary=10000000, is_social_insurance_participant=True)
+        client.force_authenticate(user)
+        res = client.post('/api/personnel/periods/', {'period_code': '2026-11', 'name': 'Lương T11', 'from_date': '2026-11-01',
+                                                      'to_date': '2026-11-30', 'standard_days': 26}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        period_id = res.json().get('id') or res.json().get('data', {}).get('id')
+        calc = client.post(f'/api/personnel/periods/{period_id}/calculate/', {}, format='json')
+        self.assertEqual(calc.status_code, status.HTTP_200_OK, calc.content[:300])

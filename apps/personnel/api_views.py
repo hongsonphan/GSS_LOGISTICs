@@ -484,12 +484,14 @@ class PayrollPolicyConfigAPIView(APIView):
         config = PayrollPolicyConfig.objects.filter(is_active=True).first()
         if not config:
             config = PayrollPolicyConfig.objects.create()
+            config.refresh_from_db()  # nạp lại để giá trị mặc định là Decimal (tránh lỗi Decimal x float)
         return Response(PayrollPolicyConfigSerializer(config).data)
 
     def put(self, request):
         config = PayrollPolicyConfig.objects.filter(is_active=True).first()
         if not config:
             config = PayrollPolicyConfig.objects.create()
+            config.refresh_from_db()  # nạp lại để giá trị mặc định là Decimal (tránh lỗi Decimal x float)
         serializer = PayrollPolicyConfigSerializer(config, data=request.data, partial=True)
         if serializer.is_valid():
             updated = serializer.save()
@@ -674,12 +676,14 @@ class SalaryDeductionRateAPIView(APIView):
         rate = SalaryDeductionRate.objects.filter(is_active=True).first()
         if not rate:
             rate = SalaryDeductionRate.objects.create()
+            rate.refresh_from_db()  # nạp lại để giá trị mặc định là Decimal (tránh lỗi Decimal x float)
         return Response(SalaryDeductionRateSerializer(rate).data)
 
     def put(self, request):
         rate = SalaryDeductionRate.objects.filter(is_active=True).first()
         if not rate:
             rate = SalaryDeductionRate.objects.create()
+            rate.refresh_from_db()  # nạp lại để giá trị mặc định là Decimal (tránh lỗi Decimal x float)
         serializer = SalaryDeductionRateSerializer(rate, data=request.data, partial=True)
         if serializer.is_valid():
             updated = serializer.save()
@@ -1000,10 +1004,12 @@ class PayrollCalculateAPIView(APIView):
         policy = PayrollPolicyConfig.objects.filter(is_active=True).first()
         if not policy:
             policy = PayrollPolicyConfig.objects.create()
+            policy.refresh_from_db()  # nạp lại để giá trị mặc định là Decimal (tránh lỗi Decimal x float)
 
         rate = SalaryDeductionRate.objects.filter(is_active=True).first()
         if not rate:
             rate = SalaryDeductionRate.objects.create()
+            rate.refresh_from_db()  # nạp lại để giá trị mặc định là Decimal (tránh lỗi Decimal x float)
 
         tax_brackets = list(TaxBracket.objects.all().order_by('bracket_level'))
 
