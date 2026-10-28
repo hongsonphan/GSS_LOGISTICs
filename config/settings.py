@@ -333,6 +333,7 @@ SPECTACULAR_SETTINGS = {
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAdminUser'],
 }
 
-# Đa doanh nghiệp: bật để mọi truy vấn qua core.tenant.scope_queryset chỉ thấy dữ liệu công ty của người dùng
-TENANT_ENFORCE = _env_bool('TENANT_ENFORCE', False)
+# Đa doanh nghiệp: người dùng đăng nhập chỉ thấy dữ liệu công ty của mình (lọc ở manager mặc định của mọi model
+# thuộc công ty — core.models.tenant_scope). Với một công ty hành vi không đổi. Tắt khẩn cấp: TENANT_ENFORCE=false
+TENANT_ENFORCE = _env_bool('TENANT_ENFORCE', True)
 LEDGER_AUTO_POST = _env_bool('LEDGER_AUTO_POST', True)

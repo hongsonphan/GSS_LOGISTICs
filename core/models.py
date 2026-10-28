@@ -1,9 +1,32 @@
 import uuid
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
+
+def tenant_scope(queryset):
+    """Đa doanh nghiệp (TENANT_ENFORCE): trong một request chỉ thấy dữ liệu của công ty người dùng.
+
+    Ngoài request (lệnh quản trị, tác vụ nền, migration) không lọc. Bản ghi chưa gán công ty vẫn hiện
+    để không "mất" dữ liệu tạo bằng bulk_create (bỏ qua save()).
+    """
+    if not getattr(settings, 'TENANT_ENFORCE', False):
+        return queryset
+    if not any(f.name == 'company' for f in queryset.model._meta.concrete_fields):
+        return queryset
+    from core.tenant import scoping_company
+    company = scoping_company()
+    if company is None:
+        return queryset
+    return queryset.filter(Q(company=company) | Q(company__isnull=True))
+
+
 class SoftDeleteQuerySet(models.QuerySet):
+    def all(self):
+        # DRF gọi queryset.all() mỗi request trên queryset khai báo sẵn ở lớp view -> áp phạm vi công ty tại đây
+        return tenant_scope(super().all())
+
     def delete(self):
         return self.update(is_deleted=True, deleted_at=timezone.now())
 
@@ -18,11 +41,11 @@ class SoftDeleteQuerySet(models.QuerySet):
 
 class SoftDeleteManager(models.Manager):
     def get_queryset(self):
-        return SoftDeleteQuerySet(self.model, using=self._db).filter(is_deleted=False)
+        return tenant_scope(SoftDeleteQuerySet(self.model, using=self._db).filter(is_deleted=False))
 
 class AllObjectsManager(models.Manager):
     def get_queryset(self):
-        return SoftDeleteQuerySet(self.model, using=self._db)
+        return tenant_scope(SoftDeleteQuerySet(self.model, using=self._db))
 
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)

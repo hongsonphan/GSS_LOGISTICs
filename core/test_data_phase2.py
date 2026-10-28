@@ -103,4 +103,36 @@ class TenantContextTests(TestCase):
         self.assertEqual(Customer.objects.create(code='KH_MD', name='Ngoài request').company, default)
         with self.settings(TENANT_ENFORCE=True):
             self.assertEqual(list(scope_queryset(Customer.objects.all(), request)), [created['c']])
-        self.assertEqual(scope_queryset(Customer.objects.all(), request).count(), 2)
+        with self.settings(TENANT_ENFORCE=False):
+            self.assertEqual(scope_queryset(Customer.objects.all(), request).count(), 2)
+
+    def test_manager_scopes_by_user_company(self):
+        """TENANT_ENFORCE: API trả về dữ liệu đúng công ty của người đăng nhập (lọc ở manager mặc định)."""
+        from django.contrib.auth.models import User
+
+        from apps.customers.models import Customer
+        from apps.personnel.models import Employee, EmployeeRole
+        from core.models import Company, get_default_company
+
+        default = get_default_company()
+        other = Company.objects.create(code='KHAC2', name='Công ty khác 2')
+        Customer.objects.create(code='KH_A', name='Khách công ty A', company=default)
+        Customer.objects.create(code='KH_B', name='Khách công ty B', company=other)
+        user = User.objects.create_superuser('gd_khac', 'g@example.com', 'Pw-Tenant#2026')
+        Employee.objects.create(user=user, code='GDK1', full_name='GĐ công ty B', phone_number='0900000202',
+                                role=EmployeeRole.DIRECTOR, company=other)
+        self.client.force_login(user)
+        with self.settings(TENANT_ENFORCE=True):
+            res = self.client.get('/api/customers/')
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            rows = data.get('results', data) if isinstance(data, dict) else data
+            codes = {r.get('code') for r in rows}
+            self.assertIn('KH_B', codes)
+            self.assertNotIn('KH_A', codes)
+            # ngoài request (lệnh quản trị) vẫn thấy đủ
+            self.assertEqual(Customer.objects.filter(code__in=['KH_A', 'KH_B']).count(), 2)
+        with self.settings(TENANT_ENFORCE=False):
+            data = self.client.get('/api/customers/').json()
+            rows = data.get('results', data) if isinstance(data, dict) else data
+            self.assertIn('KH_A', {r.get('code') for r in rows})
