@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import sys
 import datetime
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -155,7 +156,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Manifest: tên file có mã băm nội dung -> cache 1 năm an toàn; bản nén .gz sẵn cho Nginx (gzip_static).
 STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+                    if not DEBUG and 'test' not in sys.argv else 'django.contrib.staticfiles.storage.StaticFilesStorage'},
 }
 WHITENOISE_MANIFEST_STRICT = False  # thiếu mục trong manifest thì dùng tên gốc thay vì báo lỗi
 
