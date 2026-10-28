@@ -14,40 +14,6 @@
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
     
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        teal: {
-                            50: '#f0fdfa',
-                            100: '#ccfbf1',
-                            200: '#99f6e4',
-                            300: '#5eead4',
-                            400: '#2dd4bf',
-                            500: '#14b8a6',
-                            600: '#0d9488',
-                            700: '#0f766e',
-                            800: '#115e59',
-                            900: '#134e4a',
-                            950: '#042f2e',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                        heading: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    boxShadow: {
-                        '2xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                        'xs': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
-                    }
-                }
-            }
-        }
-    </script>
 
     <style>
         @page {
@@ -128,6 +94,8 @@
             }
         }
     </style>
+  <!-- Tailwind CSS (build sẵn, đặt cuối <head> để giữ thứ tự ưu tiên như bản CDN cũ) -->
+  <link rel="stylesheet" href="{% static 'css/tailwind-help.css' %}">
 </head>
 <body class="bg-slate-100/70 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-teal-500 selection:text-white">
 

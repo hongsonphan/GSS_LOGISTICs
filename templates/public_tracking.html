@@ -8,8 +8,6 @@
   <link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
   <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=3.0">
   
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
   <!-- Phosphor Icons -->
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"/>
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css"/>
@@ -19,6 +17,8 @@
     @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
     body { font-family: "Inter", sans-serif; }
   </style>
+  <!-- Tailwind CSS (build sẵn, đặt cuối <head> để giữ thứ tự ưu tiên như bản CDN cũ) -->
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-12">
 

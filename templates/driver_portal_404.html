@@ -1,10 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Không tìm thấy chuyến xe - BIM Logistics</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"/>
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css"/>
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css"/>
@@ -13,6 +13,8 @@
     @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
     body { font-family: "Inter", sans-serif; -webkit-tap-highlight-color: transparent; }
   </style>
+  <!-- Tailwind CSS (build sẵn, đặt cuối <head> để giữ thứ tự ưu tiên như bản CDN cũ) -->
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col justify-between text-slate-800 p-4">
   <div class="flex-1 flex flex-col items-center justify-center text-center py-12">
