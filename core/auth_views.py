@@ -4,6 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.http import JsonResponse
+from django.shortcuts import redirect
 
 class CurrentUserAPIView(APIView):
     """API lấy và cập nhật thông tin định danh & hồ sơ cá nhân của người dùng đang đăng nhập."""
@@ -76,8 +80,10 @@ class CurrentUserAPIView(APIView):
                 return Response({'error': 'Vui lòng nhập mật khẩu hiện tại để đổi mật khẩu mới.'}, status=status.HTTP_400_BAD_REQUEST)
             if not user.check_password(old_password):
                 return Response({'error': 'Mật khẩu hiện tại không chính xác.'}, status=status.HTTP_400_BAD_REQUEST)
-            if len(new_password) < 6:
-                return Response({'error': 'Mật khẩu mới phải có tối thiểu 6 ký tự.'}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                validate_password(new_password, user=user)
+            except DjangoValidationError as exc:
+                return Response({'error': ' '.join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
             user.set_password(new_password)
             user.save()
             update_session_auth_hash(request, user)
@@ -97,3 +103,11 @@ class CurrentUserAPIView(APIView):
                 'department_label': employee.get_department_display() if employee else '',
             }
         }, status=status.HTTP_200_OK)
+
+
+def csrf_failure(request, reason=""):
+    """Lỗi CSRF (thường do mở lại form đăng nhập cũ bằng nút Back): đưa về trang đăng nhập thay vì màn hình 403."""
+    wants_json = request.path.startswith('/api/') or 'application/json' in request.headers.get('Accept', '')
+    if wants_json:
+        return JsonResponse({'error': 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang và thử lại.', 'code': 'csrf_failed'}, status=403)
+    return redirect('/login/?expired=1')

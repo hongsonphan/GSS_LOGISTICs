@@ -28,14 +28,11 @@ $DOCKER_CMD exec -T web python manage.py collectstatic --noinput
 $DOCKER_CMD restart web
 sleep 3
 
-echo "=== [3/4] COMMIT CAC THAY DOI TAI CHO VA DAY LEN GITHUB ==="
-if [ -n "$(git status --porcelain)" ]; then
-    git add -A
-    git commit -m "chore(vps): cap nhat sua truc tiep tu VPS $(date '+%Y-%m-%d %H:%M:%S')" || true
-    git push origin master || true
-    echo "Da day cac thay doi len GitHub thanh cong."
-else
-    echo "Khong co thay doi noi bo can commit them."
+echo "=== [3/4] KIEM TRA THAY DOI TAI CHO TREN VPS ==="
+# Khong tu commit/push tu VPS nua: moi thay doi phai di qua may phat trien + GitHub (co review, co test).
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    echo "CANH BAO: VPS co file bi sua truc tiep, chua dong bo voi GitHub:"
+    git status --short
 fi
 
 echo "=== [4/4] KIEM TRA HE THONG WEBAPP ==="

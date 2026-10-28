@@ -158,20 +158,3 @@ class GracefulJWTAuthentication(JWTAuthentication):
             if user and user.is_authenticated:
                 return None
             raise
-
-
-from rest_framework.authentication import SessionAuthentication
-
-class CsrfExemptSessionAuthentication(SessionAuthentication):
-    """
-    SessionAuthentication không enforce CSRF nếu request sở hữu Capability Token hợp lệ (X-Trip-Hash).
-    Bảo vệ các thao tác hiện trường của tài xế trên thiết bị di động (Mobile Portal chống lỗi CSRF).
-    """
-    def enforce_csrf(self, request):
-        trip_identifier = request.headers.get('X-Trip-Hash') or request.META.get('HTTP_X_TRIP_HASH') or request.GET.get('trip_hash')
-        if trip_identifier:
-            if decode_driver_hashid(trip_identifier) or decode_trip_hashid(trip_identifier):
-                return
-        return super().enforce_csrf(request)
-
-

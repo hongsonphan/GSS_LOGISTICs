@@ -3,22 +3,37 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.http import HttpResponse, Http404
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.personnel.models import Employee
 from apps.master_data.models import CompanyProfile
 
 from django.utils.http import url_has_allowed_host_and_scheme
 import json
+import logging
+
+from django.conf import settings
+from django.core.cache import cache
+
+security_logger = logging.getLogger('bim.security')
+
+
+def _client_ip(request):
+    # Nginx đặt X-Real-IP = $remote_addr (client không giả mạo được); chạy trực tiếp thì dùng REMOTE_ADDR
+    return request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR') or 'unknown'
+
+
+def _login_lock_key(request, username):
+    return f"login-fail:{_client_ip(request)}:{username.lower()[:150]}"
 
 @never_cache
-@csrf_exempt
 def login_view(request):
     """
     Trang Đăng nhập Quản trị & Vận hành Bim Logistics (TMS).
     Kế thừa chuẩn giao diện & quy chuẩn bảo mật từ hệ sinh thái BIM Ecosystem.
     Hỗ trợ xác thực kép: Django Session Cookie + JWT Access Token.
-    @csrf_exempt đảm bảo người dùng và demo roles không bị chặn bởi lỗi 403 CSRF token mismatch khi chuyển tài khoản hoặc bấm nút Back.
+    Có kiểm tra CSRF. Khi token hết hạn (ví dụ bấm Back), CSRF_FAILURE_VIEW đưa người dùng về lại trang này.
+    Sai mật khẩu quá LOGIN_MAX_FAILURES lần trong LOGIN_LOCKOUT_SECONDS giây sẽ bị khoá tạm thời theo IP + tài khoản.
     """
     raw_next_url = request.GET.get('next') or request.POST.get('next') or '/'
     # Bảo vệ chống Open Redirect & XSS
@@ -35,6 +50,15 @@ def login_view(request):
         password_raw = request.POST.get('password', '').strip()
         remember_me = request.POST.get('remember_me')
 
+        lock_key = _login_lock_key(request, username_raw)
+        if cache.get(lock_key, 0) >= settings.LOGIN_MAX_FAILURES:
+            security_logger.warning('Login locked ip=%s user=%s', _client_ip(request), username_raw[:50])
+            return render(request, 'login.html', {
+                'error': f'Bạn đã nhập sai quá {settings.LOGIN_MAX_FAILURES} lần. Vui lòng thử lại sau {settings.LOGIN_LOCKOUT_SECONDS // 60} phút.',
+                'username': username_raw,
+                'next_url': next_url,
+            }, status=429)
+
         user = None
         # 1. Thử xác thực trực tiếp qua Username
         user = authenticate(request, username=username_raw, password=password_raw)
@@ -47,6 +71,7 @@ def login_view(request):
                 user = authenticate(request, username=emp.user.username, password=password_raw)
 
         if user and user.is_active:
+            cache.delete(lock_key)
             login(request, user)
             if remember_me:
                 request.session.set_expiry(1209600)  # Ghi nhớ 2 tuần
@@ -81,13 +106,21 @@ def login_view(request):
 </html>"""
             return HttpResponse(html_redirect)
         else:
+            try:
+                cache.incr(lock_key)
+            except ValueError:
+                cache.set(lock_key, 1, settings.LOGIN_LOCKOUT_SECONDS)
+            security_logger.info('Login failed ip=%s user=%s', _client_ip(request), username_raw[:50])
             return render(request, 'login.html', {
                 'error': 'Tên đăng nhập hoặc mật khẩu không chính xác.',
                 'username': username_raw,
                 'next_url': next_url,
             })
 
-    return render(request, 'login.html', {'next_url': next_url})
+    context = {'next_url': next_url}
+    if request.GET.get('expired'):
+        context['error'] = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+    return render(request, 'login.html', context)
 
 @never_cache
 def logout_view(request):
@@ -225,6 +258,7 @@ def help_view(request):
     })
 
 
+@ensure_csrf_cookie
 def driver_portal_view(request, trip_hash):
     """
     Trang Mobile Portal dành riêng cho Tài xế xe đầu kéo / xe tải.
@@ -407,7 +441,9 @@ def driver_portal_view(request, trip_hash):
         'timelines': timelines,
         'portal_expire_seconds': trip.get_driver_portal_seconds_left(),
     }
-    return render(request, 'driver_portal.html', context)
+    response = render(request, 'driver_portal.html', context)
+    from core.media_views import grant_media_scope
+    return grant_media_scope(request, response, 'd', trip.id)
 
 
 def public_tracking_view(request, trip_hash):
@@ -467,7 +503,9 @@ def public_tracking_view(request, trip_hash):
         'carrier_name': trip.carrier_name,
         'share_url': request.build_absolute_uri(),
     }
-    return render(request, 'public_tracking.html', context)
+    response = render(request, 'public_tracking.html', context)
+    from core.media_views import grant_media_scope
+    return grant_media_scope(request, response, 't', trip.id)
 
 
 @never_cache

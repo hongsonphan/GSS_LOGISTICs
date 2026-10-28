@@ -11,3 +11,18 @@ db.sqlite3
 .gitignore
 .idea
 .vscode
+
+# Không đưa bí mật, dữ liệu và file tạm vào image
+.env
+.env.*
+!.env.example
+.secrets/
+*.key
+*.pem
+*.dump
+*.sqlite3
+media/
+staticfiles/
+scratch/
+_deploy/
+test_screenshots/

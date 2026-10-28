@@ -10,12 +10,18 @@ try:
 except ImportError:
     pass
 
-SECRET_KEY = os.environ.get(
-    'SECRET_KEY',
-    'django-insecure-bim-logistics-trien-vo-enterprise-key-2026'
-)
+from django.core.exceptions import ImproperlyConfigured
 
-DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1')
+# Mặc định TẮT chế độ DEBUG. Máy phát triển bật bằng DEBUG=True trong .env
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1')
+
+# SECRET_KEY bắt buộc khai báo trong .env khi chạy production (DEBUG=False)
+SECRET_KEY = os.environ.get('SECRET_KEY', '')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-local-dev-only-key'
+    else:
+        raise ImproperlyConfigured('Thiếu biến môi trường SECRET_KEY (bắt buộc khi DEBUG=False).')
 
 # Frontend: True = nạp từng module JS riêng (dev), False = nạp app.js đã ghép (production)
 FRONTEND_SPLIT_SCRIPTS = os.environ.get('FRONTEND_SPLIT_SCRIPTS', str(DEBUG)).lower() in ('true', '1')
@@ -103,7 +109,7 @@ if DB_HOST or 'postgresql' in DB_ENGINE:
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.environ.get('DB_NAME', 'bim_logistics_db'),
             'USER': os.environ.get('DB_USER', 'bim_logistics_user'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'bim_logistics_secret_2026'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
             'HOST': DB_HOST or '127.0.0.1',
             'PORT': os.environ.get('DB_PORT', '5432'),
         }
@@ -159,10 +165,7 @@ if cors_env:
 else:
     CORS_ALLOWED_ORIGINS = [
         'https://logistics.bim.info.vn',
-        'http://logistics.bim.info.vn',
         'https://bim.info.vn',
-        'http://bim.info.vn',
-        'http://149.118.60.194:8085',
         'http://localhost:8085',
         'http://127.0.0.1:8085',
         'http://localhost:8000',
@@ -177,16 +180,17 @@ if csrf_env:
 else:
     CSRF_TRUSTED_ORIGINS = [
         'https://logistics.bim.info.vn',
-        'http://logistics.bim.info.vn',
         'https://bim.info.vn',
-        'http://bim.info.vn',
-        'http://149.118.60.194:8085',
-        'http://149.118.60.194',
         'http://localhost:8085',
         'http://127.0.0.1:8085',
         'http://localhost:8000',
         'http://127.0.0.1:8000',
     ]
+
+# Luôn tin cậy domain production chính thức (trước đây được thêm cứng ở cuối file)
+for _origin in ('https://logistics.bim.info.vn', 'https://bim.info.vn'):
+    if _origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_origin)
 
 # 2 & 6. DRF Settings: Throttling, Authentication & Custom Error Handler (Tiêu chuẩn 2, 3, 6)
 REST_FRAMEWORK = {
@@ -195,8 +199,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'core.security.GracefulJWTAuthentication',
-        'core.security.CsrfExemptSessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
@@ -257,36 +260,53 @@ X_FRAME_OPTIONS = 'DENY'
 # Cấu hình Reverse Proxy SSL Header cho Nginx / Docker
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Danh sách nguồn tin cậy cho CSRF (Bắt buộc từ Django 4.0+ khi chạy HTTPS qua domain)
-CSRF_TRUSTED_ORIGINS = [
-    'https://logistics.bim.info.vn',
-    'http://logistics.bim.info.vn',
-    'https://bim.info.vn',
-    'http://149.118.60.194:8085',
-    'http://149.118.60.194',
-    'http://localhost:8085',
-    'http://127.0.0.1:8085',
-]
-
-csrf_trusted_raw = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
-if csrf_trusted_raw:
-    for origin in csrf_trusted_raw.split(','):
-        cleaned = origin.strip()
-        if cleaned and cleaned not in CSRF_TRUSTED_ORIGINS:
-            CSRF_TRUSTED_ORIGINS.append(cleaned)
-
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 
 # 13. HTTPS Enforcement (Chỉ kích hoạt khi trên VPS có SSL)
-SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1')
-SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1')
-CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'False').lower() in ('true', '1')
+def _env_bool(name, default):
+    return os.environ.get(name, str(default)).lower() in ('true', '1')
 
-if not DEBUG and SECURE_SSL_REDIRECT:
+SECURE_SSL_REDIRECT = _env_bool('SECURE_SSL_REDIRECT', False)
+# Cookie chỉ gửi qua HTTPS khi chạy production (mặc định theo DEBUG, ghi đè được bằng .env)
+SESSION_COOKIE_SECURE = _env_bool('SESSION_COOKIE_SECURE', not DEBUG)
+CSRF_COOKIE_SECURE = _env_bool('CSRF_COOKIE_SECURE', not DEBUG)
+SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+
+# HSTS: bật khi production chạy HTTPS (Nginx + Certbot)
+if not DEBUG and _env_bool('ENABLE_HSTS', SECURE_SSL_REDIRECT):
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_PRELOAD = False
+
+# Trang lỗi CSRF thân thiện: đưa người dùng về trang đăng nhập thay vì màn hình 403
+CSRF_FAILURE_VIEW = 'core.auth_views.csrf_failure'
+
+# Media: True khi Nginx có location /protected-media/ (internal) -> Nginx gửi file, Django chỉ kiểm quyền
+MEDIA_USE_X_ACCEL = _env_bool('MEDIA_USE_X_ACCEL', False)
+
+# Salt mã hoá HashID trong URL. Giữ giá trị cũ làm mặc định để không làm hỏng các link đã gửi;
+# đặt HASHIDS_SALT mới trong .env khi chấp nhận vô hiệu hoá link cũ.
+HASHIDS_SALT = os.environ.get('HASHIDS_SALT') or 'BIM_LOGISTICS_SECURE_SALT_2026'
+
+# Khoá đăng nhập tạm thời sau nhiều lần sai mật khẩu
+LOGIN_MAX_FAILURES = int(os.environ.get('LOGIN_MAX_FAILURES', '5'))
+LOGIN_LOCKOUT_SECONDS = int(os.environ.get('LOGIN_LOCKOUT_SECONDS', '900'))
+
+# Nhật ký hệ thống: ghi ra console (Docker thu lại bằng `docker compose logs`)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'plain': {'format': '%(asctime)s %(levelname)s %(name)s: %(message)s'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'plain'}},
+    'root': {'handlers': ['console'], 'level': os.environ.get('LOG_LEVEL', 'INFO')},
+    'loggers': {
+        'django.request': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'django.security': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'bim.security': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+    },
+}
 

@@ -870,7 +870,14 @@ class CollaborationTestSuite(TestCase):
         self.assertEqual(post.title, 'Thông báo lịch điều xe đêm [BGD PHÊ DUYỆT]')
 
         # 5. Kiểm tra safe_media_serve trả về header X-Frame-Options: SAMEORIGIN
-        res_media = self.client.get('/media/company_news/attachments/2026/10/sample_doc_1.pdf')
+        import os, tempfile
+        from django.test import override_settings
+        with tempfile.TemporaryDirectory() as media_dir:
+            os.makedirs(os.path.join(media_dir, 'company_news/attachments/2026/10'))
+            with open(os.path.join(media_dir, 'company_news/attachments/2026/10/sample_doc_1.pdf'), 'wb') as fh:
+                fh.write(b'%PDF-1.4 test')
+            with override_settings(MEDIA_ROOT=media_dir):
+                res_media = self.client.get('/media/company_news/attachments/2026/10/sample_doc_1.pdf')
         self.assertEqual(res_media.status_code, 200)
         self.assertEqual(res_media.headers.get('X-Frame-Options'), 'SAMEORIGIN')
         self.assertIn('inline', res_media.headers.get('Content-Disposition', ''))

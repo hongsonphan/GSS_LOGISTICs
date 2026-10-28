@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: bim_logistics_db
       POSTGRES_USER: bim_logistics_user
-      POSTGRES_PASSWORD: bim_logistics_secret_2026
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Khai bao DB_PASSWORD trong file .env}
     ports:
       - "127.0.0.1:5435:5432" # Chỉ mở trên localhost nội bộ máy chủ, không mở ra Internet
     volumes:
@@ -25,12 +25,12 @@ services:
       DB_ENGINE: django.db.backends.postgresql
       DB_NAME: bim_logistics_db
       DB_USER: bim_logistics_user
-      DB_PASSWORD: bim_logistics_secret_2026
+      DB_PASSWORD: ${DB_PASSWORD:?Khai bao DB_PASSWORD trong file .env}
       DB_HOST: db
       DB_PORT: 5432
       DJANGO_SETTINGS_MODULE: config.settings
     ports:
-      - "8085:8000" # Tránh cổng 8080 đang dùng bởi Paperless
+      - "127.0.0.1:8085:8000" # Chỉ mở nội bộ máy chủ; truy cập từ ngoài đi qua Nginx (HTTPS)
     volumes:
       - .:/app
     depends_on:

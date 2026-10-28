@@ -1,3 +1,5 @@
+import tempfile
+from django.test import override_settings
 import datetime
 import io
 import json
@@ -2624,17 +2626,11 @@ class SidebarHoverPeekTestCase(TestCase):
 
 
 class SafeMediaServeTestCase(TestCase):
-    def test_safe_media_serve_sample_doc(self):
-        res = self.client.get('/media/trip_docs/sample_doc_2.pdf')
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res['Content-Type'], 'application/pdf')
-
-    def test_safe_media_serve_fallback_pdf(self):
+    """Media không còn tự sinh file giả: file thiếu -> 404 (chi tiết bảo mật ở core/test_security_phase0.py)."""
+    @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+    def test_missing_media_returns_404_without_generating_file(self):
+        import os
+        from django.conf import settings
         res = self.client.get('/media/trip_docs/non_existent_random_doc_123.pdf')
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res['Content-Type'], 'application/pdf')
-
-    def test_safe_media_serve_fallback_image(self):
-        res = self.client.get('/media/documents/non_existent_random_image_999.jpg')
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res['Content-Type'], 'image/jpeg')
+        self.assertEqual(res.status_code, 404)
+        self.assertFalse(os.path.exists(os.path.join(settings.MEDIA_ROOT, 'trip_docs', 'non_existent_random_doc_123.pdf')))

@@ -258,6 +258,23 @@ class IsDriver(permissions.BasePermission):
         return bool(employee and employee.role == EmployeeRole.DRIVER)
 
 
+def _trip_for_driver_capability(identifier):
+    """Trả về chuyến xe nếu identifier là Driver Token còn hiệu lực (hoặc HashID tài xế đời cũ của chuyến chưa có token)."""
+    if not identifier:
+        return None
+    from apps.dispatch.models import DispatchTrip
+    trip = DispatchTrip.objects.filter(driver_token=identifier).first()
+    if trip:
+        return trip
+    from core.security import decode_driver_hashid
+    decoded_id = decode_driver_hashid(identifier)
+    if decoded_id:
+        legacy_trip = DispatchTrip.objects.filter(id=decoded_id).first()
+        if legacy_trip and not legacy_trip.driver_token:
+            return legacy_trip
+    return None
+
+
 class IsTripDriverOrDispatcher(permissions.BasePermission):
     """
     Quyền truy cập chuyến xe (Chống IDOR - Tiêu chuẩn 10):
@@ -271,19 +288,20 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
         if request.user and request.user.is_authenticated:
             return True
 
-        # Hỗ trợ Capability Token từ URL hoặc Header cho Trang Tài Xế Mobile (Chỉ chấp nhận Driver Token còn hiệu lực)
-        trip_identifier = view.kwargs.get('trip_code') or request.headers.get('X-Trip-Hash') or request.GET.get('trip_hash')
-        if trip_identifier:
-            from apps.dispatch.models import DispatchTrip
-            if DispatchTrip.objects.filter(driver_token=trip_identifier).exists():
-                return True
-            from core.security import decode_driver_hashid, decode_trip_hashid
-            decoded_id = decode_driver_hashid(trip_identifier) or decode_trip_hashid(trip_identifier)
-            if decoded_id:
-                legacy_trip = DispatchTrip.objects.filter(id=decoded_id).first()
-                if legacy_trip and (not legacy_trip.driver_token or legacy_trip.driver_token == trip_identifier):
-                    return True
-        return False
+        # Tài xế không đăng nhập: chỉ được thao tác trên ĐÚNG chuyến gắn với Driver Token của mình.
+        url_ident = view.kwargs.get('trip_code')
+        header_ident = request.headers.get('X-Trip-Hash') or request.GET.get('trip_hash')
+        token_trip = _trip_for_driver_capability(header_ident or url_ident)
+        if not token_trip:
+            return False
+        if hasattr(token_trip, 'is_driver_portal_expired') and token_trip.is_driver_portal_expired():
+            return False
+        if url_ident and header_ident and url_ident != header_ident:
+            # URL trỏ tới chuyến khác với token đang cầm -> chặn (chống IDOR)
+            from apps.dispatch.api_views import get_trip_by_code_or_hash
+            url_trip = get_trip_by_code_or_hash(url_ident)
+            return bool(url_trip and url_trip.pk == token_trip.pk)
+        return True
 
     def has_object_permission(self, request, view, obj):
         if request.user and (request.user.is_superuser or request.user.is_staff):
