@@ -36,6 +36,7 @@ function switchAccountingSubTab(subtabId) {
     else if (subtabId === 'acct-reimbursables') { btnId = 'acct-tab-btn-5'; brandColor = 'sky'; }
     else if (subtabId === 'acct-subcontractors') { btnId = 'acct-tab-btn-6'; brandColor = 'rose'; }
     else if (subtabId === 'acct-bot-audit') { btnId = 'acct-tab-btn-7'; brandColor = 'emerald'; }
+    else if (subtabId === 'acct-ledger') { btnId = 'acct-tab-btn-8'; brandColor = 'indigo'; }
 
     const activeBtn = document.getElementById(btnId);
     if (activeBtn) {
@@ -60,6 +61,8 @@ function switchAccountingSubTab(subtabId) {
         loadSubcontractorData();
     } else if (subtabId === 'acct-bot-audit') {
         loadBotAuditData();
+    } else if (subtabId === 'acct-ledger') {
+        loadLedgerData();
     } else {
         loadCashBookData();
     }

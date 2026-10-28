@@ -167,3 +167,31 @@ class ReportTests(LedgerTestBase):
         user = User.objects.create_user('nv_lg', password='Pw-Ledger#2026')
         self.client.force_login(user)
         self.assertEqual(self.client.get('/api/ledger/trial-balance/').status_code, 403)
+
+    def test_mapping_api(self):
+        import json
+        user = User.objects.create_superuser('ketoan_map', 'm@example.com', 'Pw-Ledger#2026')
+        self.client.force_login(user)
+        data = self.client.get('/api/ledger/mapping/').json()
+        self.assertEqual(data['regime'], 'TT133')
+        item = {i['key']: i for i in data['items']}
+        self.assertEqual(item['fuel']['effective'], '632')
+        self.assertNotIn('111', [a['code'] for a in data['accounts']])  # chỉ tài khoản chi tiết
+        put = lambda body: self.client.put('/api/ledger/mapping/', json.dumps(body), content_type='application/json')
+        self.assertEqual(put({'overrides': {'fuel': '9999'}}).status_code, 400)
+        self.assertEqual(put({'overrides': {'khong_co': '632'}}).status_code, 400)
+        res = put({'overrides': {'admin_other': '6422', 'fuel': '154'}})
+        self.assertEqual(res.status_code, 200, res.content)
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.ledger_account_overrides, {'fuel': '154'})  # trùng mặc định thì không lưu
+        self.assertEqual({i['key']: i for i in res.json()['items']}['fuel']['effective'], '154')
+
+    def test_mapping_regime_change_needs_director(self):
+        import json
+        user = User.objects.create_user('kt_thuong', password='Pw-Ledger#2026')
+        Employee.objects.create(code='KTLG', full_name='Kế Toán Sổ Cái', phone_number='0900000010',
+                                role=EmployeeRole.ACCOUNTANT, user=user)
+        self.client.force_login(user)
+        res = self.client.put('/api/ledger/mapping/', json.dumps({'regime': 'TT200'}), content_type='application/json')
+        self.assertEqual(res.status_code, 400)
+        self.assertFalse(self.client.get('/api/ledger/mapping/').json()['can_change_regime'])

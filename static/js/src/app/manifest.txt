@@ -68,6 +68,7 @@ accounting/cashbook.js
 accounting/cash-voucher-page.js
 accounting/subcontractor.js
 accounting/bot-audit.js
+accounting/ledger.js
 accounting/customer-settlement.js
 accounting/reports-center.js
 # 8. Danh mục & cài đặt

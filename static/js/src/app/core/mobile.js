@@ -115,7 +115,8 @@
             const label = (th.innerText || '').replace(/\s+/g, ' ').replace(/[↑↓⇅]/g, '').trim();
             const isCheck = !!th.querySelector('input[type=checkbox]');
             const isAct = th.getAttribute('data-col-key') === 'actions' || /THAO TÁC/i.test(label);
-            for (let i = 0; i < span; i++) cols.push({ label, isCheck, isAct });
+            const role = th.getAttribute('data-m-role') || '';  // vai trò chỉ định sẵn (m-title, m-key m-money, m-minor, m-skip…)
+            for (let i = 0; i < span; i++) cols.push({ label, isCheck, isAct, role });
         }
         return cols;
     }
@@ -123,6 +124,7 @@
     function rolesFor(cols) {
         let title = -1, keys = 0, money = 0;
         const descIdx = cols.findIndex(c => DESC_RE.test(c.label));
+        if (cols.some(c => c.role)) return cols.map(c => c.role || 'm-minor');
         return cols.map((c, i) => {
             if (c.isCheck || SKIP_RE.test(c.label)) return 'm-skip';
             if (c.isAct) return 'm-actions';

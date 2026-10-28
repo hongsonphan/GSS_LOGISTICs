@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from core.permissions import CanViewFinancialReports
 from core.tenant import company_for_user
 
-from . import reports
+from . import charts, reports
 from .models import Account
 
 XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -99,3 +99,82 @@ class AccountLedgerAPIView(APIView):
                          'closing': _num(data['closing']),
                          'rows': [{**r, 'debit': _num(r['debit']), 'credit': _num(r['credit']), 'balance': _num(r['balance'])}
                                   for r in data['rows']]})
+
+
+MAPPING_LABELS = {
+    'cash': 'Tiền mặt', 'bank': 'Tiền gửi ngân hàng', 'receivable': 'Phải thu khách hàng',
+    'vat_in': 'Thuế GTGT đầu vào', 'other_receivable': 'Phải thu khác (chi hộ)', 'advance': 'Tạm ứng',
+    'payable': 'Phải trả nhà cung cấp / đối tác', 'vat_out': 'Thuế GTGT đầu ra', 'pit': 'Thuế TNCN',
+    'salary': 'Phải trả người lao động', 'union': 'Kinh phí công đoàn', 'social_ins': 'Bảo hiểm xã hội',
+    'health_ins': 'Bảo hiểm y tế', 'unemployment_ins': 'Bảo hiểm thất nghiệp', 'revenue': 'Doanh thu cước vận tải',
+    'other_income': 'Thu nhập khác', 'cogs': 'Giá vốn (chi phí chuyến khác)', 'fuel': 'Chi phí nhiên liệu',
+    'toll': 'Chi phí cầu đường / BOT', 'maintenance': 'Chi phí sửa chữa, bảo dưỡng', 'driver_salary': 'Lương tài xế',
+    'admin_salary': 'Lương bộ phận quản lý', 'admin_other': 'Chi phí quản lý khác',
+}
+
+
+def _can_change_regime(user):
+    from core.permissions import IsAdminOrDirector
+    return IsAdminOrDirector().has_permission(type('R', (), {'user': user})(), None)
+
+
+def _mapping_payload(company, user):
+    regime = company.accounting_regime or 'TT133'
+    names = {code: name for code, name, _k in charts.CHARTS[regime]}
+    overrides = company.ledger_account_overrides or {}
+    items = []
+    for key, default in charts.ACCOUNT_MAP[regime].items():
+        effective = overrides.get(key) or default
+        items.append({'key': key, 'label': MAPPING_LABELS.get(key, key), 'default': default,
+                      'override': overrides.get(key) or '', 'effective': effective,
+                      'effective_name': names.get(effective, '')})
+    leaf_codes = [{'code': c, 'name': n} for c, n, _k in charts.CHARTS[regime]
+                  if not any(o != c and o.startswith(c) for o, _n, _x in charts.CHARTS[regime])]
+    return {'regime': regime, 'regimes': list(charts.REGIMES), 'can_change_regime': _can_change_regime(user),
+            'items': items, 'accounts': leaf_codes}
+
+
+class LedgerMappingAPIView(APIView):
+    """Xem/sửa ánh xạ nghiệp vụ -> tài khoản của công ty (ghi đè mặc định theo chế độ kế toán)."""
+    permission_classes = [CanViewFinancialReports]
+
+    def get(self, request):
+        company = _company(request)
+        return Response(_mapping_payload(company, request.user))
+
+    def put(self, request):
+        from django.db import transaction
+
+        from .posting import rebuild
+        company = _company(request)
+        data = request.data if isinstance(request.data, dict) else {}
+        regime = data.get('regime') or company.accounting_regime or 'TT133'
+        if regime not in charts.REGIMES:
+            raise ValidationError({'regime': 'Chế độ kế toán không hợp lệ'})
+        if regime != company.accounting_regime and not _can_change_regime(request.user):
+            raise ValidationError({'regime': 'Chỉ Ban Giám Đốc / quản trị được đổi chế độ kế toán'})
+        raw = data.get('overrides') or {}
+        if not isinstance(raw, dict):
+            raise ValidationError({'overrides': 'Sai định dạng'})
+        valid_codes = {c for c, _n, _k in charts.CHARTS[regime]}
+        overrides, errors = {}, {}
+        for key, code in raw.items():
+            code = str(code or '').strip()
+            if key not in charts.ACCOUNT_MAP[regime]:
+                errors[key] = 'Nghiệp vụ không tồn tại'
+            elif not code or code == charts.ACCOUNT_MAP[regime][key]:
+                continue
+            elif code not in valid_codes:
+                errors[key] = f'Tài khoản {code} không có trong hệ thống tài khoản {regime}'
+            else:
+                overrides[key] = code
+        if errors:
+            raise ValidationError({'overrides': errors})
+        with transaction.atomic():
+            company.accounting_regime = regime
+            company.ledger_account_overrides = overrides
+            company.save(update_fields=['accounting_regime', 'ledger_account_overrides'])
+            summary = rebuild(company) if data.get('rebuild', True) else {}
+        payload = _mapping_payload(company, request.user)
+        payload['rebuilt'] = sum(summary.values())
+        return Response(payload)
