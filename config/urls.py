@@ -66,10 +66,12 @@ from rest_framework_simplejwt.views import (
     TokenBlacklistView,
 )
 from core.auth_views import CurrentUserAPIView
+from core.health import healthz
 
 urlpatterns = [
     path('favicon.ico', RedirectView.as_view(url='/static/favicon.ico', permanent=True)),
     path('robots.txt', RedirectView.as_view(url='/static/robots.txt', permanent=True)),
+    path('healthz/', healthz, name='healthz'),
     path('admin/', admin.site.urls),
     
     # Giao diện Web SPA & Xác thực

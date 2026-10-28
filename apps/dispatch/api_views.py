@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 from django.db import models, transaction
 from django.db.models import Sum, Count, Q, Avg
@@ -10,6 +11,8 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from apps.dispatch.models import DispatchTrip, TripTimelineItem, ShipmentType, TripStatus
 from apps.dispatch.timeline_service import sync_trip_10_step_timeline, build_10_step_timeline_spec, get_derived_7_milestones
+
+logger = logging.getLogger(__name__)
 from apps.fleet.models import Vehicle, Trailer, VehicleStatus, VehicleType, VehicleOwnership
 from apps.personnel.models import Employee, Department, EmployeeRole
 from apps.customers.models import Customer, Quotation, QuotationItem, RouteTariff, BookingOrder, BookingStatus, BookingDocument
@@ -4680,7 +4683,7 @@ class BookingPriceLookupAPIView(APIView):
 
         # 3. Tra cứu lịch sử chuyến xe gần nhất của khách
         if delivery:
-            recent_trip = Trip.objects.filter(
+            recent_trip = DispatchTrip.objects.filter(
                 customer=customer,
                 is_deleted=False,
                 delivery_location__icontains=delivery

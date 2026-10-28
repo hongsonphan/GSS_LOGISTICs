@@ -33,6 +33,12 @@ services:
       - "127.0.0.1:8085:8000" # Chỉ mở nội bộ máy chủ; truy cập từ ngoài đi qua Nginx (HTTPS)
     volumes:
       - .:/app
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     depends_on:
       db:
         condition: service_healthy

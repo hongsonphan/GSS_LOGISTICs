@@ -1,0 +1,79 @@
+# Kiểm tra tự động mỗi lần push / tạo Pull Request.
+# Merge vào master chỉ khi tất cả bước đều xanh.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: bim_ci
+          POSTGRES_USER: bim_ci
+          POSTGRES_PASSWORD: bim_ci_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U bim_ci -d bim_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DEBUG: "False"
+      SECRET_KEY: ci-only-secret-key-not-for-production
+      DB_ENGINE: django.db.backends.postgresql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      DB_NAME: bim_ci
+      DB_USER: bim_ci
+      DB_PASSWORD: bim_ci_password
+      SECURE_SSL_REDIRECT: "False"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Cài thư viện
+        run: pip install -r requirements.txt pip-audit ruff
+
+      - name: app.js khớp mã nguồn module
+        run: python scripts/build_app_js.py --check
+
+      - name: Cú pháp JavaScript
+        run: node --check static/js/app.js
+
+      - name: Lỗi Python nghiêm trọng (cú pháp, tên chưa định nghĩa)
+        run: ruff check --select E9,F63,F7,F82 apps core config scripts
+
+      - name: Kiểm tra migration đầy đủ
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Django system check (cấu hình production)
+        run: python manage.py check --deploy --fail-level ERROR
+
+      - name: Chạy toàn bộ test
+        run: python manage.py test --noinput --parallel 4
+
+      - name: Lỗ hổng thư viện đã biết
+        run: pip-audit -r requirements.txt
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Quét bí mật lọt vào mã nguồn
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
