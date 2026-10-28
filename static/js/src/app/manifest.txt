@@ -12,6 +12,7 @@ core/master-options.js
 core/layout.js
 core/time-picker.js
 core/router.js
+core/fit-text.js
 # 2. Dashboard
 dashboard/period-filter.js
 dashboard/role-widgets.js

@@ -1656,3 +1656,9 @@ body.bim-col-resizing * {
     .erp-table tbody td[colspan] > div,
     .bim-table tbody td[colspan] > div { max-width: calc(100vw - 48px); }
 }
+
+/* Nút chỉ gồm chữ + biểu tượng: không rớt dòng trên màn hình từ 640px (nút dạng thẻ có khối div/p bên trong không bị ảnh hưởng) */
+@media (min-width: 640px) {
+    button:not(:has(div, p, br, ul, ol, table, h1, h2, h3, h4, h5, h6)),
+    a[onclick]:not(:has(div, p, br, ul, ol, table)) { white-space: nowrap; }
+}
