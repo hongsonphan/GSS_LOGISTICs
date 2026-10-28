@@ -72,6 +72,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'core.security_headers.SecurityHeadersMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -246,6 +247,9 @@ REST_FRAMEWORK = {
         'iso-8601',
     ],
 }
+# Production: chỉ trả JSON (tắt giao diện "Browsable API" của DRF — lộ cấu trúc API và form gửi dữ liệu)
+if not DEBUG:
+    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = ['rest_framework.renderers.JSONRenderer']
 
 # 3. Simple JWT Configuration (Tiêu chuẩn 3 - Mobile Token Expiration & Blacklist)
 SIMPLE_JWT = {
@@ -268,7 +272,8 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 # 14 & 15. Security Headers & Cookie Protection (Tiêu chuẩn 14, 15)
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
-X_FRAME_OPTIONS = 'DENY'
+# SAMEORIGIN: khớp header Nginx phía trước (tránh 2 giá trị mâu thuẫn) và cho phép xem trước tệp trong khung cùng site
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 # Cấu hình Reverse Proxy SSL Header cho Nginx / Docker
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -336,4 +341,6 @@ SPECTACULAR_SETTINGS = {
 # Đa doanh nghiệp: người dùng đăng nhập chỉ thấy dữ liệu công ty của mình (lọc ở manager mặc định của mọi model
 # thuộc công ty — core.models.tenant_scope). Với một công ty hành vi không đổi. Tắt khẩn cấp: TENANT_ENFORCE=false
 TENANT_ENFORCE = _env_bool('TENANT_ENFORCE', True)
+# Content-Security-Policy (core/security_headers.py). CSP_REPORT_ONLY=true để chỉ báo cáo khi cần dò lỗi
+CSP_REPORT_ONLY = _env_bool('CSP_REPORT_ONLY', False)
 LEDGER_AUTO_POST = _env_bool('LEDGER_AUTO_POST', True)

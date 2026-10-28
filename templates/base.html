@@ -10,14 +10,13 @@
     <title>{% block title %}Hệ thống Quản lý Vận tải - BIM LOGISTICS{% endblock %}</title>
     
     
-    <!-- Phosphor Icons (Direct CSS & Webfont JS) -->
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"/>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css"/>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css"/>
-    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <!-- Phosphor Icons (tự host: static/vendor) -->
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/regular/style.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/fill/style.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/bold/style.css' %}"/>
     
     <!-- Chart.js (Modern Logistics Analytics & BI Visualization) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
     
     <!-- International Enterprise Typography & Custom Styles -->
     <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2.9.86">

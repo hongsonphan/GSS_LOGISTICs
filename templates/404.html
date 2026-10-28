@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>404 - Không tìm thấy trang | BIM Logistics</title>
   <link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
-  <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/bold/style.css' %}"/>
   <style>
-    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+    @import url("{% static 'vendor/fonts/fonts.css' %}");
     body { font-family: "Inter", sans-serif; }
   </style>
   <!-- Tailwind CSS (build sẵn, đặt cuối <head> để giữ thứ tự ưu tiên như bản CDN cũ) -->

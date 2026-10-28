@@ -5,14 +5,14 @@
 
 {% block extra_head %}
   <!-- SheetJS cho xem trước bảng tính Excel (.xlsx/.xls) trên máy khách -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="{% static 'vendor/xlsx/xlsx.full.min.js' %}"></script>
   <!-- Mammoth.js cho xem trước tài liệu Word (.docx) chuyển thành HTML -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="{% static 'vendor/mammoth/mammoth.browser.min.js' %}"></script>
   <!-- Mozilla PDF.js cho xem trước trực tiếp tài liệu PDF sắc nét trên Canvas, không bị chặn iframe -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="{% static 'vendor/pdfjs/pdf.min.js' %}"></script>
   <script>
     if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '{% static 'vendor/pdfjs/pdf.worker.min.js' %}';
     }
   </script>
 
@@ -659,7 +659,7 @@
 
                 const loadingTask = pdfjsLib.getDocument({
                     url: url,
-                    cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+                    cMapUrl: '{% get_static_prefix %}vendor/pdfjs/cmaps/',
                     cMapPacked: true
                 });
                 pdfDoc = await loadingTask.promise;
