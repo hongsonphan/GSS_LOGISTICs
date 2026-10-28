@@ -137,3 +137,14 @@ class Phase0SecurityTestCase(TestCase):
         c.force_login(User.objects.get(username="sec_staff"))
         self.assertEqual(c.get("/api/auth/me/").status_code, 200)
         self.assertEqual(c.post("/api/collaboration/news/posts/", {}, content_type="application/json").status_code, 403)
+
+
+class ClientIpTests(TestCase):
+    def test_client_ip_sources(self):
+        from django.test import RequestFactory
+
+        from apps.dispatch.views import _client_ip
+        rf = RequestFactory()
+        self.assertEqual(_client_ip(rf.get('/', HTTP_X_REAL_IP='1.2.3.4', HTTP_X_FORWARDED_FOR='9.9.9.9')), '1.2.3.4')
+        self.assertEqual(_client_ip(rf.get('/', HTTP_X_FORWARDED_FOR='6.6.6.6, 5.5.5.5')), '5.5.5.5')
+        self.assertEqual(_client_ip(rf.get('/', REMOTE_ADDR='7.7.7.7')), '7.7.7.7')

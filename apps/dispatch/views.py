@@ -18,8 +18,15 @@ security_logger = logging.getLogger('bim.security')
 
 
 def _client_ip(request):
-    # Nginx đặt X-Real-IP = $remote_addr (client không giả mạo được); chạy trực tiếp thì dùng REMOTE_ADDR
-    return request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR') or 'unknown'
+    # Ưu tiên X-Real-IP do Nginx đặt; nếu Nginx chỉ gửi X-Forwarded-For thì lấy địa chỉ CUỐI (do Nginx của ta thêm,
+    # client không giả mạo được); chạy trực tiếp thì dùng REMOTE_ADDR.
+    real_ip = request.META.get('HTTP_X_REAL_IP')
+    if real_ip:
+        return real_ip.strip()
+    forwarded = [p.strip() for p in request.META.get('HTTP_X_FORWARDED_FOR', '').split(',') if p.strip()]
+    if forwarded:
+        return forwarded[-1]
+    return request.META.get('REMOTE_ADDR') or 'unknown'
 
 
 def _login_lock_key(request, username):

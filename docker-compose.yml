@@ -31,6 +31,7 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings
     ports:
       - "127.0.0.1:8085:8000" # Chỉ mở nội bộ máy chủ; truy cập từ ngoài đi qua Nginx (HTTPS)
+      - "172.17.0.1:8085:8000" # Cầu nối docker0: Nginx dạng container (bim_consulting-nginx-1) gọi vào đây; không lộ ra Internet
     volumes:
       - .:/app
     healthcheck:

@@ -95,6 +95,10 @@ for i in $(seq 1 30); do
     if curl -fsS -H "Host: logistics.bim.info.vn" -H "X-Forwarded-Proto: https" http://127.0.0.1:8085/healthz/ >/dev/null 2>&1; then ok=1; break; fi
     sleep 4
 done
+# Nginx dạng container gọi qua cầu nối docker0 (172.17.0.1): kiểm tra cả đường này
+if [ -n "$ok" ] && ip -4 addr show docker0 >/dev/null 2>&1; then
+    curl -fsS -m 10 -H "Host: logistics.bim.info.vn" -H "X-Forwarded-Proto: https" http://172.17.0.1:8085/healthz/ >/dev/null 2>&1 || { echo "Không gọi được qua 172.17.0.1:8085 (đường Nginx dùng)"; ok=""; }
+fi
 if [ -z "$ok" ]; then
     echo "WEB KHÔNG LÊN -> quay về bản cũ"; $DC logs --tail 80 web || true
     if [ -f "$ROLLBACK_FILE" ]; then git checkout -B master "$(cat "$ROLLBACK_FILE")"; $DC build web; $DC up -d web; fi
