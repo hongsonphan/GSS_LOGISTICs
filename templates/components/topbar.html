@@ -59,6 +59,10 @@
         
         <!-- NÚT CHUÔNG THÔNG BÁO NỘI BỘ (In-App Notification Bell) -->
         {% if request.user.is_authenticated %}
+        <!-- Điện thoại: các nút thao tác của màn hình được thu vào đây (core/mobile.js) -->
+        <button type="button" id="m-actions-btn" class="hidden w-10 h-10 items-center justify-center text-slate-700 bg-white border border-slate-200 rounded-xl shadow-2xs cursor-pointer" title="Thao tác" aria-label="Thao tác">
+            <i class="ph-bold ph-dots-three-outline text-lg"></i>
+        </button>
         <div class="relative" id="topbar-notification-container">
             <button type="button" id="btn-notification-bell" onclick="toggleNotificationDropdown(event)" 
                 class="relative p-2 text-slate-600 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer border border-slate-200 shadow-2xs active:scale-95 bg-white flex items-center justify-center"

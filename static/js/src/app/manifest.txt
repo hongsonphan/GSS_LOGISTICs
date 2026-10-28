@@ -13,6 +13,7 @@ core/layout.js
 core/time-picker.js
 core/router.js
 core/fit-text.js
+core/mobile.js
 # 2. Dashboard
 dashboard/period-filter.js
 dashboard/role-widgets.js

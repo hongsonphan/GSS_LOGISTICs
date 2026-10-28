@@ -1666,3 +1666,121 @@ body.bim-col-resizing * {
     button:not(:has(div, p, br, ul, ol, table, h1, h2, h3, h4, h5, h6)),
     a[onclick]:not(:has(div, p, br, ul, ol, table)) { white-space: nowrap; }
 }
+
+/* =====================================================================
+   GIAO DIỆN ĐIỆN THOẠI (< 768px) — xem số liệu là chính, thao tác khi thật cần (core/mobile.js)
+   ===================================================================== */
+#m-sheet { display: none; }
+@media (max-width: 767px) {
+    .m-hide, [data-m-hide] { display: none !important; }
+    /* Thanh tiêu đề trang con: một dòng, bỏ tiền tố "Điều Vận |" */
+    #topbar-fullpage-wrapper, #topbar-fullpage-wrapper > div { min-width: 0; }
+    #topbar-fullpage-prefix, #topbar-fullpage-separator-1 { display: none !important; }
+    #topbar-fullpage-wrapper :has(> #topbar-fullpage-title) { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #topbar-fullpage-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* --- Thẻ KPI: lưới 2 cột, chỉ nhãn + số --- */
+    .m-kpi-grid { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
+    .m-kpi-grid > .m-kpi-card:last-child:nth-child(odd) { grid-column: span 2; }
+    .m-kpi-card { padding: 10px 12px !important; min-height: 0 !important; border-left-width: 3px !important; }
+    .m-kpi-card p.text-xs,
+    .m-kpi-card span[class*="rounded-full"],
+    .m-kpi-card span[class*="rounded"][class*="border"],
+    .m-kpi-card .border-t { display: none !important; }
+    .m-kpi-card p.tabular-nums.font-black { font-size: 20px; line-height: 1.2; margin-top: 2px; white-space: normal !important; }
+    /* hàng tiêu đề thẻ: giữ nhãn và con số, ẩn chip phụ + ô biểu tượng */
+    .m-kpi-card .justify-between > :not(:first-child):not(:has(.tabular-nums)):not(.tabular-nums) { display: none !important; }
+    .m-kpi-card .justify-between > :first-child:not(:has(.tabular-nums)):not(.tabular-nums) { white-space: normal; }
+    /* nhãn và số chung một hàng (thẻ phễu): xếp nhãn trên, số dưới */
+    .m-kpi-card .justify-between:has(.tabular-nums) { flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }
+    .m-kpi-card .justify-between:has(.tabular-nums) > * { justify-content: flex-start !important; width: auto; }
+    .m-kpi-card .justify-between:has(.tabular-nums) p.tabular-nums { text-align: left !important; }
+    .m-kpi-card :is(.w-6, .w-7, .w-8, .w-9, .w-10):is(.h-6, .h-7, .h-8, .h-9, .h-10):not(:has(.tabular-nums)) { display: none !important; }
+    .m-kpi-card span.uppercase, .m-kpi-card p.uppercase { font-size: 10.5px; letter-spacing: .02em; }
+    .m-kpi-card > div > div:first-child { margin-bottom: 2px !important; }
+
+    /* --- Tab: một hàng cuộn ngang --- */
+    .m-tabs { flex-wrap: nowrap !important; overflow-x: auto !important; scrollbar-width: none; -webkit-overflow-scrolling: touch; gap: 6px !important; }
+    .m-tabs::-webkit-scrollbar { display: none; }
+    .m-tabs > button { flex-shrink: 0 !important; white-space: nowrap !important; margin: 0 !important; }
+    /* tab dạng thẻ lớn (vd. 4 nhóm báo cáo): thành chip gọn, bỏ biểu tượng lớn + dòng mô tả */
+    .m-tabs.grid { display: flex !important; }
+    .m-tabs > button:has(> div > .min-w-0) { padding: 8px 12px !important; border-radius: 12px !important; max-width: 70vw; }
+    .m-tabs > button > div > div:not(.min-w-0):first-child { display: none !important; }
+    .m-tabs > button > div > .min-w-0 > :not(:first-child) { display: none !important; }
+    .m-tabs > button > div > .min-w-0 > :first-child { font-size: 12px !important; }
+
+    /* --- Nút thao tác: thu vào nút "⋯" trên thanh tiêu đề --- */
+    .m-act { display: none !important; }
+    div:has(> .m-act):not(:has(> :not(.m-act, script, template, .hidden))) { display: none !important; }
+
+    /* --- Bộ lọc: thu gọn danh sách chọn --- */
+    .m-filter-toggle { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 10px;
+        border: 1px solid #cbd5e1; background: #fff; color: #334155; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .m-filter-toggle .m-filter-count:not(:empty) { background: #0f766e; color: #fff; border-radius: 999px; padding: 0 6px; font-size: 11px; }
+    .m-filters:not(.m-open) select { display: none !important; }
+    .m-filters:not(.m-open) :is(div, label):has(> select):not(:has(input, button, a)) { display: none !important; }
+    .m-filters.m-open .m-filter-toggle { background: #f0fdfa; border-color: #0f766e; color: #0f766e; }
+
+    /* --- Bảng thành thẻ --- */
+    div:has(> table.m-cards) { overflow: visible !important; }
+    table.m-cards { display: block; width: 100% !important; min-width: 0 !important; white-space: normal !important; border: 0 !important; }
+    table.m-cards thead { display: none !important; }
+    table.m-cards tbody, table.m-cards tfoot { display: block; }
+    table.m-cards tr { display: block; position: relative; padding: 10px 12px; border-bottom: 1px solid #e2e8f0 !important; background: #fff; }
+    table.m-cards tfoot tr { background: #f8fafc; }
+    table.m-cards td { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 1px 0 !important; border: 0 !important;
+        position: static !important; box-shadow: none !important; background: transparent !important; min-width: 0; height: auto !important;
+        text-align: right !important; white-space: normal !important; font-size: 13px; }
+    table.m-cards td::before { content: attr(data-label); flex-shrink: 0; max-width: 45%; text-align: left; color: #64748b;
+        font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+    table.m-cards td.m-title { display: block; text-align: left !important; font-size: 14px; font-weight: 800; color: #0f172a; padding-bottom: 3px !important; }
+    table.m-cards td.m-title::before { content: none; }
+    table.m-cards td.m-money { font-weight: 800; }
+    table.m-cards td.m-skip,
+    table.m-cards td.m-minor,
+    table.m-cards td.m-actions { display: none !important; }
+    table.m-cards tr.m-expanded td.m-minor { display: flex !important; }
+    table.m-cards tr.m-expanded td.m-actions { display: flex !important; justify-content: flex-end; flex-wrap: wrap; padding-top: 8px !important; }
+    table.m-cards tr.m-expanded td.m-actions::before { content: none; }
+    table.m-cards td.m-full { display: block !important; text-align: center !important; }
+    table.m-cards td.m-full::before { content: none; }
+    table.m-cards td.m-full > div { width: auto !important; position: static !important; }
+    table.m-cards tr.m-expandable { cursor: pointer; padding-right: 28px; }
+    table.m-cards tr.m-expandable::after { content: ''; position: absolute; right: 12px; top: 14px; width: 7px; height: 7px;
+        border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8; transform: rotate(45deg); transition: transform .15s; }
+    table.m-cards tr.m-expanded::after { transform: rotate(-135deg); top: 18px; }
+    table.m-cards tr[onclick], table.m-cards tr.m-opens { cursor: pointer; padding-right: 28px; }
+    /* dòng mở trang chi tiết khi chạm: mũi tên › */
+    table.m-cards tr.m-opens::after { content: ''; position: absolute; right: 14px; top: 16px; width: 7px; height: 7px;
+        border-right: 2px solid #94a3b8; border-top: 2px solid #94a3b8; transform: rotate(45deg); }
+    /* danh sách chi tiết lồng trong bảng tổng hợp (vd. chuyến của từng đầu xe): chỉ xem trên máy tính */
+    table.m-cards tr:has(> td.m-full table) { display: none !important; }
+
+    /* --- Bảng chọn "Thao tác" (bottom sheet) --- */
+    #m-sheet { display: block; position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+    #m-sheet .m-sheet-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, .45); opacity: 0; transition: opacity .2s; }
+    #m-sheet .m-sheet-panel { position: absolute; left: 0; right: 0; bottom: 0; max-height: 75vh; overflow-y: auto; background: #fff;
+        border-radius: 18px 18px 0 0; padding: 6px 12px calc(16px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform .22s; }
+    #m-sheet.m-open { pointer-events: auto; }
+    #m-sheet.m-open .m-sheet-backdrop { opacity: 1; }
+    #m-sheet.m-open .m-sheet-panel { transform: translateY(0); }
+    #m-sheet .m-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px; font-weight: 800; color: #0f172a; }
+    #m-sheet .m-sheet-close { width: 34px; height: 34px; border-radius: 10px; background: #f1f5f9; }
+    #m-sheet .m-sheet-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 46px; padding: 0 10px; border-radius: 12px;
+        text-align: left; font-size: 14px; font-weight: 600; color: #1e293b; }
+    #m-sheet .m-sheet-item:active { background: #f0fdfa; }
+    #m-sheet .m-sheet-item i { font-size: 18px; color: #0f766e; width: 22px; text-align: center; }
+    #m-sheet .m-sheet-item.m-danger { color: #be123c; }
+    #m-sheet .m-sheet-item.m-danger i { color: #e11d48; }
+    #m-sheet .m-sheet-item.m-danger:first-of-type, #m-sheet .m-sheet-item:not(.m-danger) + .m-sheet-item.m-danger { margin-top: 6px; border-top: 1px solid #f1f5f9; border-radius: 0 0 12px 12px; }
+
+    /* --- Khe tóm tắt (vd. P&L chuyến) ở đầu trang: 3 ô ngang gọn --- */
+    .m-slotted { margin: 0 !important; padding: 0 !important; border: 0 !important; }
+    #trip-pnl-summary.m-slotted { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 6px !important; }
+    #trip-pnl-summary.m-slotted > div { padding: 8px 6px !important; border-radius: 12px !important; }
+    #trip-pnl-summary.m-slotted > div > :first-child { font-size: 9.5px !important; line-height: 1.25; letter-spacing: 0; }
+    #trip-pnl-summary.m-slotted > div > :last-child { font-size: 14px !important; line-height: 1.25; margin-top: 3px !important; letter-spacing: -0.01em; }
+
+    /* --- Nút chat nổi nhỏ gọn hơn --- */
+    #chat-bubble-btn { width: 48px !important; height: 48px !important; }
+}
