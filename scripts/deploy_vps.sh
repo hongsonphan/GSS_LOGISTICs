@@ -22,8 +22,8 @@ if [ -z "$(env_get SECRET_KEY)" ]; then
     printf '\nSECRET_KEY=%s\n' "$(python3 -c 'import secrets;print(secrets.token_urlsafe(50))')" >> .env
 fi
 if [ -z "$(env_get DB_PASSWORD)" ]; then
-    echo "CẢNH BÁO: DB_PASSWORD chưa có trong .env -> ghi mật khẩu CSDL hiện tại để hệ thống chạy tiếp. HÃY ĐỔI SỚM."
-    printf '\n# Mật khẩu CSDL hiện tại (đã từng nằm trong mã nguồn) - cần đổi\nDB_PASSWORD=bim_logistics_secret_2026\n' >> .env
+    echo "LỖI: DB_PASSWORD chưa có trong .env. Không dùng mật khẩu mặc định - hãy đặt DB_PASSWORD rồi chạy lại."
+    exit 1
 fi
 grep -q '^DEBUG=' .env || printf '\nDEBUG=False\n' >> .env
 grep -q '^FRONTEND_SPLIT_SCRIPTS=' .env || printf 'FRONTEND_SPLIT_SCRIPTS=false\n' >> .env
@@ -85,6 +85,8 @@ fi
 step "4/7 Quyền thư mục cho container chạy bằng user thường (UID 1000)"
 mkdir -p media staticfiles
 $SUDO chown -R 1000:1000 media staticfiles
+# .env: chủ là user triển khai (ghi), nhóm UID 1000 của container (chỉ đọc), người khác không đọc được
+$SUDO chown "$(id -un)":1000 .env && $SUDO chmod 640 .env
 
 step "5/7 Khởi động bản mới (tự migrate + collectstatic)"
 $DC up -d web
