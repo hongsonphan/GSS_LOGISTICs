@@ -21,3 +21,12 @@ class TailwindBuildTests(SimpleTestCase):
         css = (ROOT / 'static' / 'css' / 'tailwind.css').read_text(encoding='utf-8')
         for selector in (r'.bg-sky-50\/70', r'.ring-emerald-200\/80', r'.hover\:bg-blue-100:hover', '.bg-purple-500'):
             self.assertIn(selector, css)
+
+
+class MediaUrlFilterTests(SimpleTestCase):
+    def test_media_url(self):
+        from core.templatetags.media_tags import media_url
+        self.assertEqual(media_url('booking_files/a.pdf'), '/media/booking_files/a.pdf')
+        self.assertEqual(media_url('/media/x.png'), '/media/x.png')
+        self.assertEqual(media_url('https://cdn/x.png'), 'https://cdn/x.png')
+        self.assertEqual(media_url(None), '')

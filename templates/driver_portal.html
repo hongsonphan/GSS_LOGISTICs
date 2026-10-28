@@ -1,4 +1,4 @@
-{% load static %}
+{% load static media_tags %}
 {% load static currency_filters %}
 <!DOCTYPE html>
 <html lang="vi">
@@ -576,8 +576,8 @@
         <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 flex items-center justify-between text-xs gap-2">
           <div class="flex items-center gap-2.5 overflow-hidden">
             {% if doc.file_path %}
-            <a href="{{ doc.file_path }}" target="_blank" class="w-12 h-12 rounded-xl bg-slate-200 border border-slate-300 overflow-hidden shrink-0 block relative group" title="Xem ảnh đầy đủ">
-              <img src="{{ doc.file_path }}" class="w-full h-full object-cover" alt="{{ doc.title }}" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-slate-400\'><i class=\'ph-bold ph-file-text text-lg\'></i></div>';">
+            <a href="{{ doc.file_path|media_url }}" target="_blank" class="w-12 h-12 rounded-xl bg-slate-200 border border-slate-300 overflow-hidden shrink-0 block relative group" title="Xem ảnh đầy đủ">
+              <img src="{{ doc.file_path|media_url }}" class="w-full h-full object-cover" alt="{{ doc.title }}" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-slate-400\'><i class=\'ph-bold ph-file-text text-lg\'></i></div>';">
               <span class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"><i class="ph-bold ph-magnifying-glass-plus text-sm"></i></span>
             </a>
             {% else %}

@@ -1,4 +1,4 @@
-{% load static %}
+{% load static media_tags %}
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -171,8 +171,8 @@
 
           {% if doc.file_path %}
           <div class="rounded-lg overflow-hidden border border-slate-200 bg-white">
-            <a href="{{ doc.file_path }}" target="_blank" title="Bấm xem ảnh gốc kích thước lớn">
-              <img src="{{ doc.file_path }}" alt="{{ doc.title }}" class="w-full h-36 object-contain hover:scale-105 transition-transform duration-200">
+            <a href="{{ doc.file_path|media_url }}" target="_blank" title="Bấm xem ảnh gốc kích thước lớn">
+              <img src="{{ doc.file_path|media_url }}" alt="{{ doc.title }}" class="w-full h-36 object-contain hover:scale-105 transition-transform duration-200">
             </a>
           </div>
           {% endif %}
