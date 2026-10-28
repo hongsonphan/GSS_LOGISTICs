@@ -25,6 +25,10 @@ if [ -z "$(env_get DB_PASSWORD)" ]; then
     echo "LỖI: DB_PASSWORD chưa có trong .env. Không dùng mật khẩu mặc định - hãy đặt DB_PASSWORD rồi chạy lại."
     exit 1
 fi
+if [ -z "$(env_get HASHIDS_SALT)" ]; then
+    echo "HASHIDS_SALT chưa có -> tạo ngẫu nhiên (mã link tra cứu/tài xế không đoán được từ mã nguồn)."
+    printf '\nHASHIDS_SALT=%s\n' "$(python3 -c 'import secrets;print(secrets.token_urlsafe(30))')" >> .env
+fi
 grep -q '^DEBUG=' .env || printf '\nDEBUG=False\n' >> .env
 grep -q '^FRONTEND_SPLIT_SCRIPTS=' .env || printf 'FRONTEND_SPLIT_SCRIPTS=false\n' >> .env
 grep -q '^SECURE_SSL_REDIRECT=' .env || printf 'SECURE_SSL_REDIRECT=True\n' >> .env
