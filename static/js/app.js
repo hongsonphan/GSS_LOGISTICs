@@ -36677,6 +36677,21 @@ function onReportPrintTypeChanged(newType) {
     renderReportPrintContent(newType);
 }
 
+// Khoảng ngày của kỳ báo cáo, khớp với apps/dispatch/reports_api.py (tuần bắt đầu thứ Hai)
+function getReportPeriodRangeText(period) {
+    const today = new Date();
+    const fmt = d => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    let start = null;
+    if (period === 'today') start = new Date(today);
+    else if (period === '10_days') { start = new Date(today); start.setDate(today.getDate() - 9); }
+    else if (period === 'week') { start = new Date(today); start.setDate(today.getDate() - ((today.getDay() + 6) % 7)); }
+    else if (period === 'month') start = new Date(today.getFullYear(), today.getMonth(), 1);
+    else if (period === 'quarter') start = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
+    else if (period === 'year' || period === 'this_year') start = new Date(today.getFullYear(), 0, 1);
+    if (!start) return '';
+    return ` (từ ngày ${fmt(start)} đến ngày ${fmt(today)})`;
+}
+
 function renderReportPrintContent(reportKey) {
     const meta = REPORT_PRINT_METADATA[reportKey] || {
         title: 'BÁO CÁO QUẢN TRỊ VẬN HÀNH DOANH NGHIỆP',
@@ -36697,12 +36712,16 @@ function renderReportPrintContent(reportKey) {
     // Kỳ báo cáo
     const periodMap = {
         today: 'Hôm nay',
+        '10_days': '10 ngày qua',
         week: 'Tuần này',
         month: 'Tháng này',
         quarter: 'Quý này',
+        year: 'Năm nay',
+        this_year: 'Năm nay',
         all: 'Tất cả thời gian'
     };
-    const periodLabel = periodMap[currentReportPeriod] || currentReportPeriod;
+    // Chuẩn báo cáo: ghi rõ "Từ ngày ... đến ngày ..." (cùng cách tính kỳ với API báo cáo)
+    const periodLabel = (periodMap[currentReportPeriod] || currentReportPeriod) + getReportPeriodRangeText(currentReportPeriod);
     const badgePeriod = document.getElementById('report-print-badge-period');
     if (badgePeriod) badgePeriod.innerText = periodLabel;
 

@@ -151,7 +151,13 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+# Django 5.1+ dùng STORAGES (STATICFILES_STORAGE cũ đã bị bỏ nên trước đây WhiteNoise không nén file).
+# Manifest: tên file có mã băm nội dung -> cache 1 năm an toàn; bản nén .gz sẵn cho Nginx (gzip_static).
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+}
+WHITENOISE_MANIFEST_STRICT = False  # thiếu mục trong manifest thì dùng tên gốc thay vì báo lỗi
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
