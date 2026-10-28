@@ -858,7 +858,7 @@ class BotTollAuditAPIView(APIView):
         expenses_qs = TripExpense.objects.filter(
             is_deleted=False,
             category=ExpenseCategory.TOLL_FEE
-        ).select_related('trip', 'trip__customer', 'trip__vehicle', 'driver')
+        ).select_related('trip', 'trip__customer', 'trip__vehicle', 'trip__driver', 'driver')
 
         if from_date:
             try:
@@ -876,18 +876,22 @@ class BotTollAuditAPIView(APIView):
 
         # Gom nhóm chi phí BOT theo từng Chuyến xe
         trips_bot = {}
-        for exp in expenses_qs:
+        expenses = list(expenses_qs)
+        # Định mức BOT theo tuyến: nạp một lần cho các khách hàng liên quan (tránh 1 truy vấn/chuyến)
+        tariff_map = {}
+        customer_ids = {e.trip.customer_id for e in expenses if e.trip and e.trip.customer_id}
+        for t in RouteTariff.objects.filter(customer_id__in=customer_ids).order_by('pk'):
+            key = (t.customer_id, (t.pickup_location or '').lower(), (t.delivery_location or '').lower())
+            tariff_map.setdefault(key, t)
+        for exp in expenses:
             tid = exp.trip_id
             if tid not in trips_bot:
                 trip = exp.trip
                 # Tìm định mức BOT của tuyến (nếu có)
                 standard_toll = Decimal(0)
                 if trip:
-                    tariff = RouteTariff.objects.filter(
-                        customer=trip.customer,
-                        pickup_location__iexact=trip.pickup_location,
-                        delivery_location__iexact=trip.warehouse_location
-                    ).first()
+                    tariff = tariff_map.get((trip.customer_id, (trip.pickup_location or '').lower(),
+                                             (trip.warehouse_location or '').lower()))
                     if tariff and tariff.toll_standard_fee > 0:
                         standard_toll = tariff.toll_standard_fee
 

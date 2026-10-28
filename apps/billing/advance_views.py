@@ -1243,14 +1243,12 @@ class CustomerARReconciliationAPIView(APIView):
         settled_count = 0
         pending_count = 0
 
-        for t in qs.select_related('customer', 'driver', 'vehicle').order_by('-created_at'):
+        for t in qs.select_related('customer', 'driver', 'vehicle').prefetch_related('expenses', 'documents').order_by('-created_at'):
             rev_val = getattr(t, 'cached_revenue', None) if getattr(t, 'cached_revenue', None) is not None else getattr(t, 'revenue', 0)
             rev = Decimal(str(rev_val or 0))
-            exp_mgr = getattr(t, 'expenses', None) or getattr(t, 'trip_expenses', None)
-            if exp_mgr is not None:
-                reimb = sum(Decimal(str(e.amount or 0)) for e in exp_mgr.filter(is_deleted=False, is_on_behalf_of_customer=True))
-            else:
-                reimb = Decimal(0)
+            # chi phí đã prefetch: lọc trong bộ nhớ (tránh 1 truy vấn/chuyến)
+            reimb = sum((Decimal(str(e.amount or 0)) for e in t.expenses.all()
+                         if not e.is_deleted and e.is_on_behalf_of_customer), Decimal(0))
             rec = rev + reimb
             total_rev += rev
             total_reimb += reimb
@@ -1278,7 +1276,7 @@ class CustomerARReconciliationAPIView(APIView):
                 'vat_invoice_date': t.vat_invoice_date.strftime('%d/%m/%Y') if t.vat_invoice_date else '',
                 'soa_code': t.customer_soa_code or '',
                 'status': t.status,
-                'has_pod': bool(getattr(t, 'pod_document', None)) or (hasattr(t, 'documents') and t.documents.filter(document_type__in=['POD_RETURN', 'EIR_RECEIPT', 'POD', 'E_POD', 'DELIVERY_NOTE'], is_deleted=False).exists()) or bool(getattr(t, 'actual_gate_out_time', None))
+                'has_pod': bool(t.pod_document) or bool(getattr(t, 'actual_gate_out_time', None))
             })
 
         return Response({

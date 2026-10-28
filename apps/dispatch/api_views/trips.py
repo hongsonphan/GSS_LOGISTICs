@@ -65,7 +65,8 @@ class TripListCreateAPIView(APIView):
         trips_list = []
         for t in trips_qs:
             det_status = calculate_dem_det_status(t)
-            customs_decl = t.customs_declarations.filter(is_deleted=False).first()
+            # dùng dữ liệu đã prefetch (tránh 1 truy vấn/chuyến); manager mặc định đã bỏ bản ghi đã xoá
+            customs_decl = min((d for d in t.customs_declarations.all() if not d.is_deleted), key=lambda d: d.pk, default=None)
             customs_info = {
                 'has_declaration': bool(customs_decl),
                 'declaration_number': customs_decl.declaration_number if customs_decl else '',
@@ -358,8 +359,8 @@ class TripListCreateAPIView(APIView):
                 customer = resolve_customer(customer_name)
 
         if not customer and customer_name:
-            import random
-            rand_suffix = ''.join(random.choices('0123456789', k=4))
+            import secrets
+            rand_suffix = ''.join(secrets.choice('0123456789') for _ in range(4))
             code_cand = f"KH_{timezone.now().strftime('%m%d')}_{rand_suffix}"
             customer = Customer.objects.create(name=customer_name, code=code_cand)
 

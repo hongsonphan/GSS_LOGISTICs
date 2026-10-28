@@ -31,7 +31,7 @@ def _manifest():
 def _bundle_version():
     # Phiên bản theo nội dung file: trình duyệt tự tải lại khi app.js thay đổi
     try:
-        return hashlib.md5(BUNDLE.read_bytes()).hexdigest()[:10]
+        return hashlib.md5(BUNDLE.read_bytes(), usedforsecurity=False).hexdigest()[:10]
     except OSError:
         return "0"
 

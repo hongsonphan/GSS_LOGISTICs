@@ -433,11 +433,13 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     @property
     def pod_document(self):
         """Chứng từ POD / Phiếu giao nhận của chuyến xe."""
+        pod_types = ('POD_RETURN', 'EIR_RECEIPT', 'POD', 'E_POD', 'DELIVERY_NOTE')
+        if 'documents' in getattr(self, '_prefetched_objects_cache', {}):
+            # đã prefetch_related('documents') -> lọc trong bộ nhớ, không truy vấn thêm
+            docs = [d for d in self.documents.all() if d.document_type in pod_types and not d.is_deleted]
+            return min(docs, key=lambda d: d.pk) if docs else None
         if hasattr(self, 'documents'):
-            return self.documents.filter(
-                document_type__in=['POD_RETURN', 'EIR_RECEIPT', 'POD', 'E_POD', 'DELIVERY_NOTE'],
-                is_deleted=False
-            ).first()
+            return self.documents.filter(document_type__in=pod_types, is_deleted=False).first()
         return None
 
     @property

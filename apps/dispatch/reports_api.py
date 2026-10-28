@@ -1208,7 +1208,7 @@ class ReportsAPIView(APIView):
         settled_driver_advances_count = 0
 
         for t in trips_qs:
-            adv_records = list(t.driver_advances.filter(is_deleted=False))
+            adv_records = [a for a in t.driver_advances.all() if not a.is_deleted]
             adv_amount = sum(int(a.amount) for a in adv_records) if adv_records else int(t.driver_advance_amount or 0)
 
             valid_expenses = [e for e in t.expenses.all() if not e.is_deleted and e.status != ApprovalStatus.REJECTED]
@@ -1374,8 +1374,8 @@ class ReportsAPIView(APIView):
                 ownership_code = 'PARTNER'
                 ownership_label = 'Xe Bạn / 3PL'
             
-            has_pod = t.documents.filter(document_type__in=['POD_RETURN', 'EIR_RECEIPT']).exists() or bool(t.actual_gate_out_time)
-            reimbursable_sum = sum(e.amount for e in t.expenses.filter(is_deleted=False, is_on_behalf_of_customer=True))
+            has_pod = any(d.document_type in ('POD_RETURN', 'EIR_RECEIPT') for d in t.documents.all()) or bool(t.actual_gate_out_time)
+            reimbursable_sum = sum(e.amount for e in t.expenses.all() if not e.is_deleted and e.is_on_behalf_of_customer)
             
             settled_at_str = t.settled_at.strftime('%d/%m/%Y %H:%M') if t.settled_at else '-'
             settled_by_name = (t.settled_by.nickname or t.settled_by.full_name) if t.settled_by else '-'
@@ -1548,7 +1548,7 @@ class ReportsAPIView(APIView):
                 c_entry['pending_reconcile_trips_count'] += 1
 
             rev, exp, prof = get_trip_financials(t)
-            reim = sum(e.amount for e in t.expenses.filter(is_deleted=False, is_on_behalf_of_customer=True))
+            reim = sum(e.amount for e in t.expenses.all() if not e.is_deleted and e.is_on_behalf_of_customer)
             trip_total = rev + reim
 
             c_entry['freight_revenue'] += rev
@@ -1575,7 +1575,7 @@ class ReportsAPIView(APIView):
                 c_entry['pending_settlement_amount'] += trip_total
                 c_entry['pending_reconcile_amount'] += trip_total
 
-            has_pod = t.documents.filter(document_type__in=['POD_RETURN', 'EIR_RECEIPT', 'POD', 'E_POD', 'DELIVERY_NOTE']).exists() or bool(t.actual_gate_out_time)
+            has_pod = any(d.document_type in ('POD_RETURN', 'EIR_RECEIPT', 'POD', 'E_POD', 'DELIVERY_NOTE') for d in t.documents.all()) or bool(t.actual_gate_out_time)
             plate = t.vehicle.license_plate if t.vehicle else 'Chưa gán'
             drv_name = t.driver.nickname or t.driver.full_name if t.driver else 'Chưa gán'
             ownership = getattr(t.vehicle, 'ownership_type', 'OWNED') if t.vehicle else 'OWNED'
@@ -1673,8 +1673,8 @@ class ReportsAPIView(APIView):
             t_date = t.loading_date or t.created_at.date()
             days_unsettled = (today - t_date).days if t_date else 0
             
-            has_pod = t.documents.filter(document_type__in=['POD_RETURN', 'EIR_RECEIPT']).exists() or bool(t.actual_gate_out_time)
-            has_pending_expenses = t.expenses.filter(is_deleted=False, status=ApprovalStatus.PENDING).exists()
+            has_pod = any(d.document_type in ('POD_RETURN', 'EIR_RECEIPT') for d in t.documents.all()) or bool(t.actual_gate_out_time)
+            has_pending_expenses = any(not e.is_deleted and e.status == ApprovalStatus.PENDING for e in t.expenses.all())
 
             reasons = []
             if not has_pod:

@@ -6,6 +6,11 @@ class Command(BaseCommand):
     help = 'Khởi tạo các tài khoản người dùng mẫu và liên kết với Employee cho môi trường Local / Demo.'
 
     def handle(self, *args, **options):
+        from django.conf import settings
+        from django.core.management.base import CommandError
+        # Tài khoản demo có mật khẩu mẫu cố định -> tuyệt đối không chạy trên hệ thống thật
+        if not settings.DEBUG:
+            raise CommandError('setup_auth_users chỉ dùng cho môi trường dev/demo (DEBUG=True). Không chạy trên production.')
         self.stdout.write(self.style.NOTICE("=== THIET LAP TAI KHOAN NGUOI DUNG BIM LOGISTICS ==="))
 
         demo_accounts = [
