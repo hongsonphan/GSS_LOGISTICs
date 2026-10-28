@@ -20,3 +20,20 @@ def handle_trip_status_change(sender, instance, created, **kwargs):
             if not other_active and vehicle.status == 'ACTIVE':
                 vehicle.status = 'IDLE'
                 vehicle.save(update_fields=['status'])
+
+from django.db.models.signals import post_save as _post_save
+
+
+def _sync_containers(sender, instance, raw=False, **kwargs):
+    if raw:
+        return
+    from apps.dispatch.models import sync_trip_containers
+    sync_trip_containers(instance)
+
+
+def _connect_container_sync():
+    from apps.dispatch.models import DispatchTrip
+    _post_save.connect(_sync_containers, sender=DispatchTrip, weak=False, dispatch_uid="sync_trip_containers")
+
+
+_connect_container_sync()

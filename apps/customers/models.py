@@ -42,6 +42,8 @@ class Customer(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     credit_limit = models.DecimalField(max_digits=14, decimal_places=0, default=0, verbose_name="Hạn mức nợ tối đa (VNĐ)")
 
     notes = models.TextField(blank=True)
+    partner = models.ForeignKey('master_data.Partner', on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name='customer_profiles', help_text='Đối tác hợp nhất (tự đồng bộ)')
 
     class Meta:
         ordering = ['name']

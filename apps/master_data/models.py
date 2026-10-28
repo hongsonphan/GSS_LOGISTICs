@@ -199,6 +199,8 @@ class Subcontractor(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     bank_account_holder = models.CharField(max_length=150, blank=True, help_text="Tên chủ tài khoản")
     notes = models.TextField(blank=True, help_text="Ghi chú")
     is_active = models.BooleanField(default=True, db_index=True)
+    partner = models.ForeignKey('master_data.Partner', on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name='subcontractor_profiles', help_text='Đối tác hợp nhất (tự đồng bộ)')
 
     class Meta:
         ordering = ['name']
@@ -498,4 +500,34 @@ class OpeningBalance(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
         super().save(*args, **kwargs)
 
+class Partner(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """Đối tác hợp nhất (một pháp nhân = một đối tác) dùng cho công nợ và sổ cái.
 
+    Một công ty có thể vừa là Khách hàng vừa là Nhà xe/Nhà cung cấp: hai hồ sơ Customer và Subcontractor
+    trỏ chung về một Partner (khớp theo Mã số thuế). Customer/Subcontractor vẫn là nơi người dùng nhập liệu;
+    Partner được đồng bộ tự động khi lưu hai hồ sơ đó.
+    """
+    code = models.CharField(max_length=30, db_index=True)
+    name = models.CharField(max_length=255)
+    short_name = models.CharField(max_length=100, blank=True, default='')
+    tax_code = models.CharField(max_length=30, blank=True, default='', db_index=True)
+    address = models.CharField(max_length=255, blank=True, default='')
+    phone = models.CharField(max_length=50, blank=True, default='')
+    email = models.CharField(max_length=150, blank=True, default='')
+    bank_account_number = models.CharField(max_length=50, blank=True, default='')
+    bank_name = models.CharField(max_length=150, blank=True, default='')
+    bank_account_holder = models.CharField(max_length=150, blank=True, default='')
+    is_customer = models.BooleanField(default=False, db_index=True)
+    is_carrier = models.BooleanField(default=False, db_index=True, help_text='Nhà xe thầu phụ / 3PL')
+    is_supplier = models.BooleanField(default=False, db_index=True, help_text='Gara, nhà cung cấp')
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Đối tác'
+        verbose_name_plural = 'Đối tác (hợp nhất)'
+        constraints = [
+            models.UniqueConstraint(fields=['company', 'code'], name='uniq_partner_code_per_company'),
+        ]
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"

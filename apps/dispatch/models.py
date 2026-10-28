@@ -412,6 +412,12 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         if not self.driver_token:
             import secrets
             self.driver_token = secrets.token_urlsafe(16)
+        # Chuẩn hoá mốc giờ: điền cột DateTime còn trống từ cột giờ dạng chữ
+        from apps.dispatch.time_utils import fill_missing_datetimes
+        filled = fill_missing_datetimes(self)
+        update_fields = kwargs.get('update_fields')
+        if filled and update_fields is not None:
+            kwargs['update_fields'] = list(set(update_fields) | set(filled))
         super().save(*args, **kwargs)
 
     @property
@@ -536,3 +542,47 @@ class TripTimelineItem(TimeStampedModel):
 
     def __str__(self):
         return f"{self.trip.trip_code} - Bước {self.step_number}: {self.title}"
+
+
+class TripContainer(TimeStampedModel):
+    """Container của chuyến xe (1 chuyến có 1 hoặc 2 container khi chạy kẹp 20ft).
+
+    Dữ liệu chuẩn hoá từ các cột container_number / container_number_2... của DispatchTrip,
+    tự đồng bộ mỗi khi lưu chuyến. Dùng cho tra cứu, báo cáo theo container và tích hợp về sau.
+    """
+    trip = models.ForeignKey(DispatchTrip, on_delete=models.CASCADE, related_name='containers')
+    seq = models.PositiveSmallIntegerField(default=1)
+    container_number = models.CharField(max_length=50, blank=True, db_index=True)
+    seal_number = models.CharField(max_length=50, blank=True)
+    container_type = models.CharField(max_length=30, blank=True)
+    booking_or_bill = models.CharField(max_length=100, blank=True, db_index=True)
+    vgm_weight = models.CharField(max_length=50, blank=True)
+    cargo_notes = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['trip_id', 'seq']
+        constraints = [models.UniqueConstraint(fields=['trip', 'seq'], name='uniq_trip_container_seq')]
+        verbose_name = 'Container của chuyến'
+        verbose_name_plural = 'Container của chuyến'
+
+    def __str__(self):
+        return f"{self.trip_id}#{self.seq} {self.container_number}"
+
+
+def sync_trip_containers(trip):
+    """Ghi lại bảng TripContainer từ các cột container trên DispatchTrip."""
+    rows = [{
+        'seq': 1, 'container_number': trip.container_number or '', 'seal_number': trip.seal_number or '',
+        'container_type': trip.container_type or '', 'booking_or_bill': trip.booking_or_bill or '',
+        'vgm_weight': trip.vgm_weight or '', 'cargo_notes': trip.cargo_notes or '',
+    }]
+    if trip.is_twin_container or trip.container_number_2:
+        rows.append({
+            'seq': 2, 'container_number': trip.container_number_2 or '', 'seal_number': trip.seal_number_2 or '',
+            'container_type': trip.container_type or '', 'booking_or_bill': trip.booking_or_bill_2 or '',
+            'vgm_weight': trip.vgm_weight_2 or '', 'cargo_notes': trip.cargo_notes_2 or '',
+        })
+    for row in rows:
+        seq = row.pop('seq')
+        TripContainer.objects.update_or_create(trip=trip, seq=seq, defaults=row)
+    TripContainer.objects.filter(trip=trip).exclude(seq__in=[1, 2][:len(rows)]).delete()
