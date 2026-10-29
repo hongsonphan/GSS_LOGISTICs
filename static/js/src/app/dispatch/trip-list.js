@@ -291,7 +291,7 @@ function renderDispatchTable(trips) {
         const isImport = rawUpper.includes('IMPORT') || rawUpper.includes('NHẬP') || rawUpper.includes('NHAP');
         const isExport = rawUpper.includes('EXPORT') || rawUpper.includes('XUẤT') || rawUpper.includes('XUAT');
         const typeColor = isImport ? 'text-blue-700' : (isExport ? 'text-emerald-700' : 'text-purple-700');
-        const displayShipmentType = isImport ? 'HÀNG NHẬP' : (isExport ? 'HÀNG XUẤT' : 'NỘI ĐỊA');
+        const displayShipmentType = isImport ? 'Hàng Nhập' : (isExport ? 'Hàng Xuất' : 'Nội Địa');
         const statusCls = STATUS_STYLE_MAP[trip.status] || 'bg-slate-100 text-slate-700 border-slate-300';
         const tripIdentifier = trip.hashid || trip.id;
 
@@ -434,7 +434,7 @@ function renderDispatchTable(trips) {
                     <span class="text-indigo-700">${escapeHtml(trip.dropoff || 'Bãi rỗng')}</span>
                 </div>
                 <div class="mt-0.5 flex items-center space-x-2 text-[11.5px]">
-                    <span class="text-[11px] font-bold uppercase ${typeColor}">${displayShipmentType}</span>
+                    <span class="text-[11px] font-bold ${typeColor}">${displayShipmentType}</span>
                     <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
                 </div>
             </td>

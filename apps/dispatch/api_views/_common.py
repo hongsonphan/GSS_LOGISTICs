@@ -176,12 +176,12 @@ def calculate_dem_det_status(trip):
 def normalize_shipment_type(shipment_type):
     st = str(shipment_type or '').strip().upper()
     if 'IMPORT' in st or 'NHẬP' in st or 'NHAP' in st:
-        return 'HÀNG NHẬP', 'IMPORT'
+        return 'Hàng Nhập', 'IMPORT'
     elif 'EXPORT' in st or 'XUẤT' in st or 'XUAT' in st:
-        return 'HÀNG XUẤT', 'EXPORT'
+        return 'Hàng Xuất', 'EXPORT'
     elif 'DOMESTIC' in st or 'NỘI ĐỊA' in st or 'NOI DIA' in st:
-        return 'NỘI ĐỊA', 'DOMESTIC'
-    return 'NỘI ĐỊA', 'DOMESTIC'
+        return 'Nội Địa', 'DOMESTIC'
+    return 'Nội Địa', 'DOMESTIC'
 
 def get_trip_by_code_or_hash(trip_identifier, select_related_fields=None):
     """Truy vấn chuyến xe an toàn bằng cả trip_code gốc, driver_token hoặc HashID bảo mật (Tiêu chuẩn 10)."""
