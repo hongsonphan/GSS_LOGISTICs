@@ -1,20 +1,16 @@
-"""API trang Phân quyền: ma trận Chức danh × Phân hệ × Thao tác và ngoại lệ theo người."""
+"""API trang Phân quyền 3 tầng: Nhóm → Chức danh → Người (xem core/access.py)."""
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core import access
-from django.utils import timezone
-
 from core.account_security import user_email
-from core.models import LoginEvent, RoleAccess, UserAccessOverride
+from core.models import AccessGroup, LoginEvent, RoleAccess, UserAccessOverride
 from core.permissions import CanAdministerAccess
 from core.tenant import company_for_user
-
-# Ban Giám đốc luôn giữ quyền quản trị phân quyền (tránh tự khoá mất quyền vào trang này)
-LOCKED = {'DIRECTOR': {'admin': ['view', 'edit']}}
 
 
 def _role_label(role):
@@ -22,18 +18,25 @@ def _role_label(role):
     return dict(EmployeeRole.choices).get(role, role)
 
 
+def _bad(msg):
+    return Response({'detail': msg}, status=status.HTTP_400_BAD_REQUEST)
+
+
 def _user_row(user, company):
     if hasattr(user, '_bim_access'):
         del user._bim_access
     emp = getattr(user, 'employee', None)
     ov = UserAccessOverride.objects.filter(user=user).first()
+    position_group = access.position_config(company, emp.role)[0] if emp else ''
     return {
         'id': user.id, 'username': user.username,
         'name': (emp.full_name if emp else (user.get_full_name() or user.username)),
         'code': emp.code if emp else '', 'role': emp.role if emp else '',
         'role_label': _role_label(emp.role) if emp else ('Quản trị hệ thống' if user.is_superuser else 'Chưa gắn hồ sơ nhân viên'),
-        'is_superuser': user.is_superuser, 'is_active': user.is_active and (emp.is_active if emp else True),
+        'position_group': position_group,
+        'is_superuser': user.is_superuser, 'is_active': user.is_active,
         'has_employee': emp is not None,
+        'groups': [g for g in (ov.groups if ov else []) if g in access.GROUP_KEYS],
         'allow': access._clean(ov.allow) if ov else {}, 'deny': access._clean(ov.deny) if ov else {},
         'note': ov.note if ov else '',
         'effective': access.effective_grants(user) or {},
@@ -47,15 +50,8 @@ def _user_row(user, company):
 
 def _payload(request):
     company = company_for_user(request.user)
-    saved = {r.role: r for r in RoleAccess.objects.filter(company=company)}
-    roles = []
-    for group, keys in access.ROLE_GROUPS:
-        for key in keys:
-            row = saved.get(key)
-            roles.append({'key': key, 'label': _role_label(key), 'group': group,
-                          'grants': access._clean(row.grants) if row else access.default_grants(key),
-                          'default': access.default_grants(key), 'customized': bool(row),
-                          'locked': LOCKED.get(key, {})})
+    saved_groups = {g.key: g for g in AccessGroup.objects.filter(company=company)}
+    saved_roles = {r.role: r for r in RoleAccess.objects.filter(company=company)}
     User = get_user_model()
     users = User.objects.filter(is_active=True).select_related('employee').order_by('username')
     rows = []
@@ -66,10 +62,24 @@ def _payload(request):
         if emp is None and not u.is_superuser and not u.is_staff:
             continue
         rows.append(_user_row(u, company))
+
+    groups = []
+    for key, label, desc, icon, _g in access.GROUPS:
+        groups.append({'key': key, 'label': label, 'description': desc, 'icon': icon,
+                       'grants': access.group_grants(company, key),
+                       'default': access._with_locked(key, access.default_group_grants(key)),
+                       'customized': key in saved_groups, 'locked': access.LOCKED_GROUP_GRANTS.get(key, {})})
+    roles = []
+    for key in access.ROLE_ORDER:
+        group, add, remove = access.position_config(company, key)
+        d_group, d_add, d_remove = access.default_position(key)
+        roles.append({'key': key, 'label': _role_label(key), 'group': group, 'add': add, 'remove': remove,
+                      'default_group': d_group, 'default_add': d_add, 'default_remove': d_remove,
+                      'customized': key in saved_roles, 'grants': access.role_grants(company, key)})
     return {
         'modules': [{'key': k, 'label': lbl, 'description': d, 'actions': acts} for k, lbl, d, acts in access.MODULES],
         'actions': [{'key': k, 'label': lbl} for k, lbl in access.ACTIONS],
-        'roles': roles, 'users': rows,
+        'groups': groups, 'roles': roles, 'users': rows,
         'can_edit': access.can(request.user, 'admin', 'edit'),
     }
 
@@ -91,21 +101,48 @@ class AccessMatrixAPIView(APIView):
         return Response(_payload(request))
 
 
+class GroupAccessAPIView(APIView):
+    """PUT: lưu quyền đầy đủ của một nhóm. DELETE: khôi phục mặc định."""
+    permission_classes = [CanAdministerAccess]
+    access_actions = {'PUT': 'edit', 'DELETE': 'edit'}
+
+    def put(self, request, key):
+        if key not in access.GROUP_KEYS:
+            return _bad('Nhóm không hợp lệ')
+        grants = access._with_locked(key, access._clean(request.data.get('grants') if isinstance(request.data, dict) else None))
+        row, _ = AccessGroup.objects.get_or_create(company=company_for_user(request.user), key=key)
+        row.grants, row.updated_by = grants, request.user
+        row.save()
+        return Response(_payload(request))
+
+    def delete(self, request, key):
+        AccessGroup.objects.filter(company=company_for_user(request.user), key=key).delete()
+        return Response(_payload(request))
+
+
 class RoleAccessAPIView(APIView):
-    """PUT: lưu quyền một chức danh. DELETE: khôi phục mặc định."""
+    """PUT: chức danh thuộc nhóm nào, thêm / bớt quyền gì so với nhóm. DELETE: khôi phục mặc định."""
     permission_classes = [CanAdministerAccess]
     access_actions = {'PUT': 'edit', 'DELETE': 'edit'}
 
     def put(self, request, role):
-        if role not in access.DEFAULT_MATRIX:
-            return Response({'detail': 'Chức danh không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
-        grants = access._clean(request.data.get('grants') if isinstance(request.data, dict) else None)
-        for mod, acts in LOCKED.get(role, {}).items():
-            grants[mod] = [a for a in access.MODULE_ACTIONS[mod] if a in set(grants.get(mod, [])) | set(acts)]
+        if role not in access.POSITIONS:
+            return _bad('Chức danh không hợp lệ')
+        data = request.data if isinstance(request.data, dict) else {}
+        group = data.get('group', '') or ''
+        if group and group not in access.GROUP_KEYS:
+            return _bad('Nhóm không hợp lệ')
+        add, remove = access._clean(data.get('add')), access._clean(data.get('remove'))
+        if access._to_set(add) & access._to_set(remove):
+            return _bad('Một quyền không thể vừa thêm vừa bớt')
         company = company_for_user(request.user)
+        base = access._to_set(access.group_grants(company, group))
+        add = access._from_set(access._to_set(add) - base)          # chỉ lưu phần thực sự thêm
+        remove = access._from_set(access._to_set(remove) & base)    # chỉ lưu phần thực sự bớt
+        if role == 'DIRECTOR' and 'edit' in remove.get('admin', []):
+            return _bad('Giám đốc luôn giữ quyền quản trị phân quyền')
         row, _ = RoleAccess.objects.get_or_create(company=company, role=role)
-        row.grants = grants
-        row.updated_by = request.user
+        row.group, row.add, row.remove, row.updated_by = group, add, remove, request.user
         row.save()
         return Response(_payload(request))
 
@@ -115,7 +152,7 @@ class RoleAccessAPIView(APIView):
 
 
 class UserAccessAPIView(APIView):
-    """PUT: lưu ngoại lệ (cho thêm / chặn) của một người. DELETE: bỏ mọi ngoại lệ."""
+    """PUT: nhóm bổ sung + ngoại lệ (cho thêm / chặn) của một người. DELETE: bỏ hết, chỉ còn quyền chức danh."""
     permission_classes = [CanAdministerAccess]
     access_actions = {'PUT': 'edit', 'DELETE': 'edit'}
 
@@ -125,17 +162,16 @@ class UserAccessAPIView(APIView):
     def put(self, request, pk):
         user = self._user(pk)
         if user is None or getattr(user, 'employee', None) is None:
-            return Response({'detail': 'Chỉ đặt ngoại lệ cho tài khoản có hồ sơ nhân viên'}, status=status.HTTP_400_BAD_REQUEST)
+            return _bad('Chỉ phân quyền cho tài khoản có hồ sơ nhân viên')
         data = request.data if isinstance(request.data, dict) else {}
+        groups = [g for g in (data.get('groups') or []) if g in access.GROUP_KEYS]
         allow, deny = access._clean(data.get('allow')), access._clean(data.get('deny'))
         if user.pk == request.user.pk and 'edit' in deny.get('admin', []):
-            return Response({'detail': 'Không thể tự chặn quyền quản trị phân quyền của chính mình'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        overlap = access._to_set(allow) & access._to_set(deny)
-        if overlap:
-            return Response({'detail': 'Một quyền không thể vừa cho thêm vừa chặn'}, status=status.HTTP_400_BAD_REQUEST)
+            return _bad('Không thể tự chặn quyền quản trị phân quyền của chính mình')
+        if access._to_set(allow) & access._to_set(deny):
+            return _bad('Một quyền không thể vừa cho thêm vừa chặn')
         ov, _ = UserAccessOverride.objects.get_or_create(user=user, defaults={'company': company_for_user(user)})
-        ov.allow, ov.deny = allow, deny
+        ov.groups, ov.allow, ov.deny = list(dict.fromkeys(groups)), allow, deny
         ov.note = str(data.get('note') or '')[:255]
         ov.updated_by = request.user
         ov.save()

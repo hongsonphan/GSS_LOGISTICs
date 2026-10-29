@@ -1,7 +1,9 @@
-"""Ma trận phân quyền: Chức danh × Phân hệ × Thao tác, cộng ngoại lệ từng người.
+"""Phân quyền 3 tầng: Nhóm → Chức danh → Người.
 
-- Quyền hiệu lực của một người = quyền của chức danh (RoleAccess, chưa cấu hình thì dùng DEFAULT_MATRIX)
-  + quyền cho thêm − quyền chặn riêng (UserAccessOverride).
+- Nhóm (Admin, Giám đốc, Kinh doanh, Nhân sự, Kế toán, Điều vận, Vận hành, Hải quan): bộ quyền đầy đủ của nhóm
+  theo ma trận Phân hệ × Thao tác (AccessGroup; chưa cấu hình thì dùng GROUPS mặc định).
+- Chức danh (EmployeeRole): thuộc một nhóm -> mặc định có toàn bộ quyền của nhóm, thêm / bớt quyền theo vị trí (RoleAccess).
+- Người: quyền chức danh + nhóm bổ sung (vd. thêm nhóm Admin) + ngoại lệ cá nhân cho thêm / chặn (UserAccessOverride).
 - Quản trị hệ thống (superuser) luôn đủ quyền. Tài khoản không gắn hồ sơ nhân viên dùng quy tắc cũ (nhóm Django).
 - Các lớp quyền DRF trong core/permissions.py gọi `allowed()` / `request_allowed()`.
 """
@@ -38,16 +40,6 @@ MODULES = [
 MODULE_KEYS = [m[0] for m in MODULES]
 MODULE_ACTIONS = {m[0]: m[3] for m in MODULES}
 
-# Chức danh theo phòng ban (thứ tự hiển thị)
-ROLE_GROUPS = [
-    ('Ban Giám đốc', ['DIRECTOR']),
-    ('Hành chính & Kế toán', ['LEAD_ADMIN_ACC', 'STAFF_ADMIN_ACC', 'ACCOUNTANT']),
-    ('Điều vận', ['LEAD_DISPATCH', 'DISPATCHER', 'DISPATCH_ASST', 'DRIVER']),
-    ('Kinh doanh', ['LEAD_SALES', 'SALESMAN', 'CSKH']),
-    ('Bảo trì vận hành', ['LEAD_MAINT', 'MECHANIC']),
-    ('Dịch vụ hải quan', ['LEAD_CUSTOMS', 'CUSTOMS_STAFF']),
-]
-
 ALL = 'view create edit delete approve export'
 VIEW = 'view export'
 
@@ -56,31 +48,54 @@ def _m(**mods):
     return {k: [a for a in v.split() if a in MODULE_ACTIONS[k]] for k, v in mods.items()}
 
 
-# Mặc định: dựng theo quy tắc phân quyền đang chạy trong mã trước đây (core/permissions.py)
-_ACC = dict(dashboard='view', accounting=ALL, advances=ALL, ledger=ALL, payroll=ALL, reports_fin=VIEW, reports_ops=VIEW,
-            sales=VIEW, dispatch=VIEW, customs='', master_data='view create edit delete export', hr=ALL, fleet='')
-DEFAULT_MATRIX = {
-    'DIRECTOR': _m(**{k: ALL for k in MODULE_KEYS}),
-    'ACCOUNTANT': _m(**_ACC),
-    'LEAD_ADMIN_ACC': _m(**_ACC),
-    'STAFF_ADMIN_ACC': _m(dashboard='view', accounting='view create edit export', advances='view create edit export',
-                          ledger='view export', reports_fin=VIEW, reports_ops=VIEW, sales=VIEW, dispatch=VIEW,
-                          master_data='view', hr='view create edit export'),
-    'LEAD_DISPATCH': _m(dashboard='view', dispatch=ALL, advances=ALL, fleet=ALL, customs=ALL,
-                        sales=VIEW, reports_ops=VIEW, master_data='view create edit delete export'),
-    'DISPATCHER': _m(dashboard='view', dispatch=ALL, advances=ALL,
-                     fleet='view create edit delete export', customs='view create edit delete export', sales=VIEW,
-                     reports_ops=VIEW, master_data='view create edit delete export'),
-    'DISPATCH_ASST': _m(dashboard='view', dispatch='view create edit export', master_data='view'),
-    'DRIVER': _m(dashboard='view', master_data='view'),
-    'LEAD_SALES': _m(dashboard='view', sales=ALL, dispatch=VIEW, master_data='view'),
-    'SALESMAN': _m(dashboard='view', sales='view create edit delete export', dispatch=VIEW, master_data='view'),
-    'CSKH': _m(dashboard='view', sales='view create edit export', dispatch=VIEW, master_data='view'),
-    'LEAD_MAINT': _m(dashboard='view', fleet=ALL, dispatch=VIEW, master_data='view'),
-    'MECHANIC': _m(dashboard='view', fleet='view create edit export', dispatch=VIEW, master_data='view'),
-    'LEAD_CUSTOMS': _m(dashboard='view', customs=ALL, dispatch=VIEW, master_data='view'),
-    'CUSTOMS_STAFF': _m(dashboard='view', customs='view create edit export', dispatch=VIEW, master_data='view'),
+# ----------------------------------------------------------------------------- Nhóm quyền (mặc định)
+# (khoá, tên, mô tả, biểu tượng, quyền đầy đủ của nhóm)
+GROUPS = [
+    ('admin', 'Admin', 'Quản trị hệ thống: toàn quyền, cấu hình, phân quyền, tài khoản', 'ph-shield-star',
+     _m(**{k: ALL for k in MODULE_KEYS})),
+    ('director', 'Giám đốc', 'Ban Giám đốc: xem và duyệt mọi phân hệ, phân quyền', 'ph-crown',
+     _m(**{k: ALL for k in MODULE_KEYS})),
+    ('sales', 'Kinh doanh', 'Báo giá, booking, khách hàng; theo dõi chuyến của khách', 'ph-handshake',
+     _m(dashboard='view', sales=ALL, dispatch=VIEW, customs='view', master_data='view create edit export')),
+    ('hr', 'Nhân sự', 'Hồ sơ nhân viên, hợp đồng, chấm công, bảng lương', 'ph-users-three',
+     _m(dashboard='view', hr=ALL, payroll=ALL, master_data='view')),
+    ('accounting', 'Kế toán', 'Sổ quỹ, quyết toán, tạm ứng, sổ sách, lương, báo cáo tài chính', 'ph-calculator',
+     _m(dashboard='view', accounting=ALL, advances=ALL, ledger=ALL, payroll=ALL, hr='view export', reports_fin=VIEW,
+        reports_ops=VIEW, sales=VIEW, dispatch=VIEW, master_data='view create edit delete export')),
+    ('dispatch', 'Điều vận', 'Chuyến xe, lệnh điều động, tạm ứng tài xế, quỹ điều vận', 'ph-truck',
+     _m(dashboard='view', dispatch=ALL, advances=ALL, fleet='view create edit export', customs='view', sales=VIEW,
+        reports_ops=VIEW, master_data='view create edit delete export')),
+    ('operations', 'Vận hành', 'Đội xe, rơ-moóc, bảo dưỡng, đăng kiểm, bãi xe', 'ph-wrench',
+     _m(dashboard='view', fleet=ALL, dispatch=VIEW, reports_ops=VIEW, master_data='view')),
+    ('customs', 'Hải quan', 'Tờ khai VNACCS, phân luồng, thông quan', 'ph-stamp',
+     _m(dashboard='view', customs=ALL, dispatch=VIEW, sales='view', master_data='view')),
+]
+GROUP_KEYS = [g[0] for g in GROUPS]
+GROUP_LABELS = {g[0]: g[1] for g in GROUPS}
+# Nhóm luôn giữ quyền quản trị phân quyền (tránh tự khoá mất quyền vào trang Phân quyền)
+LOCKED_GROUP_GRANTS = {'admin': {'admin': ['view', 'edit']}, 'director': {'admin': ['view', 'edit']}}
+
+# Chức danh -> (nhóm, thêm, bớt) mặc định
+POSITIONS = {
+    'DIRECTOR': ('director', {}, {}),
+    'LEAD_ADMIN_ACC': ('accounting', {}, {}),
+    'ACCOUNTANT': ('accounting', {}, {}),
+    'STAFF_ADMIN_ACC': ('accounting', {}, _m(accounting='delete approve', advances='delete approve', ledger='edit',
+                                              payroll='delete approve', master_data='delete')),
+    'LEAD_DISPATCH': ('dispatch', {}, {}),
+    'DISPATCHER': ('dispatch', {}, {}),
+    'DISPATCH_ASST': ('dispatch', {}, _m(dispatch='delete approve', advances='delete approve', master_data='delete')),
+    'DRIVER': ('', _m(dashboard='view', master_data='view'), {}),
+    'LEAD_SALES': ('sales', {}, {}),
+    'SALESMAN': ('sales', {}, _m(sales='approve')),
+    'CSKH': ('sales', {}, _m(sales='delete approve')),
+    'LEAD_MAINT': ('operations', {}, {}),
+    'MECHANIC': ('operations', {}, _m(fleet='delete')),
+    'LEAD_CUSTOMS': ('customs', {}, {}),
+    'CUSTOMS_STAFF': ('customs', {}, _m(customs='delete')),
 }
+# Thứ tự hiển thị chức danh trong trang Phân quyền
+ROLE_ORDER = list(POSITIONS)
 
 
 def _clean(grants):
@@ -94,14 +109,47 @@ def _clean(grants):
     return out
 
 
-def default_grants(role):
-    return {k: list(v) for k, v in DEFAULT_MATRIX.get(role, {'dashboard': ['view']}).items()}
+def default_group_grants(key):
+    for k, _l, _d, _i, grants in GROUPS:
+        if k == key:
+            return {m: list(a) for m, a in grants.items()}
+    return {}
+
+
+def _with_locked(key, grants):
+    for mod, acts in LOCKED_GROUP_GRANTS.get(key, {}).items():
+        grants[mod] = [a for a in MODULE_ACTIONS[mod] if a in set(grants.get(mod, [])) | set(acts)]
+    return grants
+
+
+def group_grants(company, key, _cache=None):
+    if not key:
+        return {}
+    from core.models import AccessGroup
+    row = AccessGroup.objects.filter(company=company, key=key).first() if company else None
+    return _with_locked(key, _clean(row.grants) if row else default_group_grants(key))
+
+
+def default_position(role):
+    group, add, remove = POSITIONS.get(role, ('', {'dashboard': ['view']}, {}))
+    return group, {m: list(a) for m, a in add.items()}, {m: list(a) for m, a in remove.items()}
+
+
+def position_config(company, role):
+    """(nhóm, thêm, bớt) của chức danh."""
+    from core.models import RoleAccess
+    row = RoleAccess.objects.filter(company=company, role=role).first() if company else None
+    if row is None:
+        return default_position(role)
+    group = row.group if row.group in GROUP_KEYS or row.group == '' else default_position(role)[0]
+    return group, _clean(row.add), _clean(row.remove)
 
 
 def role_grants(company, role):
-    from core.models import RoleAccess
-    row = RoleAccess.objects.filter(company=company, role=role).first() if company else None
-    return _clean(row.grants) if row else default_grants(role)
+    """Quyền của chức danh = quyền nhóm + thêm − bớt."""
+    group, add, remove = position_config(company, role)
+    pairs = (_to_set(group_grants(company, group)) | _to_set(add)) - _to_set(remove)
+    return _from_set(pairs)
 
 
 def _to_set(grants):
@@ -133,9 +181,13 @@ def effective_grants(user):
         else:
             from core.models import UserAccessOverride
             from core.tenant import company_for_user
-            pairs = _to_set(role_grants(company_for_user(user), employee.role))
+            company = company_for_user(user)
+            pairs = _to_set(role_grants(company, employee.role))
             ov = UserAccessOverride.objects.filter(user=user).first()
             if ov:
+                for key in ov.groups or []:
+                    if key in GROUP_KEYS:
+                        pairs |= _to_set(group_grants(company, key))
                 pairs |= _to_set(_clean(ov.allow))
                 pairs -= _to_set(_clean(ov.deny))
             grants = _from_set(pairs)

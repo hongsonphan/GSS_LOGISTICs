@@ -7,7 +7,7 @@ from django.test import TestCase
 
 from apps.personnel.models import Employee, EmployeeRole
 from core import access
-from core.models import RoleAccess, UserAccessOverride, get_default_company
+from core.models import AccessGroup, RoleAccess, UserAccessOverride, get_default_company
 
 PW = 'Pw-Access#2026'
 
@@ -48,8 +48,49 @@ class AccessMatrixTests(TestCase):
         self.assertIn('Sổ sách kế toán', res.json().get('detail', '') + json.dumps(res.json(), ensure_ascii=False))
 
     def test_role_change_applies(self):
-        RoleAccess.objects.create(company=self.company, role=EmployeeRole.DISPATCHER, grants={'dashboard': ['view']})
+        RoleAccess.objects.create(company=self.company, role=EmployeeRole.DISPATCHER, group='', add={'dashboard': ['view']})
         self.assertEqual(self.get(self.dispatcher, '/api/trips/').status_code, 403)
+
+    # ---- 3 tầng: nhóm → chức danh → người
+    def test_position_inherits_group_with_add_remove(self):
+        self.assertEqual(access.role_grants(self.company, 'DISPATCHER'), access.group_grants(self.company, 'dispatch'))
+        self.assertNotIn('delete', access.role_grants(self.company, 'DISPATCH_ASST')['dispatch'])
+        AccessGroup.objects.create(company=self.company, key='dispatch', grants={'dashboard': ['view'], 'dispatch': ['view']})
+        user = User.objects.get(pk=self.dispatcher.pk)
+        self.assertFalse(access.allowed(user, 'dispatch', 'create'))  # sửa nhóm áp dụng ngay cho chức danh
+        RoleAccess.objects.create(company=self.company, role='DISPATCHER', group='dispatch', add={'dispatch': ['create']})
+        self.assertTrue(access.allowed(User.objects.get(pk=self.dispatcher.pk), 'dispatch', 'create'))
+
+    def test_group_api_and_locks(self):
+        res = self.put(self.director, '/api/access/groups/sales/', {'grants': {'sales': ['view'], 'bogus': ['view']}})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(AccessGroup.objects.get(key='sales').grants, {'sales': ['view']})
+        self.put(self.director, '/api/access/groups/director/', {'grants': {}})
+        self.assertIn('edit', access.group_grants(self.company, 'director')['admin'])  # Giám đốc luôn giữ quyền phân quyền
+        self.assertEqual(self.put(self.director, '/api/access/groups/xyz/', {'grants': {}}).status_code, 400)
+        self.client.delete('/api/access/groups/sales/')
+        self.assertFalse(AccessGroup.objects.filter(key='sales').exists())
+        self.assertEqual(self.put(self.dispatcher, '/api/access/groups/sales/', {'grants': {}}).status_code, 403)
+
+    def test_extra_group_for_user(self):
+        self.assertFalse(access.allowed(self.dispatcher, 'customs', 'create'))
+        res = self.put(self.director, f'/api/access/users/{self.dispatcher.pk}/', {'groups': ['customs', 'nope']})
+        self.assertEqual(res.status_code, 200)
+        row = next(u for u in res.json()['users'] if u['id'] == self.dispatcher.pk)
+        self.assertEqual(row['groups'], ['customs'])
+        self.assertEqual(row['position_group'], 'dispatch')
+        self.assertIn('create', row['effective']['customs'])
+        self.assertTrue(access.allowed(User.objects.get(pk=self.dispatcher.pk), 'customs', 'create'))
+
+    def test_matrix_payload_lists_groups_and_positions(self):
+        data = self.get(self.director, '/api/access/matrix/').json()
+        self.assertEqual([g['key'] for g in data['groups']],
+                         ['admin', 'director', 'sales', 'hr', 'accounting', 'dispatch', 'operations', 'customs'])
+        role = next(r for r in data['roles'] if r['key'] == 'DISPATCH_ASST')
+        self.assertEqual(role['group'], 'dispatch')
+        self.assertIn('delete', role['remove']['dispatch'])
+        user = next(u for u in data['users'] if u['username'] == 'ketoan')
+        self.assertEqual(user['position_group'], 'accounting')
 
     def test_user_override_allow_and_deny(self):
         UserAccessOverride.objects.create(user=self.dispatcher, company=self.company,
@@ -104,11 +145,18 @@ class AccessMatrixTests(TestCase):
         self.assertIn('dispatch', [m['key'] for m in data['modules']])
 
     def test_save_role_and_director_keeps_admin(self):
-        res = self.put(self.director, '/api/access/roles/DISPATCHER/', {'grants': {'dispatch': ['view'], 'bogus': ['view']}})
+        res = self.put(self.director, '/api/access/roles/DISPATCHER/',
+                       {'group': 'dispatch', 'add': {'ledger': ['view'], 'dispatch': ['view'], 'bogus': ['view']},
+                        'remove': {'dispatch': ['delete'], 'hr': ['view']}})
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(RoleAccess.objects.get(role='DISPATCHER').grants, {'dispatch': ['view']})
-        self.put(self.director, '/api/access/roles/DIRECTOR/', {'grants': {}})
-        self.assertIn('edit', RoleAccess.objects.get(role='DIRECTOR').grants['admin'])
+        row = RoleAccess.objects.get(role='DISPATCHER')
+        self.assertEqual((row.group, row.add, row.remove), ('dispatch', {'ledger': ['view']}, {'dispatch': ['delete']}))
+        user = User.objects.get(pk=self.dispatcher.pk)
+        self.assertTrue(access.allowed(user, 'ledger', 'view'))
+        self.assertFalse(access.allowed(user, 'dispatch', 'delete'))
+        self.assertEqual(self.put(self.director, '/api/access/roles/DIRECTOR/', {'group': 'director', 'remove': {'admin': ['edit']}}).status_code, 400)
+        self.assertEqual(self.put(self.director, '/api/access/roles/DISPATCHER/', {'group': 'xyz'}).status_code, 400)
+        self.assertEqual(self.put(self.director, '/api/access/roles/DISPATCHER/', {'add': {'hr': ['view']}, 'remove': {'hr': ['view']}}).status_code, 400)
         self.client.delete('/api/access/roles/DISPATCHER/')
         self.assertFalse(RoleAccess.objects.filter(role='DISPATCHER').exists())
 

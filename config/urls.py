@@ -149,6 +149,7 @@ urlpatterns = [
     # Phân quyền theo ma trận Chức danh × Phân hệ × Thao tác (core/access.py)
     path('api/access/me/', access_views.MyAccessAPIView.as_view(), name='api-access-me'),
     path('api/access/matrix/', access_views.AccessMatrixAPIView.as_view(), name='api-access-matrix'),
+    path('api/access/groups/<str:key>/', access_views.GroupAccessAPIView.as_view(), name='api-access-group'),
     path('api/access/roles/<str:role>/', access_views.RoleAccessAPIView.as_view(), name='api-access-role'),
     path('api/access/users/<int:pk>/', access_views.UserAccessAPIView.as_view(), name='api-access-user'),
     path('api/access/users/<int:pk>/send-reset/', account_views.SendPasswordResetAPIView.as_view(), name='api-access-user-send-reset'),

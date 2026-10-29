@@ -192,10 +192,27 @@ class AuditLog(models.Model):
         return f"[{self.created_at:%d/%m/%Y %H:%M}] {self.actor_label} {self.action} {self.model_label}#{self.object_id}"
 
 
-class RoleAccess(CompanyOwnedModel, TimeStampedModel):
-    """Quyền của một chức danh trong một doanh nghiệp: {phân hệ: [thao tác]} (xem core/access.py)."""
-    role = models.CharField(max_length=30, db_index=True, verbose_name='Chức danh')
+class AccessGroup(CompanyOwnedModel, TimeStampedModel):
+    """Nhóm quyền (Admin, Giám đốc, Kinh doanh, Nhân sự, Kế toán, Điều vận, Vận hành, Hải quan): quyền đầy đủ của nhóm."""
+    key = models.CharField(max_length=30, db_index=True, verbose_name='Mã nhóm')
     grants = models.JSONField(default=dict, blank=True, verbose_name='Quyền theo phân hệ')
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+
+    class Meta:
+        verbose_name = 'Nhóm quyền'
+        verbose_name_plural = 'Nhóm quyền'
+        constraints = [models.UniqueConstraint(fields=['company', 'key'], name='uniq_access_group_company_key')]
+
+    def __str__(self):
+        return f'Nhóm {self.key} @ {self.company_id}'
+
+
+class RoleAccess(CompanyOwnedModel, TimeStampedModel):
+    """Chức danh thuộc nhóm nào và thêm / bớt quyền gì so với nhóm (xem core/access.py)."""
+    role = models.CharField(max_length=30, db_index=True, verbose_name='Chức danh')
+    group = models.CharField(max_length=30, blank=True, default='', verbose_name='Nhóm')
+    add = models.JSONField(default=dict, blank=True, verbose_name='Thêm quyền')
+    remove = models.JSONField(default=dict, blank=True, verbose_name='Bớt quyền')
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
 
     class Meta:
@@ -210,6 +227,7 @@ class RoleAccess(CompanyOwnedModel, TimeStampedModel):
 class UserAccessOverride(CompanyOwnedModel, TimeStampedModel):
     """Ngoại lệ quyền riêng một người: cho thêm (allow) hoặc chặn (deny) so với quyền chức danh."""
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='access_override')
+    groups = models.JSONField(default=list, blank=True, verbose_name='Nhóm bổ sung')
     allow = models.JSONField(default=dict, blank=True, verbose_name='Cho phép thêm')
     deny = models.JSONField(default=dict, blank=True, verbose_name='Chặn')
     note = models.CharField(max_length=255, blank=True, default='', verbose_name='Lý do')
