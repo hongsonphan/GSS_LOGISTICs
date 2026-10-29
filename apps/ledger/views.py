@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.permissions import CanViewFinancialReports
+from core.permissions import CanUseLedger
 from core.tenant import company_for_user
 
 from . import charts, reports
@@ -42,7 +42,7 @@ def _num(value):
 
 
 class LedgerAccountsAPIView(APIView):
-    permission_classes = [CanViewFinancialReports]
+    permission_classes = [CanUseLedger]
 
     def get(self, request):
         company = _company(request)
@@ -53,7 +53,7 @@ class LedgerAccountsAPIView(APIView):
 
 
 class TrialBalanceAPIView(APIView):
-    permission_classes = [CanViewFinancialReports]
+    permission_classes = [CanUseLedger]
 
     def get(self, request):
         company = _company(request)
@@ -70,7 +70,7 @@ class TrialBalanceAPIView(APIView):
 
 
 class GeneralJournalAPIView(APIView):
-    permission_classes = [CanViewFinancialReports]
+    permission_classes = [CanUseLedger]
 
     def get(self, request):
         company = _company(request)
@@ -84,7 +84,7 @@ class GeneralJournalAPIView(APIView):
 
 
 class AccountLedgerAPIView(APIView):
-    permission_classes = [CanViewFinancialReports]
+    permission_classes = [CanUseLedger]
 
     def get(self, request, code):
         company = _company(request)
@@ -114,8 +114,8 @@ MAPPING_LABELS = {
 
 
 def _can_change_regime(user):
-    from core.permissions import IsAdminOrDirector
-    return IsAdminOrDirector().has_permission(type('R', (), {'user': user})(), None)
+    from core import access
+    return access.can(user, 'admin', 'edit')
 
 
 def _mapping_payload(company, user):
@@ -136,7 +136,7 @@ def _mapping_payload(company, user):
 
 class LedgerMappingAPIView(APIView):
     """Xem/sửa ánh xạ nghiệp vụ -> tài khoản của công ty (ghi đè mặc định theo chế độ kế toán)."""
-    permission_classes = [CanViewFinancialReports]
+    permission_classes = [CanUseLedger]
 
     def get(self, request):
         company = _company(request)

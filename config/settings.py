@@ -81,6 +81,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'core.audit.AuditContextMiddleware',
     'core.tenant.TenantMiddleware',
+    'core.session_security.SessionSecurityMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -98,6 +99,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.access_menu',
             ],
         },
     },
@@ -140,9 +142,19 @@ AUTHENTICATION_BACKENDS = [
     'apps.master_data.auth_backends.BimPermissionBackend',
 ]
 
+# Băm mật khẩu bằng Argon2id (khuyến nghị OWASP); mật khẩu cũ (PBKDF2) tự nâng cấp khi người dùng đăng nhập
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+if 'test' in sys.argv:  # test chạy nhanh
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher', *PASSWORD_HASHERS]
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'core.validators.MinimumLengthValidator', 'OPTIONS': {'min_length': 10}},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
@@ -314,6 +326,42 @@ HASHIDS_SALT = os.environ.get('HASHIDS_SALT') or 'BIM_LOGISTICS_SECURE_SALT_2026
 # Khoá đăng nhập tạm thời sau nhiều lần sai mật khẩu
 LOGIN_MAX_FAILURES = int(os.environ.get('LOGIN_MAX_FAILURES', '5'))
 LOGIN_LOCKOUT_SECONDS = int(os.environ.get('LOGIN_LOCKOUT_SECONDS', '900'))
+# Khoá cả tài khoản (mọi địa chỉ IP) khi bị dò mật khẩu từ nhiều nơi
+LOGIN_ACCOUNT_MAX_FAILURES = int(os.environ.get('LOGIN_ACCOUNT_MAX_FAILURES', '10'))
+
+# Phiên làm việc: tự đăng xuất khi không thao tác SESSION_IDLE_HOURS giờ; tối đa SESSION_MAX_DAYS ngày dù có "Ghi nhớ"
+SESSION_IDLE_HOURS = float(os.environ.get('SESSION_IDLE_HOURS', '8'))
+SESSION_MAX_DAYS = int(os.environ.get('SESSION_MAX_DAYS', '14'))
+SESSION_COOKIE_AGE = SESSION_MAX_DAYS * 86400
+
+# Link đặt lại mật khẩu dùng một lần, hết hạn sau 1 giờ
+PASSWORD_RESET_TIMEOUT = int(os.environ.get('PASSWORD_RESET_TIMEOUT', '3600'))
+SITE_URL = os.environ.get('SITE_URL', '').rstrip('/')
+
+# Email gửi đi (đặt lại mật khẩu, cảnh báo đăng nhập). Gmail / Google Workspace:
+#   EMAIL_HOST_USER=hop-thu@gmail.com  EMAIL_HOST_PASSWORD=<Mật khẩu ứng dụng 16 ký tự>  (xem docs/CAU_HINH_EMAIL.md)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', True)
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_TIMEOUT = 15
+EMAIL_BRAND_NAME = os.environ.get('EMAIL_BRAND_NAME', 'BIM Logistics')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or (f'{EMAIL_BRAND_NAME} <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'noreply@localhost')
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND') or (
+    'django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST_USER or not DEBUG else 'django.core.mail.backends.console.EmailBackend')
+
+# Bộ nhớ đệm dùng chung giữa các tiến trình gunicorn (giới hạn tần suất API, giới hạn yêu cầu đặt lại mật khẩu).
+# Bảng bim_cache được tạo bằng migration core/0008.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache' if 'test' in sys.argv
+        else 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'bim_cache',
+        'TIMEOUT': 3600,
+        'OPTIONS': {'MAX_ENTRIES': 20000},
+    }
+}
 
 # Nhật ký hệ thống: ghi ra console (Docker thu lại bằng `docker compose logs`)
 LOGGING = {

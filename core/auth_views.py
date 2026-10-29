@@ -87,6 +87,11 @@ class CurrentUserAPIView(APIView):
             user.set_password(new_password)
             user.save()
             update_session_auth_hash(request, user)
+            from core import account_security as sec
+            from core.session_security import FORCE_KEY
+            request.session.pop(FORCE_KEY, None)
+            sec.log_event(request, 'password_change', user)
+            sec.notify_password_changed(user, request)
 
         display_name = employee.full_name if employee else (user.get_full_name() or user.username)
 

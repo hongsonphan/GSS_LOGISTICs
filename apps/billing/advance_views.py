@@ -416,6 +416,7 @@ class DriverAdvanceSettleAPIView(APIView):
     """API Quyết Toán Hoàn Ứng Chuyến Cho Tài Xế (Điều Vận hoặc Kế Toán Đối Soát Thực Chi & Chênh Lệch)."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsDispatcherOrAccountant]
+    access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}  # chốt/duyệt (ma trận phân quyền)
 
     def post(self, request, pk):
         with transaction.atomic():
@@ -1042,6 +1043,7 @@ class DriverBatchSettlementExecuteAPIView(APIView):
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsDispatcherOrAccountant]
+    access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}  # chốt/duyệt (ma trận phân quyền)
 
     def post(self, request):
         trip_ids = request.data.get('trip_ids', [])
@@ -1208,6 +1210,7 @@ class CustomerARReconciliationAPIView(APIView):
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsDispatcherOrAccountant]
+    access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}  # chốt/duyệt (ma trận phân quyền)
 
     def get(self, request):
         customer_id = request.GET.get('customer_id')

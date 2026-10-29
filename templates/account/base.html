@@ -1,0 +1,32 @@
+{% load static %}<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>{% block title %}Tài khoản{% endblock %} - BIM LOGISTICS</title>
+  <link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/regular/style.css' %}"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/bold/style.css' %}"/>
+  <style>
+    @import url("{% static 'vendor/fonts/fonts.css' %}");
+    body { font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f1f5f9; }
+    .input-field:focus { border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15); outline: none; }
+  </style>
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+  <link rel="stylesheet" href="{% static 'css/contrast.css' %}">
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+  <main class="w-full max-w-md">
+    <div class="flex items-center justify-center gap-2.5 mb-5">
+      <img src="{% static 'images/logo_clean.png' %}" alt="" class="w-10 h-10 object-contain">
+      <div class="leading-tight"><div class="text-[11px] font-black tracking-wider text-teal-700">BIZ SOLUTIONS</div>
+        <div class="text-lg font-black text-slate-900 font-heading">BIM LOGISTICS</div></div>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+      {% block content %}{% endblock %}
+    </div>
+    <p class="text-center text-xs text-slate-500 mt-5"><a href="/login/" class="font-semibold text-teal-700 hover:underline">← Về trang đăng nhập</a></p>
+  </main>
+</body>
+</html>

@@ -1926,9 +1926,25 @@ class ReportsAPIView(APIView):
                 for p in emp.excluded_permissions.select_related('content_type').all()
             }
 
+        from core import access as _access
+        _matrix = _access.uses_matrix(u)
+        # Ma trận phân quyền: mỗi báo cáo thuộc một phân hệ (Báo cáo tài chính / vận hành / Kinh doanh / Tạm ứng)
+        _REPORT_MODULES = {
+            'view_report_pnl': ['reports_fin'], 'view_report_customer_rev': ['reports_fin'],
+            'view_report_subcontractor': ['reports_fin'], 'view_report_driver_salary': ['reports_fin'],
+            'view_report_dispatcher_funds': ['reports_fin'], 'view_report_settlement_backlog': ['reports_fin'],
+            'view_report_ar_aging': ['reports_fin'], 'view_report_unsettled_aging': ['reports_fin'],
+            'view_report_driver_advances': ['reports_fin', 'advances'],
+            'view_report_dem_det': ['reports_ops'], 'view_report_otp': ['reports_ops'], 'view_report_route_cost': ['reports_ops'],
+            'view_report_layover': ['reports_ops'], 'view_report_incidents': ['reports_ops'], 'view_report_wip_trips': ['reports_ops', 'sales'],
+            'view_report_crm_quotations': ['sales'], 'view_report_active_bookings': ['sales'],
+        }
+
         def check_report_perm(perm_codename, allowed_roles=None):
             if is_sup:
                 return True
+            if _matrix:
+                return any(_access.allowed(u, m, 'view') for m in _REPORT_MODULES.get(perm_codename, ['reports_fin']))
             full_code = f"reports.{perm_codename}"
             # 1. Nếu bị loại trừ tường minh -> Chặn ngay lập tức
             if full_code in excluded_perms:

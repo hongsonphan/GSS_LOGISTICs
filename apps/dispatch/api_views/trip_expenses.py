@@ -385,6 +385,7 @@ class TripExpenseDetailAPIView(APIView):
 class TripSettleExpensesAPIView(APIView):
     """API Kế toán Chốt sổ Chi Phí Chuyến Xe (Khóa cứng không thể sửa/xóa)."""
     permission_classes = [IsAccountant]
+    access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}  # chốt/duyệt (ma trận phân quyền)
 
     def post(self, request, trip_code):
         trip = get_trip_by_code_or_hash(trip_code)

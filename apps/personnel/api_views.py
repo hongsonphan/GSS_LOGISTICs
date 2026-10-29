@@ -8,6 +8,8 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core import access
+
 from apps.personnel.models import (
     Employee, Department, EmployeeRole, EmployeeGender,
     EmployeeDependent, LaborContract, ContractAppendix, ContractType, ContractStatus, TaxResidentType,
@@ -40,19 +42,65 @@ from apps.master_data.models import CompanyProfile
 
 class EmployeePermission(permissions.BasePermission):
     """
-    Quyền truy cập Phân hệ Nhân Sự:
-    - Đọc (GET, HEAD, OPTIONS): Nhân sự nội bộ đã đăng nhập.
-    - Ghi / Cập nhật / Xóa: Kế toán viên, Ban Giám Đốc hoặc Quản trị viên hệ thống.
+    Phân hệ Nhân sự (ma trận phân quyền, phân hệ "hr"):
+    - Xem danh sách / hồ sơ: mọi nhân sự đăng nhập, nhưng người không có quyền Xem Nhân sự chỉ nhận thông tin danh bạ
+      (không CCCD, ngân hàng, địa chỉ, lương) — xem `employee_payload`.
+    - Tạo / Sửa / Xoá / Nhập / Xuất: theo quyền tương ứng của phân hệ Nhân sự.
     """
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
+        user = request.user
+        if not user or not user.is_authenticated:
             return False
-        if request.method in permissions.SAFE_METHODS:
+        if request.method in permissions.SAFE_METHODS and not access.action_for(request, view) == 'export':
             return True
-        if request.user.is_superuser or request.user.is_staff:
+        if user.is_superuser:
             return True
-        emp = getattr(request.user, 'employee', None)
-        return bool(emp and emp.role in [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT])
+        if not access.uses_matrix(user):
+            return bool(user.is_staff)
+        if access.request_allowed(request, 'hr', view):
+            return True
+        self.message = access.denied_message('hr', access.action_for(request, view))
+        return False
+
+
+class HRRecordPermission(permissions.BasePermission):
+    """Dữ liệu nhân sự nhạy cảm (người phụ thuộc, hợp đồng lao động): cần quyền phân hệ Nhân sự cả khi xem."""
+    module = 'hr'
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        if not access.uses_matrix(user):
+            return bool(user.is_staff)
+        if access.request_allowed(request, self.module, view):
+            return True
+        self.message = access.denied_message(self.module, access.action_for(request, view))
+        return False
+
+
+class PayrollPermission(HRRecordPermission):
+    """Chấm công, kỳ lương, phiếu lương, cấu hình lương: phân hệ Bảng lương (kể cả khi xem)."""
+    module = 'payroll'
+
+
+# Thông tin danh bạ được phép trả cho người không có quyền Xem Nhân sự
+_DIRECTORY_FIELDS = ('id', 'code', 'full_name', 'nickname', 'phone_number', 'zalo_id', 'email', 'department',
+                     'department_display', 'role', 'role_display', 'is_active', 'is_department_head', 'avatar', 'avatar_url')
+
+
+def employee_payload(request, data, employee=None):
+    """Lọc dữ liệu hồ sơ theo quyền: đủ quyền Xem Nhân sự hoặc xem hồ sơ của chính mình -> đầy đủ."""
+    user = request.user
+    if user.is_superuser or access.can(user, 'hr', 'view') or (not access.uses_matrix(user) and user.is_staff):
+        return data
+    own = getattr(user, 'employee', None)
+    if employee is not None and own is not None and own.pk == employee.pk:
+        return data
+    strip = lambda d: {k: v for k, v in d.items() if k in _DIRECTORY_FIELDS}
+    return [strip(d) for d in data] if isinstance(data, list) else strip(data)
 
 
 # ==============================================================================
@@ -91,9 +139,16 @@ class EmployeeListCreateAPIView(APIView):
                 Q(license_number__icontains=q)
             )
 
+        if not (request.user.is_superuser or access.can(request.user, 'hr', 'view')):
+            # Không có quyền Nhân sự: không cho tìm theo CCCD / số tài khoản
+            q_sensitive = request.GET.get('q', '').strip()
+            if q_sensitive:
+                qs = Employee.objects.filter(pk__in=qs.values('pk')).filter(
+                    Q(code__icontains=q_sensitive) | Q(full_name__icontains=q_sensitive) |
+                    Q(nickname__icontains=q_sensitive) | Q(phone_number__icontains=q_sensitive))
         serializer = EmployeeSerializer(qs, many=True)
         return Response({
-            'results': serializer.data,
+            'results': employee_payload(request, serializer.data),
             'total': qs.count()
         })
 
@@ -121,7 +176,7 @@ class EmployeeDetailAPIView(APIView):
 
     def get(self, request, pk):
         employee = self.get_object(pk)
-        return Response(EmployeeSerializer(employee).data)
+        return Response(employee_payload(request, EmployeeSerializer(employee).data, employee))
 
     def put(self, request, pk):
         employee = self.get_object(pk)
@@ -333,7 +388,7 @@ class EmployeeStatsAPIView(APIView):
 # ==============================================================================
 
 class EmployeeDependentListCreateAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [HRRecordPermission]
 
     def get(self, request):
         employee_id = request.GET.get('employee_id')
@@ -360,7 +415,7 @@ class EmployeeDependentListCreateAPIView(APIView):
 
 
 class EmployeeDependentDetailAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [HRRecordPermission]
 
     def get_object(self, pk):
         return get_object_or_404(EmployeeDependent, pk=pk)
@@ -390,7 +445,7 @@ class EmployeeDependentDetailAPIView(APIView):
 # ==============================================================================
 
 class LaborContractListCreateAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [HRRecordPermission]
 
     def get(self, request):
         if request.GET.get('action') == 'suggest_number':
@@ -426,7 +481,7 @@ class LaborContractListCreateAPIView(APIView):
 
 
 class LaborContractDetailAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [HRRecordPermission]
 
     def get_object(self, pk):
         return get_object_or_404(LaborContract, pk=pk)
@@ -459,7 +514,7 @@ class LaborContractDetailAPIView(APIView):
 
 
 class ContractAppendixListCreateAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [HRRecordPermission]
 
     def post(self, request):
         serializer = ContractAppendixSerializer(data=request.data)
@@ -478,7 +533,7 @@ class ContractAppendixListCreateAPIView(APIView):
 # ==============================================================================
 
 class PayrollPolicyConfigAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request):
         config = PayrollPolicyConfig.objects.filter(is_active=True).first()
@@ -504,7 +559,7 @@ class PayrollPolicyConfigAPIView(APIView):
 
 
 class TaxBracketListAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request):
         brackets = TaxBracket.objects.all().order_by('bracket_level')
@@ -524,7 +579,7 @@ class TaxBracketListAPIView(APIView):
 
 
 class TaxBracketDetailAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get_object(self, pk):
         return get_object_or_404(TaxBracket, pk=pk)
@@ -555,7 +610,7 @@ class TaxBracketDetailAPIView(APIView):
 
 
 class PayrollParameterListCreateAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request):
         params = PayrollParameter.objects.all().order_by('order', 'code')
@@ -575,7 +630,7 @@ class PayrollParameterListCreateAPIView(APIView):
 
 
 class PayrollParameterDetailAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get_object(self, pk):
         return get_object_or_404(PayrollParameter, pk=pk)
@@ -606,7 +661,7 @@ class PayrollParameterDetailAPIView(APIView):
 
 
 class AllowanceGroupListAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request):
         groups = AllowanceGroup.objects.prefetch_related('items').filter(is_active=True).order_by('order')
@@ -615,7 +670,7 @@ class AllowanceGroupListAPIView(APIView):
 
 
 class AllowanceTypeListCreateAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request):
         group_id = request.GET.get('group_id')
@@ -639,7 +694,7 @@ class AllowanceTypeListCreateAPIView(APIView):
 
 
 class AllowanceTypeDetailAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get_object(self, pk):
         return get_object_or_404(AllowanceType, pk=pk)
@@ -670,7 +725,7 @@ class AllowanceTypeDetailAPIView(APIView):
 
 
 class SalaryDeductionRateAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request):
         rate = SalaryDeductionRate.objects.filter(is_active=True).first()
@@ -700,7 +755,7 @@ class SalaryDeductionRateAPIView(APIView):
 # ==============================================================================
 
 class AttendanceCodeListAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request):
         codes = AttendanceCode.objects.filter(is_active=True).order_by('order', 'code')
@@ -712,7 +767,7 @@ class MonthlyAttendanceSummaryListAPIView(APIView):
     """
     Danh sách Bảng Chấm Công Tổng Hợp Tháng theo Kỳ lương (PayrollPeriod).
     """
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request):
         period_id = request.GET.get('period_id')
@@ -768,7 +823,7 @@ class MonthlyAttendanceSummaryListAPIView(APIView):
 
 
 class MonthlyAttendanceSummaryDetailAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get_object(self, pk):
         return get_object_or_404(MonthlyAttendanceSummary, pk=pk)
@@ -793,7 +848,7 @@ class MonthlyAttendanceAutoGenerateAPIView(APIView):
     Tự động khởi tạo Bảng chấm công tháng cho toàn bộ nhân sự đang hoạt động trong kỳ lương.
     Mặc định: CBNV đi làm đủ ngày công tiêu chuẩn (26 ngày).
     """
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def post(self, request):
         period_id = request.data.get('period_id')
@@ -839,7 +894,7 @@ class MonthlyAttendanceAutoGenerateAPIView(APIView):
 # ==============================================================================
 
 class PayrollPeriodListCreateAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request):
         qs = PayrollPeriod.objects.all().select_related('cash_transaction', 'approved_by').order_by('-from_date')
@@ -915,7 +970,7 @@ class PayrollPeriodListCreateAPIView(APIView):
 
 
 class PayrollPeriodDetailAPIView(APIView):
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request, pk):
         period = get_object_or_404(PayrollPeriod.objects.select_related('cash_transaction', 'approved_by'), pk=pk)
@@ -977,7 +1032,7 @@ class PayrollCalculateAPIView(APIView):
     - Áp biểu thuế TNCN 7 bậc lũy tiến từng phần
     - Trích đóng bảo hiểm NLĐ 10.5% & DN 21.5%
     """
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     @staticmethod
     def _calculate_pit(taxable_income, tax_brackets):
@@ -1297,7 +1352,8 @@ class PayrollPeriodStatusAPIView(APIView):
     DRAFT ➔ REVIEWED ➔ LOCKED ➔ PAID.
     Khi chuyển sang PAID: Tự động ghi nhận Phiếu Chi (CashTransaction) vào Sổ Quỹ dòng tiền.
     """
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
+    access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}  # chốt/duyệt (ma trận phân quyền)
 
     def post(self, request, pk):
         period = get_object_or_404(PayrollPeriod, pk=pk)
@@ -1367,7 +1423,7 @@ class PayrollExportBankAPIView(APIView):
     API DỮ LIỆU CHUYỂN KHOẢN NGÂN HÀNG HÀNG LOẠT (BANK BATCH PAYMENT LIST):
     Trả về dữ liệu có cấu trúc phục vụ xuất file Excel chuyển khoản lương qua ngân hàng.
     """
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request, pk):
         period = get_object_or_404(PayrollPeriod, pk=pk)
@@ -1418,7 +1474,7 @@ class PayrollSlipPrintAPIView(APIView):
     API DỮ LIỆU IN PHIẾU LƯƠNG CÁ NHÂN (FLAT PRINTABLE PAYSLIP DOCUMENT):
     Cung cấp đầy đủ thông tin chuẩn định dạng văn bản phẳng A4/A5 để in hoặc gửi email/Zalo.
     """
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get(self, request, pk):
         slip = get_object_or_404(
@@ -1470,7 +1526,7 @@ class PayrollSlipDetailAPIView(APIView):
     API CHI TIẾT & ĐIỀU CHỈNH PHIẾU LƯƠNG:
     Cho phép điều chỉnh các khoản phụ cấp, KPI, khấu trừ khác và tự động tính lại Net.
     """
-    permission_classes = [EmployeePermission]
+    permission_classes = [PayrollPermission]
 
     def get_object(self, pk):
         return get_object_or_404(PayrollSlip.objects.select_related('period', 'employee'), pk=pk)
@@ -1580,7 +1636,7 @@ class EmployeeExportTemplateAPIView(APIView):
     """
     API Tải file Excel mẫu để nhập hồ sơ nhân sự
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [HRRecordPermission]
 
     def get(self, request):
         import io
@@ -1602,7 +1658,7 @@ class EmployeeImportAPIView(APIView):
     """
     API Nhập danh sách nhân sự từ file Excel (.xlsx, .xls)
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [HRRecordPermission]
 
     def post(self, request):
         file_obj = request.FILES.get('file')
@@ -1621,7 +1677,7 @@ class EmployeeExportDataAPIView(APIView):
     """
     API Xuất toàn bộ danh sách nhân sự hiện tại ra file Excel
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [HRRecordPermission]
 
     def get(self, request):
         import io

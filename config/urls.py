@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+from core import access_views, account_views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
@@ -60,7 +61,6 @@ from apps.billing.finance_reports_api import (
 from apps.master_data.api_views import CustomerMasterListCreateAPIView
 
 from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView,
     TokenBlacklistView,
@@ -76,6 +76,7 @@ urlpatterns = [
     path('healthz/', healthz, name='healthz'),
     path('api/schema/', SpectacularAPIView.as_view(permission_classes=[IsAdminUser]), name='api-schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='api-schema', permission_classes=[IsAdminUser]), name='api-docs'),
+    path('admin/login/', account_views.admin_login_redirect, name='admin-login-redirect'),
     path('admin/', admin.site.urls),
     
     # Giao diện Web SPA & Xác thực
@@ -140,11 +141,21 @@ urlpatterns = [
     path('tracking/<str:trip_hash>', public_tracking_view, name='public-tracking-noslash'),
 
     # Xác thực người dùng & Mobile JWT Authentication (Tiêu chuẩn 1 & 3)
-    path('api/auth/token/', TokenObtainPairView.as_view(), name='token-obtain-pair'),
+    path('api/auth/token/', account_views.SecureTokenObtainPairView.as_view(), name='token-obtain-pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('api/auth/token/verify/', TokenVerifyView.as_view(), name='token-verify'),
     path('api/auth/token/blacklist/', TokenBlacklistView.as_view(), name='token-blacklist'),
     path('api/ledger/', include('apps.ledger.urls')),
+    # Phân quyền theo ma trận Chức danh × Phân hệ × Thao tác (core/access.py)
+    path('api/access/me/', access_views.MyAccessAPIView.as_view(), name='api-access-me'),
+    path('api/access/matrix/', access_views.AccessMatrixAPIView.as_view(), name='api-access-matrix'),
+    path('api/access/roles/<str:role>/', access_views.RoleAccessAPIView.as_view(), name='api-access-role'),
+    path('api/access/users/<int:pk>/', access_views.UserAccessAPIView.as_view(), name='api-access-user'),
+    path('api/access/users/<int:pk>/send-reset/', account_views.SendPasswordResetAPIView.as_view(), name='api-access-user-send-reset'),
+    # Tài khoản: quên mật khẩu qua email, đặt lại bằng link, đổi mật khẩu
+    path('password-reset/', account_views.password_reset_request, name='password-reset'),
+    path('password-reset/<str:uidb64>/<str:token>/', account_views.password_reset_confirm, name='password-reset-confirm'),
+    path('account/password/', account_views.password_change, name='account-password'),
     path('api/auth/me/', CurrentUserAPIView.as_view(), name='auth-me'),
 
     # REST APIs

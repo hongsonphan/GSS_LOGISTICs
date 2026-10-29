@@ -1,0 +1,7 @@
+10049	IGNORE	(Non-storable content: trang động cố ý không cache)
+10027	IGNORE	(Information disclosure suspicious comments: chú thích tiếng Việt trong JS)
+10109	IGNORE	(Modern web application: thông tin)
+10055	IGNORE	(CSP: còn unsafe-inline do giao diện dùng onclick nội tuyến - đã biết)
+90004	IGNORE	(Cross-Origin-Embedder-Policy: không dùng nhúng chéo nguồn)
+10015	IGNORE	(Re-examine Cache-control: trang tĩnh có cache dài hạn chủ đích)
+10010	IGNORE	(Cookie csrftoken không HttpOnly: cố ý để JavaScript gửi kèm header CSRF)

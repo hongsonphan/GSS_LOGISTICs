@@ -1,9 +1,11 @@
 from rest_framework import permissions
+
+from core import access
 from django.conf import settings
 from apps.personnel.models import EmployeeRole, Department
 
 
-class IsAdminOrDirector(permissions.BasePermission):
+class LegacyIsAdminOrDirector(permissions.BasePermission):
     """
     Quyền truy cập dành cho Ban Giám Đốc hoặc Quản trị viên hệ thống (Xem P&L, Báo cáo chiến lược).
     Chỉ Quản trị viên (superuser/staff) hoặc Giám đốc mới có toàn quyền.
@@ -20,7 +22,7 @@ class IsAdminOrDirector(permissions.BasePermission):
         )
 
 
-class IsDispatcher(permissions.BasePermission):
+class LegacyIsDispatcher(permissions.BasePermission):
     """
     Quyền truy cập dành cho Điều phối viên & Ban Giám Đốc:
     - Đọc (SAFE_METHODS: GET, HEAD, OPTIONS): Mọi nhân viên văn phòng (Điều phối, Kế toán, Kinh doanh, Nhân sự, Giám đốc).
@@ -47,7 +49,7 @@ class IsDispatcher(permissions.BasePermission):
         )
 
 
-class IsAccountant(permissions.BasePermission):
+class LegacyIsAccountant(permissions.BasePermission):
     """
     Quyền truy cập dành cho Kế toán & Ban Giám Đốc (Chốt sổ chi phí, mở sổ, kiểm toán cước, quản lý quỹ).
     Kiểm tra quyền billing.view_tripexpense hoặc billing.view_cashtransaction.
@@ -66,7 +68,7 @@ class IsAccountant(permissions.BasePermission):
         )
 
 
-class IsSalesOrDirector(permissions.BasePermission):
+class LegacyIsSalesOrDirector(permissions.BasePermission):
     """
     Quyền truy cập Báo giá (Quotation) & Đơn hàng Booking (Sale CRM):
     - Đọc (SAFE_METHODS: GET, HEAD, OPTIONS): Kinh doanh, Điều phối, Kế toán, Ban Giám Đốc.
@@ -97,7 +99,7 @@ class IsSalesOrDirector(permissions.BasePermission):
         return bool(employee.role in [EmployeeRole.SALESMAN, EmployeeRole.DIRECTOR] or employee.department == Department.SALES)
 
 
-class IsDispatcherOrAccountant(permissions.BasePermission):
+class LegacyIsDispatcherOrAccountant(permissions.BasePermission):
     """
     Quyền truy cập nghiệp vụ phối hợp giữa Điều phối và Kế toán (Tạm ứng quỹ, tạm ứng chuyến xe).
     """
@@ -115,7 +117,7 @@ class IsDispatcherOrAccountant(permissions.BasePermission):
         )
 
 
-class IsCustomsOrDirector(permissions.BasePermission):
+class LegacyIsCustomsOrDirector(permissions.BasePermission):
     """
     Quyền truy cập dành cho Nhân viên Thủ tục Hải Quan, Điều độ & Ban Giám Đốc.
     Đăng ký và theo dõi Tờ khai hải quan VNACCS/VCIS.
@@ -137,7 +139,7 @@ class IsCustomsOrDirector(permissions.BasePermission):
         )
 
 
-class CanManageFleet(permissions.BasePermission):
+class LegacyCanManageFleet(permissions.BasePermission):
     """
     Quyền truy cập Quản lý Đội xe, Rơ-moóc & Bãi xe:
     Kỹ thuật viên bãi xe (Mechanic), Điều độ (Dispatcher) & Ban Giám Đốc.
@@ -156,7 +158,7 @@ class CanManageFleet(permissions.BasePermission):
         )
 
 
-class CanViewPayroll(permissions.BasePermission):
+class LegacyCanViewPayroll(permissions.BasePermission):
     """
     Quyền xem Bảng lương & Tạm ứng nhân sự (Bảo mật tiền lương):
     Chỉ Kế toán viên (ACCOUNTANT), Quản Lý Nhân Sự và Ban Giám Đốc (DIRECTOR) được phép truy cập.
@@ -175,7 +177,7 @@ class CanViewPayroll(permissions.BasePermission):
         return bool(employee and employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR])
 
 
-class CanViewFinancialReports(permissions.BasePermission):
+class LegacyCanViewFinancialReports(permissions.BasePermission):
     """
     Quyền xem Báo cáo Tài chính, Sổ quỹ, P&L, Thu hồi chi hộ, Quyết toán thầu phụ:
     Chỉ Ban Giám Đốc (DIRECTOR) và Kế toán (ACCOUNTANT) hoặc người có quyền view_financial_report.
@@ -191,7 +193,7 @@ class CanViewFinancialReports(permissions.BasePermission):
         return bool(employee and employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR])
 
 
-class CanViewOperationalReports(permissions.BasePermission):
+class LegacyCanViewOperationalReports(permissions.BasePermission):
     """
     Quyền xem Báo cáo Quản trị Vận hành & Thống kê TMS:
     - Cho phép nếu có quyền reports.view_operational_report, view_financial_report hoặc bất kỳ quyền xem báo cáo cụ thể nào.
@@ -225,7 +227,7 @@ class CanViewOperationalReports(permissions.BasePermission):
         )
 
 
-class CanManageMasterData(permissions.BasePermission):
+class LegacyCanManageMasterData(permissions.BasePermission):
     """
     Quyền xem & cấu hình Hệ thống Danh Mục (Master Data):
     - Đọc (SAFE_METHODS: GET, HEAD, OPTIONS): Tất cả nhân viên nội bộ đã đăng nhập.
@@ -245,6 +247,51 @@ class CanManageMasterData(permissions.BasePermission):
             (employee and employee.role in [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT, EmployeeRole.DISPATCHER]) or
             request.user.groups.filter(name__in=['Ban Giám Đốc', 'Kế Toán Cước', 'Điều Phối Viên']).exists()
         )
+
+
+# =============================================================================
+# LỚP QUYỀN THEO MA TRẬN PHÂN QUYỀN (core/access.py)
+# Người dùng có hồ sơ nhân viên: quyết định bởi ma trận Chức danh × Phân hệ × Thao tác + ngoại lệ cá nhân.
+# Tài khoản không có hồ sơ nhân viên: giữ quy tắc cũ (Legacy*) — nhóm/quyền Django.
+# =============================================================================
+class ModulePermission(permissions.BasePermission):
+    module = None
+    legacy = None
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        if not access.uses_matrix(user):
+            return bool(self.legacy and self.legacy().has_permission(request, view))
+        if access.request_allowed(request, self.module, view):
+            return True
+        self.message = access.denied_message(self.module, access.action_for(request, view))
+        return False
+
+
+def module_permission(module, legacy=None, name=None):
+    """Tạo lớp quyền cho một phân hệ: permission_classes = [module_permission('ledger')]."""
+    return type(name or f'Module_{module}_Permission', (ModulePermission,), {'module': module, 'legacy': legacy})
+
+
+IsAdminOrDirector = module_permission('admin', LegacyIsAdminOrDirector, 'IsAdminOrDirector')
+IsDispatcher = module_permission('dispatch', LegacyIsDispatcher, 'IsDispatcher')
+IsAccountant = module_permission('accounting', LegacyIsAccountant, 'IsAccountant')
+IsSalesOrDirector = module_permission('sales', LegacyIsSalesOrDirector, 'IsSalesOrDirector')
+IsDispatcherOrAccountant = module_permission('advances', LegacyIsDispatcherOrAccountant, 'IsDispatcherOrAccountant')
+IsCustomsOrDirector = module_permission('customs', LegacyIsCustomsOrDirector, 'IsCustomsOrDirector')
+CanManageFleet = module_permission('fleet', LegacyCanManageFleet, 'CanManageFleet')
+CanViewPayroll = module_permission('payroll', LegacyCanViewPayroll, 'CanViewPayroll')
+CanViewFinancialReports = module_permission('reports_fin', LegacyCanViewFinancialReports, 'CanViewFinancialReports')
+CanViewOperationalReports = module_permission('reports_ops', LegacyCanViewOperationalReports, 'CanViewOperationalReports')
+CanManageMasterData = module_permission('master_data', LegacyCanManageMasterData, 'CanManageMasterData')
+CanUseLedger = module_permission('ledger', LegacyCanViewFinancialReports, 'CanUseLedger')
+CanManageHR = module_permission('hr', None, 'CanManageHR')
+CanManagePayroll = module_permission('payroll', LegacyCanViewPayroll, 'CanManagePayroll')
+CanAdministerAccess = module_permission('admin', LegacyIsAdminOrDirector, 'CanAdministerAccess')
 
 
 class IsDriver(permissions.BasePermission):

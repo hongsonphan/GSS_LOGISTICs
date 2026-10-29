@@ -190,3 +190,56 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"[{self.created_at:%d/%m/%Y %H:%M}] {self.actor_label} {self.action} {self.model_label}#{self.object_id}"
+
+
+class RoleAccess(CompanyOwnedModel, TimeStampedModel):
+    """Quyền của một chức danh trong một doanh nghiệp: {phân hệ: [thao tác]} (xem core/access.py)."""
+    role = models.CharField(max_length=30, db_index=True, verbose_name='Chức danh')
+    grants = models.JSONField(default=dict, blank=True, verbose_name='Quyền theo phân hệ')
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+
+    class Meta:
+        verbose_name = 'Phân quyền chức danh'
+        verbose_name_plural = 'Phân quyền chức danh'
+        constraints = [models.UniqueConstraint(fields=['company', 'role'], name='uniq_role_access_company_role')]
+
+    def __str__(self):
+        return f'{self.role} @ {self.company_id}'
+
+
+class UserAccessOverride(CompanyOwnedModel, TimeStampedModel):
+    """Ngoại lệ quyền riêng một người: cho thêm (allow) hoặc chặn (deny) so với quyền chức danh."""
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='access_override')
+    allow = models.JSONField(default=dict, blank=True, verbose_name='Cho phép thêm')
+    deny = models.JSONField(default=dict, blank=True, verbose_name='Chặn')
+    note = models.CharField(max_length=255, blank=True, default='', verbose_name='Lý do')
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+
+    class Meta:
+        verbose_name = 'Ngoại lệ phân quyền'
+        verbose_name_plural = 'Ngoại lệ phân quyền'
+
+    def __str__(self):
+        return f'Ngoại lệ quyền: {self.user}'
+
+
+class LoginEvent(models.Model):
+    """Nhật ký đăng nhập / đăng xuất / đặt lại mật khẩu (phục vụ phát hiện truy cập bất thường)."""
+    KIND_CHOICES = [('login', 'Đăng nhập'), ('failed', 'Sai mật khẩu'), ('locked', 'Bị khoá tạm'), ('logout', 'Đăng xuất'),
+                    ('reset_request', 'Yêu cầu đặt lại mật khẩu'), ('reset_done', 'Đã đặt lại mật khẩu'),
+                    ('password_change', 'Đổi mật khẩu'), ('admin_reset', 'Quản trị đặt lại mật khẩu')]
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    username = models.CharField(max_length=150, blank=True, default='', db_index=True)
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, db_index=True)
+    ip_address = models.CharField(max_length=64, blank=True, default='')
+    user_agent = models.CharField(max_length=255, blank=True, default='')
+    new_device = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Nhật ký đăng nhập'
+        verbose_name_plural = 'Nhật ký đăng nhập'
+
+    def __str__(self):
+        return f'[{self.created_at:%d/%m/%Y %H:%M}] {self.username} {self.kind} {self.ip_address}'

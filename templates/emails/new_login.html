@@ -1,0 +1,10 @@
+{% include "emails/_layout_start.html" %}
+<p>Chào {{ name }},</p>
+<p>Tài khoản <b>{{ username }}</b> vừa đăng nhập từ một thiết bị hoặc mạng chưa từng dùng:</p>
+<table role="presentation" cellspacing="0" cellpadding="0" style="font-size:13px;margin:8px 0 16px">
+<tr><td style="color:#64748b;padding:3px 12px 3px 0">Thời gian</td><td><b>{{ when }}</b></td></tr>
+<tr><td style="color:#64748b;padding:3px 12px 3px 0">Thiết bị</td><td><b>{{ device }}</b></td></tr>
+<tr><td style="color:#64748b;padding:3px 12px 3px 0">Địa chỉ IP</td><td><b>{{ ip }}</b></td></tr></table>
+<p>Nếu là bạn, không cần làm gì thêm. Nếu <b>không phải bạn</b>, hãy đổi mật khẩu ngay:</p>
+<p style="text-align:center;margin:20px 0"><a href="{{ reset_url }}" style="display:inline-block;background:#be123c;color:#ffffff;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:10px">Đặt lại mật khẩu</a></p>
+{% include "emails/_layout_end.html" %}

@@ -185,7 +185,7 @@ function switchMasterDataTab(tabKey) {
     if (tableContainer) tableContainer.classList.remove('hidden');
     if (paginationContainer) paginationContainer.classList.remove('hidden');
     if (companyView) companyView.classList.add('hidden');
-    if (rolesView) rolesView.classList.add('hidden');
+    if (rolesView) { rolesView.classList.add('hidden'); rolesView.parentElement.classList.remove('shrink-0'); }
     if (openingBalanceView) openingBalanceView.classList.add('hidden');
 
     // Ẩn/hiện các nút Tải Mẫu, Nhập Excel, Xuất Dữ Liệu theo danh mục
@@ -196,6 +196,16 @@ function switchMasterDataTab(tabKey) {
     if (exportTemplateBtn) exportTemplateBtn.style.display = isSpecialTab ? 'none' : '';
     if (importBtn) importBtn.style.display = isSpecialTab ? 'none' : '';
     if (exportDataBtn) exportDataBtn.style.display = isSpecialTab ? 'none' : '';
+
+    if (tabKey === 'roles_permissions' && rolesView && typeof renderAccessMatrixPage === 'function') {
+        // Trang phân quyền riêng: không dùng bảng danh mục chung
+        [filterToolbar, tableContainer, paginationContainer].forEach(el => el && el.classList.add('hidden'));
+        if (createBtnContainer) createBtnContainer.style.display = 'none';
+        rolesView.classList.remove('hidden');
+        rolesView.parentElement.classList.add('shrink-0');  // khung danh mục không bị co lại cắt mất nội dung
+        renderAccessMatrixPage(rolesView);
+        return;
+    }
 
     loadActiveMasterDataTab();
 }

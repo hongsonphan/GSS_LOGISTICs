@@ -35,7 +35,7 @@
             </li>
 
             <!-- 2. Sale & Booking -->
-            {% if is_admin or perms.customers.view_bookingorder or perms.customers.view_customer %}
+            {% if menu.sales %}
             <li>
                 <a href="/sales" onclick="event.preventDefault(); switchTab('kinh-doanh');" class="sidebar-item-main flex items-center" data-target="kinh-doanh">
                     <i class="ph ph-handshake text-xl mr-3 text-slate-400"></i>
@@ -45,7 +45,7 @@
             {% endif %}
 
             <!-- 3. Điều vận -->
-            {% if is_admin or perms.dispatch.view_dispatchtrip %}
+            {% if menu.dispatch %}
             <li>
                 <a href="/dispatch" onclick="event.preventDefault(); switchTab('dieu-van');" class="sidebar-item-main flex items-center" data-target="dieu-van">
                     <i class="ph ph-truck text-xl mr-3 text-slate-400"></i>
@@ -55,7 +55,7 @@
             {% endif %}
 
             <!-- 4. Xe & Bãi -->
-            {% if is_admin or perms.fleet.view_vehicle %}
+            {% if menu.fleet %}
             <li>
                 <a href="/fleet" onclick="event.preventDefault(); switchTab('xe-bai');" class="sidebar-item-main flex items-center" data-target="xe-bai">
                     <i class="ph ph-garage text-xl mr-3 text-slate-400"></i>
@@ -65,7 +65,7 @@
             {% endif %}
 
             <!-- 5. Hành chính & Nhân sự -->
-            {% if is_admin or perms.personnel.view_employee %}
+            {% if menu.hr %}
             <li>
                 <a href="/hr" onclick="event.preventDefault(); switchTab('nhan-su');" class="sidebar-item-main flex items-center" data-target="nhan-su">
                     <i class="ph ph-users text-xl mr-3 text-slate-400"></i>
@@ -75,7 +75,7 @@
             {% endif %}
 
             <!-- 6. Tài chính & Kế toán -->
-            {% if is_admin or perms.billing.view_cashtransaction or perms.billing.view_debitnote %}
+            {% if menu.accounting %}
             <li>
                 <a href="/accounting" onclick="event.preventDefault(); switchTab('ke-toan');" class="sidebar-item-main flex items-center" data-target="ke-toan">
                     <i class="ph ph-calculator text-xl mr-3 text-slate-400"></i>
@@ -85,7 +85,7 @@
             {% endif %}
 
             <!-- 7. Dịch vụ Hải quan -->
-            {% if is_admin or perms.customs.view_customsdeclaration %}
+            {% if menu.customs %}
             <li>
                 <a href="/customs" onclick="event.preventDefault(); switchTab('hai-quan');" class="sidebar-item-main flex items-center" data-target="hai-quan">
                     <i class="ph ph-file-text text-xl mr-3 text-slate-400"></i>
@@ -95,7 +95,7 @@
             {% endif %}
 
             <!-- 8. Báo cáo & Thống kê -->
-            {% if is_admin or perms.reports.view_report_pnl or perms.reports.view_report_dem_det or perms.reports.view_report_otp or perms.reports.view_report_route_cost or perms.reports.view_report_layover or perms.reports.view_report_incidents or perms.reports.view_report_customer_rev or perms.reports.view_report_subcontractor or perms.reports.view_report_driver_salary or perms.reports.view_report_dispatcher_funds or perms.reports.view_report_driver_advances or perms.reports.view_report_settlement_backlog or perms.reports.view_report_ar_aging or perms.reports.view_report_unsettled_aging or perms.reports.view_operational_report or perms.reports.view_financial_report %}
+            {% if menu.reports %}
             <li>
                 <a href="/reports" onclick="event.preventDefault(); switchTab('bao-cao');" class="sidebar-item-main flex items-center" data-target="bao-cao">
                     <i class="ph ph-chart-bar text-xl mr-3 text-slate-400"></i>
@@ -105,7 +105,7 @@
             {% endif %}
 
             <!-- 9. Cài đặt Danh Mục -->
-            {% if is_admin or perms.auth.change_user or perms.master_data.view_portwarehouse or perms.master_data.view_commodity %}
+            {% if menu.settings %}
             <li>
                 <a href="/settings" onclick="event.preventDefault(); switchTab('cai-dat');" class="sidebar-item-main flex items-center" data-target="cai-dat">
                     <i class="ph ph-gear text-xl mr-3 text-slate-400"></i>

@@ -32,6 +32,7 @@ fi
 grep -q '^DEBUG=' .env || printf '\nDEBUG=False\n' >> .env
 grep -q '^FRONTEND_SPLIT_SCRIPTS=' .env || printf 'FRONTEND_SPLIT_SCRIPTS=false\n' >> .env
 grep -q '^SECURE_SSL_REDIRECT=' .env || printf 'SECURE_SSL_REDIRECT=True\n' >> .env
+grep -q '^SITE_URL=' .env || printf 'SITE_URL=https://logistics.bim.info.vn\n' >> .env  # link trong email đặt lại mật khẩu
 
 step "2/7 Sao lưu CSDL và media trước khi cập nhật"
 bash scripts/backup_vps.sh
@@ -43,7 +44,7 @@ $PG dropdb -U bim_logistics_user --if-exists bim_preflight
 $PG createdb -U bim_logistics_user bim_preflight
 $PG sh -c 'pg_dump -U bim_logistics_user -d bim_logistics_db --no-owner | psql -q -U bim_logistics_user -d bim_preflight' >/dev/null
 if $DC run --rm --no-deps -T -e DB_NAME=bim_preflight web sh -c \
-    "python manage.py migrate --noinput && python manage.py assign_default_company && python manage.py sync_trip_data && python manage.py rebuild_ledger && python manage.py check"; then
+    "python manage.py migrate --noinput && python manage.py assign_default_company && python manage.py sync_trip_data && python manage.py rebuild_ledger && python manage.py migrate_legacy_access && python manage.py check"; then
     echo "Chạy thử trên bản sao CSDL: ĐẠT"
     $PG dropdb -U bim_logistics_user bim_preflight
 else
@@ -113,6 +114,8 @@ fi
 $DC exec -T web python manage.py assign_default_company
 $DC exec -T web python manage.py sync_trip_data
 $DC exec -T web python manage.py rebuild_ledger
+# Chuyển sang ma trận phân quyền không làm ai mất quyền cũ (chỉ chạy cho tài khoản chưa có bản ghi ngoại lệ)
+$DC exec -T web python manage.py migrate_legacy_access
 
 step "7/7 Lịch sao lưu hằng ngày (2h sáng)"
 CRON_LINE="0 2 * * * $APP_DIR/scripts/backup_vps.sh >> /home/ubuntu/backups/backup.log 2>&1"

@@ -1,0 +1,12 @@
+{% autoescape off %}
+Chào {{ name }},
+
+Tài khoản {{ username }} vừa đăng nhập từ thiết bị hoặc mạng mới:
+- Thời gian: {{ when }}
+- Thiết bị: {{ device }}
+- Địa chỉ IP: {{ ip }}
+
+Nếu không phải bạn, hãy đặt lại mật khẩu ngay: {{ reset_url }}
+
+{{ brand }}
+{% endautoescape %}

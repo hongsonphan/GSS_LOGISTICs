@@ -1,10 +1,35 @@
 """Dashboard Ban Giám Đốc và biểu đồ pivot."""
 from ._common import *  # noqa: F401,F403
 
+def _scrub_financial(user, data):
+    """Người không có quyền xem tài chính (Báo cáo tài chính / Kế toán): ẩn số dư quỹ, doanh thu, lãi lỗ."""
+    from core import access
+    if access.can(user, 'reports_fin', 'view') or access.can(user, 'accounting', 'view') or not access.uses_matrix(user) and user.is_staff:
+        return data
+    for key in ('financial', 'funds'):
+        if isinstance(data.get(key), dict):
+            data[key] = {k: (0 if isinstance(v, (int, float)) else ('' if isinstance(v, str) else v)) for k, v in data[key].items()}
+    if isinstance(data.get('productivity'), dict):
+        data['productivity']['monthly_gross_profit'] = 0
+    trend = (data.get('charts') or {}).get('daily_trend')
+    if isinstance(trend, dict):
+        for k in ('revenue', 'expense', 'profit'):
+            if isinstance(trend.get(k), list):
+                trend[k] = [0 for _ in trend[k]]
+    return data
+
+
 class DashboardBGDAPIView(APIView):
     """API tổng quan chiến lược đa vai trò (Role-based Dashboard) chuẩn quốc tế TMS, Fleet & Customs."""
     permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request):
+        response = self._build(request)
+        if getattr(response, 'status_code', 500) == 200 and isinstance(getattr(response, 'data', None), dict):
+            response.data = _scrub_financial(request.user, response.data)
+        return response
+
+    def _build(self, request):
         today = timezone.now().date()
         yesterday = today - datetime.timedelta(days=1)
         period = request.GET.get('period', '10_days')

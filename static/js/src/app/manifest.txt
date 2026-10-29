@@ -15,6 +15,7 @@ core/router.js
 core/fit-text.js
 core/mobile.js
 core/a11y.js
+core/access.js
 # 2. Dashboard
 dashboard/period-filter.js
 dashboard/role-widgets.js
@@ -79,6 +80,7 @@ master-data/form.js
 master-data/form-fields.js
 master-data/form-submit.js
 master-data/company-roles.js
+master-data/access-matrix.js
 master-data/opening-balance.js
 master-data/import-export.js
 master-data/subcontractor-fleet.js

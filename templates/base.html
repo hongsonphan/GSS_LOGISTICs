@@ -149,6 +149,9 @@
             ]
         };
 
+        // Ma trận phân quyền hiệu lực (core/access.py): {phân hệ: [thao tác]}; null = tài khoản không có hồ sơ nhân viên
+        window.BIM_ACCESS = {{ access_json|default:"null"|safe }};
+
         window.hasUserPermission = function(permCodename) {
             if (!window.CURRENT_USER) return false;
             if (window.CURRENT_USER.is_superuser) return true;

@@ -6,13 +6,17 @@ from django.contrib.auth.models import Group, Permission, User
 from django.db import transaction
 from django.db.models import Q
 
+from core.permissions import CanAdministerAccess
+
 
 class RolesPermissionsAPIView(APIView):
     """
     API Quản lý Phân Quyền & Vai Trò người dùng hệ thống BIM Logistics.
     Chuẩn Django Permission Model kết hợp Group Kế Thừa và Loại Trừ/Bổ Sung Cá Nhân.
     """
-    permission_classes = [IsAuthenticated]
+    # Chỉ người có quyền Quản trị hệ thống (trước đây mọi tài khoản đăng nhập đều xem được danh sách người dùng/quyền)
+    permission_classes = [CanAdministerAccess]
+    access_actions = {'POST': 'edit'}
 
     def _get_categorized_permissions(self):
         """

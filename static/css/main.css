@@ -1679,6 +1679,9 @@ table .bim-pin:not(.bim-pin-edge) { box-shadow: none !important; }
 table tbody td.bim-unpin, table tfoot td.bim-unpin { position: static !important; box-shadow: none !important; }
 table thead th.bim-unpin { right: auto !important; box-shadow: none !important; }
 
+/* Phần tử bị ẩn do không có quyền (core/access.js) */
+.acc-hidden { display: none !important; }
+
 /* =====================================================================
    NÚT CHAT NỔI KHÔNG CHE NỘI DUNG
    ===================================================================== */

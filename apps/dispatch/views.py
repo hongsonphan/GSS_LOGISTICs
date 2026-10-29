@@ -13,7 +13,6 @@ import json
 import logging
 
 from django.conf import settings
-from django.core.cache import cache
 
 security_logger = logging.getLogger('bim.security')
 
@@ -29,9 +28,6 @@ def _client_ip(request):
         return forwarded[-1]
     return request.META.get('REMOTE_ADDR') or 'unknown'
 
-
-def _login_lock_key(request, username):
-    return f"login-fail:{_client_ip(request)}:{username.lower()[:150]}"
 
 @never_cache
 def login_view(request):
@@ -57,33 +53,45 @@ def login_view(request):
         password_raw = request.POST.get('password', '').strip()
         remember_me = request.POST.get('remember_me')
 
-        lock_key = _login_lock_key(request, username_raw)
-        if cache.get(lock_key, 0) >= settings.LOGIN_MAX_FAILURES:
-            security_logger.warning('Login locked ip=%s user=%s', _client_ip(request), username_raw[:50])
+        from core import account_security as sec
+        # Tài khoản thật ứng với tên đăng nhập / mã nhân viên / số điện thoại (đếm lần sai theo tài khoản, không theo chữ gõ vào)
+        target = User.objects.filter(username__iexact=username_raw).first()
+        if target is None and username_raw:
+            emp = Employee.objects.filter(code__iexact=username_raw, user__isnull=False).select_related('user').first() or \
+                  Employee.objects.filter(phone_number=username_raw, user__isnull=False).select_related('user').first()
+            target = emp.user if emp else None
+        account_name = target.username if target else username_raw
+
+        locked = sec.lock_status(request, account_name)
+        if locked:
+            sec.log_event(request, 'locked', target, account_name)
+            security_logger.warning('Login locked ip=%s user=%s', _client_ip(request), account_name[:50])
             return render(request, 'login.html', {
-                'error': f'Bạn đã nhập sai quá {settings.LOGIN_MAX_FAILURES} lần. Vui lòng thử lại sau {settings.LOGIN_LOCKOUT_SECONDS // 60} phút.',
+                'error': locked,
                 'username': username_raw,
                 'next_url': next_url,
             }, status=429)
 
-        user = None
-        # 1. Thử xác thực trực tiếp qua Username
-        user = authenticate(request, username=username_raw, password=password_raw)
-
-        # 2. Nếu không tìm thấy, thử tìm theo Mã nhân viên (code) hoặc Số điện thoại
-        if not user:
-            emp = Employee.objects.filter(code__iexact=username_raw, user__isnull=False).first() or \
-                  Employee.objects.filter(phone_number=username_raw, user__isnull=False).first()
-            if emp and emp.user:
-                user = authenticate(request, username=emp.user.username, password=password_raw)
+        user = authenticate(request, username=account_name, password=password_raw) if account_name else None
 
         if user and user.is_active:
-            cache.delete(lock_key)
+            new_device = sec.is_new_device(user, request)
+            weak = sec.password_is_weak(password_raw, user)
             login(request, user)
+            event = sec.log_event(request, 'login', user)
+            if event is not None and new_device:
+                event.new_device = True
+                event.save(update_fields=['new_device'])
+                sec.notify_new_device(user, request)
             if remember_me:
-                request.session.set_expiry(1209600)  # Ghi nhớ 2 tuần
+                request.session.set_expiry(settings.SESSION_COOKIE_AGE)  # Ghi nhớ (tối đa SESSION_MAX_DAYS ngày)
             else:
                 request.session.set_expiry(0)  # Hết hạn khi đóng trình duyệt
+            if weak:
+                # Mật khẩu không đạt chính sách mới (>= 10 ký tự, không phổ biến, không toàn số): bắt đổi trước khi dùng tiếp
+                from core.session_security import FORCE_KEY
+                request.session[FORCE_KEY] = True
+                next_url = '/account/password/?required=1'
 
             # Web dùng phiên đăng nhập (cookie HttpOnly + CSRF), không lưu JWT trong localStorage nữa
             # (JWT vẫn cấp qua /api/auth/token/ cho ứng dụng di động / tích hợp).
@@ -105,10 +113,7 @@ def login_view(request):
 </html>"""
             return HttpResponse(html_redirect)
         else:
-            try:
-                cache.incr(lock_key)
-            except ValueError:
-                cache.set(lock_key, 1, settings.LOGIN_LOCKOUT_SECONDS)
+            sec.log_event(request, 'failed', target, account_name)
             security_logger.info('Login failed ip=%s user=%s', _client_ip(request), username_raw[:50])
             return render(request, 'login.html', {
                 'error': 'Tên đăng nhập hoặc mật khẩu không chính xác.',
@@ -124,6 +129,9 @@ def login_view(request):
 @never_cache
 def logout_view(request):
     """Đăng xuất khỏi hệ thống và dọn dẹp token phía client."""
+    if request.user.is_authenticated:
+        from core.account_security import log_event
+        log_event(request, 'logout', request.user)
     logout(request)
     html_logout = """
     <!DOCTYPE html>

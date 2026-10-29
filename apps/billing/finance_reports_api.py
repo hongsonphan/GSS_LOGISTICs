@@ -596,6 +596,7 @@ class SubcontractorSettlementsAPIView(APIView):
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsAccountant]
+    access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}  # chốt/duyệt (ma trận phân quyền)
 
     def get(self, request):
         status_filter = request.GET.get('status', 'ALL')

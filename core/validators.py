@@ -146,3 +146,19 @@ def format_booking_attachment_filename(file_obj, booking_code):
 
     file_obj.name = new_name
     return file_obj
+
+
+from django.contrib.auth.password_validation import MinimumLengthValidator as _MinLen  # noqa: E402
+from django.core.exceptions import ValidationError as _VE  # noqa: E402
+
+
+class MinimumLengthValidator(_MinLen):
+    """Độ dài tối thiểu của mật khẩu, thông báo tiếng Việt (bản dịch Django thiếu dạng số nhiều)."""
+
+    def validate(self, password, user=None):
+        if len(password or '') < self.min_length:
+            raise _VE(f'Mật khẩu quá ngắn: cần ít nhất {self.min_length} ký tự.', code='password_too_short',
+                      params={'min_length': self.min_length})
+
+    def get_help_text(self):
+        return f'Mật khẩu cần ít nhất {self.min_length} ký tự.'

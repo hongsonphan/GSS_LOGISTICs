@@ -393,6 +393,8 @@ window.loadRolesPermissionsData = loadRolesPermissionsData;
 function renderRolesPermissionsView(data) {
     const container = document.getElementById('md-roles-permissions-view');
     if (!container) return;
+    // Trang phân quyền mới: ma trận Chức danh × Phân hệ × Thao tác (master-data/access-matrix.js)
+    if (typeof renderAccessMatrixPage === 'function') return;
     if (!data) return;
 
     const summary = data.summary || {};
