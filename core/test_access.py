@@ -58,9 +58,13 @@ class AccessMatrixTests(TestCase):
         self.client.force_login(self.dispatcher)
         self.assertEqual(self.client.post('/api/trips/', {}, content_type='application/json').status_code, 403)
 
-    def test_inactive_employee_has_no_access(self):
+    def test_disabled_account_has_no_access(self):
+        # Khoá truy cập bằng cách khoá tài khoản đăng nhập (User.is_active); trạng thái hồ sơ nhân sự không chặn quyền
         self.dispatcher.employee.is_active = False
         self.dispatcher.employee.save()
+        self.assertTrue(access.allowed(User.objects.get(pk=self.dispatcher.pk), 'dispatch', 'view'))
+        self.dispatcher.is_active = False
+        self.dispatcher.save()
         self.assertEqual(access.effective_grants(User.objects.get(pk=self.dispatcher.pk)), {})
 
     # ---- dữ liệu nhạy cảm

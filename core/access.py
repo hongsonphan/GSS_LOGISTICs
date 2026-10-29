@@ -138,8 +138,6 @@ def effective_grants(user):
             if ov:
                 pairs |= _to_set(_clean(ov.allow))
                 pairs -= _to_set(_clean(ov.deny))
-            if not employee.is_active:
-                pairs = set()
             grants = _from_set(pairs)
     user._bim_access = grants
     return grants
