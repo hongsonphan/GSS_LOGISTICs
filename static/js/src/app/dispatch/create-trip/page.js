@@ -39,6 +39,10 @@ async function openCreateTripPage(bookingId = null, updateHistory = true) {
 
     initDefaultDatesForCreateTrip();
     onFreeDaysChange();
+    const typeElInit = document.getElementById('inp-type');
+    if (typeElInit && typeof cleanupTransportTypeOptions === 'function') {
+        cleanupTransportTypeOptions(typeElInit);
+    }
     if (typeof handleCargoTypeChange === 'function') {
         handleCargoTypeChange();
     }

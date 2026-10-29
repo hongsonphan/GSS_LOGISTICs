@@ -2887,6 +2887,23 @@ function initAllSearchableComboboxes(container = document) {
 }
 
 
+function cleanupTransportTypeOptions(selectEl) {
+    if (!selectEl || !selectEl.options) return;
+    for (let i = selectEl.options.length - 1; i >= 0; i--) {
+        const optVal = (selectEl.options[i].value || '').trim();
+        const optTxt = (selectEl.options[i].text || '').trim();
+        const vUpper = optVal.toUpperCase();
+        const tUpper = optTxt.toUpperCase();
+        if (vUpper === 'HÀNG NHẬP' || vUpper === 'HÀNG XUẤT' || vUpper === 'HANG NHAP' || vUpper === 'HANG XUAT' ||
+            tUpper === 'HÀNG NHẬP' || tUpper === 'HÀNG XUẤT' || tUpper === 'HANG NHAP' || tUpper === 'HANG XUAT') {
+            selectEl.remove(i);
+        }
+    }
+    if (selectEl._bimCombobox && typeof selectEl._bimCombobox.sync === 'function') {
+        selectEl._bimCombobox.sync();
+    }
+}
+
 function setSelectValueCaseInsensitive(selectEl, value, label = null) {
     if (!selectEl || value === undefined || value === null) return;
     const strVal = String(value).trim();
@@ -2895,6 +2912,38 @@ function setSelectValueCaseInsensitive(selectEl, value, label = null) {
         if (selectEl._bimCombobox) selectEl._bimCombobox.sync();
         return;
     }
+
+    // Đặc thù loại hình vận chuyển: luôn giữ đúng 3 dòng cũ (Nhập, Xuất, Nội địa), tuyệt đối không tự thêm
+    const isTransportTypeSelect = selectEl.id === 'inp-type' || selectEl.id === 'edit-inp-type' || selectEl.dataset.noAutoAdd === 'true';
+    if (isTransportTypeSelect) {
+        cleanupTransportTypeOptions(selectEl);
+
+        const upper = strVal.toUpperCase();
+        let targetCanonical = 'Xuất';
+        if (upper.includes('NHẬP') || upper.includes('IMPORT') || upper.includes('NHAP')) {
+            targetCanonical = 'Nhập';
+        } else if (upper.includes('XUẤT') || upper.includes('EXPORT') || upper.includes('XUAT')) {
+            targetCanonical = 'Xuất';
+        } else if (upper.includes('NỘI ĐỊA') || upper.includes('DOMESTIC') || upper.includes('NOI DIA')) {
+            targetCanonical = 'Nội địa';
+        } else {
+            targetCanonical = strVal;
+        }
+
+        for (let i = 0; i < selectEl.options.length; i++) {
+            const optVal = selectEl.options[i].value.toLowerCase();
+            const optTxt = selectEl.options[i].text.toLowerCase();
+            const targetLower = targetCanonical.toLowerCase();
+            if (optVal === targetLower || optTxt.includes(targetLower)) {
+                selectEl.selectedIndex = i;
+                if (selectEl._bimCombobox) selectEl._bimCombobox.sync();
+                return;
+            }
+        }
+        // Tuyệt đối không tự thêm option mới vào select loại hình vận chuyển
+        return;
+    }
+
     for (let i = 0; i < selectEl.options.length; i++) {
         if (selectEl.options[i].value.toLowerCase() === strVal.toLowerCase() ||
             selectEl.options[i].text.toLowerCase() === strVal.toLowerCase()) {
@@ -2903,12 +2952,33 @@ function setSelectValueCaseInsensitive(selectEl, value, label = null) {
             return;
         }
     }
+
+    // Không tự thêm nếu select có data-no-auto-add="true" hoặc class no-auto-add
+    if (selectEl.dataset.noAutoAdd === 'true' || selectEl.classList.contains('no-auto-add')) {
+        return;
+    }
+
     const opt = document.createElement('option');
     opt.value = strVal;
     opt.innerText = label || strVal;
     selectEl.appendChild(opt);
     selectEl.value = strVal;
     if (selectEl._bimCombobox) selectEl._bimCombobox.sync();
+}
+
+// Tự động dọn sạch các option "HÀNG NHẬP", "HÀNG XUẤT" thừa trên toàn trang khi tải DOM
+if (typeof document !== 'undefined') {
+    const runCleanupAllTransportSelects = () => {
+        ['inp-type', 'edit-inp-type'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) cleanupTransportTypeOptions(el);
+        });
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runCleanupAllTransportSelects);
+    } else {
+        runCleanupAllTransportSelects();
+    }
 }
 
 // ---- src/app/core/master-options.js ----
@@ -9277,7 +9347,10 @@ async function openModalEditTrip(tripCode = null) {
 
     // Type & Container type
     const typeSel = document.getElementById('edit-inp-type');
-    if (typeSel) typeSel.value = trip.type || 'Nhập';
+    if (typeSel) {
+        if (typeof cleanupTransportTypeOptions === 'function') cleanupTransportTypeOptions(typeSel);
+        setSelectValueCaseInsensitive(typeSel, trip.type || 'Nhập');
+    }
     const contTypeSel = document.getElementById('edit-inp-cont-type');
     if (contTypeSel) contTypeSel.value = trip.container_type || '40HC';
 
@@ -10794,6 +10867,10 @@ async function openCreateTripPage(bookingId = null, updateHistory = true) {
 
     initDefaultDatesForCreateTrip();
     onFreeDaysChange();
+    const typeElInit = document.getElementById('inp-type');
+    if (typeElInit && typeof cleanupTransportTypeOptions === 'function') {
+        cleanupTransportTypeOptions(typeElInit);
+    }
     if (typeof handleCargoTypeChange === 'function') {
         handleCargoTypeChange();
     }

@@ -408,7 +408,10 @@ async function openModalEditTrip(tripCode = null) {
 
     // Type & Container type
     const typeSel = document.getElementById('edit-inp-type');
-    if (typeSel) typeSel.value = trip.type || 'Nhập';
+    if (typeSel) {
+        if (typeof cleanupTransportTypeOptions === 'function') cleanupTransportTypeOptions(typeSel);
+        setSelectValueCaseInsensitive(typeSel, trip.type || 'Nhập');
+    }
     const contTypeSel = document.getElementById('edit-inp-cont-type');
     if (contTypeSel) contTypeSel.value = trip.container_type || '40HC';
 

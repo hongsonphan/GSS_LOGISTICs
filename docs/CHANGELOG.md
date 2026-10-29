@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.18] - 2026-10-29 (Khắc Phục Dropdown Loại Hình Vận Chuyển: Xóa "HÀNG NHẬP", "HÀNG XUẤT", Giữ 3 Dòng Cũ & Chặn Tự Động Thêm)
+
+### 1. Phân Hệ Điều Độ & Tạo Chuyến Xe (`view_create_trip`, `modal_create_trip`, `modal_edit_trip`):
+- **Khắc Phục Triệt Để Lỗi Tự Sinh Thêm Option:**
+  * Xác định nguyên nhân: Hàm `setSelectValueCaseInsensitive` trong quá trình kế thừa dữ liệu hoặc nhân bản chuyến (`trip.type = 'HÀNG NHẬP'`) không khớp chính xác với option `Nhập` (`Hàng Nhập (Cảng -> Kho)`), dẫn đến việc tự động tạo mới và append thêm các thẻ `<option value="HÀNG NHẬP">` và `<option value="HÀNG XUẤT">` vào DOM của dropdown.
+  * Thêm thuộc tính `data-no-auto-add="true"` vào các thẻ `<select id="inp-type">` và `<select id="edit-inp-type">`.
+  * Xây dựng hàm `cleanupTransportTypeOptions`: Tự động rà soát và loại bỏ sạch sẽ mọi option trùng lặp/tự sinh (`HÀNG NHẬP`, `HÀNG XUẤT`, `HANG NHAP`, `HANG XUAT`).
+  * Nâng cấp `setSelectValueCaseInsensitive` trong `static/js/src/app/core/combobox.js`: Tự động chuẩn hóa mọi giá trị đầu vào (`IMPORT`, `HÀNG NHẬP` ➔ `Nhập`; `EXPORT`, `HÀNG XUẤT` ➔ `Xuất`; `DOMESTIC`, `NỘI ĐỊA` ➔ `Nội địa`) và **tuyệt đối không tự thêm option mới** vào dropdown Loại hình vận chuyển.
+  * Giữ nguyên vẹn đúng 3 lựa chọn gốc chuẩn hệ thống:
+    1. `Hàng Nhập (Cảng -> Kho)` (value: `Nhập`)
+    2. `Hàng Xuất (Kho -> Cảng)` (value: `Xuất`)
+    3. `Nội địa / Chuyển kho` (value: `Nội địa`)
+
+### 2. Kiểm Thử & Tự Động Hóa Build:
+- Chạy `python scripts/build_app_js.py` để đồng bộ toàn bộ mã nguồn `static/js/src/app/` sang `static/js/app.js`.
+- Xác nhận kiểm tra tính toàn vẹn `python scripts/build_app_js.py --check` (100% Khớp).
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` (100% Passed).
+- Chạy kiểm thử tự động phân hệ điều độ: `python manage.py test apps.dispatch --keepdb` (24/24 tests Passed).
+
 ## [v4.7.17] - 2026-10-27 (Lập Báo Cáo Bảng Kê Vận Chuyển Tháng 26 Cột Đối Soát & Xác Nhận Khách Hàng)
 
 ### 1. Phân Hệ Kế Toán & Đối Soát Khách Hàng (Bảng Kê Vận Chuyển Tháng 26 Cột):
