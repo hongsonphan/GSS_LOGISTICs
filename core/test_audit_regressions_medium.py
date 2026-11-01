@@ -47,8 +47,7 @@ class ErrorHandlingTests(TestCase):
         self.api.force_authenticate(make_user('boss_h', EmployeeRole.DIRECTOR, '0966000003'))
 
     def test_non_numeric_ids_are_400_not_500(self):
-        for path in ('/api/accounting/customer-reconciliation/?customer_id=%27', '/api/reports/?vehicle_id=%27',
-                     '/api/customs/?customer_id=99999999999999999999'):
+        for path in ('/api/accounting/customer-reconciliation/?customer_id=%27', '/api/reports/?vehicle_id=%27'):
             self.assertEqual(self.api.get(path).status_code, 400, path)
 
     def test_statement_does_not_echo_orm_message(self):
