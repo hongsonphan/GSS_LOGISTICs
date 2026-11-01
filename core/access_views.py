@@ -10,7 +10,7 @@ from core import access
 from core.account_security import user_email
 from core.models import AccessGroup, LoginEvent, RoleAccess, UserAccessOverride
 from core.permissions import CanAdministerAccess
-from core.tenant import company_for_user
+from core.tenant import company_for_user, users_of_company
 
 
 def _role_label(role):
@@ -53,7 +53,7 @@ def _payload(request):
     saved_groups = {g.key: g for g in AccessGroup.objects.filter(company=company)}
     saved_roles = {r.role: r for r in RoleAccess.objects.filter(company=company)}
     User = get_user_model()
-    users = User.objects.filter(is_active=True).select_related('employee').order_by('username')
+    users = users_of_company(company, User.objects.filter(is_active=True)).select_related('employee').order_by('username')
     rows = []
     for u in users:
         emp = getattr(u, 'employee', None)
@@ -157,7 +157,7 @@ class UserAccessAPIView(APIView):
     access_actions = {'PUT': 'edit', 'DELETE': 'edit'}
 
     def _user(self, pk):
-        return get_user_model().objects.filter(pk=pk).select_related('employee').first()
+        return users_of_company(company_for_user(self.request.user), get_user_model().objects.filter(pk=pk)).select_related('employee').first()
 
     def put(self, request, pk):
         user = self._user(pk)
@@ -178,5 +178,7 @@ class UserAccessAPIView(APIView):
         return Response(_payload(request))
 
     def delete(self, request, pk):
+        if self._user(pk) is None:
+            return _bad('Không tìm thấy tài khoản trong doanh nghiệp của bạn')
         UserAccessOverride.objects.filter(user_id=pk).delete()
         return Response(_payload(request))

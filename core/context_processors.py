@@ -2,6 +2,7 @@
 import json
 
 from core import access
+from core.security import json_for_script
 
 
 def _legacy_menu(user):
@@ -22,7 +23,7 @@ def access_menu(request):
     user = getattr(request, 'user', None)
     if user is None or not user.is_authenticated:
         return {'menu': {}, 'access_json': 'null'}
-    return {**_menu(user), 'access_json': json.dumps(access.effective_grants(user))}
+    return {**_menu(user), 'access_json': json_for_script(access.effective_grants(user))}
 
 
 def _menu(user):

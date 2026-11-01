@@ -245,3 +245,16 @@ def can(user, module, action='view'):
     if user is not None and getattr(user, 'is_superuser', False):
         return True
     return allowed(user, module, action)
+
+
+def can_view_finance(user):
+    """Số liệu tài chính tổng hợp (quỹ, doanh thu, lãi lỗ): Báo cáo tài chính / Kế toán; tài khoản cũ không hồ sơ thì theo is_staff."""
+    return bool(can(user, 'reports_fin', 'view') or can(user, 'accounting', 'view')
+                or (user is not None and getattr(user, 'is_authenticated', False) and not uses_matrix(user) and user.is_staff))
+
+
+def can_view_trip_finance(user):
+    """Doanh thu / chi phí / lãi của từng chuyến: ngoài nhóm tài chính còn có Điều vận (sửa chuyến) và Kinh doanh. Tài xế, thợ máy, tài khoản không hồ sơ và link công khai thì không."""
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return False
+    return bool(can_view_finance(user) or can(user, 'dispatch', 'edit') or can(user, 'sales', 'view'))

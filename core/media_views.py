@@ -104,6 +104,34 @@ def _anonymous_can_view(request, rel_path):
     return False
 
 
+TRIP_FILE_PREFIXES = ("documents/", "receipts/")
+INLINE_SAFE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"}
+
+
+def _trip_file_allowed(user, rel_path):
+    """Chứng từ chuyến (POD/EIR/hoá đơn): chỉ mở khi gắn với chuyến thuộc công ty của người xem (manager mặc định đã lọc
+    theo công ty) và, với tài xế, chỉ chuyến do chính họ chạy. File mồ côi (không gắn bản ghi nào) bị ẩn."""
+    rel = rel_path.lstrip("/")
+    if not rel.startswith(TRIP_FILE_PREFIXES):
+        return True
+    if user.is_superuser:
+        return True
+    from apps.billing.models import TripExpense
+    from apps.dispatch.models import DispatchTrip
+    from apps.documents.models import TripDocument
+
+    variants = _path_variants(rel_path)
+    trip_ids = set(TripDocument.objects.filter(file_path__in=variants).values_list("trip_id", flat=True))
+    trip_ids |= set(TripExpense.objects.filter(receipt_image_path__in=variants).values_list("trip_id", flat=True))
+    trip_ids |= set(TripExpense.objects.filter(receipt_image=rel).values_list("trip_id", flat=True))
+    trips = DispatchTrip.objects.filter(id__in=trip_ids)
+    employee = getattr(user, "employee", None)
+    if employee is not None and employee.role == "DRIVER":
+        from django.db.models import Q
+        trips = trips.filter(Q(driver=employee) | Q(dropoff_driver=employee))
+    return trips.exists()
+
+
 @xframe_options_sameorigin
 def safe_media_serve(request, path, document_root=None, show_indexes=False):
     doc_root = str(settings.MEDIA_ROOT)  # luôn lấy theo settings (document_root trong urls chỉ để tương thích)
@@ -116,7 +144,7 @@ def safe_media_serve(request, path, document_root=None, show_indexes=False):
 
     user = getattr(request, "user", None)
     if user and user.is_authenticated:
-        if not _staff_can_view(user, path):
+        if not _staff_can_view(user, path) or not _trip_file_allowed(user, path):
             raise Http404("Không tìm thấy tệp")
     elif not _anonymous_can_view(request, path):
         # Trả 404 thay vì 403 để không lộ việc file có tồn tại hay không
@@ -132,7 +160,12 @@ def safe_media_serve(request, path, document_root=None, show_indexes=False):
         response["X-Accel-Redirect"] = "/protected-media/" + rel
     else:
         response = FileResponse(open(full_path, "rb"), content_type=content_type)
-    response["Content-Disposition"] = f'inline; filename="{filename}"'
+    if content_type in INLINE_SAFE_TYPES:
+        response["Content-Disposition"] = f'inline; filename="{filename}"'
+    else:
+        # HTML/SVG/... không được hiển thị trực tiếp trên cùng origin (chống XSS lưu trữ): buộc tải xuống
+        response["Content-Type"] = "application/octet-stream"
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
     response["Cache-Control"] = "private, max-age=3600"
     response["X-Content-Type-Options"] = "nosniff"
     return response

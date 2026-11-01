@@ -30,6 +30,11 @@ def custom_exception_handler(exc, context):
             detail = str(exc)
         exc = DRFValidationError(detail=detail)
 
+    # Tham số số học không hợp lệ (vd. ?customer_id=' hoặc số quá lớn): lỗi của client -> 400, không phải 500
+    if isinstance(exc, (ValueError, TypeError, OverflowError)) and (
+            'expected a number' in str(exc) or 'too large' in str(exc) or 'invalid literal for int' in str(exc)):
+        exc = DRFValidationError(detail='Tham số không hợp lệ.')
+
     # Gọi handler mặc định của DRF
     response = exception_handler(exc, context)
 

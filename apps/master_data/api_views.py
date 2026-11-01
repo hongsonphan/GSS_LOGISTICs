@@ -1865,6 +1865,9 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
         return self._update_company(request)
 
     def _update_company(self, request):
+        from core import access
+        if not access.can(request.user, 'admin', 'edit'):
+            return Response({'success': False, 'message': access.denied_message('admin', 'edit')}, status=status.HTTP_403_FORBIDDEN)
         company = CompanyProfile.get_default_company()
         data = request.data
         if 'company_name' in data and data['company_name'].strip():
@@ -2404,3 +2407,16 @@ class MasterDataImportAPIView(APIView):
         )
 
         return Response(result, status=status.HTTP_200_OK if result.get('success') else status.HTTP_400_BAD_REQUEST)
+
+
+# --- Bảo mật: số dư đầu kỳ / biểu giá lương chỉ cho nhóm phù hợp; cấu hình dùng chung chỉ superuser ghi khi có nhiều công ty ---
+from core.permissions import FinanceMasterOnly, PayMasterOnly, SharedConfigWritePermission  # noqa: E402
+
+for _cls in (OpeningBalanceListCreateAPIView, OpeningBalanceDetailAPIView):
+    _cls.permission_classes = [CanManageMasterData, FinanceMasterOnly]
+for _cls in (DriverSalaryTariffListCreateAPIView, DriverSalaryTariffDetailAPIView,
+             DriverAllowanceListCreateAPIView, DriverAllowanceDetailAPIView):
+    _cls.permission_classes = [CanManageMasterData, PayMasterOnly, SharedConfigWritePermission]
+for _cls in (ContainerTypeListCreateAPIView, ContainerTypeDetailAPIView, ExpenseItemListCreateAPIView, ExpenseItemDetailAPIView,
+             ShippingLineListCreateAPIView, ShippingLineDetailAPIView):
+    _cls.permission_classes = [CanManageMasterData, SharedConfigWritePermission]

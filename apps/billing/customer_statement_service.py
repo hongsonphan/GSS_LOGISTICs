@@ -5,6 +5,8 @@ from django.db.models import Q
 from django.utils import timezone
 
 import openpyxl
+from core.validators import excel_safe
+from core.validators import excel_safe
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
@@ -602,7 +604,7 @@ def export_customer_monthly_statement_excel(statement_data):
 
         for col_l, val, align, is_bold, num_fmt in row_cells:
             cell = ws[f'{col_l}{current_row}']
-            cell.value = val
+            cell.value = excel_safe(val)
             cell.font = font_data_bold if is_bold else font_data
             cell.alignment = align
             cell.border = cell_border

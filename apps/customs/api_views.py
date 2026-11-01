@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 import openpyxl
+from core.validators import excel_safe
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
@@ -469,11 +470,11 @@ class CustomsExportExcelAPIView(APIView):
 
         for row_idx, d in enumerate(qs, 5):
             ws.cell(row=row_idx, column=1, value=row_idx - 4).alignment = Alignment(horizontal='center')
-            ws.cell(row=row_idx, column=2, value=d.declaration_number).alignment = Alignment(horizontal='center')
+            ws.cell(row=row_idx, column=2, value=excel_safe(d.declaration_number)).alignment = Alignment(horizontal='center')
             ws.cell(row=row_idx, column=3, value=d.declaration_date.strftime('%d/%m/%Y') if d.declaration_date else '').alignment = Alignment(horizontal='center')
-            ws.cell(row=row_idx, column=4, value=d.customer.name).alignment = Alignment(horizontal='left')
+            ws.cell(row=row_idx, column=4, value=excel_safe(d.customer.name)).alignment = Alignment(horizontal='left')
             ws.cell(row=row_idx, column=5, value=d.declaration_type).alignment = Alignment(horizontal='center')
-            ws.cell(row=row_idx, column=6, value=f"{d.customs_office_code} - {d.customs_office_name}").alignment = Alignment(horizontal='left')
+            ws.cell(row=row_idx, column=6, value=excel_safe(f"{d.customs_office_code} - {d.customs_office_name}")).alignment = Alignment(horizontal='left')
             
             lane_cell = ws.cell(row=row_idx, column=7, value=d.get_customs_lane_display())
             lane_cell.alignment = Alignment(horizontal='center')
@@ -487,8 +488,8 @@ class CustomsExportExcelAPIView(APIView):
             status_cell = ws.cell(row=row_idx, column=8, value=d.get_status_display())
             status_cell.alignment = Alignment(horizontal='center')
             
-            ws.cell(row=row_idx, column=9, value=d.bill_of_lading).alignment = Alignment(horizontal='center')
-            ws.cell(row=row_idx, column=10, value=d.container_numbers).alignment = Alignment(horizontal='left')
+            ws.cell(row=row_idx, column=9, value=excel_safe(d.bill_of_lading)).alignment = Alignment(horizontal='center')
+            ws.cell(row=row_idx, column=10, value=excel_safe(d.container_numbers)).alignment = Alignment(horizontal='left')
             
             tax_cell = ws.cell(row=row_idx, column=11, value=float(d.tax_amount_vnd))
             tax_cell.number_format = '#,##0'

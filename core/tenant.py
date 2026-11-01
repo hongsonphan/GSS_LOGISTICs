@@ -60,6 +60,18 @@ def scope_queryset(queryset, request=None):
     return queryset.filter(company=company) if company is not None else queryset.none()
 
 
+def users_of_company(company, queryset=None):
+    """Tài khoản thuộc công ty. Tài khoản không gắn hồ sơ nhân viên tính vào công ty mặc định (xem company_for_user)."""
+    from django.contrib.auth import get_user_model
+    from django.db.models import Q
+    from core.models import get_default_company
+    qs = queryset if queryset is not None else get_user_model().objects.all()
+    cond = Q(employee__company=company)
+    if company is not None and company.pk == get_default_company().pk:
+        cond |= Q(employee__isnull=True) | Q(employee__company__isnull=True)
+    return qs.filter(cond)
+
+
 class TenantMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

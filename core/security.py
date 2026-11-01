@@ -1,3 +1,4 @@
+import json
 import os
 from django.conf import settings
 from hashids import Hashids
@@ -158,3 +159,55 @@ class GracefulJWTAuthentication(JWTAuthentication):
             if user and user.is_authenticated:
                 return None
             raise
+
+
+def json_for_script(data, **kwargs):
+    """JSON an toàn để nhúng vào <script> trong template: thoát < > & và dấu phân cách dòng Unicode
+    để dữ liệu người dùng (vd. tên hiển thị chứa "</script>") không thoát khỏi thẻ script."""
+    text = json.dumps(data, ensure_ascii=False, **kwargs)
+    for ch, esc in (('<', '\\u003c'), ('>', '\\u003e'), ('&', '\\u0026'), ('\u2028', '\\u2028'), ('\u2029', '\\u2029')):
+        text = text.replace(ch, esc)
+    return text
+
+
+# ----------------------------------------------------------------------------- Thu hồi JWT khi đổi mật khẩu
+def password_fingerprint(user):
+    """Dấu vân tay mã băm mật khẩu hiện tại; đổi/đặt lại mật khẩu thì dấu vân tay đổi và mọi JWT cũ mất hiệu lực."""
+    import hashlib
+    import hmac
+    return hmac.new(settings.SECRET_KEY.encode(), (user.password or '').encode(), hashlib.sha256).hexdigest()[:16]
+
+
+from rest_framework_simplejwt.exceptions import AuthenticationFailed as _JWTAuthFailed  # noqa: E402
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer  # noqa: E402
+
+
+class FingerprintTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['pwf'] = password_fingerprint(user)
+        return token
+
+
+class FingerprintTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        from django.contrib.auth import get_user_model
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken(attrs['refresh'])
+        claim = refresh.payload.get('pwf')
+        user = get_user_model().objects.filter(pk=refresh.payload.get('user_id')).first()
+        if user is None or not user.is_active or (claim and claim != password_fingerprint(user)):
+            raise _JWTAuthFailed('Phiên đã bị thu hồi do đổi mật khẩu. Vui lòng đăng nhập lại.', code='token_revoked')
+        return super().validate(attrs)
+
+
+def _revoked_check(self, validated_token):
+    user = super(GracefulJWTAuthentication, self).get_user(validated_token)
+    claim = validated_token.get('pwf')
+    if claim and claim != password_fingerprint(user):
+        raise _JWTAuthFailed('Token đã bị thu hồi do đổi mật khẩu.', code='token_revoked')
+    return user
+
+
+GracefulJWTAuthentication.get_user = _revoked_check

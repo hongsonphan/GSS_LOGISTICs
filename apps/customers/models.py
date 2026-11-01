@@ -348,3 +348,8 @@ class BookingDocument(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"[{self.booking.booking_code}] {self.file_name or self.file.name}"
+
+
+# Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
+QuotationItem.tenant_path = 'quotation__company'
+BookingDocument.tenant_path = 'booking__company'

@@ -32,3 +32,7 @@ class TripException(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"[{self.get_exception_type_display()}] {self.trip.trip_code} ({self.get_severity_display()})"
+
+
+# Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
+TripException.tenant_path = 'trip__company'

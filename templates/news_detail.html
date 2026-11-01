@@ -531,7 +531,7 @@
 
 {% block extra_scripts %}
 <script>
-    const ATTACHMENTS_DATA = {{ attachments|safe|default:"[]" }};
+    const ATTACHMENTS_DATA = {{ attachments_json|default:"[]"|safe }};
     const POST_ID = {{ post.id }};
     const POST_HASHID = "{{ post.hashid }}";
     let currentAttIndex = 0;

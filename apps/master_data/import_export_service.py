@@ -1,6 +1,7 @@
 import datetime
 from decimal import Decimal
 import openpyxl
+from core.validators import excel_safe
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from django.db import transaction
@@ -626,7 +627,7 @@ def generate_catalog_data_export(catalog_key):
             elif isinstance(val, Decimal):
                 val = float(val)
 
-            cell = ws.cell(row=row_num, column=col_idx, value=val)
+            cell = ws.cell(row=row_num, column=col_idx, value=excel_safe(val))
             cell.font = body_font
             cell.border = thin_border
             if any(term in col['header'] for term in ['(VNĐ)', '(kg)', '(CBM)', 'Cự Ly', 'Số Ngày']):

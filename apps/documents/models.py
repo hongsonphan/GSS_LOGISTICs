@@ -38,3 +38,7 @@ class TripDocument(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"[{self.get_document_type_display()}] {self.trip.trip_code} - {self.title}"
+
+
+# Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
+TripDocument.tenant_path = 'trip__company'

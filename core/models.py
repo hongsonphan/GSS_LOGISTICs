@@ -13,9 +13,14 @@ def tenant_scope(queryset):
     """
     if not getattr(settings, 'TENANT_ENFORCE', False):
         return queryset
-    if not any(f.name == 'company' for f in queryset.model._meta.concrete_fields):
-        return queryset
     from core.tenant import scoping_company
+    if not any(f.name == 'company' for f in queryset.model._meta.concrete_fields):
+        # Model con không có cột company: lọc qua bản ghi cha khai báo ở `tenant_path` (vd. 'employee__company')
+        path = getattr(queryset.model, 'tenant_path', None)
+        company = scoping_company() if path else None
+        if company is None:
+            return queryset
+        return queryset.filter(Q(**{path: company}) | Q(**{path + '__isnull': True}))
     company = scoping_company()
     if company is None:
         return queryset

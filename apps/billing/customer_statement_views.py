@@ -1,3 +1,4 @@
+import logging
 import datetime
 import urllib.parse
 from django.http import HttpResponse
@@ -57,10 +58,11 @@ class CustomerMonthlyStatementAPIView(APIView):
                 'success': True,
                 'data': data
             })
-        except Exception as e:
+        except Exception:
+            logging.getLogger(__name__).exception('Lỗi tạo bảng kê vận chuyển')
             return Response({
                 'success': False,
-                'error': f'Lỗi tạo bảng kê vận chuyển: {str(e)}'
+                'error': 'Lỗi tạo bảng kê vận chuyển. Vui lòng kiểm tra tham số và thử lại.'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -115,7 +117,8 @@ class CustomerMonthlyStatementExportExcelAPIView(APIView):
             response['Access-Control-Expose-Headers'] = 'Content-Disposition'
             return response
 
-        except Exception as e:
+        except Exception:
+            logging.getLogger(__name__).exception('Lỗi xuất bảng kê')
             return Response({
-                'error': f'Lỗi xuất file Excel bảng kê vận chuyển: {str(e)}'
+                'error': 'Lỗi xuất file Excel bảng kê vận chuyển. Vui lòng kiểm tra tham số và thử lại.'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

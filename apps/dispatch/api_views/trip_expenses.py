@@ -246,10 +246,21 @@ class TripAddExpenseAPIView(APIView):
 class TripExpenseDetailAPIView(APIView):
     """API Sửa và Xóa (Soft-delete) khoản chi phí phát sinh."""
     permission_classes = [IsTripDriverOrDispatcher]
+
+    @staticmethod
+    def _can_change_status(request):
+        """Chỉ người có quyền duyệt (Kế toán / Điều vận) mới đổi được trạng thái duyệt; tài xế và link công khai thì không."""
+        from core import access
+        user = request.user
+        return bool(user and user.is_authenticated and (
+            access.can(user, 'accounting', 'approve') or access.can(user, 'dispatch', 'approve')))
+
     def put(self, request, trip_code, expense_id):
         trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, trip)
 
         if trip.is_expenses_settled:
             return Response({
@@ -309,7 +320,7 @@ class TripExpenseDetailAPIView(APIView):
             expense.tax_amount = int(data['tax_amount'])
         if 'amount_before_tax' in data:
             expense.amount_before_tax = int(data['amount_before_tax'])
-        if 'status' in data and data['status'] in dict(ApprovalStatus.choices):
+        if 'status' in data and data['status'] in dict(ApprovalStatus.choices) and self._can_change_status(request):
             expense.status = data['status']
         if 'company_borne' in data:
             expense.company_borne = bool(data['company_borne'])
@@ -356,6 +367,8 @@ class TripExpenseDetailAPIView(APIView):
         trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, trip)
 
         if trip.is_expenses_settled:
             return Response({

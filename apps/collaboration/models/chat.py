@@ -148,3 +148,7 @@ class ChatAttachment(TimeStampedModel, SoftDeleteModel):
             # Tự động gán thời hạn 30 ngày để tiết kiệm dung lượng như bim_consulting
             self.expires_at = timezone.now() + timedelta(days=30)
         super().save(*args, **kwargs)
+
+
+# Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
+ChatMessage.tenant_path = 'room__company'

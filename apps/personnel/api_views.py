@@ -1706,3 +1706,11 @@ class EmployeeExportDataAPIView(APIView):
         )
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
+
+
+# Cấu hình lương dùng chung giữa các công ty: khi có nhiều doanh nghiệp chỉ superuser được ghi
+from core.permissions import SharedConfigWritePermission  # noqa: E402
+
+for _cls in (PayrollPolicyConfigAPIView, TaxBracketListAPIView, TaxBracketDetailAPIView, PayrollParameterListCreateAPIView,
+             PayrollParameterDetailAPIView, AllowanceTypeListCreateAPIView, AllowanceTypeDetailAPIView, SalaryDeductionRateAPIView):
+    _cls.permission_classes = [*_cls.permission_classes, SharedConfigWritePermission]

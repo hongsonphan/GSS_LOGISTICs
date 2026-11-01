@@ -151,7 +151,8 @@ class RolesPermissionsAPIView(APIView):
             })
 
         # 2. Danh sách người dùng nội bộ (Users) - Loại trừ Tài xế vì tài xế không dùng tài khoản hệ thống
-        users = User.objects.exclude(employee__role='DRIVER').select_related('employee').prefetch_related(
+        from core.tenant import company_for_user, users_of_company
+        users = users_of_company(company_for_user(request.user), User.objects.exclude(employee__role='DRIVER')).select_related('employee').prefetch_related(
             'groups', 'user_permissions__content_type', 'employee__excluded_permissions__content_type'
         ).order_by('-is_active', 'username')
         users_data = []
@@ -242,7 +243,8 @@ class RolesPermissionsAPIView(APIView):
             return Response({'error': 'Thiếu user_id!'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            target_user = User.objects.select_related('employee').get(id=user_id)
+            from core.tenant import company_for_user, users_of_company
+            target_user = users_of_company(company_for_user(request.user), User.objects.select_related('employee')).get(id=user_id)
         except User.DoesNotExist:
             return Response({'error': 'Không tìm thấy người dùng!'}, status=status.HTTP_404_NOT_FOUND)
 

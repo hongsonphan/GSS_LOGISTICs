@@ -138,3 +138,8 @@ class PostReadStatus(models.Model):
         verbose_name = "Trạng thái đọc Bản tin"
         verbose_name_plural = "Trạng thái đọc Bản tin"
         unique_together = ('post', 'user')
+
+
+# Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
+PostAttachment.tenant_path = 'post__company'
+PostComment.tenant_path = 'post__company'

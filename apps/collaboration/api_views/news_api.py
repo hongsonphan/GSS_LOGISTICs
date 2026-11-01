@@ -110,6 +110,11 @@ class CompanyPostListCreateAPIView(views.APIView):
         if not title or not content:
             return Response({'success': False, 'message': 'Vui lòng cung cấp tiêu đề và nội dung.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        from core.validators import validate_attachment_files
+        err = validate_attachment_files(request.FILES.getlist('attachments') + request.FILES.getlist('cover_image'))
+        if err:
+            return Response({'success': False, 'message': err}, status=status.HTTP_400_BAD_REQUEST)
+
         post = CompanyPost.objects.create(
             title=title,
             category_id=data.get('category_id') or None,
@@ -281,6 +286,11 @@ class CompanyPostDetailAPIView(views.APIView):
 
         if 'is_published' in data:
             post.is_published = str(data.get('is_published', '')).lower() in ['true', '1']
+
+        from core.validators import validate_attachment_files
+        err = validate_attachment_files(request.FILES.getlist('attachments') + request.FILES.getlist('cover_image'))
+        if err:
+            return Response({'success': False, 'message': err}, status=status.HTTP_400_BAD_REQUEST)
 
         if 'cover_image' in request.FILES:
             post.cover_image = request.FILES['cover_image']

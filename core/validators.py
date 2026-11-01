@@ -162,3 +162,29 @@ class MinimumLengthValidator(_MinLen):
 
     def get_help_text(self):
         return f'Mật khẩu cần ít nhất {self.min_length} ký tự.'
+
+
+ATTACHMENT_ALLOWED_EXTENSIONS = {
+    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+    '.txt', '.csv', '.zip', '.rar', '.7z',
+}
+ATTACHMENT_MAX_SIZE_BYTES = 10 * 1024 * 1024
+
+
+def validate_attachment_files(files, max_size=ATTACHMENT_MAX_SIZE_BYTES):
+    """Tệp đính kèm công việc / bản tin / chat: chỉ nhận định dạng văn phòng + ảnh, tối đa 10MB mỗi tệp.
+    Chặn HTML/SVG/script (XSS lưu trữ khi mở lại từ /media/) và tệp quá lớn. Trả về thông báo lỗi hoặc None."""
+    for f in files:
+        ext = os.path.splitext(f.name or '')[1].lower()
+        if ext not in ATTACHMENT_ALLOWED_EXTENSIONS:
+            return f"Định dạng tệp '{ext or '(không có)'}' không được hỗ trợ."
+        if f.size > max_size:
+            return f"Tệp '{f.name}' vượt quá giới hạn {max_size // (1024 * 1024)}MB."
+    return None
+
+
+def excel_safe(value):
+    """Chống Excel/CSV formula injection: chuỗi bắt đầu bằng = + - @ (hoặc tab/CR) được thêm dấu ' để Excel coi là văn bản."""
+    if isinstance(value, str) and value[:1] in ('=', '+', '-', '@', '\t', '\r'):
+        return "'" + value
+    return value

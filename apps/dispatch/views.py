@@ -11,6 +11,7 @@ from apps.master_data.models import CompanyProfile
 from django.utils.http import url_has_allowed_host_and_scheme
 import json
 import logging
+from core.security import json_for_script
 
 from django.conf import settings
 
@@ -171,7 +172,8 @@ def index_view(request, *args, **kwargs):
         is_super = request.user.is_superuser or (employee and employee.hierarchy_level >= 100)
         
         # Lấy tất cả tài khoản User đang hoạt động được cấp trong hệ thống
-        active_users = User.objects.filter(is_active=True).select_related('employee').order_by('username')
+        from core.tenant import company_for_user, users_of_company
+        active_users = users_of_company(company_for_user(request.user), User.objects.filter(is_active=True)).select_related('employee').order_by('username')
 
         for u in active_users:
             emp = getattr(u, 'employee', None)
@@ -238,8 +240,8 @@ def index_view(request, *args, **kwargs):
     except Exception as e:
         company_profile_data = {}
 
-    office_users_json = json.dumps(office_users_data, ensure_ascii=False)
-    company_profile_json = json.dumps(company_profile_data, ensure_ascii=False)
+    office_users_json = json_for_script(office_users_data)
+    company_profile_json = json_for_script(company_profile_data)
 
     return render(request, 'index.html', {
         'current_employee': employee,
@@ -691,7 +693,7 @@ def news_detail_page_view(request, post_identifier):
         } if company else {}
     except Exception:
         company_profile_data = {}
-    company_profile_json = json.dumps(company_profile_data, ensure_ascii=False)
+    company_profile_json = json_for_script(company_profile_data)
 
     from apps.collaboration.models.news import PostCategory
     categories = PostCategory.objects.all().order_by('order', 'name')
@@ -706,6 +708,7 @@ def news_detail_page_view(request, post_identifier):
         'author_role': author_role,
         'author_dept': author_dept,
         'attachments': attachments_data,
+        'attachments_json': json_for_script(attachments_data),
         'has_attachments': len(attachments_data) > 0,
         'primary_attachment': attachments_data[0] if attachments_data else None,
         'comments': comments,

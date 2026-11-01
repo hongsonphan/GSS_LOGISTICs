@@ -659,6 +659,22 @@ class TripDetailAPIView(APIView):
     """API Xem chi tiết một chuyến xe (Hỗ trợ tra cứu bằng cả trip_code hoặc HashID bảo mật)."""
     permission_classes = [IsTripDriverOrDispatcher]
 
+    def finalize_response(self, request, response, *args, **kwargs):
+        # Người không có quyền xem tài chính chuyến (tài xế, thợ máy, link công khai...) nhận số liệu về 0
+        data = getattr(response, 'data', None)
+        if request.method == 'GET' and response.status_code == 200 and isinstance(data, dict) and 'financials' in data:
+            from decimal import Decimal
+            from core import access
+            if not access.can_view_trip_finance(request.user):
+                data['financials'] = {k: 0 for k in data['financials']}
+                sheet = data.get('cost_sheet')
+                if isinstance(sheet, dict):
+                    data['cost_sheet'] = {k: (0 if isinstance(v, (int, float, Decimal)) else v) for k, v in sheet.items()
+                                          if k not in ('fee_einvoice', 'reimbursable_items')}
+                    data['cost_sheet']['fee_einvoice'] = {'has_invoice': False, 'invoices': []}
+                    data['cost_sheet']['reimbursable_items'] = []
+        return super().finalize_response(request, response, *args, **kwargs)
+
     def get(self, request, trip_code):
         trip = get_trip_by_code_or_hash(trip_code, ['customer', 'vehicle', 'driver', 'dispatcher', 'dropoff_driver', 'dropoff_vehicle'])
         if not trip:

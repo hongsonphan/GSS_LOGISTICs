@@ -46,13 +46,14 @@ class TripAddDocumentAPIView(APIView):
         doc_type = doc_map.get(doc_name, DocumentType.EIR_DROPOFF)
 
         created_docs = []
+        import uuid
         from django.core.files.storage import default_storage
         from core.validators import validate_uploaded_document, sanitize_filename, optimize_and_resize_image
         for idx, ufile in enumerate(uploaded_files):
             try:
                 validate_uploaded_document(ufile)
                 optimized_ufile = optimize_and_resize_image(ufile)
-                saved_name = default_storage.save(f"documents/{trip.trip_code}_{sanitize_filename(optimized_ufile.name)}", optimized_ufile)
+                saved_name = default_storage.save(f"documents/{trip.trip_code}_{uuid.uuid4().hex[:12]}_{sanitize_filename(optimized_ufile.name)}", optimized_ufile)
                 file_path_str = f"/media/{saved_name}"
                 title_str = doc_name if len(uploaded_files) == 1 else f"{doc_name} (#{idx+1})"
                 doc = TripDocument.objects.create(

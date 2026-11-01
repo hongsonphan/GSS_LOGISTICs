@@ -2160,11 +2160,11 @@ hansu từ chức danh kế toán cũ thành chuẩn vị trí **Phòng Hành Ch
 
 ### 2. Chuẩn Hóa & Kích Hoạt Mật Khẩu Cho 5 Tài Khoản Văn Phòng Chính Thức:
 - **Khắc phục sự cố trên VPS Production:** Phát hiện và sửa lỗi tài khoản `ketoan` và `sales` bị `is_active = False` trên máy chủ; đặt lại mật khẩu chuẩn xác 100%:
-  1. **`admin`** / `Admin@2026`: Võ Công Triền - Ban Giám Đốc (Superuser toàn quyền).
-  2. **`dieudo`** / `DieuDo@2026`: Trần Điều Độ - Phòng Điều Vận (Dispatcher).
-  3. **`ketoan`** / `KeToan@2026`: Trần Thị Kế Toán - Phòng Kế Toán & Tài Chính (Accountant, kích hoạt lại `is_active=True`).
-  4. **`sales`** / `Sales@2026`: Nguyễn Minh Thuân / Lê Hoàng Nam - Phòng Kinh Doanh (Salesman, kích hoạt lại `is_active=True`).
-  5. **`nhansu`** / `NhanSu@2026`: Lê Thị Thu Thảo - Phòng Hành Chính Nhân Sự (HR).
+  1. **`admin`** / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Võ Công Triền - Ban Giám Đốc (Superuser toàn quyền).
+  2. **`dieudo`** / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Trần Điều Độ - Phòng Điều Vận (Dispatcher).
+  3. **`ketoan`** / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Trần Thị Kế Toán - Phòng Kế Toán & Tài Chính (Accountant, kích hoạt lại `is_active=True`).
+  4. **`sales`** / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Nguyễn Minh Thuân / Lê Hoàng Nam - Phòng Kinh Doanh (Salesman, kích hoạt lại `is_active=True`).
+  5. **`nhansu`** / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Lê Thị Thu Thảo - Phòng Hành Chính Nhân Sự (HR).
 
 ---
 
@@ -3536,12 +3536,12 @@ ightarrow$ 4/4 Passed.
   * Chuẩn hóa form đăng nhập thuần túy: Logo BIM Logistics, ô Tài khoản đăng nhập (Username/Mã NV), Mật khẩu (kèm icon ẩn/hiện), Checkbox Ghi nhớ đăng nhập và Nút Đăng nhập gradient Teal sang trọng.
   * Bổ sung Hộp thoại Trợ giúp Cấp lại Mật khẩu (`#forgot-modal`) khi người dùng bấm "Quên mật khẩu?", hướng dẫn liên hệ Quản trị viên/Ban Giám Đốc nội bộ.
 - **Thiết Lập & Đồng Bộ Ma Trận 6 Tài Khoản Production:**
-  * `admin` / `Admin@2026`: Võ Triền (Giám Đốc) - Ban Giám Đốc (Superuser toàn quyền).
-  * `dieudo` / `DieuDo@2026`: Trần Điều Độ - Phòng Điều Vận (Dispatcher).
-  * `ketoan` / `KeToan@2026`: Trần Thị Kế Toán - Kế Toán Tài Chính (Accountant).
-  * `sales` / `Sales@2026`: Lê Hoàng Nam - Phòng Kinh Doanh (Salesman).
-  * `nhansu` / `NhanSu@2026`: Lê Thị Thu Thảo - Hành Chính Nhân Sự (HR).
-  * `taixe` / `TaiXe@2026`: Hoàng Văn Thật (Tài Xế) - Đội Xe & Bãi (Driver).
+  * `admin` / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Võ Triền (Giám Đốc) - Ban Giám Đốc (Superuser toàn quyền).
+  * `dieudo` / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Trần Điều Độ - Phòng Điều Vận (Dispatcher).
+  * `ketoan` / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Trần Thị Kế Toán - Kế Toán Tài Chính (Accountant).
+  * `sales` / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Lê Hoàng Nam - Phòng Kinh Doanh (Salesman).
+  * `nhansu` / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Lê Thị Thu Thảo - Hành Chính Nhân Sự (HR).
+  * `taixe` / `(đã gỡ, mật khẩu mẫu không còn dùng)`: Hoàng Văn Thật (Tài Xế) - Đội Xe & Bãi (Driver).
 
 ### 3. Trang Chi Tiết Bản Tin Mới & Bộ Xem Trước Trực Tiếp (Document Previewer):
 - **Trang Chi Tiết Riêng Biệt (`/news/<pk>/` - `templates/news_detail.html`):**

@@ -218,7 +218,11 @@ for _origin in ('https://logistics.bim.info.vn', 'https://bim.info.vn'):
         CSRF_TRUSTED_ORIGINS.append(_origin)
 
 # 2 & 6. DRF Settings: Throttling, Authentication & Custom Error Handler (Tiêu chuẩn 2, 3, 6)
+# Số proxy tin cậy phía trước ứng dụng (Nginx = 1; thêm Cloudflare = 2). Không đặt thì DRF tin cả X-Forwarded-For do client gửi.
+THROTTLE_NUM_PROXIES = int(os.environ.get('THROTTLE_NUM_PROXIES', '1'))
+
 REST_FRAMEWORK = {
+    'NUM_PROXIES': THROTTLE_NUM_PROXIES,
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
@@ -275,6 +279,9 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
+    # Token mang dấu vân tay mật khẩu: đổi / đặt lại mật khẩu thì token cũ bị thu hồi (core/security.py)
+    'TOKEN_OBTAIN_SERIALIZER': 'core.security.FingerprintTokenObtainPairSerializer',
+    'TOKEN_REFRESH_SERIALIZER': 'core.security.FingerprintTokenRefreshSerializer',
 }
 
 # 8. File Upload Limits (Tiêu chuẩn 8: Tối đa 5MB)

@@ -323,3 +323,9 @@ class TaskActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.action} ({self.created_at.strftime('%d/%m/%Y %H:%M')})"
+
+
+# Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
+TaskChecklist.tenant_path = 'task__company'
+TaskComment.tenant_path = 'task__company'
+TaskAttachment.tenant_path = 'task__company'

@@ -212,6 +212,10 @@ class ChatMessageListCreateAPIView(views.APIView):
 
         content = request.data.get('content', '').strip()
         files = request.FILES.getlist('files')
+        from core.validators import validate_attachment_files
+        err = validate_attachment_files(files)
+        if err:
+            return Response({'success': False, 'message': err}, status=status.HTTP_400_BAD_REQUEST)
 
         if not content and not files:
             return Response({'success': False, 'message': 'Tin nhắn không có nội dung.'}, status=status.HTTP_400_BAD_REQUEST)

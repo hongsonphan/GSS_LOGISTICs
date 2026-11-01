@@ -1005,3 +1005,11 @@ class PayrollSlip(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"[{self.slip_code}] {self.employee.full_name} ({self.employee.code}): {self.net_salary:,} đ"
+
+
+# Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
+EmployeeDependent.tenant_path = 'employee__company'
+ContractAppendix.tenant_path = 'contract__company'
+DailyAttendance.tenant_path = 'employee__company'
+MonthlyAttendanceSummary.tenant_path = 'employee__company'
+PayrollSlip.tenant_path = 'employee__company'

@@ -11,13 +11,11 @@ import django
 django.setup()
 
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate
 from apps.personnel.models import Employee, Department, EmployeeRole
 
 ACCOUNTS_CONFIG = [
     {
         'username': 'admin',
-        'password': 'Admin@2026',
         'email': 'admin@trienvo.com',
         'first_name': 'Võ',
         'last_name': 'Triền',
@@ -30,7 +28,6 @@ ACCOUNTS_CONFIG = [
     },
     {
         'username': 'dieudo',
-        'password': 'DieuDo@2026',
         'email': 'dieudo@trienvo.com',
         'first_name': 'Trần',
         'last_name': 'Điều Độ',
@@ -43,7 +40,6 @@ ACCOUNTS_CONFIG = [
     },
     {
         'username': 'ketoan',
-        'password': 'KeToan@2026',
         'email': 'ketoan@trienvo.com',
         'first_name': 'Trần Thị',
         'last_name': 'Kế Toán',
@@ -56,7 +52,6 @@ ACCOUNTS_CONFIG = [
     },
     {
         'username': 'sales',
-        'password': 'Sales@2026',
         'email': 'sales@trienvo.com',
         'first_name': 'Lê Hoàng',
         'last_name': 'Nam',
@@ -69,7 +64,6 @@ ACCOUNTS_CONFIG = [
     },
     {
         'username': 'nhansu',
-        'password': 'NhanSu@2026',
         'email': 'nhansu@trienvo.com',
         'first_name': 'Lê Thị Thu',
         'last_name': 'Thảo',
@@ -82,7 +76,6 @@ ACCOUNTS_CONFIG = [
     },
     {
         'username': 'taixe',
-        'password': 'TaiXe@2026',
         'email': 'taixe@trienvo.com',
         'first_name': 'Hoàng Văn',
         'last_name': 'Thật',
@@ -98,14 +91,21 @@ ACCOUNTS_CONFIG = [
 print("=== THIẾT LẬP VÀ KIỂM CHỨNG TÀI KHOẢN PRODUCTION TRIỀN VÕ LOGISTICS ===")
 for acc in ACCOUNTS_CONFIG:
     u, created = User.objects.get_or_create(username=acc['username'])
-    u.set_password(acc['password'])
-    u.email = acc['email']
-    u.first_name = acc['first_name']
-    u.last_name = acc['last_name']
-    u.is_superuser = acc['is_superuser']
-    u.is_staff = acc['is_staff']
-    u.is_active = True
-    u.save()
+    # Không bao giờ ghi đè mật khẩu tài khoản đang vận hành. Tài khoản mới: mật khẩu lấy từ biến môi trường
+    # BIM_PASSWORD_<TÊN_ĐĂNG_NHẬP>; không có thì khoá mật khẩu và dùng "Quên mật khẩu" để người dùng tự đặt.
+    if created:
+        env_pw = os.environ.get('BIM_PASSWORD_' + acc['username'].upper(), '')
+        if env_pw:
+            u.set_password(env_pw)
+        else:
+            u.set_unusable_password()
+        u.email = acc['email']
+        u.first_name = acc['first_name']
+        u.last_name = acc['last_name']
+        u.is_superuser = acc['is_superuser']
+        u.is_staff = acc['is_staff']
+        u.is_active = True
+        u.save()
 
     # Tạo hoặc liên kết Employee
     emp, emp_created = Employee.objects.get_or_create(
@@ -122,9 +122,6 @@ for acc in ACCOUNTS_CONFIG:
         emp.user = u
         emp.save()
 
-    # Kiểm tra xác thực ngay lập tức
-    auth_ok = authenticate(username=acc['username'], password=acc['password']) is not None
-    status_str = "HỢP LỆ (AUTH OK)" if auth_ok else "LỖI XÁC THỰC"
-    print(f"[{status_str}] Tài khoản: {acc['username']:10s} | Mật khẩu: {acc['password']:12s} | Họ tên: {acc['full_name']:28s} | Phòng ban: {acc['department']:12s} | Vị trí: {acc['role']:12s}")
+    print(f"[{'TẠO MỚI' if created else 'GIỮ NGUYÊN'}] Tài khoản: {acc['username']:10s} | Họ tên: {acc['full_name']:28s} | Phòng ban: {acc['department']:12s} | Vị trí: {acc['role']:12s}")
 
 print("\nHoàn tất thiết lập tài khoản Production!")

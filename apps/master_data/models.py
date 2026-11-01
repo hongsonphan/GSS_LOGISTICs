@@ -531,3 +531,7 @@ class Partner(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"{self.code} - {self.name}"
+
+
+# Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
+SubcontractorDriver.tenant_path = 'subcontractor__company'

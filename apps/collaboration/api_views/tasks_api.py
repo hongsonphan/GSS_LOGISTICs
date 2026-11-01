@@ -547,6 +547,10 @@ class OfficeTaskAttachmentAPIView(views.APIView):
             return Response({'success': False, 'message': 'Không tìm thấy công việc.'}, status=status.HTTP_404_NOT_FOUND)
 
         files = request.FILES.getlist('files')
+        from core.validators import validate_attachment_files
+        err = validate_attachment_files(files)
+        if err:
+            return Response({'success': False, 'message': err}, status=status.HTTP_400_BAD_REQUEST)
         created_attachments = []
         for f in files:
             att = TaskAttachment.objects.create(
@@ -583,7 +587,8 @@ class OfficeTaskDirectoryAPIView(views.APIView):
         is_super = request.user.is_superuser or (current_emp and current_emp.hierarchy_level >= 100)
 
         # Lấy tất cả tài khoản User đang hoạt động được cấp trong hệ thống
-        active_users = User.objects.filter(is_active=True).select_related('employee').order_by('username')
+        from core.tenant import company_for_user, users_of_company
+        active_users = users_of_company(company_for_user(request.user), User.objects.filter(is_active=True)).select_related('employee').order_by('username')
 
         users_data = []
         assignable_users = []

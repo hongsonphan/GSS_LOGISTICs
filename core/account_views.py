@@ -62,7 +62,11 @@ def password_reset_request(request):
             return render(request, 'account/password_reset_request.html', ctx, status=429)
         cache.set(key, count + 1, 3600)
         for user in _users_for(ident):
-            if sec.user_email(user):
+            # Giới hạn theo tài khoản (chống dội email từ nhiều IP): tối đa RESET_RATE_PER_HOUR email/giờ cho một tài khoản
+            ukey = f'pwreset-user:{user.pk}'
+            ucount = cache.get(ukey, 0)
+            cache.set(ukey, ucount + 1, 3600)
+            if ucount < RESET_RATE_PER_HOUR and sec.user_email(user):
                 sec.send_reset_email(user, request)
             sec.log_event(request, 'reset_request', user)
         if not _users_for(ident):
@@ -126,7 +130,8 @@ class SendPasswordResetAPIView(APIView):
     access_actions = {'POST': 'edit'}
 
     def post(self, request, pk):
-        user = get_user_model().objects.filter(pk=pk, is_active=True).first()
+        from core.tenant import company_for_user, users_of_company
+        user = users_of_company(company_for_user(request.user), get_user_model().objects.filter(pk=pk, is_active=True)).first()
         if user is None:
             return Response({'detail': 'Không tìm thấy tài khoản'}, status=status.HTTP_404_NOT_FOUND)
         if not sec.email_enabled():
@@ -167,7 +172,12 @@ if _TokenObtainPairView is not None:
             if locked:
                 sec.log_event(request, 'locked', None, username)
                 return Response({'detail': locked}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-            response = super().post(request, *args, **kwargs)
             user = get_user_model().objects.filter(username__iexact=username).first()
+            try:
+                response = super().post(request, *args, **kwargs)
+            except Exception:
+                # Sai mật khẩu / dữ liệu không hợp lệ: simplejwt ném ngoại lệ -> vẫn phải ghi lần sai để khoá đếm được
+                sec.log_event(request, 'failed', user, username)
+                raise
             sec.log_event(request, 'login' if response.status_code == 200 else 'failed', user, username)
             return response

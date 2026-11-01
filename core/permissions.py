@@ -457,3 +457,35 @@ def check_can_edit_or_delete(user, obj, owner_field='created_by', action='edit')
         return False, "Chỉ người tạo phiếu này hoặc Ban Giám Đốc mới có quyền xóa!"
 
     return False, "Bạn không phải người tạo phiếu này và không có thẩm quyền cấp cao hơn để sửa/xóa!"
+
+
+class SharedConfigWritePermission(permissions.BasePermission):
+    """Cấu hình dùng chung giữa các công ty (thuế, chính sách lương, hạng mục chi phí...) không có cột company:
+    khi hệ thống có nhiều hơn một doanh nghiệp, chỉ quản trị hệ thống (superuser) được ghi, tránh công ty này sửa chung của công ty khác."""
+    message = 'Cấu hình dùng chung nhiều doanh nghiệp chỉ do quản trị hệ thống thay đổi.'
+
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS or not request.user or request.user.is_superuser:
+            return True
+        from core.models import Company
+        return Company.objects.filter(is_active=True).count() <= 1
+
+
+def restricted_by(check, message='Bạn không có quyền xem dữ liệu này.'):
+    """Lớp quyền bổ sung: người dùng phải thoả check(user) (superuser luôn được)."""
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and (user.is_superuser or check(user)))
+    return type('RestrictedBy', (permissions.BasePermission,), {'has_permission': has_permission, 'message': message})
+
+
+def _sees_finance_master(user):
+    return access.can_view_finance(user)
+
+
+def _sees_pay_master(user):
+    return access.can_view_finance(user) or access.can(user, 'dispatch', 'view') or access.can(user, 'hr', 'view') or access.can(user, 'payroll', 'view')
+
+
+FinanceMasterOnly = restricted_by(_sees_finance_master, 'Số dư đầu kỳ chỉ dành cho Kế toán / Ban Giám đốc.')
+PayMasterOnly = restricted_by(_sees_pay_master, 'Biểu giá lương tài xế và phụ cấp chỉ dành cho Điều vận, Nhân sự, Kế toán.')

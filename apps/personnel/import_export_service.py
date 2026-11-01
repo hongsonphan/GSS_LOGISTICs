@@ -3,6 +3,7 @@ import re
 import datetime
 from decimal import Decimal
 import openpyxl
+from core.validators import excel_safe
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
@@ -571,7 +572,7 @@ def export_employees_to_excel(queryset=None):
             'Hoạt động' if emp.is_active else 'Tạm ngưng'
         ]
         for c_idx, val in enumerate(row_vals, start=1):
-            c = ws.cell(row=r_idx, column=c_idx, value=val)
+            c = ws.cell(row=r_idx, column=c_idx, value=excel_safe(val))
             c.font = data_font
             c.border = thin_border
             if isinstance(val, (int, float)):

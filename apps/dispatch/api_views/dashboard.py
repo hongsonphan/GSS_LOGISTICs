@@ -4,7 +4,7 @@ from ._common import *  # noqa: F401,F403
 def _scrub_financial(user, data):
     """Người không có quyền xem tài chính (Báo cáo tài chính / Kế toán): ẩn số dư quỹ, doanh thu, lãi lỗ."""
     from core import access
-    if access.can(user, 'reports_fin', 'view') or access.can(user, 'accounting', 'view') or not access.uses_matrix(user) and user.is_staff:
+    if access.can_view_finance(user):
         return data
     for key in ('financial', 'funds'):
         if isinstance(data.get(key), dict):
@@ -1655,6 +1655,9 @@ class DashboardPivotChartAPIView(APIView):
         entity = request.query_params.get('entity', 'trips').lower().strip()
         group_by = request.query_params.get('group_by', 'customer').lower().strip()
         metric = request.query_params.get('metric', 'revenue').lower().strip()
+        from core import access as _access
+        if metric not in ('trip_count', 'booking_count', 'vehicle_count', 'count') and not _access.can_view_finance(request.user):
+            return Response({'success': False, 'message': _access.denied_message('reports_fin', 'view')}, status=status.HTTP_403_FORBIDDEN)
         agg = request.query_params.get('agg', 'sum').lower().strip()
         period = request.query_params.get('period', 'all').lower().strip()
         chart_type = request.query_params.get('chart_type', 'bar').lower().strip()
