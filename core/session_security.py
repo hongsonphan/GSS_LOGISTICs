@@ -4,6 +4,7 @@
 - Phiên bị đánh dấu "phải đổi mật khẩu" (mật khẩu yếu theo chính sách mới): chỉ cho vào trang đổi mật khẩu.
 """
 import time
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib.auth import logout
@@ -32,7 +33,8 @@ class SessionSecurityMiddleware:
                 if request.path.startswith('/api/'):
                     return JsonResponse({'detail': 'Phiên đăng nhập đã hết hạn do lâu không thao tác. Vui lòng đăng nhập lại.',
                                          'code': 'session_idle'}, status=401)
-                return redirect(f'/login/?expired=1&next={request.path}')
+                # next là đường dẫn nội bộ của chính request này (không nhận từ người dùng), được mã hoá URL
+                return redirect('/login/?' + urlencode({'expired': 1, 'next': request.path}))  # nosemgrep: python.django.security.injection.open-redirect.open-redirect
             # Ghi mốc thao tác tối đa mỗi phút một lần (tránh ghi phiên liên tục)
             if not last or now - int(last) > 60:
                 request.session[LAST_KEY] = now

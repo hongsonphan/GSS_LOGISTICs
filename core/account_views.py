@@ -103,7 +103,8 @@ def password_reset_confirm(request, uidb64, token):
 @login_required(login_url='/login/')
 def password_change(request):
     user = request.user
-    ctx = {'required': bool(request.session.get(FORCE_KEY)) or request.GET.get('required') == '1'}
+    # so sánh chuỗi với '1', không chuyển sang số
+    ctx = {'required': bool(request.session.get(FORCE_KEY)) or request.GET.get('required') == '1'}  # nosemgrep: python.django.security.nan-injection.nan-injection
     if request.method == 'POST':
         if not user.check_password(request.POST.get('old_password', '')):
             ctx['errors'] = ['Mật khẩu hiện tại không đúng.']

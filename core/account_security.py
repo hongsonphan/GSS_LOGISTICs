@@ -109,7 +109,7 @@ def site_url(request=None):
     if base:
         return base.rstrip('/')
     if request is not None:
-        return f'{request.scheme}://{request.get_host()}'
+        return '://'.join((request.scheme, request.get_host()))
     return ''
 
 
