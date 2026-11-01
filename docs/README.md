@@ -1,7 +1,7 @@
 # TÀI LIỆU KIẾN TRÚC HỆ THỐNG BIM LOGISTICS (TMS & WMS PLATFORM)
 ## Architecture Documentation Hub & System Landscape
 
-> **Hệ thống:** BIM Logistics Platform (Triền Võ Logistics)  
+> **Hệ thống:** BIM Logistics Platform  
 > **Hệ sinh thái:** BIM Ecosystem (BIM ERP Solutions & BIM Consulting)  
 > **Phiên bản:** v4.7.19 (Production)  
 > **Cập nhật lần cuối:** 01/11/2026  
