@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.24] - 2026-11-01 (Xóa Sạch Hồ Sơ Nhân Sự Để Chuẩn Bị Nhập Dữ Liệu Thực Tế Mới)
+
+### 1. Dọn Dẹp Toàn Bộ Hồ Sơ Nhân Sự Cũ (`personnel`, `fleet`):
+- **Xóa Sạch Dữ Liệu Nhân Sự:**
+  * Xóa sạch toàn bộ 21 hồ sơ nhân viên & tài xế (`Employee`).
+  * Xóa sạch 29 hợp đồng lao động (`LaborContract`) và 12 phụ lục hợp đồng (`ContractAppendix`).
+  * Xóa sạch 13 người phụ thuộc (`EmployeeDependent`).
+- **Gỡ Liên Kết Tài Xế Trên Đội Xe:**
+  * Gỡ bỏ toàn bộ tài xế mặc định (`current_driver = None`) trên 12 xe đầu kéo & xe tải (`fleet.Vehicle`).
+- **Bảo Toàn Chính Sách Lương & Quy Chuẩn Nhân Sự:**
+  * Giữ nguyên vẹn 7 mã chấm công chuẩn (`AttendanceCode`), 5 bậc thuế TNCN (`TaxBracket`), cấu hình chính sách lương (`PayrollPolicyConfig`), 20 tham số lương cơ sở & giảm trừ (`PayrollParameter`), tỷ lệ trích BHXH (`SalaryDeductionRate`), nhóm và loại phụ cấp (`AllowanceGroup`, `AllowanceType`).
+  * Giữ nguyên vẹn tài khoản quản trị viên tối cao (`User: admin`) để người dùng đăng nhập nhập liệu.
+
+### 2. Tự Động Hóa Triển Khai & Kiểm Thử:
+- **Data Migration `core.0011_purge_test_personnel`:** Tự động thực thi dọn sạch nhân sự trên máy chủ VPS khi triển khai qua `deploy_vps.sh` (`python manage.py migrate --noinput`).
+- **CLI Management Command:** Nâng cấp `python manage.py purge_operational_data --include-personnel --confirm`.
+- **Kiểm Thử:** 263/263 unit & integration tests hoàn thành xanh 100%. Giao diện Phân hệ Nhân sự `/hr/` hiển thị 0 nhân sự, sẵn sàng cho chức năng "+ Thêm Nhân Sự" và "Nhập Excel".
+
+---
+
 ## [v4.7.23] - 2026-11-01 (Rà Soát & Xóa Sạch Dữ Liệu Phát Sinh Nghiệp Vụ - Bảo Toàn Nguyên Vẹn Danh Mục Gốc Hệ Thống)
 
 ### 1. Dọn Dẹp & Xóa Toàn Diện Dữ Liệu Phát Sinh (Operational / Transactional Data):

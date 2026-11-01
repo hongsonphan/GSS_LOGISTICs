@@ -12,8 +12,10 @@ from apps.collaboration.models import (
     PostReadStatus, PostComment, PostAttachment, CompanyPost, Notification
 )
 from core.models import TrackingEventLog, LoginEvent, AuditLog, DocumentSequence
+from apps.fleet.models import Vehicle
 from apps.personnel.models import (
-    PayrollSlip, MonthlyAttendanceSummary, DailyAttendance, PayrollPeriod, Employee
+    PayrollSlip, MonthlyAttendanceSummary, DailyAttendance, PayrollPeriod,
+    Employee, LaborContract, ContractAppendix, EmployeeDependent
 )
 from apps.billing.models import (
     CustomerInvoice, DebitNote, SubcontractorSettlement, DriverPayrollSettlement,
@@ -27,10 +29,12 @@ from apps.customers.models import BookingDocument, BookingOrder, QuotationItem, 
 from apps.ledger.models import JournalLine, JournalEntry
 
 
-def run_purge_operational_data(clean_media=True, stdout=None):
+def run_purge_operational_data(clean_media=True, purge_personnel=False, stdout=None):
     """
     Xóa toàn bộ dữ liệu nghiệp vụ phát sinh (operational/transactional data)
     nhưng BẢO LƯU 100% DANH MỤC GỐC (Master Data / Catalogs / Categories).
+    Nếu purge_personnel=True, xóa sạch toàn bộ hồ sơ nhân sự (Employee, Contract, Appendix, Dependent)
+    để người dùng tự nhập lại từ đầu.
     """
     if hasattr(sys.stdout, 'reconfigure'):
         try:
@@ -147,6 +151,27 @@ def run_purge_operational_data(clean_media=True, stdout=None):
         updated_adv = Employee.objects.filter(current_advance__gt=0).update(current_advance=0)
         log(f"  - [X] Đã đặt lại công nợ tạm ứng về 0đ cho {updated_adv} nhân sự/tài xế")
 
+        # 5. Nếu có yêu cầu xóa sạch nhân sự để nhập lại từ đầu
+        if purge_personnel:
+            v_cnt = Vehicle.objects.filter(current_driver__isnull=False).update(current_driver=None)
+            log(f"  - [X] Đã gỡ tài xế mặc định khỏi {v_cnt} phương tiện")
+            ca_cnt = ContractAppendix.objects.count()
+            ContractAppendix.objects.all().delete()
+            log(f"  - [X] Đã xóa {ca_cnt} phụ lục hợp đồng")
+            lc_cnt = LaborContract.objects.count()
+            LaborContract.objects.all().delete()
+            log(f"  - [X] Đã xóa {lc_cnt} hợp đồng lao động")
+            ed_cnt = EmployeeDependent.objects.count()
+            EmployeeDependent.objects.all().delete()
+            log(f"  - [X] Đã xóa {ed_cnt} người phụ thuộc")
+            emp_cnt = Employee.objects.count()
+            Employee.objects.all().delete()
+            log(f"  - [X] Đã xóa sạch {emp_cnt} hồ sơ nhân sự (Employee)")
+            purged_counts['Employee'] = emp_cnt
+            purged_counts['LaborContract'] = lc_cnt
+            purged_counts['ContractAppendix'] = ca_cnt
+            purged_counts['EmployeeDependent'] = ed_cnt
+
     # 5. Dọn dẹp tệp tin rác phát sinh trong media/ (chỉ dọn các thư mục test, bảo toàn logo & avatar danh mục)
     purged_files_count = 0
     if clean_media and hasattr(settings, 'MEDIA_ROOT') and os.path.isdir(settings.MEDIA_ROOT):
@@ -185,6 +210,11 @@ class Command(BaseCommand):
             '--no-clean-media',
             action='store_true',
             help='Bỏ qua việc xóa tệp phát sinh trong media/.'
+        )
+        parser.add_argument(
+            '--include-personnel',
+            action='store_true',
+            help='Xóa sạch toàn bộ hồ sơ nhân sự (Employee, Hợp đồng, Phụ lục, Người phụ thuộc).'
         )
 
     def handle(self, *args, **options):
@@ -235,8 +265,13 @@ class Command(BaseCommand):
 
         safe_write("Dang bat dau xoa toan bo du lieu phat sinh nghiep vu...", self.style.WARNING)
         clean_media = not options.get('no_clean_media', False)
-        counts = run_purge_operational_data(clean_media=clean_media, stdout=self.stdout)
+        purge_personnel = options.get('include_personnel', False)
+        counts = run_purge_operational_data(
+            clean_media=clean_media,
+            purge_personnel=purge_personnel,
+            stdout=self.stdout
+        )
         safe_write(
-            "\n[HOAN TAT] Toan bo du lieu phat sinh da duoc don sach thanh cong! Toan bo Danh muc goc duoc bao luu nguyen ven.",
+            "\n[HOAN TAT] Toan bo du lieu phat sinh da duoc don sach thanh cong!",
             self.style.SUCCESS
         )
