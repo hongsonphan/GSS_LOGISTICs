@@ -881,4 +881,5 @@ class CollaborationTestSuite(TestCase):
                 self.assertEqual(res_media.status_code, 200)
                 self.assertEqual(res_media.headers.get('X-Frame-Options'), 'SAMEORIGIN')
                 self.assertIn('inline', res_media.headers.get('Content-Disposition', ''))
-                res_media.close()
+                for closer in getattr(res_media, '_resource_closers', []):
+                    closer()

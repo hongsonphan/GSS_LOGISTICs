@@ -6,11 +6,15 @@ Kết quả: static/css/tailwind.css (toàn hệ thống) và static/css/tailwin
     python scripts/build_css.py --check   # (CI) báo lỗi nếu file CSS chưa build lại sau khi sửa giao diện
 Class ghép động trong JS/Python phải khai báo trong safelist của tailwind.config.js.
 """
+import os
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parent.parent
 VERSION = "3.4.17"
@@ -28,7 +32,12 @@ def main():
     stale = []
     for config, output in BUILDS:
         target = ROOT / output
-        out = Path(tempfile.mkstemp(suffix=".css")[1]) if check else target
+        if check:
+            fd, temp_path = tempfile.mkstemp(suffix=".css")
+            os.close(fd)
+            out = Path(temp_path)
+        else:
+            out = target
         cmd = [npx, "--yes", f"tailwindcss@{VERSION}", "-c", config, "-i", "static/css/tailwind.input.css",
                "-o", str(out), "--minify"]
         subprocess.run(cmd, cwd=ROOT, check=True, capture_output=check)
