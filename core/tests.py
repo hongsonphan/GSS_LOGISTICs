@@ -1894,9 +1894,14 @@ class BimLogisticsCoreTestCase(TestCase):
         res_cash = self.client.get('/api/accounting/cashbook/')
         self.assertEqual(res_cash.status_code, 403)
 
-        # Bị chặn xem báo cáo TMS BI: HTTP 403
+        # Báo cáo TMS BI: chỉ thấy các báo cáo kinh doanh được cấp, không thấy số tài chính / lương / công nợ / vận hành
         res_rep = self.client.get('/api/reports/')
-        self.assertEqual(res_rep.status_code, 403)
+        self.assertEqual(res_rep.status_code, 200)
+        body = res_rep.json()
+        self.assertIsNone(body['report2_container_dem_det'])
+        self.assertIsNone(body['report3_on_time_performance'])
+        for key in ('total_revenue', 'total_payroll_fund', 'total_ar_balance', 'total_dispatcher_balance', 'total_driver_advances'):
+            self.assertEqual(body['summary'][key], 0, key)
 
     def test_rbac_director_full_access(self):
         """Ban Giám Đốc có toàn quyền trên toàn bộ các phân hệ và API."""

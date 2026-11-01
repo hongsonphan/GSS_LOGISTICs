@@ -475,7 +475,7 @@ function _accessUserDetail(u) {
           <div>
             <div class="text-sm font-black font-heading text-slate-900">${_acEsc(u.name)} <span class="text-slate-400 font-bold">· ${_acEsc(u.username)}</span>${u.code ? ` <span class="text-slate-400 font-bold">· ${_acEsc(u.code)}</span>` : ''}</div>
             <div class="text-xs text-slate-600 font-medium mt-0.5">Chức danh: <b>${_acEsc(u.role_label)}</b>${u.role ? ` <button type="button" onclick="openAccessRole('${u.role}')" class="text-teal-700 underline decoration-dotted">xem</button>` : ''}
-              · Nhóm: <b>${u.is_superuser ? 'Quản trị hệ thống' : _acEsc(_acGroupLabel(u.position_group))}</b>
+              · Nhóm: <b>${u.is_superuser ? 'Quản trị hệ thống' : _acEsc([u.position_group, ...(u.groups || []).filter(g => g !== u.position_group)].filter(Boolean).map(_acGroupLabel).join(' + ') || 'Không thuộc nhóm')}</b>
               ${u.is_active ? '' : ' · <span class="text-rose-600 font-bold">đã khoá</span>'}</div>
           </div>
           <div class="text-xs font-bold text-slate-600">Được vào <span class="text-teal-800">${mods.length}/${d.modules.length}</span> phân hệ</div>

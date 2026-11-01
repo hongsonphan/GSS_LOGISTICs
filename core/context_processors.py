@@ -37,7 +37,7 @@ def _menu(user):
         'sales': v('sales'), 'dispatch': v('dispatch'), 'fleet': v('fleet'), 'customs': v('customs'),
         'hr': v('hr') or v('payroll'),
         'accounting': v('accounting') or v('advances') or v('ledger'),
-        'reports': v('reports_ops') or v('reports_fin'),
+        'reports': v('reports_any'),
         'settings': v('master_data', 'create') or v('master_data', 'edit') or v('admin'),
         'access_admin': v('admin'),
     }}

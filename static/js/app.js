@@ -31880,7 +31880,7 @@ function _accessUserDetail(u) {
           <div>
             <div class="text-sm font-black font-heading text-slate-900">${_acEsc(u.name)} <span class="text-slate-400 font-bold">· ${_acEsc(u.username)}</span>${u.code ? ` <span class="text-slate-400 font-bold">· ${_acEsc(u.code)}</span>` : ''}</div>
             <div class="text-xs text-slate-600 font-medium mt-0.5">Chức danh: <b>${_acEsc(u.role_label)}</b>${u.role ? ` <button type="button" onclick="openAccessRole('${u.role}')" class="text-teal-700 underline decoration-dotted">xem</button>` : ''}
-              · Nhóm: <b>${u.is_superuser ? 'Quản trị hệ thống' : _acEsc(_acGroupLabel(u.position_group))}</b>
+              · Nhóm: <b>${u.is_superuser ? 'Quản trị hệ thống' : _acEsc([u.position_group, ...(u.groups || []).filter(g => g !== u.position_group)].filter(Boolean).map(_acGroupLabel).join(' + ') || 'Không thuộc nhóm')}</b>
               ${u.is_active ? '' : ' · <span class="text-rose-600 font-bold">đã khoá</span>'}</div>
           </div>
           <div class="text-xs font-bold text-slate-600">Được vào <span class="text-teal-800">${mods.length}/${d.modules.length}</span> phân hệ</div>
@@ -33692,15 +33692,9 @@ const REPORT_PERMISSION_MAPPING = {
     'report-17': 'reports.view_report_wip_trips'
 };
 
-// Ma trận phân quyền: báo cáo -> phân hệ (khớp apps/dispatch/reports_api.py)
-const REPORT_ACCESS_MODULES = {
-    'report-1': ['reports_fin'], 'report-7': ['reports_fin'], 'report-8': ['reports_fin'], 'report-9': ['reports_fin'],
-    'report-10': ['reports_fin'], 'report-12': ['reports_fin'], 'report-13': ['reports_fin'], 'report-14': ['reports_fin'],
-    'report-11': ['reports_fin', 'advances'],
-    'report-2': ['reports_ops'], 'report-3': ['reports_ops'], 'report-4': ['reports_ops'], 'report-5': ['reports_ops'],
-    'report-6': ['reports_ops'], 'report-17': ['reports_ops', 'sales'],
-    'report-15': ['sales'], 'report-16': ['sales']
-};
+// Ma trận phân quyền: mỗi báo cáo là một phân hệ riêng rpt_<tên> (khớp core/access.py)
+const REPORT_ACCESS_MODULES = Object.fromEntries(Object.entries(REPORT_PERMISSION_MAPPING)
+    .map(([id, perm]) => [id, ['rpt_' + perm.replace('reports.view_report_', '')]]));
 
 function canAccessReport(reportId) {
     if (!window.CURRENT_USER) return false;

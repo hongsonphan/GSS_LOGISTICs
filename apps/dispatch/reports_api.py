@@ -1928,23 +1928,12 @@ class ReportsAPIView(APIView):
 
         from core import access as _access
         _matrix = _access.uses_matrix(u)
-        # Ma trận phân quyền: mỗi báo cáo thuộc một phân hệ (Báo cáo tài chính / vận hành / Kinh doanh / Tạm ứng)
-        _REPORT_MODULES = {
-            'view_report_pnl': ['reports_fin'], 'view_report_customer_rev': ['reports_fin'],
-            'view_report_subcontractor': ['reports_fin'], 'view_report_driver_salary': ['reports_fin'],
-            'view_report_dispatcher_funds': ['reports_fin'], 'view_report_settlement_backlog': ['reports_fin'],
-            'view_report_ar_aging': ['reports_fin'], 'view_report_unsettled_aging': ['reports_fin'],
-            'view_report_driver_advances': ['reports_fin', 'advances'],
-            'view_report_dem_det': ['reports_ops'], 'view_report_otp': ['reports_ops'], 'view_report_route_cost': ['reports_ops'],
-            'view_report_layover': ['reports_ops'], 'view_report_incidents': ['reports_ops'], 'view_report_wip_trips': ['reports_ops', 'sales'],
-            'view_report_crm_quotations': ['sales'], 'view_report_active_bookings': ['sales'],
-        }
-
+        # Ma trận phân quyền: mỗi báo cáo là một phân hệ riêng (rpt_<tên>) trong core/access.py
         def check_report_perm(perm_codename, allowed_roles=None):
             if is_sup:
                 return True
             if _matrix:
-                return any(_access.allowed(u, m, 'view') for m in _REPORT_MODULES.get(perm_codename, ['reports_fin']))
+                return _access.allowed(u, 'rpt_' + perm_codename.replace('view_report_', '', 1), 'view')
             full_code = f"reports.{perm_codename}"
             # 1. Nếu bị loại trừ tường minh -> Chặn ngay lập tức
             if full_code in excluded_perms:
@@ -2018,6 +2007,7 @@ class ReportsAPIView(APIView):
                 'unsettled_over_30_count': unsettled_over_30_count,
                 'unsettled_missing_pod_count': unsettled_missing_pod_count
             },
+            # (khối 'summary' được che theo quyền từng báo cáo ngay bên dưới)
             'report1_fleet_utilization': {
                 'total_tractors': Vehicle.objects.filter(is_deleted=False).count(),
                 'total_trips': total_trips,
@@ -2179,6 +2169,22 @@ class ReportsAPIView(APIView):
                 'trips': wip_trips_data
             } if can_wip else None
         }
+
+        # Số tổng hợp chỉ hiện khi người xem có quyền báo cáo chứa số đó (tránh lộ số qua khối tổng hợp)
+        summary_gate = {
+            'total_reimbursable': can_pnl, 'estimated_fines_total': can_dem_det, 'otp_rate': can_otp,
+            'overnight_trips_count': can_layover, 'total_payroll_fund': can_drv_sal,
+            'total_dispatcher_funds': can_funds, 'total_dispatcher_balance': can_funds,
+            'total_driver_advances': can_advances, 'total_driver_actual_expenses': can_advances,
+            'pending_driver_settlement_count': can_advances,
+            'settlement_settled_count': can_settle, 'settlement_unsettled_count': can_settle,
+            'settlement_carryover_count': can_settle,
+            'total_ar_receivable': can_ar, 'total_ar_reconciled': can_ar, 'total_ar_pending': can_ar, 'total_ar_balance': can_ar,
+            'unsettled_over_30_count': can_unsettled, 'unsettled_missing_pod_count': can_unsettled,
+        }
+        for key, ok in summary_gate.items():
+            if not ok:
+                data['summary'][key] = 0
 
         return Response(data)
 

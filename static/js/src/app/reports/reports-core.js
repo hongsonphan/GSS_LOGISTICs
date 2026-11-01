@@ -126,15 +126,9 @@ const REPORT_PERMISSION_MAPPING = {
     'report-17': 'reports.view_report_wip_trips'
 };
 
-// Ma trận phân quyền: báo cáo -> phân hệ (khớp apps/dispatch/reports_api.py)
-const REPORT_ACCESS_MODULES = {
-    'report-1': ['reports_fin'], 'report-7': ['reports_fin'], 'report-8': ['reports_fin'], 'report-9': ['reports_fin'],
-    'report-10': ['reports_fin'], 'report-12': ['reports_fin'], 'report-13': ['reports_fin'], 'report-14': ['reports_fin'],
-    'report-11': ['reports_fin', 'advances'],
-    'report-2': ['reports_ops'], 'report-3': ['reports_ops'], 'report-4': ['reports_ops'], 'report-5': ['reports_ops'],
-    'report-6': ['reports_ops'], 'report-17': ['reports_ops', 'sales'],
-    'report-15': ['sales'], 'report-16': ['sales']
-};
+// Ma trận phân quyền: mỗi báo cáo là một phân hệ riêng rpt_<tên> (khớp core/access.py)
+const REPORT_ACCESS_MODULES = Object.fromEntries(Object.entries(REPORT_PERMISSION_MAPPING)
+    .map(([id, perm]) => [id, ['rpt_' + perm.replace('reports.view_report_', '')]]));
 
 function canAccessReport(reportId) {
     if (!window.CURRENT_USER) return false;
