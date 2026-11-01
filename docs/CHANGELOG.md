@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.21] - 2026-11-01 (Chuẩn Hóa Typography & Giao Diện Production Phân Hệ Kinh Doanh / Booking)
+
+### 1. Phân Hệ Kinh Doanh / Sale & Booking (`templates/views/view_sales.html`):
+- **Chuẩn Hóa Typography & Bố Cục Thẻ Trạng Thái Phễu Báo Giá (Subtab 1):**
+  * Tinh chỉnh cấu trúc 3 tầng chuẩn ERP thống nhất: Hàng 1 (Huy hiệu trạng thái góc trái + Icon góc phải), Hàng 2 (Số tiền doanh thu lớn, đậm nét nổi bật `text-2xl 2xl:text-3xl font-black`), Hàng 3 (Dải số liệu KPI đơn hàng 1 dòng nằm trọn vẹn trong thanh nền `bg-slate-50/80` bo góc).
+  * Hiển thị dòng KPI 1 hàng ngang duy nhất: `[ 3 TUYẾN | 30 CHUYẾN | 3 BÁO GIÁ ]` và `[ 7 TUYẾN | 130 CHUYẾN | 7 BÁO GIÁ ]` với số lượng in đậm (`font-black tabular-nums`), vách ngăn `|` thanh mảnh và kích thước chữ (`text-[9px] 2xl:text-[10px] uppercase font-bold`) cân đối tuyệt đối không xuống dòng.
+- **Đồng Bộ Bố Cục Thẻ Tiến Độ Điều Xe Đơn Hàng (Subtab 2 - Booking):**
+  * Đồng bộ cấu trúc 3 tầng tương tự sang 5 thẻ Booking (Chờ điều xe, Đang điều xe, Chạy cắt kéo, Cảnh báo đơn gấp, Đã hoàn tất).
+  * Chuẩn hóa dòng KPI trạng thái cont thành 1 dòng ngang gọn gàng: `[ 0 CONT | 0 ĐÃ GIAO | 0 CÒN LẠI ]`, triệt tiêu hoàn toàn hiện tượng tràn biên hoặc che khuất chữ.
+- **Loại Bỏ Ký Tự Bản Nháp & Chuyên Nghiệp Hóa Ngôn Ngữ Production:**
+  * Bỏ tiền tố đánh số thử nghiệm `1.`, `2.`, `3.`, `4.`, `5.` tại tất cả huy hiệu tiêu đề trạng thái và nút subtab điều hướng.
+  * Chuyển đổi nhãn thuật ngữ tiếng Anh `Win Rate` sang Tiếng Việt chuẩn quản trị ERP: `Tỷ Lệ Chốt`.
+  * Rà soát tiêu đề bộ lọc: Chuyển đổi `Quản lý phễu báo giá & hợp đồng tuyến CRM` sang `Danh Sách Báo Giá Tuyến Cước` và `Danh Sách Đơn Đặt Hàng (Booking)`.
+- **Kiểm Thử Thị Giác (Visual Testing):**
+  * Tự động khởi chạy Chromium qua Playwright, xác thực giao diện trực tiếp trên viewport 1440x900 và 1920x1080, lưu vết hình ảnh đối soát tại artifacts: `03_sales_page_live.png`, `05_sales_cards_closeup.png`, `06_booking_subtab.png`, `07_booking_cards_closeup.png`.
+
+---
+
 ## [v4.7.20] - 2026-11-01 (Tối Ưu Hóa Giao Diện Thẻ KPI Phễu Báo Giá CRM: Hiển Thị 1 Dòng Ngang "# TUYẾN | # CHUYẾN | # BÁO GIÁ")
 
 ### 1. Phân Hệ Kinh Doanh / CRM (`templates/views/view_sales.html`):
