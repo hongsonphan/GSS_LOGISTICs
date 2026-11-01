@@ -112,3 +112,54 @@ class ReportMigrationTests(TestCase):
         again, changed = convert(out, True)
         self.assertFalse(changed)
         self.assertEqual(again, out)
+
+
+class RealDatabaseGroupTests(TestCase):
+    """Nhóm quyền lấy từ bảng Nhóm thật của cơ sở dữ liệu (trang admin), không phải danh sách cố định trong code."""
+
+    def setUp(self):
+        from django.contrib.auth.models import Group
+        for name in ('Ban Giám Đốc', 'Hành chính & Nhân Sự', 'Kinh Doanh (Sales)', 'Tài Xế Hiện Trường', 'Tài chính & Kế toán', 'Điều Vận'):
+            Group.objects.create(name=name)
+        self.boss = make_user('boss_rg', EmployeeRole.DIRECTOR, '0972000001')
+        self.api = APIClient()
+        self.api.force_authenticate(self.boss)
+
+    def test_matrix_lists_exactly_the_database_groups(self):
+        groups = self.api.get('/api/access/matrix/').json()['groups']
+        self.assertEqual([g['label'] for g in groups],
+                         ['Ban Giám Đốc', 'Hành chính & Nhân Sự', 'Kinh Doanh (Sales)', 'Tài Xế Hiện Trường', 'Tài chính & Kế toán', 'Điều Vận'])
+
+    def test_new_admin_group_appears_with_empty_rights(self):
+        from django.contrib.auth.models import Group
+        grp = Group.objects.create(name='Kho bãi')
+        groups = self.api.get('/api/access/matrix/').json()['groups']
+        row = next(g for g in groups if g['label'] == 'Kho bãi')
+        self.assertEqual(row['key'], f'grp{grp.pk}')
+        self.assertEqual(row['grants'], {})
+
+    def test_two_groups_saved_as_real_django_group_membership(self):
+        target = make_user('tgt_rg', EmployeeRole.SALESMAN, '0972000002')
+        res = self.api.put(f'/api/access/users/{target.pk}/', {'groups': ['dispatch', 'accounting']}, format='json')
+        self.assertEqual(res.status_code, 200)
+        names = set(User.objects.get(pk=target.pk).groups.values_list('name', flat=True))
+        self.assertEqual(names, {'Kinh Doanh (Sales)', 'Điều Vận', 'Tài chính & Kế toán'})
+        target = User.objects.get(pk=target.pk)
+        self.assertTrue(access.allowed(target, 'dispatch', 'create'))
+        self.assertTrue(access.allowed(target, 'accounting', 'approve'))
+        res = self.api.put(f'/api/access/users/{target.pk}/', {'groups': ['dispatch']}, format='json')
+        names = set(User.objects.get(pk=target.pk).groups.values_list('name', flat=True))
+        self.assertEqual(names, {'Kinh Doanh (Sales)', 'Điều Vận'})
+        self.assertFalse(access.allowed(User.objects.get(pk=target.pk), 'accounting', 'approve'))
+
+    def test_membership_set_in_django_admin_counts(self):
+        from django.contrib.auth.models import Group
+        user = make_user('adm_rg', EmployeeRole.SALESMAN, '0972000003')
+        self.assertFalse(access.allowed(user, 'dispatch', 'create'))
+        user.groups.add(Group.objects.get(name='Điều Vận'))
+        self.assertTrue(access.allowed(User.objects.get(pk=user.pk), 'dispatch', 'create'))
+
+    def test_position_without_database_group_keeps_its_rights(self):
+        mech = make_user('mech_rg', EmployeeRole.MECHANIC, '0972000004')   # nhóm Vận hành không có trong CSDL
+        self.assertTrue(access.allowed(mech, 'fleet', 'create'))
+        self.assertFalse(access.allowed(mech, 'accounting', 'view'))

@@ -116,9 +116,49 @@ GROUPS = [
      _m(dashboard='view', fleet=ALL, dispatch=VIEW, reports_ops=VIEW, master_data='view')),
     ('customs', 'Hải quan', 'Tờ khai VNACCS, phân luồng, thông quan', 'ph-stamp',
      _m(dashboard='view', customs=ALL, dispatch=VIEW, sales='view', master_data='view', rpt_crm_quotations=VIEW, rpt_active_bookings=VIEW, rpt_wip_trips=VIEW)),
+    ('driver', 'Tài xế hiện trường', 'Tài xế: xem chuyến được giao, cập nhật mốc và chứng từ', 'ph-steering-wheel',
+     _m(dashboard='view', master_data='view')),
 ]
 GROUP_KEYS = [g[0] for g in GROUPS]
 GROUP_LABELS = {g[0]: g[1] for g in GROUPS}
+# Tên nhóm Django (bảng Nhóm trong trang admin, dữ liệu thật) -> khoá quyền mặc định; nhóm tạo thêm trong admin có khoá grp<id>
+GROUP_ALIASES = {
+    'Admin': 'admin', 'Quản trị hệ thống': 'admin',
+    'Ban Giám Đốc': 'director', 'Giám đốc': 'director',
+    'Kinh Doanh (Sales)': 'sales', 'Kinh Doanh': 'sales',
+    'Hành chính & Nhân Sự': 'hr', 'Quản Lý Nhân Sự': 'hr', 'Nhân sự': 'hr',
+    'Tài chính & Kế toán': 'accounting', 'Kế Toán Cước': 'accounting', 'Kế toán': 'accounting',
+    'Điều Vận': 'dispatch', 'Điều Phối Viên': 'dispatch',
+    'Vận Hành': 'operations', 'Hải Quan': 'customs',
+    'Tài Xế Hiện Trường': 'driver',
+}
+
+
+def available_groups():
+    """Các nhóm thật trong cơ sở dữ liệu (bảng Nhóm của Django) theo thứ tự tạo: [{key, label, description, icon, pk}]."""
+    from django.contrib.auth.models import Group
+    builtin = {g[0]: g for g in GROUPS}
+    out, seen = [], set()
+    for grp in Group.objects.order_by('id'):
+        key = GROUP_ALIASES.get(grp.name)
+        if not key or key in seen:
+            key = f'grp{grp.pk}'
+        seen.add(key)
+        info = builtin.get(key)
+        out.append({'key': key, 'label': grp.name, 'description': info[2] if info else '', 'icon': info[3] if info else 'ph-users', 'pk': grp.pk})
+    if not out:  # cài mới, chưa có nhóm nào trong CSDL: dùng bộ nhóm mặc định
+        out = [{'key': k, 'label': lbl, 'description': d, 'icon': i, 'pk': None} for k, lbl, d, i, _g in GROUPS]
+    return out
+
+
+def available_group_keys():
+    return [g['key'] for g in available_groups()]
+
+
+def user_group_keys(user):
+    """Khoá các nhóm thật mà tài khoản đang là thành viên (bảng Nhóm của Django)."""
+    ids = set(user.groups.values_list('id', flat=True)) if getattr(user, 'pk', None) else set()
+    return [g['key'] for g in available_groups() if g['pk'] in ids]
 # Nhóm luôn giữ quyền quản trị phân quyền (tránh tự khoá mất quyền vào trang Phân quyền)
 LOCKED_GROUP_GRANTS = {'admin': {'admin': ['view', 'edit']}, 'director': {'admin': ['view', 'edit']}}
 
@@ -187,9 +227,17 @@ def position_config(company, role):
     from core.models import RoleAccess
     row = RoleAccess.objects.filter(company=company, role=role).first() if company else None
     if row is None:
-        return default_position(role)
-    group = row.group if row.group in GROUP_KEYS or row.group == '' else default_position(role)[0]
-    return group, _clean(row.add), _clean(row.remove)
+        return _fold_missing_group(company, *default_position(role))
+    group, add, remove = row.group or '', _clean(row.add), _clean(row.remove)
+    return _fold_missing_group(company, group, add, remove)
+
+
+def _fold_missing_group(company, group, add, remove):
+    """Nhóm của chức danh chưa có trong cơ sở dữ liệu: giữ quyền mặc định của nhóm đó như quyền riêng của chức danh."""
+    if group and group not in available_group_keys():
+        add = _from_set(_to_set(add) | _to_set(group_grants(company, group)))
+        group = ''
+    return group, add, remove
 
 
 def role_grants(company, role):
@@ -242,9 +290,14 @@ def effective_grants(user):
             pairs = _to_set(role_grants(company, employee.role))
             ov = UserAccessOverride.objects.filter(user=user).first()
             if ov:
-                for key in ov.groups or []:
-                    if key in GROUP_KEYS:
-                        pairs |= _to_set(group_grants(company, key))
+                extra_keys = list(ov.groups or [])
+            else:
+                extra_keys = []
+            keys = available_group_keys()
+            for key in dict.fromkeys(extra_keys + user_group_keys(user)):
+                if key in keys:
+                    pairs |= _to_set(group_grants(company, key))
+            if ov:
                 pairs |= _to_set(_clean(ov.allow))
                 pairs -= _to_set(_clean(ov.deny))
             grants = _with_derived(_from_set(pairs))

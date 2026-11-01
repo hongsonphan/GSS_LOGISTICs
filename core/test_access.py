@@ -86,7 +86,7 @@ class AccessMatrixTests(TestCase):
     def test_matrix_payload_lists_groups_and_positions(self):
         data = self.get(self.director, '/api/access/matrix/').json()
         self.assertEqual([g['key'] for g in data['groups']],
-                         ['admin', 'director', 'sales', 'hr', 'accounting', 'dispatch', 'operations', 'customs'])
+                         ['admin', 'director', 'sales', 'hr', 'accounting', 'dispatch', 'operations', 'customs', 'driver'])
         role = next(r for r in data['roles'] if r['key'] == 'DISPATCH_ASST')
         self.assertEqual(role['group'], 'dispatch')
         self.assertIn('delete', role['remove']['dispatch'])

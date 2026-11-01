@@ -36,7 +36,7 @@ def _user_row(user, company):
         'position_group': position_group,
         'is_superuser': user.is_superuser, 'is_active': user.is_active,
         'has_employee': emp is not None,
-        'groups': [g for g in (ov.groups if ov else []) if g in access.GROUP_KEYS],
+        'groups': [g for g in dict.fromkeys((ov.groups if ov else []) + access.user_group_keys(user)) if g in access.available_group_keys()],
         'allow': access._clean(ov.allow) if ov else {}, 'deny': access._clean(ov.deny) if ov else {},
         'note': ov.note if ov else '',
         'effective': access.effective_grants(user) or {},
@@ -64,8 +64,9 @@ def _payload(request):
         rows.append(_user_row(u, company))
 
     groups = []
-    for key, label, desc, icon, _g in access.GROUPS:
-        groups.append({'key': key, 'label': label, 'description': desc, 'icon': icon,
+    for g in access.available_groups():
+        key = g['key']
+        groups.append({'key': key, 'label': g['label'], 'description': g['description'], 'icon': g['icon'],
                        'grants': access.group_grants(company, key),
                        'default': access._with_locked(key, access.default_group_grants(key)),
                        'customized': key in saved_groups, 'locked': access.LOCKED_GROUP_GRANTS.get(key, {})})
@@ -107,7 +108,7 @@ class GroupAccessAPIView(APIView):
     access_actions = {'PUT': 'edit', 'DELETE': 'edit'}
 
     def put(self, request, key):
-        if key not in access.GROUP_KEYS:
+        if key not in access.available_group_keys():
             return _bad('Nhóm không hợp lệ')
         grants = access._with_locked(key, access._clean(request.data.get('grants') if isinstance(request.data, dict) else None))
         row, _ = AccessGroup.objects.get_or_create(company=company_for_user(request.user), key=key)
@@ -130,7 +131,7 @@ class RoleAccessAPIView(APIView):
             return _bad('Chức danh không hợp lệ')
         data = request.data if isinstance(request.data, dict) else {}
         group = data.get('group', '') or ''
-        if group and group not in access.GROUP_KEYS:
+        if group and group not in access.available_group_keys():
             return _bad('Nhóm không hợp lệ')
         add, remove = access._clean(data.get('add')), access._clean(data.get('remove'))
         if access._to_set(add) & access._to_set(remove):
@@ -164,7 +165,8 @@ class UserAccessAPIView(APIView):
         if user is None or getattr(user, 'employee', None) is None:
             return _bad('Chỉ phân quyền cho tài khoản có hồ sơ nhân viên')
         data = request.data if isinstance(request.data, dict) else {}
-        groups = [g for g in (data.get('groups') or []) if g in access.GROUP_KEYS]
+        valid = access.available_group_keys()
+        groups = [g for g in (data.get('groups') or []) if g in valid]
         allow, deny = access._clean(data.get('allow')), access._clean(data.get('deny'))
         if user.pk == request.user.pk and 'edit' in deny.get('admin', []):
             return _bad('Không thể tự chặn quyền quản trị phân quyền của chính mình')
@@ -175,10 +177,25 @@ class UserAccessAPIView(APIView):
         ov.note = str(data.get('note') or '')[:255]
         ov.updated_by = request.user
         ov.save()
+        self._sync_django_groups(user, ov.groups)
         return Response(_payload(request))
+
+    @staticmethod
+    def _sync_django_groups(user, keys):
+        """Thành viên nhóm thật (bảng Nhóm của Django) khớp với các nhóm vừa chọn, giữ nguyên nhóm chính theo chức danh."""
+        from django.contrib.auth.models import Group
+        if getattr(user, 'employee', None) is None:
+            return
+        company = company_for_user(user)
+        primary = access.position_config(company, user.employee.role)[0]
+        wanted = set(keys) | ({primary} if primary else set())
+        pks = [g['pk'] for g in access.available_groups() if g['key'] in wanted and g['pk']]
+        user.groups.set(Group.objects.filter(pk__in=pks))
 
     def delete(self, request, pk):
         if self._user(pk) is None:
             return _bad('Không tìm thấy tài khoản trong doanh nghiệp của bạn')
+        user = self._user(pk)
         UserAccessOverride.objects.filter(user_id=pk).delete()
+        self._sync_django_groups(user, [])
         return Response(_payload(request))
