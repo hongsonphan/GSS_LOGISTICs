@@ -183,6 +183,13 @@ class Employee(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
             self.code = self.generate_next_code(self.role, self.department)
         super().save(*args, **kwargs)
 
+    def delete(self, using=None, keep_parents=False):
+        """Giải phóng tài khoản đăng nhập khi xóa mềm nhân sự."""
+        if self.user_id:
+            self.user = None
+            self.save(update_fields=['user'])
+        super().delete(using=using, keep_parents=keep_parents)
+
     class Meta:
         ordering = ['code']
 

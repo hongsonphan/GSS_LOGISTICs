@@ -97,6 +97,40 @@ class PersonnelHRMAPITestCase(TestCase):
     # -------------------------------------------------------------
     # Test Employee CRUD & Stats
     # -------------------------------------------------------------
+    def test_available_users_api(self):
+        res = self.client.get('/api/personnel/users-available/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        usernames = [u['username'] for u in res.json()['results']]
+        self.assertIn(self.director_user.username, usernames)
+
+    def test_assign_user_to_employee_and_release_on_delete(self):
+        test_user = User.objects.create_user(username='test_acc_link', password='Password123!')
+        emp = Employee.objects.create(
+            code='NV_TEST_LINK',
+            full_name='Nhân Sự Gán User',
+            phone_number='0912345678',
+            department=Department.ADMIN_ACC,
+            role=EmployeeRole.STAFF_ADMIN_ACC,
+            user=test_user
+        )
+        self.assertEqual(emp.user, test_user)
+
+        # Xóa nhân sự sẽ tự giải phóng user
+        emp.delete()
+        emp.refresh_from_db()
+        self.assertIsNone(emp.user)
+
+        # Gán lại cho nhân sự mới hoàn toàn hợp lệ
+        emp2 = Employee.objects.create(
+            code='NV_TEST_LINK_2',
+            full_name='Nhân Sự Gán User 2',
+            phone_number='0912345679',
+            department=Department.ADMIN_ACC,
+            role=EmployeeRole.STAFF_ADMIN_ACC,
+            user=test_user
+        )
+        self.assertEqual(emp2.user, test_user)
+
     def test_list_employees(self):
         res = self.client.get('/api/personnel/employees/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)

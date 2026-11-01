@@ -2,6 +2,35 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.25] - 2026-11-01 (Sửa Lỗi Cuộn Bảng Nhân Sự & Bổ Sung Tính Năng Gán Tài Khoản Người Dùng Vào Hồ Sơ Nhân Sự)
+
+### 1. Khắc Phục Triệt Để Lỗi Khóa Cuộn Dọc Trên Danh Sách Nhân Sự & Các Bảng Phân Hệ (`templates/views/view_personnel.html`):
+- **Nguyên Nhân Gốc:** Cấu trúc Flexbox lồng nhau trong thẻ chứa bảng thiếu thuộc tính `min-h-0` trên các container cha (`#hr-panel-directory`, `#hr-panel-contracts`, `#hr-panel-attendance`, `#hr-panel-payroll`), kết hợp với wrapper bảng trước đó chỉ có `overflow-x-auto` (chỉ cuộn ngang, thiếu `overflow-y-auto`). Khi danh sách vượt quá 12 nhân sự, nội dung bảng tràn xuống dưới và bị thẻ ngoài (`overflow-hidden`) cắt mất, làm người dùng không thể cuộn xuống xem các hàng tiếp theo.
+- **Giải Pháp Xử Lý:**
+  * Bổ sung `overflow-x-auto overflow-y-auto flex-1 min-h-0` cho wrapper bảng `#employees-table`, `#contracts-table`, `#attendance-table`, `#payroll-slips-table`.
+  * Bổ sung `min-h-0` cho toàn bộ 5 sub-panel: `#hr-panel-directory`, `#hr-panel-contracts`, `#hr-panel-attendance`, `#hr-panel-payroll`, `#hr-panel-policies`.
+  * Giữ nguyên vẹn tính năng tiêu đề cố định `thead sticky top-0 z-10` và dòng chân trang tổng kết `BimTableFooter` khi cuộn.
+  * Mở rộng trường tìm kiếm: cho phép gõ tìm theo Tên, Mã NV, Tên tài khoản, CCCD, SĐT.
+
+### 2. Bổ Sung Tính Năng Gán Tài Khoản Người Dùng (User Account) Vào Hồ Sơ Nhân Sự:
+- **Giao Diện Khai Báo / Cập Nhật Nhân Sự (`view_employee_form.html`, `employee-form.js`):**
+  * Thêm ô chọn dropdown "Tài Khoản Đăng Nhập Hệ Thống (User Account)" tại Thẻ 3 (Thông Tin Chuyên Môn & Trạng Thái Công Tác).
+  * Tự động nạp danh sách tài khoản hệ thống của công ty (`/api/personnel/users-available/`), hiển thị rõ trạng thái tài khoản đang gán hoặc khả dụng (VD: `ketoan`, `dieudo`, `admin`, `sales`).
+  * Tự động cập nhật gợi ý thông tin tài khoản khi chọn (`emp-user-hint`).
+- **Hiển Thị Huy Hiệu Tài Khoản Trực Quan Trên Bảng Nhân Sự (`employees.js`):**
+  * Hiển thị huy hiệu xanh font mono `[ketoan]`, `[dieudo]` ngay cạnh tên nhân sự trên danh sách để nhận diện ngay nhân sự nào đã được cấp tài khoản.
+- **Xử Lý Triệt Để Ràng Buộc Cơ Sở Dữ Liệu `UNIQUE (user_id)` Đối Với Xóa Mềm (`SoftDeleteModel`):**
+  * **Data Migration `personnel.0013_release_deleted_employee_users`:** Tự động giải phóng `user = None` trên tất cả hồ sơ nhân sự cũ đã xóa mềm (`is_deleted = True`), xóa bỏ triệt để lỗi xung đột khóa ngoại `UniqueViolation: Key (user_id)=(3) already exists` khi gán tài khoản cho nhân sự mới.
+  * Cập nhật phương thức `Employee.delete()` và API `EmployeeDetailAPIView.delete()`: Luôn tự động giải phóng `self.user = None` khi xóa nhân sự.
+  * Thêm logic kiểm tra `validate_user` trong `EmployeeSerializer`: Tự động giải phóng bản ghi xóa mềm và thông báo tiếng Việt thân thiện nếu tài khoản đang được gán cho nhân sự hoạt động khác.
+
+### 3. Kiểm Thử & Đóng Gói:
+- Toàn bộ 284/284 unit & integration tests hoàn thành xanh 100%.
+- Đã build lại bundle sản xuất `static/js/app.js` từ 101 tệp nguồn.
+- Kiểm thử thị giác (Visual Regression Test bằng Playwright) xác nhận tính năng cuộn mượt mà và form chọn tài khoản hoạt động hoàn hảo.
+
+---
+
 ## [v4.7.24] - 2026-11-01 (Xóa Sạch Hồ Sơ Nhân Sự Để Chuẩn Bị Nhập Dữ Liệu Thực Tế Mới)
 
 ### 1. Dọn Dẹp Toàn Bộ Hồ Sơ Nhân Sự Cũ (`personnel`, `fleet`):

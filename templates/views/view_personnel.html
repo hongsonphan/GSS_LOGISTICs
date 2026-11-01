@@ -190,7 +190,7 @@
         <!-- ========================================================================= -->
         <!-- SUB-PANEL 1: HỒ SƠ NHÂN SỰ & TÀI XẾ 360° (DIRECTORY) -->
         <!-- ========================================================================= -->
-        <div id="hr-panel-directory" class="flex flex-col flex-1">
+        <div id="hr-panel-directory" class="flex flex-col flex-1 min-h-0">
 
             <!-- Filter & Search Toolbar -->
 
@@ -200,7 +200,7 @@
 
                     <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
 
-                    <input type="text" id="emp-search-input" onkeyup="filterEmployeesTable()" placeholder="Tìm theo tên, mã NV, CCCD, SĐT..."
+                    <input type="text" id="emp-search-input" onkeyup="filterEmployeesTable()" placeholder="Tìm theo tên, mã NV, tài khoản, CCCD, SĐT..."
 
                            class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs md:text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
 
@@ -294,7 +294,7 @@
 
             <!-- Table Container -->
 
-            <div class="overflow-x-auto flex-1 min-h-[350px]">
+            <div class="overflow-x-auto overflow-y-auto flex-1 min-h-0">
 
                 <table class="w-full text-left border-collapse erp-table whitespace-nowrap text-xs" id="employees-table">
 
@@ -374,7 +374,7 @@
 
         <!-- ========================================================================= -->
 
-        <div id="hr-panel-contracts" class="hidden flex flex-col flex-1">
+        <div id="hr-panel-contracts" class="hidden flex flex-col flex-1 min-h-0">
 
             <div class="p-3 px-4 border-b border-slate-200 bg-white flex items-center justify-between gap-2 shrink-0">
 
@@ -420,7 +420,7 @@
 
 
 
-            <div class="overflow-x-auto flex-1 min-h-[350px]">
+            <div class="overflow-x-auto overflow-y-auto flex-1 min-h-0">
 
                 <table class="w-full text-left border-collapse erp-table whitespace-nowrap text-xs" id="contracts-table">
 
@@ -480,7 +480,7 @@
 
         <!-- ========================================================================= -->
 
-        <div id="hr-panel-attendance" class="hidden flex flex-col flex-1">
+        <div id="hr-panel-attendance" class="hidden flex flex-col flex-1 min-h-0">
 
             <div class="p-3 px-4 border-b border-slate-200 bg-white flex flex-col md:flex-row items-center justify-between gap-2.5 shrink-0">
 
@@ -542,7 +542,7 @@
 
             <!-- Bảng tổng hợp công tháng -->
 
-            <div class="overflow-x-auto flex-1 border-b border-slate-200 erp-table-container min-h-[350px]">
+            <div class="overflow-x-auto overflow-y-auto flex-1 min-h-0 border-b border-slate-200 erp-table-container">
 
                 <table class="w-full text-left border-collapse erp-table whitespace-nowrap text-xs" id="attendance-table">
 
@@ -602,7 +602,7 @@
 
         <!-- ========================================================================= -->
 
-        <div id="hr-panel-payroll" class="hidden flex flex-col flex-1">
+        <div id="hr-panel-payroll" class="hidden flex flex-col flex-1 min-h-0">
 
             <!-- Toolbar Chọn Kỳ Lương & Hành Động -->
 
@@ -778,7 +778,7 @@
 
             <!-- Bảng Lương Chi Tiết Từng Nhân Viên (Hybrid Payroll Table) -->
 
-            <div class="overflow-x-auto flex-1 border-b border-slate-200 erp-table-container min-h-[350px]">
+            <div class="overflow-x-auto overflow-y-auto flex-1 min-h-0 border-b border-slate-200 erp-table-container">
 
                 <table class="w-full text-left border-collapse erp-table whitespace-nowrap text-xs" id="payroll-slips-table">
 
@@ -864,7 +864,7 @@
 
         <!-- ========================================================================= -->
 
-        <div id="hr-panel-policies" class="hidden p-5 overflow-y-auto space-y-6">
+        <div id="hr-panel-policies" class="hidden p-5 overflow-y-auto space-y-6 flex-1 min-h-0">
 
             <!-- 1. Tham số giảm trừ gia cảnh & ngày công chuẩn -->
 

@@ -236,7 +236,11 @@ class EmployeeDetailAPIView(APIView):
         employee.is_active = False
         employee.is_deleted = True
         employee.deleted_at = now
-        employee.save(update_fields=['is_active', 'is_deleted', 'deleted_at'])
+        if employee.user_id:
+            employee.user = None
+            employee.save(update_fields=['is_active', 'is_deleted', 'deleted_at', 'user'])
+        else:
+            employee.save(update_fields=['is_active', 'is_deleted', 'deleted_at'])
 
         # Đồng bộ soft-delete các hợp đồng lao động và phụ lục liên quan
         LaborContract.objects.filter(employee=employee, is_deleted=False).update(
@@ -1714,3 +1718,28 @@ from core.permissions import SharedConfigWritePermission  # noqa: E402
 for _cls in (PayrollPolicyConfigAPIView, TaxBracketListAPIView, TaxBracketDetailAPIView, PayrollParameterListCreateAPIView,
              PayrollParameterDetailAPIView, AllowanceTypeListCreateAPIView, AllowanceTypeDetailAPIView, SalaryDeductionRateAPIView):
     _cls.permission_classes = [*_cls.permission_classes, SharedConfigWritePermission]
+
+class AvailableUsersAPIView(APIView):
+    """Danh sách tài khoản người dùng để liên kết vào hồ sơ nhân sự."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from django.contrib.auth import get_user_model
+        from core.tenant import company_for_user, users_of_company
+        User = get_user_model()
+        company = company_for_user(request.user)
+        users = users_of_company(company, User.objects.filter(is_active=True)).select_related('employee').order_by('username')
+        data = []
+        for u in users:
+            emp = getattr(u, 'employee', None)
+            is_active_emp = emp is not None and not emp.is_deleted
+            data.append({
+                'id': u.id,
+                'username': u.username,
+                'full_name': u.get_full_name() or u.username,
+                'email': u.email or '',
+                'assigned_to_id': emp.id if is_active_emp else None,
+                'assigned_to_code': emp.code if is_active_emp else None,
+                'assigned_to_name': emp.full_name if is_active_emp else None,
+            })
+        return Response({'results': data})

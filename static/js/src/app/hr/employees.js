@@ -116,7 +116,7 @@ function filterEmployeesTable() {
     const status = document.getElementById('emp-filter-status')?.value || 'ALL';
 
     const filtered = (rawEmployeesList || []).filter(item => {
-        const str = `${item.code} ${item.full_name} ${item.nickname || ''} ${item.phone_number || ''} ${item.national_id || ''} ${item.bank_account || ''}`.toLowerCase();
+        const str = `${item.code} ${item.full_name} ${item.nickname || ''} ${item.username || ''} ${item.phone_number || ''} ${item.national_id || ''} ${item.bank_account || ''}`.toLowerCase();
         const matchesQuery = !q || str.includes(q);
         const matchesDept = dept === 'ALL' || item.department === dept;
         const matchesRole = role === 'ALL' || item.role === role;
@@ -156,7 +156,11 @@ function renderEmployeesTable(items) {
                 <td class="py-2.5 px-3.5 text-center font-mono font-bold text-slate-500 border-r border-slate-200 text-xs tabular-nums select-none w-12">${index + 1}</td>
                 <td class="py-2.5 px-3.5 font-mono font-bold text-teal-900 border-r border-slate-200 text-xs">${escapeHtml(emp.code)}</td>
                 <td class="py-2.5 px-3.5 font-bold text-slate-900 border-r border-slate-200 text-sm">
-                    <div>${escapeHtml(emp.full_name)} ${emp.nickname ? `<span class="text-xs text-slate-500 font-normal">(${escapeHtml(emp.nickname)})</span>` : ''}</div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span>${escapeHtml(emp.full_name)}</span>
+                        ${emp.nickname ? `<span class="text-xs text-slate-500 font-normal">(${escapeHtml(emp.nickname)})</span>` : ''}
+                        ${emp.username ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-mono font-bold" title="Tài khoản đăng nhập hệ thống"><i class="ph-bold ph-user"></i>${escapeHtml(emp.username)}</span>` : ''}
+                    </div>
                     <div class="text-[11px] text-slate-400 font-normal">${emp.gender_label || ''} ${emp.date_of_birth ? '• ' + emp.date_of_birth : ''}</div>
                 </td>
                 <td class="py-2.5 px-3.5 text-xs border-r border-slate-200">

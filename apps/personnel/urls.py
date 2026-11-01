@@ -33,6 +33,7 @@ from apps.personnel.api_views import (
     PayrollExportBankAPIView,
     PayrollSlipPrintAPIView,
     PayrollSlipDetailAPIView,
+    AvailableUsersAPIView,
 )
 
 urlpatterns = [
@@ -43,6 +44,7 @@ urlpatterns = [
     path('employees/import/', EmployeeImportAPIView.as_view(), name='api-employee-import'),
     path('employees/export-data/', EmployeeExportDataAPIView.as_view(), name='api-employee-export-data'),
     path('employees/<int:pk>/', EmployeeDetailAPIView.as_view(), name='api-employee-detail'),
+    path('users-available/', AvailableUsersAPIView.as_view(), name='api-available-users'),
     path('stats/', EmployeeStatsAPIView.as_view(), name='api-employee-stats'),
 
     # 2. Người phụ thuộc

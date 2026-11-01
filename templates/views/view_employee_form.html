@@ -220,6 +220,27 @@
                                    class="w-full h-10 px-3 text-xs font-mono border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
                         </div>
 
+                        <!-- Tài khoản đăng nhập hệ thống (User Account) -->
+                        <div class="md:col-span-12 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <div class="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                                <label class="block font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                                    <i class="ph-bold ph-user-circle text-teal-600 text-base"></i>
+                                    <span>Tài Khoản Đăng Nhập Hệ Thống (User Account)</span>
+                                </label>
+                                <span class="text-[11px] text-slate-500">Liên kết nhân sự với tài khoản hệ thống (VD: ketoan, dieudo, sales...)</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <select id="emp-user-id" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                        <option value="">-- Không liên kết tài khoản --</option>
+                                    </select>
+                                </div>
+                                <div id="emp-user-hint" class="flex items-center text-xs text-slate-500 px-3 py-2 bg-white rounded-xl border border-dashed border-slate-200">
+                                    <span id="emp-user-hint-text">Chọn tài khoản đăng nhập để nhân sự truy cập phân hệ tương ứng.</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Chuyên môn tài xế (GPLX & Hạn bằng) -->
                         <div id="emp-driver-fields" class="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-3.5 p-4 bg-teal-50/60 rounded-xl border border-teal-200">
                             <div>
