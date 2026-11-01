@@ -165,8 +165,15 @@ class RealDatabaseGroupTests(TestCase):
         self.assertFalse(access.allowed(mech, 'accounting', 'view'))
 
 
-class SettingsMenuTests(TestCase):
-    def test_salesman_has_no_settings_by_default_but_accountant_does(self):
+class SettingsTabTests(TestCase):
+    """Trang Cài đặt phân quyền theo từng tab: tab không được cấp thì không xem được, chỉ xem thì không sửa được."""
+
+    def api(self, user):
+        client = APIClient()
+        client.force_authenticate(user)
+        return client
+
+    def test_salesman_has_no_settings_menu_or_tabs_by_default(self):
         sales = make_user('sl_set', EmployeeRole.SALESMAN, '0973000001')
         acc = make_user('kt_set', EmployeeRole.ACCOUNTANT, '0973000002')
         self.assertFalse(access.allowed(sales, 'settings', 'view'))
@@ -175,7 +182,43 @@ class SettingsMenuTests(TestCase):
         self.assertFalse(_menu(sales)['menu']['settings'])
         self.assertTrue(_menu(acc)['menu']['settings'])
 
-    def test_granting_settings_shows_the_menu(self):
-        sales = make_user('sl2_set', EmployeeRole.SALESMAN, '0973000003')
-        UserAccessOverride.objects.create(user=sales, company=get_default_company(), allow={'settings': ['view']})
-        self.assertTrue(access.allowed(User.objects.get(pk=sales.pk), 'settings', 'view'))
+    def test_view_only_tab_cannot_write(self):
+        user = make_user('kt2_set', EmployeeRole.ACCOUNTANT, '0973000003')
+        UserAccessOverride.objects.create(user=user, company=get_default_company(),
+                                          deny={'cfg_network': ['create', 'edit', 'delete']})
+        api = self.api(User.objects.get(pk=user.pk))
+        self.assertEqual(api.get('/api/master-data/locations/').status_code, 200)
+        self.assertEqual(api.post('/api/master-data/locations/', {'code': 'X', 'name': 'Y', 'location_type': 'PORT'}, format='json').status_code, 403)
+        self.assertEqual(api.post('/api/master-data/shipping-lines/', {}, format='json').status_code, 403)
+        self.assertNotEqual(api.post('/api/master-data/customers/', {}, format='json').status_code, 403)  # tab Khách hàng & Đối tác vẫn ghi được
+
+    def test_tab_without_permission_cannot_write_or_export(self):
+        sales = make_user('sl3_set', EmployeeRole.SALESMAN, '0973000004')
+        api = self.api(sales)
+        self.assertEqual(api.get('/api/master-data/locations/').status_code, 200)   # đọc để chọn trong biểu mẫu
+        self.assertEqual(api.post('/api/master-data/locations/', {}, format='json').status_code, 403)
+        self.assertEqual(api.post('/api/master-data/customers/', {}, format='json').status_code, 403)
+        self.assertEqual(api.get('/api/master-data/export-data/?catalog=customers').status_code, 403)
+        self.assertEqual(api.put('/api/master-data/company/', {'short_name': 'X'}, format='json').status_code, 403)
+
+    def test_granting_one_tab_opens_only_that_tab(self):
+        sales = make_user('sl4_set', EmployeeRole.SALESMAN, '0973000005')
+        UserAccessOverride.objects.create(user=sales, company=get_default_company(),
+                                          allow={'cfg_partners': ['view', 'create', 'edit', 'export']})
+        sales = User.objects.get(pk=sales.pk)
+        self.assertTrue(access.allowed(sales, 'settings', 'view'))
+        api = self.api(sales)
+        self.assertNotEqual(api.post('/api/master-data/customers/', {}, format='json').status_code, 403)
+        self.assertEqual(api.get('/api/master-data/export-data/?catalog=customers').status_code, 200)
+        self.assertEqual(api.get('/api/master-data/export-data/?catalog=vehicles').status_code, 403)
+        self.assertEqual(api.post('/api/master-data/vehicles/', {}, format='json').status_code, 403)
+
+    def test_migration_moves_master_data_writes_to_tabs(self):
+        import importlib
+        convert = importlib.import_module('core.migrations.0014_settings_tab_permissions').convert
+        out, changed = convert({'master_data': ['view', 'create', 'edit', 'export'], 'dashboard': ['view']})
+        self.assertTrue(changed)
+        self.assertEqual(out['master_data'], ['view'])
+        self.assertEqual(out['cfg_partners'], ['view', 'create', 'edit', 'export'])
+        self.assertEqual(out['cfg_company'], ['view'])
+        self.assertFalse(convert(out)[1])

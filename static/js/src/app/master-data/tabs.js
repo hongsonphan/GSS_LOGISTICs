@@ -32,6 +32,39 @@ const MASTER_DATA_GROUPS = {
     }
 };
 
+// Mỗi tab thuộc một dòng quyền "Cài đặt · ..." trong trang Phân quyền (khớp core/access.py CFG_TAB_MODULE)
+const MASTER_DATA_TAB_MODULE = {
+    company: 'cfg_company', roles_permissions: 'admin',
+    opening_balance: 'cfg_finance', expenses: 'cfg_finance', driver_tariffs: 'cfg_finance', allowances: 'cfg_finance',
+    customers: 'cfg_partners', tariffs: 'cfg_partners', subcontractors: 'cfg_partners',
+    locations: 'cfg_network', shipping_lines: 'cfg_network',
+    vehicles: 'cfg_fleet', trailers: 'cfg_fleet', containers: 'cfg_fleet'
+};
+
+function mdCan(tabKey, action = 'view') {
+    if (typeof window.canAccess !== 'function') return true;
+    return window.canAccess(MASTER_DATA_TAB_MODULE[tabKey] || 'master_data', action);
+}
+window.mdCan = mdCan;
+window.mdActiveModule = () => MASTER_DATA_TAB_MODULE[currentMasterDataTab] || 'master_data';
+
+function firstAllowedMasterDataTab() {
+    for (const grp of Object.values(MASTER_DATA_GROUPS)) {
+        const tab = grp.tabs.find(t => mdCan(t));
+        if (tab) return tab;
+    }
+    return null;
+}
+
+// Ẩn tab / nhóm tab mà người dùng không có quyền xem
+function applyMasterDataAccess() {
+    document.querySelectorAll('[data-md-tab]').forEach(btn => btn.classList.toggle('hidden', !mdCan(btn.getAttribute('data-md-tab'))));
+    Object.entries(MASTER_DATA_GROUPS).forEach(([key, grp]) => {
+        const btn = document.querySelector(`[data-md-group="${key}"]`);
+        if (btn) btn.classList.toggle('hidden', !grp.tabs.some(t => mdCan(t)));
+    });
+}
+
 function getMasterDataGroupForTab(tabKey) {
     for (const [groupKey, grp] of Object.entries(MASTER_DATA_GROUPS)) {
         if (grp.tabs.includes(tabKey)) return groupKey;
@@ -101,6 +134,13 @@ async function loadMasterData() {
 }
 
 function switchMasterDataTab(tabKey) {
+    applyMasterDataAccess();
+    if (!mdCan(tabKey)) {
+        // Tab không được cấp quyền xem: chuyển sang tab đầu tiên được phép (không có thì không mở gì)
+        const allowedTab = firstAllowedMasterDataTab();
+        if (!allowedTab) return;
+        tabKey = allowedTab;
+    }
     currentMasterDataTab = tabKey;
     masterDataPagination.currentPage = 1;
     masterDataSortColumn = null;
@@ -193,9 +233,11 @@ function switchMasterDataTab(tabKey) {
     const exportTemplateBtn = document.getElementById('md-export-template-btn');
     const importBtn = document.getElementById('md-import-btn');
     const exportDataBtn = document.getElementById('md-export-data-btn');
-    if (exportTemplateBtn) exportTemplateBtn.style.display = isSpecialTab ? 'none' : '';
-    if (importBtn) importBtn.style.display = isSpecialTab ? 'none' : '';
-    if (exportDataBtn) exportDataBtn.style.display = isSpecialTab ? 'none' : '';
+    if (exportTemplateBtn) exportTemplateBtn.style.display = (isSpecialTab || !mdCan(tabKey, 'export')) ? 'none' : '';
+    if (importBtn) importBtn.style.display = (isSpecialTab || !mdCan(tabKey, 'create')) ? 'none' : '';
+    if (exportDataBtn) exportDataBtn.style.display = (isSpecialTab || !mdCan(tabKey, 'export')) ? 'none' : '';
+    // Nút Tạo mới (tab Công ty: Sửa thông tin) chỉ hiện khi có quyền thao tác tương ứng của tab
+    if (createBtnContainer && !mdCan(tabKey, tabKey === 'company' ? 'edit' : 'create')) createBtnContainer.style.display = 'none';
 
     if (tabKey === 'roles_permissions' && rolesView && typeof renderAccessMatrixPage === 'function') {
         // Trang phân quyền riêng: không dùng bảng danh mục chung

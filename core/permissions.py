@@ -287,7 +287,31 @@ CanManageFleet = module_permission('fleet', LegacyCanManageFleet, 'CanManageFlee
 CanViewPayroll = module_permission('payroll', LegacyCanViewPayroll, 'CanViewPayroll')
 CanViewFinancialReports = module_permission('reports_fin', LegacyCanViewFinancialReports, 'CanViewFinancialReports')
 CanViewOperationalReports = module_permission('reports_any', LegacyCanViewOperationalReports, 'CanViewOperationalReports')
-CanManageMasterData = module_permission('master_data', LegacyCanManageMasterData, 'CanManageMasterData')
+class CanManageMasterData(permissions.BasePermission):
+    """Danh mục / Cài đặt theo từng tab: ghi, xoá, nhập, xuất cần quyền đúng tab (view.cfg_module hoặc view.cfg_module_for(request)).
+    Đọc danh sách để chọn trong biểu mẫu chỉ cần quyền Danh mục (đọc) hoặc quyền xem của tab."""
+    legacy = LegacyCanManageMasterData
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        if not access.uses_matrix(user):
+            return bool(self.legacy().has_permission(request, view))
+        module = getattr(view, 'cfg_module', None)
+        resolver = getattr(view, 'cfg_module_for', None)
+        if resolver is not None:
+            module = resolver(request) or module
+        action = access.action_for(request, view)
+        if action == 'view':
+            ok = access.allowed(user, 'master_data', 'view') or bool(module and access.allowed(user, module, 'view'))
+        else:
+            ok = bool(module and access.allowed(user, module, action))
+        if not ok:
+            self.message = access.denied_message(module or 'master_data', action)
+        return ok
 CanUseLedger = module_permission('ledger', LegacyCanViewFinancialReports, 'CanUseLedger')
 CanManageHR = module_permission('hr', None, 'CanManageHR')
 CanManagePayroll = module_permission('payroll', LegacyCanViewPayroll, 'CanManagePayroll')

@@ -44,11 +44,21 @@ REPORT_KEYS = [f'rpt_{r[0]}' for r in REPORTS]
 REPORT_CATEGORY = {f'rpt_{r[0]}': r[3] for r in REPORTS}
 # Phân hệ tổng hợp (không hiện trong ma trận, tự tính từ quyền từng báo cáo) để các chỗ kiểm tra cũ vẫn dùng được:
 #   reports_any: xem được ít nhất một báo cáo; reports_fin: xem được Lãi lỗ hoặc Doanh thu khách (số liệu lãi lỗ);
-#   reports_ops: xem được ít nhất một báo cáo vận hành.
+#   reports_ops: xem được ít nhất một báo cáo vận hành; settings: xem được ít nhất một tab Cài đặt.
+CFG_KEYS = ['cfg_company', 'cfg_finance', 'cfg_partners', 'cfg_network', 'cfg_fleet']
+# Tab của trang Cài đặt -> phân hệ quyền (roles_permissions thuộc Quản trị hệ thống)
+CFG_TAB_MODULE = {
+    'company': 'cfg_company', 'roles_permissions': 'admin',
+    'opening_balance': 'cfg_finance', 'expenses': 'cfg_finance', 'driver_tariffs': 'cfg_finance', 'allowances': 'cfg_finance',
+    'customers': 'cfg_partners', 'tariffs': 'cfg_partners', 'subcontractors': 'cfg_partners',
+    'locations': 'cfg_network', 'shipping_lines': 'cfg_network',
+    'vehicles': 'cfg_fleet', 'trailers': 'cfg_fleet', 'containers': 'cfg_fleet',
+}
 DERIVED_MODULES = {
-    'reports_any': lambda keys: bool(keys),
+    'reports_any': lambda keys: any(k in REPORT_CATEGORY for k in keys),
     'reports_fin': lambda keys: bool(keys & {'rpt_pnl', 'rpt_customer_rev'}),
-    'reports_ops': lambda keys: any(REPORT_CATEGORY[k] == 'ops' for k in keys),
+    'reports_ops': lambda keys: any(REPORT_CATEGORY.get(k) == 'ops' for k in keys),
+    'settings': lambda keys: bool(keys & set(CFG_KEYS)),   # vào được trang Cài đặt: xem được ít nhất một tab
 }
 # Khoá phân hệ báo cáo cũ (trước khi tách từng báo cáo) -> các báo cáo tương ứng; dữ liệu đã lưu theo khoá cũ vẫn đọc được
 LEGACY_EXPAND = {
@@ -69,8 +79,12 @@ MODULES = [
     ('hr', 'Nhân sự', 'Hồ sơ nhân viên (CCCD, ngân hàng, địa chỉ), hợp đồng lao động', ['view', 'create', 'edit', 'delete', 'export']),
     ('payroll', 'Bảng lương', 'Kỳ lương, phiếu lương, cấu hình lương và khấu trừ', ['view', 'create', 'edit', 'delete', 'approve', 'export']),
     *[(f'rpt_{k}', f'Báo cáo · {label}', desc, ['view', 'export']) for k, label, desc, _c in REPORTS],
-    ('settings', 'Cài đặt', 'Hiện menu và mở được trang Cài đặt & Danh mục (thao tác trong từng danh mục theo dòng Danh mục)', ['view']),
-    ('master_data', 'Danh mục', 'Cảng, kho, tuyến, đơn giá, loại chi phí, đối tác', ['view', 'create', 'edit', 'delete', 'export']),
+    ('master_data', 'Danh mục (đọc)', 'Chọn khách hàng, địa điểm, xe, loại chi phí... trong các biểu mẫu (chỉ đọc; sửa danh mục theo các dòng Cài đặt bên dưới)', ['view']),
+    ('cfg_company', 'Cài đặt · Khai báo ban đầu', 'Tab Khai báo ban đầu: thông tin công ty, mã số thuế, tham số hệ thống', ['view', 'edit']),
+    ('cfg_finance', 'Cài đặt · Tài chính & Quản trị', 'Số dư đầu kỳ, khoản mục chi phí, biểu giá lương tài xế, phụ cấp', ['view', 'create', 'edit', 'delete', 'export']),
+    ('cfg_partners', 'Cài đặt · Khách hàng & Đối tác', 'Khách hàng, biểu giá cước, nhà thầu phụ 3PL', ['view', 'create', 'edit', 'delete', 'export']),
+    ('cfg_network', 'Cài đặt · Mạng lưới & Địa điểm', 'Cảng, kho, bãi, tuyến, hãng tàu', ['view', 'create', 'edit', 'delete', 'export']),
+    ('cfg_fleet', 'Cài đặt · Phương tiện & Thiết bị', 'Đầu kéo, rơ-moóc, loại container', ['view', 'create', 'edit', 'delete', 'export']),
     ('admin', 'Quản trị hệ thống', 'Phân quyền, tài khoản người dùng, thông tin công ty', ['view', 'edit']),
 ]
 MODULE_KEYS = [m[0] for m in MODULES]
@@ -103,16 +117,16 @@ GROUPS = [
     ('director', 'Giám đốc', 'Ban Giám đốc: xem và duyệt mọi phân hệ, phân quyền', 'ph-crown',
      _m(**{k: ALL for k in MODULE_KEYS})),
     ('sales', 'Kinh doanh', 'Báo giá, booking, khách hàng; theo dõi chuyến của khách', 'ph-handshake',
-     _m(dashboard='view', sales=ALL, dispatch=VIEW, customs='view', master_data='view create edit export',
+     _m(dashboard='view', sales=ALL, dispatch=VIEW, customs='view', master_data='view',
         rpt_crm_quotations=VIEW, rpt_active_bookings=VIEW, rpt_wip_trips=VIEW)),
     ('hr', 'Nhân sự', 'Hồ sơ nhân viên, hợp đồng, chấm công, bảng lương', 'ph-users-three',
      _m(dashboard='view', hr=ALL, payroll=ALL, master_data='view')),
     ('accounting', 'Kế toán', 'Sổ quỹ, quyết toán, tạm ứng, sổ sách, lương, báo cáo tài chính', 'ph-calculator',
      _m(dashboard='view', accounting=ALL, advances=ALL, ledger=ALL, payroll=ALL, hr='view export', reports_fin=VIEW,
-        reports_ops=VIEW, sales=VIEW, dispatch=VIEW, master_data='view create edit delete export', settings='view', rpt_crm_quotations=VIEW, rpt_active_bookings=VIEW)),
+        reports_ops=VIEW, sales=VIEW, dispatch=VIEW, master_data='view', cfg_company='view', cfg_finance=ALL, cfg_partners=ALL, cfg_network=ALL, cfg_fleet=ALL, rpt_crm_quotations=VIEW, rpt_active_bookings=VIEW)),
     ('dispatch', 'Điều vận', 'Chuyến xe, lệnh điều động, tạm ứng tài xế, quỹ điều vận', 'ph-truck',
      _m(dashboard='view', dispatch=ALL, advances=ALL, fleet='view create edit export', customs='view', sales=VIEW,
-        reports_ops=VIEW, master_data='view create edit delete export', settings='view', rpt_crm_quotations=VIEW, rpt_active_bookings=VIEW, rpt_driver_advances=VIEW)),
+        reports_ops=VIEW, master_data='view', cfg_company='view', cfg_finance=ALL, cfg_partners=ALL, cfg_network=ALL, cfg_fleet=ALL, rpt_crm_quotations=VIEW, rpt_active_bookings=VIEW, rpt_driver_advances=VIEW)),
     ('operations', 'Vận hành', 'Đội xe, rơ-moóc, bảo dưỡng, đăng kiểm, bãi xe', 'ph-wrench',
      _m(dashboard='view', fleet=ALL, dispatch=VIEW, reports_ops=VIEW, master_data='view')),
     ('customs', 'Hải quan', 'Tờ khai VNACCS, phân luồng, thông quan', 'ph-stamp',
@@ -169,10 +183,10 @@ POSITIONS = {
     'LEAD_ADMIN_ACC': ('accounting', {}, {}),
     'ACCOUNTANT': ('accounting', {}, {}),
     'STAFF_ADMIN_ACC': ('accounting', {}, _m(accounting='delete approve', advances='delete approve', ledger='edit',
-                                              payroll='delete approve', master_data='delete')),
+                                              payroll='delete approve', cfg_finance='delete', cfg_partners='delete', cfg_network='delete', cfg_fleet='delete')),
     'LEAD_DISPATCH': ('dispatch', {}, {}),
     'DISPATCHER': ('dispatch', {}, {}),
-    'DISPATCH_ASST': ('dispatch', {}, _m(dispatch='delete approve', advances='delete approve', master_data='delete')),
+    'DISPATCH_ASST': ('dispatch', {}, _m(dispatch='delete approve', advances='delete approve', cfg_finance='delete', cfg_partners='delete', cfg_network='delete', cfg_fleet='delete')),
     'DRIVER': ('', _m(dashboard='view', master_data='view'), {}),
     'LEAD_SALES': ('sales', {}, {}),
     'SALESMAN': ('sales', {}, _m(sales='approve')),
@@ -262,10 +276,9 @@ def _from_set(pairs):
 
 
 def _with_derived(grants):
-    keys = {m for m, acts in grants.items() if m in REPORT_CATEGORY and 'view' in acts}
-    exported = {m for m, acts in grants.items() if m in REPORT_CATEGORY and 'export' in acts}
     for name, test in DERIVED_MODULES.items():
-        acts = (['view'] if test(keys) else []) + (['export'] if test(exported) else [])
+        acts = [act for act in ('view', 'export')
+                if test({m for m, acts_ in grants.items() if m in REPORT_CATEGORY or m in CFG_KEYS if act in acts_})]
         if acts:
             grants[name] = acts
     return grants

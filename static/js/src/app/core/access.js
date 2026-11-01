@@ -30,8 +30,12 @@
         [/^\s*(event\.stopPropagation\(\);\s*)?(confirmDelete\w*|delete\w*|remove(Trip|Vehicle|Trailer|Employee|Customer|Booking|Quotation|Voucher|Declaration)\w*)\s*\(/, 'delete'],
         [/^\s*(export\w*|download\w*Excel\w*)\s*\(/, 'export'],
     ];
+    // Nút Sửa trong bảng Cài đặt (tab Công ty dùng quyền Sửa; tab khác cũng cần Sửa)
+    const SETTINGS_EDIT_RULE = /^\s*(openEditMasterDataModal|openSubcontractorFleetModal)\s*\(/;
 
     function moduleOf(el) {
+        // Trang Cài đặt: quyền theo tab đang mở (cfg_*)
+        if (el.closest('#view-cai-dat') && typeof window.mdActiveModule === 'function') return window.mdActiveModule();
         const sub = el.closest('[id^="subtab-"]');
         if (sub && SUBTAB_MODULE[sub.id]) return SUBTAB_MODULE[sub.id];
         const view = el.closest('[id^="view-"]');
@@ -47,6 +51,10 @@
         (root || document).querySelectorAll('button[onclick], a[onclick]').forEach(el => {
             if (el.closest('form, [id^="modal-"], #m-sheet, [data-access-keep]')) return;
             const on = el.getAttribute('onclick') || '';
+            if (SETTINGS_EDIT_RULE.test(on) && el.closest('#view-cai-dat')) {
+                if (!canAccess(moduleOf(el), 'edit')) el.classList.add('acc-hidden');
+                return;
+            }
             const rule = RULES.find(([re]) => re.test(on));
             if (!rule) return;
             const mod = moduleOf(el);

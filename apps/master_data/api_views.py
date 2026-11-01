@@ -2420,3 +2420,37 @@ for _cls in (DriverSalaryTariffListCreateAPIView, DriverSalaryTariffDetailAPIVie
 for _cls in (ContainerTypeListCreateAPIView, ContainerTypeDetailAPIView, ExpenseItemListCreateAPIView, ExpenseItemDetailAPIView,
              ShippingLineListCreateAPIView, ShippingLineDetailAPIView):
     _cls.permission_classes = [CanManageMasterData, SharedConfigWritePermission]
+
+
+# --- Phân quyền theo từng tab Cài đặt (xem core/access.py: cfg_*) ---
+from core.access import CFG_TAB_MODULE  # noqa: E402
+
+_VIEW_TAB = {
+    LocationListCreateAPIView: 'locations', LocationDetailAPIView: 'locations',
+    ShippingLineListCreateAPIView: 'shipping_lines', ShippingLineDetailAPIView: 'shipping_lines',
+    ContainerTypeListCreateAPIView: 'containers', ContainerTypeDetailAPIView: 'containers',
+    ExpenseItemListCreateAPIView: 'expenses', ExpenseItemDetailAPIView: 'expenses',
+    OpeningBalanceListCreateAPIView: 'opening_balance', OpeningBalanceDetailAPIView: 'opening_balance',
+    DriverSalaryTariffListCreateAPIView: 'driver_tariffs', DriverSalaryTariffDetailAPIView: 'driver_tariffs',
+    DriverAllowanceListCreateAPIView: 'allowances', DriverAllowanceDetailAPIView: 'allowances',
+    CustomerMasterListCreateAPIView: 'customers', CustomerMasterDetailAPIView: 'customers',
+    TariffMasterListCreateAPIView: 'tariffs', TariffMasterDetailAPIView: 'tariffs',
+    SubcontractorListCreateAPIView: 'subcontractors', SubcontractorDetailAPIView: 'subcontractors',
+    SubcontractorNextCodeAPIView: 'subcontractors', SubcontractorFleetAPIView: 'subcontractors',
+    SubcontractorVehicleListCreateAPIView: 'subcontractors', SubcontractorVehicleDetailAPIView: 'subcontractors',
+    SubcontractorDriverListCreateAPIView: 'subcontractors', SubcontractorDriverDetailAPIView: 'subcontractors',
+    VehicleMasterListCreateAPIView: 'vehicles', VehicleMasterDetailAPIView: 'vehicles',
+    TrailerMasterListCreateAPIView: 'trailers', TrailerMasterDetailAPIView: 'trailers',
+    CompanyProfileAPIView: 'company',
+}
+for _cls, _tab in _VIEW_TAB.items():
+    _cls.cfg_module = CFG_TAB_MODULE[_tab]
+
+
+def _catalog_module(request):
+    catalog = (request.data.get('catalog') if request.method == 'POST' else request.GET.get('catalog')) or ''
+    return CFG_TAB_MODULE.get(str(catalog).strip().lower())
+
+
+for _cls in (MasterDataExportTemplateAPIView, MasterDataExportDataAPIView, MasterDataImportAPIView):
+    _cls.cfg_module_for = staticmethod(lambda request: _catalog_module(request))
