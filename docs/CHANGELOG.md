@@ -2,6 +2,30 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.22] - 2026-11-01 (Tinh Gọn Line KPI Thẻ Trạng Thái & Tích Hợp Ô Sort / Search Đa Năng Tra Cứu Số Xe, Số Chuyến, Khách Hàng, Vendor)
+
+### 1. Tinh Gọn Line Chỉ Số Thẻ Trạng Thái (Sale & Booking, Dispatch):
+- **Thu Gọn Line KPI Chân Thẻ:**
+  * Giảm độ cao và padding dải chân thẻ xuống `py-0.5 px-1.5`, viền mỏng hairline `border-slate-100/90`.
+  * Thay thế ký tự pipe `|` to dày bằng vách ngăn hairline tinh tế `<span class="h-2 w-px bg-slate-200"></span>`.
+  * Tinh chỉnh typography cân đối: Số liệu `font-black text-[10px] 2xl:text-[10.5px] tabular-nums`, nhãn viết hoa thanh mảnh `text-[8px] 2xl:text-[8.5px] font-bold text-slate-400`.
+- **Làm Mảnh Đường Line Thẻ Chỉ Số Tổng Quan:**
+  * Giảm độ dày đường viền màu nhận diện bên trái (`border-l-4` ➔ `border-l-2`) trên toàn bộ 5 thẻ tổng quan tại cả phân hệ Kinh Doanh và Điều Vận, mang lại cảm giác thoáng đãng, tinh tế.
+
+### 2. Tích Hợp Ô Sort / Search Đa Năng (Tìm Kiếm Số Xe, Số Chuyến, Khách Hàng, Vendor):
+- **Phân Hệ Kinh Doanh / Sale & Booking (`view_sales.html`):**
+  * **Subtab 1 (Báo Giá):** Bổ sung dropdown Sắp xếp nhanh (`filter-quote-sort`) hỗ trợ sort theo mã báo giá, khách hàng, ngày tạo, doanh thu, đơn giá; nâng cấp ô tìm kiếm đa năng (`filter-quote-search`).
+  * **Subtab 2 (Booking):** Bổ sung dropdown Sắp xếp nhanh (`filter-bk-sort`) theo mã đơn, khách hàng, lịch đóng, tiến độ, giá cước; nâng cấp ô tìm kiếm (`filter-bk-search`) hỗ trợ gõ tìm tức thì theo số xe, số chuyến, khách hàng, vendor / thầu phụ, số booking.
+  * **Backend API (`apps/dispatch/api_views/sales.py`):** Tổng hợp dữ liệu `vehicles`, `trip_codes`, `vendors`, `drivers` từ danh sách chuyến xe liên kết vào từng đơn booking để phục vụ tra cứu full-text tức thì.
+- **Phân Hệ Điều Vận (`view_dispatch.html`, `trip-list.js`):**
+  * Bổ sung dropdown Sắp xếp nhanh (`filter-dispatch-sort`) theo mã chuyến, biển số xe, khách hàng, vendor / nhà xe thầu phụ.
+  * Mở rộng phạm vi tìm kiếm (`filter-dispatch-search`): Tích hợp tìm kiếm toàn diện theo biển số xe (`vehicle`), mã chuyến (`trip_id`), khách hàng (`customer`), tên thầu phụ / nhà xe (`subcontractor_name`, `carrier_name`), tài xế thầu phụ (`subcontractor_driver_name`), số cont, số booking.
+
+### 3. Kiểm Thử Thị Giác (Playwright):
+- Xác thực thành công giao diện thực tế tại artifacts: `12_sales_subtab1_final.png`, `12_sales_cards_closeup_final.png`, `13_sales_subtab2_final.png`, `13_booking_cards_closeup_final.png`, `14_dispatch_final.png`, `15_dispatch_search_51C.png`.
+
+---
+
 ## [v4.7.21] - 2026-11-01 (Chuẩn Hóa Typography & Giao Diện Production Phân Hệ Kinh Doanh / Booking)
 
 ### 1. Phân Hệ Kinh Doanh / Sale & Booking (`templates/views/view_sales.html`):

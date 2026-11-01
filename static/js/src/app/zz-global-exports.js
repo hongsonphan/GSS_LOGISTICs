@@ -306,3 +306,7 @@ window.setBookingLoadingTime = typeof setBookingLoadingTime !== 'undefined' ? se
 window.setFullpageBookingClosingTime = typeof setFullpageBookingClosingTime !== 'undefined' ? setFullpageBookingClosingTime : undefined;
 window.setFullpageBookingSiTime = typeof setFullpageBookingSiTime !== 'undefined' ? setFullpageBookingSiTime : undefined;
 window.setFullpageBookingLoadingTime = typeof setFullpageBookingLoadingTime !== 'undefined' ? setFullpageBookingLoadingTime : undefined;
+
+window.handleBookingSortChange = typeof handleBookingSortChange !== 'undefined' ? handleBookingSortChange : undefined;
+window.handleQuoteSortChange = typeof handleQuoteSortChange !== 'undefined' ? handleQuoteSortChange : undefined;
+window.handleDispatchSortChange = typeof handleDispatchSortChange !== 'undefined' ? handleDispatchSortChange : undefined;

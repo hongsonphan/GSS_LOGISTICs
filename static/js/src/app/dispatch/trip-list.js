@@ -179,6 +179,7 @@ function applyDispatchFilters() {
         if (filterSearch) {
             const combinedText = [
                 trip.id,
+                trip.trip_id,
                 trip.container,
                 trip.container_2,
                 trip.booking,
@@ -189,6 +190,12 @@ function applyDispatchFilters() {
                 trip.warehouse,
                 trip.driver,
                 trip.vehicle,
+                trip.tractor,
+                trip.trailer,
+                trip.subcontractor_name,
+                trip.carrier_name,
+                trip.subcontractor_driver_name,
+                trip.vendor,
                 trip.pickup,
                 trip.dropoff
             ].filter(Boolean).join(' ').toLowerCase();
@@ -212,9 +219,26 @@ function applyDispatchFilters() {
             let valB = b[dispatchSortColumn];
 
             if (dispatchSortColumn === 'trip_id') {
-                const idA = (a.id || '').toString();
-                const idB = (b.id || '').toString();
+                const idA = (a.id || a.trip_id || '').toString();
+                const idB = (b.id || b.trip_id || '').toString();
                 const cmp = idA.localeCompare(idB, 'vi', { numeric: true });
+                return dispatchSortDirection === 'asc' ? cmp : -cmp;
+            }
+
+            if (dispatchSortColumn === 'vehicle') {
+                const cmp = (a.vehicle || '').toString().localeCompare((b.vehicle || '').toString(), 'vi');
+                return dispatchSortDirection === 'asc' ? cmp : -cmp;
+            }
+
+            if (dispatchSortColumn === 'customer') {
+                const cmp = (a.customer || '').toString().localeCompare((b.customer || '').toString(), 'vi');
+                return dispatchSortDirection === 'asc' ? cmp : -cmp;
+            }
+
+            if (dispatchSortColumn === 'subcontractor_name') {
+                const subA = (a.subcontractor_name || a.carrier_name || '').toString();
+                const subB = (b.subcontractor_name || b.carrier_name || '').toString();
+                const cmp = subA.localeCompare(subB, 'vi');
                 return dispatchSortDirection === 'asc' ? cmp : -cmp;
             }
 
@@ -580,3 +604,27 @@ async function loadTripsData() {
         console.error('Error loading trips data:', err);
     }
 }
+
+function handleDispatchSortChange(sortVal) {
+    if (!sortVal) {
+        dispatchSortColumn = 'trip_id';
+        dispatchSortDirection = 'desc';
+    } else if (sortVal === 'trip_id_asc') {
+        dispatchSortColumn = 'trip_id';
+        dispatchSortDirection = 'asc';
+    } else if (sortVal === 'trip_id_desc') {
+        dispatchSortColumn = 'trip_id';
+        dispatchSortDirection = 'desc';
+    } else if (sortVal === 'vehicle_asc') {
+        dispatchSortColumn = 'vehicle';
+        dispatchSortDirection = 'asc';
+    } else if (sortVal === 'customer_asc') {
+        dispatchSortColumn = 'customer';
+        dispatchSortDirection = 'asc';
+    } else if (sortVal === 'subcontractor_asc') {
+        dispatchSortColumn = 'subcontractor_name';
+        dispatchSortDirection = 'asc';
+    }
+    applyDispatchFilters();
+}
+window.handleDispatchSortChange = handleDispatchSortChange;

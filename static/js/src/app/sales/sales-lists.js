@@ -217,7 +217,11 @@ function applyBookingFilters() {
                 b.pickup,
                 b.delivery,
                 b.dropoff,
-                b.commodity
+                b.commodity,
+                b.vehicles,
+                b.trip_codes,
+                b.vendors,
+                b.drivers
             ].filter(Boolean).join(' ').toLowerCase();
 
             if (!combinedText.includes(filterSearch)) return false;
@@ -996,3 +1000,63 @@ function renderQuotationsTable(quotations) {
         });
     }
 }
+
+function handleBookingSortChange(sortVal) {
+    if (!sortVal) {
+        bookingSortColumn = 'booking_code';
+        bookingSortDirection = 'desc';
+    } else if (sortVal === 'code_asc') {
+        bookingSortColumn = 'booking_code';
+        bookingSortDirection = 'asc';
+    } else if (sortVal === 'code_desc') {
+        bookingSortColumn = 'booking_code';
+        bookingSortDirection = 'desc';
+    } else if (sortVal === 'customer_asc') {
+        bookingSortColumn = 'customer';
+        bookingSortDirection = 'asc';
+    } else if (sortVal === 'loading_date_desc') {
+        bookingSortColumn = 'loading_date';
+        bookingSortDirection = 'desc';
+    } else if (sortVal === 'loading_date_asc') {
+        bookingSortColumn = 'loading_date';
+        bookingSortDirection = 'asc';
+    } else if (sortVal === 'progress_desc') {
+        bookingSortColumn = 'progress_percent';
+        bookingSortDirection = 'desc';
+    } else if (sortVal === 'price_desc') {
+        bookingSortColumn = 'price';
+        bookingSortDirection = 'desc';
+    }
+    applyBookingFilters();
+}
+window.handleBookingSortChange = handleBookingSortChange;
+
+function handleQuoteSortChange(sortVal) {
+    if (!sortVal) {
+        quoteSortColumn = 'created_at';
+        quoteSortDirection = 'desc';
+    } else if (sortVal === 'code_asc') {
+        quoteSortColumn = 'code';
+        quoteSortDirection = 'asc';
+    } else if (sortVal === 'code_desc') {
+        quoteSortColumn = 'code';
+        quoteSortDirection = 'desc';
+    } else if (sortVal === 'customer_asc') {
+        quoteSortColumn = 'customer';
+        quoteSortDirection = 'asc';
+    } else if (sortVal === 'created_at_desc') {
+        quoteSortColumn = 'created_at';
+        quoteSortDirection = 'desc';
+    } else if (sortVal === 'created_at_asc') {
+        quoteSortColumn = 'created_at';
+        quoteSortDirection = 'asc';
+    } else if (sortVal === 'revenue_desc') {
+        quoteSortColumn = 'expected_revenue';
+        quoteSortDirection = 'desc';
+    } else if (sortVal === 'price_desc') {
+        quoteSortColumn = 'unit_price';
+        quoteSortDirection = 'desc';
+    }
+    applyQuoteFilters();
+}
+window.handleQuoteSortChange = handleQuoteSortChange;

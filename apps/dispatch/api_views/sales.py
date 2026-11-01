@@ -321,15 +321,23 @@ class SalesAPIView(APIView):
                     is_urgent = True
                     urgent_reason = 'Chờ điều xe'
 
-            trips_list = [t for t in b.trips.all() if not t.is_deleted]
+            trips_list = [t for t in b.trips.select_related('vehicle', 'driver', 'subcontractor').all() if not t.is_deleted]
             has_drop_hook = any(t.is_split_trip for t in trips_list)
             drop_hook_count = sum(1 for t in trips_list if t.is_split_trip)
+            vehicles_str = ' '.join(set([t.vehicle.plate_number for t in trips_list if t.vehicle and t.vehicle.plate_number]))
+            trip_codes_str = ' '.join([t.trip_id or f"TVL-{t.id}" for t in trips_list])
+            vendors_str = ' '.join(set([t.subcontractor.name for t in trips_list if t.subcontractor and t.subcontractor.name] + [t.carrier_name for t in trips_list if t.carrier_name]))
+            drivers_str = ' '.join(set([t.driver.full_name for t in trips_list if t.driver and t.driver.full_name] + [t.subcontractor_driver_name for t in trips_list if t.subcontractor_driver_name]))
 
             b_results.append({
                 'id': b.id,
                 'booking_code': b.booking_code,
                 'customer': b.customer.name,
                 'customer_id': b.customer.id,
+                'vehicles': vehicles_str,
+                'trip_codes': trip_codes_str,
+                'vendors': vendors_str,
+                'drivers': drivers_str,
                 'booking_type': b.booking_type,
                 'booking_type_display': b.get_booking_type_display(),
                 'booking_number': b.booking_number,

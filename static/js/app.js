@@ -7556,6 +7556,7 @@ function applyDispatchFilters() {
         if (filterSearch) {
             const combinedText = [
                 trip.id,
+                trip.trip_id,
                 trip.container,
                 trip.container_2,
                 trip.booking,
@@ -7566,6 +7567,12 @@ function applyDispatchFilters() {
                 trip.warehouse,
                 trip.driver,
                 trip.vehicle,
+                trip.tractor,
+                trip.trailer,
+                trip.subcontractor_name,
+                trip.carrier_name,
+                trip.subcontractor_driver_name,
+                trip.vendor,
                 trip.pickup,
                 trip.dropoff
             ].filter(Boolean).join(' ').toLowerCase();
@@ -7589,9 +7596,26 @@ function applyDispatchFilters() {
             let valB = b[dispatchSortColumn];
 
             if (dispatchSortColumn === 'trip_id') {
-                const idA = (a.id || '').toString();
-                const idB = (b.id || '').toString();
+                const idA = (a.id || a.trip_id || '').toString();
+                const idB = (b.id || b.trip_id || '').toString();
                 const cmp = idA.localeCompare(idB, 'vi', { numeric: true });
+                return dispatchSortDirection === 'asc' ? cmp : -cmp;
+            }
+
+            if (dispatchSortColumn === 'vehicle') {
+                const cmp = (a.vehicle || '').toString().localeCompare((b.vehicle || '').toString(), 'vi');
+                return dispatchSortDirection === 'asc' ? cmp : -cmp;
+            }
+
+            if (dispatchSortColumn === 'customer') {
+                const cmp = (a.customer || '').toString().localeCompare((b.customer || '').toString(), 'vi');
+                return dispatchSortDirection === 'asc' ? cmp : -cmp;
+            }
+
+            if (dispatchSortColumn === 'subcontractor_name') {
+                const subA = (a.subcontractor_name || a.carrier_name || '').toString();
+                const subB = (b.subcontractor_name || b.carrier_name || '').toString();
+                const cmp = subA.localeCompare(subB, 'vi');
                 return dispatchSortDirection === 'asc' ? cmp : -cmp;
             }
 
@@ -7957,6 +7981,30 @@ async function loadTripsData() {
         console.error('Error loading trips data:', err);
     }
 }
+
+function handleDispatchSortChange(sortVal) {
+    if (!sortVal) {
+        dispatchSortColumn = 'trip_id';
+        dispatchSortDirection = 'desc';
+    } else if (sortVal === 'trip_id_asc') {
+        dispatchSortColumn = 'trip_id';
+        dispatchSortDirection = 'asc';
+    } else if (sortVal === 'trip_id_desc') {
+        dispatchSortColumn = 'trip_id';
+        dispatchSortDirection = 'desc';
+    } else if (sortVal === 'vehicle_asc') {
+        dispatchSortColumn = 'vehicle';
+        dispatchSortDirection = 'asc';
+    } else if (sortVal === 'customer_asc') {
+        dispatchSortColumn = 'customer';
+        dispatchSortDirection = 'asc';
+    } else if (sortVal === 'subcontractor_asc') {
+        dispatchSortColumn = 'subcontractor_name';
+        dispatchSortDirection = 'asc';
+    }
+    applyDispatchFilters();
+}
+window.handleDispatchSortChange = handleDispatchSortChange;
 
 // ---- src/app/dispatch/trip-detail.js ----
 /**
@@ -12948,7 +12996,11 @@ function applyBookingFilters() {
                 b.pickup,
                 b.delivery,
                 b.dropoff,
-                b.commodity
+                b.commodity,
+                b.vehicles,
+                b.trip_codes,
+                b.vendors,
+                b.drivers
             ].filter(Boolean).join(' ').toLowerCase();
 
             if (!combinedText.includes(filterSearch)) return false;
@@ -13727,6 +13779,66 @@ function renderQuotationsTable(quotations) {
         });
     }
 }
+
+function handleBookingSortChange(sortVal) {
+    if (!sortVal) {
+        bookingSortColumn = 'booking_code';
+        bookingSortDirection = 'desc';
+    } else if (sortVal === 'code_asc') {
+        bookingSortColumn = 'booking_code';
+        bookingSortDirection = 'asc';
+    } else if (sortVal === 'code_desc') {
+        bookingSortColumn = 'booking_code';
+        bookingSortDirection = 'desc';
+    } else if (sortVal === 'customer_asc') {
+        bookingSortColumn = 'customer';
+        bookingSortDirection = 'asc';
+    } else if (sortVal === 'loading_date_desc') {
+        bookingSortColumn = 'loading_date';
+        bookingSortDirection = 'desc';
+    } else if (sortVal === 'loading_date_asc') {
+        bookingSortColumn = 'loading_date';
+        bookingSortDirection = 'asc';
+    } else if (sortVal === 'progress_desc') {
+        bookingSortColumn = 'progress_percent';
+        bookingSortDirection = 'desc';
+    } else if (sortVal === 'price_desc') {
+        bookingSortColumn = 'price';
+        bookingSortDirection = 'desc';
+    }
+    applyBookingFilters();
+}
+window.handleBookingSortChange = handleBookingSortChange;
+
+function handleQuoteSortChange(sortVal) {
+    if (!sortVal) {
+        quoteSortColumn = 'created_at';
+        quoteSortDirection = 'desc';
+    } else if (sortVal === 'code_asc') {
+        quoteSortColumn = 'code';
+        quoteSortDirection = 'asc';
+    } else if (sortVal === 'code_desc') {
+        quoteSortColumn = 'code';
+        quoteSortDirection = 'desc';
+    } else if (sortVal === 'customer_asc') {
+        quoteSortColumn = 'customer';
+        quoteSortDirection = 'asc';
+    } else if (sortVal === 'created_at_desc') {
+        quoteSortColumn = 'created_at';
+        quoteSortDirection = 'desc';
+    } else if (sortVal === 'created_at_asc') {
+        quoteSortColumn = 'created_at';
+        quoteSortDirection = 'asc';
+    } else if (sortVal === 'revenue_desc') {
+        quoteSortColumn = 'expected_revenue';
+        quoteSortDirection = 'desc';
+    } else if (sortVal === 'price_desc') {
+        quoteSortColumn = 'unit_price';
+        quoteSortDirection = 'desc';
+    }
+    applyQuoteFilters();
+}
+window.handleQuoteSortChange = handleQuoteSortChange;
 
 // ---- src/app/sales/quotation-modal.js ----
 // --- 8. SALE & BÁO GIÁ CRM & BOOKINGS CRUD ---
@@ -39861,6 +39973,10 @@ window.setBookingLoadingTime = typeof setBookingLoadingTime !== 'undefined' ? se
 window.setFullpageBookingClosingTime = typeof setFullpageBookingClosingTime !== 'undefined' ? setFullpageBookingClosingTime : undefined;
 window.setFullpageBookingSiTime = typeof setFullpageBookingSiTime !== 'undefined' ? setFullpageBookingSiTime : undefined;
 window.setFullpageBookingLoadingTime = typeof setFullpageBookingLoadingTime !== 'undefined' ? setFullpageBookingLoadingTime : undefined;
+
+window.handleBookingSortChange = typeof handleBookingSortChange !== 'undefined' ? handleBookingSortChange : undefined;
+window.handleQuoteSortChange = typeof handleQuoteSortChange !== 'undefined' ? handleQuoteSortChange : undefined;
+window.handleDispatchSortChange = typeof handleDispatchSortChange !== 'undefined' ? handleDispatchSortChange : undefined;
 
 // ---- src/app/collaboration/shared.js ----
 function formatNewsDate(dateStr) {
