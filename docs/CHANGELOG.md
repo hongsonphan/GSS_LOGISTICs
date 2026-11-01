@@ -2,6 +2,53 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.23] - 2026-11-01 (Rà Soát & Xóa Sạch Dữ Liệu Phát Sinh Nghiệp Vụ - Bảo Toàn Nguyên Vẹn Danh Mục Gốc Hệ Thống)
+
+### 1. Dọn Dẹp & Xóa Toàn Diện Dữ Liệu Phát Sinh (Operational / Transactional Data):
+- **Phân Hệ Điều Độ & Chuyến Xe (`dispatch`, `documents`, `exceptions`):**
+  * Xóa sạch 112 chuyến xe (`DispatchTrip`), 135 container (`TripContainer`), 237 mốc hành trình (`TripTimelineItem`), chứng từ chuyến (`TripDocument`), sự cố vận chuyển (`TripException`).
+- **Phân Hệ Bán Hàng & Đơn Hàng (`customers`):**
+  * Xóa sạch 95 đơn đặt hàng booking (`BookingOrder`), chứng từ đính kèm (`BookingDocument`), 10 báo giá thương mại (`Quotation`), 21 chi tiết báo giá (`QuotationItem`).
+- **Phân Hệ Tài Chính, Kế Toán & Thanh Toán (`billing`, `ledger`):**
+  * Xóa sạch 240 khoản chi phí chuyến (`TripExpense`), 94 khoản tạm ứng tài xế (`DriverTripAdvance`), 2 quỹ hoàn ứng (`DispatcherAdvanceFund`), 29 phiếu thu/chi tiền mặt (`CashTransaction`), 3 hóa đơn bán hàng (`CustomerInvoice`), 1 debit note (`DebitNote`), 1 quyết toán thầu phụ (`SubcontractorSettlement`), 2 quyết toán tài xế (`DriverPayrollSettlement`), các bút toán sổ cái phát sinh (`JournalEntry`, `JournalLine`).
+  * Đặt lại toàn bộ số dư nợ tạm ứng tài xế (`Employee.current_advance`) về chính xác 0 đ.
+- **Phân Hệ Tương Tác, Việc & Tin Tức Nội Bộ (`collaboration`):**
+  * Xóa sạch toàn bộ tin nhắn chat (`ChatMessage`), phòng chat thử nghiệm (`ChatRoom`), người tham gia (`ChatParticipant`), tệp đính kèm (`ChatAttachment`), thông báo (`Notification`).
+  * Xóa 19 công việc phát sinh (`OfficeTask`), danh sách kiểm tra việc (`TaskChecklist`), bình luận việc (`TaskComment`), log công việc (`TaskActivityLog`).
+  * Xóa bài đăng tin tức test (`CompanyPost`), tệp tin bản tin (`PostAttachment`), bình luận bản tin (`PostComment`), trạng thái đọc tin (`PostReadStatus`).
+- **Phân Hệ Nhân Sự & Lương Phát Sinh (`personnel`):**
+  * Xóa 50 phiếu lương kỳ thử nghiệm (`PayrollSlip`), 84 bảng tổng hợp công tháng (`MonthlyAttendanceSummary`), dữ liệu chấm công ngày (`DailyAttendance`), 4 kỳ tính lương (`PayrollPeriod`).
+- **Nhật Ký Vận Hành & Bảo Mật (`core`):**
+  * Xóa sạch 80 tracking sự kiện (`TrackingEventLog`), 12 log đăng nhập (`LoginEvent`), log thao tác (`AuditLog`).
+- **Dọn Dẹp Kho Lưu Trữ Tệp Đính Kèm Rác (`media/`):**
+  * Xóa sạch 3.507 tệp đính kèm rác phát sinh trong các thư mục `media/booking_files/`, `media/documents/`, `media/receipts/`, `media/incidents/`, `media/office_tasks/`, `media/company_news/`, `media/chat_attachments/`, `media/trip_docs/`.
+  * Bảo lưu tuyệt đối logo hệ thống `media/trienvo_logo.png` và hồ sơ nhân sự `media/personnel/`.
+
+### 2. Bảo Toàn Nguyên Vẹn 100% Danh Mục Gốc (Master Data / Catalogs):
+- **Kho bãi, Cảng & Địa điểm (`master_data.Location`):** 60 địa điểm, cảng biển, depot container, kho ICD.
+- **Loại Container (`master_data.ContainerType`):** 8 chủng loại cont tiêu chuẩn.
+- **Khoản mục chi phí (`master_data.ExpenseItem`):** 9 danh mục chi phí định mức.
+- **Biểu cước lương tài xế theo tuyến (`master_data.DriverSalaryTariff`):** 36 tuyến cước chuẩn.
+- **Định mức phụ cấp tài xế (`master_data.DriverAllowanceCatalog`):** 8 danh mục phụ cấp.
+- **Hãng tàu quốc tế & nội địa (`master_data.ShippingLine`):** 11 hãng tàu.
+- **Nhà xe đối tác & Thầu phụ (`master_data.Subcontractor`, `Partner`):** 4 thầu phụ, 34 đối tác.
+- **Số dư ban đầu (`master_data.OpeningBalance`):** 7 số dư định mức tài chính, quỹ tiền mặt và tài khoản ngân hàng.
+- **Hồ sơ thông tin doanh nghiệp (`master_data.CompanyProfile`, `core.Company`):** Đầy đủ thông tin pháp nhân.
+- **Đội xe & Rơ moóc (`fleet.Vehicle`, `fleet.Trailer`):** 12 xe đầu kéo/xe tải, 10 rơ-moóc.
+- **Hồ sơ nhân sự (`personnel.Employee`, `EmployeeDependent`):** 21 nhân sự, 13 người phụ thuộc.
+- **Hợp đồng lao động & Phụ lục (`personnel.LaborContract`, `ContractAppendix`):** 29 hợp đồng, 12 phụ lục.
+- **Chính sách nhân sự, Biểu thuế, Bảng lương (`personnel`):** Toàn bộ chính sách lương, tỷ lệ BHXH, biểu thuế TNCN, nhóm phụ cấp, mã chấm công.
+- **Danh mục Khách hàng & Tuyến cước khách hàng (`customers.Customer`, `RouteTariff`):** 30 khách hàng, 9 tuyến biểu cước.
+- **Phân quyền, Tài khoản & Nhóm quyền (`auth.User`, `core.RoleAccess`, `UserAccessOverride`):** Giữ nguyên vẹn.
+- **Danh mục tin bài (`collaboration.PostCategory`):** 7 danh mục tin tức.
+
+### 3. Công Cụ Quản Trị & Cơ Chế Đồng Bộ Triển Khai:
+- **Lệnh Quản Trị CLI:** Bổ sung `python manage.py purge_operational_data [--confirm] [--no-clean-media]` hỗ trợ cả chế độ xem trước (Dry-run) và thực thi an toàn trong giao dịch nguyên tử (`transaction.atomic()`).
+- **Data Migration Tự Động:** Tích hợp `core.0010_purge_test_operational_data` đảm bảo khi triển khai lên VPS thông qua `scripts/deploy_vps.sh` (`python manage.py migrate --noinput`), hệ thống cơ sở dữ liệu trên VPS tự động dọn sạch dữ liệu phát sinh một lần duy nhất mà không ảnh hưởng đến dữ liệu nghiệp vụ thật sau này.
+- **Kiểm Thử & Đảm Bảo Chất Lượng:** 263/263 unit & integration tests hoàn thành xanh 100%. Giao diện người dùng xác thực thực tế không lỗi tại các artifacts: `16_sales_empty_clean.png`, `17_dispatch_empty_clean.png`, `18_accounting_empty_clean.png`, `19_fleet_master_data.png`, `20_hr_master_data.png`, `21_master_data.png`.
+
+---
+
 ## [v4.7.22] - 2026-11-01 (Tinh Gọn Line KPI Thẻ Trạng Thái & Tích Hợp Ô Sort / Search Đa Năng Tra Cứu Số Xe, Số Chuyến, Khách Hàng, Vendor)
 
 ### 1. Tinh Gọn Line Chỉ Số Thẻ Trạng Thái (Sale & Booking, Dispatch):
