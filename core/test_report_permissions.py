@@ -163,3 +163,19 @@ class RealDatabaseGroupTests(TestCase):
         mech = make_user('mech_rg', EmployeeRole.MECHANIC, '0972000004')   # nhóm Vận hành không có trong CSDL
         self.assertTrue(access.allowed(mech, 'fleet', 'create'))
         self.assertFalse(access.allowed(mech, 'accounting', 'view'))
+
+
+class SettingsMenuTests(TestCase):
+    def test_salesman_has_no_settings_by_default_but_accountant_does(self):
+        sales = make_user('sl_set', EmployeeRole.SALESMAN, '0973000001')
+        acc = make_user('kt_set', EmployeeRole.ACCOUNTANT, '0973000002')
+        self.assertFalse(access.allowed(sales, 'settings', 'view'))
+        self.assertTrue(access.allowed(acc, 'settings', 'view'))
+        from core.context_processors import _menu
+        self.assertFalse(_menu(sales)['menu']['settings'])
+        self.assertTrue(_menu(acc)['menu']['settings'])
+
+    def test_granting_settings_shows_the_menu(self):
+        sales = make_user('sl2_set', EmployeeRole.SALESMAN, '0973000003')
+        UserAccessOverride.objects.create(user=sales, company=get_default_company(), allow={'settings': ['view']})
+        self.assertTrue(access.allowed(User.objects.get(pk=sales.pk), 'settings', 'view'))

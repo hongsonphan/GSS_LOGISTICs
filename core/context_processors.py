@@ -38,6 +38,6 @@ def _menu(user):
         'hr': v('hr') or v('payroll'),
         'accounting': v('accounting') or v('advances') or v('ledger'),
         'reports': v('reports_any'),
-        'settings': v('master_data', 'create') or v('master_data', 'edit') or v('admin'),
+        'settings': v('settings') or v('admin'),
         'access_admin': v('admin'),
     }}

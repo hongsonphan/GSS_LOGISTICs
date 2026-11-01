@@ -20,7 +20,7 @@
         'view-kinh-doanh': 'sales', 'view-quotation-detail': 'sales', 'view-booking-detail': 'sales',
         'view-xe-bai': 'fleet', 'view-hai-quan': 'customs', 'view-customs-form': 'customs',
         'view-nhan-su': 'hr', 'view-employee-form': 'hr', 'view-contract-detail': 'hr', 'view-payroll-slip-detail': 'payroll',
-        'view-ke-toan': 'accounting', 'view-cash-voucher-detail': 'accounting', 'view-cai-dat': 'master_data',
+        'view-ke-toan': 'accounting', 'view-cash-voucher-detail': 'accounting', 'view-cai-dat': 'settings',
     };
     const SUBTAB_MODULE = {
         'subtab-acct-driver-advances': 'advances', 'subtab-acct-dispatcher-funds': 'advances', 'subtab-acct-ledger': 'ledger',
