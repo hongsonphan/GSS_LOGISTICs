@@ -2,6 +2,17 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.20] - 2026-11-01 (Tối Ưu Hóa Giao Diện Thẻ KPI Phễu Báo Giá CRM: Hiển Thị 1 Dòng Ngang "# TUYẾN | # CHUYẾN | # BÁO GIÁ")
+
+### 1. Phân Hệ Kinh Doanh / CRM (`templates/views/view_sales.html`):
+- **Tối Ưu Bố Cục Thẻ Trạng Thái Báo Giá:**
+  * Chuyển đổi định dạng hiển thị chân thẻ của 5 trạng thái phễu CRM (Đã Gửi Báo Giá, Đang Đàm Phán, Chờ Ký Hợp Đồng, Đã Ký Hợp Đồng, Từ Chối / Huỷ) từ cấu trúc 2 dòng xếp chồng (nhãn trên - số dưới) sang **1 dòng ngang duy nhất**.
+  * Định dạng mẫu hiển thị chuẩn: `1 TUYẾN | 15 CHUYẾN | 1 BÁO GIÁ` với số lượng in đậm (`font-black`) theo màu nhận diện thương hiệu của từng thẻ, nhãn viết hoa tinh gọn (`text-[10px] 2xl:text-[11px]`).
+  * Giữ nguyên cơ chế tự động co giãn kích thước chữ chống tràn `data-fit-text` (`data-fit-min="8"`) và vách ngăn phân cách thanh lịch (`divide-x divide-slate-200`).
+  * Kiểm thử thị giác tự động bằng Playwright (Chromium), chụp ảnh màn hình kiểm chứng tại `sales_cards_inline.png`.
+
+---
+
 ## [v4.7.19] - 2026-11-01 (Tái Cấu Trúc Toàn Diện Bộ Tài Liệu Kiến Trúc Phần Mềm: Hợp Nhất & Tinh Gọn Hệ Thống Chuẩn Quốc Tế ISO/IEC/IEEE 42010, Arc42 & C4 Model)
 
 ### 1. Tái Cấu Trúc, Hợp Nhất & Tinh Gọn Hệ Thống Tài Liệu Kiến Trúc:
