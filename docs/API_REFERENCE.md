@@ -1,9 +1,11 @@
 # BIM LOGISTICS — API REFERENCE (Tài liệu REST API Đầy Đủ)
+## Interface Architecture & RESTful API Specification
 
-> **Phiên bản:** 1.4.9 | **Cập nhật:** 21/09/2026  
+> **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 01/11/2026  
 > **Base URL:** `http://localhost:8085`  
-> **Format:** JSON  
-> **File nguồn:** [`apps/dispatch/api_views.py`](../apps/dispatch/api_views.py)
+> **Data Format:** JSON / Multipart Form-Data (Tải tệp $\le 5$MB)  
+> **Kiến trúc:** RESTful API • JWT & Session Authentication • Django REST Framework  
+> **Tiêu chuẩn:** OpenAPI 3.0 / Arc42 Section 6 (Runtime & Interface Architecture)
 
 ---
 

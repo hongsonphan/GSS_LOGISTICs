@@ -1,7 +1,7 @@
 # FEATURES.md — BIM LOGISTICS PLATFORM
 ## Tài liệu Đặc tả Tính năng Đầy đủ (Living Document)
 
-> **Phiên bản:** 3.7.2 | **Cập nhật lần cuối:** 2026-10-21
+> **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 2026-11-01
 > **Trạng thái:** Production-Ready
 > **Công ty:** Triền Võ Logistics (BIM Ecosystem)
 > **Mục đích:** Tài liệu này ghi nhận **toàn bộ tính năng đã được lập trình và triển khai** trên nền tảng BIM Logistics, được cập nhật liên tục sau mỗi thay đổi. Dùng để tham khảo trước khi phát triển tính năng mới (tránh viết lại những gì đã có).
@@ -593,7 +593,7 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 
 ## 15. Bảo mật & Phân quyền
 
-*(Chi tiết đầy đủ tại [`SECURITY_AUDIT.md`](file:///E:/Bim_Logistics/SECURITY_AUDIT.md))*
+*(Chi tiết đầy đủ tại [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md))*
 
 | Tiêu chuẩn | Trạng thái |
 |---|---|

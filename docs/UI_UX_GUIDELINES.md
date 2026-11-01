@@ -1,6 +1,6 @@
 # BIM LOGISTICS — NGUYÊN TẮC UI/UX & DESIGN SYSTEM
 
-> **Phiên bản:** 1.4.9 | **Cập nhật:** 21/09/2026  
+> **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 01/11/2026 | **Tiêu chuẩn:** ISO 9241 & BIM Design System  
 > Tài liệu này định nghĩa toàn bộ nguyên tắc thiết kế giao diện, hệ thống màu sắc, typography, component pattern và trải nghiệm người dùng áp dụng xuyên suốt nền tảng BIM Logistics.
 
 ---

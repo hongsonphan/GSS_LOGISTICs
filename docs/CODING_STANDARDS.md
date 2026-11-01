@@ -1,5 +1,6 @@
 # BIM LOGISTICS — CODING STANDARDS & ENGINEERING GUIDELINES
-(QUY CHUẨN LẬP TRÌNH & KIẾN TRÚC HỆ THỐNG BIM_LOGISTICS)
+(QUY CHUẨN LẬP TRÌNH & KIẾN TRÚC HỆ THỐNG BIM_LOGISTICS — ISO 25010 CODE QUALITY)
+> **Phiên bản:** v4.7.19 | **Cập nhật lần cuối:** 01/11/2026 | **Trạng thái:** Active Standard
 
 > **Kế thừa & Tổng hợp từ:** `Bim_ERP-Solutions` (Modular Monolith, Data Safety, Defensive Backend) và `Bim_Consulting` (Business First, State Machine, Caching Signals & Design Tokens).  
 > **Áp dụng cho:** Toàn bộ mã nguồn, cấu hình database, API và giao diện của nền tảng **Bim_Logistics** (TMS, WMS, Fleet & Supply Chain Management).

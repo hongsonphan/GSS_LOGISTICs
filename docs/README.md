@@ -1,41 +1,77 @@
-# TÀI LIỆU DỰ ÁN BIM LOGISTICS (TMS & WMS PLATFORM)
+# TÀI LIỆU KIẾN TRÚC HỆ THỐNG BIM LOGISTICS (TMS & WMS PLATFORM)
+## Architecture Documentation Hub & System Landscape
 
-> **Dự án:** BIM Logistics Platform (Triền Võ Logistics)  
-> **Phiên bản:** 1.8.1 (Production Demo)  
-> **Cập nhật:** 25/09/2026  
-> **Mô hình tài liệu:** Documentation-as-Code
+> **Hệ thống:** BIM Logistics Platform (Triền Võ Logistics)  
+> **Hệ sinh thái:** BIM Ecosystem (BIM ERP Solutions & BIM Consulting)  
+> **Phiên bản:** v4.7.19 (Production)  
+> **Cập nhật lần cuối:** 01/11/2026  
+> **Tiêu chuẩn tài liệu:** ISO/IEC/IEEE 42010, Arc42 Template & C4 Model  
+> **Mô hình quản trị:** Documentation-as-Code
 
-Thư mục `docs/` chứa toàn bộ tài liệu kỹ thuật, đặc tả tính năng, quy chuẩn giao diện UI/UX, sơ đồ kiến trúc và nhật ký phát triển của hệ thống BIM Logistics.
-
----
-
-## 📚 MỤC LỤC TÀI LIỆU TRỌNG YẾU
-
-| Tài liệu | Mô tả chi tiết |
-|---|---|
-| 📌 **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** | **Tổng quan dự án & Cấu trúc mã nguồn**: Mục tiêu cốt lõi, công nghệ stack (Django, Postgres, Tailwind, Chart.js), cấu trúc thư mục toàn diện và các phân hệ. |
-| ✨ **[FEATURES.md](FEATURES.md)** | **Toàn bộ tính năng đã xây dựng**: Đặc tả chi tiết 8 phân hệ (Dashboard BGĐ, Sale & Booking, Điều vận, Chi tiết chuyến xe & P&L 8 mục, Quản lý Kế toán, Xe & Bãi, Nhân sự & Tiền lương, Dịch vụ Hải quan) cùng các cơ chế kỹ thuật. |
-| 🎨 **[UI_UX_GUIDELINES.md](UI_UX_GUIDELINES.md)** | **Nguyên tắc UI/UX & Design System**: Triết lý Field-First, bảng màu BIM Tailwind Tokens, thang đo Typography 7 bậc chuẩn ERP, thư viện component patterns (KPI card, badge, table, modal, toast), responsive layout và quy tắc thao tác hiện trường (2-touch rule). |
-| 🔌 **[API_REFERENCE.md](API_REFERENCE.md)** | **Tài liệu REST API Đầy Đủ**: 14 nhóm endpoints, request payloads mẫu, JSON responses, mã lỗi và cơ chế tự động đồng bộ tài chính Zero Variance. |
-| 🗄️ **[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)** | **Sơ đồ Cơ sở Dữ liệu & ORM Architecture**: Thiết kế models theo chuẩn Modular Monolith, kế thừa TimeStampedModel/SoftDeleteModel, No Hard-Delete, Indexing và Caching Signals. |
-| 🔄 **[OPERATIONAL_WORKFLOW.md](OPERATIONAL_WORKFLOW.md)** | **Quy trình Điều vận & Máy trạng thái 10 Bước**: Chu trình vận hành thực tế từ tiếp nhận lệnh, phát lệnh Zalo/App, lấy cont, giao kho, hoàn tất POD, trả rỗng đến đối soát kế toán. |
-| 💰 **[EXPENSE_LIFECYCLE_BUSINESS_ANALYSIS.md](EXPENSE_LIFECYCLE_BUSINESS_ANALYSIS.md)** | **Phân tích Nghiệp vụ Vòng đời Chi phí Hiện trường**: Luồng kiểm soát hóa đơn điện tử, vé BOT, phí nâng/hạ, cơ chế duyệt chi phí và nguyên tắc khóa sổ kế toán. |
-| 📜 **[CHANGELOG.md](CHANGELOG.md)** | **Nhật ký Thay đổi Phiên bản**: Lịch sử chi tiết từ v1.0.0 đến v1.4.9, ghi nhận từng bugfix, tối ưu hóa giao diện và nâng cấp tính năng. |
-| 🤖 **[AI_CONTEXT.md](AI_CONTEXT.md)** | **Ngữ cảnh Kỹ thuật cho AI Agent**: Quy định cốt lõi và các chỉ thị ràng buộc khi AI tham gia bảo trì và phát triển mã nguồn. |
+Thư mục `docs/` kết hợp cùng các tài liệu chỉ thị tại thư mục gốc tạo thành bộ đặc tả kiến trúc phần mềm hoàn chỉnh, tinh gọn và không trùng lặp cho nền tảng **Bim_Logistics**, phục vụ các bên liên quan: Ban Giám Đốc, Kiến trúc sư phần mềm, Lập trình viên và các AI Autonomous Agents.
 
 ---
 
-## 🏗️ TỔNG HỢP CẤU TRÚC 3 TRỤ CỘT
+## 🗺️ BẢN ĐỒ ĐIỀU HƯỚNG BỘ TÀI LIỆU KIẾN TRÚC ĐÃ CHUẨN HÓA
 
-### 1. Cấu Trúc Dự Án (Project Architecture)
-- **Kiến trúc Modular Monolith:** Phân tách rõ ràng giữa nền tảng dùng chung (`core/`) và các phân hệ nghiệp vụ độc lập (`apps/dispatch/`, `apps/billing/`, `apps/customers/`, `apps/fleet/`, `apps/personnel/`, `apps/documents/`, `apps/exceptions/`).
-- **Giao diện SPA (Single Page Application):** Giao diện chạy mượt mà không reload trang qua `static/js/app.js` và hệ thống view templates tại `templates/views/`.
+Toàn bộ hệ thống tài liệu được tái cấu trúc thành 4 nhóm nghiệp vụ chính:
 
-### 2. Tính Năng Đã Hoàn Thiện (Implemented Features)
-- **7 Phân hệ hoạt động + 1 Phân hệ mở rộng:** Dashboard Ban Giám Đốc, Sale & Tiếp nhận Booking, Điều độ Chuyến xe, Quản lý Kế toán & Đối soát chi phí, Đội xe & Rơ-moóc, Nhân sự & Lương chuyến, Dịch vụ Hải quan.
-- **Màn hình Chi tiết Chuyến xe Chuẩn Hiện Trường:** Lộ trình 3 điểm, 5 mốc thời gian tại kho khách hàng, Bảng kê chi phí 8 mục Triền Võ khớp với HĐĐT tra cứu trực tuyến, Timeline 10 bước, Giả lập App Tài xế 1-chạm và Chốt sổ kế toán.
+```mermaid
+flowchart TD
+    subgraph G1["1. GOVERNANCE & PRINCIPLES"]
+        A1["AGENTS.md<br/>(Protocols & AI System Map)"]
+        A2["CODING_STANDARDS.md<br/>(Clean Architecture)"]
+        A3["SECURITY_AUDIT.md<br/>(Security & Privacy 91/2025)"]
+    end
 
-### 3. Nguyên Tắc UI/UX Quốc Tế (Design System)
-- **BIM Design Tokens:** Bộ màu nhận diện chuẩn mực (Teal chủ đạo, Emerald thành công, Amber cảnh báo, Rose chi phí/sự cố, Purple chốt sổ).
-- **ERP Typography Hierarchy:** Phân cấp cỡ chữ 7 bậc từ Hero KPI (`30px`), Tiêu đề phân hệ (`24px`), Section (`17px`), Card (`15px`), Body chính (`14px`), Sub-info (`13px`) đến Caption/Badge (`12px`).
-- **Zero Ambiguity & Zero Variance:** Mọi trạng thái đều có nhãn rõ ràng, số liệu tài chính P&L luôn khớp 100% với tổng chi tiết bảng kê.
+    subgraph G2["2. SYSTEM ARCHITECTURE & REQUIREMENTS"]
+        B1["PROJECT_OVERVIEW.md<br/>(C4 Model & Infrastructure)"]
+        B2["FEATURES.md<br/>(Functional Specs)"]
+        B3["DEVELOPMENT_PLAN.md<br/>(Roadmap & ADRs)"]
+        B4["CHANGELOG.md<br/>(SemVer Release Log)"]
+    end
+
+    subgraph G3["3. DOMAIN WORKFLOWS & DATA LAYER"]
+        C1["OPERATIONAL_WORKFLOW.md<br/>(11-Step Trip & Expense Settle)"]
+        C2["DATABASE_SCHEMA.md<br/>(ORM & Domain ERD)"]
+    end
+
+    subgraph G4["4. INTERFACES & USER EXPERIENCE"]
+        D1["API_REFERENCE.md<br/>(REST API Contracts)"]
+        D2["UI_UX_GUIDELINES.md<br/>(BIM Design System)"]
+        D3["USER_GUIDE.md<br/>(End-User Manual)"]
+    end
+
+    G1 --> G2
+    G2 --> G3
+    G3 --> G4
+```
+
+### Bảng Danh Mục 13 Tài Liệu Chuẩn Quốc Tế:
+
+| STT | Tài liệu | Đường dẫn | Tiêu chuẩn & Trọng tâm nghiệp vụ |
+|:---:|---|---|---|
+| **01** | **Documentation Hub** | [`README.md`](README.md) | *(File này)* Cổng thông tin điều hướng toàn bộ hệ thống tài liệu kiến trúc phần mềm. |
+| **02** | **Agent Governance & Map** | [`AGENTS.md`](AGENTS.md) | **[Hợp nhất GEMINI.md]** 4 quy tắc hành vi, kiểm chứng chất lượng, bảo toàn dữ liệu & bản đồ tra cứu tài liệu cho AI. |
+| **03** | **Coding Standards** | [`CODING_STANDARDS.md`](CODING_STANDARDS.md) | Clean Architecture, Modular Monolith Django, ORM First, Defensive Backend chống lỗi 500, Design Tokens BIM. |
+| **04** | **Security & Privacy** | [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md) | 20 chuẩn an ninh chuỗi cung ứng + Tuân thủ Luật Bảo vệ dữ liệu cá nhân (số 91/2025/QH15 & NĐ 356/2025/NĐ-CP). |
+| **05** | **System Overview & C4** | [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) | Kiến trúc C4 Level 1 & Level 2, Bounded Contexts + Cấu hình hạ tầng & Dịch vụ Email SMTP. |
+| **06** | **Feature Specifications** | [`FEATURES.md`](FEATURES.md) | Đặc tả 22 phân hệ tính năng nghiệp vụ TMS/WMS, UI details, tổng hợp 25 Django Models thực tế. |
+| **07** | **API Reference** | [`API_REFERENCE.md`](API_REFERENCE.md) | Hợp đồng giao tiếp RESTful API 9 phân hệ, Auth JWT/Session, schema payload, HTTP response & error codes. |
+| **08** | **Database Schema** | [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) | Mô hình thực thể ERD 25 models, quan hệ khóa ngoại PROTECT, chiến lược Indexing và Denormalization Signals. |
+| **09** | **Operational & Financial Workflow** | [`OPERATIONAL_WORKFLOW.md`](OPERATIONAL_WORKFLOW.md) | Chu trình điều vận 11 bước + Máy trạng thái chi phí (`PENDING` ➔ `APPROVED` ➔ `SETTLED`), Sổ quỹ S03a-DN & Tạm ứng 2 cấp. |
+| **10** | **UI/UX Guidelines** | [`UI_UX_GUIDELINES.md`](UI_UX_GUIDELINES.md) | Triết lý Field-First, Design Tokens BIM, Thang đo Typography 7 bậc chuẩn ERP, thư viện component và 2-touch rule. |
+| **11** | **Development Roadmap & ADRs** | [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md) | Lộ trình kỹ thuật TMS nâng cao, 5 Architecture Decision Records (ADRs) và mô hình triển khai On-Premise chuẩn MISA. |
+| **12** | **Release Changelog** | [`CHANGELOG.md`](CHANGELOG.md) | Lịch sử phát hành và thay đổi mã nguồn chi tiết từ v1.0.0 đến v4.7.19 theo chuẩn SemVer & Keep a Changelog. |
+| **13** | **System User Manual** | [`USER_GUIDE.md`](USER_GUIDE.md) | Cẩm nang hướng dẫn sử dụng phần mềm toàn diện từng màn hình cho Ban Giám Đốc, Điều Vận, Tài Xế và Kế Toán. |
+
+---
+
+## 🏗️ CÁC NGUYÊN TẮC BẤT KHẢ XÂM PHẠM TRONG KIẾN TRÚC (ARCHITECTURAL INVARIANTS)
+
+1. **No Hard-Delete on Legal Data (Bảo toàn lịch sử truy vết):**
+   Mọi dữ liệu vận đơn, phiếu EIR, biên bản POD có chữ ký và sự cố bồi thường là chứng cứ pháp lý giải quyết tranh chấp. Tuyệt đối không dùng `.delete()` cứng, chỉ dùng Soft-Delete (`is_deleted=True`) kế thừa từ `SoftDeleteModel`.
+2. **Zero Variance Financial Accounting (Chính xác tuyệt đối tài chính):**
+   Số liệu P&L chuyến xe và đối soát sổ quỹ luôn bằng tổng đại số chi tiết của từng khoản mục chi phí được duyệt. Mọi thay đổi về chi phí đều tự động cập nhật cache tài chính trên bảng `DispatchTrip` qua Django Signals.
+3. **Deterministic State Machine (Máy trạng thái đơn định):**
+   Vòng đời chuyến xe trải qua 11 bước vận hành được quản lý tập trung qua `core.workflows`, ngăn chặn mọi hành vi nhảy cóc trạng thái trái quy luật vận tải.

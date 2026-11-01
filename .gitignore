@@ -31,8 +31,12 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Node / Scratch
+# Node / Scratch / Test
 node_modules/
 scratch/
 test_screenshots/
 simulate_browser.py
+.coverage
+htmlcov/
+.pytest_cache/
+Claude outputs/

@@ -1,13 +1,40 @@
 # BIM LOGISTICS — DATABASE SCHEMA & ORM ARCHITECTURE
-**Tài liệu Đặc tả Cấu trúc Cơ sở Dữ liệu Chuẩn (Triền Võ - BIM Logistics)**
+## Data Layer Architecture & Relational Entity-Relationship Specification
 
-Phiên bản: 1.0  
-Ngày cập nhật: 21/09/2026  
-Mô hình: Django ORM • Modular Monolith • SQLite3 / PostgreSQL
+> **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 01/11/2026  
+> **Hệ quản trị CSDL:** PostgreSQL 16 (Production) / SQLite3 (Development)  
+> **Mô hình ORM:** Django 4.x ORM • Modular Monolith Architecture  
+> **Tiêu chuẩn:** ISO/IEC/IEEE 42010 & Arc42 Section 8 (Data & Persistence Concept)
 
 ---
 
-## 1. NGUYÊN TẮC THIẾT KẾ CỐT LÕI
+## 1. SƠ ĐỒ THỰC THỂ QUAN HỆ CỐT LÕI (CORE DOMAIN ERD)
+
+```mermaid
+erDiagram
+    Customer ||--o{ BookingOrder : places
+    Customer ||--o{ DispatchTrip : bills
+    BookingOrder ||--o{ DispatchTrip : generates
+    DispatchTrip ||--o{ TripExpense : incurs
+    DispatchTrip ||--o{ TripTimelineItem : tracks
+    DispatchTrip ||--o{ TripDocument : stores
+    DispatchTrip ||--o{ TripException : reports
+    
+    Vehicle ||--o{ DispatchTrip : assigns
+    Trailer ||--o{ DispatchTrip : attaches
+    Employee ||--o{ DispatchTrip : drives
+    Employee ||--o{ DriverTripAdvance : receives
+    
+    DispatcherAdvanceFund ||--o{ DriverTripAdvance : allocates
+    ExpenseItem ||--o{ TripExpense : categorizes
+    Location ||--o{ DispatchTrip : routes
+    Subcontractor ||--o{ DispatchTrip : subcontracts
+    Subcontractor ||--o{ Vehicle : supplies
+```
+
+---
+
+## 2. NGUYÊN TẮC THIẾT KẾ CỐT LÕI
 
 1. **Kế thừa Chuẩn mực:**
    - Mọi model kế thừa `TimeStampedModel` (`created_at`, `updated_at`).
@@ -24,7 +51,7 @@ Mô hình: Django ORM • Modular Monolith • SQLite3 / PostgreSQL
 
 ---
 
-## 2. DANH MỤC CÁC PHÂN HỆ & BẢNG DỮ LIỆU
+## 3. DANH MỤC CÁC PHÂN HỆ & BẢNG DỮ LIỆU (25 MODELS TRÊN 9 PHÂN HỆ)
 
 ### A. Phân hệ Nền tảng (`core`)
 - `core.TrackingEventLog`: Lưu chuỗi sự kiện bất biến (Event Sourcing) cho mọi thay đổi trạng thái, tọa độ GPS và thao tác của điều độ/tài xế.

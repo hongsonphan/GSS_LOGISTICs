@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.19] - 2026-11-01 (Tái Cấu Trúc Toàn Diện Bộ Tài Liệu Kiến Trúc Phần Mềm: Hợp Nhất & Tinh Gọn Hệ Thống Chuẩn Quốc Tế ISO/IEC/IEEE 42010, Arc42 & C4 Model)
+
+### 1. Tái Cấu Trúc, Hợp Nhất & Tinh Gọn Hệ Thống Tài Liệu Kiến Trúc:
+- **Hợp nhất các tệp liên quan vào tài liệu chuyên sâu:**
+  * Hợp nhất `docs/BAO_VE_DU_LIEU_CA_NHAN.md` vào `SECURITY_AUDIT.md`: Thiết lập mục chuyên sâu về Tuân thủ Luật Bảo vệ dữ liệu cá nhân (số 91/2025/QH15 & NĐ 356/2025/NĐ-CP), danh mục PII và quy trình ứng phó sự cố lộ lọt trong 72 giờ.
+  * Hợp nhất `docs/CAU_HINH_EMAIL.md` vào `docs/PROJECT_OVERVIEW.md`: Tích hợp toàn bộ cấu hình dịch vụ SMTP Google Workspace / Gmail App Password vào mục Cấu hình Hạ tầng & Tích hợp.
+  * Hợp nhất `docs/EXPENSE_LIFECYCLE.md` vào `docs/OPERATIONAL_WORKFLOW.md`: Xây dựng tài liệu vận hành và tài chính xuyên suốt từ Chu trình điều vận 11 bước, máy trạng thái chuyến xe đến Vòng đời chi phí 3 cấp độ (`PENDING` ➔ `APPROVED` ➔ `SETTLED`), Bảng kê 8 khoản chi và Sổ quỹ S03a-DN.
+  * Hợp nhất `docs/GEMINI.md` vào `docs/AGENTS.md`: Tích hợp toàn bộ chỉ thị hệ thống, nhận diện dự án và bản đồ tra cứu tài liệu vào duy nhất một tệp quản trị AI Agent chuẩn mực (`AGENTS.md`).
+- **Xóa bỏ triệt để các tệp dư thừa, trùng lặp & thư mục rác:**
+  * Xóa thư mục rác `Claude outputs/` (chứa tệp duplicate và hash rác).
+  * Xóa `.agents/rules/data-integrity-rules.md` (nội dung đã được bảo toàn 100% trong `AGENTS.md`, tránh dư thừa context AI).
+  * Xóa vĩnh viễn các tệp trùng lặp cũ: `docs/AI_CONTEXT.md`, `docs/API_DOCUMENTATION.md`, `docs/BAO_VE_DU_LIEU_CA_NHAN.md`, `docs/CAU_HINH_EMAIL.md`, `docs/EXPENSE_LIFECYCLE.md`, `docs/GEMINI.md`.
+- **Chuẩn hóa bộ 13 tài liệu kiến trúc phần mềm cốt lõi (100% lưu trữ trong `docs/`):**
+  * Đồng bộ số hiệu phiên bản `v4.7.19 (Production)` trên toàn bộ hệ thống.
+  * Tái cấu trúc cổng thông tin `docs/README.md` và bản đồ điều hướng chỉ thị `GEMINI.md`.
+  * Bổ sung biểu đồ C4 Context & Container vào `docs/PROJECT_OVERVIEW.md`.
+  * Bổ sung sơ đồ Core Domain ERD vào `docs/DATABASE_SCHEMA.md`.
+  * Bổ sung bảng Architecture Decision Records (ADRs) vào `docs/DEVELOPMENT_PLAN.md`.
+
+---
+
 ## [v4.7.18] - 2026-10-29 (Khắc Phục Dropdown Loại Hình Vận Chuyển: Xóa "HÀNG NHẬP", "HÀNG XUẤT", Giữ 3 Dòng Cũ & Chặn Tự Động Thêm)
 
 ### 1. Phân Hệ Điều Độ & Tạo Chuyến Xe (`view_create_trip`, `modal_create_trip`, `modal_edit_trip`):

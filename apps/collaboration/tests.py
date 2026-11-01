@@ -878,6 +878,7 @@ class CollaborationTestSuite(TestCase):
                 fh.write(b'%PDF-1.4 test')
             with override_settings(MEDIA_ROOT=media_dir):
                 res_media = self.client.get('/media/company_news/attachments/2026/10/sample_doc_1.pdf')
-        self.assertEqual(res_media.status_code, 200)
-        self.assertEqual(res_media.headers.get('X-Frame-Options'), 'SAMEORIGIN')
-        self.assertIn('inline', res_media.headers.get('Content-Disposition', ''))
+                self.assertEqual(res_media.status_code, 200)
+                self.assertEqual(res_media.headers.get('X-Frame-Options'), 'SAMEORIGIN')
+                self.assertIn('inline', res_media.headers.get('Content-Disposition', ''))
+                res_media.close()

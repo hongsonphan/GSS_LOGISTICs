@@ -1,4 +1,5 @@
 """Ma trận phân quyền: quyền chức danh, ngoại lệ cá nhân, API trang Phân quyền, chặn rò dữ liệu nhạy cảm."""
+import io
 import json
 
 from django.contrib.auth.models import Group, Permission, User
@@ -182,10 +183,10 @@ class AccessMatrixTests(TestCase):
         group, _ = Group.objects.get_or_create(name='Kế Toán Cước')
         self.dispatcher.groups.add(group)
         self.dispatcher.user_permissions.add(Permission.objects.get(codename='view_cashtransaction'))
-        call_command('migrate_legacy_access', stdout=open('/dev/null', 'w'))
+        call_command('migrate_legacy_access', stdout=io.StringIO())
         user = User.objects.get(pk=self.dispatcher.pk)
         self.assertTrue(access.allowed(user, 'accounting', 'view'))
         ov = UserAccessOverride.objects.get(user=user)
         self.assertIn('Chuyển đổi', ov.note)
-        call_command('migrate_legacy_access', stdout=open('/dev/null', 'w'))  # chạy lại không đổi gì
+        call_command('migrate_legacy_access', stdout=io.StringIO())  # chạy lại không đổi gì
         self.assertEqual(UserAccessOverride.objects.filter(user=user).count(), 1)

@@ -1,7 +1,7 @@
 # KẾ HOẠCH PHÁT TRIỂN HỆ THỐNG BÁO CÁO & ĐIỀU VẬN NÂNG CAO (TMS ADVANCED ROADMAP)
 > **Dự án:** BIM Logistics Platform — Nền tảng Quản trị Vận tải & Chuỗi cung ứng (Triền Võ Logistics)  
-> **Phiên bản tài liệu:** 1.0  
-> **Ngày lập:** 25/09/2026  
+> **Phiên bản tài liệu:** v4.7.18  
+> **Cập nhật lần cuối:** 01/11/2026 | **Tiêu chuẩn:** Arc42 Section 9 & 11 (Architecture Roadmap & ADRs)  
 > **Trạng thái:** Sẵn sàng thực thi (Ready for Execution)
 
 ---
@@ -250,7 +250,15 @@ gantt
 
 ---
 
-## 7. KẾT LUẬN & SẴN SÀNG TRIỂN KHAI
+---
 
-Tài liệu này đã đúc kết đầy đủ toàn bộ yêu cầu, phân tích nghiệp vụ thực tế, lộ trình báo cáo chuyên sâu và kế hoạch đóng gói triển khai On-Premise chuẩn MISA cho BIM Logistics. Khi bắt đầu triển khai, đội ngũ kỹ thuật có thể mở file này và kích hoạt thực hiện theo từng Sprint cụ thể.
+## 8. NHẬT KÝ QUYẾT ĐỊNH KIẾN TRÚC (ARCHITECTURE DECISION RECORDS — ADRs)
+
+| Mã ADR | Tiêu đề Quyết định | Bối cảnh & Phương án đánh đổi | Quyết định được chọn | Trạng thái |
+|---|---|---|---|---|
+| **ADR-001** | Modular Monolith vs. Microservices | Đội ngũ tinh gọn, yêu cầu tính toàn vẹn giao dịch ACID cao trong quản lý vận đơn và đối soát tài chính P&L. | **Modular Monolith (Django 4.x)**: Cách ly nghiệp vụ qua bounded apps, chia sẻ database giao dịch, tránh chi phí vận hành mạng phân tán. | ✅ Accepted |
+| **ADR-002** | Vanilla JS SPA vs. Nặng Frontend Framework (React/Next) | Hiện trường mạng 4G/3G chập chờn, máy tính văn phòng cấu hình trung bình, cần tải trang tức thì dưới 1s. | **Vanilla JS ES6+ SPA kết hợp Tailwind CSS**: Đóng gói qua `build_app_js.py`, không cần runtime framework nặng, phản hồi tức thời. | ✅ Accepted |
+| **ADR-003** | Soft-Delete vs. Hard-Delete | Vận đơn, ảnh POD, phiếu EIR và chi phí là chứng cứ pháp lý giải quyết khiếu nại và bảo hiểm hàng hải. | **Bắt buộc 100% Soft-Delete**: Tuyệt đối cấm `.delete()`, kế thừa `SoftDeleteModel` và lưu vết thời gian. | ✅ Accepted |
+| **ADR-004** | Signal Denormalization Caching vs. Real-Time Query Aggregation | Bảng kê chi phí và dashboard BGĐ đòi hỏi hiển thị tức thời mà không quét toàn bảng (Full-table scan). | **Django Signals Caching**: Tự động tính toán P&L lưu vào `cached_revenue`, `cached_expense`, `cached_profit` trên `DispatchTrip`. | ✅ Accepted |
+| **ADR-005** | Hai Cấp Độ Quỹ Tạm Ứng (Two-Tier Advance Funds) | Điều độ cần chủ động cấp tiền gấp cho tài xế đi đường mà không phải đợi duyệt chi từng khoản qua kế toán công ty. | **Quỹ Điều Vận Cấp 1 (`DispatcherAdvanceFund`) & Tạm Ứng Chuyến Cấp 2 (`DriverTripAdvance`)**: Linh hoạt tối đa cho hiện trường. | ✅ Accepted |
 
