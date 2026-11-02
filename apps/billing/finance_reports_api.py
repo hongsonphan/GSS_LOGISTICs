@@ -1,3 +1,4 @@
+import re
 import datetime
 from decimal import Decimal
 from core.sequences import next_code
@@ -766,6 +767,27 @@ class SubcontractorSettlementsAPIView(APIView):
             'trips': items
         }, status=status.HTTP_200_OK)
 
+    @staticmethod
+    def _remove_settlement_vouchers(trip):
+        """Xóa mềm phiếu chi cước xe bạn tham chiếu chuyến này, nếu mọi chuyến trong phiếu đều đã được hủy quyết toán."""
+        removed, kept = [], []
+        qs = CashTransaction.objects.filter(
+            is_deleted=False, category=CashFlowCategory.SUBCONTRACTOR_PAYMENT,
+            partner_type='SUBCONTRACTOR', ref_code__contains=trip.trip_code,
+        )
+        for tx in qs:
+            codes = [c.strip() for c in re.sub(r'\(\+\d+\)', '', tx.ref_code).split(',') if c.strip()]
+            truncated = '(+' in tx.ref_code
+            still_settled = DispatchTrip.objects.filter(
+                trip_code__in=codes, is_deleted=False, subcontractor_settlement_status='SETTLED').exists()
+            if trip.trip_code in codes and not truncated and not still_settled:
+                tx.is_deleted = True
+                tx.save(update_fields=['is_deleted'])
+                removed.append(tx.code)
+            elif trip.trip_code in codes:
+                kept.append(tx.code)
+        return removed, kept
+
     @transaction.atomic
     def post(self, request):
         action = request.data.get('action')
@@ -871,6 +893,9 @@ class SubcontractorSettlementsAPIView(APIView):
         if not trip:
             return Response({'error': 'Không tìm thấy thông tin chuyến xe bạn!'}, status=status.HTTP_404_NOT_FOUND)
 
+        if action in ('update_cost', 'settle') and trip.subcontractor_settlement_status == 'SETTLED':
+            return Response({'error': f'Chuyến [{trip.trip_code}] đã quyết toán. Hãy bấm "Hủy Quyết Toán" trước khi sửa hoặc quyết toán lại!'}, status=status.HTTP_400_BAD_REQUEST)
+
         if action == 'update_cost':
             cost = request.data.get('subcontractor_cost')
             advance = request.data.get('subcontractor_advance', 0)
@@ -938,10 +963,19 @@ class SubcontractorSettlementsAPIView(APIView):
             trip.subcontractor_settlement_status = 'PENDING'
             trip.subcontractor_settled_at = None
             trip.save(update_fields=['subcontractor_settlement_status', 'subcontractor_settled_at'])
+
+            removed, kept = self._remove_settlement_vouchers(trip)
+            msg = f"Đã hoàn tác quyết toán chuyến xe bạn [{trip.trip_code}] về trạng thái chờ quyết toán!"
+            if removed:
+                msg += f" Đã xóa phiếu chi Sổ Quỹ: {', '.join(removed)}."
+            if kept:
+                msg += f" Phiếu chi {', '.join(kept)} còn chứa các chuyến khác đang quyết toán nên được giữ lại - hủy quyết toán hết các chuyến đó (hoặc xóa tay trong Sổ Quỹ) để gỡ phiếu."
             return Response({
                 'success': True,
-                'message': f"Đã hoàn tác quyết toán chuyến xe bạn [{trip.trip_code}] về trạng thái chờ quyết toán!",
-                'trip_id': trip.id
+                'message': msg,
+                'trip_id': trip.id,
+                'removed_vouchers': removed,
+                'kept_vouchers': kept
             }, status=status.HTTP_200_OK)
 
         return Response({'error': 'Hành động không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)

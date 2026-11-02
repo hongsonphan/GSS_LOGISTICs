@@ -195,6 +195,31 @@ class DriverBatchSettlementTests(TestCase):
         self.assertFalse(CashTransaction.objects.filter(ref_code=res.data['voucher']['code'], is_deleted=False).exists())
         self.assertEqual(self.client.delete(f'{base}{vid}/').status_code, status.HTTP_200_OK)
 
+    def test_subcontractor_unsettle_removes_voucher_and_blocks_edit_when_settled(self):
+        """Hủy quyết toán xe bạn gỡ phiếu chi Sổ quỹ; chuyến đã quyết toán thì không sửa/quyết toán đè được."""
+        self.client.force_authenticate(user=self.accountant_user)
+        url = '/api/accounting/subcontractor-settlements/'
+        self.trip1.subcontractor_cost = 5000000
+        self.trip1.subcontractor_advance = 1000000
+        self.trip1.save()
+
+        res = self.client.post(url, {'action': 'settle', 'trip_id': self.trip1.id}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        code = res.data['settlement_code']
+        self.assertTrue(CashTransaction.objects.filter(code=code, is_deleted=False).exists())
+
+        res = self.client.post(url, {'action': 'update_cost', 'trip_id': self.trip1.id, 'subcontractor_cost': 1}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        res = self.client.post(url, {'action': 'settle', 'trip_id': self.trip1.id}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+        res = self.client.post(url, {'action': 'unsettle', 'trip_id': self.trip1.id}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertEqual(res.data['removed_vouchers'], [code])
+        self.assertFalse(CashTransaction.objects.filter(code=code, is_deleted=False).exists())
+        self.trip1.refresh_from_db()
+        self.assertEqual(self.trip1.subcontractor_settlement_status, 'PENDING')
+
     def test_batch_settlement_reject_uncompleted_trip(self):
         """Từ chối quyết toán nếu có chuyến xe chưa hoàn thành (chưa COMPLETED)."""
         self.trip2.status = TripStatus.IN_TRANSIT

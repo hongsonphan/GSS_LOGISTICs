@@ -442,6 +442,24 @@ function openSubcontractorModal(tripId, mode = 'update_cost') {
         labelEl.innerText = 'Lưu';
     }
 
+    // Chuyến đã quyết toán: khóa các ô nhập, chỉ cho In / Hủy quyết toán / Mở lại để sửa (không cho Lưu đè)
+    const isSettled = trip.subcontractor_settlement_status === 'SETTLED';
+    ['subcon-cost', 'subcon-advance', 'subcon-notes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = isSettled;
+    });
+    const unsettleBtn = document.getElementById('btn-subcon-unsettle');
+    if (unsettleBtn) {
+        unsettleBtn.classList.toggle('hidden', !isSettled);
+        unsettleBtn.classList.toggle('flex', isSettled);
+    }
+    document.getElementById('btn-save-subcon')?.classList.toggle('hidden', isSettled);
+    const editLabel = document.querySelector('#btn-subcon-edit span');
+    if (editLabel) editLabel.innerText = isSettled ? 'Mở lại để sửa' : 'Sửa';
+    const settleNote = document.getElementById('subcon-settle-section');
+    if (isSettled && settleNote) settleNote.classList.add('hidden');
+    if (isSettled) titleEl.innerText = 'Chuyến Xe Bạn Đã Quyết Toán';
+
     calculateSubcontractorMargin();
     modal.classList.remove('hidden');
 }
@@ -526,24 +544,27 @@ function exportSubcontractorToExcel() {
 // SUBCONTRACTOR 3PL & SETTLEMENT ADVANCE PRINTING
 // -----------------------------------------------------------------------------
 function enableSubcontractorEdit() {
-    const costInp = document.getElementById('subcon-cost');
-    if (costInp) costInp.disabled = false;
-    const advInp = document.getElementById('subcon-advance');
-    if (advInp) advInp.disabled = false;
-    const notesInp = document.getElementById('subcon-notes');
-    if (notesInp) notesInp.disabled = false;
+    // Chuyến đã quyết toán: phải hủy quyết toán (gỡ luôn phiếu chi) rồi mới sửa được
+    if (activeSubcontractorTrip && activeSubcontractorTrip.subcontractor_settlement_status === 'SETTLED') {
+        handleUnsettleSubcontractor(null, true);
+        return;
+    }
+    ['subcon-cost', 'subcon-advance', 'subcon-notes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = false;
+    });
     showToast('info', 'Đã mở khóa các trường cước thỏa thuận & tạm ứng');
 }
 
-async function handleUnsettleSubcontractor(tripId = null) {
+async function handleUnsettleSubcontractor(tripId = null, reopenForEdit = false) {
     const targetId = tripId || (activeSubcontractorTrip ? activeSubcontractorTrip.trip_id : null);
     if (!targetId) return;
 
     const confirmed = await showConfirmModal({
-        title: 'Hủy Quyết Toán Xe Bạn',
+        title: reopenForEdit ? 'Mở Lại Để Sửa' : 'Hủy Quyết Toán Xe Bạn',
         message: `Bạn có chắc chắn muốn HỦY QUYẾT TOÁN chuyến xe bạn này?
 
-Chuyến xe sẽ quay về trạng thái Chờ Quyết Toán để bạn hiệu chỉnh lại số liệu.`,
+Chuyến sẽ quay về Chờ Quyết Toán và phiếu chi Sổ Quỹ đã tự động lập cho chuyến này (nếu có) sẽ bị xóa.`,
         confirmText: 'Hủy Quyết Toán',
         cancelText: 'Đóng',
         type: 'warning',
@@ -564,9 +585,9 @@ Chuyến xe sẽ quay về trạng thái Chờ Quyết Toán để bạn hiệu 
         if (res.ok && data.success) {
             showToast('success', data.message || 'Đã hủy quyết toán thành công', 'Hoàn Tác Thành Công');
             closeSubcontractorModal();
-            if (typeof loadSubcontractorsData === 'function') {
-                loadSubcontractorsData();
-            }
+            await loadSubcontractorData();
+            if (typeof loadCashBookData === 'function') loadCashBookData();
+            if (reopenForEdit) openSubcontractorModal(targetId, 'update_cost');
         } else {
             showToast('danger', data.error || 'Có lỗi xảy ra');
         }
