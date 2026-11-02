@@ -83,6 +83,7 @@ master-data/form-submit.js
 master-data/company-roles.js
 master-data/access-matrix.js
 master-data/opening-balance.js
+master-data/account-settings.js
 master-data/import-export.js
 master-data/subcontractor-fleet.js
 # 9. Báo cáo

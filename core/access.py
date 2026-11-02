@@ -49,7 +49,7 @@ CFG_KEYS = ['cfg_company', 'cfg_finance', 'cfg_partners', 'cfg_network', 'cfg_fl
 # Tab của trang Cài đặt -> phân hệ quyền (roles_permissions thuộc Quản trị hệ thống)
 CFG_TAB_MODULE = {
     'company': 'cfg_company', 'roles_permissions': 'admin',
-    'opening_balance': 'cfg_finance', 'expenses': 'cfg_finance', 'driver_tariffs': 'cfg_finance', 'allowances': 'cfg_finance',
+    'opening_balance': 'cfg_finance', 'account_settings': 'cfg_finance', 'expenses': 'cfg_finance', 'driver_tariffs': 'cfg_finance', 'allowances': 'cfg_finance',
     'customers': 'cfg_partners', 'tariffs': 'cfg_partners', 'subcontractors': 'cfg_partners',
     'locations': 'cfg_network', 'shipping_lines': 'cfg_network',
     'vehicles': 'cfg_fleet', 'trailers': 'cfg_fleet', 'containers': 'cfg_fleet',

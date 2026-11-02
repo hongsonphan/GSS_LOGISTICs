@@ -1,16 +1,14 @@
 // ==============================================================================
-// 9.9. SUBTAB 9: SỔ SÁCH KẾ TOÁN — cân đối tài khoản, nhật ký chung, sổ cái, ánh xạ tài khoản
+// 9.9. SUBTAB 9: SỔ SÁCH KẾ TOÁN — cân đối tài khoản, nhật ký chung, sổ cái (ánh xạ tài khoản nay nằm ở Cài đặt > Tài chính & Quản trị > Cài đặt tài khoản)
 // Dữ liệu từ /api/ledger/* (sổ kép tự động theo TT133/TT200 của công ty)
 // ==============================================================================
 let ledgerView = 'trial';
 let ledgerAccounts = null;
-let ledgerMapping = null;
 
 const LEDGER_TITLES = {
     trial: 'Bảng cân đối tài khoản',
     journal: 'Sổ nhật ký chung',
     account: 'Sổ cái',
-    mapping: 'Ánh xạ nghiệp vụ → tài khoản',
 };
 
 function _ledgerNum(n) {
@@ -29,7 +27,7 @@ function _ledgerDate(d) {
 }
 
 function _ledgerEmpty(view, text) {
-    const cols = { trial: 8, journal: 7, account: 7, mapping: 4 }[view];
+    const cols = { trial: 8, journal: 7, account: 7 }[view];
     const tb = document.getElementById(`ledger-${view}-tbody`);
     if (tb) tb.innerHTML = `<tr><td colspan="${cols}" class="p-8 text-center text-slate-400 font-medium">${text}</td></tr>`;
     const tf = document.getElementById(`ledger-${view}-tfoot`);
@@ -73,7 +71,7 @@ async function loadLedgerData() {
         try {
             const res = await fetchWithAuth('/api/ledger/accounts/');
             if (res.status === 403) {
-                ['trial', 'journal', 'account', 'mapping'].forEach(v => _ledgerEmpty(v, 'Chỉ Kế toán và Ban Giám Đốc được xem sổ sách kế toán'));
+                ['trial', 'journal', 'account'].forEach(v => _ledgerEmpty(v, 'Chỉ Kế toán và Ban Giám Đốc được xem sổ sách kế toán'));
                 return;
             }
             const data = await res.json();
@@ -104,22 +102,13 @@ function switchLedgerView(view) {
         btn.classList.toggle('text-slate-600', !on);
     });
     document.querySelectorAll('.ledger-panel').forEach(p => p.classList.toggle('hidden', p.dataset.ledgerPanel !== view));
-    const isMap = view === 'mapping';
-    ['ledger-from', 'ledger-to', 'ledger-export-btn'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.toggle('hidden', isMap);
-    });
-    document.querySelectorAll('#ledger-period-bar > span.text-slate-400').forEach(el => el.classList.toggle('hidden', isMap));
     const sel = document.getElementById('ledger-account-select');
     if (sel) sel.classList.toggle('hidden', view !== 'account');
-    const act = document.getElementById('ledger-mapping-actions');
-    if (act) act.classList.toggle('hidden', !isMap);
     loadLedgerView();
 }
 
 async function loadLedgerView() {
     const view = ledgerView;
-    if (view === 'mapping') return loadLedgerMapping();
     _ledgerSetHeader('', '');
     try {
         const res = await fetchWithAuth(_ledgerUrl(view));
@@ -234,7 +223,6 @@ function openLedgerAccount(code) {
 }
 
 async function exportLedgerExcel() {
-    if (ledgerView === 'mapping') return;
     const btn = document.getElementById('ledger-export-btn');
     if (btn) btn.disabled = true;
     try {
@@ -256,103 +244,6 @@ async function exportLedgerExcel() {
     } catch (err) {
         console.error('Lỗi xuất sổ:', err);
         showToast('danger', 'Không xuất được file Excel', 'Xuất Excel');
-    } finally {
-        if (btn) btn.disabled = false;
-    }
-}
-
-// ---------------- Ánh xạ tài khoản ----------------
-async function loadLedgerMapping() {
-    _ledgerSetHeader('Mỗi nghiệp vụ tự động hạch toán vào tài khoản bên dưới. Chỉ đổi khi kế toán trưởng yêu cầu.', '');
-    try {
-        const res = await fetchWithAuth('/api/ledger/mapping/');
-        if (!res.ok) return _ledgerEmpty('mapping', 'Không tải được ánh xạ tài khoản');
-        ledgerMapping = await res.json();
-        renderLedgerMapping();
-    } catch (err) {
-        console.error('Lỗi tải ánh xạ:', err);
-        _ledgerEmpty('mapping', 'Không kết nối được máy chủ');
-    }
-}
-
-function renderLedgerMapping() {
-    const d = ledgerMapping;
-    if (!d) return;
-    const names = Object.fromEntries((d.accounts || []).map(a => [a.code, a.name]));
-    const options = (sel) => (d.accounts || []).map(a =>
-        `<option value="${_ledgerEsc(a.code)}" ${a.code === sel ? 'selected' : ''}>${_ledgerEsc(a.code)}</option>`).join('');
-    const regimeSel = `<select id="ledger-regime-select" ${d.can_change_regime ? '' : 'disabled title="Chỉ Ban Giám Đốc / quản trị được đổi"'}
-        class="h-8 px-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700">
-        ${(d.regimes || []).map(r => `<option value="${r}" ${r === d.regime ? 'selected' : ''}>${r === 'TT200' ? 'TT200/2014 (doanh nghiệp lớn)' : 'TT133/2016 (doanh nghiệp nhỏ và vừa)'}</option>`).join('')}
-        </select>`;
-    const changed = d.items.filter(i => i.override).length;
-    _ledgerSetHeader('Mỗi nghiệp vụ tự động hạch toán vào tài khoản bên dưới. Chỉ đổi khi kế toán trưởng yêu cầu.',
-        changed ? `${changed} nghiệp vụ đã đổi so với mặc định` : 'Đang dùng mặc định');
-    document.getElementById('ledger-mapping-tbody').innerHTML =
-        `<tr class="bg-slate-50"><td class="font-bold text-slate-700">Chế độ kế toán</td><td colspan="3">${regimeSel}</td></tr>` +
-        d.items.map(i => `<tr class="${i.override ? 'bg-amber-50/50' : ''}">
-            <td class="font-semibold text-slate-800">${_ledgerEsc(i.label)}</td>
-            <td class="font-mono text-slate-500">${_ledgerEsc(i.default)}</td>
-            <td><select data-ledger-key="${_ledgerEsc(i.key)}" onchange="onLedgerMappingChange(this)"
-                class="h-8 px-2 rounded-lg border ${i.override ? 'border-amber-400' : 'border-slate-200'} bg-white text-xs font-bold font-mono text-slate-800">${options(i.effective)}</select></td>
-            <td class="text-slate-500 whitespace-normal" data-ledger-name="${_ledgerEsc(i.key)}">${_ledgerEsc(names[i.effective] || i.effective_name)}</td>
-        </tr>`).join('');
-    document.getElementById('ledger-mapping-tfoot').innerHTML = '';
-}
-
-function onLedgerMappingChange(sel) {
-    const names = Object.fromEntries(((ledgerMapping || {}).accounts || []).map(a => [a.code, a.name]));
-    const cell = document.querySelector(`[data-ledger-name="${sel.dataset.ledgerKey}"]`);
-    if (cell) cell.textContent = names[sel.value] || '';
-    const item = (ledgerMapping.items || []).find(i => i.key === sel.dataset.ledgerKey);
-    const isOverride = item && sel.value !== item.default;
-    sel.classList.toggle('border-amber-400', !!isOverride);
-    sel.classList.toggle('border-slate-200', !isOverride);
-    sel.closest('tr').classList.toggle('bg-amber-50/50', !!isOverride);
-}
-
-function resetLedgerMapping() {
-    if (!ledgerMapping) return;
-    document.querySelectorAll('#ledger-mapping-tbody select[data-ledger-key]').forEach(sel => {
-        const item = ledgerMapping.items.find(i => i.key === sel.dataset.ledgerKey);
-        if (item) { sel.value = item.default; onLedgerMappingChange(sel); }
-    });
-}
-
-async function saveLedgerMapping() {
-    const overrides = {};
-    document.querySelectorAll('#ledger-mapping-tbody select[data-ledger-key]').forEach(sel => {
-        overrides[sel.dataset.ledgerKey] = sel.value;
-    });
-    const regimeEl = document.getElementById('ledger-regime-select');
-    const regime = regimeEl ? regimeEl.value : undefined;
-    const msg = regime && regime !== ledgerMapping.regime
-        ? `Đổi chế độ kế toán sang ${regime} và hạch toán lại toàn bộ bút toán tự động?`
-        : 'Lưu ánh xạ và hạch toán lại toàn bộ bút toán tự động?';
-    const ok = await showConfirmModal({ title: 'Lưu ánh xạ tài khoản', message: msg, type: 'warning', confirmText: 'Lưu và hạch toán lại' });
-    if (!ok) return;
-    const btn = document.getElementById('ledger-mapping-save');
-    if (btn) btn.disabled = true;
-    try {
-        const res = await fetchWithAuth('/api/ledger/mapping/', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ regime, overrides, rebuild: true }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-            const err = data.regime || (data.overrides && Object.values(data.overrides)[0]) || data.detail || 'Không lưu được';
-            showToast('danger', String(err), 'Ánh xạ tài khoản');
-            return;
-        }
-        ledgerMapping = data;
-        ledgerAccounts = null;
-        renderLedgerMapping();
-        showToast('success', `Đã lưu và hạch toán lại ${data.rebuilt || 0} bút toán`, 'Ánh xạ tài khoản');
-        loadLedgerData();
-    } catch (err) {
-        console.error('Lỗi lưu ánh xạ:', err);
-        showToast('danger', 'Không kết nối được máy chủ', 'Ánh xạ tài khoản');
     } finally {
         if (btn) btn.disabled = false;
     }

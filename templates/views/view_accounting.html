@@ -1961,8 +1961,7 @@
             <div class="flex flex-wrap items-center gap-1.5 m-tabs" id="ledger-view-tabs">
                 <button type="button" data-ledger-view="trial" onclick="switchLedgerView('trial')" class="ledger-view-btn h-9 px-3 rounded-xl text-xs md:text-sm font-bold font-heading border-2 whitespace-nowrap">Cân đối tài khoản</button>
                 <button type="button" data-ledger-view="journal" onclick="switchLedgerView('journal')" class="ledger-view-btn h-9 px-3 rounded-xl text-xs md:text-sm font-bold font-heading border-2 whitespace-nowrap">Nhật ký chung</button>
-                <button type="button" data-ledger-view="account" onclick="switchLedgerView('account')" class="ledger-view-btn h-9 px-3 rounded-xl text-xs md:text-sm font-bold font-heading border-2 whitespace-nowrap">Sổ cái</button>
-                <button type="button" data-ledger-view="mapping" data-m-hide onclick="switchLedgerView('mapping')" class="ledger-view-btn h-9 px-3 rounded-xl text-xs md:text-sm font-bold font-heading border-2 whitespace-nowrap">Ánh xạ tài khoản</button>
+                <button type="button" data-ledger-view="account" onclick="switchLedgerView('account')" class="ledger-view-btn h-9 px-3 rounded-xl text-xs md:text-sm font-bold font-heading border-2 whitespace-nowrap">Sổ cái</button>
             </div>
             <div class="flex flex-wrap items-center gap-2" id="ledger-period-bar">
                 <span id="ledger-regime-chip" class="m-hide h-9 px-2.5 inline-flex items-center rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 text-xs font-bold whitespace-nowrap">TT133</span>
@@ -2005,20 +2004,7 @@
                     <tfoot id="ledger-account-tfoot"></tfoot>
                 </table>
             </div>
-            <div class="overflow-x-auto ledger-panel hidden" data-ledger-panel="mapping">
-                <table class="erp-table whitespace-nowrap" id="ledger-mapping-table" data-table-title="Ánh xạ nghiệp vụ - tài khoản">
-                    <thead><tr><th data-col-key="label" data-m-role="m-title" data-col-name="Nghiệp vụ">Nghiệp vụ</th><th data-col-key="default" data-m-role="m-minor" data-col-name="Mặc định">Mặc định</th><th data-col-key="effective" data-m-role="m-key" data-col-name="Tài khoản áp dụng">Tài khoản áp dụng</th><th data-col-key="name" data-m-role="m-minor" data-col-name="Tên tài khoản">Tên tài khoản</th></tr></thead>
-                    <tbody class="divide-y divide-slate-100" id="ledger-mapping-tbody"><tr><td colspan="4" class="p-8 text-center text-slate-400 font-medium">Đang tải…</td></tr></tbody>
-                    <tfoot id="ledger-mapping-tfoot"></tfoot>
-                </table>
-            </div>
-            <div id="ledger-mapping-actions" class="hidden px-4 py-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/60">
-                <p class="text-xs text-slate-500 font-medium">Lưu sẽ hạch toán lại toàn bộ bút toán tự động theo ánh xạ mới. Chứng từ gốc không thay đổi.</p>
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="resetLedgerMapping()" class="h-9 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold whitespace-nowrap">Về mặc định</button>
-                    <button type="button" onclick="saveLedgerMapping()" id="ledger-mapping-save" class="h-9 px-3.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-1.5"><i class="ph-bold ph-floppy-disk"></i><span>Lưu ánh xạ</span></button>
-                </div>
-            </div>
+
         </div>
     </div>
 

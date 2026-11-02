@@ -50,6 +50,10 @@
                         <i class="ph-bold ph-wallet text-sm"></i>
                         <span>Số Dư Ban Đầu</span>
                     </button>
+                    <button type="button" onclick="switchMasterDataTab('account_settings')" data-md-tab="account_settings" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-book-open-text text-sm"></i>
+                        <span>Cài Đặt Tài Khoản</span>
+                    </button>
                     <button type="button" onclick="switchMasterDataTab('expenses')" data-md-tab="expenses" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
                         <i class="ph-bold ph-receipt text-sm"></i>
                         <span>Khoản Mục Chi</span>
@@ -176,6 +180,9 @@
 
         <!-- Vai trò & Phân quyền: ma trận Chức danh × Phân hệ × Thao tác (master-data/access-matrix.js) -->
         <div id="md-roles-permissions-view" class="hidden p-3 md:p-4 bg-slate-50" data-m-keep></div>
+
+        <!-- Cài đặt tài khoản kế toán: ánh xạ nghiệp vụ -> tài khoản (master-data/account-settings.js) -->
+        <div id="md-account-settings-view" class="hidden p-3 md:p-4 bg-slate-50" data-m-keep></div>
 
         <!-- Dynamic Data Table Container (Sticky Header & Scrollable Body) -->
         <div id="md-table-container" class="overflow-x-auto relative border-b border-slate-200 erp-table-container min-h-[420px] max-h-[calc(100vh-320px)] overflow-y-auto">

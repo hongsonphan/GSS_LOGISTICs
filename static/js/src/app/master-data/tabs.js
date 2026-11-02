@@ -13,7 +13,7 @@ const MASTER_DATA_GROUPS = {
     'finance_admin': {
         name: 'Tài Chính & Quản Trị',
         icon: 'ph-wallet',
-        tabs: ['opening_balance', 'expenses', 'driver_tariffs', 'allowances']
+        tabs: ['opening_balance', 'account_settings', 'expenses', 'driver_tariffs', 'allowances']
     },
     'partners': {
         name: 'Khách Hàng & Đối Tác',
@@ -35,7 +35,7 @@ const MASTER_DATA_GROUPS = {
 // Mỗi tab thuộc một dòng quyền "Cài đặt · ..." trong trang Phân quyền (khớp core/access.py CFG_TAB_MODULE)
 const MASTER_DATA_TAB_MODULE = {
     company: 'cfg_company', roles_permissions: 'admin',
-    opening_balance: 'cfg_finance', expenses: 'cfg_finance', driver_tariffs: 'cfg_finance', allowances: 'cfg_finance',
+    opening_balance: 'cfg_finance', account_settings: 'cfg_finance', expenses: 'cfg_finance', driver_tariffs: 'cfg_finance', allowances: 'cfg_finance',
     customers: 'cfg_partners', tariffs: 'cfg_partners', subcontractors: 'cfg_partners',
     locations: 'cfg_network', shipping_lines: 'cfg_network',
     vehicles: 'cfg_fleet', trailers: 'cfg_fleet', containers: 'cfg_fleet'
@@ -201,6 +201,7 @@ function switchMasterDataTab(tabKey) {
         'company': 'Sửa Thông Tin Công Ty',
         'roles_permissions': 'Quản Lý Vai Trò',
         'opening_balance': 'Khai Báo Số Dư Đầu Kỳ',
+        'account_settings': 'Cài Đặt Tài Khoản',
         'driver_tariffs': 'Tạo mới',
         'allowances': 'Tạo mới',
         'locations': 'Tạo mới',
@@ -225,6 +226,7 @@ function switchMasterDataTab(tabKey) {
     const companyView = document.getElementById('md-company-view');
     const rolesView = document.getElementById('md-roles-permissions-view');
     const openingBalanceView = document.getElementById('md-opening-balance-view');
+    const accountSettingsView = document.getElementById('md-account-settings-view');
     const createBtnContainer = document.getElementById('md-create-btn') || document.getElementById('md-create-btn-label')?.parentElement;
 
     if (createBtnContainer) createBtnContainer.style.display = '';
@@ -234,9 +236,10 @@ function switchMasterDataTab(tabKey) {
     if (companyView) companyView.classList.add('hidden');
     if (rolesView) { rolesView.classList.add('hidden'); rolesView.parentElement.classList.remove('shrink-0'); }
     if (openingBalanceView) openingBalanceView.classList.add('hidden');
+    if (accountSettingsView) accountSettingsView.classList.add('hidden');
 
     // Ẩn/hiện các nút Tải Mẫu, Nhập Excel, Xuất Dữ Liệu theo danh mục
-    const isSpecialTab = (tabKey === 'company' || tabKey === 'roles_permissions');
+    const isSpecialTab = (tabKey === 'company' || tabKey === 'roles_permissions' || tabKey === 'account_settings');
     const exportTemplateBtn = document.getElementById('md-export-template-btn');
     const importBtn = document.getElementById('md-import-btn');
     const exportDataBtn = document.getElementById('md-export-data-btn');
@@ -253,6 +256,15 @@ function switchMasterDataTab(tabKey) {
         rolesView.classList.remove('hidden');
         rolesView.parentElement.classList.add('shrink-0');  // khung danh mục không bị co lại cắt mất nội dung
         renderAccessMatrixPage(rolesView);
+        return;
+    }
+
+    if (tabKey === 'account_settings' && accountSettingsView && typeof renderAccountSettingsPage === 'function') {
+        // Trang cài đặt tài khoản riêng: không dùng bảng danh mục chung
+        [filterToolbar, tableContainer, paginationContainer].forEach(el => el && el.classList.add('hidden'));
+        if (createBtnContainer) createBtnContainer.style.display = 'none';
+        accountSettingsView.classList.remove('hidden');
+        renderAccountSettingsPage(accountSettingsView);
         return;
     }
 

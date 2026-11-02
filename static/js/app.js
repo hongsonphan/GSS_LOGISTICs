@@ -27109,18 +27109,16 @@ function applyBotAuditFilter() {
 
 // ---- src/app/accounting/ledger.js ----
 // ==============================================================================
-// 9.9. SUBTAB 9: SỔ SÁCH KẾ TOÁN — cân đối tài khoản, nhật ký chung, sổ cái, ánh xạ tài khoản
+// 9.9. SUBTAB 9: SỔ SÁCH KẾ TOÁN — cân đối tài khoản, nhật ký chung, sổ cái (ánh xạ tài khoản nay nằm ở Cài đặt > Tài chính & Quản trị > Cài đặt tài khoản)
 // Dữ liệu từ /api/ledger/* (sổ kép tự động theo TT133/TT200 của công ty)
 // ==============================================================================
 let ledgerView = 'trial';
 let ledgerAccounts = null;
-let ledgerMapping = null;
 
 const LEDGER_TITLES = {
     trial: 'Bảng cân đối tài khoản',
     journal: 'Sổ nhật ký chung',
     account: 'Sổ cái',
-    mapping: 'Ánh xạ nghiệp vụ → tài khoản',
 };
 
 function _ledgerNum(n) {
@@ -27139,7 +27137,7 @@ function _ledgerDate(d) {
 }
 
 function _ledgerEmpty(view, text) {
-    const cols = { trial: 8, journal: 7, account: 7, mapping: 4 }[view];
+    const cols = { trial: 8, journal: 7, account: 7 }[view];
     const tb = document.getElementById(`ledger-${view}-tbody`);
     if (tb) tb.innerHTML = `<tr><td colspan="${cols}" class="p-8 text-center text-slate-400 font-medium">${text}</td></tr>`;
     const tf = document.getElementById(`ledger-${view}-tfoot`);
@@ -27183,7 +27181,7 @@ async function loadLedgerData() {
         try {
             const res = await fetchWithAuth('/api/ledger/accounts/');
             if (res.status === 403) {
-                ['trial', 'journal', 'account', 'mapping'].forEach(v => _ledgerEmpty(v, 'Chỉ Kế toán và Ban Giám Đốc được xem sổ sách kế toán'));
+                ['trial', 'journal', 'account'].forEach(v => _ledgerEmpty(v, 'Chỉ Kế toán và Ban Giám Đốc được xem sổ sách kế toán'));
                 return;
             }
             const data = await res.json();
@@ -27214,22 +27212,13 @@ function switchLedgerView(view) {
         btn.classList.toggle('text-slate-600', !on);
     });
     document.querySelectorAll('.ledger-panel').forEach(p => p.classList.toggle('hidden', p.dataset.ledgerPanel !== view));
-    const isMap = view === 'mapping';
-    ['ledger-from', 'ledger-to', 'ledger-export-btn'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.toggle('hidden', isMap);
-    });
-    document.querySelectorAll('#ledger-period-bar > span.text-slate-400').forEach(el => el.classList.toggle('hidden', isMap));
     const sel = document.getElementById('ledger-account-select');
     if (sel) sel.classList.toggle('hidden', view !== 'account');
-    const act = document.getElementById('ledger-mapping-actions');
-    if (act) act.classList.toggle('hidden', !isMap);
     loadLedgerView();
 }
 
 async function loadLedgerView() {
     const view = ledgerView;
-    if (view === 'mapping') return loadLedgerMapping();
     _ledgerSetHeader('', '');
     try {
         const res = await fetchWithAuth(_ledgerUrl(view));
@@ -27344,7 +27333,6 @@ function openLedgerAccount(code) {
 }
 
 async function exportLedgerExcel() {
-    if (ledgerView === 'mapping') return;
     const btn = document.getElementById('ledger-export-btn');
     if (btn) btn.disabled = true;
     try {
@@ -27366,103 +27354,6 @@ async function exportLedgerExcel() {
     } catch (err) {
         console.error('Lỗi xuất sổ:', err);
         showToast('danger', 'Không xuất được file Excel', 'Xuất Excel');
-    } finally {
-        if (btn) btn.disabled = false;
-    }
-}
-
-// ---------------- Ánh xạ tài khoản ----------------
-async function loadLedgerMapping() {
-    _ledgerSetHeader('Mỗi nghiệp vụ tự động hạch toán vào tài khoản bên dưới. Chỉ đổi khi kế toán trưởng yêu cầu.', '');
-    try {
-        const res = await fetchWithAuth('/api/ledger/mapping/');
-        if (!res.ok) return _ledgerEmpty('mapping', 'Không tải được ánh xạ tài khoản');
-        ledgerMapping = await res.json();
-        renderLedgerMapping();
-    } catch (err) {
-        console.error('Lỗi tải ánh xạ:', err);
-        _ledgerEmpty('mapping', 'Không kết nối được máy chủ');
-    }
-}
-
-function renderLedgerMapping() {
-    const d = ledgerMapping;
-    if (!d) return;
-    const names = Object.fromEntries((d.accounts || []).map(a => [a.code, a.name]));
-    const options = (sel) => (d.accounts || []).map(a =>
-        `<option value="${_ledgerEsc(a.code)}" ${a.code === sel ? 'selected' : ''}>${_ledgerEsc(a.code)}</option>`).join('');
-    const regimeSel = `<select id="ledger-regime-select" ${d.can_change_regime ? '' : 'disabled title="Chỉ Ban Giám Đốc / quản trị được đổi"'}
-        class="h-8 px-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700">
-        ${(d.regimes || []).map(r => `<option value="${r}" ${r === d.regime ? 'selected' : ''}>${r === 'TT200' ? 'TT200/2014 (doanh nghiệp lớn)' : 'TT133/2016 (doanh nghiệp nhỏ và vừa)'}</option>`).join('')}
-        </select>`;
-    const changed = d.items.filter(i => i.override).length;
-    _ledgerSetHeader('Mỗi nghiệp vụ tự động hạch toán vào tài khoản bên dưới. Chỉ đổi khi kế toán trưởng yêu cầu.',
-        changed ? `${changed} nghiệp vụ đã đổi so với mặc định` : 'Đang dùng mặc định');
-    document.getElementById('ledger-mapping-tbody').innerHTML =
-        `<tr class="bg-slate-50"><td class="font-bold text-slate-700">Chế độ kế toán</td><td colspan="3">${regimeSel}</td></tr>` +
-        d.items.map(i => `<tr class="${i.override ? 'bg-amber-50/50' : ''}">
-            <td class="font-semibold text-slate-800">${_ledgerEsc(i.label)}</td>
-            <td class="font-mono text-slate-500">${_ledgerEsc(i.default)}</td>
-            <td><select data-ledger-key="${_ledgerEsc(i.key)}" onchange="onLedgerMappingChange(this)"
-                class="h-8 px-2 rounded-lg border ${i.override ? 'border-amber-400' : 'border-slate-200'} bg-white text-xs font-bold font-mono text-slate-800">${options(i.effective)}</select></td>
-            <td class="text-slate-500 whitespace-normal" data-ledger-name="${_ledgerEsc(i.key)}">${_ledgerEsc(names[i.effective] || i.effective_name)}</td>
-        </tr>`).join('');
-    document.getElementById('ledger-mapping-tfoot').innerHTML = '';
-}
-
-function onLedgerMappingChange(sel) {
-    const names = Object.fromEntries(((ledgerMapping || {}).accounts || []).map(a => [a.code, a.name]));
-    const cell = document.querySelector(`[data-ledger-name="${sel.dataset.ledgerKey}"]`);
-    if (cell) cell.textContent = names[sel.value] || '';
-    const item = (ledgerMapping.items || []).find(i => i.key === sel.dataset.ledgerKey);
-    const isOverride = item && sel.value !== item.default;
-    sel.classList.toggle('border-amber-400', !!isOverride);
-    sel.classList.toggle('border-slate-200', !isOverride);
-    sel.closest('tr').classList.toggle('bg-amber-50/50', !!isOverride);
-}
-
-function resetLedgerMapping() {
-    if (!ledgerMapping) return;
-    document.querySelectorAll('#ledger-mapping-tbody select[data-ledger-key]').forEach(sel => {
-        const item = ledgerMapping.items.find(i => i.key === sel.dataset.ledgerKey);
-        if (item) { sel.value = item.default; onLedgerMappingChange(sel); }
-    });
-}
-
-async function saveLedgerMapping() {
-    const overrides = {};
-    document.querySelectorAll('#ledger-mapping-tbody select[data-ledger-key]').forEach(sel => {
-        overrides[sel.dataset.ledgerKey] = sel.value;
-    });
-    const regimeEl = document.getElementById('ledger-regime-select');
-    const regime = regimeEl ? regimeEl.value : undefined;
-    const msg = regime && regime !== ledgerMapping.regime
-        ? `Đổi chế độ kế toán sang ${regime} và hạch toán lại toàn bộ bút toán tự động?`
-        : 'Lưu ánh xạ và hạch toán lại toàn bộ bút toán tự động?';
-    const ok = await showConfirmModal({ title: 'Lưu ánh xạ tài khoản', message: msg, type: 'warning', confirmText: 'Lưu và hạch toán lại' });
-    if (!ok) return;
-    const btn = document.getElementById('ledger-mapping-save');
-    if (btn) btn.disabled = true;
-    try {
-        const res = await fetchWithAuth('/api/ledger/mapping/', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ regime, overrides, rebuild: true }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-            const err = data.regime || (data.overrides && Object.values(data.overrides)[0]) || data.detail || 'Không lưu được';
-            showToast('danger', String(err), 'Ánh xạ tài khoản');
-            return;
-        }
-        ledgerMapping = data;
-        ledgerAccounts = null;
-        renderLedgerMapping();
-        showToast('success', `Đã lưu và hạch toán lại ${data.rebuilt || 0} bút toán`, 'Ánh xạ tài khoản');
-        loadLedgerData();
-    } catch (err) {
-        console.error('Lỗi lưu ánh xạ:', err);
-        showToast('danger', 'Không kết nối được máy chủ', 'Ánh xạ tài khoản');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -28559,7 +28450,7 @@ const MASTER_DATA_GROUPS = {
     'finance_admin': {
         name: 'Tài Chính & Quản Trị',
         icon: 'ph-wallet',
-        tabs: ['opening_balance', 'expenses', 'driver_tariffs', 'allowances']
+        tabs: ['opening_balance', 'account_settings', 'expenses', 'driver_tariffs', 'allowances']
     },
     'partners': {
         name: 'Khách Hàng & Đối Tác',
@@ -28581,7 +28472,7 @@ const MASTER_DATA_GROUPS = {
 // Mỗi tab thuộc một dòng quyền "Cài đặt · ..." trong trang Phân quyền (khớp core/access.py CFG_TAB_MODULE)
 const MASTER_DATA_TAB_MODULE = {
     company: 'cfg_company', roles_permissions: 'admin',
-    opening_balance: 'cfg_finance', expenses: 'cfg_finance', driver_tariffs: 'cfg_finance', allowances: 'cfg_finance',
+    opening_balance: 'cfg_finance', account_settings: 'cfg_finance', expenses: 'cfg_finance', driver_tariffs: 'cfg_finance', allowances: 'cfg_finance',
     customers: 'cfg_partners', tariffs: 'cfg_partners', subcontractors: 'cfg_partners',
     locations: 'cfg_network', shipping_lines: 'cfg_network',
     vehicles: 'cfg_fleet', trailers: 'cfg_fleet', containers: 'cfg_fleet'
@@ -28747,6 +28638,7 @@ function switchMasterDataTab(tabKey) {
         'company': 'Sửa Thông Tin Công Ty',
         'roles_permissions': 'Quản Lý Vai Trò',
         'opening_balance': 'Khai Báo Số Dư Đầu Kỳ',
+        'account_settings': 'Cài Đặt Tài Khoản',
         'driver_tariffs': 'Tạo mới',
         'allowances': 'Tạo mới',
         'locations': 'Tạo mới',
@@ -28771,6 +28663,7 @@ function switchMasterDataTab(tabKey) {
     const companyView = document.getElementById('md-company-view');
     const rolesView = document.getElementById('md-roles-permissions-view');
     const openingBalanceView = document.getElementById('md-opening-balance-view');
+    const accountSettingsView = document.getElementById('md-account-settings-view');
     const createBtnContainer = document.getElementById('md-create-btn') || document.getElementById('md-create-btn-label')?.parentElement;
 
     if (createBtnContainer) createBtnContainer.style.display = '';
@@ -28780,9 +28673,10 @@ function switchMasterDataTab(tabKey) {
     if (companyView) companyView.classList.add('hidden');
     if (rolesView) { rolesView.classList.add('hidden'); rolesView.parentElement.classList.remove('shrink-0'); }
     if (openingBalanceView) openingBalanceView.classList.add('hidden');
+    if (accountSettingsView) accountSettingsView.classList.add('hidden');
 
     // Ẩn/hiện các nút Tải Mẫu, Nhập Excel, Xuất Dữ Liệu theo danh mục
-    const isSpecialTab = (tabKey === 'company' || tabKey === 'roles_permissions');
+    const isSpecialTab = (tabKey === 'company' || tabKey === 'roles_permissions' || tabKey === 'account_settings');
     const exportTemplateBtn = document.getElementById('md-export-template-btn');
     const importBtn = document.getElementById('md-import-btn');
     const exportDataBtn = document.getElementById('md-export-data-btn');
@@ -28799,6 +28693,15 @@ function switchMasterDataTab(tabKey) {
         rolesView.classList.remove('hidden');
         rolesView.parentElement.classList.add('shrink-0');  // khung danh mục không bị co lại cắt mất nội dung
         renderAccessMatrixPage(rolesView);
+        return;
+    }
+
+    if (tabKey === 'account_settings' && accountSettingsView && typeof renderAccountSettingsPage === 'function') {
+        // Trang cài đặt tài khoản riêng: không dùng bảng danh mục chung
+        [filterToolbar, tableContainer, paginationContainer].forEach(el => el && el.classList.add('hidden'));
+        if (createBtnContainer) createBtnContainer.style.display = 'none';
+        accountSettingsView.classList.remove('hidden');
+        renderAccountSettingsPage(accountSettingsView);
         return;
     }
 
@@ -33911,6 +33814,149 @@ async function deleteOpeningBalanceItem(id, name) {
     }
 }
 window.deleteOpeningBalanceItem = deleteOpeningBalanceItem;
+
+// ---- src/app/master-data/account-settings.js ----
+// ==============================================================================
+// CÀI ĐẶT · TÀI CHÍNH & QUẢN TRỊ · CÀI ĐẶT TÀI KHOẢN (trước đây là "Ánh xạ tài khoản" trong Sổ sách kế toán)
+// Mỗi nghiệp vụ tự động hạch toán vào tài khoản được chọn; đổi ở đây sẽ hạch toán lại toàn bộ bút toán tự động.
+// Dữ liệu từ /api/ledger/mapping/
+// ==============================================================================
+let accountSettingsData = null;
+
+function _acctEsc(s) {
+    return (typeof escapeHtml === 'function') ? escapeHtml(s == null ? '' : String(s)) : String(s == null ? '' : s);
+}
+
+async function renderAccountSettingsPage(container) {
+    const box = container || document.getElementById('md-account-settings-view');
+    if (!box) return;
+    box.innerHTML = `<div class="p-10 text-center text-slate-400 font-medium"><i class="ph ph-spinner animate-spin text-2xl text-teal-600 block mb-2"></i>Đang tải cài đặt tài khoản…</div>`;
+    try {
+        const res = await fetchWithAuth('/api/ledger/mapping/');
+        if (res.status === 403) {
+            box.innerHTML = '<div class="p-10 text-center text-slate-500 font-semibold">Chỉ Kế toán và Ban Giám Đốc được xem cài đặt tài khoản</div>';
+            return;
+        }
+        if (!res.ok) throw new Error('Không tải được cài đặt tài khoản');
+        accountSettingsData = await res.json();
+        paintAccountSettings(box);
+    } catch (err) {
+        console.error('Lỗi tải cài đặt tài khoản:', err);
+        box.innerHTML = `<div class="p-10 text-center text-rose-600 font-bold">${_acctEsc(err.message || 'Không kết nối được máy chủ')}
+            <div><button type="button" onclick="renderAccountSettingsPage()" class="mt-3 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold">Thử lại</button></div></div>`;
+    }
+}
+
+function paintAccountSettings(box) {
+    const d = accountSettingsData;
+    if (!d) return;
+    const canEdit = typeof mdCan !== 'function' || mdCan('account_settings', 'edit');
+    const names = Object.fromEntries((d.accounts || []).map(a => [a.code, a.name]));
+    const options = (sel) => (d.accounts || []).map(a =>
+        `<option value="${_acctEsc(a.code)}" ${a.code === sel ? 'selected' : ''}>${_acctEsc(a.code)}</option>`).join('');
+    const regimeSel = `<select id="acct-regime-select" ${d.can_change_regime ? '' : 'disabled title="Chỉ Ban Giám Đốc / quản trị được đổi"'}
+        class="h-8 px-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700">
+        ${(d.regimes || []).map(r => `<option value="${r}" ${r === d.regime ? 'selected' : ''}>${r === 'TT200' ? 'TT200/2014 (doanh nghiệp lớn)' : 'TT133/2016 (doanh nghiệp nhỏ và vừa)'}</option>`).join('')}
+        </select>`;
+    const changed = d.items.filter(i => i.override).length;
+    const rows = d.items.map(i => `<tr class="${i.override ? 'bg-amber-50/50' : ''} border-b border-slate-100">
+        <td class="px-3 py-2 font-semibold text-slate-800">${_acctEsc(i.label)}</td>
+        <td class="px-3 py-2 font-mono text-slate-500">${_acctEsc(i.default)}</td>
+        <td class="px-3 py-2"><select data-acct-key="${_acctEsc(i.key)}" ${canEdit ? '' : 'disabled'} onchange="onAccountSettingChange(this)"
+            class="h-8 px-2 rounded-lg border ${i.override ? 'border-amber-400' : 'border-slate-200'} bg-white text-xs font-bold font-mono text-slate-800">${options(i.effective)}</select></td>
+        <td class="px-3 py-2 text-slate-500 whitespace-normal" data-acct-name="${_acctEsc(i.key)}">${_acctEsc(names[i.effective] || i.effective_name)}</td>
+    </tr>`).join('');
+
+    box.innerHTML = `
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-100 flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                    <h3 class="text-sm md:text-base font-black font-heading text-slate-800">Cài đặt tài khoản kế toán</h3>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">Mỗi nghiệp vụ tự động hạch toán vào tài khoản bên dưới. Chỉ đổi khi kế toán trưởng yêu cầu.</p>
+                </div>
+                <p class="text-xs font-bold text-slate-600">${changed ? `${changed} nghiệp vụ đã đổi so với mặc định` : 'Đang dùng mặc định'}</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left whitespace-nowrap" id="acct-settings-table" data-no-col-manager data-no-toolbar>
+                    <thead class="bg-slate-50 text-slate-700 font-bold"><tr>
+                        <th class="px-3 py-2">Nghiệp vụ</th><th class="px-3 py-2">Mặc định</th><th class="px-3 py-2">Tài khoản áp dụng</th><th class="px-3 py-2">Tên tài khoản</th></tr></thead>
+                    <tbody>
+                        <tr class="bg-slate-50 border-b border-slate-100"><td class="px-3 py-2 font-bold text-slate-700">Chế độ kế toán</td><td class="px-3 py-2" colspan="3">${regimeSel}</td></tr>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+            ${canEdit ? `<div class="px-4 py-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/60">
+                <p class="text-xs text-slate-500 font-medium">Lưu sẽ hạch toán lại toàn bộ bút toán tự động theo cài đặt mới. Chứng từ gốc không thay đổi.</p>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="resetAccountSettings()" class="h-9 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold whitespace-nowrap">Về mặc định</button>
+                    <button type="button" onclick="saveAccountSettings()" id="acct-settings-save" class="h-9 px-3.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-1.5"><i class="ph-bold ph-floppy-disk"></i><span>Lưu cài đặt</span></button>
+                </div>
+            </div>` : ''}
+        </div>`;
+}
+
+function onAccountSettingChange(sel) {
+    const names = Object.fromEntries(((accountSettingsData || {}).accounts || []).map(a => [a.code, a.name]));
+    const cell = document.querySelector(`[data-acct-name="${sel.dataset.acctKey}"]`);
+    if (cell) cell.textContent = names[sel.value] || '';
+    const item = (accountSettingsData.items || []).find(i => i.key === sel.dataset.acctKey);
+    const isOverride = item && sel.value !== item.default;
+    sel.classList.toggle('border-amber-400', !!isOverride);
+    sel.classList.toggle('border-slate-200', !isOverride);
+    sel.closest('tr').classList.toggle('bg-amber-50/50', !!isOverride);
+}
+
+function resetAccountSettings() {
+    if (!accountSettingsData) return;
+    document.querySelectorAll('#acct-settings-table select[data-acct-key]').forEach(sel => {
+        const item = accountSettingsData.items.find(i => i.key === sel.dataset.acctKey);
+        if (item) { sel.value = item.default; onAccountSettingChange(sel); }
+    });
+}
+
+async function saveAccountSettings() {
+    const overrides = {};
+    document.querySelectorAll('#acct-settings-table select[data-acct-key]').forEach(sel => {
+        overrides[sel.dataset.acctKey] = sel.value;
+    });
+    const regimeEl = document.getElementById('acct-regime-select');
+    const regime = regimeEl ? regimeEl.value : undefined;
+    const msg = regime && regime !== accountSettingsData.regime
+        ? `Đổi chế độ kế toán sang ${regime} và hạch toán lại toàn bộ bút toán tự động?`
+        : 'Lưu cài đặt tài khoản và hạch toán lại toàn bộ bút toán tự động?';
+    const ok = await showConfirmModal({ title: 'Lưu cài đặt tài khoản', message: msg, type: 'warning', confirmText: 'Lưu và hạch toán lại' });
+    if (!ok) return;
+    const btn = document.getElementById('acct-settings-save');
+    if (btn) btn.disabled = true;
+    try {
+        const res = await fetchWithAuth('/api/ledger/mapping/', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ regime, overrides, rebuild: true }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            const err = data.regime || (data.overrides && Object.values(data.overrides)[0]) || data.detail || 'Không lưu được';
+            showToast('danger', String(err), 'Cài đặt tài khoản');
+            return;
+        }
+        accountSettingsData = data;
+        if (typeof ledgerAccounts !== 'undefined') ledgerAccounts = null;  // Sổ sách nạp lại hệ thống tài khoản mới
+        paintAccountSettings(document.getElementById('md-account-settings-view'));
+        showToast('success', `Đã lưu và hạch toán lại ${data.rebuilt || 0} bút toán`, 'Cài đặt tài khoản');
+    } catch (err) {
+        console.error('Lỗi lưu cài đặt tài khoản:', err);
+        showToast('danger', 'Không kết nối được máy chủ', 'Cài đặt tài khoản');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+window.renderAccountSettingsPage = renderAccountSettingsPage;
+window.onAccountSettingChange = onAccountSettingChange;
+window.resetAccountSettings = resetAccountSettings;
+window.saveAccountSettings = saveAccountSettings;
 
 // ---- src/app/master-data/import-export.js ----
 // =========================================================================
