@@ -18,7 +18,11 @@ function backToDispatch() {
 }
 
 async function openCreateTripPage(bookingId = null, updateHistory = true) {
-    await loadMasterDataFormOptions();
+    if (typeof checkAndSyncMasterData === 'function') {
+        await checkAndSyncMasterData(false);
+    } else {
+        await loadMasterDataFormOptions();
+    }
     populateMasterDataDropdowns();
 
     const form = document.getElementById('form-create-trip');
@@ -220,9 +224,13 @@ async function submitQuickCreateDriver() {
             showToast('success', data.message || 'Đã thêm tài xế thành công.');
             closeQuickCreateDriverModal();
 
-            // Cập nhật Master Data cache
-            await loadMasterDataFormOptions(true);
-            populateMasterDataDropdowns();
+            // Cập nhật Master Data cache & đồng bộ tức thời
+            if (typeof checkAndSyncMasterData === 'function') {
+                await checkAndSyncMasterData(true);
+            } else {
+                await loadMasterDataFormOptions(true);
+                populateMasterDataDropdowns();
+            }
 
             // Tự động gán tài xế vừa tạo vào ô chọn mục tiêu
             const newDriverData = data.data;

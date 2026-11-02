@@ -2,6 +2,37 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.26] - 2026-11-02 (Kiến Trúc Đồng Bộ Danh Mục Tức Thời Toàn Hệ Thống Không Cần Tải Lại Trang - Realtime Instant Master Data Sync)
+
+### 1. Bối Cảnh & Vấn Đề Nghiệp Vụ:
+- **Vấn Đề:** Khi người dùng Admin/Hành chính tạo mới Xe, Rơ-moóc, Tài xế, Khách hàng, Điểm kho/Cảng/Bãi, Thầu phụ, Hãng tàu... thì trên các máy tính/màn hình đang mở của nhân viên Điều vận (Tạo/Sửa chuyến xe), Sales (Tạo Báo giá/Booking), hoặc các tab trình duyệt khác không hiển thị ngay bản ghi mới trừ khi phải F5 (Reload) lại toàn bộ trang web.
+- **Yêu Cầu Nghiệp Vụ:** Bất kỳ thay đổi nào trên cơ sở dữ liệu phải được tự động đồng bộ tức thì cho tất cả các máy tính và tài khoản đang sử dụng mà không cần F5/Reload, tuyệt đối không tạo rác dữ liệu, bảo lưu nguyên vẹn giá trị người dùng đang chọn trên form.
+
+### 2. Giải Pháp Kiến Trúc Đồng Bộ Thời Gian Thực (Realtime Instant Master Data Sync):
+- **Phía Máy Chủ (Backend - Django Cache & Model Signals):**
+  * **Module Quản Lý Phiên Bản (`apps/master_data/version.py`):** Cung cấp hàm `get_master_data_version()` và `bump_master_data_version()`. Sử dụng `DatabaseCache` đa tiến trình (`bim_cache`) để lưu timestamp phiên bản danh mục (mili-giây), đảm bảo tính nhất quán trên toàn bộ worker Gunicorn.
+  * **Hệ Thống Lắng Nghe Sự Kiện Tự Động (`apps/master_data/signals.py`):** Kết nối tín hiệu `post_save` và `post_delete` trên 9 mô hình dữ liệu cốt lõi: `Location`, `ContainerType`, `ShippingLine`, `Subcontractor`, `DriverSalaryTariff`, `Customer`, `Vehicle`, `Trailer`, `Employee`. Bất kỳ thao tác thêm, sửa, xóa nào (từ Web, Django Admin, Excel Import hay API) đều tự động tăng phiên bản danh mục ngay lập tức.
+  * **Endpoint Kiểm Tra Phiên Bản Siêu Nhẹ (`apps/master_data/api_views.py`, `MasterDataVersionAPIView`):** Endpoint `/api/master-data/version/` trả về `version` timestamp trong thời gian xử lý ~1ms, payload ~30 bytes, phản hồi kèm header `Cache-Control: no-cache, no-store, must-revalidate`.
+  * **Tích Hợp Phiên Bản Vào Form Options (`MasterDataFormOptionsAPIView`):** Endpoint `/api/master-data/form-options/` luôn trả về trường `version` song hành cùng toàn bộ cây danh mục.
+- **Phía Máy Khách (Frontend - Cross-Tab Broadcast & Polling Thông Minh):**
+  * **Kênh Đồng Bộ Ngay Lập Tức Giữa Các Tab (`static/js/src/app/core/master-options.js`):** Sử dụng `BroadcastChannel('bim_master_data_sync_channel')`. Khi người dùng tạo/sửa bản ghi ở một tab, tín hiệu lập tức truyền sang tất cả các tab khác trên cùng trình duyệt để cập nhật dropdown trong 0 mili-giây.
+  * **Cơ Chế Kiểm Tra Phiên Bản Ngầm Đa Máy Tính (Cross-Machine Version Polling):**
+    - Kiểm tra khi người dùng tương tác: Sự kiện `window.focus` và `document.visibilitychange` tự động kiểm tra phiên bản ngay khi người dùng chuyển qua lại giữa các cửa sổ làm việc.
+    - Định kỳ 15 giây kiểm tra ngầm siêu nhẹ (`/api/master-data/version/`). Nếu phát hiện phiên bản trên máy chủ mới hơn phiên bản ở bộ nhớ máy khách, hệ thống tự động gọi tải lại danh mục và điền lại các dropdown.
+  * **Bảo Lưu Trạng Thái Nhập Liệu Chuẩn Bim TMS:**
+    - Hàm `populateMasterDataDropdowns()` ghi nhớ giá trị đang chọn (`const currentVal = sel.value;`) trước khi nạp lại và gọi `setSelectValueCaseInsensitive()`, kết hợp `_bimCombobox.sync()`, đảm bảo không bao giờ làm mất hay reset dữ liệu người dùng đang thao tác dở dang.
+    - Mở rộng hỗ trợ tự động điền danh mục Rơ-moóc (`inp-trailer`, `edit-inp-trailer`), Tài xế và Đầu kéo cho cả Modal Tạo chuyến và Sửa lệnh điều vận.
+  * **Kích Hoạt Đồng Bộ Ngay Khi Thao Tác:**
+    - Tích hợp `checkAndSyncMasterData(true)` tại `submitMasterDataForm`, `deleteMasterDataItem`, `openSubcontractorFleetModal`, `submitEmployeeForm`, `deleteEmployeeItem`, và form tạo nhanh tài xế điều vận.
+    - Tích hợp kiểm tra phiên bản tự động khi mở trang/modal Điều vận (`openCreateTripPage`, `openModalEditTrip`), Bán hàng (`openCreateBookingPage`, `viewBookingDetail`), Báo giá (`openCreateQuotationPage`, `viewQuotationDetail`).
+
+### 3. Kiểm Thử & Xác Nhận:
+- Bổ sung unit test `test_master_data_version_api_and_signal_bump` kiểm tra toàn diện API version và Model Signals.
+- Toàn bộ bộ kiểm thử 285/285 tests hoàn thành xanh 100%.
+- Kiểm tra tính toàn vẹn cú pháp JS (`node --check static/js/app.js`), mã nguồn Python (`ruff check`), kiểm tra Tailwind CSS (`scripts/build_css.py --check`) và bundle JS (`scripts/build_app_js.py --check`) đều đạt chuẩn.
+
+---
+
 ## [v4.7.25] - 2026-11-01 (Sửa Lỗi Cuộn Bảng Nhân Sự & Bổ Sung Tính Năng Gán Tài Khoản Người Dùng Vào Hồ Sơ Nhân Sự)
 
 ### 1. Khắc Phục Triệt Để Lỗi Khóa Cuộn Dọc Trên Danh Sách Nhân Sự & Các Bảng Phân Hệ (`templates/views/view_personnel.html`):

@@ -966,3 +966,31 @@ class ReferentialDeletionLocksTestCase(TestCase):
         }, format='json')
         self.assertEqual(res_create_spl.status_code, status.HTTP_201_CREATED)
         self.assertTrue(res_create_spl.data['data']['code'].startswith('SPL'))
+
+    def test_master_data_version_api_and_signal_bump(self):
+        from apps.master_data.version import get_master_data_version
+        from apps.customers.models import Customer
+        from apps.fleet.models import Vehicle
+
+        # 1. API version endpoint
+        res = self.client.get('/api/master-data/version/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('version', res.data)
+        v1 = res.data['version']
+        self.assertIsInstance(v1, int)
+
+        # 2. Form options endpoint also contains version
+        res_opts = self.client.get('/api/master-data/form-options/')
+        self.assertEqual(res_opts.status_code, status.HTTP_200_OK)
+        self.assertIn('version', res_opts.data)
+        self.assertEqual(res_opts.data['version'], v1)
+
+        # 3. Create a Customer -> signal bumps version
+        c = Customer.objects.create(name='Test Realtime Sync Customer', code='CUST_SYNC_01')
+        v2 = get_master_data_version()
+        self.assertGreaterEqual(v2, v1)
+
+        # 4. Create a Vehicle -> signal bumps version
+        v = Vehicle.objects.create(license_plate='51D-999.88', vehicle_type='TRACTOR')
+        v3 = get_master_data_version()
+        self.assertGreaterEqual(v3, v2)

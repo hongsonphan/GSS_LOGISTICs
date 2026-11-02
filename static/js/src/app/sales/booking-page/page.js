@@ -97,7 +97,11 @@ async function openCreateBookingPage(updateHistory = true) {
         if (typeof initAllNumberInputs === 'function') initAllNumberInputs();
 
         try {
-            if (typeof loadMasterDataFormOptions === 'function') await loadMasterDataFormOptions();
+            if (typeof checkAndSyncMasterData === 'function') {
+                await checkAndSyncMasterData(false);
+            } else if (typeof loadMasterDataFormOptions === 'function') {
+                await loadMasterDataFormOptions();
+            }
             if (typeof populateMasterDataDropdowns === 'function') populateMasterDataDropdowns();
         } catch (mErr) {
             console.warn('loadMasterDataFormOptions error:', mErr);
@@ -112,7 +116,11 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
     if (!bookingId || bookingId === 'new') {
         return openCreateBookingPage(updateHistory);
     }
-    await loadMasterDataFormOptions();
+    if (typeof checkAndSyncMasterData === 'function') {
+        await checkAndSyncMasterData(false);
+    } else {
+        await loadMasterDataFormOptions();
+    }
     populateMasterDataDropdowns();
 
     const form = document.getElementById('form-fullpage-booking');

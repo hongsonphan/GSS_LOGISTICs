@@ -249,9 +249,13 @@ async function submitMasterDataForm(e) {
                 if (typeof loadFleetData === 'function') loadFleetData();
             }
 
-            // Tự động tải lại danh mục cho các Modal đang mở và chọn ngay bản ghi vừa tạo
-            await loadMasterDataFormOptions(true);
-            populateMasterDataDropdowns();
+            // Tự động tải lại danh mục cho các Modal đang mở và đồng bộ tức thời mọi máy tính/tab
+            if (typeof checkAndSyncMasterData === 'function') {
+                await checkAndSyncMasterData(true);
+            } else {
+                await loadMasterDataFormOptions(true);
+                populateMasterDataDropdowns();
+            }
 
             if (typeof quickMasterDataTargetSelectId !== 'undefined' && quickMasterDataTargetSelectId) {
                 const targetEl = document.getElementById(quickMasterDataTargetSelectId);
@@ -313,6 +317,9 @@ async function deleteMasterDataItem(id) {
             loadMasterData();
             if (currentMasterDataTab === 'vehicles' || currentMasterDataTab === 'trailers') {
                 if (typeof loadFleetData === 'function') loadFleetData();
+            }
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
             }
         } else {
             showToast('danger', data.message || data.error || data.detail || 'Không thể xóa bản ghi!');

@@ -1903,7 +1903,11 @@ async function openModal(id, extraParam = null) {
         }
         initDefaultDatesForCreateTrip();
         onFreeDaysChange();
-        await loadMasterDataFormOptions();
+        if (typeof checkAndSyncMasterData === 'function') {
+            await checkAndSyncMasterData(false);
+        } else {
+            await loadMasterDataFormOptions();
+        }
         populateMasterDataDropdowns();
         await loadActiveBookingsForModal(extraParam);
     }
@@ -2985,6 +2989,32 @@ if (typeof document !== 'undefined') {
 // --- MASTER DATA FORM OPTIONS CACHE & POPULATION (Anti-Garbage Master Data Standard) ---
 let masterDataFormOptionsCache = null;
 let quickMasterDataTargetSelectId = null;
+let currentMasterDataVersion = null;
+let isSyncingMasterData = false;
+
+// Kênh giao tiếp tức thì giữa các tab cùng trình duyệt (Cross-tab Realtime Sync)
+const masterDataSyncChannel = (typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined')
+    ? new BroadcastChannel('bim_master_data_sync_channel')
+    : null;
+
+if (masterDataSyncChannel) {
+    masterDataSyncChannel.onmessage = (event) => {
+        if (event && event.data && event.data.type === 'MASTER_DATA_UPDATED') {
+            // Nhận tín hiệu từ tab khác vừa thêm/sửa/xóa danh mục -> tự động đồng bộ ngay lập tức
+            checkAndSyncMasterData(true);
+        }
+    };
+}
+
+function broadcastMasterDataChanged() {
+    if (masterDataSyncChannel) {
+        try {
+            masterDataSyncChannel.postMessage({ type: 'MASTER_DATA_UPDATED', timestamp: Date.now() });
+        } catch (e) {
+            // Không làm gián đoạn luồng chính
+        }
+    }
+}
 
 async function loadMasterDataFormOptions(forceReload = false) {
     if (masterDataFormOptionsCache && !forceReload) {
@@ -2994,6 +3024,9 @@ async function loadMasterDataFormOptions(forceReload = false) {
         const res = await fetchWithAuth('/api/master-data/form-options/');
         if (res.ok) {
             masterDataFormOptionsCache = await res.json();
+            if (masterDataFormOptionsCache && masterDataFormOptionsCache.version) {
+                currentMasterDataVersion = masterDataFormOptionsCache.version;
+            }
             return masterDataFormOptionsCache;
         }
     } catch (err) {
@@ -3002,9 +3035,43 @@ async function loadMasterDataFormOptions(forceReload = false) {
     return masterDataFormOptionsCache;
 }
 
+/**
+ * Kiểm tra và đồng bộ danh mục tức thời (Realtime Instant Master Data Sync):
+ * - Nếu force = true: ép tải lại toàn bộ danh mục mới nhất, điền lại các select và phát tín hiệu cho các tab khác.
+ * - Nếu force = false: gọi endpoint version siêu nhẹ (~1ms). Chỉ khi server có dữ liệu mới thì mới tải và cập nhật.
+ */
+async function checkAndSyncMasterData(force = false) {
+    if (isSyncingMasterData) return masterDataFormOptionsCache;
+    isSyncingMasterData = true;
+    try {
+        if (force) {
+            await loadMasterDataFormOptions(true);
+            populateMasterDataDropdowns();
+            broadcastMasterDataChanged();
+            return masterDataFormOptionsCache;
+        }
+
+        // Tự động kiểm tra endpoint version siêu nhẹ
+        const res = await fetchWithAuth('/api/master-data/version/');
+        if (res.ok) {
+            const data = await res.json();
+            const serverVersion = data.version;
+            if (!currentMasterDataVersion || (serverVersion && serverVersion !== currentMasterDataVersion)) {
+                await loadMasterDataFormOptions(true);
+                populateMasterDataDropdowns();
+            }
+        }
+    } catch (err) {
+        // Tránh gián đoạn UI khi mất mạng tạm thời
+    } finally {
+        isSyncingMasterData = false;
+    }
+    return masterDataFormOptionsCache;
+}
+
 function populateMasterDataDropdowns() {
     if (!masterDataFormOptionsCache) return;
-    const { customers, locations, drivers, vehicles, shipping_lines, routes } = masterDataFormOptionsCache;
+    const { customers, locations, drivers, vehicles, trailers, shipping_lines, routes } = masterDataFormOptionsCache;
 
     function fillSelect(elId, items, placeholder, valueKey = 'name', textKey = 'label') {
         const elements = document.querySelectorAll('#' + elId);
@@ -3041,6 +3108,7 @@ function populateMasterDataDropdowns() {
     // Xe nhà nội bộ TVL (chỉ lọc ownership_code === 'OWNED')
     const ownedVehicles = (vehicles || []).filter(v => v.ownership_code === 'OWNED');
     fillSelect('inp-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải TVL --', 'plate', 'label');
+    fillSelect('inp-trailer', trailers, '-- Chọn Rơ-Moóc --', 'plate', 'label');
 
     // Chế độ Cắt Kéo (Drop & Hook)
     fillSelect('inp-driver-leg1', drivers, '-- Chọn tài xế lấy cont --', 'nickname', 'label');
@@ -3048,7 +3116,11 @@ function populateMasterDataDropdowns() {
     fillSelect('inp-vehicle-leg1', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải lấy cont --', 'plate', 'label');
     fillSelect('inp-dropoff-vehicle', ownedVehicles, '-- Tự động theo tài xế hoặc gán sau --', 'plate', 'label');
 
-    // Đổ danh sách Chặng 2 cho Modal Sửa Lệnh Điều Vận
+    // Đổ danh sách cho Modal Sửa Lệnh Điều Vận (modal-edit-trip)
+    fillSelect('edit-inp-customer', customers, '-- Chọn Khách Hàng --', 'id', 'label');
+    fillSelect('edit-inp-driver', drivers, '-- Chọn tài xế điều động --', 'id', 'label');
+    fillSelect('edit-inp-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải TVL --', 'id', 'label');
+    fillSelect('edit-inp-trailer', trailers, '-- Chọn Rơ-Moóc --', 'id', 'label');
     fillSelect('edit-inp-dropoff-driver', drivers, '-- Bỏ trống (Chưa gán) --', 'id', 'label');
     fillSelect('edit-inp-dropoff-vehicle', ownedVehicles, '-- Chọn Đầu kéo Chặng 2 --', 'id', 'label');
 
@@ -3088,13 +3160,42 @@ function populateMasterDataDropdowns() {
     }
 }
 
-
 // --- QUY TẮC MỞ NHANH MODAL MASTER DATA & TỰ ĐỘNG CHỌN (UNIVERSAL QUICK-ADD) ---
 async function openMasterDataModalQuick(tabKey, targetSelectId = null) {
     quickMasterDataTargetSelectId = targetSelectId;
     currentMasterDataTab = tabKey;
     await openCreateMasterDataModal();
 }
+
+// Lắng nghe sự kiện người dùng tương tác để đồng bộ dữ liệu ngầm không chờ đợi
+if (typeof window !== 'undefined') {
+    // 1. Khi người dùng focus hoặc chuyển tab quay lại ứng dụng -> tự động check version
+    window.addEventListener('focus', () => {
+        checkAndSyncMasterData(false);
+    });
+
+    if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                checkAndSyncMasterData(false);
+            }
+        });
+    }
+
+    // 2. Định kỳ 15 giây kiểm tra version ngầm siêu nhẹ (~1ms) khi tab đang hoạt động
+    setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+            checkAndSyncMasterData(false);
+        }
+    }, 15000);
+}
+
+// Cung cấp hàm toàn cục cho toàn hệ thống
+window.loadMasterDataFormOptions = loadMasterDataFormOptions;
+window.checkAndSyncMasterData = checkAndSyncMasterData;
+window.broadcastMasterDataChanged = broadcastMasterDataChanged;
+window.populateMasterDataDropdowns = populateMasterDataDropdowns;
+window.refreshMasterDataOptions = () => checkAndSyncMasterData(true);
 
 // ---- src/app/core/layout.js ----
 // --- USER PROFILE & AVATAR DROPDOWN HANDLERS (TÁI CẤU TRÚC GIAO DIỆN TOPBAR) ---
@@ -9395,8 +9496,10 @@ async function openModalEditTrip(tripCode = null) {
         return;
     }
 
-    // Tải master data options nếu chưa có
-    if (typeof loadMasterDataFormOptions === 'function') {
+    // Tải master data options và kiểm tra đồng bộ tức thời
+    if (typeof checkAndSyncMasterData === 'function') {
+        await checkAndSyncMasterData(false);
+    } else if (typeof loadMasterDataFormOptions === 'function') {
         await loadMasterDataFormOptions();
     }
     if (typeof populateMasterDataDropdowns === 'function') {
@@ -10996,7 +11099,11 @@ function backToDispatch() {
 }
 
 async function openCreateTripPage(bookingId = null, updateHistory = true) {
-    await loadMasterDataFormOptions();
+    if (typeof checkAndSyncMasterData === 'function') {
+        await checkAndSyncMasterData(false);
+    } else {
+        await loadMasterDataFormOptions();
+    }
     populateMasterDataDropdowns();
 
     const form = document.getElementById('form-create-trip');
@@ -11198,9 +11305,13 @@ async function submitQuickCreateDriver() {
             showToast('success', data.message || 'Đã thêm tài xế thành công.');
             closeQuickCreateDriverModal();
 
-            // Cập nhật Master Data cache
-            await loadMasterDataFormOptions(true);
-            populateMasterDataDropdowns();
+            // Cập nhật Master Data cache & đồng bộ tức thời
+            if (typeof checkAndSyncMasterData === 'function') {
+                await checkAndSyncMasterData(true);
+            } else {
+                await loadMasterDataFormOptions(true);
+                populateMasterDataDropdowns();
+            }
 
             // Tự động gán tài xế vừa tạo vào ô chọn mục tiêu
             const newDriverData = data.data;
@@ -14375,7 +14486,11 @@ function setFullpageSaveButtonState(btnId, isEnabled) {
 window.setFullpageSaveButtonState = setFullpageSaveButtonState;
 
 async function openCreateQuotationPage(updateHistory = true) {
-    await loadMasterDataFormOptions();
+    if (typeof checkAndSyncMasterData === 'function') {
+        await checkAndSyncMasterData(false);
+    } else {
+        await loadMasterDataFormOptions();
+    }
     populateMasterDataDropdowns();
 
     const form = document.getElementById('form-fullpage-quotation');
@@ -14482,7 +14597,11 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
     if (!quoteIdentifier || quoteIdentifier === 'new') {
         return openCreateQuotationPage(updateHistory);
     }
-    await loadMasterDataFormOptions();
+    if (typeof checkAndSyncMasterData === 'function') {
+        await checkAndSyncMasterData(false);
+    } else {
+        await loadMasterDataFormOptions();
+    }
     populateMasterDataDropdowns();
 
     const form = document.getElementById('form-fullpage-quotation');
@@ -16404,7 +16523,11 @@ async function openCreateBookingPage(updateHistory = true) {
         if (typeof initAllNumberInputs === 'function') initAllNumberInputs();
 
         try {
-            if (typeof loadMasterDataFormOptions === 'function') await loadMasterDataFormOptions();
+            if (typeof checkAndSyncMasterData === 'function') {
+                await checkAndSyncMasterData(false);
+            } else if (typeof loadMasterDataFormOptions === 'function') {
+                await loadMasterDataFormOptions();
+            }
             if (typeof populateMasterDataDropdowns === 'function') populateMasterDataDropdowns();
         } catch (mErr) {
             console.warn('loadMasterDataFormOptions error:', mErr);
@@ -16419,7 +16542,11 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
     if (!bookingId || bookingId === 'new') {
         return openCreateBookingPage(updateHistory);
     }
-    await loadMasterDataFormOptions();
+    if (typeof checkAndSyncMasterData === 'function') {
+        await checkAndSyncMasterData(false);
+    } else {
+        await loadMasterDataFormOptions();
+    }
     populateMasterDataDropdowns();
 
     const form = document.getElementById('form-fullpage-booking');
@@ -20515,6 +20642,9 @@ async function submitEmployeeForm(event) {
 
         showToast('success', data.message || 'Đã lưu hồ sơ nhân sự thành công!', 'Thành Công');
         await loadEmployeesData();
+        if (typeof checkAndSyncMasterData === 'function') {
+            checkAndSyncMasterData(true);
+        }
         const savedId = editId || data.id || data.data?.id;
         if (savedId) {
             openEditEmployeePage(savedId, true);
@@ -20608,6 +20738,9 @@ async function deleteEmployeeItem(empId) {
             }
             if (typeof loadEmployeesData === 'function') {
                 await loadEmployeesData();
+            }
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
             }
         } else {
             const errMsg = data.error || data.message || 'Không thể xóa hồ sơ nhân sự này do đã phát sinh ràng buộc nghiệp vụ!';
@@ -30478,9 +30611,13 @@ async function submitMasterDataForm(e) {
                 if (typeof loadFleetData === 'function') loadFleetData();
             }
 
-            // Tự động tải lại danh mục cho các Modal đang mở và chọn ngay bản ghi vừa tạo
-            await loadMasterDataFormOptions(true);
-            populateMasterDataDropdowns();
+            // Tự động tải lại danh mục cho các Modal đang mở và đồng bộ tức thời mọi máy tính/tab
+            if (typeof checkAndSyncMasterData === 'function') {
+                await checkAndSyncMasterData(true);
+            } else {
+                await loadMasterDataFormOptions(true);
+                populateMasterDataDropdowns();
+            }
 
             if (typeof quickMasterDataTargetSelectId !== 'undefined' && quickMasterDataTargetSelectId) {
                 const targetEl = document.getElementById(quickMasterDataTargetSelectId);
@@ -30542,6 +30679,9 @@ async function deleteMasterDataItem(id) {
             loadMasterData();
             if (currentMasterDataTab === 'vehicles' || currentMasterDataTab === 'trailers') {
                 if (typeof loadFleetData === 'function') loadFleetData();
+            }
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
             }
         } else {
             showToast('danger', data.message || data.error || data.detail || 'Không thể xóa bản ghi!');
@@ -33321,7 +33461,9 @@ async function saveNewSubVehicleInline(subId) {
             if (brandInp) brandInp.value = '';
             hideAddSubVehicleInline();
             loadSubcontractorVehiclesInModal(subId);
-            if (typeof loadMasterDataFormOptions === 'function') {
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
+            } else if (typeof loadMasterDataFormOptions === 'function') {
                 loadMasterDataFormOptions(true);
             }
         } else {
@@ -33343,7 +33485,9 @@ async function deleteSubVehicleInline(vehicleId, subId) {
             showToast('success', result.message || 'Đã gỡ phương tiện thành công!');
             subVehiclesEditingSet.delete(vehicleId);
             loadSubcontractorVehiclesInModal(subId);
-            if (typeof loadMasterDataFormOptions === 'function') {
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
+            } else if (typeof loadMasterDataFormOptions === 'function') {
                 loadMasterDataFormOptions(true);
             }
         } else {
@@ -33506,7 +33650,9 @@ async function saveNewSubDriverInline(subId) {
             if (licInp) licInp.value = '';
             hideAddSubDriverInline();
             loadSubcontractorDriversInModal(subId);
-            if (typeof loadMasterDataFormOptions === 'function') {
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
+            } else if (typeof loadMasterDataFormOptions === 'function') {
                 loadMasterDataFormOptions(true);
             }
         } else {
@@ -33528,7 +33674,9 @@ async function deleteSubDriverInline(driverId, subId) {
             showToast('success', result.message || 'Đã xóa tài xế thành công!');
             subDriversEditingSet.delete(driverId);
             loadSubcontractorDriversInModal(subId);
-            if (typeof loadMasterDataFormOptions === 'function') {
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
+            } else if (typeof loadMasterDataFormOptions === 'function') {
                 loadMasterDataFormOptions(true);
             }
         } else {
@@ -33633,8 +33781,10 @@ async function saveAllSubcontractorFleetInlineChanges(subId) {
         }
     }
 
-    // Tải lại danh mục cho các dropdown
-    if (typeof loadMasterDataFormOptions === 'function') {
+    // Tải lại danh mục cho các dropdown & đồng bộ tức thời
+    if (typeof checkAndSyncMasterData === 'function') {
+        checkAndSyncMasterData(true);
+    } else if (typeof loadMasterDataFormOptions === 'function') {
         loadMasterDataFormOptions(true);
     }
 }
@@ -39804,6 +39954,11 @@ window.downloadSelectedImportTemplate = typeof downloadSelectedImportTemplate !=
 window.handleImportFileSelected = typeof handleImportFileSelected !== 'undefined' ? handleImportFileSelected : undefined;
 window.clearImportFileInput = typeof clearImportFileInput !== 'undefined' ? clearImportFileInput : undefined;
 window.submitMasterDataImport = typeof submitMasterDataImport !== 'undefined' ? submitMasterDataImport : undefined;
+window.loadMasterDataFormOptions = typeof loadMasterDataFormOptions !== 'undefined' ? loadMasterDataFormOptions : undefined;
+window.checkAndSyncMasterData = typeof checkAndSyncMasterData !== 'undefined' ? checkAndSyncMasterData : undefined;
+window.broadcastMasterDataChanged = typeof broadcastMasterDataChanged !== 'undefined' ? broadcastMasterDataChanged : undefined;
+window.populateMasterDataDropdowns = typeof populateMasterDataDropdowns !== 'undefined' ? populateMasterDataDropdowns : undefined;
+window.refreshMasterDataOptions = typeof refreshMasterDataOptions !== 'undefined' ? refreshMasterDataOptions : undefined;
 window.switchAccountingSubTab = typeof switchAccountingSubTab !== 'undefined' ? switchAccountingSubTab : window.switchAccountingSubTab;
 window.switchReportGroup = typeof switchReportGroup !== 'undefined' ? switchReportGroup : undefined;
 window.switchReportSubTab = typeof switchReportSubTab !== 'undefined' ? switchReportSubTab : undefined;

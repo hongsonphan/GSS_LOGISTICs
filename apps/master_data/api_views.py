@@ -220,7 +220,10 @@ class MasterDataFormOptionsAPIView(APIView):
             for ct in RouteTariff.objects.select_related('customer').all().order_by('customer__name', 'pickup_location')
         ]
 
+        from apps.master_data.version import get_master_data_version
+
         return Response({
+            'version': get_master_data_version(),
             'customers': customers,
             'customer_tariffs': customer_tariffs,
             'locations': {
@@ -2454,3 +2457,19 @@ def _catalog_module(request):
 
 for _cls in (MasterDataExportTemplateAPIView, MasterDataExportDataAPIView, MasterDataImportAPIView):
     _cls.cfg_module_for = staticmethod(lambda request: _catalog_module(request))
+
+from rest_framework.permissions import IsAuthenticated
+
+class MasterDataVersionAPIView(APIView):
+    """
+    API siêu nhẹ (1-2ms) cung cấp phiên bản danh mục hệ thống (timestamp mili-giây).
+    Cho phép Frontend trên toàn bộ máy tính / user tự động kiểm tra và đồng bộ tức thời.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.master_data.version import get_master_data_version
+        v = get_master_data_version()
+        resp = Response({'version': v})
+        resp['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp

@@ -37,6 +37,11 @@ window.downloadSelectedImportTemplate = typeof downloadSelectedImportTemplate !=
 window.handleImportFileSelected = typeof handleImportFileSelected !== 'undefined' ? handleImportFileSelected : undefined;
 window.clearImportFileInput = typeof clearImportFileInput !== 'undefined' ? clearImportFileInput : undefined;
 window.submitMasterDataImport = typeof submitMasterDataImport !== 'undefined' ? submitMasterDataImport : undefined;
+window.loadMasterDataFormOptions = typeof loadMasterDataFormOptions !== 'undefined' ? loadMasterDataFormOptions : undefined;
+window.checkAndSyncMasterData = typeof checkAndSyncMasterData !== 'undefined' ? checkAndSyncMasterData : undefined;
+window.broadcastMasterDataChanged = typeof broadcastMasterDataChanged !== 'undefined' ? broadcastMasterDataChanged : undefined;
+window.populateMasterDataDropdowns = typeof populateMasterDataDropdowns !== 'undefined' ? populateMasterDataDropdowns : undefined;
+window.refreshMasterDataOptions = typeof refreshMasterDataOptions !== 'undefined' ? refreshMasterDataOptions : undefined;
 window.switchAccountingSubTab = typeof switchAccountingSubTab !== 'undefined' ? switchAccountingSubTab : window.switchAccountingSubTab;
 window.switchReportGroup = typeof switchReportGroup !== 'undefined' ? switchReportGroup : undefined;
 window.switchReportSubTab = typeof switchReportSubTab !== 'undefined' ? switchReportSubTab : undefined;

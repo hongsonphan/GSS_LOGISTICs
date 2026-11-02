@@ -479,6 +479,9 @@ async function submitEmployeeForm(event) {
 
         showToast('success', data.message || 'Đã lưu hồ sơ nhân sự thành công!', 'Thành Công');
         await loadEmployeesData();
+        if (typeof checkAndSyncMasterData === 'function') {
+            checkAndSyncMasterData(true);
+        }
         const savedId = editId || data.id || data.data?.id;
         if (savedId) {
             openEditEmployeePage(savedId, true);
@@ -572,6 +575,9 @@ async function deleteEmployeeItem(empId) {
             }
             if (typeof loadEmployeesData === 'function') {
                 await loadEmployeesData();
+            }
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
             }
         } else {
             const errMsg = data.error || data.message || 'Không thể xóa hồ sơ nhân sự này do đã phát sinh ràng buộc nghiệp vụ!';
