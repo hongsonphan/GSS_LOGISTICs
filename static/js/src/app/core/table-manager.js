@@ -231,14 +231,18 @@
                 pin = self.options.rightPinKeys.includes(key.toLowerCase()) ? 'right' : null;
             }
 
+            const isDefaultHidden = th.getAttribute('data-col-default-hidden') === 'true' || 
+                                    th.getAttribute('data-col-visible') === 'false';
+
             const colObj = {
                 key: key,
                 label: label,
-                visible: true,
+                visible: !isDefaultHidden,
                 locked: isLocked,
                 pin: pin,
                 resizable: th.getAttribute('data-col-resizable') !== 'false',
-                origIdx: idx
+                origIdx: idx,
+                defaultHidden: isDefaultHidden
             };
 
             self.defaultColumns.push(colObj);
@@ -280,7 +284,8 @@
                                 locked: defaultMap[s.key].locked,
                                 pin: (s.pin === 'left' || s.pin === 'right' || s.pin === null) ? s.pin : defaultMap[s.key].pin,
                                 resizable: typeof s.resizable === 'boolean' ? s.resizable : defaultMap[s.key].resizable,
-                                origIdx: defaultMap[s.key].origIdx
+                                origIdx: defaultMap[s.key].origIdx,
+                                defaultHidden: defaultMap[s.key].defaultHidden
                             });
                             delete defaultMap[s.key];
                         }
@@ -291,11 +296,12 @@
                         return a.origIdx - b.origIdx;
                     });
                     remainingCols.forEach(function(c) {
+                        const newCol = Object.assign({}, c, { visible: !c.defaultHidden });
                         if (c.key === 'stt' || c.origIdx === 0) {
-                            merged.unshift(Object.assign({}, c));
+                            merged.unshift(newCol);
                         } else {
                             const targetIdx = Math.min(c.origIdx, merged.length);
-                            merged.splice(targetIdx, 0, Object.assign({}, c));
+                            merged.splice(targetIdx, 0, newCol);
                         }
                     });
 
@@ -315,7 +321,7 @@
 
         // Mặc định sao chép từ defaultColumns
         this.columns = this.defaultColumns.map(function(c) {
-            return Object.assign({}, c);
+            return Object.assign({}, c, { visible: !c.defaultHidden });
         });
     };
 
@@ -343,7 +349,7 @@
         } catch (e) {}
 
         this.columns = this.defaultColumns.map(function(c) {
-            return Object.assign({}, c);
+            return Object.assign({}, c, { visible: !c.defaultHidden });
         });
 
         const ths = this.table.querySelectorAll(':scope > thead > tr > th');
@@ -1422,6 +1428,32 @@
     window.BimTableFooter = BimTableFooter;
     // Export module
     window.BimTableColumnManager = BimTableColumnManager;
+
+    window.BimColumnManager_showAll = function() {
+        const tableId = BimTableColumnManager.activeTableId;
+        if (!tableId || !BimTableColumnManager.instances[tableId]) return;
+        const inst = BimTableColumnManager.instances[tableId];
+        inst.columns.forEach(function(c) { c.visible = true; });
+        inst.saveConfig();
+        inst.apply();
+        inst.buildModalUI();
+    };
+
+    window.BimColumnManager_filterCols = function(query) {
+        const term = (query || '').trim().toLowerCase();
+        const listEl = document.getElementById('bim-col-modal-list');
+        if (!listEl) return;
+        const items = listEl.querySelectorAll('[data-key]');
+        items.forEach(function(item) {
+            const text = item.textContent.toLowerCase();
+            if (!term || text.includes(term)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    };
+
 
 
     /**

@@ -304,6 +304,39 @@
                         </th>
 
                         <!-- 9. Thao tác Xóa / Xem Phiếu -->
+                        
+                        <!-- Các Cột Mở Rộng Từ Database (Mặc Định Ẩn - Tùy Biến Hiện) -->
+                        <th data-col-key="customer_short" data-col-name="Tên Viết Tắt KH" data-col-default-hidden="true" style="display:none">Tên Viết Tắt KH</th>
+                        <th data-col-key="customer_code" data-col-name="Mã Khách Hàng" data-col-default-hidden="true" style="display:none">Mã KH</th>
+                        <th data-col-key="shipment_type" data-col-name="Loại Hình Hàng Hóa" data-col-default-hidden="true" style="display:none">Loại Hình</th>
+                        <th data-col-key="container_type" data-col-name="Loại / Quy Cách Cont" data-col-default-hidden="true" style="display:none">Loại Cont</th>
+                        <th data-col-key="container_number" data-col-name="Số Cont Riêng" data-col-default-hidden="true" style="display:none">Số Cont</th>
+                        <th data-col-key="seal_number" data-col-name="Số Seal Riêng" data-col-default-hidden="true" style="display:none">Số Seal</th>
+                        <th data-col-key="booking_number" data-col-name="Số Booking / B/L Riêng" data-col-default-hidden="true" style="display:none">Số Booking / BL</th>
+                        <th data-col-key="shipping_line" data-col-name="Hãng Tàu Biển" data-col-default-hidden="true" style="display:none">Hãng Tàu</th>
+                        <th data-col-key="cutoff_time" data-col-name="Hạn Cắt Máng (Closing)" data-col-default-hidden="true" style="display:none">Hạn Cắt Máng</th>
+                        <th data-col-key="det_expiry" data-col-name="Hạn Miễn Phí Vỏ (DET)" data-col-default-hidden="true" style="display:none">Hạn Free DET</th>
+                        <th data-col-key="dem_expiry" data-col-name="Hạn Miễn Phí Bãi (DEM)" data-col-default-hidden="true" style="display:none">Hạn Free DEM</th>
+                        <th data-col-key="pickup_location" data-col-name="Cảng / Bãi Lấy Rỗng" data-col-default-hidden="true" style="display:none">Cảng Lấy Rỗng</th>
+                        <th data-col-key="warehouse_location" data-col-name="Kho / Nhà Máy Đóng" data-col-default-hidden="true" style="display:none">Kho Đóng Hàng</th>
+                        <th data-col-key="dropoff_location" data-col-name="Cảng / Bãi Hạ Cont" data-col-default-hidden="true" style="display:none">Cảng Hạ Cont</th>
+                        <th data-col-key="commercial_invoice" data-col-name="Hóa Đơn Thương Mại" data-col-default-hidden="true" style="display:none">Hóa Đơn TM</th>
+                        <th data-col-key="warehouse_dock" data-col-name="Cửa Dock Kho" data-col-default-hidden="true" style="display:none">Cửa Dock</th>
+                        <th data-col-key="fleet_type" data-col-name="Phân Loại Xe (Nhà/Bạn)" data-col-default-hidden="true" style="display:none">Phân Loại Xe</th>
+                        <th data-col-key="license_plate" data-col-name="Biển Số Đầu Kéo" data-col-default-hidden="true" style="display:none">Biển Số Xe</th>
+                        <th data-col-key="trailer_plate" data-col-name="Biển Số Rơ-Moóc" data-col-default-hidden="true" style="display:none">Số Rơ-moóc</th>
+                        <th data-col-key="driver_name" data-col-name="Tên Tài Xế" data-col-default-hidden="true" style="display:none">Tên Tài Xế</th>
+                        <th data-col-key="driver_phone" data-col-name="SĐT Tài Xế" data-col-default-hidden="true" style="display:none">SĐT Tài Xế</th>
+                        <th data-col-key="dropoff_vehicle" data-col-name="Xe Hạ Cont" data-col-default-hidden="true" style="display:none">Xe Hạ Cont</th>
+                        <th data-col-key="dropoff_driver" data-col-name="Tài Xế Hạ Cont" data-col-default-hidden="true" style="display:none">Tài Xế Hạ</th>
+                        <th data-col-key="subcontractor_name" data-col-name="Đơn Vị Thầu Phụ 3PL" data-col-default-hidden="true" style="display:none">Thầu Phụ 3PL</th>
+                        <th data-col-key="customs_declaration" data-col-name="Tờ Khai & Luồng HQ" data-col-default-hidden="true" style="display:none">Tờ Khai HQ</th>
+                        <th data-col-key="cont_location_type" data-col-name="Vị Trí Vỏ Cont" data-col-default-hidden="true" style="display:none">Vị Trí Vỏ</th>
+                        <th data-col-key="cargo_notes" data-col-name="Ghi Chú Đóng Hàng" data-col-default-hidden="true" style="display:none">Ghi Chú Hàng</th>
+                        <th data-col-key="revenue" data-col-name="Doanh Thu Cước (VNĐ)" data-col-default-hidden="true" style="display:none">Doanh Thu</th>
+                        <th data-col-key="dispatch_cost" data-col-name="Chi Phí Chuyến (VNĐ)" data-col-default-hidden="true" style="display:none">Chi Phí</th>
+                        <th data-col-key="profit" data-col-name="Lợi Nhuận Gộp (VNĐ)" data-col-default-hidden="true" style="display:none">Lợi Nhuận</th>
+                        <th data-col-key="created_at" data-col-name="Ngày Giờ Tạo Lệnh" data-col-default-hidden="true" style="display:none">Ngày Tạo</th>
                         <th data-col-key="actions" data-col-name="Thao tác" data-col-locked="true" class="w-28 text-center font-bold text-slate-700 select-none">Thao tác</th>
                     </tr>
                 </thead>

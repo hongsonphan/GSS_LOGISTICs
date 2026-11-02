@@ -9,7 +9,7 @@ class TripListCreateAPIView(APIView):
         status_filter = request.GET.get('status', '').strip()
 
         trips_qs = DispatchTrip.objects.select_related(
-            'customer', 'vehicle', 'driver', 'dropoff_vehicle', 'dropoff_driver'
+            'customer', 'vehicle', 'driver', 'trailer', 'subcontractor', 'dropoff_vehicle', 'dropoff_driver'
         ).prefetch_related('customs_declarations').order_by('-created_at')
 
         if query:
@@ -20,7 +20,11 @@ class TripListCreateAPIView(APIView):
                 Q(booking_or_bill__icontains=query) |
                 Q(booking_or_bill_2__icontains=query) |
                 Q(customer__name__icontains=query) |
-                Q(vehicle__license_plate__icontains=query)
+                Q(vehicle__license_plate__icontains=query) |
+                Q(customer__short_name__icontains=query) |
+                Q(customer__code__icontains=query) |
+                Q(trailer__license_plate__icontains=query) |
+                Q(shipping_line__icontains=query)
             )
 
         if status_filter in ['ACTIVE', 'Đang điều vận']:
@@ -108,6 +112,11 @@ class TripListCreateAPIView(APIView):
                 'driver_hashid': t.driver_hashid,
                 'tracking_hashid': t.tracking_hashid,
                 'customer': t.customer.name if t.customer else 'Khách Hàng',
+                'customer_short_name': (t.customer.short_name or t.customer.name) if t.customer else 'Khách Hàng',
+                'customer_code': t.customer.code if t.customer else '',
+                'shipping_line': t.shipping_line or '',
+                'trailer': t.trailer.license_plate if t.trailer else '',
+                'subcontractor_name': t.subcontractor.name if t.subcontractor else '',
                 'type': disp_type,
                 'type_raw': raw_type,
                 'route': f"{t.pickup_location} -> {t.warehouse_location} -> {t.dropoff_location or 'Hạ bãi'}",
