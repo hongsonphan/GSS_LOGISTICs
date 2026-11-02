@@ -161,6 +161,15 @@ window.filterAccountingTable = typeof filterAccountingTable !== 'undefined' ? fi
 window.toggleAccountingSort = typeof toggleAccountingSort !== 'undefined' ? toggleAccountingSort : undefined;
 window.resetAccountingFilters = typeof resetAccountingFilters !== 'undefined' ? resetAccountingFilters : undefined;
 window.clearAccountingSearch = typeof clearAccountingSearch !== 'undefined' ? clearAccountingSearch : undefined;
+window.toggleSelectAllDriverTrips = typeof toggleSelectAllDriverTrips !== 'undefined' ? toggleSelectAllDriverTrips : undefined;
+window.onDriverTripSelectionChange = typeof onDriverTripSelectionChange !== 'undefined' ? onDriverTripSelectionChange : undefined;
+window.updateDriverBatchSettleButtonState = typeof updateDriverBatchSettleButtonState !== 'undefined' ? updateDriverBatchSettleButtonState : undefined;
+window.openBatchSettleDriverModal = typeof openBatchSettleDriverModal !== 'undefined' ? openBatchSettleDriverModal : undefined;
+window.toggleSelectAllCustTrips = typeof toggleSelectAllCustTrips !== 'undefined' ? toggleSelectAllCustTrips : undefined;
+window.onCustSettleTripSelectionChange = typeof onCustSettleTripSelectionChange !== 'undefined' ? onCustSettleTripSelectionChange : undefined;
+window.updateCustBatchSettleButtonState = typeof updateCustBatchSettleButtonState !== 'undefined' ? updateCustBatchSettleButtonState : undefined;
+window.toggleCustomerSettleSort = typeof toggleCustomerSettleSort !== 'undefined' ? toggleCustomerSettleSort : undefined;
+window.filterCustomerSettlementsClientSide = typeof filterCustomerSettlementsClientSide !== 'undefined' ? filterCustomerSettlementsClientSide : undefined;
 window.exportAccountingToExcel = typeof exportAccountingToExcel !== 'undefined' ? exportAccountingToExcel : undefined;
 window.exportCashBookToExcel = typeof exportCashBookToExcel !== 'undefined' ? exportCashBookToExcel : undefined;
 window.exportReimbursablesToExcel = typeof exportReimbursablesToExcel !== 'undefined' ? exportReimbursablesToExcel : undefined;

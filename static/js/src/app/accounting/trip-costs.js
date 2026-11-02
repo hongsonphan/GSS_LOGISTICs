@@ -2,6 +2,7 @@
 // 10. PHÂN HỆ QUẢN LÝ KẾ TOÁN & ĐỐI SOÁT CHI PHÍ CHUYẾN XE
 // =========================================================================
 let accountingDataCache = [];
+let selectedDriverTripCodes = new Set();
 
 async function loadAccountingData() {
     const tbody = document.getElementById('acct-tbody');
@@ -43,6 +44,11 @@ async function loadAccountingData() {
 
         // 2. Lưu cache và hiển thị bảng
         accountingDataCache = data.settlements || [];
+        const availableCodes = new Set(accountingDataCache.map(t => t.trip_code));
+        for (const code of selectedDriverTripCodes) {
+            if (!availableCodes.has(code)) selectedDriverTripCodes.delete(code);
+        }
+        updateDriverBatchSettleButtonState();
         populateAccountingFilterDropdowns(accountingDataCache);
         filterAccountingTable();
 
@@ -68,7 +74,7 @@ function renderAccountingTable(list) {
     if (!list || list.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="11" class="p-8 text-center text-slate-400 font-medium">
+                <td colspan="12" class="p-8 text-center text-slate-400 font-medium">
                     <i class="ph ph-receipt text-3xl mb-1 inline-block text-slate-300"></i>
                     <p>Không có dữ liệu đối soát chuyến xe phù hợp với bộ lọc.</p>
                 </td>
@@ -79,12 +85,17 @@ function renderAccountingTable(list) {
 
     tbody.innerHTML = '';
     list.forEach((item, idx) => {
-        const tr = document.createElement('tr');
-        tr.className = item.is_settled 
-            ? 'hover:bg-slate-50 transition-colors' 
-            : 'hover:bg-amber-50/50 bg-amber-50/10 transition-colors';
+        const isSettled = !!item.is_settled;
+        const isChecked = selectedDriverTripCodes.has(item.trip_code);
+        const chkDisabled = isSettled ? 'disabled title="Chuyến này đã chốt sổ quyết toán"' : '';
+        const chkClass = isSettled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer';
 
-        const settleBadge = item.is_settled
+        const tr = document.createElement('tr');
+        tr.className = isChecked
+            ? 'bg-emerald-50/40 hover:bg-slate-50 transition-colors'
+            : (isSettled ? 'hover:bg-slate-50 transition-colors' : 'hover:bg-amber-50/50 bg-amber-50/10 transition-colors');
+
+        const settleBadge = isSettled
             ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1 font-heading">
                 <i class="ph-bold ph-lock-key"></i> Đã Chốt Sổ
                </span>`
@@ -93,6 +104,14 @@ function renderAccountingTable(list) {
                </span>`;
 
         tr.innerHTML = `
+            <td class="w-10 text-center border-r border-slate-200">
+                <input type="checkbox"
+                    class="acct-driver-row-checkbox rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 ${chkClass}"
+                    data-trip-code="${escapeHtml(item.trip_code)}"
+                    ${isChecked ? 'checked' : ''}
+                    ${chkDisabled}
+                    onchange="onDriverTripSelectionChange('${escapeHtml(item.trip_code)}', this.checked)">
+            </td>
             <td class="p-3.5 text-center font-mono text-xs font-bold text-slate-500 tabular-nums select-none border-r border-slate-200/70 w-12">
                 ${idx + 1}
             </td>
@@ -170,13 +189,22 @@ function renderAccountingTable(list) {
         tbody.appendChild(tr);
     });
 
+    // Đồng bộ master checkbox thead
+    const activeCheckboxes = document.querySelectorAll('.acct-driver-row-checkbox:not(:disabled)');
+    const checkedCheckboxes = document.querySelectorAll('.acct-driver-row-checkbox:not(:disabled):checked');
+    const masterCb = document.getElementById('acct-driver-select-all');
+    if (masterCb) {
+        masterCb.checked = activeCheckboxes.length > 0 && activeCheckboxes.length === checkedCheckboxes.length;
+        masterCb.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < activeCheckboxes.length;
+    }
+
     if (window.BimTableFooter && Array.isArray(list)) {
         const totalRev = list.reduce((sum, i) => sum + (Number(i.revenue) || 0), 0);
         const totalExp = list.reduce((sum, i) => sum + (Number(i.expense) || 0), 0);
         const totalProfit = totalRev - totalExp;
         window.BimTableFooter.render('accounting-pnl-table', {
             cells: [
-                { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
+                { html: '<span class="font-black text-slate-900 font-heading">TỔNG</span>', align: 'center', colspan: 2 },
                 { html: `${list.length} chuyến xe đối soát P&L`, colspan: 4 },
                 { html: `<span class="text-slate-900 font-bold tabular-nums font-mono text-sm">${new Intl.NumberFormat('vi-VN').format(totalRev)} đ</span>`, align: 'right' },
                 { html: `<span class="text-rose-600 font-bold tabular-nums font-mono text-sm">${new Intl.NumberFormat('vi-VN').format(totalExp)} đ</span>`, align: 'right' },
@@ -458,3 +486,113 @@ function exportAccountingToExcel() {
 
     showToast('success', `Đã xuất dữ liệu "${filename}" thành công!`, 'Xuất Excel Thành Công');
 }
+
+// -----------------------------------------------------------------------------
+// CHỌN NHIỀU CHUYẾN & QUYẾT TOÁN TÀI XẾ HÀNG LOẠT (BATCH DRIVER SETTLEMENT)
+// -----------------------------------------------------------------------------
+function toggleSelectAllDriverTrips(masterCheckbox) {
+    const isChecked = masterCheckbox.checked;
+    const visibleUnsettledTrips = (accountingDataCache || []).filter(t => !t.is_settled);
+
+    if (isChecked) {
+        visibleUnsettledTrips.forEach(t => selectedDriverTripCodes.add(t.trip_code));
+    } else {
+        visibleUnsettledTrips.forEach(t => selectedDriverTripCodes.delete(t.trip_code));
+    }
+
+    document.querySelectorAll('.acct-driver-row-checkbox:not(:disabled)').forEach(cb => {
+        cb.checked = isChecked;
+    });
+
+    updateDriverBatchSettleButtonState();
+}
+
+function onDriverTripSelectionChange(tripCode, isChecked) {
+    if (typeof tripCode !== 'undefined' && tripCode !== null) {
+        if (isChecked) {
+            selectedDriverTripCodes.add(tripCode);
+        } else {
+            selectedDriverTripCodes.delete(tripCode);
+        }
+    } else {
+        selectedDriverTripCodes.clear();
+        document.querySelectorAll('.acct-driver-row-checkbox:checked').forEach(cb => {
+            const code = cb.getAttribute('data-trip-code');
+            if (code) selectedDriverTripCodes.add(code);
+        });
+    }
+
+    const activeCheckboxes = document.querySelectorAll('.acct-driver-row-checkbox:not(:disabled)');
+    const checkedCheckboxes = document.querySelectorAll('.acct-driver-row-checkbox:not(:disabled):checked');
+    const masterCb = document.getElementById('acct-driver-select-all');
+    if (masterCb) {
+        masterCb.checked = activeCheckboxes.length > 0 && activeCheckboxes.length === checkedCheckboxes.length;
+        masterCb.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < activeCheckboxes.length;
+    }
+
+    updateDriverBatchSettleButtonState();
+}
+
+function updateDriverBatchSettleButtonState() {
+    const btn = document.getElementById('btn-batch-settle-driver');
+    const label = document.getElementById('btn-batch-settle-driver-label');
+    if (!btn) return;
+
+    const count = selectedDriverTripCodes.size;
+    // Yêu cầu: Khi chọn nhiều chuyến (>= 2) thì nút hiển thị bên cạnh "⚡ Quyết Toán Gom Chuyến".
+    // Trường hợp chỉ chọn 1 chuyến thì nút này ẩn hoặc không hiệu lực, mà chỉ có nút trong từng dòng hiệu lực.
+    if (count >= 2) {
+        btn.classList.remove('hidden');
+        btn.classList.add('inline-flex');
+        if (label) label.innerText = `Quyết Toán Nhiều Chuyến (${count})`;
+    } else {
+        btn.classList.add('hidden');
+        btn.classList.remove('inline-flex');
+        if (label) label.innerText = 'Quyết Toán Nhiều Chuyến';
+    }
+}
+
+async function openBatchSettleDriverModal() {
+    const count = selectedDriverTripCodes.size;
+    if (count < 2) {
+        showToast('warning', 'Vui lòng chọn ít nhất hai chuyến xe để chốt sổ quyết toán tài xế hàng loạt!', 'Chưa Đủ Số Lượng Chuyến');
+        return;
+    }
+
+    const confirmed = await (typeof showConfirmModal === 'function' ? showConfirmModal({
+        title: 'Chốt Sổ Quyết Toán Nhiều Chuyến',
+        message: `Xác nhận CHỐT SỔ KẾ TOÁN cho ${count} chuyến xe tài xế đã chọn?\n\nToàn bộ chi phí của các chuyến xe này sẽ được khóa cứng để làm căn cứ quyết toán tài xế và hạch toán kế toán.`,
+        confirmText: `Chốt Sổ (${count} Chuyến)`,
+        cancelText: 'Huỷ bỏ',
+        type: 'success',
+        icon: 'ph-bold ph-seal-check text-2xl'
+    }) : Promise.resolve(confirm(`Xác nhận chốt sổ kế toán cho ${count} chuyến xe đã chọn?`)));
+
+    if (!confirmed) return;
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'batch_settle',
+                trip_codes: Array.from(selectedDriverTripCodes)
+            })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.error) {
+            throw new Error(data.error || data.message || 'Lỗi chốt sổ kế toán');
+        }
+        showToast('success', data.message || `Đã chốt sổ thành công cho ${count} chuyến xe!`, 'Chốt Sổ Thành Công');
+        selectedDriverTripCodes.clear();
+        updateDriverBatchSettleButtonState();
+        loadAccountingData();
+    } catch (err) {
+        console.error('Lỗi batch settle tài xế:', err);
+        showToast('danger', err.message || 'Lỗi kết nối máy chủ');
+    }
+}
+
+window.toggleSelectAllDriverTrips = toggleSelectAllDriverTrips;
+window.onDriverTripSelectionChange = onDriverTripSelectionChange;
+window.updateDriverBatchSettleButtonState = updateDriverBatchSettleButtonState;
+window.openBatchSettleDriverModal = openBatchSettleDriverModal;

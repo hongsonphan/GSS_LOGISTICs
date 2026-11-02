@@ -4,6 +4,7 @@ from ._common import *  # noqa: F401,F403
 class AccountingAPIView(APIView):
     """API Phân hệ Quản lý Kế toán: Đối soát Chi phí, Hóa đơn chứng từ và Chốt sổ chuyến xe."""
     permission_classes = [IsAccountant]
+    access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}
     def get(self, request):
         trips = DispatchTrip.objects.select_related('customer', 'driver', 'vehicle', 'settled_by', 'booking_order').prefetch_related('expenses').filter(is_deleted=False).order_by('-created_at')
 
@@ -55,6 +56,7 @@ class AccountingAPIView(APIView):
             margin_percent = round((profit / rev * 100), 1) if rev > 0 else 0
 
             settlement_list.append({
+                'id': t.id,
                 'trip_code': t.trip_code,
                 'loading_date': t.loading_date.strftime('%d/%m/%Y') if t.loading_date else '',
                 'customer_name': t.customer.name if t.customer else '-',
@@ -88,3 +90,64 @@ class AccountingAPIView(APIView):
             },
             'settlements': settlement_list
         })
+
+    def post(self, request):
+        action = request.data.get('action')
+        trip_codes = request.data.get('trip_codes', [])
+        if not trip_codes or not isinstance(trip_codes, list):
+            return Response({'error': 'Vui lòng chọn ít nhất một chuyến xe để thao tác.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        trips = DispatchTrip.objects.filter(trip_code__in=trip_codes, is_deleted=False)
+        if not trips.exists():
+            return Response({'error': 'Không tìm thấy các chuyến xe tương ứng.'}, status=status.HTTP_404_NOT_FOUND)
+
+        accountant = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or \
+                     Employee.objects.filter(role=EmployeeRole.ACCOUNTANT).first()
+
+        now = timezone.now()
+        settled_codes = []
+
+        if action == 'batch_settle':
+            with transaction.atomic():
+                for t in trips:
+                    t.is_expenses_settled = True
+                    t.settled_at = now
+                    t.settled_by = accountant
+                    t.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by'])
+
+                    t.expenses.filter(is_deleted=False).update(
+                        status=ApprovalStatus.SETTLED,
+                        approved_at=now,
+                        approved_by=accountant
+                    )
+                    t.update_financials()
+                    settled_codes.append(t.trip_code)
+
+            return Response({
+                'success': True,
+                'message': f'Đã chốt sổ quyết toán chi phí cho {len(settled_codes)} chuyến xe thành công!',
+                'settled_codes': settled_codes
+            })
+
+        elif action == 'batch_unsettle':
+            with transaction.atomic():
+                for t in trips:
+                    t.is_expenses_settled = False
+                    t.settled_at = None
+                    t.settled_by = None
+                    t.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by'])
+
+                    t.expenses.filter(is_deleted=False, status=ApprovalStatus.SETTLED).update(
+                        status=ApprovalStatus.APPROVED
+                    )
+                    t.update_financials()
+                    settled_codes.append(t.trip_code)
+
+            return Response({
+                'success': True,
+                'message': f'Đã mở lại sổ quyết toán cho {len(settled_codes)} chuyến xe thành công!',
+                'settled_codes': settled_codes
+            })
+
+        return Response({'error': f'Hành động không hợp lệ: {action}'}, status=status.HTTP_400_BAD_REQUEST)
+

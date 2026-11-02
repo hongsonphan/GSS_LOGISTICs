@@ -2,6 +2,44 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.29] - 2026-11-02 (Chuẩn Hóa Quyết Toán Gom Khách Hàng & Tài Xế: Checkbox Trước STT, Nút Quyết Toán Nhiều Chuyến Thông Minh & Sắp Xếp Tìm Kiếm)
+
+### 1. Đồng Bộ Hóa Trải Nghiệm Quyết Toán Gom Khách Hàng (Subtab 5 - Customer Settlement / SOA):
+- **Cột Checkbox Đặt Trước STT:**
+  * Bổ sung cột Checkbox chọn trước cột STT trên `#customer-settlements-table`.
+  * Header có master checkbox `#cust-settle-select-all` cho phép chọn/bỏ chọn toàn bộ chuyến chưa quyết toán trên trang.
+  * Từng hàng có checkbox `.cust-settle-row-checkbox`, tự động khóa (disable & mờ) đối với các chuyến đã quyết toán (`is_customer_settled = true`).
+  * Cột STT hiển thị số thứ tự tăng dần từ 1, độc lập với cột checkbox.
+- **Nút Quyết Toán Nhiều Chuyến Thông Minh (`#btn-batch-settle-customer`):**
+  * Đặt tại thanh công cụ ngay bên cạnh nút "Xem Bảng Kê SOA".
+  * Ẩn hoàn toàn (`hidden`) khi số lượng chuyến chọn < 2 (0 hoặc 1 chuyến).
+  * Hiển thị tức thì kèm số lượng chuyến khi chọn từ 2 chuyến trở lên: `Quyết Toán Nhiều Chuyến (${count})`.
+  * Hộp thoại xác nhận nguyên tử (Confirm Modal) hiển thị chi tiết số lượng chuyến trước khi thực hiện.
+  * Gọi API backend `POST /api/accounting/customer-reconciliation/` với `action: 'SETTLE'` và `trip_ids: [...]`.
+- **Tìm Kiếm Đa Chiều & Sắp Xếp Cột Client-side:**
+  * Bổ sung ô tìm kiếm `#cust-settle-search-input` tại thanh bộ lọc cho phép tìm nhanh theo: Mã chuyến, Khách hàng, Số Cont, Lộ trình.
+  * Hỗ trợ click tiêu đề để sắp xếp động (Mã chuyến, Ngày đóng hàng, Khách hàng, Cước bán, Chi hộ, Tổng thu) kèm icon mũi tên đa chiều `ph-arrows-down-up`, `ph-arrow-up`, `ph-arrow-down`.
+- **Căn Chỉnh Chân Bảng `BimTableFooter`:**
+  * Căn chỉnh chuẩn xác 13 cột của bảng, hiển thị tổng hợp cước bán, chi hộ và tổng công nợ thu hồi.
+
+### 2. Đồng Bộ Hóa Trải Nghiệm Quyết Toán Gom Tài Xế / Lãi Lỗ Chuyến Xe (Subtab 4 - Driver PnL Settlement):
+- **Cột Checkbox Đặt Trước STT:**
+  * Bổ sung cột Checkbox chọn trước cột STT trên bảng `#accounting-pnl-table`.
+  * Header có master checkbox `#acct-driver-select-all` hỗ trợ chọn tất cả chuyến chưa chốt sổ (`!item.is_settled`).
+  * Checkbox hàng `.acct-driver-row-checkbox` tự động vô hiệu hóa nếu chuyến đã chốt sổ kế toán.
+  * Highlight màu nền dòng xanh nhẹ khi được tick chọn.
+- **Nút Quyết Toán Nhiều Chuyến Tài Xế (`#btn-batch-settle-driver`):**
+  * Nằm trên thanh công cụ kế toán bên cạnh nút "⚡ Quyết Toán Gom Chuyến".
+  * Ẩn hoàn toàn (`hidden`) khi chọn 0 hoặc 1 chuyến; hiển thị dạng `Quyết Toán Nhiều Chuyến (${count})` khi chọn $\ge 2$ chuyến.
+  * Khi bấm, mở modal xác nhận chốt sổ đồng thời cho danh sách các chuyến được chọn.
+- **Backend API Hỗ Trợ Chốt Sổ Hàng Loạt (`AccountingAPIView.post`):**
+  * Bổ sung endpoint xử lý `action == 'batch_settle'` và `action == 'batch_unsettle'`.
+  * Chốt sổ nguyên tử (atomic transaction) cho danh sách `trip_codes`: Cập nhật cờ `is_expenses_settled = True`, `settled_at`, `settled_by`, đồng bộ trạng thái toàn bộ chi phí chuyến xe sang `ApprovalStatus.SETTLED` và tính toán lại tài chính `update_financials()`.
+- **Căn Chỉnh Chân Bảng `BimTableFooter`:**
+  * Mở rộng cấu trúc thành 12 cột, hiển thị đúng các giá trị tổng Doanh thu, Chi phí, Lãi gộp.
+
+---
+
 ## [v4.7.28] - 2026-11-02 (Tối Ưu Hóa Bố Trí Giao Diện Dọc Màn Hình Chi Tiết Chuyến Xe Điều Vận - Vertical Layout Modernization)
 
 ### 1. Chuẩn Hóa Bố Trí Dọc Màn Hình Chi Tiết Chuyến (`templates/views/view_trip_detail.html`):
