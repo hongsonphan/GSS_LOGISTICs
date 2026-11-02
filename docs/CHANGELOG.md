@@ -2,6 +2,20 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.28] - 2026-11-02 (Tối Ưu Hóa Bố Trí Giao Diện Dọc Màn Hình Chi Tiết Chuyến Xe Điều Vận - Vertical Layout Modernization)
+
+### 1. Chuẩn Hóa Bố Trí Dọc Màn Hình Chi Tiết Chuyến (`templates/views/view_trip_detail.html`):
+- **Tái Cấu Trúc Khối 2 Cột Thành Chuẩn Dọc Liền Mạch:**
+  * Thay thế cấu trúc lưới 2 cột co hẹp (`lg:col-span-7` và `lg:col-span-5`) bằng các khối card độc lập toàn chiều rộng (full-width), xếp tuần tự theo đúng luồng kiểm soát nghiệp vụ vận hành:
+    1. **Khối 1: THÔNG TIN VẬN CHUYỂN & CHỨNG TỪ EIR:** Dàn đều 4 thẻ chỉ số chính (`Số Xe & Tài xế`, `Số Cont & Vị trí`, `Số Seal & Booking`, `Invoice & Cửa Dock`) và bảng `Hành trình 3 điểm chuẩn` (Cảng lấy -> Kho đóng/trả -> Cảng hạ) rộng rãi, thông thoáng.
+    2. **Khối 2: QUẢN LÝ HẠN FREE DEM/DET & EIR:** Bố trí 3 thẻ theo dõi (`Hạn Vỏ DET`, `Hạn Bãi DEM`, `Giám Định Vỏ Cont EIR`) và thanh giám sát `Theo Dõi Lưu Xe & Phụ Phí Neo Đêm Chờ Hạ` trải đều toàn bộ bề ngang, tối ưu cho mắt quét thông tin.
+    3. **Khối 3: TIẾN ĐỘ THỜI GIAN VẬN CHUYỂN & HẠ CONT (7 MỐC THỰC TẾ):** Đặt ngay phía dưới khối quản lý hạn, trực quan hóa tiến độ 7 bước và thông tin ngày giờ đóng hàng, lưu ý giao nhận.
+- **Trải Nghiệm Người Dùng (UI/UX Accessibility):**
+  * Tối ưu không gian hiển thị: Loại bỏ hiện tượng chữ bị cắt cụt (truncate), co rúm hoặc chen chúc khi người dùng thao tác trên màn hình laptop hoặc máy tính bảng.
+  * Giữ nguyên 100% ID DOM, binding JavaScript, các nút thao tác nhanh (Cập nhật neo đêm, Xem chuyến, Bảng kê chi phí) và tính năng responsive linh hoạt.
+
+---
+
 ## [v4.7.27] - 2026-11-02 (Nâng Cấp Phân Hệ Đối Soát & Quyết Toán 3PL: Bộ Lọc & Sắp Xếp Đối Tác, Checkbox Chọn Nhiều & Quyết Toán Gom)
 
 ### 1. Bổ Sung Bộ Lọc 3PL & Sắp Xếp Cột Trên Phân Hệ Đối Soát Thầu Phụ (`view_accounting.html`, `subcontractor.js`):

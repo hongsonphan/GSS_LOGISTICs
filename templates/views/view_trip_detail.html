@@ -142,132 +142,130 @@
                 </div>
             </div>
 
-            <!-- HÀNG 1: THÔNG TIN VẬN CHUYỂN EIR & QUẢN LÝ DEM/DET (2 CỘT CÂN ĐỐI) -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                <!-- 1. Thông tin Chứng từ EIR & Vận chuyển Hiện trường (lg:col-span-7) -->
-                <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest mb-4 flex items-center justify-between font-heading border-b border-slate-100 pb-2.5">
-                        <span class="flex items-center text-teal-700 font-black">
-                            <i class="ph-bold ph-truck mr-2 text-teal-600 text-lg"></i> Thông tin Vận chuyển & Chứng từ EIR
-                        </span>
-                        <span class="text-[11px] font-bold text-slate-400 normal-case">Quy trình điều vận 11 bước</span>
+            <!-- 1. THÔNG TIN VẬN CHUYỂN & CHỨNG TỪ EIR (CHUẨN DỌC TOÀN CHIỀU RỘNG) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center font-heading">
+                        <i class="ph-bold ph-truck mr-2 text-teal-600 text-lg"></i>
+                        <span>Thông Tin Vận Chuyển & Chứng Từ EIR</span>
                     </h3>
+                    <span class="text-[11px] font-bold text-slate-400 normal-case">Quy trình điều vận 11 bước</span>
+                </div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                            <div class="flex items-center justify-between mb-0.5">
-                                <p class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Số Xe & Tài xế</p>
-                                <span id="detail-ownership-badge" class="text-[9.5px] font-black uppercase px-1.5 py-0.2 rounded bg-teal-100 text-teal-800">Xe Nhà</span>
-                            </div>
-                            <p class="font-black text-slate-900 text-sm font-heading" id="detail-driver">-</p>
-                            <p class="text-[11.5px] text-slate-700 font-mono font-bold" id="detail-vehicle-plate">-</p>
-                            <p class="text-[10px] text-indigo-700 font-semibold font-mono mt-0.5" id="detail-dropoff-vehicle-info"></p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                        <div class="flex items-center justify-between mb-0.5">
+                            <p class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Số Xe & Tài xế</p>
+                            <span id="detail-ownership-badge" class="text-[9.5px] font-black uppercase px-1.5 py-0.2 rounded bg-teal-100 text-teal-800">Xe Nhà</span>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                            <div class="flex items-center justify-between mb-0.5">
-                                <p class="text-[10.5px] font-bold text-teal-700 uppercase tracking-wider">Số Cont & Vị Trí</p>
-                                <span id="detail-cont-location-badge" class="text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded bg-teal-100 text-teal-800">Nhà máy</span>
-                            </div>
-                            <p class="font-black text-teal-900 text-sm font-heading" id="detail-cont">-</p>
-                            <p class="text-[11.5px] text-teal-700 font-semibold" id="detail-cont-type">40HC</p>
+                        <p class="font-black text-slate-900 text-sm font-heading" id="detail-driver">-</p>
+                        <p class="text-[11.5px] text-slate-700 font-mono font-bold" id="detail-vehicle-plate">-</p>
+                        <p class="text-[10px] text-indigo-700 font-semibold font-mono mt-0.5" id="detail-dropoff-vehicle-info"></p>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                        <div class="flex items-center justify-between mb-0.5">
+                            <p class="text-[10.5px] font-bold text-teal-700 uppercase tracking-wider">Số Cont & Vị Trí</p>
+                            <span id="detail-cont-location-badge" class="text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded bg-teal-100 text-teal-800">Nhà máy</span>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                            <p class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Số Seal & Booking</p>
-                            <p class="font-bold text-slate-800 text-sm" id="detail-seal">-</p>
-                            <p class="text-[11.5px] text-slate-500 font-mono truncate" id="detail-booking">-</p>
-                        </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                            <p class="text-[10.5px] font-bold text-amber-800 uppercase tracking-wider mb-0.5">Invoice & Cửa Dock</p>
-                            <p class="font-black text-slate-900 text-sm font-mono flex items-center gap-1">
-                                <i class="ph ph-file-text text-teal-700"></i>
-                                <span id="detail-invoice">-</span>
-                            </p>
-                            <p class="text-[11.5px] text-indigo-800 font-bold mt-0.5" id="detail-dock">DOCK: -</p>
-                        </div>
-
-                        <!-- Lộ trình 3 điểm thực tế: Cảng lấy -> Kho khách -> Cảng hạ -->
-                        <div class="col-span-2 sm:col-span-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
-                            <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2 font-heading">Hành trình 3 điểm chuẩn:</p>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div class="bg-white p-2.5 rounded-lg border border-slate-200">
-                                    <span class="text-[10px] font-bold text-teal-700 uppercase block mb-0.5">1. Cảng / Bãi lấy cont</span>
-                                    <p class="text-[13px] font-bold text-slate-800" id="detail-pickup">-</p>
-                                </div>
-                                <div class="bg-white p-2.5 rounded-lg border border-slate-200">
-                                    <span class="text-[10px] font-bold text-blue-700 uppercase block mb-0.5">2. Kho đóng / trả hàng</span>
-                                    <p class="text-[13px] font-bold text-slate-800" id="detail-warehouse">-</p>
-                                </div>
-                                <div class="bg-white p-2.5 rounded-lg border border-slate-200">
-                                    <span class="text-[10px] font-bold text-amber-700 uppercase block mb-0.5">3. Cảng / Bãi hạ cont</span>
-                                    <p class="text-[13px] font-bold text-slate-800" id="detail-dropoff">-</p>
-                                </div>
-                            </div>
-                        </div>
+                        <p class="font-black text-teal-900 text-sm font-heading" id="detail-cont">-</p>
+                        <p class="text-[11.5px] text-teal-700 font-semibold" id="detail-cont-type">40HC</p>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                        <p class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Số Seal & Booking</p>
+                        <p class="font-bold text-slate-800 text-sm" id="detail-seal">-</p>
+                        <p class="text-[11.5px] text-slate-500 font-mono truncate" id="detail-booking">-</p>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                        <p class="text-[10.5px] font-bold text-amber-800 uppercase tracking-wider mb-0.5">Invoice & Cửa Dock</p>
+                        <p class="font-black text-slate-900 text-sm font-mono flex items-center gap-1">
+                            <i class="ph ph-file-text text-teal-700"></i>
+                            <span id="detail-invoice">-</span>
+                        </p>
+                        <p class="text-[11.5px] text-indigo-800 font-bold mt-0.5" id="detail-dock">DOCK: -</p>
                     </div>
                 </div>
 
-                <!-- 1.08 Quản Lý Hạn Free DEM/DET Cảng & Giám Định Vỏ Cont EIR (lg:col-span-5) -->
-                <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center font-heading">
-                            <i class="ph-bold ph-hourglass-high text-teal-700 mr-2 text-lg"></i> Quản Lý Hạn Free DEM/DET & EIR
-                        </h3>
-                        <div id="detail-det-status-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold border font-heading">
-                            <!-- Injected by JS -->
-                        </div>
-                    </div>
+                <!-- Lộ trình 3 điểm thực tế: Cảng lấy -> Kho khách -> Cảng hạ -->
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                    <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2 font-heading">Hành trình 3 điểm chuẩn:</p>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <!-- Free DET -->
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[10.5px] font-bold text-slate-600 uppercase tracking-wider">Hạn Vỏ (DET)</span>
-                                <span class="text-[10px] font-bold text-slate-700 bg-slate-200 px-1.5 py-0.2 rounded font-mono" id="detail-det-days">3 ngày</span>
-                            </div>
-                            <p class="text-sm font-black text-slate-900 font-mono" id="detail-det-expiry">-</p>
-                            <p class="text-[10.5px] text-slate-500 mt-1 font-medium" id="detail-det-countdown">Đếm ngược hạn trả</p>
+                        <div class="bg-white p-2.5 rounded-lg border border-slate-200">
+                            <span class="text-[10px] font-bold text-teal-700 uppercase block mb-0.5">1. Cảng / Bãi lấy cont</span>
+                            <p class="text-[13px] font-bold text-slate-800" id="detail-pickup">-</p>
                         </div>
-
-                        <!-- Free DEM -->
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[10.5px] font-bold text-slate-600 uppercase tracking-wider">Hạn Bãi (DEM)</span>
-                                <span class="text-[10px] font-bold text-slate-700 bg-slate-200 px-1.5 py-0.2 rounded font-mono" id="detail-dem-days">3 ngày</span>
-                            </div>
-                            <p class="text-sm font-black text-slate-900 font-mono" id="detail-dem-expiry">-</p>
-                            <p class="text-[10.5px] text-slate-500 mt-1 font-medium">Hạn rút cont</p>
+                        <div class="bg-white p-2.5 rounded-lg border border-slate-200">
+                            <span class="text-[10px] font-bold text-blue-700 uppercase block mb-0.5">2. Kho đóng / trả hàng</span>
+                            <p class="text-[13px] font-bold text-slate-800" id="detail-warehouse">-</p>
                         </div>
-
-                        <!-- EIR Condition -->
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[10.5px] font-bold text-slate-600 uppercase tracking-wider">Vỏ Cont (EIR)</span>
-                                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded" id="detail-condition-badge">Đạt</span>
-                            </div>
-                            <p class="text-xs font-bold text-slate-900" id="detail-condition-label">Nguyên Vẹn</p>
-                            <p class="text-[10.5px] text-slate-500 mt-1 italic truncate" id="detail-damage-desc">Không hư hỏng</p>
+                        <div class="bg-white p-2.5 rounded-lg border border-slate-200">
+                            <span class="text-[10px] font-bold text-amber-700 uppercase block mb-0.5">3. Cảng / Bãi hạ cont</span>
+                            <p class="text-[13px] font-bold text-slate-800" id="detail-dropoff">-</p>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Khối Giám Sát Lưu Xe & Phụ Phí Neo Đêm Chờ Hạ -->
-                    <div id="detail-detention-banner" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-800 flex items-center justify-center shrink-0 border border-teal-200">
-                                <i class="ph-bold ph-moon-stars text-base"></i>
-                            </div>
-                            <div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="font-bold text-slate-800 uppercase tracking-wider font-heading">Theo Dõi Lưu Xe:</span>
-                                    <span id="detail-detention-badge-status" class="px-2 py-0.2 rounded font-bold text-[10px] bg-slate-200 text-slate-700">Chưa ghi nhận</span>
-                                </div>
-                                <p class="text-[11px] text-slate-600 mt-0.5 line-clamp-2" id="detail-detention-info-text">
-                                    Xe kéo cont ra khỏi kho lúc <span id="detail-gateout-summary" class="font-bold">-</span>. Nếu kho yêu cầu chờ sau 0h mới hạ bãi, vui lòng bấm cập nhật để tự tính phí.
-                                </p>
-                            </div>
-                        </div>
-                        <button type="button" onclick="openModalDetention()" class="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold font-heading shadow-2xs flex items-center transition-all shrink-0">
-                            <i class="ph-bold ph-pencil-simple mr-1"></i> Cập Nhật Neo Đêm
-                        </button>
+            <!-- 2. QUẢN LÝ HẠN FREE DEM/DET & EIR (CHUẨN DỌC TOÀN CHIỀU RỘNG) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center font-heading">
+                        <i class="ph-bold ph-hourglass-high text-teal-700 mr-2 text-lg"></i> Quản Lý Hạn Free DEM/DET & EIR
+                    </h3>
+                    <div id="detail-det-status-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold border font-heading">
+                        <!-- Injected by JS -->
                     </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <!-- Free DET -->
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10.5px] font-bold text-slate-600 uppercase tracking-wider">Hạn Vỏ (DET)</span>
+                            <span class="text-[10px] font-bold text-slate-700 bg-slate-200 px-1.5 py-0.2 rounded font-mono" id="detail-det-days">3 ngày</span>
+                        </div>
+                        <p class="text-sm font-black text-slate-900 font-mono" id="detail-det-expiry">-</p>
+                        <p class="text-[10.5px] text-slate-500 mt-1 font-medium" id="detail-det-countdown">Đếm ngược hạn trả</p>
+                    </div>
+
+                    <!-- Free DEM -->
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10.5px] font-bold text-slate-600 uppercase tracking-wider">Hạn Bãi (DEM)</span>
+                            <span class="text-[10px] font-bold text-slate-700 bg-slate-200 px-1.5 py-0.2 rounded font-mono" id="detail-dem-days">3 ngày</span>
+                        </div>
+                        <p class="text-sm font-black text-slate-900 font-mono" id="detail-dem-expiry">-</p>
+                        <p class="text-[10.5px] text-slate-500 mt-1 font-medium">Hạn rút cont</p>
+                    </div>
+
+                    <!-- EIR Condition -->
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10.5px] font-bold text-slate-600 uppercase tracking-wider">Vỏ Cont (EIR)</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.2 rounded" id="detail-condition-badge">Đạt</span>
+                        </div>
+                        <p class="text-xs font-bold text-slate-900" id="detail-condition-label">Nguyên Vẹn</p>
+                        <p class="text-[10.5px] text-slate-500 mt-1 italic truncate" id="detail-damage-desc">Không hư hỏng</p>
+                    </div>
+                </div>
+
+                <!-- Khối Giám Sát Lưu Xe & Phụ Phí Neo Đêm Chờ Hạ -->
+                <div id="detail-detention-banner" class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-800 flex items-center justify-center shrink-0 border border-teal-200">
+                            <i class="ph-bold ph-moon-stars text-base"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-slate-800 uppercase tracking-wider font-heading">Theo Dõi Lưu Xe:</span>
+                                <span id="detail-detention-badge-status" class="px-2 py-0.2 rounded font-bold text-[10px] bg-slate-200 text-slate-700">Chưa ghi nhận</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-0.5 line-clamp-2" id="detail-detention-info-text">
+                                Xe kéo cont ra khỏi kho lúc <span id="detail-gateout-summary" class="font-bold">-</span>. Nếu kho yêu cầu chờ sau 0h mới hạ bãi, vui lòng bấm cập nhật để tự tính phí.
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="openModalDetention()" class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold font-heading shadow-2xs flex items-center transition-all shrink-0 cursor-pointer">
+                        <i class="ph-bold ph-pencil-simple mr-1"></i> Cập Nhật Neo Đêm
+                    </button>
                 </div>
             </div>
 
