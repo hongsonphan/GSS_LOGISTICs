@@ -33924,8 +33924,8 @@ function chartSectionHtml(d) {
             <input id="acct-chart-search" type="search" oninput="filterAccountChart()" placeholder="Tìm số hiệu hoặc tên tài khoản..."
                 class="h-9 px-3 border border-slate-200 rounded-xl text-xs font-semibold w-full sm:w-72">
         </div>
-        <div class="overflow-auto max-h-[70vh]"><table class="w-full text-xs text-left" id="acct-chart-table" data-no-col-manager data-no-toolbar>
-            <thead class="bg-slate-50 text-slate-700 font-bold sticky top-0"><tr><th class="px-3 py-2 w-40">Số hiệu</th><th class="px-3 py-2">Tên tài khoản</th><th class="px-3 py-2 w-24">Cấp</th></tr></thead>
+        <div class="overflow-x-auto"><table class="w-full text-xs text-left" id="acct-chart-table" data-no-col-manager data-no-toolbar>
+            <thead class="bg-slate-50 text-slate-700 font-bold"><tr><th class="px-3 py-2 w-40">Số hiệu</th><th class="px-3 py-2">Tên tài khoản</th><th class="px-3 py-2 w-24">Cấp</th></tr></thead>
             ${body}
         </table></div></div>`;
 }
