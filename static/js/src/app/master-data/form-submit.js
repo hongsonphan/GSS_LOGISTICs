@@ -242,7 +242,7 @@ async function submitMasterDataForm(e) {
                 return;
             }
 
-            if (typeof currentTab !== 'undefined' && currentTab === 'cai-dat') {
+            if (typeof isMasterDataPageActive === 'function' && isMasterDataPageActive()) {
                 loadMasterData();
             }
             if (tabKey === 'vehicles' || tabKey === 'trailers') {
@@ -311,6 +311,7 @@ async function deleteMasterDataItem(id) {
         if (res.ok && data.success) {
             showToast('success', data.message || 'Đã xóa bản ghi thành công!');
             loadMasterData();
+            if (typeof refreshMasterDataLive === 'function') refreshMasterDataLive();
             if (currentMasterDataTab === 'vehicles' || currentMasterDataTab === 'trailers') {
                 if (typeof loadFleetData === 'function') loadFleetData();
             }

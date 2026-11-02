@@ -143,7 +143,10 @@ class FinanceVisibilityTests(TestCase):
         return api.get(f'/api/trips/{self.trip.trip_code}/').json()
 
     def test_driver_sees_no_financials_but_dispatcher_does(self):
-        drv = self._detail(make_user('drv_f', EmployeeRole.DRIVER, '0955000001'))
+        drv_user = make_user('drv_f', EmployeeRole.DRIVER, '0955000001')
+        self.trip.driver = drv_user.employee
+        self.trip.save()
+        drv = self._detail(drv_user)
         self.assertEqual(drv['financials']['expense'], 0)
         self.assertEqual(drv['cost_sheet']['total_expense'], 0)
         disp = self._detail(make_user('dd_f', EmployeeRole.DISPATCHER, '0955000002'))

@@ -8,3 +8,5 @@ class MasterDataConfig(AppConfig):
     def ready(self):
         from apps.master_data import partners
         partners._connect()
+        from apps.master_data import revision
+        revision.connect()

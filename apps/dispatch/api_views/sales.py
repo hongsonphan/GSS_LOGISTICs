@@ -1,9 +1,12 @@
 """Kinh doanh: báo giá, tra giá booking, danh sách booking đang chạy."""
 from ._common import *  # noqa: F401,F403
 
+from core.permissions import any_module_view  # noqa: E402
+
+
 class BookingActiveAPIView(APIView):
     """API lấy danh sách các Booking đang hoạt động để Điều độ viên chọn kế thừa khi tạo lệnh."""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [any_module_view('sales', 'dispatch', 'accounting')]
     def get(self, request):
         # Sắp xếp phiếu mới tạo nhất lên trên đầu (mới nhất theo ngày tạo và id)
         bookings = BookingOrder.objects.select_related('customer').filter(
@@ -52,7 +55,7 @@ class BookingPriceLookupAPIView(APIView):
     2. Biểu cước khách hàng (RouteTariff)
     3. Chuyến xe gần nhất của khách hàng trên cùng tuyến
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [any_module_view('sales', 'dispatch', 'accounting')]
 
     def get(self, request):
         customer_param = request.GET.get('customer') or request.GET.get('customer_id') or ''
@@ -147,14 +150,14 @@ class BookingPriceLookupAPIView(APIView):
             recent_trip = DispatchTrip.objects.filter(
                 customer=customer,
                 is_deleted=False,
-                delivery_location__icontains=delivery
+                warehouse_location__icontains=delivery
             ).exclude(cached_revenue=0).order_by('-created_at').first()
             if recent_trip and recent_trip.cached_revenue > 0:
                 return Response({
                     'found': True,
                     'price': int(recent_trip.cached_revenue),
                     'source': f"Lịch sử chuyến #{recent_trip.trip_code}",
-                    'route': f"{recent_trip.pickup_location} ➔ {recent_trip.delivery_location}",
+                    'route': f"{recent_trip.pickup_location} ➔ {recent_trip.warehouse_location}",
                     'message': f"Áp dụng theo chuyến gần nhất #{recent_trip.trip_code}"
                 })
 

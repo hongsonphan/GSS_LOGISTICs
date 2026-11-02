@@ -1,5 +1,6 @@
 from django.urls import path
 from apps.master_data.api_views import (
+    MasterDataRevisionAPIView,
     MasterDataSummaryAPIView,
     MasterDataFormOptionsAPIView,
     LocationListCreateAPIView, LocationDetailAPIView,
@@ -25,6 +26,7 @@ from apps.master_data.permission_views import RolesPermissionsAPIView
 
 urlpatterns = [
     path('summary/', MasterDataSummaryAPIView.as_view(), name='master-summary'),
+    path('revision/', MasterDataRevisionAPIView.as_view(), name='master-revision'),
     path('form-options/', MasterDataFormOptionsAPIView.as_view(), name='master-form-options'),
     
     # 0. Khai báo Hệ Thống / Thông Tin Công Ty, Phân Quyền & Số Dư Đầu Kỳ

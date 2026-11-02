@@ -222,3 +222,98 @@ class SettingsTabTests(TestCase):
         self.assertEqual(out['cfg_partners'], ['view', 'create', 'edit', 'export'])
         self.assertEqual(out['cfg_company'], ['view'])
         self.assertFalse(convert(out)[1])
+
+
+class CatalogReadAndRevisionTests(TestCase):
+    """Danh mục nhạy cảm không đọc được bởi tài xế; đồng bộ danh mục tức thì giữa người dùng."""
+
+    def api(self, user):
+        client = APIClient()
+        client.force_authenticate(user)
+        return client
+
+    def test_driver_cannot_read_partner_and_fleet_catalogs(self):
+        from apps.customers.models import Customer
+        Customer.objects.create(code='KH_R', name='KH R', address='x')
+        driver = self.api(make_user('drv_cat', EmployeeRole.DRIVER, '0974000001'))
+        for path in ('/api/customers/', '/api/master-data/customers/', '/api/master-data/tariffs/',
+                     '/api/master-data/subcontractors/', '/api/master-data/vehicles/', '/api/master-data/trailers/'):
+            self.assertEqual(driver.get(path).status_code, 403, path)
+        body = driver.get('/api/master-data/form-options/').json()
+        self.assertEqual(body['customers'], [])
+        self.assertEqual(body['vehicles'], [])
+        self.assertTrue(body['locations']['all'] is not None)   # địa điểm vẫn đọc được
+
+    def test_business_roles_still_read_catalogs(self):
+        for name, role, phone in (('dd_cat', EmployeeRole.DISPATCHER, '0974000002'), ('sl_cat', EmployeeRole.SALESMAN, '0974000003'),
+                                  ('kt_cat', EmployeeRole.ACCOUNTANT, '0974000004')):
+            api = self.api(make_user(name, role, phone))
+            self.assertEqual(api.get('/api/master-data/customers/').status_code, 200, name)
+            self.assertEqual(api.get('/api/master-data/form-options/').status_code, 200, name)
+
+    def test_revision_changes_for_other_users_when_catalog_is_saved(self):
+        maker = self.api(make_user('kt2_cat', EmployeeRole.ACCOUNTANT, '0974000005'))
+        watcher = self.api(make_user('dd2_cat', EmployeeRole.DISPATCHER, '0974000006'))
+        before = watcher.get('/api/master-data/revision/').json()['revision']
+        res = maker.post('/api/master-data/locations/', {'code': 'KHO_NEW', 'name': 'Kho mới', 'location_type': 'WAREHOUSE'}, format='json')
+        self.assertIn(res.status_code, (200, 201))
+        after = watcher.get('/api/master-data/revision/').json()['revision']
+        self.assertNotEqual(before, after)
+        names = [x['name'] for x in watcher.get('/api/master-data/form-options/').json()['locations']['all']]
+        self.assertIn('Kho mới', names)   # người dùng khác thấy ngay trong ô chọn
+
+    def test_revision_requires_login(self):
+        self.assertIn(APIClient().get('/api/master-data/revision/').status_code, (401, 403))
+
+
+class PriceLookupTests(TestCase):
+    def test_lookup_without_quote_or_tariff_does_not_crash(self):
+        from apps.customers.models import Customer
+        cust = Customer.objects.create(code='KH_PL', name='KH PL', address='x')
+        api = APIClient()
+        api.force_authenticate(make_user('sl_pl', EmployeeRole.SALESMAN, '0975000001'))
+        res = api.get('/api/sales/price-lookup/', {'customer_id': cust.pk, 'pickup': 'a', 'delivery': 'Kho X'})
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(res.json()['found'])
+
+    def test_driver_cannot_read_prices_or_bookings(self):
+        api = APIClient()
+        api.force_authenticate(make_user('drv_pl', EmployeeRole.DRIVER, '0975000002'))
+        self.assertEqual(api.get('/api/sales/price-lookup/').status_code, 403)
+        self.assertEqual(api.get('/api/bookings/active/').status_code, 403)
+
+
+class TripDetailVisibilityTests(TestCase):
+    def test_driver_sees_only_own_trip(self):
+        from apps.customers.models import Customer
+        from apps.dispatch.models import DispatchTrip
+        from apps.fleet.models import Vehicle
+        mine = make_user('drv_own', EmployeeRole.DRIVER, '0976000001')
+        other = make_user('drv_oth', EmployeeRole.DRIVER, '0976000002')
+        cust = Customer.objects.create(code='KH_TV', name='KH TV', address='x')
+        veh = Vehicle.objects.create(license_plate='51C-7777')
+        DispatchTrip.objects.create(trip_code='T-MINE', customer=cust, vehicle=veh, pickup_location='a', warehouse_location='b', driver=mine.employee)
+        DispatchTrip.objects.create(trip_code='T-OTHER', customer=cust, vehicle=veh, pickup_location='a', warehouse_location='b', driver=other.employee)
+        api = APIClient()
+        api.force_authenticate(mine)
+        self.assertEqual(api.get('/api/trips/T-MINE/').status_code, 200)
+        self.assertEqual(api.get('/api/trips/T-OTHER/').status_code, 403)
+        disp = APIClient()
+        disp.force_authenticate(make_user('dd_tv', EmployeeRole.DISPATCHER, '0976000003'))
+        self.assertEqual(disp.get('/api/trips/T-OTHER/').status_code, 200)
+
+
+class DashboardTripListTests(TestCase):
+    def test_driver_dashboard_has_no_trip_list(self):
+        from apps.customers.models import Customer
+        from apps.dispatch.models import DispatchTrip
+        from apps.fleet.models import Vehicle
+        cust = Customer.objects.create(code='KH_DB', name='KH DB', address='x')
+        veh = Vehicle.objects.create(license_plate='51C-8888')
+        DispatchTrip.objects.create(trip_code='T-DB', customer=cust, vehicle=veh, pickup_location='a', warehouse_location='b')
+        drv = APIClient()
+        drv.force_authenticate(make_user('drv_db', EmployeeRole.DRIVER, '0977000001'))
+        self.assertEqual(drv.get('/api/dashboard/').json()['trips_pnl'], [])
+        disp = APIClient()
+        disp.force_authenticate(make_user('dd_db', EmployeeRole.DISPATCHER, '0977000002'))
+        self.assertTrue(disp.get('/api/dashboard/').json()['trips_pnl'])

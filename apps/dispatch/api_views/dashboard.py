@@ -1635,8 +1635,15 @@ class DashboardBGDAPIView(APIView):
                 'total_liquidity': total_liquidity,
                 'weekly_planned_expenses': weekly_planned_expenses,
             },
-            'trips_pnl': trips_pnl
+            # Danh sách chuyến (khách hàng, tuyến, biển số...) chỉ cho người thuộc nghiệp vụ liên quan, không cho tài xế / thợ máy
+            'trips_pnl': trips_pnl if _can_list_trips(request.user) else []
         })
+
+
+def _can_list_trips(user):
+    from core import access
+    return user.is_superuser or not access.uses_matrix(user) or any(
+        access.allowed(user, m, 'view') for m in ('dispatch', 'sales', 'accounting', 'customs'))
 
 
 class DashboardPivotChartAPIView(APIView):

@@ -3096,6 +3096,34 @@ async function openMasterDataModalQuick(tabKey, targetSelectId = null) {
     await openCreateMasterDataModal();
 }
 
+
+// --- ĐỒNG BỘ DANH MỤC TỨC THÌ: tải lại ô chọn của biểu mẫu đang mở + bảng danh mục khi danh mục thay đổi (do mình hoặc người khác) ---
+async function refreshMasterDataLive() {
+    await loadMasterDataFormOptions(true);
+    populateMasterDataDropdowns();
+    if (typeof isMasterDataPageActive === 'function' && isMasterDataPageActive() && typeof reloadActiveMasterDataTab === 'function'
+        && !document.querySelector('#modal-master-data:not(.hidden)')) {
+        reloadActiveMasterDataTab();
+    }
+}
+window.refreshMasterDataLive = refreshMasterDataLive;
+
+let masterDataRevision = null;
+async function pollMasterDataRevision() {
+    if (document.hidden || !window.CURRENT_USER || typeof fetchWithAuth !== 'function') return;
+    try {
+        const res = await fetchWithAuth('/api/master-data/revision/');
+        if (!res.ok) return;
+        const { revision } = await res.json();
+        const changed = masterDataRevision !== null && revision !== masterDataRevision;
+        masterDataRevision = revision;
+        if (changed) await refreshMasterDataLive();
+    } catch (err) { /* mất kết nối tạm thời: lần hỏi sau sẽ bù */ }
+}
+window.pollMasterDataRevision = pollMasterDataRevision;
+setInterval(pollMasterDataRevision, 8000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pollMasterDataRevision(); });
+
 // ---- src/app/core/layout.js ----
 // --- USER PROFILE & AVATAR DROPDOWN HANDLERS (TÁI CẤU TRÚC GIAO DIỆN TOPBAR) ---
 function toggleUserDropdown(e) {
@@ -4072,8 +4100,25 @@ function resetTopbarStandardMode(tabId) {
 }
 
 // --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN (CLEAN SEMANTIC URL ROUTING) ---
+// Phân hệ cần có quyền Xem (một trong các phân hệ) để mở trang; mở thẳng bằng đường dẫn cũng bị chặn
+const TAB_ACCESS_MODULES = {
+    'dieu-van': ['dispatch'], 'kinh-doanh': ['sales'], 'xe-bai': ['fleet'], 'nhan-su': ['hr', 'payroll'],
+    'ke-toan': ['accounting', 'advances', 'ledger'], 'quyet-toan': ['accounting'], 'hai-quan': ['customs'],
+    'bao-cao': ['reports_any'], 'cai-dat': ['settings', 'admin']
+};
+
+function canOpenTab(tabId) {
+    const modules = TAB_ACCESS_MODULES[tabId];
+    if (!modules || typeof window.canAccess !== 'function') return true;
+    return modules.some(m => window.canAccess(m, 'view'));
+}
+
 function switchTab(tabId, updateHistory = true) {
     if (!tabId) tabId = 'dashboard';
+    if (!canOpenTab(tabId)) {
+        if (typeof showToast === 'function') showToast('danger', 'Bạn không có quyền vào phân hệ này. Liên hệ Ban Giám Đốc để được cấp quyền.');
+        tabId = 'dashboard';
+    }
 
     // Chuẩn hóa trạng thái Sidebar từ localStorage (Unhide luôn Unhide ở tất cả màn hình, Hide luôn Hide và tắt peek)
     if (typeof applySidebarStateFromStorage === 'function') {
@@ -27460,6 +27505,13 @@ const MASTER_DATA_TAB_MODULE = {
     vehicles: 'cfg_fleet', trailers: 'cfg_fleet', containers: 'cfg_fleet'
 };
 
+// Trang Cài đặt đang mở (không dựa vào biến toàn cục currentTab vì biến đó không tồn tại)
+function isMasterDataPageActive() {
+    const view = document.getElementById('view-cai-dat');
+    return !!view && !view.classList.contains('hidden-view') && !view.classList.contains('hidden');
+}
+window.isMasterDataPageActive = isMasterDataPageActive;
+
 function mdCan(tabKey, action = 'view') {
     if (typeof window.canAccess !== 'function') return true;
     return window.canAccess(MASTER_DATA_TAB_MODULE[tabKey] || 'master_data', action);
@@ -30415,7 +30467,7 @@ async function submitMasterDataForm(e) {
                 return;
             }
 
-            if (typeof currentTab !== 'undefined' && currentTab === 'cai-dat') {
+            if (typeof isMasterDataPageActive === 'function' && isMasterDataPageActive()) {
                 loadMasterData();
             }
             if (tabKey === 'vehicles' || tabKey === 'trailers') {
@@ -30484,6 +30536,7 @@ async function deleteMasterDataItem(id) {
         if (res.ok && data.success) {
             showToast('success', data.message || 'Đã xóa bản ghi thành công!');
             loadMasterData();
+            if (typeof refreshMasterDataLive === 'function') refreshMasterDataLive();
             if (currentMasterDataTab === 'vehicles' || currentMasterDataTab === 'trailers') {
                 if (typeof loadFleetData === 'function') loadFleetData();
             }
@@ -33067,6 +33120,7 @@ async function submitMasterDataImport(event) {
                 reloadActiveMasterDataTab();
             }
             loadMasterData();
+            if (typeof refreshMasterDataLive === 'function') refreshMasterDataLive();
 
         } else {
             if (resultEl) {

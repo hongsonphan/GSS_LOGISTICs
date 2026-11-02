@@ -111,3 +111,31 @@ async function openMasterDataModalQuick(tabKey, targetSelectId = null) {
     currentMasterDataTab = tabKey;
     await openCreateMasterDataModal();
 }
+
+
+// --- ĐỒNG BỘ DANH MỤC TỨC THÌ: tải lại ô chọn của biểu mẫu đang mở + bảng danh mục khi danh mục thay đổi (do mình hoặc người khác) ---
+async function refreshMasterDataLive() {
+    await loadMasterDataFormOptions(true);
+    populateMasterDataDropdowns();
+    if (typeof isMasterDataPageActive === 'function' && isMasterDataPageActive() && typeof reloadActiveMasterDataTab === 'function'
+        && !document.querySelector('#modal-master-data:not(.hidden)')) {
+        reloadActiveMasterDataTab();
+    }
+}
+window.refreshMasterDataLive = refreshMasterDataLive;
+
+let masterDataRevision = null;
+async function pollMasterDataRevision() {
+    if (document.hidden || !window.CURRENT_USER || typeof fetchWithAuth !== 'function') return;
+    try {
+        const res = await fetchWithAuth('/api/master-data/revision/');
+        if (!res.ok) return;
+        const { revision } = await res.json();
+        const changed = masterDataRevision !== null && revision !== masterDataRevision;
+        masterDataRevision = revision;
+        if (changed) await refreshMasterDataLive();
+    } catch (err) { /* mất kết nối tạm thời: lần hỏi sau sẽ bù */ }
+}
+window.pollMasterDataRevision = pollMasterDataRevision;
+setInterval(pollMasterDataRevision, 8000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pollMasterDataRevision(); });

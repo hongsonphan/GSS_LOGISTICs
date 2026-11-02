@@ -106,8 +106,25 @@ function resetTopbarStandardMode(tabId) {
 }
 
 // --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN (CLEAN SEMANTIC URL ROUTING) ---
+// Phân hệ cần có quyền Xem (một trong các phân hệ) để mở trang; mở thẳng bằng đường dẫn cũng bị chặn
+const TAB_ACCESS_MODULES = {
+    'dieu-van': ['dispatch'], 'kinh-doanh': ['sales'], 'xe-bai': ['fleet'], 'nhan-su': ['hr', 'payroll'],
+    'ke-toan': ['accounting', 'advances', 'ledger'], 'quyet-toan': ['accounting'], 'hai-quan': ['customs'],
+    'bao-cao': ['reports_any'], 'cai-dat': ['settings', 'admin']
+};
+
+function canOpenTab(tabId) {
+    const modules = TAB_ACCESS_MODULES[tabId];
+    if (!modules || typeof window.canAccess !== 'function') return true;
+    return modules.some(m => window.canAccess(m, 'view'));
+}
+
 function switchTab(tabId, updateHistory = true) {
     if (!tabId) tabId = 'dashboard';
+    if (!canOpenTab(tabId)) {
+        if (typeof showToast === 'function') showToast('danger', 'Bạn không có quyền vào phân hệ này. Liên hệ Ban Giám Đốc để được cấp quyền.');
+        tabId = 'dashboard';
+    }
 
     // Chuẩn hóa trạng thái Sidebar từ localStorage (Unhide luôn Unhide ở tất cả màn hình, Hide luôn Hide và tắt peek)
     if (typeof applySidebarStateFromStorage === 'function') {

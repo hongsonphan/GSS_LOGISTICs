@@ -289,8 +289,8 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn('/login/', response.url)
 
-    def test_driver_can_view_any_trip_detail_safe_method(self):
-        """Kiểm tra tài xế nội bộ được phép xem thông tin chi tiết (GET) bất kỳ chuyến xe nào."""
+    def test_driver_cannot_view_other_drivers_trip_detail(self):
+        """Tài xế chỉ xem được chi tiết chuyến của chính mình (không xem chuyến của tài xế khác)."""
         # Tạo 1 chuyến xe thuộc tài xế khác
         other_driver = Employee.objects.create(
             code='TX999',
@@ -311,8 +311,7 @@ class BimLogisticsCoreTestCase(TestCase):
         )
         self.client.force_login(self.driver_user)
         response = self.client.get(f'/api/trips/{other_trip.trip_code}/')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json().get('id'), 'TVL-TEST-OTHER')
+        self.assertEqual(response.status_code, 403)
 
     def test_driver_cannot_modify_other_trip_milestone(self):
         """Tiêu chuẩn 10: Chống IDOR - Tài xế BỊ TỪ CHỐI (HTTP 403) khi gửi cập nhật tiến độ cho chuyến xe của tài xế khác."""

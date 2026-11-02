@@ -277,6 +277,21 @@ def module_permission(module, legacy=None, name=None):
     return type(name or f'Module_{module}_Permission', (ModulePermission,), {'module': module, 'legacy': legacy})
 
 
+def any_module_view(*modules, name='AnyModuleView'):
+    """Cho phép xem khi người dùng có quyền Xem ở ít nhất một trong các phân hệ (tài khoản không dùng ma trận: như cũ, chỉ cần đăng nhập)."""
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser or not access.uses_matrix(user):
+            return True
+        if any(access.allowed(user, m, 'view') for m in modules):
+            return True
+        self.message = 'Bạn không có quyền xem dữ liệu này. Liên hệ Ban Giám Đốc để được cấp quyền.'
+        return False
+    return type(name, (permissions.BasePermission,), {'has_permission': has_permission})
+
+
 IsAdminOrDirector = module_permission('admin', LegacyIsAdminOrDirector, 'IsAdminOrDirector')
 IsDispatcher = module_permission('dispatch', LegacyIsDispatcher, 'IsDispatcher')
 IsAccountant = module_permission('accounting', LegacyIsAccountant, 'IsAccountant')
@@ -306,7 +321,11 @@ class CanManageMasterData(permissions.BasePermission):
             module = resolver(request) or module
         action = access.action_for(request, view)
         if action == 'view':
-            ok = access.allowed(user, 'master_data', 'view') or bool(module and access.allowed(user, module, 'view'))
+            read_modules = getattr(view, 'read_modules', None)
+            if read_modules is not None:   # danh mục nhạy cảm: chỉ đọc khi thuộc nghiệp vụ liên quan hoặc có quyền tab
+                ok = any(access.allowed(user, m, 'view') for m in read_modules) or bool(module and access.allowed(user, module, 'view'))
+            else:
+                ok = access.allowed(user, 'master_data', 'view') or bool(module and access.allowed(user, module, 'view'))
         else:
             ok = bool(module and access.allowed(user, module, action))
         if not ok:
@@ -379,9 +398,14 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
             return True
 
         if request.user and request.user.is_authenticated:
-            # Cho phép xem chi tiết (SAFE_METHODS) cho người dùng hợp lệ
+            # Xem chi tiết (SAFE_METHODS): người có quyền Xem ở phân hệ liên quan; tài xế chỉ xem chuyến của chính mình
             if request.method in permissions.SAFE_METHODS:
-                return True
+                if not access.uses_matrix(request.user):
+                    return True
+                if any(access.allowed(request.user, m, 'view') for m in ('dispatch', 'accounting', 'sales', 'customs', 'fleet')):
+                    return True
+                emp = getattr(request.user, 'employee', None)
+                return bool(emp and emp.pk in (getattr(obj, 'driver_id', None), getattr(obj, 'dropoff_driver_id', None)))
 
             # Ràng buộc chặt chẽ với thao tác ghi/sửa đổi (Chống IDOR)
             employee = getattr(request.user, 'employee', None)

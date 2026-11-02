@@ -41,6 +41,13 @@ const MASTER_DATA_TAB_MODULE = {
     vehicles: 'cfg_fleet', trailers: 'cfg_fleet', containers: 'cfg_fleet'
 };
 
+// Trang Cài đặt đang mở (không dựa vào biến toàn cục currentTab vì biến đó không tồn tại)
+function isMasterDataPageActive() {
+    const view = document.getElementById('view-cai-dat');
+    return !!view && !view.classList.contains('hidden-view') && !view.classList.contains('hidden');
+}
+window.isMasterDataPageActive = isMasterDataPageActive;
+
 function mdCan(tabKey, action = 'view') {
     if (typeof window.canAccess !== 'function') return true;
     return window.canAccess(MASTER_DATA_TAB_MODULE[tabKey] || 'master_data', action);

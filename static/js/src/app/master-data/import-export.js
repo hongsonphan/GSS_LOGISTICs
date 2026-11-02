@@ -294,6 +294,7 @@ async function submitMasterDataImport(event) {
                 reloadActiveMasterDataTab();
             }
             loadMasterData();
+            if (typeof refreshMasterDataLive === 'function') refreshMasterDataLive();
 
         } else {
             if (resultEl) {

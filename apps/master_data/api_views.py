@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -49,6 +50,27 @@ class MasterDataSummaryAPIView(APIView):
                 'company_name': company.short_name or company.company_name,
             }
         })
+
+_PARTNER_DATA_MODULES = ('sales', 'dispatch', 'accounting', 'customs')
+_FLEET_DATA_MODULES = ('sales', 'dispatch', 'accounting', 'customs', 'fleet')
+
+
+def _can_read_any(user, modules):
+    from core import access
+    return user.is_superuser or not access.uses_matrix(user) or any(access.allowed(user, m, 'view') for m in modules)
+
+
+def _scrub_form_options(user, response):
+    """Tài khoản không thuộc nghiệp vụ liên quan (vd. tài xế) không nhận danh sách khách hàng, biểu giá, nhà thầu phụ, xe."""
+    data = response.data
+    if not _can_read_any(user, _PARTNER_DATA_MODULES):
+        for key in ('customers', 'customer_tariffs', 'subcontractors', 'routes'):
+            data[key] = []
+    if not _can_read_any(user, _FLEET_DATA_MODULES):
+        for key in ('vehicles', 'trailers', 'drivers'):
+            data[key] = []
+    return response
+
 
 class MasterDataFormOptionsAPIView(APIView):
     """
@@ -220,7 +242,7 @@ class MasterDataFormOptionsAPIView(APIView):
             for ct in RouteTariff.objects.select_related('customer').all().order_by('customer__name', 'pickup_location')
         ]
 
-        return Response({
+        response = Response({
             'customers': customers,
             'customer_tariffs': customer_tariffs,
             'locations': {
@@ -241,6 +263,7 @@ class MasterDataFormOptionsAPIView(APIView):
             'container_types': container_types,
             'routes': routes,
         })
+        return _scrub_form_options(request.user, response)
 
 # ==============================================================================
 # 1. DANH MỤC ĐỊA ĐIỂM / CẢNG / DEPOT / KHO BÃI
@@ -2454,3 +2477,25 @@ def _catalog_module(request):
 
 for _cls in (MasterDataExportTemplateAPIView, MasterDataExportDataAPIView, MasterDataImportAPIView):
     _cls.cfg_module_for = staticmethod(lambda request: _catalog_module(request))
+
+
+class MasterDataRevisionAPIView(APIView):
+    """Số phiên bản danh mục hiện tại; giao diện hỏi định kỳ và tải lại danh mục khi số này đổi."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.master_data import revision
+        from core.tenant import company_for_user
+        company = company_for_user(request.user)
+        return Response({'revision': revision.current(company.id if company else None)})
+
+
+# Danh sách khách hàng, biểu giá, nhà thầu phụ, xe: chỉ đọc được khi thuộc nghiệp vụ liên quan hoặc có quyền tab Cài đặt tương ứng
+for _cls in (CustomerMasterListCreateAPIView, CustomerMasterDetailAPIView, TariffMasterListCreateAPIView, TariffMasterDetailAPIView):
+    _cls.read_modules = _PARTNER_DATA_MODULES
+for _cls in (SubcontractorListCreateAPIView, SubcontractorDetailAPIView, SubcontractorNextCodeAPIView, SubcontractorFleetAPIView,
+             SubcontractorVehicleListCreateAPIView, SubcontractorVehicleDetailAPIView,
+             SubcontractorDriverListCreateAPIView, SubcontractorDriverDetailAPIView):
+    _cls.read_modules = ('dispatch', 'accounting', 'sales')
+for _cls in (VehicleMasterListCreateAPIView, VehicleMasterDetailAPIView, TrailerMasterListCreateAPIView, TrailerMasterDetailAPIView):
+    _cls.read_modules = _FLEET_DATA_MODULES
