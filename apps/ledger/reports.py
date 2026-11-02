@@ -3,6 +3,8 @@
 Mẫu biểu theo chế độ kế toán của công ty:
 - TT133/2016: Bảng cân đối tài khoản mẫu F01-DNN; Sổ Nhật ký chung S03a-DNN; Sổ cái S03b-DNN.
 - TT200/2014: Bảng cân đối số phát sinh mẫu S06-DN; Sổ Nhật ký chung S03a-DN; Sổ cái S03b-DN.
+- TT99/2025 (thay TT200): giữ tên/ký hiệu các sổ như TT200, ghi theo TT99; cần đối chiếu mẫu ban hành kèm TT99 khi in nộp.
+- TT58/2026 (siêu nhỏ): ghi sổ theo mẫu S1..S3b-DNSN, hệ thống chỉ xuất sổ kép dạng tham khảo, không đánh số mẫu.
 """
 import io
 from collections import defaultdict
@@ -11,11 +13,25 @@ from decimal import Decimal
 from django.db.models import Q, Sum
 
 from .models import Account, JournalLine
+from .charts import DEFAULT_REGIME
 from .posting import ensure_chart
 
 ZERO = Decimal('0')
 
+_TT99_REF = 'Thông tư số 99/2025/TT-BTC ngày 27/10/2025 của Bộ Tài chính'
+_TT58_REF = 'Thông tư số 58/2026/TT-BTC ngày 25/5/2026 của Bộ Tài chính'
+
 FORMS = {
+    'TT99': {
+        'trial_balance': ('S06-DN', 'BẢNG CÂN ĐỐI SỐ PHÁT SINH', _TT99_REF),
+        'journal': ('S03a-DN', 'SỔ NHẬT KÝ CHUNG', _TT99_REF),
+        'account_ledger': ('S03b-DN', 'SỔ CÁI', _TT99_REF),
+    },
+    'TT58': {
+        'trial_balance': ('', 'BẢNG CÂN ĐỐI SỐ PHÁT SINH', _TT58_REF),
+        'journal': ('', 'SỔ NHẬT KÝ CHUNG', _TT58_REF),
+        'account_ledger': ('', 'SỔ CÁI', _TT58_REF),
+    },
     'TT133': {
         'trial_balance': ('F01-DNN', 'BẢNG CÂN ĐỐI TÀI KHOẢN', 'Thông tư số 133/2016/TT-BTC ngày 26/8/2016 của Bộ Tài chính'),
         'journal': ('S03a-DNN', 'SỔ NHẬT KÝ CHUNG', 'Thông tư số 133/2016/TT-BTC ngày 26/8/2016 của Bộ Tài chính'),
@@ -142,7 +158,7 @@ def _sheet_header(ws, company, kind, date_from, date_to, ncols):
     ws.sheet_properties.pageSetUpPr.fitToPage = True
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 0
-    regime = company.accounting_regime or 'TT133'
+    regime = company.accounting_regime or DEFAULT_REGIME
     form, title, circular = FORMS[regime][kind]
     name, address, tax = _company_header(company)
     last = ws.cell(row=1, column=ncols).column_letter
@@ -152,8 +168,9 @@ def _sheet_header(ws, company, kind, date_from, date_to, ncols):
     for r in (1, 2, 3):
         ws.cell(row=r, column=1).font = Font(bold=(r == 1))
     mid = max(ncols - 3, 1)
-    ws.cell(row=1, column=mid, value=f'Mẫu số {form}').font = Font(bold=True)
-    ws.cell(row=2, column=mid, value=f'(Ban hành theo {circular})').font = Font(italic=True, size=9)
+    if form:
+        ws.cell(row=1, column=mid, value=f'Mẫu số {form}').font = Font(bold=True)
+    ws.cell(row=2, column=mid, value=f'(Theo {circular})').font = Font(italic=True, size=9)
     ws.merge_cells(f'A5:{last}5')
     ws['A5'] = title
     ws['A5'].font = Font(bold=True, size=14)

@@ -128,8 +128,9 @@ class Company(TimeStampedModel):
     is_default = models.BooleanField(default=False, help_text='Công ty mặc định gán cho dữ liệu mới khi chưa chọn công ty')
     is_active = models.BooleanField(default=True)
     accounting_regime = models.CharField(
-        max_length=10, default='TT133',
-        choices=[('TT133', 'Thông tư 133/2016 (DN nhỏ và vừa)'), ('TT200', 'Thông tư 200/2014')],
+        max_length=10, default='TT99',
+        choices=[('TT99', 'Thông tư 99/2025 (doanh nghiệp, thay TT200)'), ('TT58', 'Thông tư 58/2026 (doanh nghiệp siêu nhỏ)'),
+                 ('TT133', 'Thông tư 133/2016 (cũ)'), ('TT200', 'Thông tư 200/2014 (cũ)')],
         help_text='Chế độ kế toán áp dụng: quyết định hệ thống tài khoản và mẫu sổ sách')
     ledger_account_overrides = models.JSONField(
         default=dict, blank=True,

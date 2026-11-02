@@ -38,7 +38,7 @@ function paintAccountSettings(box) {
         `<option value="${_acctEsc(a.code)}" ${a.code === sel ? 'selected' : ''}>${_acctEsc(a.code)}</option>`).join('');
     const regimeSel = `<select id="acct-regime-select" ${d.can_change_regime ? '' : 'disabled title="Chỉ Ban Giám Đốc / quản trị được đổi"'}
         class="h-8 px-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700">
-        ${(d.regimes || []).map(r => `<option value="${r}" ${r === d.regime ? 'selected' : ''}>${r === 'TT200' ? 'TT200/2014 (doanh nghiệp lớn)' : 'TT133/2016 (doanh nghiệp nhỏ và vừa)'}</option>`).join('')}
+        ${(d.regimes || []).map(r => `<option value="${r}" ${r === d.regime ? 'selected' : ''}>${_acctEsc((d.regime_labels || {})[r] || r)}</option>`).join('')}
         </select>`;
     const changed = d.items.filter(i => i.override).length;
     const rows = d.items.map(i => `<tr class="${i.override ? 'bg-amber-50/50' : ''} border-b border-slate-100">
@@ -54,7 +54,7 @@ function paintAccountSettings(box) {
             <div class="px-4 py-3 border-b border-slate-100 flex flex-wrap items-baseline justify-between gap-2">
                 <div>
                     <h3 class="text-sm md:text-base font-black font-heading text-slate-800">Cài đặt tài khoản kế toán</h3>
-                    <p class="text-xs text-slate-500 font-medium mt-0.5">Mỗi nghiệp vụ tự động hạch toán vào tài khoản bên dưới. Chỉ đổi khi kế toán trưởng yêu cầu.</p>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">Danh mục tài khoản theo TT99/2025/TT-BTC (doanh nghiệp) hoặc TT58/2026/TT-BTC (siêu nhỏ, danh mục rút gọn). Mỗi nghiệp vụ tự động hạch toán vào tài khoản bên dưới. Chỉ đổi khi kế toán trưởng yêu cầu.</p>
                 </div>
                 <p class="text-xs font-bold text-slate-600">${changed ? `${changed} nghiệp vụ đã đổi so với mặc định` : 'Đang dùng mặc định'}</p>
             </div>

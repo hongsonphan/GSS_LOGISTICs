@@ -1,4 +1,4 @@
-"""API sổ sách kế toán (chỉ đọc): bảng cân đối tài khoản, nhật ký chung, sổ cái; xuất Excel theo mẫu TT133/TT200."""
+"""API sổ sách kế toán (chỉ đọc): bảng cân đối tài khoản, nhật ký chung, sổ cái; xuất Excel theo mẫu của chế độ kế toán (TT99/TT58, TT133/TT200 cũ)."""
 import datetime
 
 from django.http import HttpResponse
@@ -119,7 +119,7 @@ def _can_change_regime(user):
 
 
 def _mapping_payload(company, user):
-    regime = company.accounting_regime or 'TT133'
+    regime = company.accounting_regime or charts.DEFAULT_REGIME
     names = {code: name for code, name, _k in charts.CHARTS[regime]}
     overrides = company.ledger_account_overrides or {}
     items = []
@@ -130,7 +130,11 @@ def _mapping_payload(company, user):
                       'effective_name': names.get(effective, '')})
     leaf_codes = [{'code': c, 'name': n} for c, n, _k in charts.CHARTS[regime]
                   if not any(o != c and o.startswith(c) for o, _n, _x in charts.CHARTS[regime])]
-    return {'regime': regime, 'regimes': list(charts.REGIMES), 'can_change_regime': _can_change_regime(user),
+    # Chế độ cũ chỉ còn chọn được khi công ty đang dùng
+    selectable = [r for r in charts.REGIMES if not charts.REGIME_INFO[r]['legacy'] or r == regime]
+    return {'regime': regime, 'regimes': selectable,
+            'regime_labels': {r: charts.REGIME_INFO[r]['label'] for r in charts.REGIMES},
+            'can_change_regime': _can_change_regime(user),
             'items': items, 'accounts': leaf_codes}
 
 
@@ -148,9 +152,11 @@ class LedgerMappingAPIView(APIView):
         from .posting import rebuild
         company = _company(request)
         data = request.data if isinstance(request.data, dict) else {}
-        regime = data.get('regime') or company.accounting_regime or 'TT133'
+        regime = data.get('regime') or company.accounting_regime or charts.DEFAULT_REGIME
         if regime not in charts.REGIMES:
             raise ValidationError({'regime': 'Chế độ kế toán không hợp lệ'})
+        if charts.REGIME_INFO[regime]['legacy'] and regime != company.accounting_regime:
+            raise ValidationError({'regime': 'Chế độ kế toán cũ không còn áp dụng, chọn TT99 hoặc TT58'})
         if regime != company.accounting_regime and not _can_change_regime(request.user):
             raise ValidationError({'regime': 'Chỉ Ban Giám Đốc / quản trị được đổi chế độ kế toán'})
         raw = data.get('overrides') or {}

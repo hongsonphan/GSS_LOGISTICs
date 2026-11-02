@@ -52,6 +52,52 @@ class ChartTests(LedgerTestBase):
         self.assertEqual(charts.resolve(self.company, 'fuel'), '1521')
 
 
+class NewRegimeTests(LedgerTestBase):
+    """TT99/2025 (thay TT200) và TT58/2026 (siêu nhỏ, danh mục rút gọn)."""
+
+    def test_charts_consistent(self):
+        from apps.ledger import charts
+        for regime in ('TT99', 'TT58'):
+            codes = [c for c, _n, _k in charts.CHARTS[regime]]
+            self.assertEqual(len(codes), len(set(codes)), regime)
+            for key, code in charts.ACCOUNT_MAP[regime].items():
+                self.assertIn(code, codes, f'{regime}: {key} -> {code}')
+            for code in codes:
+                if len(code) > 3:
+                    self.assertTrue(any(code.startswith(o) and o != code for o in codes), f'{regime}: {code} thiếu tài khoản cha')
+        tt99 = {c: n for c, n, _k in charts.CHARTS['TT99']}
+        self.assertEqual(tt99['112'], 'Tiền gửi không kỳ hạn')
+        for removed in ('611', '631', '3385', '1111', '1121', '5113'):
+            self.assertNotIn(removed, tt99)
+        for added in ('332', '244', '6275'):
+            self.assertIn(added, tt99)
+        self.assertLess(len(charts.CHARTS['TT58']), len(charts.CHARTS['TT99']))
+
+    def test_posting_with_tt99_and_tt58(self):
+        from apps.ledger import charts
+        for regime in ('TT99', 'TT58'):
+            self.company.accounting_regime = regime
+            self.company.save()
+            posting.ensure_chart(self.company)
+            self.assertEqual(charts.resolve(self.company, 'revenue'), '511')
+            self.assertEqual(charts.resolve(self.company, 'bank'), '112')
+            self.assertTrue(Account.objects.filter(company=self.company, code='112', name='Tiền gửi không kỳ hạn').exists())
+
+    def test_mapping_api_hides_legacy_regimes(self):
+        import json
+        user = User.objects.create_superuser('ketoan_tt99', 'm@example.com', 'Pw-Ledger#2026')
+        self.client.force_login(user)
+        self.company.accounting_regime = 'TT99'
+        self.company.save()
+        data = self.client.get('/api/ledger/mapping/').json()
+        self.assertEqual(data['regimes'], ['TT99', 'TT58'])
+        res = self.client.put('/api/ledger/mapping/', json.dumps({'regime': 'TT200'}), content_type='application/json')
+        self.assertEqual(res.status_code, 400)
+        res = self.client.put('/api/ledger/mapping/', json.dumps({'regime': 'TT58'}), content_type='application/json')
+        self.assertEqual(res.status_code, 200, res.content)
+        self.assertEqual(res.json()['regime'], 'TT58')
+
+
 @override_settings(LEDGER_AUTO_POST=True)
 class PostingTests(LedgerTestBase):
     def test_cash_inflow_and_outflow(self):

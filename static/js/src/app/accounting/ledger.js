@@ -1,6 +1,6 @@
 // ==============================================================================
 // 9.9. SUBTAB 9: SỔ SÁCH KẾ TOÁN — cân đối tài khoản, nhật ký chung, sổ cái (ánh xạ tài khoản nay nằm ở Cài đặt > Tài chính & Quản trị > Cài đặt tài khoản)
-// Dữ liệu từ /api/ledger/* (sổ kép tự động theo TT133/TT200 của công ty)
+// Dữ liệu từ /api/ledger/* (sổ kép tự động theo chế độ kế toán TT99/TT58 của công ty)
 // ==============================================================================
 let ledgerView = 'trial';
 let ledgerAccounts = null;
@@ -77,7 +77,7 @@ async function loadLedgerData() {
             const data = await res.json();
             ledgerAccounts = data.accounts || [];
             const chip = document.getElementById('ledger-regime-chip');
-            if (chip) chip.textContent = data.regime === 'TT200' ? 'TT200/2014' : 'TT133/2016';
+            if (chip) chip.textContent = ({ TT99: 'TT99/2025', TT58: 'TT58/2026', TT200: 'TT200/2014', TT133: 'TT133/2016' })[data.regime] || data.regime;
             const sel = document.getElementById('ledger-account-select');
             if (sel) {
                 sel.innerHTML = ledgerAccounts.map(a =>

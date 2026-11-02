@@ -2,7 +2,7 @@
 
 Mỗi hàm build_* trả về (ngày, diễn giải, số chứng từ, [dòng]) hoặc None khi chứng từ chưa đủ điều kiện ghi sổ.
 Dòng: dict(key|code, debit|credit, partner, employee, trip, memo). `key` là khoá nghiệp vụ trong charts.ACCOUNT_MAP
-(tự đổi theo TT133/TT200 và ghi đè của công ty); `code` là số hiệu tài khoản cố định.
+(tự đổi theo chế độ kế toán TT99/TT58 hoặc TT133/TT200 cũ và ghi đè của công ty); `code` là số hiệu tài khoản cố định.
 
 post_source() ghi đè bút toán cũ của cùng chứng từ nên gọi lại bao nhiêu lần cũng cho cùng kết quả.
 """
@@ -37,7 +37,7 @@ def ensure_chart(company):
     """Tạo hệ thống tài khoản cho công ty theo chế độ kế toán (bỏ qua tài khoản đã có)."""
     from .models import Account
 
-    regime = company.accounting_regime or 'TT133'
+    regime = company.accounting_regime or charts.DEFAULT_REGIME
     existing = {a.code: a for a in Account.objects.filter(company=company)}
     for code, name, kind in sorted(charts.CHARTS[regime], key=lambda r: r[0]):
         if code in existing:
