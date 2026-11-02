@@ -5,6 +5,7 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 ## [v4.7.27] - 2026-11-02 (Nâng Cấp Phân Hệ Đối Soát & Quyết Toán 3PL: Bộ Lọc & Sắp Xếp Đối Tác, Checkbox Chọn Nhiều & Quyết Toán Gom)
 
 ### 1. Bổ Sung Bộ Lọc 3PL & Sắp Xếp Cột Trên Phân Hệ Đối Soát Thầu Phụ (`view_accounting.html`, `subcontractor.js`):
+- **Chuẩn Hóa Hiển Thị Mã Chuyến:** Loại bỏ 2 dấu ngoặc vuông `[...]` bao quanh mã chuyến (ví dụ chuyển từ `[DV.2611.007]` thành `DV.2611.007` tinh gọn, liền mạch) trên bảng đối soát 3PL, bảng kiểm toán BOT và phiếu đối soát/tạm ứng.
 - **Bộ Lọc Đối Tác 3PL (`#subcon-filter-subcontractor`):** Bổ sung ô chọn danh sách Thầu phụ / Đơn vị xe ngoài ngay cạnh ô tìm kiếm và trạng thái. Dropdown tự động cập nhật danh sách các đối tác 3PL có chuyến phát sinh và cho phép lọc nhanh tức thì.
 - **Tìm Kiếm Mở Rộng (`#subcon-search`):** Mở rộng tìm kiếm đa chiều cả ở frontend và backend (`SubcontractorSettlementsAPIView`): tìm theo Mã chuyến, Tên thầu phụ, Tên viết tắt, Mã đối tác, Biển số xe, Tên tài xế, Khách hàng.
 - **Sắp Xếp Bảng Động (Column Sorting):** Bổ sung tính năng click vào tiêu đề các cột (Mã Chuyến, Thầu Phụ 3PL, Tài Xế, Khách Hàng, Cước Thu, Cước Trả, Chênh Lệch, Tạm Ứng, Còn Trả, Trạng Thái) với biểu tượng mũi tên đổi chiều động (`ph-arrows-down-up`, `ph-arrow-up`, `ph-arrow-down`).

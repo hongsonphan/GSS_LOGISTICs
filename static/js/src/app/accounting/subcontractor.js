@@ -193,7 +193,7 @@ function renderSubcontractorTable(list) {
                 </td>
                 <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">${index + 1}</td>
                 <td>
-                    <div class="font-bold text-slate-900 font-heading">[${escapeHtml(item.trip_code)}]</div>
+                    <div class="font-bold text-slate-900 font-heading">${escapeHtml(item.trip_code)}</div>
                     <div class="text-[11px] text-slate-400">${item.created_at}</div>
                 </td>
                 <td>

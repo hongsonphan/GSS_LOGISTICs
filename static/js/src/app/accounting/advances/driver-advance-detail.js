@@ -433,7 +433,7 @@ async function printDriverAdvanceVoucher(advanceId) {
         </tr>
         <tr>
             <td class="label">Chuyến xe thực hiện:</td>
-            <td><strong style="color: #0f766e;">[${escapeHtml(adv.trip_code)}]</strong> - Biển số xe: <strong>${escapeHtml(adv.license_plate || '-')}</strong></td>
+            <td><strong style="color: #0f766e;">${escapeHtml(adv.trip_code)}</strong> - Biển số xe: <strong>${escapeHtml(adv.license_plate || '-')}</strong></td>
         </tr>
         <tr>
             <td class="label">Khách hàng & Tuyến đường:</td>

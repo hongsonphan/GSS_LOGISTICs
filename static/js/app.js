@@ -22352,7 +22352,7 @@ function openSettleAdvanceModal(advanceId) {
     const codeEl = document.getElementById('settle-adv-code');
     if (codeEl) codeEl.innerText = advance.code;
     const tripEl = document.getElementById('settle-adv-trip-info');
-    if (tripEl) tripEl.innerText = `[${advance.trip_code}] ${advance.customer_name || ''} (${advance.license_plate || ''})`;
+    if (tripEl) tripEl.innerText = `${advance.trip_code} - ${advance.customer_name || ''} (${advance.license_plate || ''})`;
     const drvEl = document.getElementById('settle-adv-driver-name');
     if (drvEl) drvEl.innerText = advance.driver_name;
     const amtEl = document.getElementById('settle-adv-amount-display');
@@ -22904,7 +22904,7 @@ async function printDriverAdvanceVoucher(advanceId) {
         </tr>
         <tr>
             <td class="label">Chuyến xe thực hiện:</td>
-            <td><strong style="color: #0f766e;">[${escapeHtml(adv.trip_code)}]</strong> - Biển số xe: <strong>${escapeHtml(adv.license_plate || '-')}</strong></td>
+            <td><strong style="color: #0f766e;">${escapeHtml(adv.trip_code)}</strong> - Biển số xe: <strong>${escapeHtml(adv.license_plate || '-')}</strong></td>
         </tr>
         <tr>
             <td class="label">Khách hàng & Tuyến đường:</td>
@@ -25906,7 +25906,7 @@ function renderSubcontractorTable(list) {
                 </td>
                 <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">${index + 1}</td>
                 <td>
-                    <div class="font-bold text-slate-900 font-heading">[${escapeHtml(item.trip_code)}]</div>
+                    <div class="font-bold text-slate-900 font-heading">${escapeHtml(item.trip_code)}</div>
                     <div class="text-[11px] text-slate-400">${item.created_at}</div>
                 </td>
                 <td>
@@ -26559,7 +26559,7 @@ function renderBotAuditTable(list) {
             <tr class="hover:bg-slate-50 transition-colors">
                 <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">${index + 1}</td>
                 <td>
-                    <div class="font-bold text-slate-900 font-heading">[${escapeHtml(item.trip_code)}]</div>
+                    <div class="font-bold text-slate-900 font-heading">${escapeHtml(item.trip_code)}</div>
                 </td>
                 <td>
                     <div class="font-bold text-slate-900 font-mono text-xs">${escapeHtml(item.vehicle_plate)}</div>
