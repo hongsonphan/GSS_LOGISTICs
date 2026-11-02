@@ -9767,6 +9767,7 @@ async function submitReassignDriver(e) {
         });
         const data = await res.json();
         if (res.ok) {
+            (data.warnings || []).forEach(w => showToast('warning', w, 'Loại xe không khớp loại hàng'));
             closeReassignDriverModal();
             showToast('success', `Đã phân công lại chuyến ${trip.id} cho tài xế mới!`, 'Phân Xe Thành Công');
             await viewTripDetail(trip.id);
@@ -12482,6 +12483,7 @@ async function submitNewTrip(sourceEl = null) {
         });
         const result = await res.json().catch(() => ({}));
         if (res.ok && result.success) {
+            (result.warnings || []).forEach(w => showToast('warning', w, 'Loại xe không khớp loại hàng'));
             closeModal('modal-create-trip');
             const createTripView = document.getElementById('view-create-trip');
             if (createTripView) createTripView.classList.add('hidden-view');

@@ -392,10 +392,12 @@ class TripListCreateAPIView(APIView):
                       Vehicle.objects.filter(license_plate__icontains=vehicle_plate).first()
             if not vehicle and subcontractor:
                 # Tự động tạo bản ghi xe ngoài nếu đối tác 3PL điều xe mới
+                from apps.fleet.load_compat import infer_vehicle_type
                 vehicle = Vehicle.objects.create(
                     license_plate=vehicle_plate.upper(),
                     ownership_type=VehicleOwnership.SUBCONTRACTOR,
-                    subcontractor=subcontractor
+                    subcontractor=subcontractor,
+                    vehicle_type=infer_vehicle_type(data.get('container_type')),
                 )
             elif vehicle and subcontractor and not vehicle.subcontractor:
                 vehicle.subcontractor = subcontractor
@@ -639,8 +641,12 @@ class TripListCreateAPIView(APIView):
                 is_active=tli['active']
             )
 
+        from apps.fleet.load_compat import load_mismatch
+        warnings = [w for w in (load_mismatch(trip.vehicle, trip.container_type),
+                                load_mismatch(trip.dropoff_vehicle, trip.container_type)) if w]
         return Response({
             'success': True,
+            'warnings': warnings,
             'message': f'Tạo lệnh điều động {trip.trip_code} thành công!',
             'trip_code': trip.trip_code,
             'id': trip.trip_code,
@@ -1232,8 +1238,10 @@ class TripDetailAPIView(APIView):
                     is_active=False
                 )
 
+        from apps.fleet.load_compat import load_mismatch
         return Response({
             'success': True,
+            'warnings': [w for w in [load_mismatch(trip.vehicle, trip.container_type)] if w],
             'message': 'Đã cập nhật tiến độ hạ cont và trạng thái lưu xe thành công!',
             'trip_code': trip.trip_code,
             'is_overnight_detention': trip.is_overnight_detention,

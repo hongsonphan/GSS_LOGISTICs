@@ -270,6 +270,7 @@ async function submitReassignDriver(e) {
         });
         const data = await res.json();
         if (res.ok) {
+            (data.warnings || []).forEach(w => showToast('warning', w, 'Loại xe không khớp loại hàng'));
             closeReassignDriverModal();
             showToast('success', `Đã phân công lại chuyến ${trip.id} cho tài xế mới!`, 'Phân Xe Thành Công');
             await viewTripDetail(trip.id);

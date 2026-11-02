@@ -414,6 +414,7 @@ async function submitNewTrip(sourceEl = null) {
         });
         const result = await res.json().catch(() => ({}));
         if (res.ok && result.success) {
+            (result.warnings || []).forEach(w => showToast('warning', w, 'Loại xe không khớp loại hàng'));
             closeModal('modal-create-trip');
             const createTripView = document.getElementById('view-create-trip');
             if (createTripView) createTripView.classList.add('hidden-view');
