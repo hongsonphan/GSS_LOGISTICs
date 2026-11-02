@@ -103,7 +103,7 @@ function openSettleAdvanceModal(advanceId) {
     const codeEl = document.getElementById('settle-adv-code');
     if (codeEl) codeEl.innerText = advance.code;
     const tripEl = document.getElementById('settle-adv-trip-info');
-    if (tripEl) tripEl.innerText = `[${advance.trip_code}] ${advance.customer_name || ''} (${advance.license_plate || ''})`;
+    if (tripEl) tripEl.innerText = `${advance.trip_code} - ${advance.customer_name || ''} (${advance.license_plate || ''})`;
     const drvEl = document.getElementById('settle-adv-driver-name');
     if (drvEl) drvEl.innerText = advance.driver_name;
     const amtEl = document.getElementById('settle-adv-amount-display');

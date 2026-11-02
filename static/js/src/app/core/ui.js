@@ -125,7 +125,11 @@ async function openModal(id, extraParam = null) {
         }
         initDefaultDatesForCreateTrip();
         onFreeDaysChange();
-        await loadMasterDataFormOptions();
+        if (typeof checkAndSyncMasterData === 'function') {
+            await checkAndSyncMasterData(false);
+        } else {
+            await loadMasterDataFormOptions();
+        }
         populateMasterDataDropdowns();
         await loadActiveBookingsForModal(extraParam);
     }

@@ -154,7 +154,9 @@ async function saveNewSubVehicleInline(subId) {
             if (brandInp) brandInp.value = '';
             hideAddSubVehicleInline();
             loadSubcontractorVehiclesInModal(subId);
-            if (typeof loadMasterDataFormOptions === 'function') {
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
+            } else if (typeof loadMasterDataFormOptions === 'function') {
                 loadMasterDataFormOptions(true);
             }
         } else {
@@ -176,7 +178,9 @@ async function deleteSubVehicleInline(vehicleId, subId) {
             showToast('success', result.message || 'Đã gỡ phương tiện thành công!');
             subVehiclesEditingSet.delete(vehicleId);
             loadSubcontractorVehiclesInModal(subId);
-            if (typeof loadMasterDataFormOptions === 'function') {
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
+            } else if (typeof loadMasterDataFormOptions === 'function') {
                 loadMasterDataFormOptions(true);
             }
         } else {
@@ -339,7 +343,9 @@ async function saveNewSubDriverInline(subId) {
             if (licInp) licInp.value = '';
             hideAddSubDriverInline();
             loadSubcontractorDriversInModal(subId);
-            if (typeof loadMasterDataFormOptions === 'function') {
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
+            } else if (typeof loadMasterDataFormOptions === 'function') {
                 loadMasterDataFormOptions(true);
             }
         } else {
@@ -361,7 +367,9 @@ async function deleteSubDriverInline(driverId, subId) {
             showToast('success', result.message || 'Đã xóa tài xế thành công!');
             subDriversEditingSet.delete(driverId);
             loadSubcontractorDriversInModal(subId);
-            if (typeof loadMasterDataFormOptions === 'function') {
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
+            } else if (typeof loadMasterDataFormOptions === 'function') {
                 loadMasterDataFormOptions(true);
             }
         } else {
@@ -466,8 +474,10 @@ async function saveAllSubcontractorFleetInlineChanges(subId) {
         }
     }
 
-    // Tải lại danh mục cho các dropdown
-    if (typeof loadMasterDataFormOptions === 'function') {
+    // Tải lại danh mục cho các dropdown & đồng bộ tức thời
+    if (typeof checkAndSyncMasterData === 'function') {
+        checkAndSyncMasterData(true);
+    } else if (typeof loadMasterDataFormOptions === 'function') {
         loadMasterDataFormOptions(true);
     }
 }

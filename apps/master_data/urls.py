@@ -1,8 +1,8 @@
 from django.urls import path
 from apps.master_data.api_views import (
-    MasterDataRevisionAPIView,
     MasterDataSummaryAPIView,
     MasterDataFormOptionsAPIView,
+    MasterDataVersionAPIView,
     LocationListCreateAPIView, LocationDetailAPIView,
     ContainerTypeListCreateAPIView, ContainerTypeDetailAPIView,
     ExpenseItemListCreateAPIView, ExpenseItemDetailAPIView,
@@ -26,8 +26,8 @@ from apps.master_data.permission_views import RolesPermissionsAPIView
 
 urlpatterns = [
     path('summary/', MasterDataSummaryAPIView.as_view(), name='master-summary'),
-    path('revision/', MasterDataRevisionAPIView.as_view(), name='master-revision'),
     path('form-options/', MasterDataFormOptionsAPIView.as_view(), name='master-form-options'),
+    path('version/', MasterDataVersionAPIView.as_view(), name='master-data-version'),
     
     # 0. Khai báo Hệ Thống / Thông Tin Công Ty, Phân Quyền & Số Dư Đầu Kỳ
     path('company/', CompanyProfileAPIView.as_view(), name='master-company-profile'),

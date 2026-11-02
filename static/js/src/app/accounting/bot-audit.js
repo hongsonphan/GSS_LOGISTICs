@@ -62,7 +62,7 @@ function renderBotAuditTable(list) {
             <tr class="hover:bg-slate-50 transition-colors">
                 <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">${index + 1}</td>
                 <td>
-                    <div class="font-bold text-slate-900 font-heading">[${escapeHtml(item.trip_code)}]</div>
+                    <div class="font-bold text-slate-900 font-heading">${escapeHtml(item.trip_code)}</div>
                 </td>
                 <td>
                     <div class="font-bold text-slate-900 font-mono text-xs">${escapeHtml(item.vehicle_plate)}</div>

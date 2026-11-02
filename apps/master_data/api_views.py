@@ -242,7 +242,10 @@ class MasterDataFormOptionsAPIView(APIView):
             for ct in RouteTariff.objects.select_related('customer').all().order_by('customer__name', 'pickup_location')
         ]
 
+        from apps.master_data.version import get_master_data_version
+
         response = Response({
+            'version': get_master_data_version(),
             'customers': customers,
             'customer_tariffs': customer_tariffs,
             'locations': {
@@ -2479,17 +2482,6 @@ for _cls in (MasterDataExportTemplateAPIView, MasterDataExportDataAPIView, Maste
     _cls.cfg_module_for = staticmethod(lambda request: _catalog_module(request))
 
 
-class MasterDataRevisionAPIView(APIView):
-    """Số phiên bản danh mục hiện tại; giao diện hỏi định kỳ và tải lại danh mục khi số này đổi."""
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        from apps.master_data import revision
-        from core.tenant import company_for_user
-        company = company_for_user(request.user)
-        return Response({'revision': revision.current(company.id if company else None)})
-
-
 # Danh sách khách hàng, biểu giá, nhà thầu phụ, xe: chỉ đọc được khi thuộc nghiệp vụ liên quan hoặc có quyền tab Cài đặt tương ứng
 for _cls in (CustomerMasterListCreateAPIView, CustomerMasterDetailAPIView, TariffMasterListCreateAPIView, TariffMasterDetailAPIView):
     _cls.read_modules = _PARTNER_DATA_MODULES
@@ -2499,3 +2491,20 @@ for _cls in (SubcontractorListCreateAPIView, SubcontractorDetailAPIView, Subcont
     _cls.read_modules = ('dispatch', 'accounting', 'sales')
 for _cls in (VehicleMasterListCreateAPIView, VehicleMasterDetailAPIView, TrailerMasterListCreateAPIView, TrailerMasterDetailAPIView):
     _cls.read_modules = _FLEET_DATA_MODULES
+
+
+from rest_framework.permissions import IsAuthenticated
+
+class MasterDataVersionAPIView(APIView):
+    """
+    API siêu nhẹ (1-2ms) cung cấp phiên bản danh mục hệ thống (timestamp mili-giây).
+    Cho phép Frontend trên toàn bộ máy tính / user tự động kiểm tra và đồng bộ tức thời.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.master_data.version import get_master_data_version
+        v = get_master_data_version()
+        resp = Response({'version': v})
+        resp['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp

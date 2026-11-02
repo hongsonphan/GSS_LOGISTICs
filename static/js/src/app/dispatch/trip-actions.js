@@ -306,8 +306,10 @@ async function openModalEditTrip(tripCode = null) {
         return;
     }
 
-    // Tải master data options nếu chưa có
-    if (typeof loadMasterDataFormOptions === 'function') {
+    // Tải master data options và kiểm tra đồng bộ tức thời
+    if (typeof checkAndSyncMasterData === 'function') {
+        await checkAndSyncMasterData(false);
+    } else if (typeof loadMasterDataFormOptions === 'function') {
         await loadMasterDataFormOptions();
     }
     if (typeof populateMasterDataDropdowns === 'function') {

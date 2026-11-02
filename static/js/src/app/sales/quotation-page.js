@@ -168,7 +168,11 @@ function setFullpageSaveButtonState(btnId, isEnabled) {
 window.setFullpageSaveButtonState = setFullpageSaveButtonState;
 
 async function openCreateQuotationPage(updateHistory = true) {
-    await loadMasterDataFormOptions();
+    if (typeof checkAndSyncMasterData === 'function') {
+        await checkAndSyncMasterData(false);
+    } else {
+        await loadMasterDataFormOptions();
+    }
     populateMasterDataDropdowns();
 
     const form = document.getElementById('form-fullpage-quotation');
@@ -275,7 +279,11 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
     if (!quoteIdentifier || quoteIdentifier === 'new') {
         return openCreateQuotationPage(updateHistory);
     }
-    await loadMasterDataFormOptions();
+    if (typeof checkAndSyncMasterData === 'function') {
+        await checkAndSyncMasterData(false);
+    } else {
+        await loadMasterDataFormOptions();
+    }
     populateMasterDataDropdowns();
 
     const form = document.getElementById('form-fullpage-quotation');

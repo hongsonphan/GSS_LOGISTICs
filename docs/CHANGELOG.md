@@ -2,6 +2,104 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.28] - 2026-11-02 (Tối Ưu Hóa Bố Trí Giao Diện Dọc Màn Hình Chi Tiết Chuyến Xe Điều Vận - Vertical Layout Modernization)
+
+### 1. Chuẩn Hóa Bố Trí Dọc Màn Hình Chi Tiết Chuyến (`templates/views/view_trip_detail.html`):
+- **Tái Cấu Trúc Khối 2 Cột Thành Chuẩn Dọc Liền Mạch:**
+  * Thay thế cấu trúc lưới 2 cột co hẹp (`lg:col-span-7` và `lg:col-span-5`) bằng các khối card độc lập toàn chiều rộng (full-width), xếp tuần tự theo đúng luồng kiểm soát nghiệp vụ vận hành:
+    1. **Khối 1: THÔNG TIN VẬN CHUYỂN & CHỨNG TỪ EIR:** Dàn đều 4 thẻ chỉ số chính (`Số Xe & Tài xế`, `Số Cont & Vị trí`, `Số Seal & Booking`, `Invoice & Cửa Dock`) và bảng `Hành trình 3 điểm chuẩn` (Cảng lấy -> Kho đóng/trả -> Cảng hạ) rộng rãi, thông thoáng.
+    2. **Khối 2: QUẢN LÝ HẠN FREE DEM/DET & EIR:** Bố trí 3 thẻ theo dõi (`Hạn Vỏ DET`, `Hạn Bãi DEM`, `Giám Định Vỏ Cont EIR`) và thanh giám sát `Theo Dõi Lưu Xe & Phụ Phí Neo Đêm Chờ Hạ` trải đều toàn bộ bề ngang, tối ưu cho mắt quét thông tin.
+    3. **Khối 3: TIẾN ĐỘ THỜI GIAN VẬN CHUYỂN & HẠ CONT (7 MỐC THỰC TẾ):** Đặt ngay phía dưới khối quản lý hạn, trực quan hóa tiến độ 7 bước và thông tin ngày giờ đóng hàng, lưu ý giao nhận.
+- **Trải Nghiệm Người Dùng (UI/UX Accessibility):**
+  * Tối ưu không gian hiển thị: Loại bỏ hiện tượng chữ bị cắt cụt (truncate), co rúm hoặc chen chúc khi người dùng thao tác trên màn hình laptop hoặc máy tính bảng.
+  * Giữ nguyên 100% ID DOM, binding JavaScript, các nút thao tác nhanh (Cập nhật neo đêm, Xem chuyến, Bảng kê chi phí) và tính năng responsive linh hoạt.
+
+---
+
+## [v4.7.27] - 2026-11-02 (Nâng Cấp Phân Hệ Đối Soát & Quyết Toán 3PL: Bộ Lọc & Sắp Xếp Đối Tác, Checkbox Chọn Nhiều & Quyết Toán Gom)
+
+### 1. Bổ Sung Bộ Lọc 3PL & Sắp Xếp Cột Trên Phân Hệ Đối Soát Thầu Phụ (`view_accounting.html`, `subcontractor.js`):
+- **Chuẩn Hóa Hiển Thị Mã Chuyến:** Loại bỏ 2 dấu ngoặc vuông `[...]` bao quanh mã chuyến (ví dụ chuyển từ `[DV.2611.007]` thành `DV.2611.007` tinh gọn, liền mạch) trên bảng đối soát 3PL, bảng kiểm toán BOT và phiếu đối soát/tạm ứng.
+- **Bộ Lọc Đối Tác 3PL (`#subcon-filter-subcontractor`):** Bổ sung ô chọn danh sách Thầu phụ / Đơn vị xe ngoài ngay cạnh ô tìm kiếm và trạng thái. Dropdown tự động cập nhật danh sách các đối tác 3PL có chuyến phát sinh và cho phép lọc nhanh tức thì.
+- **Tìm Kiếm Mở Rộng (`#subcon-search`):** Mở rộng tìm kiếm đa chiều cả ở frontend và backend (`SubcontractorSettlementsAPIView`): tìm theo Mã chuyến, Tên thầu phụ, Tên viết tắt, Mã đối tác, Biển số xe, Tên tài xế, Khách hàng.
+- **Sắp Xếp Bảng Động (Column Sorting):** Bổ sung tính năng click vào tiêu đề các cột (Mã Chuyến, Thầu Phụ 3PL, Tài Xế, Khách Hàng, Cước Thu, Cước Trả, Chênh Lệch, Tạm Ứng, Còn Trả, Trạng Thái) với biểu tượng mũi tên đổi chiều động (`ph-arrows-down-up`, `ph-arrow-up`, `ph-arrow-down`).
+
+### 2. Checkbox Chọn Nhiều Chuyến & Nút Quyết Toán Gom Thông Minh:
+- **Cột Checkbox Chuẩn Giao Diện Đặt Trước STT:**
+  * Header có checkbox tổng (`#subcon-select-all`) chọn/bỏ chọn tất cả các chuyến chưa quyết toán trên danh sách đang hiển thị.
+  * Hàng có checkbox (`.subcon-row-checkbox`), tự động disable đối với chuyến đã quyết toán (`SETTLED`).
+- **Nút Quyết Toán Nhiều Chuyến (`#btn-batch-settle-subcon`):**
+  * Nằm cạnh nút "Xuất Bảng Kê Xe Bạn Excel" ở thanh công cụ.
+  * Khi chọn từ 2 chuyến trở lên (`count >= 2`): Nút tự động hiển thị với số lượng chuyến được chọn `Quyết Toán Nhiều Chuyến (${count})`.
+  * Khi chọn 1 chuyến hoặc 0 chuyến: Nút ẩn hoàn toàn (`hidden`), đảm bảo quy tắc chỉ nút quyết toán trong từng dòng có hiệu lực.
+- **Modal Quyết Toán Gom 3PL (`modal_subcontractor_batch_settle.html`):**
+  * Hiển thị bảng tổng hợp tài chính chuẩn xác: Tổng cước thầu phụ, Chi phí bù trừ/hỗ trợ, Tổng tạm ứng đã chi, và Số tiền ròng còn phải thanh toán.
+  * Tùy chọn phương thức thanh toán (Chuyển khoản / Tiền mặt), số tài khoản thụ hưởng, diễn giải.
+  * Backend API hỗ trợ `action: 'batch_settle'`, cập nhật trạng thái `SETTLED` hàng loạt trong một transaction nguyên tử và tự động sinh Phiếu Chi (PC.yyMM.xxx) tương ứng.
+- **Dọn Dẹp DOM:** Loại bỏ include `modal_employee.html` đã cũ khỏi `templates/base.html` để triệt tiêu hoàn toàn xung đột ID form nhân sự.
+
+---
+
+## [v4.7.26] - 2026-11-02 (Kiến Trúc Đồng Bộ Danh Mục Tức Thời Toàn Hệ Thống Không Cần Tải Lại Trang - Realtime Instant Master Data Sync)
+
+### 1. Bối Cảnh & Vấn Đề Nghiệp Vụ:
+- **Vấn Đề:** Khi người dùng Admin/Hành chính tạo mới Xe, Rơ-moóc, Tài xế, Khách hàng, Điểm kho/Cảng/Bãi, Thầu phụ, Hãng tàu... thì trên các máy tính/màn hình đang mở của nhân viên Điều vận (Tạo/Sửa chuyến xe), Sales (Tạo Báo giá/Booking), hoặc các tab trình duyệt khác không hiển thị ngay bản ghi mới trừ khi phải F5 (Reload) lại toàn bộ trang web.
+- **Yêu Cầu Nghiệp Vụ:** Bất kỳ thay đổi nào trên cơ sở dữ liệu phải được tự động đồng bộ tức thì cho tất cả các máy tính và tài khoản đang sử dụng mà không cần F5/Reload, tuyệt đối không tạo rác dữ liệu, bảo lưu nguyên vẹn giá trị người dùng đang chọn trên form.
+
+### 2. Giải Pháp Kiến Trúc Đồng Bộ Thời Gian Thực (Realtime Instant Master Data Sync):
+- **Phía Máy Chủ (Backend - Django Cache & Model Signals):**
+  * **Module Quản Lý Phiên Bản (`apps/master_data/version.py`):** Cung cấp hàm `get_master_data_version()` và `bump_master_data_version()`. Sử dụng `DatabaseCache` đa tiến trình (`bim_cache`) để lưu timestamp phiên bản danh mục (mili-giây), đảm bảo tính nhất quán trên toàn bộ worker Gunicorn.
+  * **Hệ Thống Lắng Nghe Sự Kiện Tự Động (`apps/master_data/signals.py`):** Kết nối tín hiệu `post_save` và `post_delete` trên 9 mô hình dữ liệu cốt lõi: `Location`, `ContainerType`, `ShippingLine`, `Subcontractor`, `DriverSalaryTariff`, `Customer`, `Vehicle`, `Trailer`, `Employee`. Bất kỳ thao tác thêm, sửa, xóa nào (từ Web, Django Admin, Excel Import hay API) đều tự động tăng phiên bản danh mục ngay lập tức.
+  * **Endpoint Kiểm Tra Phiên Bản Siêu Nhẹ (`apps/master_data/api_views.py`, `MasterDataVersionAPIView`):** Endpoint `/api/master-data/version/` trả về `version` timestamp trong thời gian xử lý ~1ms, payload ~30 bytes, phản hồi kèm header `Cache-Control: no-cache, no-store, must-revalidate`.
+  * **Tích Hợp Phiên Bản Vào Form Options (`MasterDataFormOptionsAPIView`):** Endpoint `/api/master-data/form-options/` luôn trả về trường `version` song hành cùng toàn bộ cây danh mục.
+- **Phía Máy Khách (Frontend - Cross-Tab Broadcast & Polling Thông Minh):**
+  * **Kênh Đồng Bộ Ngay Lập Tức Giữa Các Tab (`static/js/src/app/core/master-options.js`):** Sử dụng `BroadcastChannel('bim_master_data_sync_channel')`. Khi người dùng tạo/sửa bản ghi ở một tab, tín hiệu lập tức truyền sang tất cả các tab khác trên cùng trình duyệt để cập nhật dropdown trong 0 mili-giây.
+  * **Cơ Chế Kiểm Tra Phiên Bản Ngầm Đa Máy Tính (Cross-Machine Version Polling):**
+    - Kiểm tra khi người dùng tương tác: Sự kiện `window.focus` và `document.visibilitychange` tự động kiểm tra phiên bản ngay khi người dùng chuyển qua lại giữa các cửa sổ làm việc.
+    - Định kỳ 15 giây kiểm tra ngầm siêu nhẹ (`/api/master-data/version/`). Nếu phát hiện phiên bản trên máy chủ mới hơn phiên bản ở bộ nhớ máy khách, hệ thống tự động gọi tải lại danh mục và điền lại các dropdown.
+  * **Bảo Lưu Trạng Thái Nhập Liệu Chuẩn Bim TMS:**
+    - Hàm `populateMasterDataDropdowns()` ghi nhớ giá trị đang chọn (`const currentVal = sel.value;`) trước khi nạp lại và gọi `setSelectValueCaseInsensitive()`, kết hợp `_bimCombobox.sync()`, đảm bảo không bao giờ làm mất hay reset dữ liệu người dùng đang thao tác dở dang.
+    - Mở rộng hỗ trợ tự động điền danh mục Rơ-moóc (`inp-trailer`, `edit-inp-trailer`), Tài xế và Đầu kéo cho cả Modal Tạo chuyến và Sửa lệnh điều vận.
+  * **Kích Hoạt Đồng Bộ Ngay Khi Thao Tác:**
+    - Tích hợp `checkAndSyncMasterData(true)` tại `submitMasterDataForm`, `deleteMasterDataItem`, `openSubcontractorFleetModal`, `submitEmployeeForm`, `deleteEmployeeItem`, và form tạo nhanh tài xế điều vận.
+    - Tích hợp kiểm tra phiên bản tự động khi mở trang/modal Điều vận (`openCreateTripPage`, `openModalEditTrip`), Bán hàng (`openCreateBookingPage`, `viewBookingDetail`), Báo giá (`openCreateQuotationPage`, `viewQuotationDetail`).
+
+### 3. Kiểm Thử & Xác Nhận:
+- Bổ sung unit test `test_master_data_version_api_and_signal_bump` kiểm tra toàn diện API version và Model Signals.
+- Toàn bộ bộ kiểm thử 285/285 tests hoàn thành xanh 100%.
+- Kiểm tra tính toàn vẹn cú pháp JS (`node --check static/js/app.js`), mã nguồn Python (`ruff check`), kiểm tra Tailwind CSS (`scripts/build_css.py --check`) và bundle JS (`scripts/build_app_js.py --check`) đều đạt chuẩn.
+
+---
+
+## [v4.7.25] - 2026-11-01 (Sửa Lỗi Cuộn Bảng Nhân Sự & Bổ Sung Tính Năng Gán Tài Khoản Người Dùng Vào Hồ Sơ Nhân Sự)
+
+### 1. Khắc Phục Triệt Để Lỗi Khóa Cuộn Dọc Trên Danh Sách Nhân Sự & Các Bảng Phân Hệ (`templates/views/view_personnel.html`):
+- **Nguyên Nhân Gốc:** Cấu trúc Flexbox lồng nhau trong thẻ chứa bảng thiếu thuộc tính `min-h-0` trên các container cha (`#hr-panel-directory`, `#hr-panel-contracts`, `#hr-panel-attendance`, `#hr-panel-payroll`), kết hợp với wrapper bảng trước đó chỉ có `overflow-x-auto` (chỉ cuộn ngang, thiếu `overflow-y-auto`). Khi danh sách vượt quá 12 nhân sự, nội dung bảng tràn xuống dưới và bị thẻ ngoài (`overflow-hidden`) cắt mất, làm người dùng không thể cuộn xuống xem các hàng tiếp theo.
+- **Giải Pháp Xử Lý:**
+  * Bổ sung `overflow-x-auto overflow-y-auto flex-1 min-h-0` cho wrapper bảng `#employees-table`, `#contracts-table`, `#attendance-table`, `#payroll-slips-table`.
+  * Bổ sung `min-h-0` cho toàn bộ 5 sub-panel: `#hr-panel-directory`, `#hr-panel-contracts`, `#hr-panel-attendance`, `#hr-panel-payroll`, `#hr-panel-policies`.
+  * Giữ nguyên vẹn tính năng tiêu đề cố định `thead sticky top-0 z-10` và dòng chân trang tổng kết `BimTableFooter` khi cuộn.
+  * Mở rộng trường tìm kiếm: cho phép gõ tìm theo Tên, Mã NV, Tên tài khoản, CCCD, SĐT.
+
+### 2. Bổ Sung Tính Năng Gán Tài Khoản Người Dùng (User Account) Vào Hồ Sơ Nhân Sự:
+- **Giao Diện Khai Báo / Cập Nhật Nhân Sự (`view_employee_form.html`, `employee-form.js`):**
+  * Thêm ô chọn dropdown "Tài Khoản Đăng Nhập Hệ Thống (User Account)" tại Thẻ 3 (Thông Tin Chuyên Môn & Trạng Thái Công Tác).
+  * Tự động nạp danh sách tài khoản hệ thống của công ty (`/api/personnel/users-available/`), hiển thị rõ trạng thái tài khoản đang gán hoặc khả dụng (VD: `ketoan`, `dieudo`, `admin`, `sales`).
+  * Tự động cập nhật gợi ý thông tin tài khoản khi chọn (`emp-user-hint`).
+- **Hiển Thị Huy Hiệu Tài Khoản Trực Quan Trên Bảng Nhân Sự (`employees.js`):**
+  * Hiển thị huy hiệu xanh font mono `[ketoan]`, `[dieudo]` ngay cạnh tên nhân sự trên danh sách để nhận diện ngay nhân sự nào đã được cấp tài khoản.
+- **Xử Lý Triệt Để Ràng Buộc Cơ Sở Dữ Liệu `UNIQUE (user_id)` Đối Với Xóa Mềm (`SoftDeleteModel`):**
+  * **Data Migration `personnel.0013_release_deleted_employee_users`:** Tự động giải phóng `user = None` trên tất cả hồ sơ nhân sự cũ đã xóa mềm (`is_deleted = True`), xóa bỏ triệt để lỗi xung đột khóa ngoại `UniqueViolation: Key (user_id)=(3) already exists` khi gán tài khoản cho nhân sự mới.
+  * Cập nhật phương thức `Employee.delete()` và API `EmployeeDetailAPIView.delete()`: Luôn tự động giải phóng `self.user = None` khi xóa nhân sự.
+  * Thêm logic kiểm tra `validate_user` trong `EmployeeSerializer`: Tự động giải phóng bản ghi xóa mềm và thông báo tiếng Việt thân thiện nếu tài khoản đang được gán cho nhân sự hoạt động khác.
+
+### 3. Kiểm Thử & Đóng Gói:
+- Toàn bộ 284/284 unit & integration tests hoàn thành xanh 100%.
+- Đã build lại bundle sản xuất `static/js/app.js` từ 101 tệp nguồn.
+- Kiểm thử thị giác (Visual Regression Test bằng Playwright) xác nhận tính năng cuộn mượt mà và form chọn tài khoản hoạt động hoàn hảo.
+
+---
+
 ## [v4.7.24] - 2026-11-01 (Xóa Sạch Hồ Sơ Nhân Sự Để Chuẩn Bị Nhập Dữ Liệu Thực Tế Mới)
 
 ### 1. Dọn Dẹp Toàn Bộ Hồ Sơ Nhân Sự Cũ (`personnel`, `fleet`):

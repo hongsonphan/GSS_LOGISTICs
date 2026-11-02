@@ -251,19 +251,19 @@ class CatalogReadAndRevisionTests(TestCase):
             self.assertEqual(api.get('/api/master-data/customers/').status_code, 200, name)
             self.assertEqual(api.get('/api/master-data/form-options/').status_code, 200, name)
 
-    def test_revision_changes_for_other_users_when_catalog_is_saved(self):
+    def test_version_changes_for_other_users_when_catalog_is_saved(self):
         maker = self.api(make_user('kt2_cat', EmployeeRole.ACCOUNTANT, '0974000005'))
         watcher = self.api(make_user('dd2_cat', EmployeeRole.DISPATCHER, '0974000006'))
-        before = watcher.get('/api/master-data/revision/').json()['revision']
+        before = watcher.get('/api/master-data/version/').json()['version']
         res = maker.post('/api/master-data/locations/', {'code': 'KHO_NEW', 'name': 'Kho mới', 'location_type': 'WAREHOUSE'}, format='json')
         self.assertIn(res.status_code, (200, 201))
-        after = watcher.get('/api/master-data/revision/').json()['revision']
+        after = watcher.get('/api/master-data/version/').json()['version']
         self.assertNotEqual(before, after)
         names = [x['name'] for x in watcher.get('/api/master-data/form-options/').json()['locations']['all']]
         self.assertIn('Kho mới', names)   # người dùng khác thấy ngay trong ô chọn
 
-    def test_revision_requires_login(self):
-        self.assertIn(APIClient().get('/api/master-data/revision/').status_code, (401, 403))
+    def test_version_requires_login(self):
+        self.assertIn(APIClient().get('/api/master-data/version/').status_code, (401, 403))
 
 
 class PriceLookupTests(TestCase):

@@ -465,6 +465,67 @@ class DriverBatchSettlementTests(TestCase):
         self.trip1.refresh_from_db()
         self.assertEqual(self.trip1.subcontractor_settlement_status, 'PENDING')
 
+        # 4. Kiểm thử Lọc theo Subcontractor & Quyết toán nhiều chuyến (batch_settle)
+        from apps.master_data.models import Subcontractor, PartnerType
+        sub_test = Subcontractor.objects.create(
+            code='3PL999',
+            name='Nhà Xe Test 3PL 999',
+            short_name='3PL999',
+            partner_type=PartnerType.CARRIER
+        )
+        trip_batch1 = DispatchTrip.objects.create(
+            trip_code=f'TRIP-BATCH-1-{unique_suffix}',
+            customer=self.customer,
+            vehicle=self.vehicle,
+            subcontractor=sub_test,
+            status=TripStatus.COMPLETED,
+            loading_date=datetime.date.today(),
+            subcontractor_cost=3000000,
+            subcontractor_advance=1000000,
+            subcontractor_settlement_status='PENDING'
+        )
+        trip_batch2 = DispatchTrip.objects.create(
+            trip_code=f'TRIP-BATCH-2-{unique_suffix}',
+            customer=self.customer,
+            vehicle=self.vehicle,
+            subcontractor=sub_test,
+            status=TripStatus.COMPLETED,
+            loading_date=datetime.date.today(),
+            subcontractor_cost=2500000,
+            subcontractor_advance=500000,
+            subcontractor_settlement_status='PENDING'
+        )
+
+        # 4.1 Lọc theo subcontractor_id
+        res_filter = self.client.get(f'/api/accounting/subcontractor-settlements/?subcontractor_id={sub_test.id}')
+        self.assertEqual(res_filter.status_code, status.HTTP_200_OK)
+        trips_filtered = res_filter.data.get('trips', [])
+        self.assertTrue(all(t['subcontractor_id'] == sub_test.id for t in trips_filtered))
+        self.assertGreaterEqual(len(trips_filtered), 2)
+
+        # 4.2 Tìm kiếm theo tên 3PL
+        res_search = self.client.get(f'/api/accounting/subcontractor-settlements/?search=3PL999')
+        self.assertEqual(res_search.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(res_search.data.get('trips', [])), 2)
+
+        # 4.3 Thực hiện batch_settle cho 2 chuyến
+        batch_res = self.client.post('/api/accounting/subcontractor-settlements/', data={
+            'action': 'batch_settle',
+            'trip_ids': [trip_batch1.id, trip_batch2.id],
+            'payment_method': 'BANK',
+            'bank_name': 'MB Bank',
+            'notes': 'Quyết toán gom test đợt 1'
+        }, format='json')
+        self.assertEqual(batch_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(batch_res.data.get('settled_count'), 2)
+
+        trip_batch1.refresh_from_db()
+        trip_batch2.refresh_from_db()
+        self.assertEqual(trip_batch1.subcontractor_settlement_status, 'SETTLED')
+        self.assertEqual(trip_batch2.subcontractor_settlement_status, 'SETTLED')
+        self.assertIsNotNone(trip_batch1.subcontractor_settled_at)
+        self.assertIsNotNone(trip_batch2.subcontractor_settled_at)
+
 
 class CustomerMonthlyStatementTests(TestCase):
     def setUp(self):

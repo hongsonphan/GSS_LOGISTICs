@@ -71,6 +71,55 @@ function handleEmployeeRoleChange() {
 }
 window.handleEmployeeRoleChange = handleEmployeeRoleChange;
 
+async function loadAvailableUsers(currentEmpId = null, selectedUserId = null) {
+    const select = document.getElementById('emp-user-id');
+    const hintText = document.getElementById('emp-user-hint-text');
+    if (!select) return;
+
+    try {
+        const res = await fetchWithAuth('/api/personnel/users-available/');
+        if (!res.ok) return;
+        const json = await res.json();
+        const users = json.results || [];
+
+        let html = '<option value="">-- Không liên kết tài khoản --</option>';
+        users.forEach(u => {
+            const isAssignedOther = u.assigned_to_id && String(u.assigned_to_id) !== String(currentEmpId);
+            const isSelected = selectedUserId && String(u.id) === String(selectedUserId);
+            let label = `${u.username} (${u.full_name || u.email || 'User'})`;
+            if (isAssignedOther) {
+                label += ` [Đang gán: ${u.assigned_to_code} - ${u.assigned_to_name}]`;
+            }
+            const disabledAttr = isAssignedOther ? 'disabled class="text-slate-400 bg-slate-100"' : '';
+            html += `<option value="${u.id}" ${isSelected ? 'selected' : ''} ${disabledAttr}>${escapeHtml(label)}</option>`;
+        });
+        select.innerHTML = html;
+
+        if (selectedUserId) {
+            select.value = String(selectedUserId);
+        }
+
+        const updateHint = () => {
+            const val = select.value;
+            if (!hintText) return;
+            if (!val) {
+                hintText.innerHTML = '<span class="text-slate-400">Chưa liên kết tài khoản đăng nhập cho nhân sự này.</span>';
+                return;
+            }
+            const selectedUser = users.find(u => String(u.id) === String(val));
+            if (selectedUser) {
+                hintText.innerHTML = `<span class="text-teal-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle text-teal-600"></i><span>Tài khoản: <b>${escapeHtml(selectedUser.username)}</b> (${escapeHtml(selectedUser.full_name || selectedUser.email)})</span></span>`;
+            }
+        };
+
+        select.onchange = updateHint;
+        updateHint();
+    } catch (e) {
+        console.error('Lỗi nạp danh sách tài khoản:', e);
+    }
+}
+window.loadAvailableUsers = loadAvailableUsers;
+
 function openCreateEmployeePage(updateHistory = true) {
     const form = document.getElementById('form-employee');
     if (form) form.reset();
@@ -107,6 +156,7 @@ function openCreateEmployeePage(updateHistory = true) {
     if (el('emp-current-address')) el('emp-current-address').value = '';
 
     handleEmployeeRoleChange();
+    loadAvailableUsers(null, null);
 
     const contractCard = document.getElementById('emp-active-contract-card');
     const badgeContainer = document.getElementById('emp-contract-badge-container');
@@ -207,6 +257,7 @@ async function openEditEmployeePage(id, updateHistory = true) {
     if (el('emp-current-address')) el('emp-current-address').value = emp.current_address || '';
 
     handleEmployeeRoleChange();
+    loadAvailableUsers(emp.id, emp.user);
 
     // RENDER CARD 4: THÔNG TIN HỢP ĐỒNG LAO ĐỘNG HIỆN HÀNH (BIM ERP STANDARD - MASTER 360°)
     const contractCard = document.getElementById('emp-active-contract-card');
@@ -406,7 +457,8 @@ async function submitEmployeeForm(event) {
         is_social_insurance_participant: getVal('emp-is-insurance') === 'true',
         is_active: getVal('emp-is-active') === 'true',
         permanent_address: getVal('emp-permanent-address'),
-        current_address: getVal('emp-current-address')
+        current_address: getVal('emp-current-address'),
+        user: getVal('emp-user-id') ? parseInt(getVal('emp-user-id'), 10) : null
     };
 
     const url = isEdit ? `/api/personnel/employees/${editId}/` : '/api/personnel/employees/';
@@ -427,6 +479,9 @@ async function submitEmployeeForm(event) {
 
         showToast('success', data.message || 'Đã lưu hồ sơ nhân sự thành công!', 'Thành Công');
         await loadEmployeesData();
+        if (typeof checkAndSyncMasterData === 'function') {
+            checkAndSyncMasterData(true);
+        }
         const savedId = editId || data.id || data.data?.id;
         if (savedId) {
             openEditEmployeePage(savedId, true);
@@ -520,6 +575,9 @@ async function deleteEmployeeItem(empId) {
             }
             if (typeof loadEmployeesData === 'function') {
                 await loadEmployeesData();
+            }
+            if (typeof checkAndSyncMasterData === 'function') {
+                checkAndSyncMasterData(true);
             }
         } else {
             const errMsg = data.error || data.message || 'Không thể xóa hồ sơ nhân sự này do đã phát sinh ràng buộc nghiệp vụ!';

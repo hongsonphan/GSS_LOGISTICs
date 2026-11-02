@@ -89,6 +89,23 @@ class EmployeeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Số điện thoại không được để trống.")
         return val
 
+    def validate_user(self, value):
+        if value:
+            qs = Employee.all_objects.filter(user=value)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            # Tự động giải phóng user từ hồ sơ nhân sự cũ đã xóa mềm
+            deleted_holders = qs.filter(is_deleted=True)
+            if deleted_holders.exists():
+                deleted_holders.update(user=None)
+            # Kiểm tra nếu tài khoản đang được liên kết với nhân sự khác
+            active_holder = qs.filter(is_deleted=False).first()
+            if active_holder:
+                raise serializers.ValidationError(
+                    f"Tài khoản '{value.username}' hiện đang được liên kết với nhân sự {active_holder.code} ({active_holder.full_name}). Vui lòng gỡ liên kết ở nhân sự đó trước."
+                )
+        return value
+
 
 class EmployeeDependentSerializer(serializers.ModelSerializer):
     employee_code = serializers.CharField(source='employee.code', read_only=True)
