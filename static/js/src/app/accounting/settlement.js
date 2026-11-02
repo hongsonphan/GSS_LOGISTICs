@@ -558,6 +558,7 @@ function onSettlementTripSelectionChange() {
 function executePageSettlementSubmit() {
     const tripIds = [];
     document.querySelectorAll('.page-settle-checkbox:checked').forEach(cb => {
+        if (cb.closest('tr')?.offsetParent === null) return;   // bỏ chuyến đang bị bộ lọc ẩn
         const id = parseInt(cb.getAttribute('data-trip-id'), 10);
         if (id) tripIds.push(id);
     });

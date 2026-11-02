@@ -24567,6 +24567,7 @@ function onSettlementTripSelectionChange() {
 function executePageSettlementSubmit() {
     const tripIds = [];
     document.querySelectorAll('.page-settle-checkbox:checked').forEach(cb => {
+        if (cb.closest('tr')?.offsetParent === null) return;   // bỏ chuyến đang bị bộ lọc ẩn
         const id = parseInt(cb.getAttribute('data-trip-id'), 10);
         if (id) tripIds.push(id);
     });
@@ -24639,11 +24640,18 @@ async function openSettlementStatement(partyType, ids, extra = {}) {
         return;
     }
     try {
-        const body = Object.assign({ party_type: partyType }, extra);
+        const body = Object.assign({ party_type: partyType, split_by_party: true }, extra);
         if (typeof ids[0] === 'string') body.trip_codes = ids; else body.trip_ids = ids;
         const res = await fetchWithAuth(SETTLE_VOUCHER_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || data.detail || 'Không thể lập bảng kê quyết toán');
+        const made = data.vouchers || [data.voucher];
+        if (made.length > 1) {
+            // Nhiều đối tượng trong một lần chọn: mỗi đối tượng một bảng kê riêng, mở danh sách để rà soát từng phiếu
+            showToast('success', `Đã lập ${made.length} bảng kê (mỗi ${SETTLE_PARTY_LABEL[partyType].toLowerCase()} một phiếu): ${made.map(v => v.code).join(', ')}`, 'Tách phiếu theo đối tượng');
+            if (typeof switchAccountingSubTab === 'function') switchAccountingSubTab('acct-vouchers');
+            return;
+        }
         showSettlementVoucherModal(data.voucher);
     } catch (err) {
         showToast('danger', err.message || 'Lỗi kết nối máy chủ', 'Lỗi lập bảng kê');

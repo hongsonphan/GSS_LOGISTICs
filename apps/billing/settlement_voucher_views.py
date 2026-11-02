@@ -181,23 +181,28 @@ class SettlementVoucherListCreateAPIView(APIView):
         if taken:
             return Response({'error': f'Chuyến đã nằm trong phiếu quyết toán khác: {", ".join(list(taken)[:3])}'}, status=status.HTTP_400_BAD_REQUEST)
 
-        parties = {_party_of(party_type, t) for t in trips}
-        if len(parties) > 1:
+        groups = {}
+        for t in trips:
+            groups.setdefault(_party_of(party_type, t), []).append(t)
+        if len(groups) > 1 and not request.data.get('split_by_party'):
             return Response({'error': 'Mỗi phiếu chỉ gồm các chuyến của cùng một đối tượng quyết toán'}, status=status.HTTP_400_BAD_REQUEST)
-        party_ref, party_name = parties.pop()
 
-        lines = [build_line(party_type, t, adjusts.get(t.id, 0), ratios.get(t.id)) for t in trips]
-        amount, direction = _totals(party_type, lines)
-        code = next_code(SettlementVoucher, 'code', f"{PARTY_PREFIX[party_type]}.{timezone.now().strftime('%y%m')}.", 3)
-        voucher = SettlementVoucher.objects.create(
-            code=code, party_type=party_type, party_ref=party_ref, party_name=party_name, lines=lines,
-            amount=amount, direction=direction, notes=(request.data.get('notes') or '').strip(),
-            with_cash=bool(request.data.get('with_cash')),
-            payment_method=request.data.get('payment_method') or PaymentMethod.BANK,
-            created_by=getattr(request.user, 'employee', None),
-        )
-        voucher.trips.set(trips)
-        return Response({'success': True, 'voucher': serialize(voucher)}, status=status.HTTP_201_CREATED)
+        vouchers = []
+        for (party_ref, party_name), group in groups.items():
+            lines = [build_line(party_type, t, adjusts.get(t.id, 0), ratios.get(t.id)) for t in group]
+            amount, direction = _totals(party_type, lines)
+            code = next_code(SettlementVoucher, 'code', f"{PARTY_PREFIX[party_type]}.{timezone.now().strftime('%y%m')}.", 3)
+            voucher = SettlementVoucher.objects.create(
+                code=code, party_type=party_type, party_ref=party_ref, party_name=party_name, lines=lines,
+                amount=amount, direction=direction, notes=(request.data.get('notes') or '').strip(),
+                with_cash=bool(request.data.get('with_cash')),
+                payment_method=request.data.get('payment_method') or PaymentMethod.BANK,
+                created_by=getattr(request.user, 'employee', None),
+            )
+            voucher.trips.set(group)
+            vouchers.append(voucher)
+        return Response({'success': True, 'voucher': serialize(vouchers[0]), 'vouchers': [serialize(v, with_lines=False) for v in vouchers]},
+                        status=status.HTTP_201_CREATED)
 
 
 class SettlementVoucherDetailAPIView(APIView):

@@ -195,6 +195,20 @@ class DriverBatchSettlementTests(TestCase):
         self.assertFalse(CashTransaction.objects.filter(ref_code=res.data['voucher']['code'], is_deleted=False).exists())
         self.assertEqual(self.client.delete(f'{base}{vid}/').status_code, status.HTTP_200_OK)
 
+    def test_voucher_mixed_drivers_split_by_party(self):
+        """Chọn chuyến của nhiều tài xế: mặc định báo lỗi, bật split_by_party thì mỗi tài xế một phiếu."""
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        self.trip2.driver = self.accountant_emp
+        self.trip2.save(update_fields=['driver'])
+        payload = {'party_type': 'DRIVER', 'trip_ids': [self.trip1.id, self.trip2.id]}
+        res = self.client.post(base, payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        res = self.client.post(base, dict(payload, split_by_party=True), format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        self.assertEqual(len(res.data['vouchers']), 2)
+        self.assertEqual({v['trips_count'] for v in res.data['vouchers']}, {1})
+
     def test_subcontractor_unsettle_removes_voucher_and_blocks_edit_when_settled(self):
         """Hủy quyết toán xe bạn gỡ phiếu chi Sổ quỹ; chuyến đã quyết toán thì không sửa/quyết toán đè được."""
         self.client.force_authenticate(user=self.accountant_user)
