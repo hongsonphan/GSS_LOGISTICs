@@ -138,7 +138,8 @@ def _mapping_payload(company, user, preview=None):
     return {'regime': regime, 'current_regime': current, 'preview': is_preview, 'regimes': selectable,
             'regime_labels': {r: charts.REGIME_INFO[r]['label'] for r in charts.REGIMES},
             'can_change_regime': _can_change_regime(user),
-            'items': items, 'accounts': leaf_codes}
+            'items': items, 'accounts': leaf_codes,
+            'chart': [{'code': c, 'name': n, 'type': k} for c, n, k in sorted(charts.CHARTS[regime], key=lambda r: r[0])]}
 
 
 class LedgerMappingAPIView(APIView):

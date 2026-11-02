@@ -33894,7 +33894,53 @@ function paintAccountSettings(box) {
                     <button type="button" onclick="saveAccountSettings()" id="acct-settings-save" class="h-9 px-3.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-1.5"><i class="ph-bold ph-floppy-disk"></i><span>Lưu cài đặt</span></button>
                 </div>
             </div>` : ''}
-        </div>`;
+        </div>
+        ${chartSectionHtml(d)}`;
+    filterAccountChart();
+}
+
+const ACCT_GROUP_TITLE = {
+    '1': 'Loại 1 - Tài sản ngắn hạn', '2': 'Loại 2 - Tài sản dài hạn', '3': 'Loại 3 - Nợ phải trả', '4': 'Loại 4 - Vốn chủ sở hữu',
+    '5': 'Loại 5 - Doanh thu', '6': 'Loại 6 - Chi phí sản xuất, kinh doanh', '7': 'Loại 7 - Thu nhập khác', '8': 'Loại 8 - Chi phí khác',
+    '9': 'Loại 9 - Xác định kết quả kinh doanh'
+};
+
+function chartSectionHtml(d) {
+    const chart = d.chart || [];
+    const groups = {};
+    chart.forEach(a => { (groups[a.code[0]] = groups[a.code[0]] || []).push(a); });
+    const body = Object.keys(groups).sort().map(g => `
+        <tbody data-acct-group="${g}">
+            <tr class="bg-slate-100"><td colspan="3" class="px-3 py-1.5 font-black text-slate-700">${_acctEsc(ACCT_GROUP_TITLE[g] || ('Loại ' + g))} <span class="font-semibold text-slate-400">(${groups[g].length} tài khoản)</span></td></tr>
+            ${groups[g].map(a => `<tr data-acct-row="${_acctEsc((a.code + ' ' + a.name).toLowerCase())}" class="border-b border-slate-100">
+                <td class="px-3 py-1.5 font-mono ${a.code.length === 3 ? 'font-black text-slate-900' : 'text-slate-600'}" style="padding-left:${0.75 + (a.code.length - 3) * 0.9}rem">${_acctEsc(a.code)}</td>
+                <td class="px-3 py-1.5 ${a.code.length === 3 ? 'font-bold text-slate-900' : 'text-slate-700'} whitespace-normal">${_acctEsc(a.name)}</td>
+                <td class="px-3 py-1.5 text-slate-400">${a.code.length === 3 ? 'Cấp 1' : (a.code.length === 4 ? 'Cấp 2' : 'Cấp 3+')}</td></tr>`).join('')}
+        </tbody>`).join('');
+    return `<div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
+            <div><h3 class="text-sm md:text-base font-black font-heading text-slate-800">Danh mục hệ thống tài khoản (${chart.length} tài khoản, loại 1 đến loại 9)</h3>
+                <p class="text-xs text-slate-500 font-medium mt-0.5">Hạch toán chọn trong danh mục này. Chế độ đang xem: <strong>${_acctEsc(d.regime)}</strong>${d.preview ? ' (xem thử)' : ''}.</p></div>
+            <input id="acct-chart-search" type="search" oninput="filterAccountChart()" placeholder="Tìm số hiệu hoặc tên tài khoản..."
+                class="h-9 px-3 border border-slate-200 rounded-xl text-xs font-semibold w-full sm:w-72">
+        </div>
+        <div class="overflow-auto max-h-[70vh]"><table class="w-full text-xs text-left" id="acct-chart-table" data-no-col-manager data-no-toolbar>
+            <thead class="bg-slate-50 text-slate-700 font-bold sticky top-0"><tr><th class="px-3 py-2 w-40">Số hiệu</th><th class="px-3 py-2">Tên tài khoản</th><th class="px-3 py-2 w-24">Cấp</th></tr></thead>
+            ${body}
+        </table></div></div>`;
+}
+
+function filterAccountChart() {
+    const q = (document.getElementById('acct-chart-search')?.value || '').trim().toLowerCase();
+    document.querySelectorAll('#acct-chart-table tbody[data-acct-group]').forEach(tb => {
+        let shown = 0;
+        tb.querySelectorAll('tr[data-acct-row]').forEach(tr => {
+            const ok = !q || tr.getAttribute('data-acct-row').includes(q);
+            tr.style.display = ok ? '' : 'none';
+            if (ok) shown++;
+        });
+        tb.style.display = shown ? '' : 'none';
+    });
 }
 
 function previewAccountRegime(regime) {
@@ -33961,6 +34007,7 @@ async function saveAccountSettings() {
 
 window.renderAccountSettingsPage = renderAccountSettingsPage;
 window.previewAccountRegime = previewAccountRegime;
+window.filterAccountChart = filterAccountChart;
 window.onAccountSettingChange = onAccountSettingChange;
 window.resetAccountSettings = resetAccountSettings;
 window.saveAccountSettings = saveAccountSettings;

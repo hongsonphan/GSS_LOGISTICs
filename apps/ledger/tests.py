@@ -52,6 +52,10 @@ class ChartTests(LedgerTestBase):
         self.assertEqual(charts.resolve(self.company, 'fuel'), '1521')
 
 
+def codes_all(charts, regime):
+    return [c for c, _n, _k in charts.CHARTS[regime]]
+
+
 class NewRegimeTests(LedgerTestBase):
     """TT99/2025 (thay TT200) và TT58/2026 (siêu nhỏ, danh mục rút gọn)."""
 
@@ -72,6 +76,11 @@ class NewRegimeTests(LedgerTestBase):
         for added in ('332', '244', '6275'):
             self.assertIn(added, tt99)
         self.assertLess(len(charts.CHARTS['TT58']), len(charts.CHARTS['TT99']))
+        # Đủ loại 1 đến loại 9 và 71 tài khoản cấp 1 theo Phụ lục II
+        self.assertEqual({c[0] for c in codes_all(charts, 'TT99')}, set('123456789'))
+        self.assertEqual(len([c for c in codes_all(charts, 'TT99') if len(c) == 3]), 71)
+        for code in ('911', '811', '821', '711', '215', '2147', '82112', '6423', '4212', '3562'):
+            self.assertIn(code, tt99)
 
     def test_posting_with_tt99_and_tt58(self):
         from apps.ledger import charts
