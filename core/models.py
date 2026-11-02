@@ -135,6 +135,9 @@ class Company(TimeStampedModel):
     ledger_account_overrides = models.JSONField(
         default=dict, blank=True,
         help_text='Ghi đè tài khoản hạch toán mặc định, vd {"fuel": "1521"} (xem apps/ledger/charts.py)')
+    ledger_active_accounts = models.JSONField(
+        default=list, blank=True,
+        help_text='Số hiệu các tài khoản đang kích hoạt (hiển thị/được chọn hạch toán). Rỗng = chưa tuỳ chỉnh, dùng mặc định')
 
     class Meta:
         verbose_name = 'Doanh nghiệp (tenant)'

@@ -107,6 +107,37 @@ class NewRegimeTests(LedgerTestBase):
         self.company.refresh_from_db()
         self.assertEqual(self.company.accounting_regime, 'TT133')  # xem thử không lưu
 
+    def test_active_accounts_setting(self):
+        import json
+        user = User.objects.create_superuser('ketoan_act', 'm@example.com', 'Pw-Ledger#2026')
+        self.client.force_login(user)
+        self.company.accounting_regime = 'TT99'
+        self.company.ledger_active_accounts = []
+        self.company.save()
+        data = self.client.get('/api/ledger/mapping/').json()
+        active = set(data['active'])
+        self.assertIn('111', active)          # đang gắn nghiệp vụ nên mặc định kích hoạt
+        self.assertNotIn('113', active)       # không dùng thì mặc định không kích hoạt
+        self.assertIn('113', {a['code'] for a in data['chart']})
+        put = lambda body: self.client.put('/api/ledger/mapping/', json.dumps(body), content_type='application/json')
+        self.assertEqual(put({'active_accounts': ['999']}).status_code, 400)
+        # bật thêm 113 và 2151 (kéo theo tài khoản cha 215); tắt 111 không được vì đang gắn nghiệp vụ
+        res = put({'active_accounts': ['113', '21511', '131']})
+        self.assertEqual(res.status_code, 200, res.content)
+        after = set(res.json()['active'])
+        self.assertTrue({'113', '215', '2151', '21511', '111'} <= after)
+        self.company.refresh_from_db()
+        self.assertIn('113', self.company.ledger_active_accounts)
+        self.assertFalse(Account.objects.filter(company=self.company, code='113', is_active=False).exists())
+        # gắn nhiều nghiệp vụ vào một tài khoản
+        res = put({'overrides': {'fuel': '154', 'toll': '154'}, 'active_accounts': list(after)})
+        item = {i['key']: i for i in res.json()['items']}
+        self.assertEqual((item['fuel']['effective'], item['toll']['effective']), ('154', '154'))
+        self.assertIn('154', res.json()['active'])
+        # về mặc định
+        res = put({'overrides': {}, 'active_accounts': []})
+        self.assertNotIn('113', res.json()['active'])
+
     def test_mapping_api_hides_legacy_regimes(self):
         import json
         user = User.objects.create_superuser('ketoan_tt99', 'm@example.com', 'Pw-Ledger#2026')

@@ -118,6 +118,37 @@ def _can_change_regime(user):
     return access.can(user, 'admin', 'edit')
 
 
+def _prefixes(code, valid):
+    return {code[:i] for i in range(3, len(code) + 1) if code[:i] in valid}
+
+
+def _locked_accounts(company, regime, effective_codes, check_entries=True):
+    """Tài khoản không được tắt: đang gán cho nghiệp vụ, đã có bút toán, và các tài khoản cha của chúng."""
+    from .models import JournalLine
+    valid = {c for c, _n, _k in charts.CHARTS[regime]}
+    used = set(effective_codes)
+    if check_entries:
+        used |= set(JournalLine.objects.filter(entry__company=company, account__code__in=valid)
+                    .values_list('account__code', flat=True).distinct())
+    locked = set()
+    for code in used:
+        locked |= _prefixes(code, valid)
+    return locked
+
+
+def _active_accounts(company, regime, effective_codes, saved, check_entries=True):
+    valid = {c for c, _n, _k in charts.CHARTS[regime]}
+    locked = _locked_accounts(company, regime, effective_codes, check_entries)
+    base = {c for c in (saved or []) if c in valid}
+    if not base:
+        base = {'911'} & valid
+    active = base | locked
+    # tài khoản con kích hoạt thì tài khoản cha cũng phải kích hoạt
+    for c in list(active):
+        active |= _prefixes(c, valid)
+    return active, locked
+
+
 def _mapping_payload(company, user, preview=None):
     """preview: chế độ kế toán muốn xem thử (chưa lưu) - hiện danh mục và ánh xạ mặc định của chế độ đó."""
     current = company.accounting_regime or charts.DEFAULT_REGIME
@@ -133,12 +164,17 @@ def _mapping_payload(company, user, preview=None):
                       'effective_name': names.get(effective, '')})
     leaf_codes = [{'code': c, 'name': n} for c, n, _k in charts.CHARTS[regime]
                   if not any(o != c and o.startswith(c) for o, _n, _x in charts.CHARTS[regime])]
+    effective_codes = [i['effective'] for i in items]
+    saved = [] if is_preview else (company.ledger_active_accounts or [])
+    active, locked = _active_accounts(company, regime, effective_codes, saved, check_entries=not is_preview)
+    default_active, _ = _active_accounts(company, regime, list(charts.ACCOUNT_MAP[regime].values()), [], check_entries=not is_preview)
     # Chế độ cũ chỉ còn chọn được khi công ty đang dùng
     selectable = [r for r in charts.REGIMES if not charts.REGIME_INFO[r]['legacy'] or r == current]
     return {'regime': regime, 'current_regime': current, 'preview': is_preview, 'regimes': selectable,
             'regime_labels': {r: charts.REGIME_INFO[r]['label'] for r in charts.REGIMES},
             'can_change_regime': _can_change_regime(user),
             'items': items, 'accounts': leaf_codes,
+            'active': sorted(active), 'locked': sorted(_locked_accounts(company, regime, [], check_entries=not is_preview)), 'default_active': sorted(default_active),
             'chart': [{'code': c, 'name': n, 'type': k} for c, n, k in sorted(charts.CHARTS[regime], key=lambda r: r[0])]}
 
 
@@ -180,11 +216,31 @@ class LedgerMappingAPIView(APIView):
                 overrides[key] = code
         if errors:
             raise ValidationError({'overrides': errors})
+        # Tài khoản kích hoạt: chỉ cập nhật khi gửi lên; đổi chế độ thì quay về mặc định. Tài khoản đang dùng luôn được giữ.
+        valid_all = {c for c, _n, _k in charts.CHARTS[regime]}
+        if 'active_accounts' in data:
+            raw_active = data.get('active_accounts') or []
+            if not isinstance(raw_active, list):
+                raise ValidationError({'active_accounts': 'Sai định dạng'})
+            unknown = [c for c in raw_active if str(c) not in valid_all]
+            if unknown:
+                raise ValidationError({'active_accounts': f'Tài khoản không có trong hệ thống {regime}: {", ".join(map(str, unknown[:5]))}'})
+            saved_active = [str(c) for c in raw_active]
+        elif regime != company.accounting_regime:
+            saved_active = []
+        else:
+            saved_active = list(company.ledger_active_accounts or [])
+        effective_codes = [overrides.get(k) or d for k, d in charts.ACCOUNT_MAP[regime].items()]
+        active, _locked = _active_accounts(company, regime, effective_codes, saved_active)
+        saved_active = sorted(active) if saved_active else []
         with transaction.atomic():
             company.accounting_regime = regime
             company.ledger_account_overrides = overrides
-            company.save(update_fields=['accounting_regime', 'ledger_account_overrides'])
+            company.ledger_active_accounts = saved_active
+            company.save(update_fields=['accounting_regime', 'ledger_account_overrides', 'ledger_active_accounts'])
             summary = rebuild(company) if data.get('rebuild', True) else {}
+            Account.objects.filter(company=company).update(is_active=False)
+            Account.objects.filter(company=company, code__in=active).update(is_active=True)
         payload = _mapping_payload(company, request.user)
         payload['rebuilt'] = sum(summary.values())
         return Response(payload)
