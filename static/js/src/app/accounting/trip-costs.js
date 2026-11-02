@@ -552,44 +552,8 @@ function updateDriverBatchSettleButtonState() {
     }
 }
 
-async function openBatchSettleDriverModal() {
-    const count = selectedDriverTripCodes.size;
-    if (count < 2) {
-        showToast('warning', 'Vui lòng chọn ít nhất hai chuyến xe để chốt sổ quyết toán tài xế hàng loạt!', 'Chưa Đủ Số Lượng Chuyến');
-        return;
-    }
-
-    const confirmed = await (typeof showConfirmModal === 'function' ? showConfirmModal({
-        title: 'Chốt Sổ Quyết Toán Nhiều Chuyến',
-        message: `Xác nhận CHỐT SỔ KẾ TOÁN cho ${count} chuyến xe tài xế đã chọn?\n\nToàn bộ chi phí của các chuyến xe này sẽ được khóa cứng để làm căn cứ quyết toán tài xế và hạch toán kế toán.`,
-        confirmText: `Chốt Sổ (${count} Chuyến)`,
-        cancelText: 'Huỷ bỏ',
-        type: 'success',
-        icon: 'ph-bold ph-seal-check text-2xl'
-    }) : Promise.resolve(confirm(`Xác nhận chốt sổ kế toán cho ${count} chuyến xe đã chọn?`)));
-
-    if (!confirmed) return;
-
-    try {
-        const res = await fetchWithAuth('/api/accounting/', {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'batch_settle',
-                trip_codes: Array.from(selectedDriverTripCodes)
-            })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || data.error) {
-            throw new Error(data.error || data.message || 'Lỗi chốt sổ kế toán');
-        }
-        showToast('success', data.message || `Đã chốt sổ thành công cho ${count} chuyến xe!`, 'Chốt Sổ Thành Công');
-        selectedDriverTripCodes.clear();
-        updateDriverBatchSettleButtonState();
-        loadAccountingData();
-    } catch (err) {
-        console.error('Lỗi batch settle tài xế:', err);
-        showToast('danger', err.message || 'Lỗi kết nối máy chủ');
-    }
+function openBatchSettleDriverModal() {
+    openSettlementStatement('DRIVER', Array.from(selectedDriverTripCodes));
 }
 
 window.toggleSelectAllDriverTrips = toggleSelectAllDriverTrips;

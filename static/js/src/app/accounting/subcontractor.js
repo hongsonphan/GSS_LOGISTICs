@@ -349,58 +349,10 @@ function updateBatchSettleButtonState() {
 }
 
 function openBatchSettleSubcontractorModal() {
-    const count = selectedSubconTripIds.size;
-    if (count < 2) {
-        showToast('warning', 'Vui lòng chọn từ 2 chuyến xe bạn trở lên để thực hiện quyết toán gom!', 'Chưa đủ chuyến');
-        return;
-    }
-
-    const modal = document.getElementById('modal-subcontractor-batch-settle');
-    if (!modal) return;
-
-    const selectedTrips = (rawSubcontractorList || []).filter(t => selectedSubconTripIds.has(t.trip_id));
-    if (!selectedTrips.length) return;
-
-    let totalCost = 0;
-    let totalReimburse = 0;
-    let totalAdvance = 0;
-    let totalRemaining = 0;
-
-    selectedTrips.forEach(t => {
-        totalCost += (Number(t.subcontractor_cost) || 0);
-        totalReimburse += (Number(t.sub_reimbursable_expenses) || 0);
-        totalAdvance += (Number(t.subcontractor_advance) || 0);
-        totalRemaining += (Number(t.remaining_payable) || 0);
+    // Lập Phiếu quyết toán đối tác 3PL (bảng kê chỉ gồm cước thuê & chi phí hoàn trả, không có giá cước khách hàng)
+    openSettlementStatement('PARTNER', Array.from(selectedSubconTripIds), {
+        payment_method: document.getElementById('subcon-batch-payment-method')?.value || 'BANK'
     });
-
-    const elCount = document.getElementById('subcon-batch-count');
-    if (elCount) elCount.innerText = `${selectedTrips.length} chuyến xe bạn`;
-
-    const elTripCodes = document.getElementById('subcon-batch-trip-codes');
-    if (elTripCodes) {
-        elTripCodes.innerHTML = selectedTrips.map(t => `
-            <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-bold border border-slate-300">
-                ${escapeHtml(t.trip_code)} (${escapeHtml(t.vehicle_plate)})
-            </span>
-        `).join('');
-    }
-
-    const elCost = document.getElementById('subcon-batch-cost');
-    if (elCost) elCost.innerText = formatMoneyVND(totalCost);
-
-    const elReimburse = document.getElementById('subcon-batch-reimburse');
-    if (elReimburse) elReimburse.innerText = `+${formatMoneyVND(totalReimburse)}`;
-
-    const elAdvance = document.getElementById('subcon-batch-advance');
-    if (elAdvance) elAdvance.innerText = `-${formatMoneyVND(totalAdvance)}`;
-
-    const elRemaining = document.getElementById('subcon-batch-remaining');
-    if (elRemaining) elRemaining.innerText = formatMoneyVND(totalRemaining);
-
-    const notesInp = document.getElementById('subcon-batch-notes');
-    if (notesInp) notesInp.value = `Quyết toán gom cước ${selectedTrips.length} chuyến xe bạn`;
-
-    modal.classList.remove('hidden');
 }
 
 function closeBatchSettleSubcontractorModal() {

@@ -554,74 +554,18 @@ function onSettlementTripSelectionChange() {
     }
 }
 
-async function executePageSettlementSubmit() {
-    const checkboxes = document.querySelectorAll('.page-settle-checkbox:checked');
+// Bấm Quyết toán -> lập Phiếu quyết toán nháp và mở Bảng kê để rà soát / duyệt
+function executePageSettlementSubmit() {
     const tripIds = [];
-    checkboxes.forEach(cb => {
+    document.querySelectorAll('.page-settle-checkbox:checked').forEach(cb => {
         const id = parseInt(cb.getAttribute('data-trip-id'), 10);
         if (id) tripIds.push(id);
     });
-
-    if (tripIds.length === 0) {
-        showToast('warning', 'Vui lòng tích chọn ít nhất một chuyến xe để quyết toán gom!', 'Chưa chọn chuyến');
-        return;
-    }
-
-    const confirmed = await showConfirmModal({
-        title: 'Khóa Sổ & Quyết Toán Gom Chuyến',
-        message: `Xác nhận khóa sổ và quyết toán gom ${tripIds.length} chuyến xe đã chọn?\n\nHệ thống sẽ tự động cập nhật đối soát chi phí, chốt hoàn ứng và hạch toán Sổ Quỹ Thu - Chi.`,
-        confirmText: `Quyết Toán (${tripIds.length} Chuyến)`,
-        cancelText: 'Huỷ bỏ',
-        type: 'success',
-        icon: 'ph-bold ph-seal-check text-2xl'
+    openSettlementStatement('DRIVER', tripIds, {
+        notes: document.getElementById('page-settle-notes')?.value || '',
+        payment_method: document.getElementById('page-settle-payment-method')?.value || 'BANK',
+        with_cash: document.getElementById('page-settle-auto-cashbook')?.checked !== false
     });
-    if (!confirmed) return;
-
-    const notes = document.getElementById('page-settle-notes')?.value || '';
-    const paymentMethod = document.getElementById('page-settle-payment-method')?.value || 'BANK';
-    const autoCashbook = document.getElementById('page-settle-auto-cashbook')?.checked !== false;
-
-    const btn = document.getElementById('btn-page-submit-settle');
-    const btnText = document.getElementById('btn-page-submit-settle-text');
-    if (btn) btn.disabled = true;
-    if (btnText) btnText.innerText = 'Đang xử lý quyết toán...';
-
-    try {
-        const res = await fetchWithAuth('/api/accounting/driver-settlements/batch-settle/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                trip_ids: tripIds,
-                settlement_notes: notes,
-                payment_method: paymentMethod,
-                auto_create_cash_transaction: autoCashbook
-            })
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-            showToast('success', data.message, 'Quyết Toán Gom Thành Công');
-            loadSettlementData();
-            if (typeof loadAccountingData === 'function') loadAccountingData();
-            if (typeof loadAccountingAdvancesData === 'function') loadAccountingAdvancesData();
-
-            // Tự động mở ngay Phiếu Thu / Phiếu Chi vừa tạo để xem và in ấn
-            if (data.cash_transaction || data.cash_transaction_id || data.cash_transaction_code) {
-                setTimeout(() => {
-                    openCashVoucherModal(data.cash_transaction || data.cash_transaction_id || data.cash_transaction_code);
-                }, 350);
-            }
-        } else {
-            const errorMsg = data.error || data.detail || data.message || (typeof data === 'string' ? data : 'Không thể thực hiện quyết toán gom');
-            showToast('danger', errorMsg, 'Lỗi Quyết Toán Gom');
-        }
-    } catch (err) {
-        console.error(err);
-        showToast('danger', err.message || 'Lỗi kết nối máy chủ', 'Lỗi Hệ Thống');
-    } finally {
-        if (btn) btn.disabled = false;
-        onSettlementTripSelectionChange();
-    }
 }
 
 function exportSettlementToExcel() {

@@ -334,12 +334,6 @@ async function submitNewTrip(sourceEl = null) {
             vehicle = getVal('inp-vehicle-leg1');
             dropoff_driver = getVal('inp-dropoff-driver');
             dropoff_vehicle = getVal('inp-dropoff-vehicle');
-            const splitRatioVal = getVal('inp-driver-split-ratio');
-            if (splitRatioVal === 'custom') {
-                driver_split_ratio = parseFloat(getVal('inp-custom-split-ratio-leg1')) || 50;
-            } else {
-                driver_split_ratio = parseFloat(splitRatioVal) || 50;
-            }
         } else {
             driver = getVal('inp-driver');
             vehicle = getVal('inp-vehicle');

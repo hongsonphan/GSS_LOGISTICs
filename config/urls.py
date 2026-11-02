@@ -45,6 +45,12 @@ from apps.billing.advance_views import (
     DriverBatchSettlementExecuteAPIView,
     CustomerARReconciliationAPIView,
 )
+from apps.billing.settlement_voucher_views import (
+    SettlementVoucherListCreateAPIView,
+    SettlementVoucherDetailAPIView,
+    SettlementVoucherApproveAPIView,
+    SettlementVoucherReopenAPIView,
+)
 from apps.billing.customer_statement_views import (
     CustomerMonthlyStatementAPIView,
     CustomerMonthlyStatementExportExcelAPIView,
@@ -197,6 +203,11 @@ urlpatterns = [
     path('api/accounting/driver-advances/<int:pk>/settle/', DriverAdvanceSettleAPIView.as_view(), name='api-driver-advance-settle'),
     path('api/accounting/driver-settlements/batch-preview/', DriverBatchSettlementQueryAPIView.as_view(), name='api-driver-batch-settlement-query'),
     path('api/accounting/driver-settlements/batch-settle/', DriverBatchSettlementExecuteAPIView.as_view(), name='api-driver-batch-settlement-execute'),
+    path('api/accounting/settlement-vouchers/', SettlementVoucherListCreateAPIView.as_view(), name='api-settlement-vouchers'),
+    path('api/accounting/settlement-vouchers/<int:pk>/', SettlementVoucherDetailAPIView.as_view(), name='api-settlement-voucher-detail'),
+    path('api/accounting/settlement-vouchers/<int:pk>/approve/', SettlementVoucherApproveAPIView.as_view(), name='api-settlement-voucher-approve'),
+    path('api/accounting/settlement-vouchers/<int:pk>/reopen/', SettlementVoucherReopenAPIView.as_view(), name='api-settlement-voucher-reopen'),
+
     path('api/accounting/customer-reconciliation/', CustomerARReconciliationAPIView.as_view(), name='api-customer-ar-reconciliation'),
     path('api/accounting/customer-statement/', CustomerMonthlyStatementAPIView.as_view(), name='api-customer-statement'),
     path('api/accounting/customer-statement/export-excel/', CustomerMonthlyStatementExportExcelAPIView.as_view(), name='api-customer-statement-export-excel'),

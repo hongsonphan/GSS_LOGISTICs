@@ -340,41 +340,9 @@ async function toggleCustomerSettleSingle(tripId, action) {
     }
 }
 
-async function executeBatchCustomerSettlement() {
-    const selectedIds = Array.from(selectedCustTripIds);
-    if (selectedIds.length === 0) {
-        showToast('warning', 'Vui lòng chọn ít nhất hai chuyến xe để chốt quyết toán với khách hàng!', 'Chưa Đủ Số Lượng Chuyến');
-        return;
-    }
-
-    const confirmed = await (typeof showConfirmModal === 'function' ? showConfirmModal({
-        title: 'Chốt Quyết Toán Khách Hàng',
-        message: `Xác nhận chốt quyết toán đối soát (SOA) cho ${selectedIds.length} chuyến xe đã chọn?\n\nToàn bộ doanh thu cước và chi hộ của các chuyến này sẽ được chuyển sang trạng thái ĐÃ QUYẾT TOÁN.`,
-        confirmText: `Chốt Quyết Toán (${selectedIds.length} Chuyến)`,
-        cancelText: 'Huỷ bỏ',
-        type: 'success',
-        icon: 'ph-bold ph-seal-check text-2xl'
-    }) : Promise.resolve(confirm(`Xác nhận chốt quyết toán đối soát (SOA) cho ${selectedIds.length} chuyến xe đã chọn?`)));
-
-    if (!confirmed) return;
-
-    try {
-        const res = await fetchWithAuth('/api/accounting/customer-reconciliation/', {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'SETTLE',
-                trip_ids: selectedIds
-            })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || data.error || 'Lỗi chốt quyết toán');
-        showToast('success', data.message || `Đã chốt quyết toán thành công ${selectedIds.length} chuyến xe!`, 'Thành Công');
-        selectedCustTripIds.clear();
-        updateCustBatchSettleButtonState();
-        loadCustomerSettlementsData();
-    } catch (err) {
-        showToast('error', err.message || 'Lỗi chốt quyết toán', 'Lỗi');
-    }
+function executeBatchCustomerSettlement() {
+    // Lập Phiếu quyết toán khách hàng (bảng kê chỉ gồm cước & chi hộ, không có chi phí tài xế/đối tác)
+    openSettlementStatement('CUSTOMER', Array.from(selectedCustTripIds), { with_cash: false });
 }
 
 function openSelectedCustomerSOAView() {

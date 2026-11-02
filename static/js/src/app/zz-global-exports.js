@@ -223,8 +223,6 @@ window.submitCustomsDeclarationForm = typeof submitCustomsDeclarationForm !== 'u
 window.exportCustomsExcel = typeof exportCustomsExcel !== 'undefined' ? exportCustomsExcel : undefined;
 window.debounceCustomsSearch = typeof debounceCustomsSearch !== 'undefined' ? debounceCustomsSearch : undefined;
 window.onCustomsOfficeChange = typeof onCustomsOfficeChange !== 'undefined' ? onCustomsOfficeChange : undefined;
-window.onSplitRatioChange = typeof onSplitRatioChange !== 'undefined' ? onSplitRatioChange : undefined;
-window.onCustomSplitRatioInput = typeof onCustomSplitRatioInput !== 'undefined' ? onCustomSplitRatioInput : undefined;
 window.onFreeDaysChange = typeof onFreeDaysChange !== 'undefined' ? onFreeDaysChange : undefined;
 
 // 9. Phân Hệ Báo Cáo & Thống Kê (Reports)

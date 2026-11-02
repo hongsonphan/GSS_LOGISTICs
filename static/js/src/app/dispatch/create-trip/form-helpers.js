@@ -199,34 +199,3 @@ function onDriverLeg2Change(driverNickname) {
     }
 }
 
-function onSplitRatioChange(ratio) {
-    const customDiv = document.getElementById('div-custom-split-ratio');
-    if (ratio === 'custom') {
-        if (customDiv) customDiv.classList.remove('hidden');
-        const customInput = document.getElementById('inp-custom-split-ratio-leg1');
-        const r = parseInt(customInput?.value, 10) || 50;
-        onCustomSplitRatioInput(r);
-    } else {
-        if (customDiv) customDiv.classList.add('hidden');
-        const r = parseInt(ratio, 10) || 50;
-        const badgeLeg1 = document.getElementById('badge-ratio-leg1');
-        const badgeLeg2 = document.getElementById('badge-ratio-leg2');
-        if (badgeLeg1) badgeLeg1.innerText = `Tỷ lệ: ${r}%`;
-        if (badgeLeg2) badgeLeg2.innerText = `Tỷ lệ: ${100 - r}%`;
-    }
-}
-
-function onCustomSplitRatioInput(val) {
-    let r = parseInt(val, 10);
-    if (isNaN(r)) r = 50;
-    if (r < 0) r = 0;
-    if (r > 100) r = 100;
-    
-    const leg2Input = document.getElementById('inp-custom-split-ratio-leg2');
-    if (leg2Input) leg2Input.value = 100 - r;
-
-    const badgeLeg1 = document.getElementById('badge-ratio-leg1');
-    const badgeLeg2 = document.getElementById('badge-ratio-leg2');
-    if (badgeLeg1) badgeLeg1.innerText = `Tỷ lệ: ${r}%`;
-    if (badgeLeg2) badgeLeg2.innerText = `Tỷ lệ: ${100 - r}%`;
-}

@@ -65,6 +65,7 @@ accounting/advances/driver-advance-detail.js
 accounting/advances/dispatcher-fund-detail.js
 accounting/advances/advance-settle-print.js
 accounting/settlement.js
+accounting/settlement-voucher.js
 accounting/reimbursables.js
 accounting/cashbook.js
 accounting/cash-voucher-page.js

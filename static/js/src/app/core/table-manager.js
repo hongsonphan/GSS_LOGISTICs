@@ -102,6 +102,9 @@
                 if (window.BimTableResizable) {
                     BimTableResizable.initTable(tbl);
                 }
+                if (window.BimTableToolbar) {
+                    BimTableToolbar.initTable(tbl);
+                }
             });
         }
     };
@@ -219,8 +222,8 @@
                 th.setAttribute('data-col-name', label);
             }
 
-            const isLocked = th.getAttribute('data-col-locked') === 'true' || 
-                             self.options.lockedKeys.includes(key.toLowerCase());
+            // Mọi cột đều cho tuỳ biến (ẩn/hiện, ghim, độ rộng, vị trí): không còn cột "Luôn hiện"
+            const isLocked = false;
 
             // Cố định (ghim) cột: 'left' | 'right' | null — khai báo qua data-col-pin trên th
             let pin = th.getAttribute('data-col-pin');
@@ -295,13 +298,6 @@
                             merged.splice(targetIdx, 0, Object.assign({}, c));
                         }
                     });
-
-                    // Đảm bảo cột STT luôn luôn ghim ở vị trí đầu tiên (index 0)
-                    const sttIdx = merged.findIndex(function(c) { return c.key === 'stt' || (c.locked && c.origIdx === 0); });
-                    if (sttIdx > 0) {
-                        const sttCol = merged.splice(sttIdx, 1)[0];
-                        merged.unshift(sttCol);
-                    }
 
                     // Đảm bảo không bao giờ toàn bộ các cột bị ẩn do cache cũ
                     const visibleCols = merged.filter(function(c) { return c.visible; });
@@ -757,16 +753,15 @@
                     <!-- Checkbox Ẩn / Hiện -->
                     <label class="flex items-center gap-2 cursor-pointer truncate">
                         <input type="checkbox" 
-                            class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300 transition-all cursor-pointer ${col.locked ? 'opacity-60 cursor-not-allowed' : ''}" 
+                            class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300 transition-all cursor-pointer " 
                             ${col.visible ? 'checked' : ''} 
-                            ${col.locked ? 'disabled' : ''}
+                            
                             data-col-toggle="${col.key}">
                         <span class="text-xs font-bold text-slate-800 font-heading truncate ${!col.visible ? 'line-through text-slate-400' : ''}">
                             ${col.label}
                         </span>
                     </label>
 
-                    ${col.locked ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 shrink-0" title="Cột bắt buộc, không ẩn được">Luôn hiện</span>' : ''}
                 </div>
 
                 <!-- Cố định cột & cho chỉnh độ rộng -->
@@ -807,7 +802,7 @@
 
             // Lắng nghe sự kiện Checkbox
             const checkbox = item.querySelector(`[data-col-toggle="${col.key}"]`);
-            if (checkbox && !col.locked) {
+            if (checkbox) {
                 checkbox.addEventListener('change', function(e) {
                     col.visible = e.target.checked;
                     self.saveConfig();
@@ -1427,6 +1422,156 @@
     window.BimTableFooter = BimTableFooter;
     // Export module
     window.BimTableColumnManager = BimTableColumnManager;
+
+
+    /**
+     * Thanh lọc & tìm kiếm tự động cho mọi bảng: các bộ lọc theo thứ tự Đối tượng | Tình trạng | Trạng thái | ...
+     * rồi ô Tìm kiếm (gõ bất kỳ). Lọc phía trình duyệt trên các dòng đang hiển thị; tự áp dụng lại khi bảng nạp lại dữ liệu.
+     * Bảng đã có ô tìm kiếm riêng thì chỉ bổ sung các bộ lọc còn thiếu; thêm data-no-toolbar trên <table> để bỏ qua.
+     */
+    const BimTableToolbar = {
+        // Thứ tự ưu tiên của các bộ lọc (khớp theo tiêu đề cột)
+        filterOrder: [
+            /đối tượng|doi tuong/i,
+            /tình trạng|tinh trang/i,
+            /trạng thái|trang thai/i,
+            /^loại|phân loại/i,
+            /nhóm|nhom/i,
+            /vai trò|vai tro|chức vụ|phòng ban/i
+        ],
+        maxOptions: 40,
+
+        initTable: function(table) {
+            if (!table || table._bimToolbar || table.hasAttribute('data-no-toolbar')) return;
+            if (table.closest('[id*="print"], .print-only, #bim-column-customizer-modal')) return;
+            const trHead = table.querySelector(':scope > thead > tr:first-child');
+            if (!trHead || !table.querySelector(':scope > tbody')) return;
+
+            const wrap = table.closest('.overflow-x-auto') || table;
+            const host = wrap.parentElement;
+            if (!host) return;
+
+            const hasSearch = Array.from(host.querySelectorAll('input[type="search"], input[type="text"]')).some(function(i) {
+                return !table.contains(i) && /tìm|search/i.test(i.placeholder || '');
+            });
+            const hasSelect = Array.from(host.querySelectorAll('select')).some(function(el) { return !table.contains(el); });
+
+            const filterCols = [];
+            if (!hasSelect) {
+                Array.from(trHead.children).forEach(function(th) {
+                    const label = (th.getAttribute('data-col-name') || th.textContent || '').trim().replace(/\s+/g, ' ');
+                    const rank = BimTableToolbar.filterOrder.findIndex(function(re) { return re.test(label); });
+                    if (rank >= 0) filterCols.push({ key: th.getAttribute('data-col-key'), label: label, rank: rank });
+                });
+                filterCols.sort(function(a, b) { return a.rank - b.rank; });
+            }
+            if (hasSearch && filterCols.length === 0) return;
+
+            const bar = document.createElement('div');
+            bar.className = 'bim-table-toolbar flex flex-wrap items-center gap-2 px-3 py-2 border-b border-slate-100 bg-white';
+            const selects = filterCols.map(function(fc) {
+                const sel = document.createElement('select');
+                sel.className = 'px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:border-teal-600 focus:ring-1 focus:ring-teal-500';
+                sel.title = 'Lọc theo ' + fc.label;
+                sel.addEventListener('change', function() { BimTableToolbar.apply(table); });
+                bar.appendChild(sel);
+                return { sel: sel, col: fc };
+            });
+            let search = null;
+            if (!hasSearch) {
+                search = document.createElement('input');
+                search.type = 'search';
+                search.placeholder = 'Tìm kiếm (gõ bất kỳ nội dung)...';
+                search.className = 'flex-1 min-w-[180px] px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500';
+                let t = null;
+                search.addEventListener('input', function() {
+                    clearTimeout(t);
+                    t = setTimeout(function() { BimTableToolbar.apply(table); }, 150);
+                });
+                bar.appendChild(search);
+            }
+            host.insertBefore(bar, wrap);
+
+            const state = table._bimToolbar = { bar: bar, selects: selects, search: search, busy: false };
+            BimTableToolbar.refreshOptions(table);
+
+            let timer = null;
+            new MutationObserver(function() {
+                if (state.busy) return;
+                clearTimeout(timer);
+                timer = setTimeout(function() {
+                    BimTableToolbar.refreshOptions(table);
+                    BimTableToolbar.apply(table);
+                }, 30);
+            }).observe(table.querySelector(':scope > tbody'), { childList: true });
+        },
+
+        colIndex: function(table, key) {
+            const trHead = table.querySelector(':scope > thead > tr:first-child');
+            return trHead ? Array.from(trHead.children).findIndex(function(th) { return th.getAttribute('data-col-key') === key; }) : -1;
+        },
+
+        dataRows: function(table) {
+            return Array.from(table.querySelectorAll(':scope > tbody > tr')).filter(function(tr) {
+                return !Array.from(tr.children).some(function(td) { return td.hasAttribute('colspan'); });
+            });
+        },
+
+        cellText: function(tr, idx) {
+            const td = tr.children[idx];
+            return td ? td.textContent.trim().replace(/\s+/g, ' ') : '';
+        },
+
+        refreshOptions: function(table) {
+            const st = table._bimToolbar;
+            if (!st) return;
+            const rows = this.dataRows(table);
+            st.selects.forEach(function(o) {
+                const idx = BimTableToolbar.colIndex(table, o.col.key);
+                const values = new Set();
+                rows.forEach(function(tr) {
+                    const v = BimTableToolbar.cellText(tr, idx);
+                    if (v) values.add(v);
+                });
+                const prev = o.sel.value;
+                const list = Array.from(values).sort(function(a, b) { return a.localeCompare(b, 'vi'); });
+                o.sel.innerHTML = '';
+                const all = document.createElement('option');
+                all.value = '';
+                all.textContent = '-- ' + o.col.label + ': Tất cả --';
+                o.sel.appendChild(all);
+                list.slice(0, BimTableToolbar.maxOptions).forEach(function(v) {
+                    const op = document.createElement('option');
+                    op.value = v;
+                    op.textContent = v.length > 60 ? v.slice(0, 57) + '...' : v;
+                    o.sel.appendChild(op);
+                });
+                o.sel.value = list.indexOf(prev) >= 0 ? prev : '';
+                // Cột không có giá trị nào (hoặc quá nhiều giá trị phân biệt) thì ẩn bộ lọc
+                o.sel.style.display = (list.length > 0 && list.length <= BimTableToolbar.maxOptions) ? '' : 'none';
+            });
+        },
+
+        apply: function(table) {
+            const st = table._bimToolbar;
+            if (!st) return;
+            st.busy = true;
+            const q = st.search ? st.search.value.trim().toLowerCase() : '';
+            const active = st.selects.filter(function(o) { return o.sel.value; }).map(function(o) {
+                return { idx: BimTableToolbar.colIndex(table, o.col.key), value: o.sel.value };
+            });
+            this.dataRows(table).forEach(function(tr) {
+                let ok = true;
+                if (q && tr.textContent.toLowerCase().replace(/\s+/g, ' ').indexOf(q) < 0) ok = false;
+                for (let i = 0; ok && i < active.length; i++) {
+                    if (BimTableToolbar.cellText(tr, active[i].idx) !== active[i].value) ok = false;
+                }
+                tr.style.display = ok ? '' : 'none';
+            });
+            st.busy = false;
+        }
+    };
+    window.BimTableToolbar = BimTableToolbar;
 
     // Tự động khởi chạy khi DOM ready
     if (document.readyState === 'loading') {

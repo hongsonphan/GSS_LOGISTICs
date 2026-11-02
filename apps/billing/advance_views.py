@@ -885,7 +885,7 @@ class DriverBatchSettlementQueryAPIView(APIView):
             is_deleted=False,
             status__in=valid_settlement_statuses
         ).select_related(
-            'driver', 'vehicle', 'customer', 'booking_order'
+            'driver', 'vehicle', 'customer', 'booking_order', 'dropoff_driver'
         ).prefetch_related(
             'expenses', 'driver_advances', 'documents'
         ).order_by('-loading_date', '-id')
@@ -968,6 +968,19 @@ class DriverBatchSettlementQueryAPIView(APIView):
                 'expenses_count': len(expenses_list),
                 'advances_count': len(advances_list),
                 'has_pod': has_pod,
+                # Dữ liệu bảng kê quyết toán tài xế (không kèm giá cước / giá bán của khách hàng)
+                'container_type': trip.container_type or '',
+                'is_split_trip': trip.is_split_trip,
+                'driver_split_ratio': float(trip.driver_split_ratio or 50),
+                'dropoff_driver_name': (trip.dropoff_driver.nickname or trip.dropoff_driver.full_name) if trip.dropoff_driver else '',
+                'expense_lines': [
+                    {
+                        'name': e.expense_name,
+                        'leg': e.get_trip_leg_display(),
+                        'amount': int(e.amount),
+                    }
+                    for e in expenses_list
+                ],
             }
 
             # Xác định khóa gom nhóm
@@ -1055,6 +1068,17 @@ class DriverBatchSettlementExecuteAPIView(APIView):
         auto_create_cash = request.data.get('auto_create_cash_transaction', True)
         curr_emp = getattr(request.user, 'employee', None)
 
+        # Tỷ lệ thù lao chặng 1 của chuyến cắt kéo (mặc định 50-50) và số phát sinh do kế toán hiệu chỉnh
+        split_ratios = request.data.get('split_ratios') or {}
+        adjustments = request.data.get('adjustments') or {}
+        try:
+            split_ratios = {int(k): float(v) for k, v in split_ratios.items()}
+            adjustments = {int(k): int(v) for k, v in adjustments.items()}
+        except (TypeError, ValueError):
+            return Response({'error': 'Tỷ lệ thù lao hoặc số phát sinh không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
+        if any(r < 0 or r > 100 for r in split_ratios.values()):
+            return Response({'error': 'Tỷ lệ thù lao phải nằm trong khoảng 0 - 100%'}, status=status.HTTP_400_BAD_REQUEST)
+
         trips = DispatchTrip.objects.filter(id__in=trip_ids, is_deleted=False).select_related('driver', 'vehicle')
         if not trips.exists():
             return Response({'error': 'Không tìm thấy các chuyến xe tương ứng'}, status=status.HTTP_404_NOT_FOUND)
@@ -1076,6 +1100,10 @@ class DriverBatchSettlementExecuteAPIView(APIView):
             for trip in trips:
                 settled_trip_codes.append(trip.trip_code)
 
+                if trip.is_split_trip and trip.id in split_ratios:
+                    trip.driver_split_ratio = split_ratios[trip.id]
+                    trip.save(update_fields=['driver_split_ratio'])
+
                 # 1. Khóa sổ chi phí chuyến xe
                 trip.is_expenses_settled = True
                 trip.settled_at = now
@@ -1094,6 +1122,7 @@ class DriverBatchSettlementExecuteAPIView(APIView):
                 advances = trip.driver_advances.filter(is_deleted=False)
                 t_adv = int(sum(a.amount for a in advances))
                 t_exp = int(sum(e.amount for e in trip.expenses.filter(is_deleted=False).exclude(status=ApprovalStatus.REJECTED)))
+                t_exp += adjustments.get(trip.id, 0)  # số phát sinh kế toán hiệu chỉnh (+ chi thêm cho tài xế, - trừ bớt)
                 total_advance_all += t_adv
                 total_spent_all += t_exp
 

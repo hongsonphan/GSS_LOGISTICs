@@ -166,6 +166,35 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(cash_tx.amount, 200000)
         self.assertEqual(cash_tx.category, CashFlowCategory.ADVANCE_REFUND)
 
+    def test_settlement_voucher_lifecycle_driver(self):
+        """Phiếu quyết toán tài xế: lập -> sửa phát sinh -> duyệt (có phiếu thu) -> mở lại -> xóa."""
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        res = self.client.post(base, {'party_type': 'DRIVER', 'trip_ids': [self.trip1.id, self.trip2.id], 'with_cash': True}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        vid = res.data['voucher']['id']
+        self.assertEqual(res.data['voucher']['amount'], 200000)
+        self.assertEqual(res.data['voucher']['direction'], 'RECEIVE')
+
+        res = self.client.put(f'{base}{vid}/', {'adjustments': {str(self.trip1.id): 50000}}, format='json')
+        self.assertEqual(res.data['voucher']['amount'], 150000)
+
+        res = self.client.post(f'{base}{vid}/approve/', {}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.trip1.refresh_from_db()
+        self.assertTrue(self.trip1.is_expenses_settled)
+        tx = CashTransaction.objects.get(ref_code=res.data['voucher']['code'])
+        self.assertEqual(tx.amount, 150000)
+        # Phiếu đã duyệt không được sửa/xóa trực tiếp
+        self.assertEqual(self.client.delete(f'{base}{vid}/').status_code, status.HTTP_400_BAD_REQUEST)
+
+        res = self.client.post(f'{base}{vid}/reopen/', {}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.trip1.refresh_from_db()
+        self.assertFalse(self.trip1.is_expenses_settled)
+        self.assertFalse(CashTransaction.objects.filter(ref_code=res.data['voucher']['code'], is_deleted=False).exists())
+        self.assertEqual(self.client.delete(f'{base}{vid}/').status_code, status.HTTP_200_OK)
+
     def test_batch_settlement_reject_uncompleted_trip(self):
         """Từ chối quyết toán nếu có chuyến xe chưa hoàn thành (chưa COMPLETED)."""
         self.trip2.status = TripStatus.IN_TRANSIT

@@ -730,3 +730,46 @@ class DebitNote(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         return f"[{self.code}] {self.customer.name}: {self.total_amount:,} đ ({self.get_status_display()})"
 
 
+
+
+class VoucherPartyType(models.TextChoices):
+    DRIVER = 'DRIVER', 'Tài xế'
+    PARTNER = 'PARTNER', 'Đối tác 3PL'
+    CUSTOMER = 'CUSTOMER', 'Khách hàng'
+
+
+class VoucherStatus(models.TextChoices):
+    DRAFT = 'DRAFT', 'Đã lưu (chờ duyệt)'
+    APPROVED = 'APPROVED', 'Đã duyệt'
+
+
+class SettlementVoucher(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """
+    Phiếu Quyết Toán (Tài xế / Đối tác 3PL / Khách hàng): bảng kê chốt số liệu các chuyến đã chọn.
+    Lưu bản chụp (snapshot) từng chuyến để in; chỉ khi Duyệt mới khóa chuyến và (tùy chọn) phát sinh phiếu Thu/Chi.
+    """
+    code = models.CharField(max_length=50, unique=True, db_index=True)
+    party_type = models.CharField(max_length=10, choices=VoucherPartyType.choices, db_index=True)
+    party_ref = models.CharField(max_length=50, blank=True, help_text="Mã/ID đối tượng quyết toán")
+    party_name = models.CharField(max_length=150)
+    trips = models.ManyToManyField('dispatch.DispatchTrip', blank=True, related_name='settlement_vouchers')
+    lines = models.JSONField(default=list, help_text="Bản chụp từng chuyến: thông tin hiển thị, phát sinh, tỷ lệ cắt kéo")
+    amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số tiền chênh lệch thanh toán (trị tuyệt đối)")
+    direction = models.CharField(max_length=10, choices=[('PAY', 'Công ty chi'), ('RECEIVE', 'Công ty thu')], default='PAY')
+    status = models.CharField(max_length=10, choices=VoucherStatus.choices, default=VoucherStatus.DRAFT, db_index=True)
+    with_cash = models.BooleanField(default=False, help_text="Tích Thu/Chi để phát sinh phiếu khi duyệt")
+    payment_method = models.CharField(max_length=10, choices=PaymentMethod.choices, default=PaymentMethod.BANK)
+    cash_transaction = models.ForeignKey(
+        'billing.CashTransaction', on_delete=models.SET_NULL, null=True, blank=True, related_name='settlement_vouchers'
+    )
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_settlement_vouchers')
+    approved_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_settlement_vouchers')
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['party_type', 'status'])]
+
+    def __str__(self):
+        return f"[{self.code}] {self.party_name}: {self.amount:,} đ ({self.get_status_display()})"

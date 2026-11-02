@@ -108,6 +108,9 @@
                 if (window.BimTableResizable) {
                     BimTableResizable.initTable(tbl);
                 }
+                if (window.BimTableToolbar) {
+                    BimTableToolbar.initTable(tbl);
+                }
             });
         }
     };
@@ -225,8 +228,8 @@
                 th.setAttribute('data-col-name', label);
             }
 
-            const isLocked = th.getAttribute('data-col-locked') === 'true' || 
-                             self.options.lockedKeys.includes(key.toLowerCase());
+            // Mọi cột đều cho tuỳ biến (ẩn/hiện, ghim, độ rộng, vị trí): không còn cột "Luôn hiện"
+            const isLocked = false;
 
             // Cố định (ghim) cột: 'left' | 'right' | null — khai báo qua data-col-pin trên th
             let pin = th.getAttribute('data-col-pin');
@@ -301,13 +304,6 @@
                             merged.splice(targetIdx, 0, Object.assign({}, c));
                         }
                     });
-
-                    // Đảm bảo cột STT luôn luôn ghim ở vị trí đầu tiên (index 0)
-                    const sttIdx = merged.findIndex(function(c) { return c.key === 'stt' || (c.locked && c.origIdx === 0); });
-                    if (sttIdx > 0) {
-                        const sttCol = merged.splice(sttIdx, 1)[0];
-                        merged.unshift(sttCol);
-                    }
 
                     // Đảm bảo không bao giờ toàn bộ các cột bị ẩn do cache cũ
                     const visibleCols = merged.filter(function(c) { return c.visible; });
@@ -763,16 +759,15 @@
                     <!-- Checkbox Ẩn / Hiện -->
                     <label class="flex items-center gap-2 cursor-pointer truncate">
                         <input type="checkbox" 
-                            class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300 transition-all cursor-pointer ${col.locked ? 'opacity-60 cursor-not-allowed' : ''}" 
+                            class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300 transition-all cursor-pointer " 
                             ${col.visible ? 'checked' : ''} 
-                            ${col.locked ? 'disabled' : ''}
+                            
                             data-col-toggle="${col.key}">
                         <span class="text-xs font-bold text-slate-800 font-heading truncate ${!col.visible ? 'line-through text-slate-400' : ''}">
                             ${col.label}
                         </span>
                     </label>
 
-                    ${col.locked ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 shrink-0" title="Cột bắt buộc, không ẩn được">Luôn hiện</span>' : ''}
                 </div>
 
                 <!-- Cố định cột & cho chỉnh độ rộng -->
@@ -813,7 +808,7 @@
 
             // Lắng nghe sự kiện Checkbox
             const checkbox = item.querySelector(`[data-col-toggle="${col.key}"]`);
-            if (checkbox && !col.locked) {
+            if (checkbox) {
                 checkbox.addEventListener('change', function(e) {
                     col.visible = e.target.checked;
                     self.saveConfig();
@@ -1433,6 +1428,156 @@
     window.BimTableFooter = BimTableFooter;
     // Export module
     window.BimTableColumnManager = BimTableColumnManager;
+
+
+    /**
+     * Thanh lọc & tìm kiếm tự động cho mọi bảng: các bộ lọc theo thứ tự Đối tượng | Tình trạng | Trạng thái | ...
+     * rồi ô Tìm kiếm (gõ bất kỳ). Lọc phía trình duyệt trên các dòng đang hiển thị; tự áp dụng lại khi bảng nạp lại dữ liệu.
+     * Bảng đã có ô tìm kiếm riêng thì chỉ bổ sung các bộ lọc còn thiếu; thêm data-no-toolbar trên <table> để bỏ qua.
+     */
+    const BimTableToolbar = {
+        // Thứ tự ưu tiên của các bộ lọc (khớp theo tiêu đề cột)
+        filterOrder: [
+            /đối tượng|doi tuong/i,
+            /tình trạng|tinh trang/i,
+            /trạng thái|trang thai/i,
+            /^loại|phân loại/i,
+            /nhóm|nhom/i,
+            /vai trò|vai tro|chức vụ|phòng ban/i
+        ],
+        maxOptions: 40,
+
+        initTable: function(table) {
+            if (!table || table._bimToolbar || table.hasAttribute('data-no-toolbar')) return;
+            if (table.closest('[id*="print"], .print-only, #bim-column-customizer-modal')) return;
+            const trHead = table.querySelector(':scope > thead > tr:first-child');
+            if (!trHead || !table.querySelector(':scope > tbody')) return;
+
+            const wrap = table.closest('.overflow-x-auto') || table;
+            const host = wrap.parentElement;
+            if (!host) return;
+
+            const hasSearch = Array.from(host.querySelectorAll('input[type="search"], input[type="text"]')).some(function(i) {
+                return !table.contains(i) && /tìm|search/i.test(i.placeholder || '');
+            });
+            const hasSelect = Array.from(host.querySelectorAll('select')).some(function(el) { return !table.contains(el); });
+
+            const filterCols = [];
+            if (!hasSelect) {
+                Array.from(trHead.children).forEach(function(th) {
+                    const label = (th.getAttribute('data-col-name') || th.textContent || '').trim().replace(/\s+/g, ' ');
+                    const rank = BimTableToolbar.filterOrder.findIndex(function(re) { return re.test(label); });
+                    if (rank >= 0) filterCols.push({ key: th.getAttribute('data-col-key'), label: label, rank: rank });
+                });
+                filterCols.sort(function(a, b) { return a.rank - b.rank; });
+            }
+            if (hasSearch && filterCols.length === 0) return;
+
+            const bar = document.createElement('div');
+            bar.className = 'bim-table-toolbar flex flex-wrap items-center gap-2 px-3 py-2 border-b border-slate-100 bg-white';
+            const selects = filterCols.map(function(fc) {
+                const sel = document.createElement('select');
+                sel.className = 'px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:border-teal-600 focus:ring-1 focus:ring-teal-500';
+                sel.title = 'Lọc theo ' + fc.label;
+                sel.addEventListener('change', function() { BimTableToolbar.apply(table); });
+                bar.appendChild(sel);
+                return { sel: sel, col: fc };
+            });
+            let search = null;
+            if (!hasSearch) {
+                search = document.createElement('input');
+                search.type = 'search';
+                search.placeholder = 'Tìm kiếm (gõ bất kỳ nội dung)...';
+                search.className = 'flex-1 min-w-[180px] px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500';
+                let t = null;
+                search.addEventListener('input', function() {
+                    clearTimeout(t);
+                    t = setTimeout(function() { BimTableToolbar.apply(table); }, 150);
+                });
+                bar.appendChild(search);
+            }
+            host.insertBefore(bar, wrap);
+
+            const state = table._bimToolbar = { bar: bar, selects: selects, search: search, busy: false };
+            BimTableToolbar.refreshOptions(table);
+
+            let timer = null;
+            new MutationObserver(function() {
+                if (state.busy) return;
+                clearTimeout(timer);
+                timer = setTimeout(function() {
+                    BimTableToolbar.refreshOptions(table);
+                    BimTableToolbar.apply(table);
+                }, 30);
+            }).observe(table.querySelector(':scope > tbody'), { childList: true });
+        },
+
+        colIndex: function(table, key) {
+            const trHead = table.querySelector(':scope > thead > tr:first-child');
+            return trHead ? Array.from(trHead.children).findIndex(function(th) { return th.getAttribute('data-col-key') === key; }) : -1;
+        },
+
+        dataRows: function(table) {
+            return Array.from(table.querySelectorAll(':scope > tbody > tr')).filter(function(tr) {
+                return !Array.from(tr.children).some(function(td) { return td.hasAttribute('colspan'); });
+            });
+        },
+
+        cellText: function(tr, idx) {
+            const td = tr.children[idx];
+            return td ? td.textContent.trim().replace(/\s+/g, ' ') : '';
+        },
+
+        refreshOptions: function(table) {
+            const st = table._bimToolbar;
+            if (!st) return;
+            const rows = this.dataRows(table);
+            st.selects.forEach(function(o) {
+                const idx = BimTableToolbar.colIndex(table, o.col.key);
+                const values = new Set();
+                rows.forEach(function(tr) {
+                    const v = BimTableToolbar.cellText(tr, idx);
+                    if (v) values.add(v);
+                });
+                const prev = o.sel.value;
+                const list = Array.from(values).sort(function(a, b) { return a.localeCompare(b, 'vi'); });
+                o.sel.innerHTML = '';
+                const all = document.createElement('option');
+                all.value = '';
+                all.textContent = '-- ' + o.col.label + ': Tất cả --';
+                o.sel.appendChild(all);
+                list.slice(0, BimTableToolbar.maxOptions).forEach(function(v) {
+                    const op = document.createElement('option');
+                    op.value = v;
+                    op.textContent = v.length > 60 ? v.slice(0, 57) + '...' : v;
+                    o.sel.appendChild(op);
+                });
+                o.sel.value = list.indexOf(prev) >= 0 ? prev : '';
+                // Cột không có giá trị nào (hoặc quá nhiều giá trị phân biệt) thì ẩn bộ lọc
+                o.sel.style.display = (list.length > 0 && list.length <= BimTableToolbar.maxOptions) ? '' : 'none';
+            });
+        },
+
+        apply: function(table) {
+            const st = table._bimToolbar;
+            if (!st) return;
+            st.busy = true;
+            const q = st.search ? st.search.value.trim().toLowerCase() : '';
+            const active = st.selects.filter(function(o) { return o.sel.value; }).map(function(o) {
+                return { idx: BimTableToolbar.colIndex(table, o.col.key), value: o.sel.value };
+            });
+            this.dataRows(table).forEach(function(tr) {
+                let ok = true;
+                if (q && tr.textContent.toLowerCase().replace(/\s+/g, ' ').indexOf(q) < 0) ok = false;
+                for (let i = 0; ok && i < active.length; i++) {
+                    if (BimTableToolbar.cellText(tr, active[i].idx) !== active[i].value) ok = false;
+                }
+                tr.style.display = ok ? '' : 'none';
+            });
+            st.busy = false;
+        }
+    };
+    window.BimTableToolbar = BimTableToolbar;
 
     // Tự động khởi chạy khi DOM ready
     if (document.readyState === 'loading') {
@@ -12117,12 +12262,6 @@ async function submitNewTrip(sourceEl = null) {
             vehicle = getVal('inp-vehicle-leg1');
             dropoff_driver = getVal('inp-dropoff-driver');
             dropoff_vehicle = getVal('inp-dropoff-vehicle');
-            const splitRatioVal = getVal('inp-driver-split-ratio');
-            if (splitRatioVal === 'custom') {
-                driver_split_ratio = parseFloat(getVal('inp-custom-split-ratio-leg1')) || 50;
-            } else {
-                driver_split_ratio = parseFloat(splitRatioVal) || 50;
-            }
         } else {
             driver = getVal('inp-driver');
             vehicle = getVal('inp-vehicle');
@@ -12459,37 +12598,6 @@ function onDriverLeg2Change(driverNickname) {
     }
 }
 
-function onSplitRatioChange(ratio) {
-    const customDiv = document.getElementById('div-custom-split-ratio');
-    if (ratio === 'custom') {
-        if (customDiv) customDiv.classList.remove('hidden');
-        const customInput = document.getElementById('inp-custom-split-ratio-leg1');
-        const r = parseInt(customInput?.value, 10) || 50;
-        onCustomSplitRatioInput(r);
-    } else {
-        if (customDiv) customDiv.classList.add('hidden');
-        const r = parseInt(ratio, 10) || 50;
-        const badgeLeg1 = document.getElementById('badge-ratio-leg1');
-        const badgeLeg2 = document.getElementById('badge-ratio-leg2');
-        if (badgeLeg1) badgeLeg1.innerText = `Tỷ lệ: ${r}%`;
-        if (badgeLeg2) badgeLeg2.innerText = `Tỷ lệ: ${100 - r}%`;
-    }
-}
-
-function onCustomSplitRatioInput(val) {
-    let r = parseInt(val, 10);
-    if (isNaN(r)) r = 50;
-    if (r < 0) r = 0;
-    if (r > 100) r = 100;
-    
-    const leg2Input = document.getElementById('inp-custom-split-ratio-leg2');
-    if (leg2Input) leg2Input.value = 100 - r;
-
-    const badgeLeg1 = document.getElementById('badge-ratio-leg1');
-    const badgeLeg2 = document.getElementById('badge-ratio-leg2');
-    if (badgeLeg1) badgeLeg1.innerText = `Tỷ lệ: ${r}%`;
-    if (badgeLeg2) badgeLeg2.innerText = `Tỷ lệ: ${100 - r}%`;
-}
 
 // ---- src/app/dispatch/create-trip/booking-link.js ----
 let activeBookingsCache = [];
@@ -21774,44 +21882,8 @@ function updateDriverBatchSettleButtonState() {
     }
 }
 
-async function openBatchSettleDriverModal() {
-    const count = selectedDriverTripCodes.size;
-    if (count < 2) {
-        showToast('warning', 'Vui lòng chọn ít nhất hai chuyến xe để chốt sổ quyết toán tài xế hàng loạt!', 'Chưa Đủ Số Lượng Chuyến');
-        return;
-    }
-
-    const confirmed = await (typeof showConfirmModal === 'function' ? showConfirmModal({
-        title: 'Chốt Sổ Quyết Toán Nhiều Chuyến',
-        message: `Xác nhận CHỐT SỔ KẾ TOÁN cho ${count} chuyến xe tài xế đã chọn?\n\nToàn bộ chi phí của các chuyến xe này sẽ được khóa cứng để làm căn cứ quyết toán tài xế và hạch toán kế toán.`,
-        confirmText: `Chốt Sổ (${count} Chuyến)`,
-        cancelText: 'Huỷ bỏ',
-        type: 'success',
-        icon: 'ph-bold ph-seal-check text-2xl'
-    }) : Promise.resolve(confirm(`Xác nhận chốt sổ kế toán cho ${count} chuyến xe đã chọn?`)));
-
-    if (!confirmed) return;
-
-    try {
-        const res = await fetchWithAuth('/api/accounting/', {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'batch_settle',
-                trip_codes: Array.from(selectedDriverTripCodes)
-            })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || data.error) {
-            throw new Error(data.error || data.message || 'Lỗi chốt sổ kế toán');
-        }
-        showToast('success', data.message || `Đã chốt sổ thành công cho ${count} chuyến xe!`, 'Chốt Sổ Thành Công');
-        selectedDriverTripCodes.clear();
-        updateDriverBatchSettleButtonState();
-        loadAccountingData();
-    } catch (err) {
-        console.error('Lỗi batch settle tài xế:', err);
-        showToast('danger', err.message || 'Lỗi kết nối máy chủ');
-    }
+function openBatchSettleDriverModal() {
+    openSettlementStatement('DRIVER', Array.from(selectedDriverTripCodes));
 }
 
 window.toggleSelectAllDriverTrips = toggleSelectAllDriverTrips;
@@ -24219,74 +24291,18 @@ function onSettlementTripSelectionChange() {
     }
 }
 
-async function executePageSettlementSubmit() {
-    const checkboxes = document.querySelectorAll('.page-settle-checkbox:checked');
+// Bấm Quyết toán -> lập Phiếu quyết toán nháp và mở Bảng kê để rà soát / duyệt
+function executePageSettlementSubmit() {
     const tripIds = [];
-    checkboxes.forEach(cb => {
+    document.querySelectorAll('.page-settle-checkbox:checked').forEach(cb => {
         const id = parseInt(cb.getAttribute('data-trip-id'), 10);
         if (id) tripIds.push(id);
     });
-
-    if (tripIds.length === 0) {
-        showToast('warning', 'Vui lòng tích chọn ít nhất một chuyến xe để quyết toán gom!', 'Chưa chọn chuyến');
-        return;
-    }
-
-    const confirmed = await showConfirmModal({
-        title: 'Khóa Sổ & Quyết Toán Gom Chuyến',
-        message: `Xác nhận khóa sổ và quyết toán gom ${tripIds.length} chuyến xe đã chọn?\n\nHệ thống sẽ tự động cập nhật đối soát chi phí, chốt hoàn ứng và hạch toán Sổ Quỹ Thu - Chi.`,
-        confirmText: `Quyết Toán (${tripIds.length} Chuyến)`,
-        cancelText: 'Huỷ bỏ',
-        type: 'success',
-        icon: 'ph-bold ph-seal-check text-2xl'
+    openSettlementStatement('DRIVER', tripIds, {
+        notes: document.getElementById('page-settle-notes')?.value || '',
+        payment_method: document.getElementById('page-settle-payment-method')?.value || 'BANK',
+        with_cash: document.getElementById('page-settle-auto-cashbook')?.checked !== false
     });
-    if (!confirmed) return;
-
-    const notes = document.getElementById('page-settle-notes')?.value || '';
-    const paymentMethod = document.getElementById('page-settle-payment-method')?.value || 'BANK';
-    const autoCashbook = document.getElementById('page-settle-auto-cashbook')?.checked !== false;
-
-    const btn = document.getElementById('btn-page-submit-settle');
-    const btnText = document.getElementById('btn-page-submit-settle-text');
-    if (btn) btn.disabled = true;
-    if (btnText) btnText.innerText = 'Đang xử lý quyết toán...';
-
-    try {
-        const res = await fetchWithAuth('/api/accounting/driver-settlements/batch-settle/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                trip_ids: tripIds,
-                settlement_notes: notes,
-                payment_method: paymentMethod,
-                auto_create_cash_transaction: autoCashbook
-            })
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-            showToast('success', data.message, 'Quyết Toán Gom Thành Công');
-            loadSettlementData();
-            if (typeof loadAccountingData === 'function') loadAccountingData();
-            if (typeof loadAccountingAdvancesData === 'function') loadAccountingAdvancesData();
-
-            // Tự động mở ngay Phiếu Thu / Phiếu Chi vừa tạo để xem và in ấn
-            if (data.cash_transaction || data.cash_transaction_id || data.cash_transaction_code) {
-                setTimeout(() => {
-                    openCashVoucherModal(data.cash_transaction || data.cash_transaction_id || data.cash_transaction_code);
-                }, 350);
-            }
-        } else {
-            const errorMsg = data.error || data.detail || data.message || (typeof data === 'string' ? data : 'Không thể thực hiện quyết toán gom');
-            showToast('danger', errorMsg, 'Lỗi Quyết Toán Gom');
-        }
-    } catch (err) {
-        console.error(err);
-        showToast('danger', err.message || 'Lỗi kết nối máy chủ', 'Lỗi Hệ Thống');
-    } finally {
-        if (btn) btn.disabled = false;
-        onSettlementTripSelectionChange();
-    }
 }
 
 function exportSettlementToExcel() {
@@ -24326,6 +24342,340 @@ function exportSettlementToExcel() {
 
     showToast('success', `Đã xuất bảng kê quyết toán "${filename}" thành công!`, 'Xuất Excel Thành Công');
 }
+
+// ---- src/app/accounting/settlement-voucher.js ----
+// Phiếu Quyết Toán dùng chung cho Tài xế / Đối tác 3PL / Khách hàng.
+// Quy trình: chọn chuyến -> Quyết toán -> Bảng kê rà soát (lưu nháp) -> Duyệt -> (Mở lại) Sửa | Lưu | Xóa | In.
+// Mỗi đối tượng chỉ thấy cột liên quan: tài xế/đối tác không thấy giá cước khách hàng, khách hàng không thấy chi phí tài xế/đối tác.
+const SETTLE_VOUCHER_API = '/api/accounting/settlement-vouchers/';
+const SETTLE_PARTY_LABEL = { DRIVER: 'Tài Xế', PARTNER: 'Đối Tác 3PL', CUSTOMER: 'Khách Hàng' };
+let currentSettleVoucher = null;
+
+function settleVoucherTotal(party, line, adj) {
+    if (party === 'DRIVER') return (line.advance || 0) - (line.spent || 0) - adj;
+    if (party === 'PARTNER') {
+        const reimb = (line.expense_lines || []).reduce((s, e) => s + e.amount, 0);
+        return (line.freight_cost || 0) + reimb - (line.advance || 0) + adj;
+    }
+    const obh = (line.expense_lines || []).reduce((s, e) => s + e.amount, 0);
+    return (line.freight || 0) + obh + adj;
+}
+
+async function openSettlementStatement(partyType, ids, extra = {}) {
+    if (!ids || ids.length === 0) {
+        showToast('warning', 'Vui lòng tích chọn ít nhất một chuyến xe để quyết toán!', 'Chưa chọn chuyến');
+        return;
+    }
+    try {
+        const body = Object.assign({ party_type: partyType }, extra);
+        if (typeof ids[0] === 'string') body.trip_codes = ids; else body.trip_ids = ids;
+        const res = await fetchWithAuth(SETTLE_VOUCHER_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || data.detail || 'Không thể lập bảng kê quyết toán');
+        showSettlementVoucherModal(data.voucher);
+    } catch (err) {
+        showToast('danger', err.message || 'Lỗi kết nối máy chủ', 'Lỗi lập bảng kê');
+    }
+}
+
+async function openSettlementVoucher(id) {
+    try {
+        const res = await fetchWithAuth(`${SETTLE_VOUCHER_API}${id}/`);
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'Không tìm thấy phiếu');
+        document.getElementById('settle-voucher-list-modal')?.remove();
+        showSettlementVoucherModal(data.voucher);
+    } catch (err) {
+        showToast('danger', err.message, 'Lỗi');
+    }
+}
+
+function settleLineRow(party, l, i, editable) {
+    const lines = (l.expense_lines || []).map(e =>
+        `<div class="flex justify-between gap-3"><span>${escapeHtml(e.name)}${e.leg ? ` <span class="text-slate-400">(${escapeHtml(e.leg)})</span>` : ''}</span><span class="tabular-nums font-mono">${formatMoneyVND(e.amount)}</span></div>`
+    ).join('') || '<span class="text-slate-400 italic">Không có</span>';
+    const adjInput = `<input type="number" step="1000" value="${l.adjustment || 0}" ${editable ? '' : 'disabled'} data-adjust-trip="${l.trip_id}"
+        oninput="recalcSettleVoucher()" class="w-28 px-1.5 py-1 text-right font-mono font-bold border border-amber-300 rounded bg-amber-50 disabled:bg-slate-50 disabled:border-slate-200"
+        title="Số phát sinh do Kế toán/Hành chính nhập (+ cộng thêm, - trừ bớt)">`;
+    const common = `<td class="px-2 py-2 text-center">${i + 1}</td>
+        <td class="px-2 py-2 font-bold">${escapeHtml(l.trip_code)}<div class="text-[10px] text-slate-500 font-normal">${escapeHtml(l.date)}</div></td>`;
+    const cont = `<td class="px-2 py-2">${escapeHtml(l.container_number)}<div class="text-[10px] text-slate-500">${escapeHtml(l.container_type)}</div></td>
+        <td class="px-2 py-2">${escapeHtml(l.route)}</td>`;
+    const total = `<td class="px-2 py-2 text-right tabular-nums font-mono font-bold" data-line-total="${l.trip_id}"></td>`;
+
+    if (party === 'DRIVER') {
+        const split = l.is_split_trip ? `
+            <div class="p-1.5 rounded-lg border-2 border-rose-400 bg-rose-50">
+                <div class="text-[10px] font-black text-rose-700 mb-1">CẮT KÉO - KIỂM TRA KỸ TỶ LỆ THÙ LAO</div>
+                <div class="flex items-center gap-1 text-[11px] font-bold text-rose-800">
+                    <span class="truncate">${escapeHtml(l.driver_name)}</span>
+                    <input type="number" min="0" max="100" step="1" value="${l.split_ratio}" ${editable ? '' : 'disabled'} data-split-trip="${l.trip_id}"
+                        oninput="onSettleSplitInput(this)" class="w-14 px-1 py-0.5 text-center font-black text-rose-800 border border-rose-400 rounded bg-white">%
+                    <span class="text-slate-400">/</span>
+                    <span class="truncate">${escapeHtml(l.dropoff_driver_name || 'Chưa gán tài 2')}</span>
+                    <span class="w-12 text-center font-black" id="settle-split2-${l.trip_id}">${100 - l.split_ratio}%</span>
+                </div>
+            </div>` : '<span class="text-slate-400">-</span>';
+        return `<tr class="border-b border-slate-100 align-top">${common}
+            <td class="px-2 py-2">${escapeHtml(l.driver_name)}<div class="text-[10px] text-slate-500">${escapeHtml(l.license_plate)}</div></td>${cont}
+            <td class="px-2 py-2 text-[11px] min-w-[200px]">${lines}</td>
+            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.advance)}</td>
+            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.spent)}</td>
+            <td class="px-2 py-2">${adjInput}</td><td class="px-2 py-2 min-w-[210px]">${split}</td>${total}</tr>`;
+    }
+    if (party === 'PARTNER') {
+        return `<tr class="border-b border-slate-100 align-top">${common}
+            <td class="px-2 py-2">${escapeHtml(l.license_plate)}<div class="text-[10px] text-slate-500">${escapeHtml(l.driver_name)}</div></td>${cont}
+            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.freight_cost)}</td>
+            <td class="px-2 py-2 text-[11px] min-w-[200px]">${lines}</td>
+            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.advance)}</td>
+            <td class="px-2 py-2">${adjInput}</td>${total}</tr>`;
+    }
+    return `<tr class="border-b border-slate-100 align-top">${common}
+        <td class="px-2 py-2">${escapeHtml(l.booking_or_bill)}</td>${cont}
+        <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.freight)}</td>
+        <td class="px-2 py-2 text-[11px] min-w-[200px]">${lines}</td>
+        <td class="px-2 py-2">${adjInput}</td>${total}</tr>`;
+}
+
+function settleHeadCols(party) {
+    const th = (t, r) => `<th class="px-2 py-2 ${r ? 'text-right' : 'text-left'}">${t}</th>`;
+    const base = '<th class="px-2 py-2">STT</th>' + th('Mã chuyến') ;
+    if (party === 'DRIVER') return base + th('Tài xế / Xe') + th('Số cont / Loại') + th('Tuyến') + th('Chi phí phát sinh (hạ xa, dầu, vé...)') + th('Tạm ứng', 1) + th('Thực chi', 1) + th('Phát sinh', 1) + th('Tỷ lệ thù lao cắt kéo') + th('Chênh lệch', 1);
+    if (party === 'PARTNER') return base + th('Xe / Tài xế') + th('Số cont / Loại') + th('Tuyến') + th('Cước thuê xe', 1) + th('Chi phí hoàn trả đối tác') + th('Đã tạm ứng', 1) + th('Phát sinh', 1) + th('Phải trả', 1);
+    return base + th('Booking / Bill') + th('Số cont / Loại') + th('Tuyến') + th('Cước vận chuyển', 1) + th('Chi hộ') + th('Phát sinh', 1) + th('Phải thu', 1);
+}
+
+function showSettlementVoucherModal(v) {
+    currentSettleVoucher = v;
+    document.getElementById('settle-voucher-modal')?.remove();
+    const draft = v.status === 'DRAFT';
+    const party = v.party_type;
+    const body = v.lines.map((l, i) => settleLineRow(party, l, i, draft)).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'settle-voucher-modal';
+    modal.className = 'fixed inset-0 z-[1000] bg-slate-900/60 flex items-center justify-center p-3';
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+                <div>
+                    <h3 class="font-bold text-slate-900 font-heading">Bảng Kê Quyết Toán ${SETTLE_PARTY_LABEL[party]} - <span class="font-mono">${escapeHtml(v.code)}</span></h3>
+                    <p class="text-xs text-slate-500">Đối tượng: <strong>${escapeHtml(v.party_name)}</strong> · ${v.lines.length} chuyến ·
+                        <span class="font-bold ${draft ? 'text-amber-700' : 'text-emerald-700'}">${escapeHtml(v.status_label)}</span>
+                        ${v.cash_transaction_code ? ` · Phiếu ${v.direction === 'RECEIVE' ? 'thu' : 'chi'}: <strong>${escapeHtml(v.cash_transaction_code)}</strong>` : ''}</p>
+                </div>
+                <button type="button" onclick="closeSettleVoucherModal()" class="text-slate-500 hover:text-rose-600"><i class="ph-bold ph-x text-lg"></i></button>
+            </div>
+            <div class="overflow-auto p-3 text-xs">
+                <table class="w-full text-xs border-collapse" id="settle-voucher-table" data-no-col-manager data-no-toolbar>
+                    <thead class="bg-slate-50 text-slate-700 font-bold"><tr>${settleHeadCols(party)}</tr></thead>
+                    <tbody>${body}</tbody>
+                    <tfoot><tr class="bg-slate-50 font-black"><td colspan="20" class="px-2 py-2 text-right font-mono text-sm"><span id="settle-total-amount"></span></td></tr></tfoot>
+                </table>
+                <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="md:col-span-2"><label class="font-bold text-slate-700">Ghi chú</label>
+                        <input id="settle-voucher-notes" type="text" value="${escapeHtml(v.notes || '')}" ${draft ? '' : 'disabled'}
+                            class="mt-1 w-full px-2.5 py-1.5 border border-slate-300 rounded-lg disabled:bg-slate-50"></div>
+                    <div class="p-2 rounded-lg border border-slate-200 bg-slate-50">
+                        <label class="flex items-center gap-2 font-bold text-slate-800"><input type="checkbox" id="settle-voucher-cash" ${v.with_cash ? 'checked' : ''} ${draft ? '' : 'disabled'}>
+                            Phát sinh phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} khi duyệt</label>
+                        <select id="settle-voucher-method" ${draft ? '' : 'disabled'} class="mt-1.5 w-full px-2 py-1 border border-slate-300 rounded-lg font-bold">
+                            <option value="BANK" ${v.payment_method === 'BANK' ? 'selected' : ''}>Chuyển khoản</option>
+                            <option value="CASH" ${v.payment_method === 'CASH' ? 'selected' : ''}>Tiền mặt</option></select>
+                    </div>
+                </div>
+                <p class="mt-2 text-[11px] text-slate-500">Bảng kê chỉ hiển thị thông tin liên quan đến ${SETTLE_PARTY_LABEL[party].toLowerCase()}. Chỉ người có quyền Kế toán/Hành chính mới nhập phát sinh, duyệt, mở lại hoặc xóa phiếu.</p>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 flex-wrap">
+                <button type="button" onclick="printSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-slate-700 hover:bg-slate-50"><i class="ph-bold ph-printer"></i> In bảng kê</button>
+                ${draft ? `
+                <button type="button" onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50"><i class="ph-bold ph-trash"></i> Xóa</button>
+                <button type="button" onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50"><i class="ph-bold ph-floppy-disk"></i> Lưu</button>
+                <button type="button" onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold"><i class="ph-bold ph-seal-check"></i> Duyệt phiếu</button>`
+                : `<button type="button" onclick="reopenSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold"><i class="ph-bold ph-lock-key-open"></i> Mở lại để sửa</button>`}
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    recalcSettleVoucher();
+}
+
+function closeSettleVoucherModal() {
+    document.getElementById('settle-voucher-modal')?.remove();
+    currentSettleVoucher = null;
+    if (typeof loadSettlementData === 'function' && document.getElementById('page-settle-tbody')) loadSettlementData();
+    if (typeof loadSubcontractorData === 'function' && document.getElementById('subcon-select-all')) loadSubcontractorData();
+    if (typeof loadCustomerSettlementsData === 'function' && document.getElementById('cust-settle-tbody')) loadCustomerSettlementsData();
+}
+
+function onSettleSplitInput(inp) {
+    let r = parseFloat(inp.value);
+    if (isNaN(r)) r = 50;
+    r = Math.min(100, Math.max(0, r));
+    const el = document.getElementById(`settle-split2-${inp.getAttribute('data-split-trip')}`);
+    if (el) el.innerText = `${100 - r}%`;
+}
+
+function recalcSettleVoucher() {
+    const v = currentSettleVoucher;
+    if (!v) return;
+    let net = 0;
+    v.lines.forEach(l => {
+        const adj = parseInt(document.querySelector(`[data-adjust-trip="${l.trip_id}"]`)?.value || '0', 10) || 0;
+        const t = settleVoucherTotal(v.party_type, l, adj);
+        net += t;
+        const cell = document.querySelector(`[data-line-total="${l.trip_id}"]`);
+        if (cell) {
+            cell.innerText = formatMoneyVND(t);
+            cell.classList.toggle('text-rose-700', v.party_type === 'DRIVER' && t < 0);
+            cell.classList.toggle('text-blue-700', v.party_type === 'DRIVER' && t > 0);
+        }
+    });
+    const amt = document.getElementById('settle-total-amount');
+    let text;
+    if (v.party_type === 'DRIVER') text = net > 0 ? `TÀI XẾ NỘP LẠI: ${formatMoneyVND(net)}` : (net < 0 ? `CÔNG TY CHI BÙ: ${formatMoneyVND(-net)}` : 'CÂN BẰNG: 0');
+    else text = `${v.party_type === 'PARTNER' ? 'TỔNG PHẢI TRẢ' : 'TỔNG PHẢI THU'}: ${formatMoneyVND(net)}`;
+    if (amt) amt.innerText = text;
+}
+
+function collectSettleVoucherForm() {
+    const split_ratios = {};
+    document.querySelectorAll('[data-split-trip]').forEach(i => { split_ratios[i.getAttribute('data-split-trip')] = parseFloat(i.value) || 50; });
+    const adjustments = {};
+    document.querySelectorAll('[data-adjust-trip]').forEach(i => { adjustments[i.getAttribute('data-adjust-trip')] = parseInt(i.value || '0', 10) || 0; });
+    return {
+        split_ratios, adjustments,
+        notes: document.getElementById('settle-voucher-notes')?.value || '',
+        with_cash: !!document.getElementById('settle-voucher-cash')?.checked,
+        payment_method: document.getElementById('settle-voucher-method')?.value || 'BANK',
+    };
+}
+
+async function settleVoucherRequest(url, method, body, okMsg) {
+    try {
+        const res = await fetchWithAuth(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+        const data = await res.json();
+        if (!res.ok || data.success === false) throw new Error(data.error || data.detail || 'Thao tác không thành công');
+        if (okMsg) showToast('success', data.message || okMsg, 'Thành công');
+        return data;
+    } catch (err) {
+        showToast('danger', err.message || 'Lỗi kết nối máy chủ', 'Lỗi');
+        return null;
+    }
+}
+
+async function saveSettleVoucher(silent = false) {
+    const v = currentSettleVoucher;
+    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/`, 'PUT', collectSettleVoucherForm(), silent ? '' : 'Đã lưu phiếu quyết toán');
+    if (data) showSettlementVoucherModal(data.voucher);
+    return data;
+}
+
+async function approveSettleVoucher() {
+    const v = currentSettleVoucher;
+    const saved = await saveSettleVoucher(true);
+    if (!saved) return;
+    const ok = await showConfirmModal({
+        title: 'Duyệt Phiếu Quyết Toán',
+        message: `Duyệt phiếu ${v.code}? Các chuyến sẽ được khóa sổ${document.getElementById('settle-voucher-cash')?.checked ? ' và tự động lập phiếu Thu/Chi' : ''}. Cần sửa thì dùng "Mở lại để sửa".`,
+        confirmText: 'Duyệt phiếu', cancelText: 'Huỷ bỏ', type: 'success', icon: 'ph-bold ph-seal-check text-2xl'
+    });
+    if (!ok) return;
+    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/approve/`, 'POST', {
+        with_cash: saved.voucher.with_cash, payment_method: saved.voucher.payment_method }, 'Đã duyệt phiếu');
+    if (data) {
+        showSettlementVoucherModal(data.voucher);
+        if (typeof loadAccountingData === 'function') loadAccountingData();
+    }
+}
+
+async function reopenSettleVoucher() {
+    const v = currentSettleVoucher;
+    const ok = await showConfirmModal({
+        title: 'Mở Lại Phiếu Quyết Toán',
+        message: `Mở lại phiếu ${v.code}? Các chuyến sẽ được mở khóa${v.cash_transaction_code ? ` và phiếu ${v.cash_transaction_code} trong Sổ quỹ sẽ bị xóa` : ''}.`,
+        confirmText: 'Mở lại', cancelText: 'Huỷ bỏ', type: 'warning', icon: 'ph-bold ph-lock-key-open text-2xl'
+    });
+    if (!ok) return;
+    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/reopen/`, 'POST', {}, 'Đã mở lại phiếu');
+    if (data) showSettlementVoucherModal(data.voucher);
+}
+
+async function deleteSettleVoucher() {
+    const v = currentSettleVoucher;
+    const ok = await showConfirmModal({
+        title: 'Xóa Phiếu Quyết Toán', message: `Xóa phiếu ${v.code}? Các chuyến sẽ được trả về trạng thái chờ quyết toán.`,
+        confirmText: 'Xóa phiếu', cancelText: 'Huỷ bỏ', type: 'danger', icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!ok) return;
+    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/`, 'DELETE', null, 'Đã xóa phiếu');
+    if (data) closeSettleVoucherModal();
+}
+
+function printSettleVoucher() {
+    const v = currentSettleVoucher;
+    const table = document.getElementById('settle-voucher-table');
+    if (!v || !table) return;
+    const clone = table.cloneNode(true);
+    clone.querySelectorAll('input').forEach(inp => {
+        const span = document.createElement('span');
+        span.textContent = inp.value + (inp.hasAttribute('data-split-trip') ? '%' : '');
+        inp.replaceWith(span);
+    });
+    const w = window.open('', '_blank');
+    if (!w) { showToast('warning', 'Trình duyệt đang chặn cửa sổ in', 'Không thể in'); return; }
+    w.document.write(`<html><head><title>${escapeHtml(v.code)}</title><style>
+        body{font-family:Arial,sans-serif;font-size:11px;padding:16px}table{width:100%;border-collapse:collapse}
+        th,td{border:1px solid #94a3b8;padding:4px 6px;vertical-align:top}th{background:#f1f5f9}.r{text-align:right}</style></head>
+        <body><h2 style="text-align:center;margin-bottom:4px">BẢNG KÊ QUYẾT TOÁN ${SETTLE_PARTY_LABEL[v.party_type].toUpperCase()}</h2>
+        <p style="text-align:center;margin-top:0">Số: ${escapeHtml(v.code)} · Đối tượng: <b>${escapeHtml(v.party_name)}</b> · Ngày lập: ${escapeHtml(v.created_at)}</p>
+        ${clone.outerHTML}${v.notes ? `<p>Ghi chú: ${escapeHtml(v.notes)}</p>` : ''}
+        <table style="margin-top:30px;border:none"><tr style="text-align:center"><td style="border:none">Người lập</td><td style="border:none">Kế toán trưởng</td><td style="border:none">Xác nhận của ${SETTLE_PARTY_LABEL[v.party_type].toLowerCase()}</td></tr></table>
+        </body></html>`);
+    w.document.close();
+    w.focus();
+    w.print();
+}
+
+// Danh sách phiếu quyết toán (xem lại, mở để sửa/duyệt/xóa/in)
+async function openSettlementVoucherList(partyType = '') {
+    document.getElementById('settle-voucher-list-modal')?.remove();
+    const res = await fetchWithAuth(`${SETTLE_VOUCHER_API}${partyType ? `?party_type=${partyType}` : ''}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { showToast('danger', data.error || data.detail || 'Không tải được danh sách phiếu', 'Lỗi'); return; }
+    const rows = (data.vouchers || []).map(v => `
+        <tr class="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onclick="openSettlementVoucher(${v.id})">
+            <td class="px-2 py-2 font-mono font-bold">${escapeHtml(v.code)}</td><td class="px-2 py-2">${escapeHtml(v.party_type_label)}</td>
+            <td class="px-2 py-2">${escapeHtml(v.party_name)}</td><td class="px-2 py-2 text-center">${v.trips_count}</td>
+            <td class="px-2 py-2 text-right font-mono">${formatMoneyVND(v.amount)}</td>
+            <td class="px-2 py-2">${escapeHtml(v.status_label)}</td><td class="px-2 py-2">${escapeHtml(v.created_at)}</td></tr>`).join('')
+        || '<tr><td colspan="7" class="text-center py-8 text-slate-400">Chưa có phiếu quyết toán</td></tr>';
+    const tab = (p, t) => `<button type="button" onclick="openSettlementVoucherList('${p}')" class="px-3 py-1 rounded-lg text-xs font-bold ${partyType === p ? 'bg-teal-700 text-white' : 'bg-slate-100 text-slate-700'}">${t}</button>`;
+    const modal = document.createElement('div');
+    modal.id = 'settle-voucher-list-modal';
+    modal.className = 'fixed inset-0 z-[999] bg-slate-900/60 flex items-center justify-center p-3';
+    modal.innerHTML = `<div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200"><h3 class="font-bold font-heading">Phiếu Quyết Toán</h3>
+            <button type="button" onclick="document.getElementById('settle-voucher-list-modal').remove()"><i class="ph-bold ph-x text-lg"></i></button></div>
+        <div class="flex gap-2 px-4 py-2">${tab('', 'Tất cả')}${tab('DRIVER', 'Tài xế')}${tab('PARTNER', 'Đối tác 3PL')}${tab('CUSTOMER', 'Khách hàng')}</div>
+        <div class="overflow-auto px-4 pb-4"><table class="w-full text-xs" data-no-col-manager data-no-toolbar><thead class="bg-slate-50 font-bold"><tr>
+            <th class="px-2 py-2 text-left">Số phiếu</th><th class="px-2 py-2 text-left">Đối tượng</th><th class="px-2 py-2 text-left">Tên</th>
+            <th class="px-2 py-2">Số chuyến</th><th class="px-2 py-2 text-right">Số tiền</th><th class="px-2 py-2 text-left">Tình trạng</th><th class="px-2 py-2 text-left">Ngày lập</th>
+        </tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    document.body.appendChild(modal);
+}
+
+window.openSettlementStatement = openSettlementStatement;
+window.openSettlementVoucher = openSettlementVoucher;
+window.openSettlementVoucherList = openSettlementVoucherList;
+window.closeSettleVoucherModal = closeSettleVoucherModal;
+window.onSettleSplitInput = onSettleSplitInput;
+window.recalcSettleVoucher = recalcSettleVoucher;
+window.saveSettleVoucher = saveSettleVoucher;
+window.approveSettleVoucher = approveSettleVoucher;
+window.reopenSettleVoucher = reopenSettleVoucher;
+window.deleteSettleVoucher = deleteSettleVoucher;
+window.printSettleVoucher = printSettleVoucher;
 
 // ---- src/app/accounting/reimbursables.js ----
 // ==============================================================================
@@ -26222,58 +26572,10 @@ function updateBatchSettleButtonState() {
 }
 
 function openBatchSettleSubcontractorModal() {
-    const count = selectedSubconTripIds.size;
-    if (count < 2) {
-        showToast('warning', 'Vui lòng chọn từ 2 chuyến xe bạn trở lên để thực hiện quyết toán gom!', 'Chưa đủ chuyến');
-        return;
-    }
-
-    const modal = document.getElementById('modal-subcontractor-batch-settle');
-    if (!modal) return;
-
-    const selectedTrips = (rawSubcontractorList || []).filter(t => selectedSubconTripIds.has(t.trip_id));
-    if (!selectedTrips.length) return;
-
-    let totalCost = 0;
-    let totalReimburse = 0;
-    let totalAdvance = 0;
-    let totalRemaining = 0;
-
-    selectedTrips.forEach(t => {
-        totalCost += (Number(t.subcontractor_cost) || 0);
-        totalReimburse += (Number(t.sub_reimbursable_expenses) || 0);
-        totalAdvance += (Number(t.subcontractor_advance) || 0);
-        totalRemaining += (Number(t.remaining_payable) || 0);
+    // Lập Phiếu quyết toán đối tác 3PL (bảng kê chỉ gồm cước thuê & chi phí hoàn trả, không có giá cước khách hàng)
+    openSettlementStatement('PARTNER', Array.from(selectedSubconTripIds), {
+        payment_method: document.getElementById('subcon-batch-payment-method')?.value || 'BANK'
     });
-
-    const elCount = document.getElementById('subcon-batch-count');
-    if (elCount) elCount.innerText = `${selectedTrips.length} chuyến xe bạn`;
-
-    const elTripCodes = document.getElementById('subcon-batch-trip-codes');
-    if (elTripCodes) {
-        elTripCodes.innerHTML = selectedTrips.map(t => `
-            <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-bold border border-slate-300">
-                ${escapeHtml(t.trip_code)} (${escapeHtml(t.vehicle_plate)})
-            </span>
-        `).join('');
-    }
-
-    const elCost = document.getElementById('subcon-batch-cost');
-    if (elCost) elCost.innerText = formatMoneyVND(totalCost);
-
-    const elReimburse = document.getElementById('subcon-batch-reimburse');
-    if (elReimburse) elReimburse.innerText = `+${formatMoneyVND(totalReimburse)}`;
-
-    const elAdvance = document.getElementById('subcon-batch-advance');
-    if (elAdvance) elAdvance.innerText = `-${formatMoneyVND(totalAdvance)}`;
-
-    const elRemaining = document.getElementById('subcon-batch-remaining');
-    if (elRemaining) elRemaining.innerText = formatMoneyVND(totalRemaining);
-
-    const notesInp = document.getElementById('subcon-batch-notes');
-    if (notesInp) notesInp.value = `Quyết toán gom cước ${selectedTrips.length} chuyến xe bạn`;
-
-    modal.classList.remove('hidden');
 }
 
 function closeBatchSettleSubcontractorModal() {
@@ -27488,41 +27790,9 @@ async function toggleCustomerSettleSingle(tripId, action) {
     }
 }
 
-async function executeBatchCustomerSettlement() {
-    const selectedIds = Array.from(selectedCustTripIds);
-    if (selectedIds.length === 0) {
-        showToast('warning', 'Vui lòng chọn ít nhất hai chuyến xe để chốt quyết toán với khách hàng!', 'Chưa Đủ Số Lượng Chuyến');
-        return;
-    }
-
-    const confirmed = await (typeof showConfirmModal === 'function' ? showConfirmModal({
-        title: 'Chốt Quyết Toán Khách Hàng',
-        message: `Xác nhận chốt quyết toán đối soát (SOA) cho ${selectedIds.length} chuyến xe đã chọn?\n\nToàn bộ doanh thu cước và chi hộ của các chuyến này sẽ được chuyển sang trạng thái ĐÃ QUYẾT TOÁN.`,
-        confirmText: `Chốt Quyết Toán (${selectedIds.length} Chuyến)`,
-        cancelText: 'Huỷ bỏ',
-        type: 'success',
-        icon: 'ph-bold ph-seal-check text-2xl'
-    }) : Promise.resolve(confirm(`Xác nhận chốt quyết toán đối soát (SOA) cho ${selectedIds.length} chuyến xe đã chọn?`)));
-
-    if (!confirmed) return;
-
-    try {
-        const res = await fetchWithAuth('/api/accounting/customer-reconciliation/', {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'SETTLE',
-                trip_ids: selectedIds
-            })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || data.error || 'Lỗi chốt quyết toán');
-        showToast('success', data.message || `Đã chốt quyết toán thành công ${selectedIds.length} chuyến xe!`, 'Thành Công');
-        selectedCustTripIds.clear();
-        updateCustBatchSettleButtonState();
-        loadCustomerSettlementsData();
-    } catch (err) {
-        showToast('error', err.message || 'Lỗi chốt quyết toán', 'Lỗi');
-    }
+function executeBatchCustomerSettlement() {
+    // Lập Phiếu quyết toán khách hàng (bảng kê chỉ gồm cước & chi hộ, không có chi phí tài xế/đối tác)
+    openSettlementStatement('CUSTOMER', Array.from(selectedCustTripIds), { with_cash: false });
 }
 
 function openSelectedCustomerSOAView() {
@@ -40796,8 +41066,6 @@ window.submitCustomsDeclarationForm = typeof submitCustomsDeclarationForm !== 'u
 window.exportCustomsExcel = typeof exportCustomsExcel !== 'undefined' ? exportCustomsExcel : undefined;
 window.debounceCustomsSearch = typeof debounceCustomsSearch !== 'undefined' ? debounceCustomsSearch : undefined;
 window.onCustomsOfficeChange = typeof onCustomsOfficeChange !== 'undefined' ? onCustomsOfficeChange : undefined;
-window.onSplitRatioChange = typeof onSplitRatioChange !== 'undefined' ? onSplitRatioChange : undefined;
-window.onCustomSplitRatioInput = typeof onCustomSplitRatioInput !== 'undefined' ? onCustomSplitRatioInput : undefined;
 window.onFreeDaysChange = typeof onFreeDaysChange !== 'undefined' ? onFreeDaysChange : undefined;
 
 // 9. Phân Hệ Báo Cáo & Thống Kê (Reports)

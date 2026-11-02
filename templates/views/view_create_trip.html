@@ -695,7 +695,6 @@
                                         <span class="w-4.5 h-4.5 rounded-full bg-teal-700 text-white flex items-center justify-center text-[10px] font-bold">1</span>
                                         Chặng 1: Lấy Cont ➔ Giao Kho
                                     </span>
-                                    <span class="text-xs text-teal-700 font-bold" id="badge-ratio-leg1">Tỷ lệ: 50%</span>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
@@ -730,7 +729,6 @@
                                         <span class="w-4.5 h-4.5 rounded-full bg-indigo-700 text-white flex items-center justify-center text-[10px] font-bold">2</span>
                                         Chặng 2: Móc Mooc ➔ Hạ Cảng/Depot
                                     </span>
-                                    <span class="text-xs text-indigo-700 font-bold" id="badge-ratio-leg2">Tỷ lệ: 50%</span>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
@@ -761,53 +759,8 @@
 
                         <!-- Tỷ lệ phân chia lương tài xế & Ghi chú bàn giao mooc tại kho -->
                         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 pt-0.5">
-                            <div class="md:col-span-5">
-                                <div class="flex items-center justify-between h-5 mb-1">
-                                    <label class="block font-bold text-slate-700 text-xs truncate" for="inp-driver-split-ratio">Tỷ lệ phân chia thù lao (Chặng 1 / Chặng 2)</label>
-                                </div>
-                                <select id="inp-driver-split-ratio" onchange="onSplitRatioChange(this.value)" class="form-select h-9 px-2.5 py-1 font-bold text-slate-800 text-xs w-full rounded-lg">
-                                    <option value="50">Chia đều 50% - 50% (Tiêu chuẩn)</option>
-                                    <option value="60">Chặng 1: 60% (Lấy xa) - Chặng 2: 40%</option>
-                                    <option value="40">Chặng 1: 40% - Chặng 2: 60% (Hạ xa)</option>
-                                    <option value="70">Chặng 1: 70% - Chặng 2: 30%</option>
-                                    <option value="custom">-- Tùy biến tỷ lệ riêng (%) --</option>
-                                </select>
-                                
-                                <!-- Khung nhập tùy biến tỷ lệ thù lao Chặng 1 & Chặng 2 -->
-                                <div id="div-custom-split-ratio" class="hidden mt-2 p-2 bg-amber-50/80 border border-amber-200 rounded-lg">
-                                    <div class="text-[11px] font-bold text-amber-950 mb-1 flex items-center gap-1">
-                                        <i class="ph-bold ph-sliders-horizontal text-amber-700"></i> Nhập tỷ lệ thù lao (%) cho 2 chặng:
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-[10px] font-bold text-teal-900 mb-0.5">Chặng 1 (%)</label>
-                                            <input
-                                                id="inp-custom-split-ratio-leg1"
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                step="1"
-                                                value="50"
-                                                oninput="onCustomSplitRatioInput(this.value)"
-                                                class="form-input h-7.5 px-2 py-0.5 font-bold text-teal-900 text-xs w-full rounded-md border-teal-300 focus:ring-teal-500"
-                                                placeholder="50"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label class="block text-[10px] font-bold text-indigo-900 mb-0.5">Chặng 2 (%)</label>
-                                            <input
-                                                id="inp-custom-split-ratio-leg2"
-                                                type="number"
-                                                readonly
-                                                value="50"
-                                                class="form-input h-7.5 px-2 py-0.5 font-bold text-indigo-900 bg-slate-100 text-xs w-full rounded-md border-indigo-200 cursor-not-allowed"
-                                                placeholder="50"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="md:col-span-7">
+                            <!-- Tỷ lệ thù lao 2 tài xế cắt kéo được nhập ở bước Quyết toán tài xế (mặc định 50-50) -->
+                            <div class="md:col-span-12">
                                 <div class="flex items-center justify-between h-5 mb-1">
                                     <label class="block font-bold text-slate-700 text-xs truncate" for="inp-notes-drop-hook">Ghi chú & Biên bản bàn giao mooc tại kho</label>
                                     <span class="text-[10px] text-slate-500 italic">Đính kèm lệnh Zalo</span>
