@@ -5,3 +5,5 @@ Dockerfile text eol=lf
 *.jpg binary
 *.pdf binary
 *.ico binary
+
+.githooks/* text eol=lf
