@@ -28673,7 +28673,7 @@ function switchMasterDataTab(tabKey) {
     if (companyView) companyView.classList.add('hidden');
     if (rolesView) { rolesView.classList.add('hidden'); rolesView.parentElement.classList.remove('shrink-0'); }
     if (openingBalanceView) openingBalanceView.classList.add('hidden');
-    if (accountSettingsView) accountSettingsView.classList.add('hidden');
+    if (accountSettingsView) { accountSettingsView.classList.add('hidden'); }
 
     // Ẩn/hiện các nút Tải Mẫu, Nhập Excel, Xuất Dữ Liệu theo danh mục
     const isSpecialTab = (tabKey === 'company' || tabKey === 'roles_permissions' || tabKey === 'account_settings');
@@ -28701,6 +28701,7 @@ function switchMasterDataTab(tabKey) {
         [filterToolbar, tableContainer, paginationContainer].forEach(el => el && el.classList.add('hidden'));
         if (createBtnContainer) createBtnContainer.style.display = 'none';
         accountSettingsView.classList.remove('hidden');
+        accountSettingsView.parentElement.classList.add('shrink-0');
         renderAccountSettingsPage(accountSettingsView);
         return;
     }
@@ -33827,12 +33828,12 @@ function _acctEsc(s) {
     return (typeof escapeHtml === 'function') ? escapeHtml(s == null ? '' : String(s)) : String(s == null ? '' : s);
 }
 
-async function renderAccountSettingsPage(container) {
+async function renderAccountSettingsPage(container, previewRegime) {
     const box = container || document.getElementById('md-account-settings-view');
     if (!box) return;
     box.innerHTML = `<div class="p-10 text-center text-slate-400 font-medium"><i class="ph ph-spinner animate-spin text-2xl text-teal-600 block mb-2"></i>Đang tải cài đặt tài khoản…</div>`;
     try {
-        const res = await fetchWithAuth('/api/ledger/mapping/');
+        const res = await fetchWithAuth('/api/ledger/mapping/' + (previewRegime ? `?regime=${encodeURIComponent(previewRegime)}` : ''));
         if (res.status === 403) {
             box.innerHTML = '<div class="p-10 text-center text-slate-500 font-semibold">Chỉ Kế toán và Ban Giám Đốc được xem cài đặt tài khoản</div>';
             return;
@@ -33854,7 +33855,7 @@ function paintAccountSettings(box) {
     const names = Object.fromEntries((d.accounts || []).map(a => [a.code, a.name]));
     const options = (sel) => (d.accounts || []).map(a =>
         `<option value="${_acctEsc(a.code)}" ${a.code === sel ? 'selected' : ''}>${_acctEsc(a.code)}</option>`).join('');
-    const regimeSel = `<select id="acct-regime-select" ${d.can_change_regime ? '' : 'disabled title="Chỉ Ban Giám Đốc / quản trị được đổi"'}
+    const regimeSel = `<select id="acct-regime-select" onchange="previewAccountRegime(this.value)" ${d.can_change_regime ? '' : 'disabled title="Chỉ Ban Giám Đốc / quản trị được đổi"'}
         class="h-8 px-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700">
         ${(d.regimes || []).map(r => `<option value="${r}" ${r === d.regime ? 'selected' : ''}>${_acctEsc((d.regime_labels || {})[r] || r)}</option>`).join('')}
         </select>`;
@@ -33874,7 +33875,7 @@ function paintAccountSettings(box) {
                     <h3 class="text-sm md:text-base font-black font-heading text-slate-800">Cài đặt tài khoản kế toán</h3>
                     <p class="text-xs text-slate-500 font-medium mt-0.5">Danh mục tài khoản theo TT99/2025/TT-BTC (doanh nghiệp) hoặc TT58/2026/TT-BTC (siêu nhỏ, danh mục rút gọn). Mỗi nghiệp vụ tự động hạch toán vào tài khoản bên dưới. Chỉ đổi khi kế toán trưởng yêu cầu.</p>
                 </div>
-                <p class="text-xs font-bold text-slate-600">${changed ? `${changed} nghiệp vụ đã đổi so với mặc định` : 'Đang dùng mặc định'}</p>
+                <p class="text-xs font-bold ${d.preview ? 'text-amber-700' : 'text-slate-600'}">${d.preview ? `Đang xem thử ${_acctEsc(d.regime)} - chưa áp dụng, bấm Lưu để chuyển` : (changed ? `${changed} nghiệp vụ đã đổi so với mặc định` : 'Đang dùng mặc định')}</p>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-xs text-left whitespace-nowrap" id="acct-settings-table" data-no-col-manager data-no-toolbar>
@@ -33894,6 +33895,11 @@ function paintAccountSettings(box) {
                 </div>
             </div>` : ''}
         </div>`;
+}
+
+function previewAccountRegime(regime) {
+    // Xem thử danh mục và ánh xạ của chế độ được chọn (chưa lưu)
+    renderAccountSettingsPage(document.getElementById('md-account-settings-view'), regime);
 }
 
 function onAccountSettingChange(sel) {
@@ -33922,7 +33928,7 @@ async function saveAccountSettings() {
     });
     const regimeEl = document.getElementById('acct-regime-select');
     const regime = regimeEl ? regimeEl.value : undefined;
-    const msg = regime && regime !== accountSettingsData.regime
+    const msg = regime && regime !== accountSettingsData.current_regime
         ? `Đổi chế độ kế toán sang ${regime} và hạch toán lại toàn bộ bút toán tự động?`
         : 'Lưu cài đặt tài khoản và hạch toán lại toàn bộ bút toán tự động?';
     const ok = await showConfirmModal({ title: 'Lưu cài đặt tài khoản', message: msg, type: 'warning', confirmText: 'Lưu và hạch toán lại' });
@@ -33954,6 +33960,7 @@ async function saveAccountSettings() {
 }
 
 window.renderAccountSettingsPage = renderAccountSettingsPage;
+window.previewAccountRegime = previewAccountRegime;
 window.onAccountSettingChange = onAccountSettingChange;
 window.resetAccountSettings = resetAccountSettings;
 window.saveAccountSettings = saveAccountSettings;

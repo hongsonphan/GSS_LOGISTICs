@@ -236,7 +236,7 @@ function switchMasterDataTab(tabKey) {
     if (companyView) companyView.classList.add('hidden');
     if (rolesView) { rolesView.classList.add('hidden'); rolesView.parentElement.classList.remove('shrink-0'); }
     if (openingBalanceView) openingBalanceView.classList.add('hidden');
-    if (accountSettingsView) accountSettingsView.classList.add('hidden');
+    if (accountSettingsView) { accountSettingsView.classList.add('hidden'); }
 
     // Ẩn/hiện các nút Tải Mẫu, Nhập Excel, Xuất Dữ Liệu theo danh mục
     const isSpecialTab = (tabKey === 'company' || tabKey === 'roles_permissions' || tabKey === 'account_settings');
@@ -264,6 +264,7 @@ function switchMasterDataTab(tabKey) {
         [filterToolbar, tableContainer, paginationContainer].forEach(el => el && el.classList.add('hidden'));
         if (createBtnContainer) createBtnContainer.style.display = 'none';
         accountSettingsView.classList.remove('hidden');
+        accountSettingsView.parentElement.classList.add('shrink-0');
         renderAccountSettingsPage(accountSettingsView);
         return;
     }

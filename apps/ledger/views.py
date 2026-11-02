@@ -118,10 +118,13 @@ def _can_change_regime(user):
     return access.can(user, 'admin', 'edit')
 
 
-def _mapping_payload(company, user):
-    regime = company.accounting_regime or charts.DEFAULT_REGIME
+def _mapping_payload(company, user, preview=None):
+    """preview: chế độ kế toán muốn xem thử (chưa lưu) - hiện danh mục và ánh xạ mặc định của chế độ đó."""
+    current = company.accounting_regime or charts.DEFAULT_REGIME
+    regime = preview if preview in charts.REGIMES else current
+    is_preview = regime != current
     names = {code: name for code, name, _k in charts.CHARTS[regime]}
-    overrides = company.ledger_account_overrides or {}
+    overrides = {} if is_preview else (company.ledger_account_overrides or {})
     items = []
     for key, default in charts.ACCOUNT_MAP[regime].items():
         effective = overrides.get(key) or default
@@ -131,8 +134,8 @@ def _mapping_payload(company, user):
     leaf_codes = [{'code': c, 'name': n} for c, n, _k in charts.CHARTS[regime]
                   if not any(o != c and o.startswith(c) for o, _n, _x in charts.CHARTS[regime])]
     # Chế độ cũ chỉ còn chọn được khi công ty đang dùng
-    selectable = [r for r in charts.REGIMES if not charts.REGIME_INFO[r]['legacy'] or r == regime]
-    return {'regime': regime, 'regimes': selectable,
+    selectable = [r for r in charts.REGIMES if not charts.REGIME_INFO[r]['legacy'] or r == current]
+    return {'regime': regime, 'current_regime': current, 'preview': is_preview, 'regimes': selectable,
             'regime_labels': {r: charts.REGIME_INFO[r]['label'] for r in charts.REGIMES},
             'can_change_regime': _can_change_regime(user),
             'items': items, 'accounts': leaf_codes}
@@ -144,7 +147,7 @@ class LedgerMappingAPIView(APIView):
 
     def get(self, request):
         company = _company(request)
-        return Response(_mapping_payload(company, request.user))
+        return Response(_mapping_payload(company, request.user, request.query_params.get('regime')))
 
     def put(self, request):
         from django.db import transaction

@@ -83,6 +83,21 @@ class NewRegimeTests(LedgerTestBase):
             self.assertEqual(charts.resolve(self.company, 'bank'), '112')
             self.assertTrue(Account.objects.filter(company=self.company, code='112', name='Tiền gửi không kỳ hạn').exists())
 
+    def test_mapping_preview_other_regime(self):
+        user = User.objects.create_superuser('ketoan_prev', 'm@example.com', 'Pw-Ledger#2026')
+        self.client.force_login(user)
+        self.company.accounting_regime = 'TT133'
+        self.company.save()
+        cur = self.client.get('/api/ledger/mapping/').json()
+        self.assertFalse(cur['preview'])
+        prev = self.client.get('/api/ledger/mapping/?regime=TT99').json()
+        self.assertTrue(prev['preview'])
+        self.assertEqual(prev['current_regime'], 'TT133')
+        self.assertEqual({i['key']: i for i in prev['items']}['bank']['effective'], '112')
+        self.assertEqual({i['key']: i for i in cur['items']}['bank']['effective'], '1121')
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.accounting_regime, 'TT133')  # xem thử không lưu
+
     def test_mapping_api_hides_legacy_regimes(self):
         import json
         user = User.objects.create_superuser('ketoan_tt99', 'm@example.com', 'Pw-Ledger#2026')
