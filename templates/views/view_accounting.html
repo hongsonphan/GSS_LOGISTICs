@@ -1737,6 +1737,14 @@
 
                     <div class="flex items-center gap-2">
 
+                        <!-- Nút Quyết Toán Nhiều Chuyến (Chỉ hiện khi chọn >= 2 chuyến) -->
+                        <button type="button" id="btn-batch-settle-subcon" onclick="openBatchSettleSubcontractorModal()" 
+                            class="hidden px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold font-heading shadow-xs items-center gap-1.5 transition-all cursor-pointer animate-fade-in"
+                            title="Quyết toán đồng thời nhiều chuyến xe bạn đã chọn">
+                            <i class="ph-bold ph-seal-check text-sm"></i>
+                            <span id="btn-batch-settle-subcon-label">Quyết Toán Nhiều Chuyến (0)</span>
+                        </button>
+
                         <button type="button" onclick="exportSubcontractorToExcel()" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
 
                             <i class="ph-bold ph-file-xls text-sm"></i>
@@ -1753,7 +1761,7 @@
 
                 <!-- Bộ lọc Quyết toán xe bạn -->
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1 text-xs">
 
                     <div>
 
@@ -1775,7 +1783,19 @@
 
                     <div>
 
-                        <input type="text" id="subcon-search" oninput="debounce(loadSubcontractorData, 300)()" placeholder="Tìm biển số xe, mã chuyến, số cont..."
+                        <select id="subcon-filter-subcontractor" onchange="loadSubcontractorData()"
+
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-slate-800 focus:ring-1 focus:ring-slate-700">
+
+                            <option value="">-- Tất cả Thầu Phụ / Nhà Xe 3PL --</option>
+
+                        </select>
+
+                    </div>
+
+                    <div>
+
+                        <input type="text" id="subcon-search" oninput="debounce(loadSubcontractorData, 300)()" placeholder="Tìm 3PL, biển số, mã chuyến, số cont..."
 
                             class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-slate-800 focus:ring-1 focus:ring-slate-700">
 
@@ -1813,27 +1833,81 @@
 
                         <tr>
 
+                            <th data-col-key="checkbox" data-col-name="Chọn" data-col-locked="true" class="w-10 text-center select-none">
+                                <input type="checkbox" id="subcon-select-all" onchange="toggleSelectAllSubconTrips(this)" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer w-4 h-4" title="Chọn tất cả chuyến chưa quyết toán">
+                            </th>
+
                             <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
 
-                            <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true">Mã Chuyến</th>
+                            <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleSubconSort('trip_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors font-mono" title="Click để sắp xếp theo Mã Chuyến">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Mã Chuyến</span>
+                                    <i id="sort-icon-subcon-trip_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                            <th data-col-key="vehicle" data-col-name="Biển Số Xe Bạn">Biển Số Xe Bạn</th>
+                            <th data-col-key="subcontractor" data-col-name="Thầu Phụ 3PL & Xe Bạn" onclick="toggleSubconSort('subcontractor_name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Thầu Phụ 3PL">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Thầu Phụ 3PL & Xe Bạn</span>
+                                    <i id="sort-icon-subcon-subcontractor_name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                            <th data-col-key="driver" data-col-name="Tài Xế">Tài Xế</th>
+                            <th data-col-key="driver" data-col-name="Tài Xế" onclick="toggleSubconSort('driver_name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tài Xế">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Tài Xế</span>
+                                    <i id="sort-icon-subcon-driver_name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                            <th data-col-key="route" data-col-name="Khách Hàng & Tuyến Vận Chuyển">Khách Hàng & Tuyến Vận Chuyển</th>
+                            <th data-col-key="route" data-col-name="Khách Hàng & Tuyến Vận Chuyển" onclick="toggleSubconSort('customer_name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách Hàng">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Khách Hàng & Tuyến Vận Chuyển</span>
+                                    <i id="sort-icon-subcon-customer_name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                            <th data-col-key="customer_freight" data-col-name="Cước Thu Khách" class="text-right">Cước Thu Khách</th>
+                            <th data-col-key="customer_freight" data-col-name="Cước Thu Khách" onclick="toggleSubconSort('cached_revenue')" class="text-right cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Cước Thu Khách">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Cước Thu Khách</span>
+                                    <i id="sort-icon-subcon-cached_revenue" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                            <th data-col-key="subcon_freight" data-col-name="Cước Trả Xe Bạn" class="text-right">Cước Trả Xe Bạn</th>
+                            <th data-col-key="subcon_freight" data-col-name="Cước Trả Xe Bạn" onclick="toggleSubconSort('subcontractor_cost')" class="text-right cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Cước Trả Xe Bạn">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Cước Trả Xe Bạn</span>
+                                    <i id="sort-icon-subcon-subcontractor_cost" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                            <th data-col-key="profit_margin" data-col-name="Chênh Lệch Cty Hưởng" class="text-right">Chênh Lệch Cty Hưởng</th>
+                            <th data-col-key="profit_margin" data-col-name="Chênh Lệch Cty Hưởng" onclick="toggleSubconSort('gross_company_margin')" class="text-right cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Chênh Lệch Cty Hưởng">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Chênh Lệch Cty Hưởng</span>
+                                    <i id="sort-icon-subcon-gross_company_margin" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                            <th data-col-key="advance_amount" data-col-name="Đã Tạm Ứng" class="text-right">Đã Tạm Ứng</th>
+                            <th data-col-key="advance_amount" data-col-name="Đã Tạm Ứng" onclick="toggleSubconSort('subcontractor_advance')" class="text-right cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Đã Tạm Ứng">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Đã Tạm Ứng</span>
+                                    <i id="sort-icon-subcon-subcontractor_advance" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                            <th data-col-key="remaining_amount" data-col-name="Còn Phải Trả" class="text-right">Còn Phải Trả</th>
+                            <th data-col-key="remaining_amount" data-col-name="Còn Phải Trả" onclick="toggleSubconSort('remaining_payable')" class="text-right cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Còn Phải Trả">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Còn Phải Trả</span>
+                                    <i id="sort-icon-subcon-remaining_payable" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                            <th data-col-key="status" data-col-name="Trạng Thái" class="text-center">Trạng Thái</th>
+                            <th data-col-key="status" data-col-name="Trạng Thái" onclick="toggleSubconSort('subcontractor_settlement_status')" class="text-center cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Trạng Thái">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <span>Trạng Thái</span>
+                                    <i id="sort-icon-subcon-subcontractor_settlement_status" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
                             <th data-col-key="notes" data-col-name="Ghi Chú">Ghi Chú</th>
 

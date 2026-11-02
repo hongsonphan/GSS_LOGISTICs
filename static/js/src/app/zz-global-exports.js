@@ -150,6 +150,12 @@ window.loadAccountingData = typeof loadAccountingData !== 'undefined' ? loadAcco
 window.loadCashBookData = typeof loadCashBookData !== 'undefined' ? loadCashBookData : undefined;
 window.loadReimbursablesData = typeof loadReimbursablesData !== 'undefined' ? loadReimbursablesData : undefined;
 window.loadSubcontractorData = typeof loadSubcontractorData !== 'undefined' ? loadSubcontractorData : undefined;
+window.toggleSubconSort = typeof toggleSubconSort !== 'undefined' ? toggleSubconSort : undefined;
+window.toggleSelectAllSubconTrips = typeof toggleSelectAllSubconTrips !== 'undefined' ? toggleSelectAllSubconTrips : undefined;
+window.onSubconTripSelectionChange = typeof onSubconTripSelectionChange !== 'undefined' ? onSubconTripSelectionChange : undefined;
+window.openBatchSettleSubcontractorModal = typeof openBatchSettleSubcontractorModal !== 'undefined' ? openBatchSettleSubcontractorModal : undefined;
+window.closeBatchSettleSubcontractorModal = typeof closeBatchSettleSubcontractorModal !== 'undefined' ? closeBatchSettleSubcontractorModal : undefined;
+window.handleSaveSubcontractorBatch = typeof handleSaveSubcontractorBatch !== 'undefined' ? handleSaveSubcontractorBatch : undefined;
 window.loadBotAuditData = typeof loadBotAuditData !== 'undefined' ? loadBotAuditData : undefined;
 window.filterAccountingTable = typeof filterAccountingTable !== 'undefined' ? filterAccountingTable : undefined;
 window.toggleAccountingSort = typeof toggleAccountingSort !== 'undefined' ? toggleAccountingSort : undefined;

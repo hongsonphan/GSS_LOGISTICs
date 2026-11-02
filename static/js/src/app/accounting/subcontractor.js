@@ -2,14 +2,110 @@
 // 9.6. SUBTAB 6: QUYẾT TOÁN XE BẠN / THẦU PHỤ 3PL (SUBCONTRACTOR CONTROLLER)
 // ==============================================================================
 let rawSubcontractorList = [];
+let subconSortColumn = null;
+let subconSortDirection = 'asc';
+let selectedSubconTripIds = new Set();
+
+function populateSubcontractorFilterOptions(byPartnerList = []) {
+    const sel = document.getElementById('subcon-filter-subcontractor');
+    if (!sel) return;
+
+    const currentVal = sel.value;
+    const optionsMap = new Map();
+
+    // 1. Lấy từ cache Master Data nếu có
+    if (typeof masterDataFormOptionsCache !== 'undefined' && masterDataFormOptionsCache?.subcontractors) {
+        masterDataFormOptionsCache.subcontractors.forEach(s => {
+            optionsMap.set(String(s.id), s.label || `[${s.code}] ${s.name}`);
+        });
+    }
+
+    // 2. Thêm từ đối tác thực tế có chuyến trong kỳ
+    if (Array.isArray(byPartnerList)) {
+        byPartnerList.forEach(p => {
+            if (p.subcontractor_id) {
+                const idStr = String(p.subcontractor_id);
+                if (!optionsMap.has(idStr)) {
+                    optionsMap.set(idStr, `[${p.partner_code}] ${p.partner_name}`);
+                }
+            }
+        });
+    }
+
+    sel.innerHTML = '<option value="">-- Tất cả Thầu Phụ / Nhà Xe 3PL --</option>';
+    optionsMap.forEach((label, id) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.innerText = label;
+        sel.appendChild(opt);
+    });
+
+    if (currentVal && optionsMap.has(currentVal)) {
+        sel.value = currentVal;
+    }
+}
+
+function toggleSubconSort(col) {
+    if (subconSortColumn === col) {
+        subconSortDirection = subconSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        subconSortColumn = col;
+        subconSortDirection = 'asc';
+    }
+    applySubconSortAndRender();
+}
+
+function applySubconSortAndRender() {
+    if (!rawSubcontractorList || !Array.isArray(rawSubcontractorList)) return;
+    let list = [...rawSubcontractorList];
+
+    if (subconSortColumn) {
+        list.sort((a, b) => {
+            let valA = a[subconSortColumn];
+            let valB = b[subconSortColumn];
+
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+            if (valA == null) valA = '';
+            if (valB == null) valB = '';
+
+            if (valA < valB) return subconSortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return subconSortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    // Cập nhật icon thead
+    const sortCols = [
+        'trip_code', 'subcontractor_name', 'driver_name', 'customer_name',
+        'cached_revenue', 'subcontractor_cost', 'gross_company_margin',
+        'subcontractor_advance', 'remaining_payable', 'subcontractor_settlement_status'
+    ];
+    sortCols.forEach(col => {
+        const iconEl = document.getElementById(`sort-icon-subcon-${col}`);
+        if (iconEl) {
+            if (subconSortColumn === col) {
+                iconEl.className = subconSortDirection === 'asc'
+                    ? 'ph-bold ph-arrow-up text-emerald-600 text-xs'
+                    : 'ph-bold ph-arrow-down text-emerald-600 text-xs';
+            } else {
+                iconEl.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs';
+            }
+        }
+    });
+
+    renderSubcontractorTable(list);
+}
 
 async function loadSubcontractorData() {
     try {
         const status = document.getElementById('subcon-filter-status')?.value || 'ALL';
+        const subconId = document.getElementById('subcon-filter-subcontractor')?.value || '';
         const search = document.getElementById('subcon-search')?.value || '';
 
         const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
         let url = `/api/accounting/subcontractor-settlements/?status=${status}&from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`;
+        if (subconId) url += `&subcontractor_id=${encodeURIComponent(subconId)}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
 
         const res = await fetchWithAuth(url);
@@ -17,6 +113,9 @@ async function loadSubcontractorData() {
         const data = await res.json();
 
         rawSubcontractorList = data.trips || [];
+
+        // Nạp danh sách Thầu phụ vào dropdown lọc
+        populateSubcontractorFilterOptions(data.by_partner || []);
 
         // Cập nhật KPIs
         if (data.kpis) {
@@ -43,7 +142,14 @@ async function loadSubcontractorData() {
             if (badgeFiltered) badgeFiltered.innerText = `Hiển thị: ${rawSubcontractorList.length} chuyến xe bạn`;
         }
 
-        renderSubcontractorTable(rawSubcontractorList);
+        // Bỏ chọn các chuyến không còn tồn tại
+        const availableIds = new Set(rawSubcontractorList.map(t => t.trip_id));
+        for (const id of selectedSubconTripIds) {
+            if (!availableIds.has(id)) selectedSubconTripIds.delete(id);
+        }
+
+        applySubconSortAndRender();
+        updateBatchSettleButtonState();
     } catch (err) {
         console.error('Lỗi tải quyết toán xe bạn:', err);
         showToast('danger', 'Không thể kết nối máy chủ để tải quyết toán xe bạn', 'Lỗi Thầu Phụ 3PL');
@@ -55,13 +161,14 @@ function renderSubcontractorTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy chuyến xe bạn nào phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="14" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy chuyến xe bạn nào phù hợp</td></tr>`;
         return;
     }
 
     tbody.innerHTML = list.map((item, index) => {
         const isSettled = item.subcontractor_settlement_status === 'SETTLED';
         const isPartial = item.subcontractor_settlement_status === 'PARTIAL';
+        const isChecked = selectedSubconTripIds.has(item.trip_id);
 
         let statusBadge = `<span class="text-xs font-bold text-rose-700 uppercase">Chờ Quyết Toán</span>`;
         if (isPartial) {
@@ -71,16 +178,27 @@ function renderSubcontractorTable(list) {
         }
 
         const marginClass = item.gross_company_margin >= 0 ? 'text-teal-700' : 'text-rose-600';
+        const chkDisabled = isSettled ? 'disabled title="Chuyến này đã quyết toán xong"' : '';
+        const chkClass = isSettled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer';
 
         return `
-            <tr class="hover:bg-slate-50 transition-colors">
+            <tr class="hover:bg-slate-50 transition-colors ${isChecked ? 'bg-emerald-50/40' : ''}">
+                <td class="w-10 text-center border-r border-slate-200">
+                    <input type="checkbox"
+                        class="subcon-row-checkbox rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 ${chkClass}"
+                        data-trip-id="${item.trip_id}"
+                        ${isChecked ? 'checked' : ''}
+                        ${chkDisabled}
+                        onchange="onSubconTripSelectionChange(${item.trip_id}, this.checked)">
+                </td>
                 <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">${index + 1}</td>
                 <td>
                     <div class="font-bold text-slate-900 font-heading">[${escapeHtml(item.trip_code)}]</div>
                     <div class="text-[11px] text-slate-400">${item.created_at}</div>
                 </td>
                 <td>
-                    <div class="font-bold text-slate-900 font-mono text-xs">${escapeHtml(item.vehicle_plate)}</div>
+                    <div class="font-bold text-slate-900 font-heading text-xs truncate max-w-[170px]" title="${escapeHtml(item.subcontractor_name || 'Xe ngoài')}">${escapeHtml(item.subcontractor_name || 'Xe ngoài')}</div>
+                    <div class="text-[11px] font-mono text-slate-500 font-semibold">${escapeHtml(item.vehicle_plate)}</div>
                 </td>
                 <td>
                     <div class="font-semibold text-slate-800">${escapeHtml(item.driver_name)}</div>
@@ -111,9 +229,9 @@ function renderSubcontractorTable(list) {
                 </td>
                 <td class="text-center">
                     <div class="flex items-center justify-center gap-1.5">
-                        <!-- 1. Quyết toán -->
+                        <!-- 1. Quyết toán từng chuyến -->
                         ${!isSettled ? `
-                            <button type="button" onclick="openSubcontractorModal(${item.trip_id}, 'settle')" class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer" title="Quyết toán cước xe bạn">
+                            <button type="button" onclick="openSubcontractorModal(${item.trip_id}, 'settle')" class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer" title="Quyết toán cước chuyến này">
                                 <i class="ph-bold ph-check-circle text-xs"></i><span>Quyết Toán</span>
                             </button>
                         ` : `
@@ -135,6 +253,15 @@ function renderSubcontractorTable(list) {
         `;
     }).join('');
 
+    // Đồng bộ trạng thái master checkbox thead
+    const activeCheckboxes = document.querySelectorAll('.subcon-row-checkbox:not(:disabled)');
+    const checkedCheckboxes = document.querySelectorAll('.subcon-row-checkbox:not(:disabled):checked');
+    const masterCb = document.getElementById('subcon-select-all');
+    if (masterCb) {
+        masterCb.checked = activeCheckboxes.length > 0 && activeCheckboxes.length === checkedCheckboxes.length;
+        masterCb.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < activeCheckboxes.length;
+    }
+
     if (window.BimTableFooter && Array.isArray(list)) {
         const totalCustRev = list.reduce((sum, i) => sum + (Number(i.cached_revenue) || 0), 0);
         const totalSubCost = list.reduce((sum, i) => sum + (Number(i.subcontractor_cost) || 0), 0);
@@ -143,7 +270,7 @@ function renderSubcontractorTable(list) {
         const totalPayable = list.reduce((sum, i) => sum + (Number(i.remaining_payable) || 0), 0);
         window.BimTableFooter.render('accounting-subcon-table', {
             cells: [
-                { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
+                { html: '<span class="font-black text-slate-900 font-heading">TỔNG</span>', align: 'center', colspan: 2 },
                 { html: `${list.length} chuyến xe bạn`, colspan: 4 },
                 { html: `<span class="text-slate-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalCustRev)}</span>`, align: 'right' },
                 { html: `<span class="text-rose-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalSubCost)}</span>`, align: 'right' },
@@ -153,6 +280,177 @@ function renderSubcontractorTable(list) {
                 { text: '', align: 'center', colspan: 3 }
             ]
         });
+    }
+}
+
+// -----------------------------------------------------------------------------
+// CHỌN NHIỀU CHUYẾN & QUYẾT TOÁN HÀNG LOẠT (BATCH SETTLEMENT)
+// -----------------------------------------------------------------------------
+function toggleSelectAllSubconTrips(masterCheckbox) {
+    const isChecked = masterCheckbox.checked;
+    const visibleUnsettledTrips = (rawSubcontractorList || []).filter(t => t.subcontractor_settlement_status !== 'SETTLED');
+
+    if (isChecked) {
+        visibleUnsettledTrips.forEach(t => selectedSubconTripIds.add(t.trip_id));
+    } else {
+        visibleUnsettledTrips.forEach(t => selectedSubconTripIds.delete(t.trip_id));
+    }
+
+    document.querySelectorAll('.subcon-row-checkbox:not(:disabled)').forEach(cb => {
+        cb.checked = isChecked;
+    });
+
+    updateBatchSettleButtonState();
+}
+
+function onSubconTripSelectionChange(tripId, isChecked) {
+    if (typeof tripId !== 'undefined' && tripId !== null) {
+        if (isChecked) {
+            selectedSubconTripIds.add(tripId);
+        } else {
+            selectedSubconTripIds.delete(tripId);
+        }
+    } else {
+        selectedSubconTripIds.clear();
+        document.querySelectorAll('.subcon-row-checkbox:checked').forEach(cb => {
+            const id = parseInt(cb.getAttribute('data-trip-id'), 10);
+            if (id) selectedSubconTripIds.add(id);
+        });
+    }
+
+    const activeCheckboxes = document.querySelectorAll('.subcon-row-checkbox:not(:disabled)');
+    const checkedCheckboxes = document.querySelectorAll('.subcon-row-checkbox:not(:disabled):checked');
+    const masterCb = document.getElementById('subcon-select-all');
+    if (masterCb) {
+        masterCb.checked = activeCheckboxes.length > 0 && activeCheckboxes.length === checkedCheckboxes.length;
+        masterCb.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < activeCheckboxes.length;
+    }
+
+    updateBatchSettleButtonState();
+}
+
+function updateBatchSettleButtonState() {
+    const btn = document.getElementById('btn-batch-settle-subcon');
+    const label = document.getElementById('btn-batch-settle-subcon-label');
+    if (!btn) return;
+
+    const count = selectedSubconTripIds.size;
+    // Yêu cầu: Khi chọn nhiều chuyến (>= 2) thì nút hiển thị bên cạnh "Xuất Bảng Kê Xe Bạn".
+    // Trường hợp chỉ chọn 1 chuyến thì nút này ẩn hoặc không hiệu lực, mà chỉ có nút trong từng dòng hiệu lực.
+    if (count >= 2) {
+        btn.classList.remove('hidden');
+        btn.classList.add('flex');
+        if (label) label.innerText = `Quyết Toán Nhiều Chuyến (${count})`;
+    } else {
+        btn.classList.add('hidden');
+        btn.classList.remove('flex');
+        if (label) label.innerText = 'Quyết Toán Nhiều Chuyến (0)';
+    }
+}
+
+function openBatchSettleSubcontractorModal() {
+    const count = selectedSubconTripIds.size;
+    if (count < 2) {
+        showToast('warning', 'Vui lòng chọn từ 2 chuyến xe bạn trở lên để thực hiện quyết toán gom!', 'Chưa đủ chuyến');
+        return;
+    }
+
+    const modal = document.getElementById('modal-subcontractor-batch-settle');
+    if (!modal) return;
+
+    const selectedTrips = (rawSubcontractorList || []).filter(t => selectedSubconTripIds.has(t.trip_id));
+    if (!selectedTrips.length) return;
+
+    let totalCost = 0;
+    let totalReimburse = 0;
+    let totalAdvance = 0;
+    let totalRemaining = 0;
+
+    selectedTrips.forEach(t => {
+        totalCost += (Number(t.subcontractor_cost) || 0);
+        totalReimburse += (Number(t.sub_reimbursable_expenses) || 0);
+        totalAdvance += (Number(t.subcontractor_advance) || 0);
+        totalRemaining += (Number(t.remaining_payable) || 0);
+    });
+
+    const elCount = document.getElementById('subcon-batch-count');
+    if (elCount) elCount.innerText = `${selectedTrips.length} chuyến xe bạn`;
+
+    const elTripCodes = document.getElementById('subcon-batch-trip-codes');
+    if (elTripCodes) {
+        elTripCodes.innerHTML = selectedTrips.map(t => `
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-bold border border-slate-300">
+                ${escapeHtml(t.trip_code)} (${escapeHtml(t.vehicle_plate)})
+            </span>
+        `).join('');
+    }
+
+    const elCost = document.getElementById('subcon-batch-cost');
+    if (elCost) elCost.innerText = formatMoneyVND(totalCost);
+
+    const elReimburse = document.getElementById('subcon-batch-reimburse');
+    if (elReimburse) elReimburse.innerText = `+${formatMoneyVND(totalReimburse)}`;
+
+    const elAdvance = document.getElementById('subcon-batch-advance');
+    if (elAdvance) elAdvance.innerText = `-${formatMoneyVND(totalAdvance)}`;
+
+    const elRemaining = document.getElementById('subcon-batch-remaining');
+    if (elRemaining) elRemaining.innerText = formatMoneyVND(totalRemaining);
+
+    const notesInp = document.getElementById('subcon-batch-notes');
+    if (notesInp) notesInp.value = `Quyết toán gom cước ${selectedTrips.length} chuyến xe bạn`;
+
+    modal.classList.remove('hidden');
+}
+
+function closeBatchSettleSubcontractorModal() {
+    const modal = document.getElementById('modal-subcontractor-batch-settle');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function handleSaveSubcontractorBatch(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const tripIds = Array.from(selectedSubconTripIds);
+    if (tripIds.length < 2) {
+        showToast('warning', 'Vui lòng chọn từ 2 chuyến xe bạn trở lên để quyết toán gom!');
+        return;
+    }
+
+    const paymentMethod = document.getElementById('subcon-batch-payment-method')?.value || 'BANK';
+    const bankInfo = document.getElementById('subcon-batch-bank-info')?.value || '';
+    const notes = document.getElementById('subcon-batch-notes')?.value || '';
+
+    const btn = document.getElementById('btn-submit-batch-subcon');
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/subcontractor-settlements/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'batch_settle',
+                trip_ids: tripIds,
+                payment_method: paymentMethod,
+                bank_name: bankInfo,
+                notes: notes
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message || `Đã quyết toán gom thành công ${tripIds.length} chuyến xe bạn!`, 'Quyết Toán Thành Công');
+            closeBatchSettleSubcontractorModal();
+            selectedSubconTripIds.clear();
+            await loadSubcontractorData();
+        } else {
+            showToast('danger', data.error || 'Có lỗi xảy ra khi quyết toán gom chuyến xe bạn!');
+        }
+    } catch (err) {
+        console.error('Lỗi khi quyết toán gom:', err);
+        showToast('danger', 'Lỗi kết nối máy chủ khi quyết toán gom!');
+    } finally {
+        if (btn) btn.disabled = false;
     }
 }
 
@@ -465,3 +763,20 @@ function printSubcontractorVoucher(tripId = null) {
     printWindow.document.write(html);
     printWindow.document.close();
 }
+
+// Global Window Exports
+window.loadSubcontractorData = loadSubcontractorData;
+window.renderSubcontractorTable = renderSubcontractorTable;
+window.toggleSubconSort = toggleSubconSort;
+window.toggleSelectAllSubconTrips = toggleSelectAllSubconTrips;
+window.onSubconTripSelectionChange = onSubconTripSelectionChange;
+window.openBatchSettleSubcontractorModal = openBatchSettleSubcontractorModal;
+window.closeBatchSettleSubcontractorModal = closeBatchSettleSubcontractorModal;
+window.handleSaveSubcontractorBatch = handleSaveSubcontractorBatch;
+window.openSubcontractorModal = openSubcontractorModal;
+window.closeSubcontractorModal = closeSubcontractorModal;
+window.handleSaveSubcontractor = handleSaveSubcontractor;
+window.exportSubcontractorToExcel = exportSubcontractorToExcel;
+window.printSubcontractorVoucher = printSubcontractorVoucher;
+window.handleUnsettleSubcontractor = handleUnsettleSubcontractor;
+window.enableSubcontractorEdit = enableSubcontractorEdit;

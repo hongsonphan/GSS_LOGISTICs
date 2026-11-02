@@ -601,6 +601,7 @@ class SubcontractorSettlementsAPIView(APIView):
     def get(self, request):
         status_filter = request.GET.get('status', 'ALL')
         vehicle_id = request.GET.get('vehicle_id')
+        subcontractor_id = request.GET.get('subcontractor_id')
         from_date = request.GET.get('from_date')
         to_date = request.GET.get('to_date')
         search = request.GET.get('search', '').strip()
@@ -626,6 +627,10 @@ class SubcontractorSettlementsAPIView(APIView):
         if vehicle_id and vehicle_id.isdigit():
             qs = qs.filter(vehicle_id=int(vehicle_id))
 
+        if subcontractor_id and subcontractor_id.isdigit():
+            sub_id = int(subcontractor_id)
+            qs = qs.filter(Q(subcontractor_id=sub_id) | Q(vehicle__subcontractor_id=sub_id))
+
         if from_date:
             try:
                 fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
@@ -644,6 +649,10 @@ class SubcontractorSettlementsAPIView(APIView):
             qs = qs.filter(
                 Q(trip_code__icontains=search) |
                 Q(vehicle__license_plate__icontains=search) |
+                Q(subcontractor__name__icontains=search) |
+                Q(subcontractor__code__icontains=search) |
+                Q(subcontractor__short_name__icontains=search) |
+                Q(vehicle__subcontractor__name__icontains=search) |
                 Q(container_number__icontains=search) |
                 Q(booking_or_bill__icontains=search) |
                 Q(subcontractor_notes__icontains=search)
@@ -762,6 +771,101 @@ class SubcontractorSettlementsAPIView(APIView):
         action = request.data.get('action')
         trip_id = request.data.get('trip_id')
         user_emp = getattr(request.user, 'employee', None)
+
+        if action == 'batch_settle':
+            trip_ids = request.data.get('trip_ids', [])
+            if not isinstance(trip_ids, (list, tuple)) or not trip_ids:
+                return Response({'error': 'Vui lòng cung cấp danh sách chuyến xe cần quyết toán!'}, status=status.HTTP_400_BAD_REQUEST)
+
+            payment_method = request.data.get('payment_method', PaymentMethod.BANK)
+            bank_name = request.data.get('bank_name', '')
+            bank_account = request.data.get('bank_account', '')
+            notes = request.data.get('notes', '').strip()
+
+            trips = list(DispatchTrip.objects.filter(
+                id__in=trip_ids,
+                is_deleted=False
+            ).exclude(
+                subcontractor_settlement_status='SETTLED'
+            ).select_related('subcontractor', 'vehicle'))
+
+            if not trips:
+                return Response({'error': 'Không có chuyến xe nào hợp lệ hoặc tất cả các chuyến đã chọn đều đã được quyết toán xong trước đó!'}, status=status.HTTP_400_BAD_REQUEST)
+
+            now = timezone.now()
+            partner_trips = {}
+            settled_trip_codes = []
+
+            for trip in trips:
+                sub_reimbursable_expenses = trip.expenses.filter(
+                    is_deleted=False,
+                    reimburse_to_subcontractor=True
+                ).exclude(
+                    status=ApprovalStatus.REJECTED
+                ).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+
+                total_payable = (trip.subcontractor_cost or Decimal(0)) + Decimal(str(sub_reimbursable_expenses))
+                rem = max(Decimal(0), total_payable - (trip.subcontractor_advance or Decimal(0)))
+
+                trip.subcontractor_settlement_status = 'SETTLED'
+                trip.subcontractor_settled_at = now
+                if notes:
+                    trip.subcontractor_notes = f"{trip.subcontractor_notes} | {notes}".strip(' | ') if trip.subcontractor_notes else notes
+                trip.save(update_fields=['subcontractor_settlement_status', 'subcontractor_settled_at', 'subcontractor_notes'])
+
+                sub = trip.subcontractor or (trip.vehicle.subcontractor if (trip.vehicle and getattr(trip.vehicle, 'subcontractor', None)) else None)
+                p_name = sub.name if sub else (f"Xe bạn: {trip.vehicle.license_plate}" if trip.vehicle else "Thầu phụ 3PL")
+                partner_key = sub.id if sub else (trip.vehicle.license_plate if trip.vehicle else 'sub_misc')
+
+                if partner_key not in partner_trips:
+                    partner_trips[partner_key] = {
+                        'name': p_name,
+                        'total_rem': Decimal(0),
+                        'trip_codes': []
+                    }
+                partner_trips[partner_key]['total_rem'] += rem
+                partner_trips[partner_key]['trip_codes'].append(trip.trip_code)
+                settled_trip_codes.append(trip.trip_code)
+
+            created_vouchers = []
+            yymm = now.strftime('%y%m')
+            for p_info in partner_trips.values():
+                p_rem = p_info['total_rem']
+                if p_rem > 0:
+                    tx_prefix = f"PC.{yymm}."
+                    pt_code = next_code(CashTransaction, 'code', f"{tx_prefix}", 3)
+                    t_codes_str = ', '.join(p_info['trip_codes'][:4])
+                    if len(p_info['trip_codes']) > 4:
+                        t_codes_str += f" (+{len(p_info['trip_codes']) - 4})"
+                    CashTransaction.objects.create(
+                        code=pt_code,
+                        transaction_type=TransactionType.OUTFLOW,
+                        payment_method=payment_method,
+                        category=CashFlowCategory.SUBCONTRACTOR_PAYMENT,
+                        amount=p_rem,
+                        transaction_date=now.date(),
+                        partner_type='SUBCONTRACTOR',
+                        partner_name=p_info['name'],
+                        ref_code=t_codes_str,
+                        bank_name=bank_name,
+                        bank_account=bank_account,
+                        created_by=user_emp,
+                        notes=f"Quyết toán gom {len(p_info['trip_codes'])} chuyến xe bạn ({p_info['name']}): {notes or 'Thanh toán cước hoàn tất'}"
+                    )
+                    created_vouchers.append(pt_code)
+
+            v_str = ', '.join(created_vouchers)
+            msg = f"Đã quyết toán gom thành công {len(trips)} chuyến xe bạn!"
+            if created_vouchers:
+                msg += f" Đã tự động lập {len(created_vouchers)} phiếu chi Sổ Quỹ: {v_str}."
+
+            return Response({
+                'success': True,
+                'message': msg,
+                'settled_count': len(trips),
+                'settled_trip_codes': settled_trip_codes,
+                'vouchers': created_vouchers
+            }, status=status.HTTP_200_OK)
 
         trip = DispatchTrip.objects.filter(id=trip_id, is_deleted=False).first()
         if not trip:

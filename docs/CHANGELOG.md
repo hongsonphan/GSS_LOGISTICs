@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.27] - 2026-11-02 (Nâng Cấp Phân Hệ Đối Soát & Quyết Toán 3PL: Bộ Lọc & Sắp Xếp Đối Tác, Checkbox Chọn Nhiều & Quyết Toán Gom)
+
+### 1. Bổ Sung Bộ Lọc 3PL & Sắp Xếp Cột Trên Phân Hệ Đối Soát Thầu Phụ (`view_accounting.html`, `subcontractor.js`):
+- **Bộ Lọc Đối Tác 3PL (`#subcon-filter-subcontractor`):** Bổ sung ô chọn danh sách Thầu phụ / Đơn vị xe ngoài ngay cạnh ô tìm kiếm và trạng thái. Dropdown tự động cập nhật danh sách các đối tác 3PL có chuyến phát sinh và cho phép lọc nhanh tức thì.
+- **Tìm Kiếm Mở Rộng (`#subcon-search`):** Mở rộng tìm kiếm đa chiều cả ở frontend và backend (`SubcontractorSettlementsAPIView`): tìm theo Mã chuyến, Tên thầu phụ, Tên viết tắt, Mã đối tác, Biển số xe, Tên tài xế, Khách hàng.
+- **Sắp Xếp Bảng Động (Column Sorting):** Bổ sung tính năng click vào tiêu đề các cột (Mã Chuyến, Thầu Phụ 3PL, Tài Xế, Khách Hàng, Cước Thu, Cước Trả, Chênh Lệch, Tạm Ứng, Còn Trả, Trạng Thái) với biểu tượng mũi tên đổi chiều động (`ph-arrows-down-up`, `ph-arrow-up`, `ph-arrow-down`).
+
+### 2. Checkbox Chọn Nhiều Chuyến & Nút Quyết Toán Gom Thông Minh:
+- **Cột Checkbox Chuẩn Giao Diện Đặt Trước STT:**
+  * Header có checkbox tổng (`#subcon-select-all`) chọn/bỏ chọn tất cả các chuyến chưa quyết toán trên danh sách đang hiển thị.
+  * Hàng có checkbox (`.subcon-row-checkbox`), tự động disable đối với chuyến đã quyết toán (`SETTLED`).
+- **Nút Quyết Toán Nhiều Chuyến (`#btn-batch-settle-subcon`):**
+  * Nằm cạnh nút "Xuất Bảng Kê Xe Bạn Excel" ở thanh công cụ.
+  * Khi chọn từ 2 chuyến trở lên (`count >= 2`): Nút tự động hiển thị với số lượng chuyến được chọn `Quyết Toán Nhiều Chuyến (${count})`.
+  * Khi chọn 1 chuyến hoặc 0 chuyến: Nút ẩn hoàn toàn (`hidden`), đảm bảo quy tắc chỉ nút quyết toán trong từng dòng có hiệu lực.
+- **Modal Quyết Toán Gom 3PL (`modal_subcontractor_batch_settle.html`):**
+  * Hiển thị bảng tổng hợp tài chính chuẩn xác: Tổng cước thầu phụ, Chi phí bù trừ/hỗ trợ, Tổng tạm ứng đã chi, và Số tiền ròng còn phải thanh toán.
+  * Tùy chọn phương thức thanh toán (Chuyển khoản / Tiền mặt), số tài khoản thụ hưởng, diễn giải.
+  * Backend API hỗ trợ `action: 'batch_settle'`, cập nhật trạng thái `SETTLED` hàng loạt trong một transaction nguyên tử và tự động sinh Phiếu Chi (PC.yyMM.xxx) tương ứng.
+- **Dọn Dẹp DOM:** Loại bỏ include `modal_employee.html` đã cũ khỏi `templates/base.html` để triệt tiêu hoàn toàn xung đột ID form nhân sự.
+
+---
+
 ## [v4.7.26] - 2026-11-02 (Kiến Trúc Đồng Bộ Danh Mục Tức Thời Toàn Hệ Thống Không Cần Tải Lại Trang - Realtime Instant Master Data Sync)
 
 ### 1. Bối Cảnh & Vấn Đề Nghiệp Vụ:
