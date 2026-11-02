@@ -332,6 +332,7 @@ class CanManageMasterData(permissions.BasePermission):
             self.message = access.denied_message(module or 'master_data', action)
         return ok
 CanUseLedger = module_permission('ledger', LegacyCanViewFinancialReports, 'CanUseLedger')
+CanViewSettlementVoucherReport = module_permission('rpt_settlement_vouchers', LegacyCanViewFinancialReports, 'CanViewSettlementVoucherReport')
 CanManageHR = module_permission('hr', None, 'CanManageHR')
 CanManagePayroll = module_permission('payroll', LegacyCanViewPayroll, 'CanManagePayroll')
 CanAdministerAccess = module_permission('admin', LegacyIsAdminOrDirector, 'CanAdministerAccess')

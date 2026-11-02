@@ -1353,6 +1353,11 @@ class CustomerARReconciliationAPIView(APIView):
         if not trip_ids:
             return Response({'error': 'Vui lòng chọn ít nhất 1 chuyến xe hợp lệ để thao tác.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        from apps.billing.voucher_guard import guard_response
+        blocked = guard_response(trip_ids, 'CUSTOMER', is_settle)
+        if blocked:
+            return blocked
+
         trips = DispatchTrip.objects.filter(id__in=trip_ids, is_deleted=False)
 
         # Kiểm tra chỉ chuyến đã giao hàng xong (COMPLETED hoặc DELIVERED) mới được phép chốt quyết toán với khách hàng

@@ -50,6 +50,8 @@ from apps.billing.settlement_voucher_views import (
     SettlementVoucherDetailAPIView,
     SettlementVoucherApproveAPIView,
     SettlementVoucherReopenAPIView,
+    SettlementVoucherReportAPIView,
+    SettlementVoucherReportDetailAPIView,
 )
 from apps.billing.customer_statement_views import (
     CustomerMonthlyStatementAPIView,
@@ -221,6 +223,8 @@ urlpatterns = [
     path('api/accounting/reports/', AccountingReportsAPIView.as_view(), name='api-accounting-reports'),
     path('api/accounting/reports/drilldown/', AccountingReportDrilldownAPIView.as_view(), name='api-accounting-reports-drilldown'),
     path('api/reports/', ReportsAPIView.as_view(), name='api-reports'),
+    path('api/reports/settlement-vouchers/', SettlementVoucherReportAPIView.as_view(), name='api-report-settlement-vouchers'),
+    path('api/reports/settlement-vouchers/<int:pk>/', SettlementVoucherReportDetailAPIView.as_view(), name='api-report-settlement-voucher-detail'),
     path('api/master-data/', include('apps.master_data.urls')),
     path('api/collaboration/', include('apps.collaboration.urls')),
 ]

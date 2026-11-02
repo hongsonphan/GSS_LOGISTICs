@@ -101,6 +101,11 @@ class AccountingAPIView(APIView):
         if not trips.exists():
             return Response({'error': 'Không tìm thấy các chuyến xe tương ứng.'}, status=status.HTTP_404_NOT_FOUND)
 
+        from apps.billing.voucher_guard import guard_response
+        blocked = guard_response(list(trips.values_list('id', flat=True)), 'DRIVER', action == 'batch_settle')
+        if blocked:
+            return blocked
+
         accountant = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or \
                      Employee.objects.filter(role=EmployeeRole.ACCOUNTANT).first()
 

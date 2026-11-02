@@ -3,6 +3,40 @@
 // =========================================================================
 
 let currentAccountingSubTab = 'acct-cashbook';
+
+// Nhóm tab Kế toán: thanh nhóm ở trên, chỉ hiện các tab con của nhóm đang chọn
+const ACCT_GROUPS = {
+    cash: ['acct-cashbook', 'acct-driver-advances', 'acct-dispatcher-funds', 'acct-reimbursables'],
+    settle: ['acct-settlements', 'acct-customer-settlements', 'acct-subcontractors', 'acct-vouchers'],
+    books: ['acct-ledger', 'acct-bot-audit'],
+};
+const ACCT_GROUP_OF = Object.fromEntries(Object.entries(ACCT_GROUPS).flatMap(([g, tabs]) => tabs.map(t => [t, g])));
+const ACCT_BTN_COLOR = { 'acct-cashbook': 'emerald', 'acct-driver-advances': 'amber', 'acct-dispatcher-funds': 'indigo', 'acct-settlements': 'teal',
+    'acct-customer-settlements': 'teal', 'acct-reimbursables': 'sky', 'acct-subcontractors': 'rose', 'acct-vouchers': 'teal', 'acct-bot-audit': 'emerald', 'acct-ledger': 'indigo' };
+
+function applyAccountingGroup(group) {
+    document.querySelectorAll('[data-acct-subtab]').forEach(btn => {
+        btn.style.display = ACCT_GROUP_OF[btn.dataset.acctSubtab] === group ? '' : 'none';
+    });
+    document.querySelectorAll('[data-acct-group-btn]').forEach(btn => {
+        const on = btn.dataset.acctGroupBtn === group;
+        btn.classList.toggle('bg-white', on);
+        btn.classList.toggle('shadow-2xs', on);
+        btn.classList.toggle('text-slate-900', on);
+        btn.classList.toggle('text-slate-500', !on);
+    });
+    const batch = document.getElementById('btn-acct-batch-settle');
+    if (batch) batch.classList.toggle('hidden', group !== 'settle');
+}
+
+function switchAccountingGroup(group) {
+    const tabs = ACCT_GROUPS[group] || [];
+    const visible = tabs.find(t => {
+        const btn = document.querySelector(`[data-acct-subtab="${t}"]`);
+        return btn && !btn.classList.contains('hidden');   // bỏ qua tab bị ẩn do phân quyền
+    });
+    if (visible) switchAccountingSubTab(visible);
+}
 let accountingAdvancesData = null;
 let rawDriverAdvancesList = [];
 let rawDispatcherFundsList = [];
@@ -26,19 +60,9 @@ function switchAccountingSubTab(subtabId) {
     const targetContent = document.getElementById(`subtab-${subtabId}`);
     if (targetContent) targetContent.classList.remove('hidden');
 
-    // Active button tương ứng (Thứ tự: 1. Cashbook, 2. Driver Adv, 3. Dispatcher Fund, 4. Settlements, 5. Reimbursables, 6. Subcontractors, 7. BOT)
-    let btnId = 'acct-tab-btn-1';
-    let brandColor = 'emerald';
-    if (subtabId === 'acct-driver-advances') { btnId = 'acct-tab-btn-2'; brandColor = 'amber'; }
-    else if (subtabId === 'acct-dispatcher-funds') { btnId = 'acct-tab-btn-3'; brandColor = 'indigo'; }
-    else if (subtabId === 'acct-settlements') { btnId = 'acct-tab-btn-4'; brandColor = 'teal'; }
-    else if (subtabId === 'acct-customer-settlements') { btnId = 'acct-tab-btn-customer-settlements'; brandColor = 'teal'; }
-    else if (subtabId === 'acct-reimbursables') { btnId = 'acct-tab-btn-5'; brandColor = 'sky'; }
-    else if (subtabId === 'acct-subcontractors') { btnId = 'acct-tab-btn-6'; brandColor = 'rose'; }
-    else if (subtabId === 'acct-bot-audit') { btnId = 'acct-tab-btn-7'; brandColor = 'emerald'; }
-    else if (subtabId === 'acct-ledger') { btnId = 'acct-tab-btn-8'; brandColor = 'indigo'; }
-
-    const activeBtn = document.getElementById(btnId);
+    const activeBtn = document.querySelector(`[data-acct-subtab="${subtabId}"]`);
+    const brandColor = ACCT_BTN_COLOR[subtabId] || 'emerald';
+    applyAccountingGroup(ACCT_GROUP_OF[subtabId] || 'cash');
     if (activeBtn) {
         activeBtn.className = `acct-subtab-btn active h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-${brandColor}-600 bg-${brandColor}-50/70 text-${brandColor}-900 shadow-2xs box-border whitespace-nowrap`;
         const icon = activeBtn.querySelector('i');
@@ -61,6 +85,8 @@ function switchAccountingSubTab(subtabId) {
         loadSubcontractorData();
     } else if (subtabId === 'acct-bot-audit') {
         loadBotAuditData();
+    } else if (subtabId === 'acct-vouchers') {
+        loadVoucherTab();
     } else if (subtabId === 'acct-ledger') {
         loadLedgerData();
     } else {

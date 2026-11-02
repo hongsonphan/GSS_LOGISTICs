@@ -794,10 +794,19 @@ class SubcontractorSettlementsAPIView(APIView):
         trip_id = request.data.get('trip_id')
         user_emp = getattr(request.user, 'employee', None)
 
+        from apps.billing.voucher_guard import guard_response
+        if action in ('settle', 'unsettle') and trip_id:
+            blocked = guard_response([trip_id], 'PARTNER', action == 'settle')
+            if blocked:
+                return blocked
+
         if action == 'batch_settle':
             trip_ids = request.data.get('trip_ids', [])
             if not isinstance(trip_ids, (list, tuple)) or not trip_ids:
                 return Response({'error': 'Vui lòng cung cấp danh sách chuyến xe cần quyết toán!'}, status=status.HTTP_400_BAD_REQUEST)
+            blocked = guard_response(trip_ids, 'PARTNER', True)
+            if blocked:
+                return blocked
 
             payment_method = request.data.get('payment_method', PaymentMethod.BANK)
             bank_name = request.data.get('bank_name', '')

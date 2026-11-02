@@ -231,7 +231,7 @@ function renderSubcontractorTable(list) {
                     <div class="flex items-center justify-center gap-1.5">
                         <!-- 1. Quyết toán từng chuyến -->
                         ${!isSettled ? `
-                            <button type="button" onclick="openSubcontractorModal(${item.trip_id}, 'settle')" class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer" title="Quyết toán cước chuyến này">
+                            <button type="button" onclick="openSettlementStatement('PARTNER', [${item.trip_id}])" class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer" title="Quyết toán cước chuyến này">
                                 <i class="ph-bold ph-check-circle text-xs"></i><span>Quyết Toán</span>
                             </button>
                         ` : `

@@ -28,6 +28,7 @@ REPORTS = [
     ('driver_salary', 'Bảng lương chuyến & tài xế', 'Lương chuyến, thưởng phạt theo tài xế', 'fin'),
     ('dispatcher_funds', 'Quỹ tạm ứng điều vận', 'Số dư và biến động quỹ điều vận', 'fin'),
     ('settlement_backlog', 'Chuyến tồn quyết toán', 'Chuyến đã chạy nhưng chưa quyết toán', 'fin'),
+    ('settlement_vouchers', 'Bảng kê quyết toán & đối soát', 'Bảng kê quyết toán tài xế, đối tác 3PL, khách hàng đã lập (chỉ xem, in, xuất)', 'fin'),
     ('ar_aging', 'Công nợ phải thu (AR)', 'Tuổi nợ phải thu theo khách hàng', 'fin'),
     ('unsettled_aging', 'Tuổi đơn tồn đọng chưa chốt', 'Đơn tồn đọng chưa chốt theo số ngày', 'fin'),
     ('driver_advances', 'Tạm ứng & chi phí tài xế', 'Tạm ứng, chi phí phát sinh, chênh lệch đối soát từng chuyến', 'fin'),

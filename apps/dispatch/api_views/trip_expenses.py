@@ -408,6 +408,11 @@ class TripSettleExpensesAPIView(APIView):
         accountant = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or \
                      Employee.objects.filter(role=EmployeeRole.ACCOUNTANT).first() or trip.dispatcher
 
+        from apps.billing.voucher_guard import guard_response
+        blocked = guard_response([trip.id], 'DRIVER', True)
+        if blocked:
+            return blocked
+
         with transaction.atomic():
             locked_trip = DispatchTrip.objects.select_for_update().filter(id=trip.id).first()
             if not locked_trip:
@@ -444,6 +449,11 @@ class TripUnsettleExpensesAPIView(APIView):
         trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.billing.voucher_guard import guard_response
+        blocked = guard_response([trip.id], 'DRIVER', False)
+        if blocked:
+            return blocked
 
         with transaction.atomic():
             locked_trip = DispatchTrip.objects.select_for_update().filter(id=trip.id).first()

@@ -220,6 +220,54 @@ class DriverBatchSettlementTests(TestCase):
         self.trip1.refresh_from_db()
         self.assertEqual(self.trip1.subcontractor_settlement_status, 'PENDING')
 
+    def test_legacy_settle_paths_blocked_for_trips_in_voucher(self):
+        """Chuyến đã nằm trong phiếu quyết toán thì không chốt/mở lại trực tiếp bằng đường cũ."""
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        res = self.client.post(base, {'party_type': 'DRIVER', 'trip_ids': [self.trip1.id]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        vid, vcode = res.data['voucher']['id'], res.data['voucher']['code']
+        # phiếu nháp: không chốt trực tiếp
+        res = self.client.post('/api/accounting/', {'action': 'batch_settle', 'trip_codes': [self.trip1.trip_code]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(vcode, res.data['error'])
+        # lập phiếu thứ hai cho cùng chuyến cũng bị từ chối
+        res = self.client.post(base, {'party_type': 'DRIVER', 'trip_ids': [self.trip1.id]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.client.post(f'{base}{vid}/approve/', {}, format='json').status_code, status.HTTP_200_OK)
+        # phiếu đã duyệt: không mở lại từng chuyến
+        res = self.client.post(f'/api/trips/{self.trip1.trip_code}/unsettle-expenses/', {}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        res = self.client.post('/api/accounting/', {'action': 'batch_unsettle', 'trip_codes': [self.trip1.trip_code]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        # mở lại phiếu thì mở lại chuyến được
+        self.assertEqual(self.client.post(f'{base}{vid}/reopen/', {}, format='json').status_code, status.HTTP_200_OK)
+        res = self.client.post('/api/accounting/', {'action': 'batch_unsettle', 'trip_codes': [self.trip1.trip_code]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+
+    def test_settlement_voucher_report_is_read_only(self):
+        """Báo cáo bảng kê: liệt kê + chi tiết + xuất Excel, không có thao tác ghi."""
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        res = self.client.post(base, {'party_type': 'DRIVER', 'trip_ids': [self.trip1.id, self.trip2.id], 'with_cash': True}, format='json')
+        vid = res.data['voucher']['id']
+        self.client.post(f'{base}{vid}/approve/', {}, format='json')
+
+        rep = self.client.get('/api/reports/settlement-vouchers/')
+        self.assertEqual(rep.status_code, status.HTTP_200_OK, rep.content)
+        self.assertEqual(rep.data['summary']['count'], 1)
+        self.assertEqual(rep.data['summary']['approved'], 1)
+        self.assertEqual(rep.data['summary']['total_receive'], 200000)
+        self.assertEqual(self.client.get('/api/reports/settlement-vouchers/?party_type=CUSTOMER').data['summary']['count'], 0)
+        detail = self.client.get(f'/api/reports/settlement-vouchers/{vid}/')
+        self.assertEqual(len(detail.data['voucher']['lines']), 2)
+        xlsx = self.client.get('/api/reports/settlement-vouchers/?export=xlsx')
+        self.assertEqual(xlsx.status_code, status.HTTP_200_OK)
+        self.assertIn('spreadsheetml', xlsx['Content-Type'])
+        # báo cáo không nhận thao tác ghi
+        self.assertIn(self.client.post('/api/reports/settlement-vouchers/', {}, format='json').status_code, (403, 405))
+        self.assertIn(self.client.delete(f'/api/reports/settlement-vouchers/{vid}/').status_code, (403, 405))
+
     def test_batch_settlement_reject_uncompleted_trip(self):
         """Từ chối quyết toán nếu có chuyến xe chưa hoàn thành (chưa COMPLETED)."""
         self.trip2.status = TripStatus.IN_TRANSIT

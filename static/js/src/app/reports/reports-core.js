@@ -102,7 +102,7 @@ let currentReportViewMode = 'group'; // 'group' hoặc 'all'
 const REPORT_GROUP_MAPPING = {
     'group-1': ['report-1', 'report-7', 'report-4', 'report-12'],
     'group-2': ['report-15', 'report-16', 'report-17'],
-    'group-3': ['report-13', 'report-14', 'report-10', 'report-11', 'report-9', 'report-8'],
+    'group-3': ['report-13', 'report-14', 'report-18', 'report-10', 'report-11', 'report-9', 'report-8'],
     'group-4': ['report-2', 'report-3', 'report-5', 'report-6']
 };
 
@@ -123,7 +123,8 @@ const REPORT_PERMISSION_MAPPING = {
     'report-14': 'reports.view_report_unsettled_aging',
     'report-15': 'reports.view_report_crm_quotations',
     'report-16': 'reports.view_report_active_bookings',
-    'report-17': 'reports.view_report_wip_trips'
+    'report-17': 'reports.view_report_wip_trips',
+    'report-18': 'reports.view_report_settlement_vouchers'
 };
 
 // Ma trận phân quyền: mỗi báo cáo là một phân hệ riêng rpt_<tên> (khớp core/access.py)
@@ -345,6 +346,8 @@ function switchReportSubTab(subtabId) {
         activeBtn.classList.remove('hidden');
         activeBtn.style.display = '';
     }
+
+    if (subtabId === 'report-18' && typeof loadReport18 === 'function') loadReport18();
 }
 
 window.canAccessReport = canAccessReport;

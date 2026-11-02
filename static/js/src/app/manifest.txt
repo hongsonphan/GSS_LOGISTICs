@@ -94,6 +94,7 @@ reports/operations/report-05-07.js
 reports/finance/report-08-10.js
 reports/finance/report-11-13.js
 reports/finance/report-14-17.js
+reports/finance/report-18.js
 reports/report-fullview.js
 reports/report-drilldown.js
 reports/customer-statement.js

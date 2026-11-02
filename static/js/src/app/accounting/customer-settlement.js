@@ -201,7 +201,7 @@ function renderCustomerSettlementsTable(list = null) {
                                 <i class="ph-bold ph-arrow-counter-clockwise text-xs"></i><span>Mở Lại</span>
                             </button>
                         ` : `
-                            <button type="button" onclick="toggleCustomerSettleSingle(${t.id}, 'SETTLE')" title="Chốt quyết toán doanh thu khách hàng" 
+                            <button type="button" onclick="openSettlementStatement('CUSTOMER', [${t.id}], { with_cash: false })" title="Lập bảng kê quyết toán khách hàng" 
                                 class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer">
                                 <i class="ph-bold ph-check-circle text-xs"></i><span>Quyết Toán</span>
                             </button>

@@ -100,10 +100,11 @@ function settleHeadCols(party) {
     return base + th('Booking / Bill') + th('Số cont / Loại') + th('Tuyến') + th('Cước vận chuyển', 1) + th('Chi hộ') + th('Phát sinh', 1) + th('Phải thu', 1);
 }
 
-function showSettlementVoucherModal(v) {
+function showSettlementVoucherModal(v, opts = {}) {
     currentSettleVoucher = v;
+    const readonly = !!opts.readonly;
     document.getElementById('settle-voucher-modal')?.remove();
-    const draft = v.status === 'DRAFT';
+    const draft = v.status === 'DRAFT' && !readonly;
     const party = v.party_type;
     const body = v.lines.map((l, i) => settleLineRow(party, l, i, draft)).join('');
 
@@ -144,12 +145,13 @@ function showSettlementVoucherModal(v) {
             <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 flex-wrap">
                 <button type="button" onclick="printSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-slate-700 hover:bg-slate-50"><i class="ph-bold ph-printer"></i> In bảng kê</button>
                 ${draft ? `
-                <button type="button" onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50"><i class="ph-bold ph-trash"></i> Xóa</button>
-                <button type="button" onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50"><i class="ph-bold ph-floppy-disk"></i> Lưu</button>
-                <button type="button" onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold"><i class="ph-bold ph-seal-check"></i> Duyệt phiếu</button>`
-                : `<button type="button" onclick="reopenSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold"><i class="ph-bold ph-lock-key-open"></i> Mở lại để sửa</button>`}
+                <button type="button" data-voucher-action onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50"><i class="ph-bold ph-trash"></i> Xóa</button>
+                <button type="button" data-voucher-action onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50"><i class="ph-bold ph-floppy-disk"></i> Lưu</button>
+                <button type="button" data-voucher-action onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold"><i class="ph-bold ph-seal-check"></i> Duyệt phiếu</button>`
+                : `<button type="button" data-voucher-action onclick="reopenSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold"><i class="ph-bold ph-lock-key-open"></i> Mở lại để sửa</button>`}
             </div>
         </div>`;
+    if (readonly) modal.querySelectorAll('[data-voucher-action]').forEach(el => el.remove());
     document.body.appendChild(modal);
     recalcSettleVoucher();
 }
@@ -160,6 +162,8 @@ function closeSettleVoucherModal() {
     if (typeof loadSettlementData === 'function' && document.getElementById('page-settle-tbody')) loadSettlementData();
     if (typeof loadSubcontractorData === 'function' && document.getElementById('subcon-select-all')) loadSubcontractorData();
     if (typeof loadCustomerSettlementsData === 'function' && document.getElementById('cust-settle-tbody')) loadCustomerSettlementsData();
+    if (document.getElementById('voucher-tab-tbody') && !document.getElementById('subtab-acct-vouchers')?.classList.contains('hidden')) loadVoucherTab();
+    if (typeof loadAccountingData === 'function' && document.getElementById('subtab-acct-settlements') && !document.getElementById('subtab-acct-settlements').classList.contains('hidden')) loadAccountingData();
 }
 
 function onSettleSplitInput(inp) {
@@ -291,7 +295,43 @@ function printSettleVoucher() {
     w.print();
 }
 
-// Danh sách phiếu quyết toán (xem lại, mở để sửa/duyệt/xóa/in)
+// Tab "Phiếu quyết toán" trong phân hệ Kế toán: danh sách phiếu + thao tác (mở để sửa/duyệt/mở lại/xóa/in)
+let voucherTabCache = [];
+
+async function loadVoucherTab() {
+    const tb = document.getElementById('voucher-tab-tbody');
+    if (!tb) return;
+    const party = document.getElementById('voucher-filter-party')?.value || '';
+    const st = document.getElementById('voucher-filter-status')?.value || '';
+    const qs = [party && `party_type=${party}`, st && `status=${st}`].filter(Boolean).join('&');
+    try {
+        const res = await fetchWithAuth(`${SETTLE_VOUCHER_API}${qs ? '?' + qs : ''}`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || data.detail || 'Không tải được danh sách phiếu');
+        voucherTabCache = data.vouchers || [];
+        renderVoucherTab();
+    } catch (err) {
+        tb.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-600 font-bold">${escapeHtml(err.message)}</td></tr>`;
+    }
+}
+
+function renderVoucherTab() {
+    const tb = document.getElementById('voucher-tab-tbody');
+    if (!tb) return;
+    const q = (document.getElementById('voucher-filter-search')?.value || '').trim().toLowerCase();
+    const list = voucherTabCache.filter(v => !q || `${v.code} ${v.party_name}`.toLowerCase().includes(q));
+    tb.innerHTML = list.map(v => `<tr class="cursor-pointer hover:bg-slate-50" onclick="openSettlementVoucher(${v.id})">
+        <td data-col-key="code" class="font-mono font-bold text-teal-800">${escapeHtml(v.code)}</td>
+        <td data-col-key="party">${escapeHtml(v.party_type_label)}</td><td data-col-key="name">${escapeHtml(v.party_name)}</td>
+        <td data-col-key="trips" class="text-center">${v.trips_count}</td>
+        <td data-col-key="amount" class="text-right font-mono font-bold">${formatMoneyVND(v.amount)}</td>
+        <td data-col-key="direction">${v.direction === 'RECEIVE' ? '<span class="text-blue-700 font-bold">Thu</span>' : '<span class="text-rose-700 font-bold">Chi</span>'}</td>
+        <td data-col-key="status"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}">${escapeHtml(v.status_label)}</span></td>
+        <td data-col-key="date">${escapeHtml(v.created_at)}</td></tr>`).join('')
+        || '<tr><td colspan="8" class="p-8 text-center text-slate-400 font-medium">Chưa có phiếu quyết toán</td></tr>';
+}
+
+// Danh sách phiếu quyết toán dạng cửa sổ (xem lại, mở để sửa/duyệt/xóa/in)
 async function openSettlementVoucherList(partyType = '') {
     document.getElementById('settle-voucher-list-modal')?.remove();
     const res = await fetchWithAuth(`${SETTLE_VOUCHER_API}${partyType ? `?party_type=${partyType}` : ''}`);
@@ -322,6 +362,8 @@ async function openSettlementVoucherList(partyType = '') {
 window.openSettlementStatement = openSettlementStatement;
 window.openSettlementVoucher = openSettlementVoucher;
 window.openSettlementVoucherList = openSettlementVoucherList;
+window.loadVoucherTab = loadVoucherTab;
+window.renderVoucherTab = renderVoucherTab;
 window.closeSettleVoucherModal = closeSettleVoucherModal;
 window.onSettleSplitInput = onSettleSplitInput;
 window.recalcSettleVoucher = recalcSettleVoucher;

@@ -20,7 +20,7 @@ from apps.billing.models import (
     SettlementVoucher, TransactionType, VoucherPartyType, VoucherStatus,
 )
 from apps.dispatch.models import DispatchTrip, TripStatus
-from core.permissions import IsAccountant
+from core.permissions import CanViewSettlementVoucherReport, IsAccountant
 from core.security import GracefulJWTAuthentication
 from core.sequences import next_code
 
@@ -392,3 +392,70 @@ class SettlementVoucherReopenAPIView(APIView):
         v.approved_at = None
         v.save()
         return Response({'success': True, 'message': f'Đã mở lại phiếu {v.code}', 'voucher': serialize(v)})
+
+
+# ---------------------------------------------------------------- báo cáo (chỉ xem) --------------------------------------
+
+class SettlementVoucherReportAPIView(APIView):
+    """Báo cáo Bảng kê quyết toán & đối soát: chỉ đọc. Thao tác lập/sửa/duyệt nằm ở phân hệ Kế toán."""
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [CanViewSettlementVoucherReport]
+
+    def get(self, request):
+        import datetime
+        qs = SettlementVoucher.objects.filter(is_deleted=False).select_related('cash_transaction')
+        p = request.query_params
+        if p.get('party_type'):
+            qs = qs.filter(party_type=p['party_type'])
+        if p.get('status'):
+            qs = qs.filter(status=p['status'])
+        for key, lookup in (('from', 'created_at__date__gte'), ('to', 'created_at__date__lte')):
+            if p.get(key):
+                try:
+                    qs = qs.filter(**{lookup: datetime.date.fromisoformat(p[key])})
+                except ValueError:
+                    return Response({'error': 'Ngày không hợp lệ, dùng YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+        vouchers = list(qs[:1000])
+        if p.get('export') == 'xlsx':
+            return self._xlsx(vouchers)
+        total = {'RECEIVE': 0, 'PAY': 0}
+        approved = 0
+        for v in vouchers:
+            total[v.direction] += int(v.amount)
+            approved += v.status == VoucherStatus.APPROVED
+        return Response({
+            'success': True,
+            'summary': {'count': len(vouchers), 'approved': approved, 'draft': len(vouchers) - approved,
+                        'total_receive': total['RECEIVE'], 'total_pay': total['PAY']},
+            'vouchers': [serialize(v, with_lines=False) for v in vouchers],
+        })
+
+    @staticmethod
+    def _xlsx(vouchers):
+        import io
+        from django.http import HttpResponse
+        from openpyxl import Workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'Bang ke quyet toan'
+        ws.append(['Số phiếu', 'Đối tượng', 'Tên', 'Số chuyến', 'Số tiền', 'Thu/Chi', 'Tình trạng', 'Phiếu thu/chi', 'Ngày lập', 'Ngày duyệt'])
+        for v in vouchers:
+            d = serialize(v, with_lines=False)
+            ws.append([d['code'], d['party_type_label'], d['party_name'], d['trips_count'], d['amount'],
+                       'Thu' if d['direction'] == 'RECEIVE' else 'Chi', d['status_label'], d['cash_transaction_code'], d['created_at'], d['approved_at']])
+        buf = io.BytesIO()
+        wb.save(buf)
+        res = HttpResponse(buf.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        res['Content-Disposition'] = 'attachment; filename="bang-ke-quyet-toan.xlsx"'
+        return res
+
+
+class SettlementVoucherReportDetailAPIView(APIView):
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [CanViewSettlementVoucherReport]
+
+    def get(self, request, pk):
+        v = SettlementVoucher.objects.filter(pk=pk, is_deleted=False).select_related('cash_transaction').first()
+        if not v:
+            return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': True, 'voucher': serialize(v)})

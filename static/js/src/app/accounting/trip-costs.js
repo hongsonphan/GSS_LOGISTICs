@@ -168,7 +168,7 @@ function renderAccountingTable(list) {
                             <i class="ph-bold ph-arrow-counter-clockwise text-xs"></i><span>Mở Lại</span>
                         </button>
                     ` : `
-                        <button type="button" onclick="toggleSettleTrip('${item.trip_code}', false)" title="Chốt sổ quyết toán tài xế" 
+                        <button type="button" onclick="openSettlementStatement('DRIVER', ['${item.trip_code}'])" title="Lập bảng kê quyết toán tài xế" 
                             class="h-7 px-2.5 text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer">
                             <i class="ph-bold ph-check-circle text-xs"></i><span>Quyết Toán</span>
                         </button>
