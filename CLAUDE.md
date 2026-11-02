@@ -16,6 +16,7 @@ python scripts/build_app_js.py --check
 python scripts/build_css.py --check
 ```
 
+- Hook `.githooks/pre-commit` tự chặn commit khi file tự sinh lệch nguồn. Cài một lần cho mỗi bản clone: `git config core.hooksPath .githooks`.
 - `static/js/app.js` và `static/css/tailwind*.css` là FILE TỰ SINH: không sửa tay, nhưng phải commit cùng nguồn.
 - Thêm file JS mới thì khai báo vào `static/js/src/app/manifest.txt`.
 - Thêm/sửa model thì chạy `python manage.py makemigrations` và commit migration.
