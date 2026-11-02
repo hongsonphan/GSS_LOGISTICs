@@ -237,14 +237,18 @@
                 pin = self.options.rightPinKeys.includes(key.toLowerCase()) ? 'right' : null;
             }
 
+            const isDefaultHidden = th.getAttribute('data-col-default-hidden') === 'true' || 
+                                    th.getAttribute('data-col-visible') === 'false';
+
             const colObj = {
                 key: key,
                 label: label,
-                visible: true,
+                visible: !isDefaultHidden,
                 locked: isLocked,
                 pin: pin,
                 resizable: th.getAttribute('data-col-resizable') !== 'false',
-                origIdx: idx
+                origIdx: idx,
+                defaultHidden: isDefaultHidden
             };
 
             self.defaultColumns.push(colObj);
@@ -286,7 +290,8 @@
                                 locked: defaultMap[s.key].locked,
                                 pin: (s.pin === 'left' || s.pin === 'right' || s.pin === null) ? s.pin : defaultMap[s.key].pin,
                                 resizable: typeof s.resizable === 'boolean' ? s.resizable : defaultMap[s.key].resizable,
-                                origIdx: defaultMap[s.key].origIdx
+                                origIdx: defaultMap[s.key].origIdx,
+                                defaultHidden: defaultMap[s.key].defaultHidden
                             });
                             delete defaultMap[s.key];
                         }
@@ -297,11 +302,12 @@
                         return a.origIdx - b.origIdx;
                     });
                     remainingCols.forEach(function(c) {
+                        const newCol = Object.assign({}, c, { visible: !c.defaultHidden });
                         if (c.key === 'stt' || c.origIdx === 0) {
-                            merged.unshift(Object.assign({}, c));
+                            merged.unshift(newCol);
                         } else {
                             const targetIdx = Math.min(c.origIdx, merged.length);
-                            merged.splice(targetIdx, 0, Object.assign({}, c));
+                            merged.splice(targetIdx, 0, newCol);
                         }
                     });
 
@@ -321,7 +327,7 @@
 
         // Mặc định sao chép từ defaultColumns
         this.columns = this.defaultColumns.map(function(c) {
-            return Object.assign({}, c);
+            return Object.assign({}, c, { visible: !c.defaultHidden });
         });
     };
 
@@ -349,7 +355,7 @@
         } catch (e) {}
 
         this.columns = this.defaultColumns.map(function(c) {
-            return Object.assign({}, c);
+            return Object.assign({}, c, { visible: !c.defaultHidden });
         });
 
         const ths = this.table.querySelectorAll(':scope > thead > tr > th');
@@ -1428,6 +1434,32 @@
     window.BimTableFooter = BimTableFooter;
     // Export module
     window.BimTableColumnManager = BimTableColumnManager;
+
+    window.BimColumnManager_showAll = function() {
+        const tableId = BimTableColumnManager.activeTableId;
+        if (!tableId || !BimTableColumnManager.instances[tableId]) return;
+        const inst = BimTableColumnManager.instances[tableId];
+        inst.columns.forEach(function(c) { c.visible = true; });
+        inst.saveConfig();
+        inst.apply();
+        inst.buildModalUI();
+    };
+
+    window.BimColumnManager_filterCols = function(query) {
+        const term = (query || '').trim().toLowerCase();
+        const listEl = document.getElementById('bim-col-modal-list');
+        if (!listEl) return;
+        const items = listEl.querySelectorAll('[data-key]');
+        items.forEach(function(item) {
+            const text = item.textContent.toLowerCase();
+            if (!term || text.includes(term)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    };
+
 
 
     /**
@@ -7980,11 +8012,11 @@ function renderDispatchTable(trips) {
             }
         };
         
-        tr.innerHTML = `
-            <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200/70 font-mono text-xs tabular-nums">
+                tr.innerHTML = `
+            <td data-col-key="stt" class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200/70 font-mono text-xs tabular-nums">
                 ${idx + 1}
             </td>
-            <td class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap">
+            <td data-col-key="trip_id" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap">
                 <div class="flex items-center space-x-2">
                     <a href="/dispatch/trips/${tripIdentifier}" 
                        onclick="event.preventDefault(); event.stopPropagation(); viewTripDetail('${tripIdentifier}');" 
@@ -7995,21 +8027,21 @@ function renderDispatchTable(trips) {
                     </a>
                 </div>
             </td>
-            <td class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap">
+            <td data-col-key="loading_date" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap">
                 <div class="flex items-center space-x-1.5 text-[12px] font-semibold text-slate-700">
                     <i class="ph ph-calendar text-slate-400 text-xs shrink-0"></i>
                     <span>${escapeHtml(trip.loading_date || '-')}</span>
                     ${trip.loading_time ? `<span class="text-slate-300 font-normal">|</span><span class="text-slate-700 font-bold">${escapeHtml(formatTimeString(trip.loading_time))}</span>` : ''}
                 </div>
             </td>
-            <td class="px-3 py-2 border-r border-slate-200/70">
+            <td data-col-key="customer" class="px-3 py-2 border-r border-slate-200/70">
                 <p class="font-bold text-slate-900 text-[13px] leading-snug truncate" title="${escapeHtml(trip.customer)}">${escapeHtml(trip.customer)}</p>
                 <p class="text-[11.5px] text-slate-500 font-medium mt-0.5 flex items-center gap-1.5 truncate" title="${escapeHtml(trip.warehouse)}">
                     <i class="ph ph-warehouse text-slate-400 text-xs shrink-0"></i>
                     <span>${escapeHtml(trip.warehouse)}</span>
                 </p>
             </td>
-            <td class="px-3 py-2 border-r border-slate-200/70">
+            <td data-col-key="container" class="px-3 py-2 border-r border-slate-200/70">
                 <div class="flex items-center space-x-1.5 font-mono font-bold text-slate-900 text-[13px]">
                     <i class="ph ph-barcode text-teal-600 text-sm"></i>
                     <span>${escapeHtml(trip.container)}</span>
@@ -8058,7 +8090,7 @@ function renderDispatchTable(trips) {
                     </div>
                 ` : ''}
             </td>
-            <td class="px-3 py-2 border-r border-slate-200/70">
+            <td data-col-key="invoice_dock" class="px-3 py-2 border-r border-slate-200/70">
                 <div class="flex items-center space-x-1.5">
                     ${trip.commercial_invoice && trip.commercial_invoice !== '-' ? `
                         <span class="font-mono text-xs font-bold text-teal-800" title="Hóa đơn thương mại">
@@ -8074,7 +8106,7 @@ function renderDispatchTable(trips) {
                     ` : `<span class="text-[11px] text-slate-400 font-medium">Chưa chỉ định dock</span>`}
                 </div>
             </td>
-            <td class="px-3 py-2 border-r border-slate-200/70">
+            <td data-col-key="vehicle" class="px-3 py-2 border-r border-slate-200/70">
                 <div class="flex items-center space-x-1.5">
                     <span class="font-bold text-slate-900 font-mono text-[13px]">${escapeHtml(trip.vehicle)}</span>
                     ${trip.vehicle_ownership_code === 'OWNED' 
@@ -8094,7 +8126,7 @@ function renderDispatchTable(trips) {
                     ` : '')}
                 </div>
             </td>
-            <td class="px-3 py-2 border-r border-slate-200/70">
+            <td data-col-key="notes" class="px-3 py-2 border-r border-slate-200/70">
                 <div class="flex items-center">
                     <span class="text-[11px] font-bold uppercase ${trip.cont_location_type === 'BÃI TVL' ? 'text-purple-700' : 'text-slate-600'}">
                         <i class="ph ph-map-pin"></i> ${escapeHtml(trip.cont_location_type)}
@@ -8104,7 +8136,7 @@ function renderDispatchTable(trips) {
                     ${trip.cargo_notes ? `<i class="ph ph-info text-amber-600"></i> ${escapeHtml(trip.cargo_notes)}` : '<span class="text-slate-400 font-normal">Không có lưu ý</span>'}
                 </p>
             </td>
-            <td class="px-3 py-2 border-r border-slate-200/70">
+            <td data-col-key="expense" class="px-3 py-2 border-r border-slate-200/70">
                 <div class="text-[13px] font-bold text-slate-800 flex items-center space-x-1.5 truncate" title="${escapeHtml(trip.pickup)} ➔ ${escapeHtml(trip.dropoff || 'Hạ bãi')}">
                     <span class="text-teal-700">${escapeHtml(trip.pickup)}</span>
                     <i class="ph ph-arrow-right text-slate-400 text-xs shrink-0"></i>
@@ -8115,7 +8147,7 @@ function renderDispatchTable(trips) {
                     <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
                 </div>
             </td>
-            <td class="px-3 py-2 text-left whitespace-nowrap border-r border-slate-200/70">
+            <td data-col-key="status" class="px-3 py-2 text-left whitespace-nowrap border-r border-slate-200/70">
                 <span class="text-xs ${statusCls}">
                     ${escapeHtml(trip.status_label)}
                 </span>
@@ -8141,7 +8173,109 @@ function renderDispatchTable(trips) {
                     </div>
                 ` : ''}
             </td>
-            <td class="px-2.5 py-2 text-center whitespace-nowrap">
+            <!-- 31 Cột Mở Rộng Từ Database (Ẩn mặc định, hiển thị khi người dùng tick chọn trong modal) -->
+            <td data-col-key="customer_short" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-bold text-slate-800 text-[12.5px]" style="display:none">
+                ${escapeHtml(trip.customer_short_name || trip.customer || '-')}
+            </td>
+            <td data-col-key="customer_code" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-teal-800 text-xs" style="display:none">
+                ${escapeHtml(trip.customer_code || '-')}
+            </td>
+            <td data-col-key="shipment_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap text-xs font-bold ${typeColor}" style="display:none">
+                ${displayShipmentType}
+            </td>
+            <td data-col-key="container_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap text-xs font-bold text-teal-800" style="display:none">
+                <span class="px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200 font-mono text-[11px] font-bold">
+                    ${escapeHtml(trip.container_type || 'Cont 40')}
+                </span>
+            </td>
+            <td data-col-key="container_number" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-slate-900 text-[13px]" style="display:none">
+                ${escapeHtml(trip.container || '-')}
+            </td>
+            <td data-col-key="seal_number" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-semibold text-slate-700 text-xs" style="display:none">
+                ${escapeHtml(trip.seal || '-')}
+            </td>
+            <td data-col-key="booking_number" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-indigo-700 text-xs" style="display:none">
+                ${escapeHtml(trip.booking || '-')}
+            </td>
+            <td data-col-key="shipping_line" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-bold text-blue-700 text-xs" style="display:none">
+                ${escapeHtml(trip.shipping_line || '-')}
+            </td>
+            <td data-col-key="cutoff_time" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-rose-600 text-xs" style="display:none">
+                ${escapeHtml(trip.cutoff || '-')}
+            </td>
+            <td data-col-key="det_expiry" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-semibold text-slate-700 text-xs" style="display:none">
+                ${escapeHtml(trip.det_expiry_date || '-')}
+            </td>
+            <td data-col-key="dem_expiry" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-semibold text-slate-700 text-xs" style="display:none">
+                ${escapeHtml(trip.dem_expiry_date || '-')}
+            </td>
+            <td data-col-key="pickup_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-teal-700 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.pickup || '-')}">
+                ${escapeHtml(trip.pickup || '-')}
+            </td>
+            <td data-col-key="warehouse_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-slate-800 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.warehouse || '-')}">
+                ${escapeHtml(trip.warehouse || '-')}
+            </td>
+            <td data-col-key="dropoff_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-indigo-700 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.dropoff || '-')}">
+                ${escapeHtml(trip.dropoff || '-')}
+            </td>
+            <td data-col-key="commercial_invoice" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono text-xs font-bold text-teal-800" style="display:none">
+                ${escapeHtml(trip.commercial_invoice || '-')}
+            </td>
+            <td data-col-key="warehouse_dock" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-indigo-700 text-xs" style="display:none">
+                ${escapeHtml(trip.warehouse_dock || '-')}
+            </td>
+            <td data-col-key="fleet_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap text-xs font-bold" style="display:none">
+                ${trip.vehicle_ownership_code === 'OWNED' 
+                    ? '<span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold uppercase text-[10.5px]">Xe Nhà</span>'
+                    : '<span class="px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-bold uppercase text-[10.5px]">Xe Bạn (Thầu)</span>'
+                }
+            </td>
+            <td data-col-key="license_plate" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-slate-900 text-xs" style="display:none">
+                ${escapeHtml(trip.vehicle || '-')}
+            </td>
+            <td data-col-key="trailer_plate" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-slate-700 text-xs" style="display:none">
+                ${escapeHtml(trip.trailer || '-')}
+            </td>
+            <td data-col-key="driver_name" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-bold text-slate-800 text-xs" style="display:none">
+                ${escapeHtml(trip.driver || '-')}
+            </td>
+            <td data-col-key="driver_phone" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono text-slate-600 text-xs" style="display:none">
+                ${escapeHtml(trip.driver_phone || '-')}
+            </td>
+            <td data-col-key="dropoff_vehicle" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-indigo-700 text-xs" style="display:none">
+                ${escapeHtml(trip.dropoff_vehicle || '-')}
+            </td>
+            <td data-col-key="dropoff_driver" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-semibold text-slate-700 text-xs" style="display:none">
+                ${escapeHtml(trip.dropoff_driver || '-')}
+            </td>
+            <td data-col-key="subcontractor_name" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-semibold text-slate-800 text-xs" style="display:none">
+                ${escapeHtml(trip.subcontractor_name || '-')}
+            </td>
+            <td data-col-key="customs_declaration" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap text-xs" style="display:none">
+                ${trip.customs_info && trip.customs_info.has_declaration ? `
+                    <span class="font-mono font-bold text-slate-800">${escapeHtml(trip.customs_info.declaration_number)}</span>
+                ` : '<span class="text-slate-400 font-normal italic">-</span>'}
+            </td>
+            <td data-col-key="cont_location_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-bold text-xs ${trip.cont_location_type === 'BÃI TVL' ? 'text-purple-700' : 'text-slate-600'}" style="display:none">
+                ${escapeHtml(trip.cont_location_type || '-')}
+            </td>
+            <td data-col-key="cargo_notes" class="px-3 py-2 border-r border-slate-200/70 text-xs text-slate-600 truncate max-w-[200px]" style="display:none" title="${escapeHtml(trip.cargo_notes || '-')}">
+                ${escapeHtml(trip.cargo_notes || '-')}
+            </td>
+            <td data-col-key="revenue" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-emerald-700 text-xs tabular-nums" style="display:none">
+                ${new Intl.NumberFormat('vi-VN').format(trip.revenue || 0)} đ
+            </td>
+            <td data-col-key="dispatch_cost" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-rose-600 text-xs tabular-nums" style="display:none">
+                ${new Intl.NumberFormat('vi-VN').format(trip.expense || 0)} đ
+            </td>
+            <td data-col-key="profit" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-teal-800 text-xs tabular-nums" style="display:none">
+                ${new Intl.NumberFormat('vi-VN').format(trip.profit || 0)} đ
+            </td>
+            <td data-col-key="created_at" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono text-slate-600 text-xs" style="display:none">
+                ${escapeHtml(trip.startTime || '-')}
+            </td>
+            <!-- Cột Thao Tác Cố Định -->
+            <td data-col-key="actions" class="px-2.5 py-2 text-center whitespace-nowrap">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <button type="button" onclick="event.stopPropagation(); viewTripDetail('${tripIdentifier}')" 
                         class="px-2 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
@@ -8160,6 +8294,12 @@ function renderDispatchTable(trips) {
         `;
         tbody.appendChild(tr);
     });
+
+    // Tự động đồng bộ và áp dụng trạng thái ẩn/hiện & thứ tự cột đã lưu
+    if (window.BimTableColumnManager) {
+        window.BimTableColumnManager.apply('dispatch-trips-table');
+    }
+
 
     if (window.BimTableFooter) {
         const totalDispatchExpenses = trips.reduce((sum, t) => sum + (Number(t.expense) || 0), 0);
@@ -13380,18 +13520,18 @@ function renderBookingsTable(bookings) {
         // Hàm rút gọn địa điểm loại bỏ ngoặc rườm rà
         const cleanLoc = (s) => (s || '-').replace(/\([^)]*\)/g, '').trim();
 
-        tr.innerHTML = `
-            <td class="p-3.5 text-center font-mono text-xs font-bold text-slate-500 tabular-nums select-none border-r border-slate-200/70 w-12">
+                tr.innerHTML = `
+            <td data-col-key="stt" class="p-3.5 text-center font-mono text-xs font-bold text-slate-500 tabular-nums select-none border-r border-slate-200/70 w-12">
                 ${idx + 1}
             </td>
-            <td class="p-3.5 whitespace-nowrap">
+            <td data-col-key="booking_code" class="p-3.5 whitespace-nowrap">
                 <div class="flex items-center flex-wrap gap-1">
                     <span class="font-bold text-slate-900 font-heading font-mono text-sm">${escapeHtml(formatCodeCompact(b.booking_code))}</span>
                     ${urgentBadge}
                     ${dropHookBadge}
                 </div>
             </td>
-            <td class="p-3.5 whitespace-nowrap">
+            <td data-col-key="loading_date" class="p-3.5 whitespace-nowrap">
                 <div class="flex flex-col">
                     <p class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
                         <i class="ph-bold ph-calendar-blank text-slate-400 text-xs shrink-0"></i>
@@ -13400,24 +13540,24 @@ function renderBookingsTable(bookings) {
                     ${b.loading_time ? `<p class="text-xs text-slate-500 font-medium mt-0.5 pl-4">${formatTimeString(b.loading_time)}</p>` : ''}
                 </div>
             </td>
-            <td class="p-3.5">
+            <td data-col-key="customer_service" class="p-3.5">
                 <p class="font-bold text-slate-900 text-sm truncate max-w-[200px]" title="${escapeHtml(b.customer)}">${escapeHtml(b.customer)}</p>
                 <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1.5 truncate">
                     <span class="font-bold text-teal-800">${svcTag}</span>
                     ${b.shipping_line ? `<span class="text-slate-300">·</span><span class="font-medium text-slate-600 truncate max-w-[120px]">${escapeHtml(b.shipping_line)}</span>` : ''}
                 </p>
             </td>
-            <td class="p-3.5 font-mono">
+            <td data-col-key="booking_bl" class="p-3.5 font-mono">
                 <p class="font-bold text-indigo-950 text-sm truncate max-w-[150px] font-mono">${escapeHtml(b.booking_number || '-')}</p>
                 <p class="text-xs text-slate-500 font-medium truncate max-w-[150px] mt-0.5 font-sans">${escapeHtml(b.vessel_voyage || '-')}</p>
             </td>
-            <td class="p-3.5">
+            <td data-col-key="cont_cargo" class="p-3.5">
                 <div class="flex flex-col">
                     <p class="font-bold text-slate-900 text-sm">Cont ${escapeHtml(b.container_size)}</p>
                     <p class="text-xs text-slate-500 font-medium truncate max-w-[140px] mt-0.5" title="${escapeHtml(b.commodity || 'Hàng hóa')}">${escapeHtml(b.commodity || 'Hàng hóa')}</p>
                 </div>
             </td>
-            <td class="p-3.5">
+            <td data-col-key="progress_percent" class="p-3.5">
                 <div class="flex items-center space-x-1.5 mb-1">
                     <span class="font-bold text-slate-900 text-sm tabular-nums">${b.progress}</span>
                     <div class="w-12 bg-slate-200 rounded-full h-1.5 overflow-hidden">
@@ -13426,21 +13566,55 @@ function renderBookingsTable(bookings) {
                 </div>
                 <div>${statusBadge}</div>
             </td>
-            <td class="p-3.5">
+            <td data-col-key="route" class="p-3.5">
                 <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
                     <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
                     <p class="truncate text-slate-900 font-bold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
                     ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
                 </div>
             </td>
-            <td class="p-3.5 font-mono">
+            <td data-col-key="closing_time" class="p-3.5 font-mono">
                 <p class="font-bold text-rose-700 text-sm">${b.closing_time || '-'}</p>
                 ${b.si_cutoff ? `<p class="text-xs text-slate-500 mt-0.5 font-sans">SI: ${b.si_cutoff}</p>` : ''}
             </td>
-            <td class="p-3.5 text-right font-black text-slate-900 text-sm tabular-nums">
+            <td data-col-key="price" class="p-3.5 text-right font-black text-slate-900 text-sm tabular-nums">
                 ${new Intl.NumberFormat('vi-VN').format(b.price)} đ
             </td>
-            <td class="p-3.5 text-center">
+            <!-- Các Cột Mở Rộng Từ Database Cho Bảng Booking (Mặc định ẩn) -->
+            <td data-col-key="customer_short" class="p-3.5 font-bold text-slate-800 text-xs whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.customer_short || b.customer || '-')}
+            </td>
+            <td data-col-key="customer_code" class="p-3.5 font-mono font-bold text-teal-800 text-xs whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.customer_code || '-')}
+            </td>
+            <td data-col-key="booking_type" class="p-3.5 text-xs font-bold text-slate-700 whitespace-nowrap" style="display:none">
+                ${svcTag}
+            </td>
+            <td data-col-key="container_size" class="p-3.5 text-xs font-mono font-bold text-teal-900 whitespace-nowrap" style="display:none">
+                Cont ${escapeHtml(b.container_size || '40')}
+            </td>
+            <td data-col-key="shipping_line" class="p-3.5 text-xs font-bold text-blue-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.shipping_line || '-')}
+            </td>
+            <td data-col-key="vessel_voyage" class="p-3.5 text-xs font-mono text-slate-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.vessel_voyage || '-')}
+            </td>
+            <td data-col-key="pickup_loc" class="p-3.5 text-xs text-teal-700 font-semibold truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.pickup || '-')}">
+                ${cleanLoc(b.pickup)}
+            </td>
+            <td data-col-key="delivery_loc" class="p-3.5 text-xs text-slate-800 font-semibold truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.delivery || '-')}">
+                ${cleanLoc(b.delivery)}
+            </td>
+            <td data-col-key="dropoff_loc" class="p-3.5 text-xs text-indigo-700 font-semibold truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.dropoff || '-')}">
+                ${cleanLoc(b.dropoff)}
+            </td>
+            <td data-col-key="si_cutoff" class="p-3.5 text-xs font-mono text-rose-600 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.si_cutoff || '-')}
+            </td>
+            <td data-col-key="created_at" class="p-3.5 text-xs font-mono text-slate-500 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.created_at || b.loading_date || '-')}
+            </td>
+            <td data-col-key="actions" class="p-3.5 text-center">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <!-- 1. Xem Booking (Toàn màn hình) -->
                     <button type="button" onclick="openModalBooking(${b.id}, true)" 
@@ -13970,29 +14144,101 @@ function renderQuotationsTable(quotations) {
         const quoteHash = s.hashid || s.id;
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition-colors';
-        tr.innerHTML = `
-            <td class="p-3.5 text-center font-mono text-xs font-bold text-slate-500 tabular-nums select-none border-r border-slate-200/70 w-12">
+                tr.innerHTML = `
+            <td data-col-key="stt" class="p-3.5 text-center font-mono text-xs font-bold text-slate-500 tabular-nums select-none border-r border-slate-200/70 w-12">
                 ${idx + 1}
             </td>
-            <td class="p-3.5 font-black text-indigo-950 font-heading text-sm">
-                <div class="flex flex-col">
-                    <a href="/sales/quotations/${quoteHash}" onclick="event.preventDefault(); viewQuotationDetail('${quoteHash}');" 
-                        class="hover:text-teal-700 hover:underline transition-colors cursor-pointer" title="Mở trang toàn màn hình: /sales/quotations/${quoteHash}">
-                        ${formatCodeCompact(s.code)}
-                    </a>
-                    ${methodBadge ? `<div class="mt-0.5">${methodBadge}</div>` : ''}
+            <td data-col-key="booking_code" class="p-3.5 whitespace-nowrap">
+                <div class="flex items-center flex-wrap gap-1">
+                    <span class="font-bold text-slate-900 font-heading font-mono text-sm">${escapeHtml(formatCodeCompact(b.booking_code))}</span>
+                    ${urgentBadge}
+                    ${dropHookBadge}
                 </div>
             </td>
-            <td class="p-3.5 text-center whitespace-nowrap text-xs font-semibold text-slate-700">${escapeHtml(s.created_at || '-')}</td>
-            <td class="p-3.5 font-bold text-slate-900 text-sm">${escapeHtml(s.customer)}</td>
-            <td class="p-3.5 font-medium text-slate-700 text-[13px]">${routeDisplay}</td>
-            <td class="p-3.5 font-semibold text-slate-700 tabular-nums text-sm text-right">${new Intl.NumberFormat('vi-VN').format(s.unit_price)} đ</td>
-            <td class="p-3.5 text-center font-bold text-teal-700 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(s.monthly_trips || 0)} <span class="text-xs text-slate-400 font-normal">chuyến</span></td>
-            <td class="p-3.5 text-right font-black text-emerald-700 tabular-nums font-heading text-sm">${new Intl.NumberFormat('vi-VN').format(s.expected_revenue)} đ</td>
-            <td class="p-3.5 whitespace-nowrap">
-                <span class="text-xs ${statusCls}">${escapeHtml(s.status)}</span>
+            <td data-col-key="loading_date" class="p-3.5 whitespace-nowrap">
+                <div class="flex flex-col">
+                    <p class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                        <i class="ph-bold ph-calendar-blank text-slate-400 text-xs shrink-0"></i>
+                        <span>${b.loading_date}</span>
+                    </p>
+                    ${b.loading_time ? `<p class="text-xs text-slate-500 font-medium mt-0.5 pl-4">${formatTimeString(b.loading_time)}</p>` : ''}
+                </div>
             </td>
-            <td class="p-3.5 text-center">
+            <td data-col-key="customer_service" class="p-3.5">
+                <p class="font-bold text-slate-900 text-sm truncate max-w-[200px]" title="${escapeHtml(b.customer)}">${escapeHtml(b.customer)}</p>
+                <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1.5 truncate">
+                    <span class="font-bold text-teal-800">${svcTag}</span>
+                    ${b.shipping_line ? `<span class="text-slate-300">·</span><span class="font-medium text-slate-600 truncate max-w-[120px]">${escapeHtml(b.shipping_line)}</span>` : ''}
+                </p>
+            </td>
+            <td data-col-key="booking_bl" class="p-3.5 font-mono">
+                <p class="font-bold text-indigo-950 text-sm truncate max-w-[150px] font-mono">${escapeHtml(b.booking_number || '-')}</p>
+                <p class="text-xs text-slate-500 font-medium truncate max-w-[150px] mt-0.5 font-sans">${escapeHtml(b.vessel_voyage || '-')}</p>
+            </td>
+            <td data-col-key="cont_cargo" class="p-3.5">
+                <div class="flex flex-col">
+                    <p class="font-bold text-slate-900 text-sm">Cont ${escapeHtml(b.container_size)}</p>
+                    <p class="text-xs text-slate-500 font-medium truncate max-w-[140px] mt-0.5" title="${escapeHtml(b.commodity || 'Hàng hóa')}">${escapeHtml(b.commodity || 'Hàng hóa')}</p>
+                </div>
+            </td>
+            <td data-col-key="progress_percent" class="p-3.5">
+                <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="font-bold text-slate-900 text-sm tabular-nums">${b.progress}</span>
+                    <div class="w-12 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-teal-600 h-1.5 rounded-full" style="width: ${b.progress_percent}%"></div>
+                    </div>
+                </div>
+                <div>${statusBadge}</div>
+            </td>
+            <td data-col-key="route" class="p-3.5">
+                <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
+                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
+                    <p class="truncate text-slate-900 font-bold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
+                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
+                </div>
+            </td>
+            <td data-col-key="closing_time" class="p-3.5 font-mono">
+                <p class="font-bold text-rose-700 text-sm">${b.closing_time || '-'}</p>
+                ${b.si_cutoff ? `<p class="text-xs text-slate-500 mt-0.5 font-sans">SI: ${b.si_cutoff}</p>` : ''}
+            </td>
+            <td data-col-key="price" class="p-3.5 text-right font-black text-slate-900 text-sm tabular-nums">
+                ${new Intl.NumberFormat('vi-VN').format(b.price)} đ
+            </td>
+            <!-- Các Cột Mở Rộng Từ Database Cho Bảng Booking (Mặc định ẩn) -->
+            <td data-col-key="customer_short" class="p-3.5 font-bold text-slate-800 text-xs whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.customer_short || b.customer || '-')}
+            </td>
+            <td data-col-key="customer_code" class="p-3.5 font-mono font-bold text-teal-800 text-xs whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.customer_code || '-')}
+            </td>
+            <td data-col-key="booking_type" class="p-3.5 text-xs font-bold text-slate-700 whitespace-nowrap" style="display:none">
+                ${svcTag}
+            </td>
+            <td data-col-key="container_size" class="p-3.5 text-xs font-mono font-bold text-teal-900 whitespace-nowrap" style="display:none">
+                Cont ${escapeHtml(b.container_size || '40')}
+            </td>
+            <td data-col-key="shipping_line" class="p-3.5 text-xs font-bold text-blue-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.shipping_line || '-')}
+            </td>
+            <td data-col-key="vessel_voyage" class="p-3.5 text-xs font-mono text-slate-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.vessel_voyage || '-')}
+            </td>
+            <td data-col-key="pickup_loc" class="p-3.5 text-xs text-teal-700 font-semibold truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.pickup || '-')}">
+                ${cleanLoc(b.pickup)}
+            </td>
+            <td data-col-key="delivery_loc" class="p-3.5 text-xs text-slate-800 font-semibold truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.delivery || '-')}">
+                ${cleanLoc(b.delivery)}
+            </td>
+            <td data-col-key="dropoff_loc" class="p-3.5 text-xs text-indigo-700 font-semibold truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.dropoff || '-')}">
+                ${cleanLoc(b.dropoff)}
+            </td>
+            <td data-col-key="si_cutoff" class="p-3.5 text-xs font-mono text-rose-600 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.si_cutoff || '-')}
+            </td>
+            <td data-col-key="created_at" class="p-3.5 text-xs font-mono text-slate-500 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.created_at || b.loading_date || '-')}
+            </td>
+            <td data-col-key="actions" class="p-3.5 text-center">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <!-- 1. Xem Báo Giá (Toàn màn hình) -->
                     <button type="button" onclick="viewQuotationDetail('${quoteHash}')" 

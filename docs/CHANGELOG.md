@@ -2,6 +2,37 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.30] - 2026-11-02 (Tùy Biến Cột Toàn Diện: Nạp Đầy Đủ Trường Dữ Liệu Database Lên Tùy Chỉnh Cột & Hỗ Trợ Tìm Kiếm Cột Thông Minh)
+
+### 1. Nâng Cấp Bộ Máy Quản Lý Cột Bảng Dữ Liệu (`static/js/src/app/core/table-manager.js`):
+- **Cơ Chế Mặc Định Ẩn Cột Thông Minh (`data-col-default-hidden="true"`):**
+  * Hỗ trợ khai báo các cột mở rộng có sẵn trong database vào bảng dưới dạng mặc định ẩn (`visible: false`), không làm phá vỡ giao diện tinh gọn ban đầu.
+  * Khi người dùng mở Modal Tùy chỉnh cột, **toàn bộ các trường dữ liệu từ database đều xuất hiện đầy đủ trong danh sách** để người dùng thoải mái tick chọn hiển thị theo nhu cầu cá nhân.
+  * Bộ nhớ cục bộ `localStorage` nhận diện tự động và lưu trữ cấu hình hiển thị / thứ tự từng cột của từng người dùng trên từng bảng.
+  * Chức năng "Mặc định" khôi phục chính xác về trạng thái thiết kế ban đầu (`visible: !defaultHidden`).
+- **Thanh Tìm Kiếm Nhanh Cột (`#bim-col-modal-search`) & Nút "Hiện Tất Cả":**
+  * Tích hợp thanh tìm kiếm trực tiếp trong Modal Tùy Chỉnh Cột: gõ từ khóa để lọc ngay cột mong muốn (ví dụ: "Tên viết tắt", "Loại Cont", "Biển số", "Hãng tàu", "Doanh thu"...).
+  * Bổ sung nút **"Hiện tất cả"** (`window.BimColumnManager_showAll()`) giúp hiển thị ngay lập tức toàn bộ các cột chỉ với 1 click.
+
+### 2. Mở Rộng 31 Trường Dữ Liệu Bảng Điều Vận Chuyến Xe (`#dispatch-trips-table`):
+- **Backend API (`apps/dispatch/api_views/trips.py`):**
+  * Tối ưu hóa truy vấn `select_related('trailer', 'subcontractor')`.
+  * Bổ sung trường tìm kiếm đa chiều: `customer__short_name`, `customer__code`, `trailer__license_plate`, `shipping_line`.
+  * Cung cấp dữ liệu chi tiết trong response: `customer_short_name`, `customer_code`, `shipping_line`, `trailer`, `subcontractor_name`.
+- **Giao Diện HTML (`templates/views/view_dispatch.html`):**
+  * Bổ sung 31 thẻ `<th>` mở rộng với `data-col-default-hidden="true" style="display:none"`:
+    `Tên Viết Tắt KH`, `Mã KH`, `Loại Hình`, `Loại Cont`, `Số Cont Riêng`, `Số Seal Riêng`, `Số Booking / BL`, `Hãng Tàu`, `Hạn Cắt Máng`, `Hạn Free DET`, `Hạn Free DEM`, `Cảng Lấy Rỗng`, `Kho Đóng Hàng`, `Cảng Hạ Cont`, `Hóa Đơn TM`, `Cửa Dock`, `Phân Loại Xe (Nhà/Bạn)`, `Biển Số Xe`, `Số Rơ-moóc`, `Tên Tài Xế`, `SĐT Tài Xế`, `Xe Hạ Cont`, `Tài Xế Hạ`, `Thầu Phụ 3PL`, `Tờ Khai HQ`, `Vị Trí Vỏ`, `Ghi Chú Hàng`, `Doanh Thu`, `Chi Phí`, `Lợi Nhuận`, `Ngày Tạo`.
+- **Renderer Frontend (`static/js/src/app/dispatch/trip-list.js`):**
+  * Gán `data-col-key="..."` trên tất cả các thẻ `<td>` của hàng dữ liệu.
+  * Tự động đồng bộ và áp dụng trạng thái ẩn/hiện và thứ tự tùy biến qua `BimTableColumnManager.apply('dispatch-trips-table')` sau mỗi lần nạp hoặc lọc dữ liệu.
+
+### 3. Mở Rộng Bảng Đơn Hàng / Booking Kinh Doanh (`#sales-bookings-table`):
+- **Giao Diện & Backend (`templates/views/view_sales.html`, `apps/dispatch/api_views/sales.py`, `static/js/src/app/sales/sales-lists.js`):**
+  * Bổ sung các cột mở rộng từ database: `customer_short`, `customer_code`, `booking_type`, `container_size`, `shipping_line`, `vessel_voyage`, `pickup_loc`, `delivery_loc`, `dropoff_loc`, `si_cutoff`, `created_at`.
+  * Gán thuộc tính `data-col-key` cho toàn bộ các ô `<td>` và gọi `BimTableColumnManager.apply('sales-bookings-table')`.
+
+---
+
 ## [v4.7.29] - 2026-11-02 (Chuẩn Hóa Quyết Toán Gom Khách Hàng & Tài Xế: Checkbox Trước STT, Nút Quyết Toán Nhiều Chuyến Thông Minh & Sắp Xếp Tìm Kiếm)
 
 ### 1. Đồng Bộ Hóa Trải Nghiệm Quyết Toán Gom Khách Hàng (Subtab 5 - Customer Settlement / SOA):
