@@ -30,5 +30,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8000/healthz/ || exit 1
 
-# Số worker gunicorn: lấy WEB_CONCURRENCY nếu đặt sẵn, không thì tự tính 2 x số CPU container thấy được + 1.
-CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${WEB_CONCURRENCY:-$(python -c 'import os;print(2*len(os.sched_getaffinity(0))+1)')} --timeout 120 --access-logfile -"]
+# Số worker gunicorn: lấy WEB_CONCURRENCY nếu đặt sẵn, không thì tự tính theo scripts/compute_gunicorn_workers.py
+CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${WEB_CONCURRENCY:-$(python scripts/compute_gunicorn_workers.py)} --timeout 120 --access-logfile -"]

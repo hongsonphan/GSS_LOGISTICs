@@ -61,7 +61,7 @@ services:
     command: >
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
-             exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${WEB_CONCURRENCY:-$(python -c 'import os;print(2*len(os.sched_getaffinity(0))+1)')} --timeout 120"
+             exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${WEB_CONCURRENCY:-$(python scripts/compute_gunicorn_workers.py)} --timeout 120"
 
 volumes:
   bim_logistics_postgres_data:
