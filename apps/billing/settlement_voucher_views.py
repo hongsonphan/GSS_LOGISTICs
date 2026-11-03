@@ -43,18 +43,30 @@ def _trip_base(trip):
     }
 
 
+def _expense_line(e, leg=True):
+    return {
+        'name': e.expense_name, 'leg': e.get_trip_leg_display() if leg else '', 'amount': int(e.amount),
+        'payer': e.get_expense_payer_type_display(), 'company_borne': e.company_borne, 'status': e.get_status_display(),
+        'invoice': e.invoice_number or '',
+    }
+
+
 def build_line(party_type, trip, adjustment=0, split_ratio=None, note=''):
     """Bản chụp một chuyến cho bảng kê; chỉ đưa vào các trường phù hợp với đối tượng quyết toán."""
     line = _trip_base(trip)
     expenses = _live_expenses(trip)
     if party_type == VoucherPartyType.DRIVER:
-        advance = int(sum(a.amount for a in trip.driver_advances.all()
-                          if not a.is_deleted and a.status == DriverAdvanceStatus.ADVANCED))
+        advances = [a for a in trip.driver_advances.all() if not a.is_deleted and a.status == DriverAdvanceStatus.ADVANCED]
+        advance = int(sum(a.amount for a in advances))
         spent = int(sum(e.amount for e in expenses))
         line.update({
             'driver_name': (trip.driver.nickname or trip.driver.full_name) if trip.driver else '',
             'license_plate': trip.vehicle.license_plate if trip.vehicle else '',
-            'expense_lines': [{'name': e.expense_name, 'leg': e.get_trip_leg_display(), 'amount': int(e.amount)} for e in expenses],
+            'expense_lines': [_expense_line(e) for e in expenses],
+            'advance_lines': [{
+                'code': a.code, 'source': a.get_advance_source_display(), 'source_code': a.advance_source,
+                'date': a.advance_date.strftime('%d/%m/%Y'), 'amount': int(a.amount), 'purpose': a.purpose,
+            } for a in sorted(advances, key=lambda a: (a.advance_date, a.id))],
             'advance': advance,
             'spent': spent,
             'is_split_trip': trip.is_split_trip,
@@ -72,7 +84,7 @@ def build_line(party_type, trip, adjustment=0, split_ratio=None, note=''):
             'license_plate': trip.vehicle.license_plate if trip.vehicle else '',
             'driver_name': trip.assigned_driver_name or '',
             'freight_cost': cost,
-            'expense_lines': [{'name': e.expense_name, 'leg': e.get_trip_leg_display(), 'amount': int(e.amount)} for e in reimb],
+            'expense_lines': [_expense_line(e) for e in reimb],
             'advance': advance,
             'total': cost + reimb_total - advance + adjustment,
         })
@@ -85,7 +97,7 @@ def build_line(party_type, trip, adjustment=0, split_ratio=None, note=''):
         line.update({
             'booking_or_bill': trip.booking_or_bill or '',
             'freight': revenue,
-            'expense_lines': [{'name': e.expense_name, 'leg': '', 'amount': int(e.amount)} for e in obh],
+            'expense_lines': [_expense_line(e, leg=False) for e in obh],
             'total': revenue + int(sum(e.amount for e in obh)) + adjustment,
         })
     line['adjustment'] = adjustment

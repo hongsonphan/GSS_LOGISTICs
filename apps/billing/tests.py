@@ -235,6 +235,9 @@ class DriverBatchSettlementTests(TestCase):
         line = res.data['voucher']['lines'][0]
         self.assertEqual(line['advance'], 1200000)
         self.assertEqual(line['spent'], 500000)
+        self.assertEqual([a['code'] for a in line['advance_lines']], ['TUTX-TEST-001', 'TUTX-TEST-002'])
+        self.assertEqual(line['advance_lines'][0]['source_code'], 'COMPANY_DIRECT')
+        self.assertEqual(line['expense_lines'][0]['payer'], 'Chi phí TVL')
         vid = res.data['voucher']['id']
         self.assertEqual(self.client.post(f'{base}{vid}/approve/', {}, format='json').status_code, status.HTTP_200_OK)
         self.adv1.refresh_from_db()
