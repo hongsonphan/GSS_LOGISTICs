@@ -16,7 +16,7 @@
     window.canAccess = canAccess;
 
     const VIEW_MODULE = {
-        'view-dieu-van': 'dispatch', 'view-trip-detail': 'dispatch', 'view-create-trip': 'dispatch', 'view-quyet-toan': 'accounting',
+        'view-dieu-van': 'dispatch', 'view-trip-detail': 'dispatch', 'view-create-trip': 'dispatch', 'view-quyet-toan': 'accounting', 'view-settlement-voucher': 'accounting',
         'view-kinh-doanh': 'sales', 'view-quotation-detail': 'sales', 'view-booking-detail': 'sales',
         'view-xe-bai': 'fleet', 'view-hai-quan': 'customs', 'view-customs-form': 'customs',
         'view-nhan-su': 'hr', 'view-employee-form': 'hr', 'view-contract-detail': 'hr', 'view-payroll-slip-detail': 'payroll',

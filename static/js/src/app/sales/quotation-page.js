@@ -17,15 +17,91 @@ function onFullpageQuotationPricingMethodChange(method) {
     }
 }
 
-function updateFullpageFuelFormulaText() {
-    const basePrice = parseNumberVN(document.getElementById('fullpage-quote-base-fuel-price')?.value) || 21000;
-    const step = parseNumberVN(document.getElementById('fullpage-quote-fuel-step')?.value) || 1000;
-    const ratio = parseFloat(document.getElementById('fullpage-quote-fuel-ratio')?.value) || 3.5;
-    const formulaEl = document.getElementById('fullpage-quote-fuel-formula-display');
-    if (formulaEl) {
-        formulaEl.innerText = `Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi ${new Intl.NumberFormat('vi-VN').format(step)} đ/lít so với giá cơ sở (${new Intl.NumberFormat('vi-VN').format(basePrice)} đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng ${ratio}%.`;
+// Diễn giải quy tắc + ví dụ cho điều chỉnh giá dầu và phụ phí hạ xa (dùng chung cho form và bản in báo giá)
+function buildQuoteSurchargeTexts(q, basePrice) {
+    const vn = (n) => new Intl.NumberFormat('vi-VN').format(Math.round(Number(n) || 0));
+    const B = Number(basePrice) > 0 ? Number(basePrice) : 3500000;
+    const out = { fuelRule: '', fuelExample: '', farRule: '', farExample: '' };
+
+    const p0 = Number(q.base_fuel_price) || 21000;
+    const step = Number(q.fuel_step_vnd) || 1000;
+    const fuelAmount = q.fuel_adjust_type === 'AMOUNT';
+    const fuelRatio = Number(q.fuel_ratio_percent) || 0;
+    const fuelMoney = Number(q.fuel_amount_per_step) || 0;
+    out.fuelRule = `Mỗi khi giá dầu DO 0.05S Petrolimex tăng/giảm ${vn(step)} đ/lít so với giá cơ sở (${vn(p0)} đ/lít), đơn giá cước vận chuyển sẽ tăng/giảm tương ứng ${fuelAmount ? `${vn(fuelMoney)} đ/chuyến` : `${fuelRatio}% cước`}.`;
+    const fuelSteps = 2;
+    const fuelDelta = fuelAmount ? fuelMoney * fuelSteps : Math.round(B * fuelRatio / 100 * fuelSteps);
+    out.fuelExample = `giá dầu tăng lên ${vn(p0 + step * fuelSteps)} đ/lít (+${vn(step * fuelSteps)} đ/lít = ${fuelSteps} bước) → cước ${vn(B)} đ + ${fuelAmount ? `${fuelSteps} × ${vn(fuelMoney)} đ` : `${fuelSteps} × ${fuelRatio}% × ${vn(B)} đ`} = ${vn(B + fuelDelta)} đ/chuyến. Giá dầu giảm thì trừ tương ứng.`;
+
+    if (q.far_drop_enabled) {
+        const free = parseInt(q.far_drop_free_km) || 0;
+        const stepKm = parseInt(q.far_drop_step_km) || 10;
+        const farAmount = q.far_drop_adjust_type === 'AMOUNT';
+        const farRatio = Number(q.far_drop_ratio_percent) || 0;
+        const farMoney = Number(q.far_drop_amount_per_step) || 0;
+        out.farRule = `Nếu hạ vỏ cách vị trí hạ ban đầu${free > 0 ? ` quá ${free} km` : ''}, cứ mỗi ${stepKm} km (hoặc phần lẻ) hạ xa, cước vận chuyển tăng thêm ${farAmount ? `${vn(farMoney)} đ/chuyến` : `${farRatio}% cước`}.`;
+        const km = free + stepKm * 2;
+        const farSteps = Math.ceil((km - free) / stepKm);
+        const farDelta = farAmount ? farMoney * farSteps : Math.round(B * farRatio / 100 * farSteps);
+        out.farExample = `hạ xa ${km} km${free > 0 ? ` (miễn ${free} km đầu)` : ''} = ${farSteps} bước → cước ${vn(B)} đ + ${farAmount ? `${farSteps} × ${vn(farMoney)} đ` : `${farSteps} × ${farRatio}% × ${vn(B)} đ`} = ${vn(B + farDelta)} đ/chuyến.`;
     }
+    return out;
 }
+
+// Đọc các thông số mới (kiểu điều chỉnh giá dầu theo %/số tiền và phụ phí hạ xa) từ form báo giá toàn trang
+function readFullpageSurchargeFields() {
+    const val = (id) => document.getElementById(id)?.value;
+    return {
+        fuel_adjust_type: val('fullpage-quote-fuel-type') || 'PERCENT',
+        fuel_amount_per_step: parseNumberVN(val('fullpage-quote-fuel-amount')),
+        far_drop_enabled: !!document.getElementById('fullpage-quote-fardrop-enabled')?.checked,
+        far_drop_free_km: parseInt(val('fullpage-quote-fardrop-free-km')) || 0,
+        far_drop_step_km: parseInt(val('fullpage-quote-fardrop-step-km')) || 10,
+        far_drop_adjust_type: val('fullpage-quote-fardrop-type') || 'PERCENT',
+        far_drop_ratio_percent: parseFloat(val('fullpage-quote-fardrop-ratio')) || 0,
+        far_drop_amount_per_step: parseNumberVN(val('fullpage-quote-fardrop-amount')),
+    };
+}
+
+function fillFullpageSurchargeFields(q = {}) {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    set('fullpage-quote-fuel-type', q.fuel_adjust_type || 'PERCENT');
+    set('fullpage-quote-fuel-amount', formatNumberVN(q.fuel_amount_per_step || 0) || '0');
+    const cb = document.getElementById('fullpage-quote-fardrop-enabled');
+    if (cb) cb.checked = !!q.far_drop_enabled;
+    set('fullpage-quote-fardrop-free-km', q.far_drop_free_km || 0);
+    set('fullpage-quote-fardrop-step-km', q.far_drop_step_km || 10);
+    set('fullpage-quote-fardrop-type', q.far_drop_adjust_type || 'PERCENT');
+    set('fullpage-quote-fardrop-ratio', q.far_drop_ratio_percent || 0);
+    set('fullpage-quote-fardrop-amount', formatNumberVN(q.far_drop_amount_per_step || 0) || '0');
+    updateFullpageFuelFormulaText();
+}
+
+function updateFullpageFuelFormulaText() {
+    const q = Object.assign({
+        base_fuel_price: parseNumberVN(document.getElementById('fullpage-quote-base-fuel-price')?.value) || 21000,
+        fuel_step_vnd: parseNumberVN(document.getElementById('fullpage-quote-fuel-step')?.value) || 1000,
+        fuel_ratio_percent: parseFloat(document.getElementById('fullpage-quote-fuel-ratio')?.value) || 0,
+    }, readFullpageSurchargeFields());
+    const firstPrice = parseNumberVN(document.querySelector('#fullpage-quote-routes-tbody .fullpage-item-price')?.value);
+    const texts = buildQuoteSurchargeTexts(q, firstPrice);
+    const show = (id, on) => document.getElementById(id)?.classList.toggle('hidden', !on);
+    show('fullpage-quote-fuel-ratio-wrap', q.fuel_adjust_type !== 'AMOUNT');
+    show('fullpage-quote-fuel-amount-wrap', q.fuel_adjust_type === 'AMOUNT');
+    show('fullpage-quote-fardrop-box', q.far_drop_enabled);
+    show('fullpage-quote-fardrop-ratio-wrap', q.far_drop_adjust_type !== 'AMOUNT');
+    show('fullpage-quote-fardrop-amount-wrap', q.far_drop_adjust_type === 'AMOUNT');
+    const setText = (id, t) => { const el = document.getElementById(id); if (el) el.innerText = t; };
+    setText('fullpage-quote-fuel-formula-display', texts.fuelRule);
+    setText('fullpage-quote-fuel-example', texts.fuelExample);
+    setText('fullpage-quote-fardrop-formula-display', texts.farRule);
+    setText('fullpage-quote-fardrop-example', texts.farExample);
+}
+
+// Đổi đơn giá tuyến đầu tiên thì cập nhật lại ví dụ
+document.addEventListener('input', (e) => {
+    if (e.target && e.target.classList && e.target.classList.contains('fullpage-item-price')) updateFullpageFuelFormulaText();
+});
 
 function setFullpageQuickQuoteNote(type) {
     const noteEl = document.getElementById('fullpage-quote-notes');
@@ -250,6 +326,7 @@ async function openCreateQuotationPage(updateHistory = true) {
     if (stepInput) stepInput.value = formatNumberVN(1000);
     const ratioInput = document.getElementById('fullpage-quote-fuel-ratio');
     if (ratioInput) ratioInput.value = 3.5;
+    fillFullpageSurchargeFields({});
 
     onFullpageQuotationPricingMethodChange('MULTI_ROUTE');
 
@@ -356,6 +433,7 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
         if (stepInput) stepInput.value = formatNumberVN(q.fuel_step_vnd || 1000);
         const ratioInput = document.getElementById('fullpage-quote-fuel-ratio');
         if (ratioInput) ratioInput.value = q.fuel_ratio_percent || 3.5;
+        fillFullpageSurchargeFields(q);
 
         onFullpageQuotationPricingMethodChange(q.pricing_method || 'MULTI_ROUTE');
 
@@ -525,6 +603,7 @@ function printQuotationFromFullPage() {
             base_fuel_price: parseNumberVN(document.getElementById('fullpage-quote-base-fuel-price')?.value) || 21000,
             fuel_step_vnd: parseNumberVN(document.getElementById('fullpage-quote-fuel-step')?.value) || 1000,
             fuel_ratio_percent: parseFloat(document.getElementById('fullpage-quote-fuel-ratio')?.value) || 3.5,
+            ...readFullpageSurchargeFields(),
             cargo_type: document.getElementById('fullpage-quote-cargo-type')?.value || 'Container 40HC / Hàng tổng hợp',
             contact_person: document.getElementById('fullpage-quote-contact-person')?.value?.trim() || '',
             contact_phone: document.getElementById('fullpage-quote-contact-phone')?.value?.trim() || '',
@@ -645,6 +724,7 @@ async function saveFullpageQuotation(e) {
             base_fuel_price: baseFuelPrice,
             fuel_step_vnd: fuelStep,
             fuel_ratio_percent: fuelRatio,
+            ...readFullpageSurchargeFields(),
             status: statusVal,
             template_type: templateType,
             cargo_type: cargoType,
