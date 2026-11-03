@@ -490,7 +490,7 @@ function renderDispatchTable(trips) {
             </td>
             <!-- 31 Cột Mở Rộng Từ Database (Ẩn mặc định, hiển thị khi người dùng tick chọn trong modal) -->
             <td data-col-key="customer_short" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-bold text-slate-800 text-[12.5px]" style="display:none">
-                ${escapeHtml(trip.customer_short_name || trip.customer || '-')}
+                ${escapeHtml((trip.customer_short_name || trip.customer || '-').toUpperCase())}
             </td>
             <td data-col-key="customer_code" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-teal-800 text-xs" style="display:none">
                 ${escapeHtml(trip.customer_code || '-')}
@@ -499,9 +499,7 @@ function renderDispatchTable(trips) {
                 ${displayShipmentType}
             </td>
             <td data-col-key="container_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap text-xs font-bold text-teal-800" style="display:none">
-                <span class="px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200 font-mono text-[11px] font-bold">
-                    ${escapeHtml(trip.container_type || 'Cont 40')}
-                </span>
+                ${escapeHtml(trip.container_type || 'Cont 40')}
             </td>
             <td data-col-key="container_number" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-slate-900 text-[13px]" style="display:none">
                 ${escapeHtml(trip.container || '-')}
@@ -541,8 +539,8 @@ function renderDispatchTable(trips) {
             </td>
             <td data-col-key="fleet_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap text-xs font-bold" style="display:none">
                 ${trip.vehicle_ownership_code === 'OWNED' 
-                    ? '<span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold uppercase text-[10.5px]">Xe Nhà</span>'
-                    : '<span class="px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-bold uppercase text-[10.5px]">Xe Bạn (Thầu)</span>'
+                    ? '<span class="font-bold uppercase text-[10.5px] text-emerald-700">Xe Nhà</span>'
+                    : '<span class="font-bold uppercase text-[10.5px] text-amber-700">Xe Bạn (Thầu)</span>'
                 }
             </td>
             <td data-col-key="license_plate" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-slate-900 text-xs" style="display:none">

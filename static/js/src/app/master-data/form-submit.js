@@ -100,7 +100,7 @@ async function submitMasterDataForm(e) {
             tax_code: document.getElementById('mdf-tax-code').value,
             customer_group: document.getElementById('mdf-customer-group')?.value || 'COMMERCIAL_TRADING',
             name: document.getElementById('mdf-name').value,
-            short_name: document.getElementById('mdf-short-name')?.value?.trim() || '',
+            short_name: (document.getElementById('mdf-short-name')?.value?.trim() || '').toUpperCase(),
             address: document.getElementById('mdf-address').value,
             company_email: document.getElementById('mdf-company-email')?.value?.trim() || '',
             contact_person: document.getElementById('mdf-contact-person')?.value?.trim() || '',

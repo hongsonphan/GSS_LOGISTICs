@@ -385,7 +385,7 @@ function renderMasterDataTable(items, total = items.length) {
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200" data-col-key="code">${escapeHtml(item.code || '')}</td>
-                <td class="py-2 px-3 text-[12px] font-bold text-slate-800 border-r border-slate-200" data-col-key="short_name">${escapeHtml(item.short_name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-bold text-slate-800 border-r border-slate-200" data-col-key="short_name">${escapeHtml((item.short_name || '—').toUpperCase())}</td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200" data-col-key="name">
                     <span>${escapeHtml(item.name || '—')}</span>
                 </td>

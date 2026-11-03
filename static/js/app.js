@@ -8175,7 +8175,7 @@ function renderDispatchTable(trips) {
             </td>
             <!-- 31 Cột Mở Rộng Từ Database (Ẩn mặc định, hiển thị khi người dùng tick chọn trong modal) -->
             <td data-col-key="customer_short" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-bold text-slate-800 text-[12.5px]" style="display:none">
-                ${escapeHtml(trip.customer_short_name || trip.customer || '-')}
+                ${escapeHtml((trip.customer_short_name || trip.customer || '-').toUpperCase())}
             </td>
             <td data-col-key="customer_code" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-teal-800 text-xs" style="display:none">
                 ${escapeHtml(trip.customer_code || '-')}
@@ -8184,9 +8184,7 @@ function renderDispatchTable(trips) {
                 ${displayShipmentType}
             </td>
             <td data-col-key="container_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap text-xs font-bold text-teal-800" style="display:none">
-                <span class="px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200 font-mono text-[11px] font-bold">
-                    ${escapeHtml(trip.container_type || 'Cont 40')}
-                </span>
+                ${escapeHtml(trip.container_type || 'Cont 40')}
             </td>
             <td data-col-key="container_number" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-slate-900 text-[13px]" style="display:none">
                 ${escapeHtml(trip.container || '-')}
@@ -8226,8 +8224,8 @@ function renderDispatchTable(trips) {
             </td>
             <td data-col-key="fleet_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap text-xs font-bold" style="display:none">
                 ${trip.vehicle_ownership_code === 'OWNED' 
-                    ? '<span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold uppercase text-[10.5px]">Xe Nhà</span>'
-                    : '<span class="px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-bold uppercase text-[10.5px]">Xe Bạn (Thầu)</span>'
+                    ? '<span class="font-bold uppercase text-[10.5px] text-emerald-700">Xe Nhà</span>'
+                    : '<span class="font-bold uppercase text-[10.5px] text-amber-700">Xe Bạn (Thầu)</span>'
                 }
             </td>
             <td data-col-key="license_plate" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-bold text-slate-900 text-xs" style="display:none">
@@ -29747,7 +29745,7 @@ function renderMasterDataTable(items, total = items.length) {
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200" data-col-key="code">${escapeHtml(item.code || '')}</td>
-                <td class="py-2 px-3 text-[12px] font-bold text-slate-800 border-r border-slate-200" data-col-key="short_name">${escapeHtml(item.short_name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-bold text-slate-800 border-r border-slate-200" data-col-key="short_name">${escapeHtml((item.short_name || '—').toUpperCase())}</td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200" data-col-key="name">
                     <span>${escapeHtml(item.name || '—')}</span>
                 </td>
@@ -31635,7 +31633,7 @@ async function submitMasterDataForm(e) {
             tax_code: document.getElementById('mdf-tax-code').value,
             customer_group: document.getElementById('mdf-customer-group')?.value || 'COMMERCIAL_TRADING',
             name: document.getElementById('mdf-name').value,
-            short_name: document.getElementById('mdf-short-name')?.value?.trim() || '',
+            short_name: (document.getElementById('mdf-short-name')?.value?.trim() || '').toUpperCase(),
             address: document.getElementById('mdf-address').value,
             company_email: document.getElementById('mdf-company-email')?.value?.trim() || '',
             contact_person: document.getElementById('mdf-contact-person')?.value?.trim() || '',
