@@ -619,6 +619,56 @@ class DriverBatchSettlementTests(TestCase):
         b = self.client.get(f'{base}{v2}/').data['voucher']
         self.assertEqual((a['status'], a['settled_amount'], b['status'], b['settled_amount']), ('APPROVED', 0, 'APPROVED', 0))
 
+    def test_advances_create_real_cash_vouchers_and_clear_ledger(self):
+        """Cấp tạm ứng sinh phiếu chi thật (quỹ điều vận / công ty chi trực tiếp); sửa/xóa đi theo; TK 141 về 0 sau quyết toán."""
+        from django.test import override_settings
+        from apps.ledger.models import JournalLine
+
+        def bal141():
+            lines = JournalLine.objects.filter(account__code__startswith='141')
+            return int(sum((ln.debit - ln.credit for ln in lines), Decimal('0')))
+
+        def live(category):
+            return list(CashTransaction.objects.filter(is_deleted=False, category=category).values_list('amount', flat=True))
+
+        self.client.force_authenticate(user=self.accountant_user)
+        with override_settings(LEDGER_AUTO_POST=True):
+            # Quỹ điều vận: chỉ khi duyệt mới chi tiền
+            with self.captureOnCommitCallbacks(execute=True):
+                res = self.client.post('/api/accounting/dispatcher-funds/', {
+                    'dispatcher_id': self.driver_emp.id, 'amount': 3000000, 'purpose': 'Quỹ test'}, format='json')
+            fund_id = res.data['fund_id']
+            self.assertEqual(live(CashFlowCategory.DISPATCHER_FUND_ADVANCE), [])
+            with self.captureOnCommitCallbacks(execute=True):
+                self.client.post(f'/api/accounting/dispatcher-funds/{fund_id}/action/', {'action': 'approve'}, format='json')
+                self.client.post(f'/api/accounting/dispatcher-funds/{fund_id}/action/', {'action': 'approve'}, format='json')  # duyệt lặp không chi hai lần
+            self.assertEqual([int(a) for a in live(CashFlowCategory.DISPATCHER_FUND_ADVANCE)], [3000000])
+            # Tạm ứng từ quỹ: không phát sinh tiền ra thêm
+            with self.captureOnCommitCallbacks(execute=True):
+                res = self.client.post('/api/accounting/driver-advances/', {
+                    'trip_id': self.trip1.id, 'amount': 1000000, 'advance_source': 'DISPATCHER_FUND'}, format='json')
+            self.assertEqual(res.status_code, 200, res.data)
+            self.assertEqual(live(CashFlowCategory.DRIVER_TRIP_ADVANCE), [])
+            # Công ty chi trực tiếp: sinh phiếu chi, sửa số tiền đi theo, xóa thì hủy
+            with self.captureOnCommitCallbacks(execute=True):
+                res = self.client.post('/api/accounting/driver-advances/', {
+                    'trip_id': self.trip2.id, 'amount': 400000, 'advance_source': 'COMPANY_DIRECT'}, format='json')
+            adv_id = res.data['advance_id']
+            self.assertEqual([int(a) for a in live(CashFlowCategory.DRIVER_TRIP_ADVANCE)], [400000])
+            with self.captureOnCommitCallbacks(execute=True):
+                self.client.put(f'/api/accounting/driver-advances/{adv_id}/', {'amount': 450000}, format='json')
+            self.assertEqual([int(a) for a in live(CashFlowCategory.DRIVER_TRIP_ADVANCE)], [450000])
+            self.assertEqual(bal141(), 3000000 + 450000)
+            with self.captureOnCommitCallbacks(execute=True):
+                self.assertEqual(self.client.delete(f'/api/accounting/driver-advances/{adv_id}/').status_code, 200)
+            self.assertEqual(live(CashFlowCategory.DRIVER_TRIP_ADVANCE), [])
+            self.assertEqual(bal141(), 3000000)
+            # Quyết toán quỹ: phần chưa cấp cho chuyến (3.000.000 - 1.000.000) nộp lại công ty
+            with self.captureOnCommitCallbacks(execute=True):
+                self.client.post(f'/api/accounting/dispatcher-funds/{fund_id}/action/', {'action': 'settle'}, format='json')
+            self.assertEqual([int(a) for a in live(CashFlowCategory.ADVANCE_REFUND)], [2000000])
+            self.assertEqual(bal141(), 1000000)
+
     def test_voucher_partner_direction_flips_when_advance_exceeds_cost(self):
         self.client.force_authenticate(user=self.accountant_user)
         self.trip1.subcontractor_cost = 1000000

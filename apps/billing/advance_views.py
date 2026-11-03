@@ -26,6 +26,7 @@ from apps.billing.models import (
     CashFlowCategory,
     CashTransaction
 )
+from apps.billing.advance_cash import cancel_cash, post_driver_cash, post_fund_cash, post_fund_return, sync_cash
 from apps.dispatch.models import DispatchTrip, TripStatus
 from apps.personnel.models import Employee, Department, EmployeeRole
 
@@ -276,6 +277,8 @@ class DispatcherFundCreateAPIView(APIView):
             approved_at=timezone.now() if is_approved else None,
             notes=notes
         )
+        if is_approved:
+            post_fund_cash(fund, curr_emp)
 
         return Response({
             'success': True,
@@ -307,6 +310,7 @@ class DispatcherFundActionAPIView(APIView):
                 fund.approved_by = curr_emp
                 fund.approved_at = timezone.now()
                 fund.save()
+                post_fund_cash(fund, curr_emp)
                 return Response({'success': True, 'message': f'Đã duyệt xuất quỹ {fund.code} số tiền {fund.amount:,} đ'})
 
             elif action == 'settle':
@@ -317,11 +321,15 @@ class DispatcherFundActionAPIView(APIView):
                 fund.settled_at = timezone.now()
                 fund.settlement_notes = notes or 'Kế toán đã nhận đủ chứng từ và thu hồi số dư hoàn ứng về công ty.'
                 fund.save()
+                post_fund_return(fund, int(fund.amount) - int(fund.total_disbursed), curr_emp, timezone.now().date())
                 return Response({'success': True, 'message': f'Đã quyết toán hoàn tất quỹ điều vận {fund.code} về công ty'})
 
             elif action == 'reject':
+                if fund.status == FundStatus.SETTLED or fund.total_disbursed > 0:
+                    return Response({'error': 'Quỹ đã giải ngân hoặc đã quyết toán, không thể từ chối'}, status=status.HTTP_400_BAD_REQUEST)
                 fund.status = FundStatus.REJECTED
                 fund.save()
+                cancel_cash(CashFlowCategory.DISPATCHER_FUND_ADVANCE, fund.code)
                 return Response({'success': True, 'message': f'Đã từ chối cấp quỹ {fund.code}'})
 
         return Response({'error': 'Thao tác không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
@@ -398,6 +406,7 @@ class DriverAdvanceCreateAPIView(APIView):
                 created_by=curr_emp,
                 notes=notes
             )
+            post_driver_cash(advance, curr_emp)
 
             # Cập nhật thông tin vào DispatchTrip
             trip.driver_advance_amount = (trip.driver_advance_amount or 0) + amount
@@ -684,6 +693,7 @@ class DriverAdvanceDetailAPIView(APIView):
                         advance.trip.save(update_fields=['driver_advance_amount'])
 
             advance.save()
+            sync_cash(CashFlowCategory.DRIVER_TRIP_ADVANCE, advance.code, advance.amount, advance.advance_date)
 
         return Response({
             'success': True,
@@ -719,6 +729,7 @@ class DriverAdvanceDetailAPIView(APIView):
             # Soft Delete
             advance.is_deleted = True
             advance.save(update_fields=['is_deleted'])
+            cancel_cash(CashFlowCategory.DRIVER_TRIP_ADVANCE, advance.code)
 
         return Response({
             'success': True,
@@ -823,6 +834,7 @@ class DispatcherFundDetailAPIView(APIView):
                 fund.amount = new_amount
 
             fund.save()
+            sync_cash(CashFlowCategory.DISPATCHER_FUND_ADVANCE, fund.code, fund.amount, fund.advance_date)
 
         return Response({
             'success': True,
@@ -845,6 +857,7 @@ class DispatcherFundDetailAPIView(APIView):
 
             fund.is_deleted = True
             fund.save(update_fields=['is_deleted'])
+            cancel_cash(CashFlowCategory.DISPATCHER_FUND_ADVANCE, fund.code)
 
         return Response({
             'success': True,
