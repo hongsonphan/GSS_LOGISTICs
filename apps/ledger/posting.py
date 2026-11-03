@@ -248,10 +248,48 @@ def build_invoice(inv):
     return inv.issue_date, f'Hoá đơn {inv.code}', inv.code, lines
 
 
+def build_settlement(v):
+    """Phiếu quyết toán đã duyệt / đã quyết toán: ghi nhận phần PHÁT SINH kế toán nhập trên bảng kê đối soát.
+
+    Cước, chi hộ và chi phí đã có chứng từ riêng (chuyến, khoản chi) nên không ghi lại; chỉ ghi phần chênh lệch do đối soát:
+    - Khách hàng: phụ phí / điều chỉnh tăng (giảm) doanh thu và công nợ phải thu (Nợ 131 / Có 5113).
+    - Tài xế: chi phí phát sinh được duyệt làm tăng (giảm) chi phí và trừ vào tạm ứng (Nợ 632 / Có 141).
+    - Đối tác 3PL: phụ phí / khấu trừ làm tăng (giảm) giá vốn và công nợ phải trả (Nợ 632 / Có 331).
+    """
+    if v.is_deleted or v.status not in ('APPROVED', 'SETTLED'):
+        return None
+    adjustment = sum(int(line.get('adjustment') or 0) for line in (v.lines or []))
+    if adjustment == 0:
+        return None
+    amount = _d(abs(adjustment))
+    increase = adjustment > 0
+    company = _company_of(v)
+    memo = f'Phát sinh đối soát {v.code}'[:255]
+    if v.party_type == 'CUSTOMER':
+        partner, _employee = _partner_by_name(company, 'CUSTOMER', v.party_name)
+        debit, credit = dict(key='receivable', partner=partner), dict(key='revenue', partner=partner)
+    elif v.party_type == 'DRIVER':
+        from apps.personnel.models import Employee
+        employee = Employee.objects.filter(pk=v.party_ref).first() if str(v.party_ref).isdigit() else None
+        debit, credit = dict(key='cogs'), dict(key='advance', employee=employee)
+    else:
+        from apps.master_data.models import Subcontractor
+        sub = Subcontractor.objects.filter(pk=v.party_ref).select_related('partner').first() if str(v.party_ref).isdigit() else None
+        partner = _partner_of_sub(sub)
+        debit, credit = dict(key='cogs'), dict(key='payable', partner=partner)
+    if increase:
+        lines = [dict(debit, debit=amount, memo=memo), dict(credit, credit=amount, memo=memo)]
+    else:
+        # điều chỉnh giảm: đảo bút toán
+        lines = [dict(credit, debit=amount, memo=memo), dict(debit, credit=amount, memo=memo)]
+    when = _date(v.approved_at or v.created_at)
+    return when, f'Phát sinh đối soát {v.code}'[:500], f'{v.code}/PS', lines
+
+
 # ---------------------------------------------------------------- nguồn chứng từ
 
 def _sources():
-    from apps.billing.models import CashTransaction, CustomerInvoice, TripExpense
+    from apps.billing.models import CashTransaction, CustomerInvoice, SettlementVoucher, TripExpense
     from apps.dispatch.models import DispatchTrip
     from apps.personnel.models import PayrollPeriod
 
@@ -261,6 +299,7 @@ def _sources():
         'trip_expense': (TripExpense, build_trip_expense),
         'payroll': (PayrollPeriod, build_payroll),
         'invoice': (CustomerInvoice, build_invoice),
+        'settlement': (SettlementVoucher, build_settlement),
     }
 
 

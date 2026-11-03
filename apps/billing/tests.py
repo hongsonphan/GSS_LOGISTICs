@@ -484,6 +484,46 @@ class DriverBatchSettlementTests(TestCase):
         self.trip1.refresh_from_db()
         self.assertEqual(self.trip1.subcontractor_settlement_status, 'SETTLED')
 
+    def test_approved_voucher_posts_adjustments_to_ledger_and_reopen_removes_them(self):
+        """Phát sinh kế toán trên phiếu được ghi sổ khi Duyệt (khách: 131/5113, tài xế: 632/141, 3PL: 632/331) và gỡ khi mở lại."""
+        from django.test import override_settings
+        from apps.ledger.models import JournalLine
+        from apps.master_data.models import Subcontractor
+
+        def bal(prefix):
+            lines = JournalLine.objects.filter(account__code__startswith=prefix)
+            return int(sum((ln.debit - ln.credit for ln in lines), Decimal('0')))
+
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        t1 = self.trip1
+        sub = Subcontractor.objects.create(name='3PL T', code='3PLT')
+        DispatchTrip.objects.filter(id=t1.id).update(subcontractor=sub, subcontractor_cost=1000000)
+        t1.refresh_from_db()
+        with override_settings(LEDGER_AUTO_POST=True):
+            cases = [('CUSTOMER', '131', 300000, '5113'), ('DRIVER', '141', 50000, '632'), ('PARTNER', '331', 70000, '632')]
+            for party, acct, adj, other in cases:
+                with self.captureOnCommitCallbacks(execute=True):
+                    res = self.client.post(base, {'party_type': party, 'trip_ids': [t1.id], 'adjustments': {str(t1.id): adj},
+                                                  'adjustment_notes': {str(t1.id): 'phát sinh'}}, format='json')
+                self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+                vid = res.data['voucher']['id']
+                before = (bal(acct), bal(other))
+                with self.captureOnCommitCallbacks(execute=True):
+                    self.assertEqual(self._approve(base, vid).status_code, status.HTTP_200_OK)
+                after = (bal(acct), bal(other))
+                if party == 'CUSTOMER':      # Nợ 131 / Có 5113
+                    self.assertEqual((after[0] - before[0], after[1] - before[1]), (adj, -adj))
+                elif party == 'DRIVER':      # Nợ 632 / Có 141
+                    self.assertEqual((after[0] - before[0], after[1] - before[1]), (-adj, adj))
+                else:                        # Nợ 632 / Có 331
+                    self.assertEqual((after[0] - before[0], after[1] - before[1]), (-adj, adj))
+                with self.captureOnCommitCallbacks(execute=True):
+                    self.assertEqual(self.client.post(f'{base}{vid}/reopen/', {'reason': 'kiểm tra'}, format='json').status_code, status.HTTP_200_OK)
+                self.assertEqual((bal(acct), bal(other)), before)   # mở lại đối soát thì bút toán bị gỡ
+                with self.captureOnCommitCallbacks(execute=True):
+                    self.assertEqual(self.client.delete(f'{base}{vid}/').status_code, status.HTTP_200_OK)
+
     def test_voucher_partner_direction_flips_when_advance_exceeds_cost(self):
         self.client.force_authenticate(user=self.accountant_user)
         self.trip1.subcontractor_cost = 1000000
