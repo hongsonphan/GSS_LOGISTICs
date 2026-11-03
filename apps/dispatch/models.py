@@ -282,6 +282,17 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     settled_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm chốt sổ chi phí")
     settled_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='settled_trips')
     
+    # Trạng thái quyết toán với tài xế theo 3 bước: Đối soát -> Duyệt -> Quyết toán
+    driver_settlement_status = models.CharField(
+        max_length=20, default='PENDING', db_index=True,
+        choices=[
+            ('PENDING', 'Chưa quyết toán'),
+            ('RECONCILING', 'Đối soát'),
+            ('APPROVED', 'Đã duyệt'),
+            ('SETTLED', 'Đã quyết toán'),
+        ],
+        help_text="Trạng thái quyết toán tạm ứng / chi phí với tài xế"
+    )
     driver_advance_amount = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Tổng tiền tạm ứng chuyến cho tài xế (VNĐ)")
     advance_settlement_status = models.CharField(
         max_length=20,
@@ -301,7 +312,9 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         default='PENDING', 
         choices=[
             ('PENDING', 'Chưa quyết toán (Chưa tính công nợ)'),
-            ('SETTLED', 'Đã quyết toán chốt nợ'),
+            ('RECONCILING', 'Đối soát (đã gửi phiếu đối soát cho khách)'),
+            ('APPROVED', 'Đã duyệt (lên công nợ)'),
+            ('SETTLED', 'Đã quyết toán'),
             ('INVOICED', 'Đã xuất hóa đơn VAT'),
             ('PAID', 'Đã thu đủ tiền')
         ], 
@@ -337,6 +350,8 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         default='PENDING',
         choices=[
             ('PENDING', 'Chờ quyết toán'),
+            ('RECONCILING', 'Đối soát'),
+            ('APPROVED', 'Đã duyệt (lên công nợ phải trả)'),
             ('PARTIAL', 'Thanh toán 1 phần'),
             ('SETTLED', 'Đã quyết toán xong')
         ],

@@ -26,6 +26,12 @@ from core.sequences import next_code
 
 PARTY_PREFIX = {'DRIVER': 'QTTX', 'PARTNER': 'QT3PL', 'CUSTOMER': 'QTKH'}
 CASH_PARTNER = {'DRIVER': 'DRIVER', 'PARTNER': 'SUBCONTRACTOR', 'CUSTOMER': 'CUSTOMER'}
+# Trường trạng thái quyết toán trên chuyến theo từng đối tượng: PENDING -> RECONCILING (Đối soát) -> APPROVED (Duyệt) -> SETTLED (Quyết toán)
+STAGE_FIELD = {'DRIVER': 'driver_settlement_status', 'PARTNER': 'subcontractor_settlement_status', 'CUSTOMER': 'customer_settlement_status'}
+
+
+def _set_stage(party_type, trip_ids, stage):
+    DispatchTrip.objects.filter(id__in=list(trip_ids)).update(**{STAGE_FIELD[party_type]: stage})
 
 
 def _live_expenses(trip):
@@ -174,6 +180,9 @@ def serialize(v, with_lines=True):
         'id': v.id, 'code': v.code, 'party_type': v.party_type, 'party_type_label': v.get_party_type_display(),
         'party_name': v.party_name, 'amount': int(v.amount), 'direction': v.direction,
         'status': v.status, 'status_label': v.get_status_display(), 'with_cash': v.with_cash,
+        'counterparty_confirmed': v.counterparty_confirmed, 'counterparty_confirm_note': v.counterparty_confirm_note,
+        'counterparty_confirmed_at': v.counterparty_confirmed_at.strftime('%d/%m/%Y %H:%M') if v.counterparty_confirmed_at else '',
+        'settled_at': v.settled_at.strftime('%d/%m/%Y %H:%M') if v.settled_at else '',
         'payment_method': v.payment_method, 'notes': v.notes, 'trips_count': len(v.lines or []),
         'cash_transaction_code': v.cash_transaction.code if v.cash_transaction else '',
         'created_at': v.created_at.strftime('%d/%m/%Y %H:%M'),
@@ -206,7 +215,7 @@ def _already_settled(party_type, trip):
     if party_type == VoucherPartyType.DRIVER:
         return trip.is_expenses_settled
     if party_type == VoucherPartyType.PARTNER:
-        return trip.subcontractor_settlement_status == 'SETTLED'
+        return trip.subcontractor_settlement_status in ('APPROVED', 'PARTIAL', 'SETTLED')
     return trip.is_customer_settled
 
 
@@ -281,6 +290,7 @@ class SettlementVoucherListCreateAPIView(APIView):
                 created_by=getattr(request.user, 'employee', None),
             )
             voucher.trips.set(group)
+            _set_stage(party_type, [t.id for t in group], 'RECONCILING')
             _write_log(voucher, request, 'CREATE', reason=voucher.notes)
             vouchers.append(voucher)
         return Response({'success': True, 'voucher': serialize(vouchers[0]), 'vouchers': [serialize(v, with_lines=False) for v in vouchers]},
@@ -335,7 +345,18 @@ class SettlementVoucherDetailAPIView(APIView):
                 setattr(v, field, request.data[field] or ('BANK' if field == 'payment_method' else ''))
         if 'with_cash' in request.data:
             v.with_cash = bool(request.data['with_cash'])
+        was_confirmed = v.counterparty_confirmed
+        if 'counterparty_confirmed' in request.data:
+            v.counterparty_confirmed = bool(request.data['counterparty_confirmed'])
+            v.counterparty_confirmed_at = timezone.now() if v.counterparty_confirmed else None
+        if 'counterparty_confirm_note' in request.data:
+            v.counterparty_confirm_note = (request.data['counterparty_confirm_note'] or '').strip()[:255]
+        if not v.counterparty_confirmed:
+            v.counterparty_confirm_note = '' if 'counterparty_confirm_note' not in request.data else v.counterparty_confirm_note
         v.save()
+        if was_confirmed != v.counterparty_confirmed:
+            _write_log(v, request, 'CONFIRM', [{'field': 'Đối tượng xác nhận bảng kê', 'trip_code': '', 'old': was_confirmed, 'new': v.counterparty_confirmed}],
+                       reason=v.counterparty_confirm_note)
         changes = _diff_lines(old_lines, lines)
         header_labels = {'notes': 'Ghi chú', 'payment_method': 'Hình thức thanh toán', 'with_cash': 'Phát sinh phiếu Thu/Chi'}
         changes += [{'field': header_labels[k], 'trip_code': '', 'old': old_header[k], 'new': getattr(v, k)}
@@ -352,13 +373,15 @@ class SettlementVoucherDetailAPIView(APIView):
         if not v:
             return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
         if v.status != VoucherStatus.DRAFT:
-            return Response({'error': 'Phiếu đã duyệt, cần Mở lại phiếu trước khi xóa'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Phiếu đã duyệt, cần Mở lại đối soát trước khi xóa'}, status=status.HTTP_400_BAD_REQUEST)
         _write_log(v, request, 'DELETE', reason=request.data.get('reason', ''))
+        _set_stage(v.party_type, v.trips.values_list('id', flat=True), 'PENDING')
         v.delete()
         return Response({'success': True, 'message': f'Đã xóa phiếu {v.code}'})
 
 
 class SettlementVoucherApproveAPIView(APIView):
+    """Bước 2 - DUYỆT: đối tượng đã xác nhận bảng kê và nội bộ đồng ý -> số liệu chốt, lên công nợ. Chưa phát sinh tiền."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsAccountant]
     access_actions = {'POST': 'approve'}
@@ -369,7 +392,11 @@ class SettlementVoucherApproveAPIView(APIView):
         if not v:
             return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
         if v.status != VoucherStatus.DRAFT:
-            return Response({'error': 'Phiếu đã được duyệt'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Phiếu không ở bước Đối soát (đã duyệt hoặc đã quyết toán)'}, status=status.HTTP_400_BAD_REQUEST)
+        if not v.counterparty_confirmed:
+            return Response({'error': f'Chưa có xác nhận của {v.get_party_type_display().lower()} trên bảng kê đối soát. '
+                                      'Tích "Đối tượng đã xác nhận" (ghi rõ ai xác nhận) trước khi duyệt'},
+                            status=status.HTTP_400_BAD_REQUEST)
         if 'with_cash' in request.data:
             v.with_cash = bool(request.data['with_cash'])
         if request.data.get('payment_method'):
@@ -396,11 +423,63 @@ class SettlementVoucherApproveAPIView(APIView):
                 t.is_expenses_settled = True
                 t.settled_at = now
                 t.settled_by = emp
-                t.advance_settlement_status = 'SETTLED'
+                t.driver_settlement_status = 'APPROVED'
                 if t.status in [TripStatus.AT_WAREHOUSE, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY]:
                     t.status = TripStatus.COMPLETED
                 t.save()
                 t.expenses.filter(is_deleted=False).exclude(status=ApprovalStatus.REJECTED).update(status=ApprovalStatus.SETTLED)
+            elif v.party_type == VoucherPartyType.PARTNER:
+                t.subcontractor_settlement_status = 'APPROVED'
+                t.save(update_fields=['subcontractor_settlement_status'])
+            else:
+                t.is_customer_settled = True
+                t.customer_settlement_status = 'APPROVED'
+                t.customer_reconciled = True
+                t.customer_settled_at = now
+                t.customer_settled_by = emp
+                t.customer_reconciled_at = now
+                t.customer_reconciled_by = emp
+                t.customer_soa_code = v.code
+                t.save(update_fields=['is_customer_settled', 'customer_settlement_status', 'customer_reconciled', 'customer_settled_at',
+                                      'customer_settled_by', 'customer_reconciled_at', 'customer_reconciled_by', 'customer_soa_code'])
+
+        v.status = VoucherStatus.APPROVED
+        v.approved_by = emp
+        v.approved_at = now
+        v.save()
+        _write_log(v, request, 'APPROVE')
+        return Response({'success': True, 'message': f'Đã duyệt phiếu {v.code}: số liệu đã chốt, lên công nợ', 'voucher': serialize(v)})
+
+
+class SettlementVoucherSettleAPIView(APIView):
+    """Bước 3 - QUYẾT TOÁN: cấn trừ / thu - chi thực tế, đóng tạm ứng; phát sinh phiếu Thu/Chi (nếu chọn)."""
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAccountant]
+    access_actions = {'POST': 'approve'}
+
+    @transaction.atomic
+    def post(self, request, pk):
+        v = SettlementVoucher.objects.filter(pk=pk, is_deleted=False).first()
+        if not v:
+            return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
+        if v.status != VoucherStatus.APPROVED:
+            return Response({'error': 'Chỉ quyết toán được phiếu đã duyệt (đã lên công nợ)'}, status=status.HTTP_400_BAD_REQUEST)
+        if 'with_cash' in request.data:
+            v.with_cash = bool(request.data['with_cash'])
+        if request.data.get('payment_method'):
+            v.payment_method = request.data['payment_method']
+
+        emp = getattr(request.user, 'employee', None)
+        now = timezone.now()
+        trips = list(v.trips.select_related('driver').prefetch_related('driver_advances'))
+        lines = {l['trip_id']: l for l in v.lines}
+
+        for t in trips:
+            line = lines.get(t.id, {})
+            if v.party_type == VoucherPartyType.DRIVER:
+                t.driver_settlement_status = 'SETTLED'
+                t.advance_settlement_status = 'SETTLED'
+                t.save(update_fields=['driver_settlement_status', 'advance_settlement_status'])
                 spent = line.get('spent', 0) + line.get('adjustment', 0)
                 # Phân bổ thực chi lần lượt lên từng phiếu tạm ứng; phiếu cuối nhận phần còn lại (kể cả phần vượt)
                 advances = list(t.driver_advances.filter(is_deleted=False, status=DriverAdvanceStatus.ADVANCED).order_by('advance_date', 'id'))
@@ -424,15 +503,8 @@ class SettlementVoucherApproveAPIView(APIView):
                 t.subcontractor_settled_at = now
                 t.save(update_fields=['subcontractor_settlement_status', 'subcontractor_settled_at'])
             else:
-                t.is_customer_settled = True
-                t.customer_reconciled = True
-                t.customer_settled_at = now
-                t.customer_settled_by = emp
-                t.customer_reconciled_at = now
-                t.customer_reconciled_by = emp
-                t.customer_soa_code = v.code
-                t.save(update_fields=['is_customer_settled', 'customer_reconciled', 'customer_settled_at', 'customer_settled_by',
-                                      'customer_reconciled_at', 'customer_reconciled_by', 'customer_soa_code'])
+                t.customer_settlement_status = 'SETTLED'
+                t.save(update_fields=['customer_settlement_status'])
 
         if v.with_cash and v.amount > 0:
             inflow = v.direction == 'RECEIVE'
@@ -451,16 +523,16 @@ class SettlementVoucherApproveAPIView(APIView):
                 ref_code=v.code, created_by=emp, notes=f"Quyết toán {v.get_party_type_display()} - phiếu {v.code}",
             )
 
-        v.status = VoucherStatus.APPROVED
-        v.approved_by = emp
-        v.approved_at = now
+        v.status = VoucherStatus.SETTLED
+        v.settled_by = emp
+        v.settled_at = now
         v.save()
-        _write_log(v, request, 'APPROVE')
-        return Response({'success': True, 'message': f'Đã duyệt phiếu {v.code}', 'voucher': serialize(v)})
+        _write_log(v, request, 'SETTLE')
+        return Response({'success': True, 'message': f'Đã quyết toán phiếu {v.code}', 'voucher': serialize(v)})
 
 
-class SettlementVoucherReopenAPIView(APIView):
-    """Mở lại phiếu đã duyệt để sửa/xóa: gỡ khóa chuyến và xóa phiếu Thu/Chi đã phát sinh."""
+class SettlementVoucherUnsettleAPIView(APIView):
+    """Hủy quyết toán (Đã quyết toán -> Đã duyệt): hủy phiếu Thu/Chi đã phát sinh và mở lại tạm ứng."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsAccountant]
     access_actions = {'POST': 'approve'}
@@ -470,6 +542,54 @@ class SettlementVoucherReopenAPIView(APIView):
         v = SettlementVoucher.objects.filter(pk=pk, is_deleted=False).select_related('cash_transaction').first()
         if not v:
             return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
+        if v.status != VoucherStatus.SETTLED:
+            return Response({'error': 'Phiếu chưa quyết toán'}, status=status.HTTP_400_BAD_REQUEST)
+        reason = (request.data.get('reason') or '').strip()
+        if not reason:
+            return Response({'error': 'Nhập lý do hủy quyết toán để lưu vết'}, status=status.HTTP_400_BAD_REQUEST)
+
+        for t in v.trips.all():
+            if v.party_type == VoucherPartyType.DRIVER:
+                t.driver_settlement_status = 'APPROVED'
+                has_adv = t.driver_advances.filter(is_deleted=False).exists()
+                t.advance_settlement_status = 'ADVANCED' if has_adv else 'NO_ADVANCE'
+                t.save(update_fields=['driver_settlement_status', 'advance_settlement_status'])
+                t.driver_advances.filter(is_deleted=False, settled_at=v.settled_at).update(
+                    status=DriverAdvanceStatus.ADVANCED, settled_at=None, settled_by=None, actual_spent=0,
+                    refund_amount=0, reimburse_amount=0)
+            elif v.party_type == VoucherPartyType.PARTNER:
+                t.subcontractor_settlement_status = 'APPROVED'
+                t.subcontractor_settled_at = None
+                t.save(update_fields=['subcontractor_settlement_status', 'subcontractor_settled_at'])
+            else:
+                t.customer_settlement_status = 'APPROVED'
+                t.save(update_fields=['customer_settlement_status'])
+
+        if v.cash_transaction:
+            v.cash_transaction.delete()
+            v.cash_transaction = None
+        v.status = VoucherStatus.APPROVED
+        v.settled_by = None
+        v.settled_at = None
+        v.save()
+        _write_log(v, request, 'UNSETTLE', reason=reason)
+        return Response({'success': True, 'message': f'Đã hủy quyết toán phiếu {v.code}', 'voucher': serialize(v)})
+
+
+class SettlementVoucherReopenAPIView(APIView):
+    """Mở lại đối soát (Đã duyệt -> Đối soát) để sửa/xóa: gỡ khóa chuyến và bỏ xác nhận của đối tượng."""
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAccountant]
+    access_actions = {'POST': 'approve'}
+
+    @transaction.atomic
+    def post(self, request, pk):
+        v = SettlementVoucher.objects.filter(pk=pk, is_deleted=False).select_related('cash_transaction').first()
+        if not v:
+            return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
+        if v.status == VoucherStatus.SETTLED:
+            return Response({'error': 'Phiếu đã quyết toán: hãy Hủy quyết toán (hủy phiếu thu/chi) trước khi mở lại đối soát'},
+                            status=status.HTTP_400_BAD_REQUEST)
         if v.status != VoucherStatus.APPROVED:
             return Response({'error': 'Phiếu chưa được duyệt'}, status=status.HTTP_400_BAD_REQUEST)
         reason = (request.data.get('reason') or '').strip()
@@ -481,26 +601,28 @@ class SettlementVoucherReopenAPIView(APIView):
                 t.is_expenses_settled = False
                 t.settled_at = None
                 t.settled_by = None
-                t.advance_settlement_status = 'PENDING'
+                t.driver_settlement_status = 'RECONCILING'
                 t.save()
                 t.expenses.filter(is_deleted=False, status=ApprovalStatus.SETTLED).update(status=ApprovalStatus.APPROVED)
+                # Phiếu duyệt theo cách cũ đã đóng tạm ứng ngay lúc duyệt: trả về trạng thái đang tạm ứng
                 t.driver_advances.filter(is_deleted=False, settled_at=v.approved_at).update(
                     status=DriverAdvanceStatus.ADVANCED, settled_at=None, settled_by=None, actual_spent=0,
                     refund_amount=0, reimburse_amount=0)
             elif v.party_type == VoucherPartyType.PARTNER:
-                t.subcontractor_settlement_status = 'PENDING'
+                t.subcontractor_settlement_status = 'RECONCILING'
                 t.subcontractor_settled_at = None
                 t.save(update_fields=['subcontractor_settlement_status', 'subcontractor_settled_at'])
             else:
                 t.is_customer_settled = False
+                t.customer_settlement_status = 'RECONCILING'
                 t.customer_reconciled = False
                 t.customer_settled_at = None
                 t.customer_settled_by = None
                 t.customer_reconciled_at = None
                 t.customer_reconciled_by = None
                 t.customer_soa_code = ''
-                t.save(update_fields=['is_customer_settled', 'customer_reconciled', 'customer_settled_at', 'customer_settled_by',
-                                      'customer_reconciled_at', 'customer_reconciled_by', 'customer_soa_code'])
+                t.save(update_fields=['is_customer_settled', 'customer_settlement_status', 'customer_reconciled', 'customer_settled_at',
+                                      'customer_settled_by', 'customer_reconciled_at', 'customer_reconciled_by', 'customer_soa_code'])
 
         if v.cash_transaction:
             v.cash_transaction.delete()
@@ -508,9 +630,11 @@ class SettlementVoucherReopenAPIView(APIView):
         v.status = VoucherStatus.DRAFT
         v.approved_by = None
         v.approved_at = None
+        v.counterparty_confirmed = False
+        v.counterparty_confirmed_at = None
         v.save()
         _write_log(v, request, 'REOPEN', reason=reason)
-        return Response({'success': True, 'message': f'Đã mở lại phiếu {v.code}', 'voucher': serialize(v)})
+        return Response({'success': True, 'message': f'Đã mở lại đối soát phiếu {v.code}', 'voucher': serialize(v)})
 
 
 # ---------------------------------------------------------------- báo cáo (chỉ xem) --------------------------------------
@@ -541,7 +665,7 @@ class SettlementVoucherReportAPIView(APIView):
         approved = 0
         for v in vouchers:
             total[v.direction] += int(v.amount)
-            approved += v.status == VoucherStatus.APPROVED
+            approved += v.status in (VoucherStatus.APPROVED, VoucherStatus.SETTLED)
         return Response({
             'success': True,
             'summary': {'count': len(vouchers), 'approved': approved, 'draft': len(vouchers) - approved,

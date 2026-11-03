@@ -335,7 +335,7 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="top_route" class="text-[13px] text-slate-600 max-w-xs truncate" title="${escapeHtml(item.top_route)}">${escapeHtml(item.top_route)}</td>
                 <td data-col-key="settlement_status" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">
                     ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
-                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đã lưu phiếu quyết toán, chờ duyệt">+${item.saved_trips_count} đã lưu</div>` : ''}
+                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đang đối soát, chờ duyệt">+${item.saved_trips_count} đang đối soát</div>` : ''}
                 </td>
                 <td data-col-key="revenue" class="text-right font-black text-indigo-700 text-[13px] tabular-nums">${revDisplay}</td>
                 <td data-col-key="settled_revenue" class="text-right font-bold text-slate-800 text-[13px] tabular-nums">${formatMoneyVND(item.settled_revenue || 0)}</td>

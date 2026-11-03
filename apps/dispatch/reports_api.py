@@ -1545,7 +1545,7 @@ class ReportsAPIView(APIView):
 
         approved_customer_lines = {}
         for voucher in SettlementVoucher.objects.filter(
-                party_type='CUSTOMER', status='APPROVED', is_deleted=False,
+                party_type='CUSTOMER', status__in=('APPROVED', 'SETTLED'), is_deleted=False,
                 trips__in=completed_trips_in_period.values('id')).distinct():
             for ln in voucher.lines or []:
                 approved_customer_lines[ln.get('trip_id')] = ln

@@ -122,7 +122,7 @@ function applyReport11Filters() {
         const statusBadge = item.is_settled
             ? '<span class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã hoàn ứng</span>'
             : (item.saved_voucher_code
-                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đã lưu QT (chờ duyệt)</span>'
+                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đối soát (chờ duyệt)</span>'
                 : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Đang tạm ứng</span>');
 
         return `
@@ -291,7 +291,7 @@ function applyReport12Filters() {
         const settlementBadge = item.is_settled
             ? '<span class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã Quyết Toán</span>'
             : (item.saved_voucher_code
-                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đã lưu QT (chờ duyệt)</span>'
+                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đối soát (chờ duyệt)</span>'
                 : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-hourglass"></i> Chưa Chốt</span>');
 
         const podBadge = item.has_pod

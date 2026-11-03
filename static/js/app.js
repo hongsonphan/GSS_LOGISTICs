@@ -24997,6 +24997,9 @@ function showSettlementVoucherModal(v, opts = {}) {
     currentSettleVoucher = v;
     const readonly = !!opts.readonly;
     const draft = v.status === 'DRAFT' && !readonly;
+    const approved = v.status === 'APPROVED' && !readonly;
+    const settled = v.status === 'SETTLED' && !readonly;
+    const cashEditable = draft || approved;
     const party = v.party_type;
     settleAnySplit = party === 'DRIVER' && v.lines.some(l => l.is_split_trip);
     const body = v.lines.map((l, i) => settleLineRow(party, l, i, draft)).join('');
@@ -25013,7 +25016,7 @@ function showSettlementVoucherModal(v, opts = {}) {
         <div class="bg-white p-2 rounded-xl border border-slate-200 flex items-center gap-2 flex-wrap text-xs no-print">
             <span class="font-bold text-slate-600 px-2">${settleBatch.length} phiếu trong lần chọn này:</span>
             ${settleBatch.map(b => `<button type="button" onclick="openSettlementVoucher(${b.id})" class="px-3 py-1.5 rounded-lg font-bold border cursor-pointer ${b.id === v.id ? 'bg-teal-700 text-white border-teal-700' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}">
-                ${escapeHtml(b.name)} · ${escapeHtml(b.code)}${b.status === 'APPROVED' ? ' ✓' : ''}</button>`).join('')}
+                ${escapeHtml(b.name)} · ${escapeHtml(b.code)}${b.status === 'APPROVED' || b.status === 'SETTLED' ? ' ✓' : ''}</button>`).join('')}
         </div>` : '';
     // Dòng tổng: số cột đứng trước cột "Tổng tạm ứng" / "Cước" thay đổi theo đối tượng
     const footLead = party === 'DRIVER' ? 13 : (party === 'PARTNER' ? 9 : 8);
@@ -25031,10 +25034,11 @@ function showSettlementVoucherModal(v, opts = {}) {
                 <div>
                     <h3 class="font-bold text-sm sm:text-base font-heading text-slate-900">Bảng kê quyết toán ${SETTLE_PARTY_LABEL[party].toLowerCase()} - <span class="font-mono">${escapeHtml(v.code)}</span></h3>
                     <p class="text-xs text-slate-500">Đối tượng: <strong>${escapeHtml(v.party_name)}</strong> · ${v.lines.length} chuyến · Lập ${escapeHtml(v.created_at)} ·
-                        <span class="font-bold ${draft ? 'text-amber-700' : 'text-emerald-700'}">${escapeHtml(v.status_label)}</span>
+                        <span class="font-bold ${v.status === 'DRAFT' ? 'text-amber-700' : (v.status === 'APPROVED' ? 'text-sky-700' : 'text-emerald-700')}">${escapeHtml(v.status_label)}</span>
                         ${v.cash_transaction_code ? ` · Phiếu ${v.direction === 'RECEIVE' ? 'thu' : 'chi'}: <strong>${escapeHtml(v.cash_transaction_code)}</strong>` : ''}</p>
                 </div>
             </div>
+            ${settleStepper(v.status)}
             <button type="button" onclick="printSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"><i class="ph-bold ph-printer"></i> In bảng kê</button>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 overflow-auto text-xs" style="max-height:calc(100vh - 290px)">
@@ -25051,9 +25055,15 @@ function showSettlementVoucherModal(v, opts = {}) {
             <label class="font-bold text-slate-700">Ghi chú</label>
             <input id="settle-voucher-notes" type="text" value="${escapeHtml(v.notes || '')}" ${draft ? '' : 'disabled'}
                 class="flex-1 min-w-[220px] px-2.5 py-1.5 border border-slate-300 rounded-lg disabled:bg-slate-50">
-            <label class="flex items-center gap-2 font-bold text-slate-800"><input type="checkbox" id="settle-voucher-cash" ${v.with_cash ? 'checked' : ''} ${draft ? '' : 'disabled'}>
-                Phát sinh phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} khi duyệt</label>
-            <select id="settle-voucher-method" ${draft ? '' : 'disabled'} class="px-2 py-1 border border-slate-300 rounded-lg font-bold">
+            ${draft ? `<label class="flex items-center gap-2 font-bold text-slate-800 basis-full"><input type="checkbox" id="settle-confirm-cb" ${v.counterparty_confirmed ? 'checked' : ''}>
+                    ${SETTLE_PARTY_LABEL[party]} đã xác nhận bảng kê đối soát</label>
+                <input id="settle-confirm-note" type="text" maxlength="255" value="${escapeHtml(v.counterparty_confirm_note || '')}" placeholder="Ai xác nhận, bằng hình thức nào (email, ký tay...)"
+                    class="flex-1 min-w-[260px] px-2.5 py-1.5 border border-slate-300 rounded-lg">`
+                : `<div class="basis-full text-slate-700"><b class="${v.counterparty_confirmed ? 'text-emerald-700' : 'text-rose-700'}">${v.counterparty_confirmed ? '✓ Đối tượng đã xác nhận' : 'Chưa có xác nhận của đối tượng'}</b>
+                    ${v.counterparty_confirmed_at ? ` · ${escapeHtml(v.counterparty_confirmed_at)}` : ''}${v.counterparty_confirm_note ? ` · ${escapeHtml(v.counterparty_confirm_note)}` : ''}</div>`}
+            <label class="flex items-center gap-2 font-bold text-slate-800"><input type="checkbox" id="settle-voucher-cash" ${v.with_cash ? 'checked' : ''} ${cashEditable ? '' : 'disabled'}>
+                Phát sinh phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} khi quyết toán</label>
+            <select id="settle-voucher-method" ${cashEditable ? '' : 'disabled'} class="px-2 py-1 border border-slate-300 rounded-lg font-bold">
                 <option value="BANK" ${v.payment_method === 'BANK' ? 'selected' : ''}>Chuyển khoản</option>
                 <option value="CASH" ${v.payment_method === 'CASH' ? 'selected' : ''}>Tiền mặt</option></select>
             <div class="flex items-center gap-2 ml-auto">
@@ -25061,8 +25071,11 @@ function showSettlementVoucherModal(v, opts = {}) {
             <button type="button" data-voucher-action onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50 cursor-pointer"><i class="ph-bold ph-trash"></i> Xóa</button>
             <button type="button" data-voucher-action onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50 cursor-pointer"><i class="ph-bold ph-floppy-disk"></i> Lưu</button>
             <button type="button" data-voucher-action onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-seal-check"></i> Duyệt phiếu</button>`
-            : `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="Lý do mở lại (bắt buộc)" class="w-64 px-2.5 py-1.5 border border-slate-300 rounded-lg">
-            <button type="button" data-voucher-action onclick="reopenSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold cursor-pointer"><i class="ph-bold ph-lock-key-open"></i> Mở lại để sửa</button>`}
+            : (approved ? `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="Lý do mở lại đối soát (bắt buộc)" class="w-64 px-2.5 py-1.5 border border-slate-300 rounded-lg">
+            <button type="button" data-voucher-action onclick="reopenSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-amber-500 font-bold text-amber-800 hover:bg-amber-50 cursor-pointer"><i class="ph-bold ph-lock-key-open"></i> Mở lại đối soát</button>
+            <button type="button" data-voucher-action onclick="settleSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-handshake"></i> Quyết toán</button>`
+            : (settled ? `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="Lý do hủy quyết toán (bắt buộc)" class="w-64 px-2.5 py-1.5 border border-slate-300 rounded-lg">
+            <button type="button" data-voucher-action onclick="unsettleSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold cursor-pointer"><i class="ph-bold ph-arrow-counter-clockwise"></i> Hủy quyết toán</button>` : ''))}
             </div>
         </div>
         ${(v.logs || []).length ? `<div class="bg-white rounded-xl border border-slate-200 px-3 py-2 text-xs no-print">${settleLogSection(v, false)}</div>` : ''}`;
@@ -25078,6 +25091,15 @@ function showSettlementVoucherModal(v, opts = {}) {
         });
     }
     recalcSettleVoucher();
+}
+
+// Ba bước: Đối soát -> Duyệt (lên công nợ) -> Quyết toán
+function settleStepper(status) {
+    const idx = { DRAFT: 0, APPROVED: 1, SETTLED: 3 }[status] ?? 0;
+    const steps = ['1. Đối soát', '2. Duyệt (lên công nợ)', '3. Quyết toán'];
+    return `<div class="flex items-center gap-1.5 text-[11px] font-bold no-print">${steps.map((t, i) =>
+        `<span class="px-2.5 py-1 rounded-full border ${i < idx ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : (i === idx ? 'bg-teal-700 text-white border-teal-700' : 'bg-white text-slate-400 border-slate-200')}">${i < idx ? '✓ ' : ''}${t}</span>`
+    ).join('<span class="text-slate-300">➔</span>')}</div>`;
 }
 
 function settleLogValue(v) {
@@ -25197,8 +25219,10 @@ function collectSettleVoucherForm() {
     document.querySelectorAll('[data-adjust-note-trip]').forEach(i => { adjustment_notes[i.getAttribute('data-adjust-note-trip')] = i.value.trim(); });
     const salary_deductions = {};
     document.querySelectorAll('[data-deduct-expense]').forEach(cb => { salary_deductions[cb.getAttribute('data-deduct-expense')] = cb.checked; });
+    const confirmCb = document.getElementById('settle-confirm-cb');
     return {
         split_ratios, adjustments, adjustment_notes, salary_deductions,
+        ...(confirmCb ? { counterparty_confirmed: confirmCb.checked, counterparty_confirm_note: document.getElementById('settle-confirm-note')?.value || '' } : {}),
         notes: document.getElementById('settle-voucher-notes')?.value || '',
         with_cash: !!document.getElementById('settle-voucher-cash')?.checked,
         payment_method: document.getElementById('settle-voucher-method')?.value || 'BANK',
@@ -25227,11 +25251,16 @@ async function saveSettleVoucher(silent = false) {
 
 async function approveSettleVoucher() {
     const v = currentSettleVoucher;
+    if (!document.getElementById('settle-confirm-cb')?.checked) {
+        showToast('warning', `Cần ${SETTLE_PARTY_LABEL[v.party_type].toLowerCase()} xác nhận bảng kê đối soát (tích ô xác nhận, ghi rõ ai xác nhận) trước khi duyệt`, 'Chưa có xác nhận');
+        document.getElementById('settle-confirm-cb')?.focus();
+        return;
+    }
     const saved = await saveSettleVoucher(true);
     if (!saved) return;
     const ok = await showConfirmModal({
-        title: 'Duyệt Phiếu Quyết Toán',
-        message: `Duyệt phiếu ${v.code}? Các chuyến sẽ được khóa sổ${document.getElementById('settle-voucher-cash')?.checked ? ' và tự động lập phiếu Thu/Chi' : ''}. Cần sửa thì dùng "Mở lại để sửa".`,
+        title: 'Duyệt Phiếu Đối Soát',
+        message: `Duyệt phiếu ${v.code}? Số liệu được chốt và lên công nợ, các chuyến bị khóa sổ. Chưa phát sinh tiền: thu/chi thực tế làm ở bước Quyết toán. Cần sửa thì "Mở lại đối soát".`,
         confirmText: 'Duyệt phiếu', cancelText: 'Huỷ bỏ', type: 'success', icon: 'ph-bold ph-seal-check text-2xl'
     });
     if (!ok) return;
@@ -25243,6 +25272,41 @@ async function approveSettleVoucher() {
     }
 }
 
+async function settleSettleVoucher() {
+    const v = currentSettleVoucher;
+    const withCash = !!document.getElementById('settle-voucher-cash')?.checked;
+    const ok = await showConfirmModal({
+        title: 'Quyết Toán Phiếu',
+        message: `Quyết toán phiếu ${v.code}?${withCash ? ` Hệ thống lập phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} ${formatMoneyVND(v.amount)} vào Sổ quỹ.` : ' Không lập phiếu thu/chi (đã cấn trừ bằng chứng từ khác).'} Tạm ứng của tài xế sẽ được đóng.`,
+        confirmText: 'Quyết toán', cancelText: 'Huỷ bỏ', type: 'success', icon: 'ph-bold ph-handshake text-2xl'
+    });
+    if (!ok) return;
+    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/settle/`, 'POST', {
+        with_cash: withCash, payment_method: document.getElementById('settle-voucher-method')?.value || 'BANK' }, 'Đã quyết toán phiếu');
+    if (data) {
+        showSettlementVoucherModal(data.voucher);
+        if (typeof loadAccountingData === 'function') loadAccountingData();
+    }
+}
+
+async function unsettleSettleVoucher() {
+    const v = currentSettleVoucher;
+    const reason = (document.getElementById('settle-reopen-reason')?.value || '').trim();
+    if (!reason) {
+        showToast('warning', 'Nhập lý do hủy quyết toán để lưu vết', 'Thiếu lý do');
+        document.getElementById('settle-reopen-reason')?.focus();
+        return;
+    }
+    const ok = await showConfirmModal({
+        title: 'Hủy Quyết Toán',
+        message: `Hủy quyết toán phiếu ${v.code}? Phiếu quay về "Đã duyệt"${v.cash_transaction_code ? ` và phiếu ${v.cash_transaction_code} trong Sổ quỹ sẽ bị hủy` : ''}; tạm ứng được mở lại.`,
+        confirmText: 'Hủy quyết toán', cancelText: 'Giữ nguyên', type: 'warning', icon: 'ph-bold ph-arrow-counter-clockwise text-2xl'
+    });
+    if (!ok) return;
+    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/unsettle/`, 'POST', { reason }, 'Đã hủy quyết toán');
+    if (data) showSettlementVoucherModal(data.voucher);
+}
+
 async function reopenSettleVoucher() {
     const v = currentSettleVoucher;
     const reason = (document.getElementById('settle-reopen-reason')?.value || '').trim();
@@ -25252,8 +25316,8 @@ async function reopenSettleVoucher() {
         return;
     }
     const ok = await showConfirmModal({
-        title: 'Mở Lại Phiếu Quyết Toán',
-        message: `Mở lại phiếu ${v.code}? Các chuyến sẽ được mở khóa${v.cash_transaction_code ? ` và phiếu ${v.cash_transaction_code} trong Sổ quỹ sẽ bị xóa` : ''}.`,
+        title: 'Mở Lại Đối Soát',
+        message: `Mở lại đối soát phiếu ${v.code}? Các chuyến được mở khóa, phiếu rút khỏi công nợ và cần đối tượng xác nhận lại.`,
         confirmText: 'Mở lại', cancelText: 'Huỷ bỏ', type: 'warning', icon: 'ph-bold ph-lock-key-open text-2xl'
     });
     if (!ok) return;
@@ -25351,7 +25415,7 @@ function renderVoucherTab() {
         <td data-col-key="trips" class="text-center">${v.trips_count}</td>
         <td data-col-key="amount" class="text-right font-mono font-bold">${formatMoneyVND(v.amount)}</td>
         <td data-col-key="direction">${v.direction === 'RECEIVE' ? '<span class="text-blue-700 font-bold">Thu</span>' : '<span class="text-rose-700 font-bold">Chi</span>'}</td>
-        <td data-col-key="status"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}">${escapeHtml(v.status_label)}</span></td>
+        <td data-col-key="status"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : (v.status === 'APPROVED' ? 'bg-sky-50 text-sky-800 border border-sky-200' : 'bg-amber-50 text-amber-800 border border-amber-200')}">${escapeHtml(v.status_label)}</span></td>
         <td data-col-key="date">${escapeHtml(v.created_at)}</td></tr>`).join('')
         || '<tr><td colspan="8" class="p-8 text-center text-slate-400 font-medium">Chưa có phiếu quyết toán</td></tr>';
 }
@@ -25395,6 +25459,8 @@ window.onSettleAdjustInput = onSettleAdjustInput;
 window.recalcSettleVoucher = recalcSettleVoucher;
 window.saveSettleVoucher = saveSettleVoucher;
 window.approveSettleVoucher = approveSettleVoucher;
+window.settleSettleVoucher = settleSettleVoucher;
+window.unsettleSettleVoucher = unsettleSettleVoucher;
 window.reopenSettleVoucher = reopenSettleVoucher;
 window.deleteSettleVoucher = deleteSettleVoucher;
 window.printSettleVoucher = printSettleVoucher;
@@ -36338,7 +36404,7 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="ownership">${ownershipBadge}</td>
                 <td data-col-key="settlement_status" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">
                     ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
-                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đã lưu phiếu quyết toán, chờ duyệt">+${item.saved_trips_count} đã lưu</div>` : ''}
+                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đang đối soát, chờ duyệt">+${item.saved_trips_count} đang đối soát</div>` : ''}
                 </td>
                 <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">${item.trips_count}</td>
                 <td data-col-key="containers_count" class="text-center font-black text-teal-800 text-[13px] tabular-nums bg-teal-50/40">${contsCount}</td>
@@ -37689,7 +37755,7 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="top_route" class="text-[13px] text-slate-600 max-w-xs truncate" title="${escapeHtml(item.top_route)}">${escapeHtml(item.top_route)}</td>
                 <td data-col-key="settlement_status" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">
                     ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
-                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đã lưu phiếu quyết toán, chờ duyệt">+${item.saved_trips_count} đã lưu</div>` : ''}
+                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đang đối soát, chờ duyệt">+${item.saved_trips_count} đang đối soát</div>` : ''}
                 </td>
                 <td data-col-key="revenue" class="text-right font-black text-indigo-700 text-[13px] tabular-nums">${revDisplay}</td>
                 <td data-col-key="settled_revenue" class="text-right font-bold text-slate-800 text-[13px] tabular-nums">${formatMoneyVND(item.settled_revenue || 0)}</td>
@@ -38350,7 +38416,7 @@ function applyReport11Filters() {
         const statusBadge = item.is_settled
             ? '<span class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã hoàn ứng</span>'
             : (item.saved_voucher_code
-                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đã lưu QT (chờ duyệt)</span>'
+                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đối soát (chờ duyệt)</span>'
                 : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Đang tạm ứng</span>');
 
         return `
@@ -38519,7 +38585,7 @@ function applyReport12Filters() {
         const settlementBadge = item.is_settled
             ? '<span class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã Quyết Toán</span>'
             : (item.saved_voucher_code
-                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đã lưu QT (chờ duyệt)</span>'
+                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đối soát (chờ duyệt)</span>'
                 : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-hourglass"></i> Chưa Chốt</span>');
 
         const podBadge = item.has_pod
@@ -39631,7 +39697,7 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
         const settlementBadge = isSettled
             ? '<span class="font-bold text-emerald-700 text-xs" title="Chuyến xe đã được kế toán đối soát & quyết toán công nợ">Đã Đối Soát</span>'
             : (t.saved_voucher_code
-                ? `<span class="font-bold text-sky-700 text-xs" title="Đã lưu phiếu quyết toán ${escapeHtml(t.saved_voucher_code)}, chờ duyệt">Đã Lưu QT (chờ duyệt)</span>`
+                ? `<span class="font-bold text-sky-700 text-xs" title="Đang đối soát: phiếu ${escapeHtml(t.saved_voucher_code)}, chờ duyệt">Đối Soát (chờ duyệt)</span>`
                 : '<span class="font-bold text-amber-600 text-xs" title="Chuyến xe đã giao hàng thành công, đang chờ đối soát công nợ">Chờ Đối Soát</span>');
 
         let partnerCol = '';

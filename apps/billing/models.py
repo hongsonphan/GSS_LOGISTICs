@@ -739,8 +739,10 @@ class VoucherPartyType(models.TextChoices):
 
 
 class VoucherStatus(models.TextChoices):
-    DRAFT = 'DRAFT', 'Đã lưu (chờ duyệt)'
-    APPROVED = 'APPROVED', 'Đã duyệt'
+    """3 bước: Đối soát (đã lập phiếu gửi đối tượng) -> Duyệt (hai bên đồng ý, lên công nợ) -> Quyết toán (cấn trừ/thu chi xong)."""
+    DRAFT = 'DRAFT', 'Đối soát'
+    APPROVED = 'APPROVED', 'Đã duyệt (lên công nợ)'
+    SETTLED = 'SETTLED', 'Đã quyết toán'
 
 
 class SettlementVoucher(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
@@ -766,6 +768,12 @@ class SettlementVoucher(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     created_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_settlement_vouchers')
     approved_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_settlement_vouchers')
     approved_at = models.DateTimeField(null=True, blank=True)
+    # Xác nhận của đối tượng (khách hàng / tài xế / đối tác 3PL) trên bảng kê đối soát: bắt buộc trước khi Duyệt
+    counterparty_confirmed = models.BooleanField(default=False)
+    counterparty_confirmed_at = models.DateTimeField(null=True, blank=True)
+    counterparty_confirm_note = models.CharField(max_length=255, blank=True, help_text="Ai xác nhận / hình thức (email, ký tay...)")
+    settled_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='settled_settlement_vouchers')
+    settled_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -778,7 +786,8 @@ class SettlementVoucher(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 class SettlementVoucherLog(TimeStampedModel):
     """Nhật ký từng thao tác trên phiếu quyết toán (lập, sửa, duyệt, mở lại, xóa) để truy vết số liệu."""
     ACTION_CHOICES = [
-        ('CREATE', 'Lập phiếu'), ('UPDATE', 'Chỉnh sửa'), ('APPROVE', 'Duyệt'), ('REOPEN', 'Mở lại'), ('DELETE', 'Xóa'),
+        ('CREATE', 'Lập phiếu đối soát'), ('UPDATE', 'Chỉnh sửa'), ('CONFIRM', 'Đối tượng xác nhận'), ('APPROVE', 'Duyệt'),
+        ('SETTLE', 'Quyết toán'), ('UNSETTLE', 'Hủy quyết toán'), ('REOPEN', 'Mở lại đối soát'), ('DELETE', 'Xóa'),
     ]
     voucher = models.ForeignKey(SettlementVoucher, on_delete=models.CASCADE, related_name='logs')
     action = models.CharField(max_length=10, choices=ACTION_CHOICES)

@@ -118,6 +118,11 @@ class DriverBatchSettlementTests(TestCase):
             status=DriverAdvanceStatus.ADVANCED
         )
 
+    def _approve(self, base, vid, **extra):
+        """Bước 2 (Duyệt): đối tượng xác nhận bảng kê rồi mới duyệt."""
+        self.client.put(f'{base}{vid}/', {'counterparty_confirmed': True, 'counterparty_confirm_note': 'Xác nhận qua email'}, format='json')
+        return self.client.post(f'{base}{vid}/approve/', extra, format='json')
+
     def test_batch_settlement_query_preview(self):
         """Kiểm tra API query preview gom chuyến."""
         self.client.force_authenticate(user=self.accountant_user)
@@ -186,25 +191,58 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(update_log['action'], 'UPDATE')
         self.assertIn(('Phát sinh', 0, 50000), [(c['field'], c['old'], c['new']) for c in update_log['changes']])
 
+        # Bước 2 - Duyệt: cần đối tượng xác nhận bảng kê; duyệt xong chốt số liệu, chưa phát sinh tiền
         res = self.client.post(f'{base}{vid}/approve/', {}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('xác nhận', res.data['error'])
+        self.trip1.refresh_from_db()
+        self.assertEqual(self.trip1.driver_settlement_status, 'RECONCILING')
+        res = self._approve(base, vid)
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertEqual(res.data['voucher']['status'], 'APPROVED')
         self.trip1.refresh_from_db()
         self.assertTrue(self.trip1.is_expenses_settled)
-        tx = CashTransaction.objects.get(ref_code=res.data['voucher']['code'])
-        self.assertEqual(tx.amount, 150000)
+        self.assertEqual(self.trip1.driver_settlement_status, 'APPROVED')
+        self.assertFalse(CashTransaction.objects.filter(ref_code=res.data['voucher']['code']).exists())
+        self.adv1.refresh_from_db()
+        self.assertEqual(self.adv1.status, DriverAdvanceStatus.ADVANCED)   # tạm ứng chưa đóng
         # Phiếu đã duyệt không được sửa/xóa trực tiếp
         self.assertEqual(self.client.delete(f'{base}{vid}/').status_code, status.HTTP_400_BAD_REQUEST)
 
-        # Mở lại bắt buộc có lý do
+        # Bước 3 - Quyết toán: phát sinh phiếu thu hoàn ứng, đóng tạm ứng
+        res = self.client.post(f'{base}{vid}/settle/', {'with_cash': True}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertEqual(res.data['voucher']['status'], 'SETTLED')
+        tx = CashTransaction.objects.get(ref_code=res.data['voucher']['code'])
+        self.assertEqual(tx.amount, 150000)
+        self.trip1.refresh_from_db()
+        self.assertEqual((self.trip1.driver_settlement_status, self.trip1.advance_settlement_status), ('SETTLED', 'SETTLED'))
+        self.adv1.refresh_from_db()
+        self.assertEqual(self.adv1.status, DriverAdvanceStatus.SETTLED)
+        # Đã quyết toán: không mở lại đối soát trực tiếp, phải hủy quyết toán (có lý do) trước
+        self.assertEqual(self.client.post(f'{base}{vid}/reopen/', {'reason': 'x'}, format='json').status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.client.post(f'{base}{vid}/unsettle/', {}, format='json').status_code, status.HTTP_400_BAD_REQUEST)
+        res = self.client.post(f'{base}{vid}/unsettle/', {'reason': 'Nhập nhầm số tiền'}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertEqual(res.data['voucher']['status'], 'APPROVED')
+        self.assertFalse(CashTransaction.objects.filter(ref_code=res.data['voucher']['code'], is_deleted=False).exists())
+        self.adv1.refresh_from_db()
+        self.assertEqual(self.adv1.status, DriverAdvanceStatus.ADVANCED)
+
+        # Mở lại đối soát bắt buộc có lý do và bỏ xác nhận của đối tượng
         self.assertEqual(self.client.post(f'{base}{vid}/reopen/', {}, format='json').status_code, status.HTTP_400_BAD_REQUEST)
         res = self.client.post(f'{base}{vid}/reopen/', {'reason': 'Nhập thiếu phí cân'}, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
-        self.assertEqual([g['action'] for g in res.data['voucher']['logs']], ['CREATE', 'UPDATE', 'APPROVE', 'REOPEN'])
+        self.assertEqual([g['action'] for g in res.data['voucher']['logs']],
+                         ['CREATE', 'UPDATE', 'CONFIRM', 'APPROVE', 'SETTLE', 'UNSETTLE', 'REOPEN'])
         self.assertEqual(res.data['voucher']['logs'][-1]['reason'], 'Nhập thiếu phí cân')
+        self.assertFalse(res.data['voucher']['counterparty_confirmed'])
         self.trip1.refresh_from_db()
         self.assertFalse(self.trip1.is_expenses_settled)
-        self.assertFalse(CashTransaction.objects.filter(ref_code=res.data['voucher']['code'], is_deleted=False).exists())
+        self.assertEqual(self.trip1.driver_settlement_status, 'RECONCILING')
         self.assertEqual(self.client.delete(f'{base}{vid}/').status_code, status.HTTP_200_OK)
+        self.trip1.refresh_from_db()
+        self.assertEqual(self.trip1.driver_settlement_status, 'PENDING')
 
     def test_voucher_mixed_drivers_split_by_party(self):
         """Chọn chuyến của nhiều tài xế: mặc định báo lỗi, bật split_by_party thì mỗi tài xế một phiếu."""
@@ -239,7 +277,8 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(line['advance_lines'][0]['source_code'], 'COMPANY_DIRECT')
         self.assertEqual(line['expense_lines'][0]['payer'], 'Chi phí TVL')
         vid = res.data['voucher']['id']
-        self.assertEqual(self.client.post(f'{base}{vid}/approve/', {}, format='json').status_code, status.HTTP_200_OK)
+        self.assertEqual(self._approve(base, vid).status_code, status.HTTP_200_OK)
+        self.assertEqual(self.client.post(f'{base}{vid}/settle/', {}, format='json').status_code, status.HTTP_200_OK)
         self.adv1.refresh_from_db()
         adv2.refresh_from_db()
         self.assertEqual((self.adv1.actual_spent, self.adv1.refund_amount), (500000, 500000))
@@ -281,7 +320,7 @@ class DriverBatchSettlementTests(TestCase):
         self.exp1.refresh_from_db()
         self.assertTrue(self.exp1.company_borne)  # chưa duyệt thì chưa đổi khoản chi
 
-        res = self.client.post(f'{base}{vid}/approve/', {}, format='json')
+        res = self._approve(base, vid)
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
         self.exp1.refresh_from_db()
         self.assertFalse(self.exp1.company_borne)
@@ -327,8 +366,8 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(trip_statuses(), {'Chờ đối soát'})
         res = self.client.post(base, {'party_type': 'CUSTOMER', 'trip_ids': [self.trip1.id]}, format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
-        self.assertEqual(trip_statuses(), {'Đã lưu quyết toán (chờ duyệt)'})
-        self.assertEqual(self.client.post(f"{base}{res.data['voucher']['id']}/approve/", {}, format='json').status_code, status.HTTP_200_OK)
+        self.assertEqual(trip_statuses(), {'Đối soát (chờ duyệt)'})
+        self.assertEqual(self._approve(base, res.data['voucher']['id']).status_code, status.HTTP_200_OK)
         self.assertEqual(trip_statuses(), {'Đã đối soát'})
 
     def test_customer_revenue_report_shows_settled_unrun_trips_as_unrealized_only(self):
@@ -386,10 +425,64 @@ class DriverBatchSettlementTests(TestCase):
 
         row = ar_row()
         self.assertEqual(row['reconciled_amount'] if row else 0, 0)  # mới lưu, chưa duyệt: chưa tính công nợ
-        self.assertEqual(self.client.post(f"{base}{res.data['voucher']['id']}/approve/", {}, format='json').status_code, status.HTTP_200_OK)
+        self.assertEqual(self._approve(base, res.data['voucher']['id']).status_code, status.HTTP_200_OK)
         row = ar_row()
         self.assertEqual(row['reconciled_amount'], 2150000)
         self.assertEqual((row['freight_revenue'], row['reimbursable_amount'], row['adjustment_amount']), (2000000, 100000, 50000))
+
+    def test_customer_three_stage_flow_updates_trip_status_and_ar(self):
+        """Khách hàng: Đối soát (chuyến RECONCILING, chưa lên công nợ) -> Duyệt (APPROVED, lên công nợ) -> Quyết toán (SETTLED)."""
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        res = self.client.post(base, {'party_type': 'CUSTOMER', 'trip_ids': [self.trip1.id], 'with_cash': True}, format='json')
+        vid = res.data['voucher']['id']
+        self.assertEqual(res.data['voucher']['status'], 'DRAFT')
+        self.trip1.refresh_from_db()
+        self.assertEqual((self.trip1.customer_settlement_status, self.trip1.is_customer_settled), ('RECONCILING', False))
+        # chưa có xác nhận của khách: không duyệt được
+        self.assertEqual(self.client.post(f'{base}{vid}/approve/', {}, format='json').status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self._approve(base, vid).status_code, status.HTTP_200_OK)
+        self.trip1.refresh_from_db()
+        self.assertEqual((self.trip1.customer_settlement_status, self.trip1.is_customer_settled), ('APPROVED', True))
+        self.assertEqual(self.trip1.customer_soa_code, res.data['voucher']['code'])
+        self.assertFalse(CashTransaction.objects.filter(ref_code=res.data['voucher']['code']).exists())  # Duyệt chưa phát sinh tiền
+        # chuyến đã lên công nợ: không lập phiếu thứ hai
+        self.assertEqual(self.client.post(base, {'party_type': 'CUSTOMER', 'trip_ids': [self.trip1.id]}, format='json').status_code,
+                         status.HTTP_400_BAD_REQUEST)
+        res = self.client.post(f'{base}{vid}/settle/', {'with_cash': True}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.trip1.refresh_from_db()
+        self.assertEqual((self.trip1.customer_settlement_status, self.trip1.is_customer_settled), ('SETTLED', True))
+        # Hủy quyết toán trả về Đã duyệt, vẫn còn trong công nợ
+        self.assertEqual(self.client.post(f'{base}{vid}/unsettle/', {'reason': 'sai số'}, format='json').status_code, status.HTTP_200_OK)
+        self.trip1.refresh_from_db()
+        self.assertEqual((self.trip1.customer_settlement_status, self.trip1.is_customer_settled), ('APPROVED', True))
+        # Mở lại đối soát: gỡ khỏi công nợ
+        self.assertEqual(self.client.post(f'{base}{vid}/reopen/', {'reason': 'khách đổi số'}, format='json').status_code, status.HTTP_200_OK)
+        self.trip1.refresh_from_db()
+        self.assertEqual((self.trip1.customer_settlement_status, self.trip1.is_customer_settled), ('RECONCILING', False))
+
+    def test_partner_three_stage_flow_payable_only_after_settlement(self):
+        """3PL: Duyệt = lên công nợ phải trả (chưa trả tiền); Quyết toán = chi trả thực tế."""
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        self.trip1.subcontractor_cost = 3000000
+        self.trip1.subcontractor_advance = 500000
+        self.trip1.save()
+        res = self.client.post(base, {'party_type': 'PARTNER', 'trip_ids': [self.trip1.id], 'with_cash': True}, format='json')
+        vid = res.data['voucher']['id']
+        self.trip1.refresh_from_db()
+        self.assertEqual(self.trip1.subcontractor_settlement_status, 'RECONCILING')
+        self.assertEqual(self._approve(base, vid).status_code, status.HTTP_200_OK)
+        self.trip1.refresh_from_db()
+        self.assertEqual(self.trip1.subcontractor_settlement_status, 'APPROVED')
+        self.assertFalse(CashTransaction.objects.filter(ref_code=res.data['voucher']['code']).exists())
+        res = self.client.post(f'{base}{vid}/settle/', {'with_cash': True, 'payment_method': 'BANK'}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        tx = CashTransaction.objects.get(ref_code=res.data['voucher']['code'])
+        self.assertEqual((tx.transaction_type, int(tx.amount)), ('OUTFLOW', 2500000))
+        self.trip1.refresh_from_db()
+        self.assertEqual(self.trip1.subcontractor_settlement_status, 'SETTLED')
 
     def test_voucher_partner_direction_flips_when_advance_exceeds_cost(self):
         self.client.force_authenticate(user=self.accountant_user)
@@ -449,7 +542,7 @@ class DriverBatchSettlementTests(TestCase):
         # chọn lại đúng chuyến của phiếu nháp: mở lại phiếu cũ, không lập phiếu thứ hai
         res = self.client.post(base, {'party_type': 'DRIVER', 'trip_ids': [self.trip1.id]}, format='json')
         self.assertEqual((res.status_code, res.data['voucher']['id']), (status.HTTP_200_OK, vid))
-        self.assertEqual(self.client.post(f'{base}{vid}/approve/', {}, format='json').status_code, status.HTTP_200_OK)
+        self.assertEqual(self._approve(base, vid).status_code, status.HTTP_200_OK)
         # phiếu đã duyệt: không mở lại từng chuyến
         res = self.client.post(f'/api/trips/{self.trip1.trip_code}/unsettle-expenses/', {}, format='json')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
@@ -466,7 +559,7 @@ class DriverBatchSettlementTests(TestCase):
         base = '/api/accounting/settlement-vouchers/'
         res = self.client.post(base, {'party_type': 'DRIVER', 'trip_ids': [self.trip1.id, self.trip2.id], 'with_cash': True}, format='json')
         vid = res.data['voucher']['id']
-        self.client.post(f'{base}{vid}/approve/', {}, format='json')
+        self._approve(base, vid)
 
         rep = self.client.get('/api/reports/settlement-vouchers/')
         self.assertEqual(rep.status_code, status.HTTP_200_OK, rep.content)
