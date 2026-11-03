@@ -43,15 +43,15 @@ def _trip_base(trip):
     }
 
 
-def _expense_line(e, leg=True):
+def _expense_line(e, leg=True, borne=None):
     return {
-        'name': e.expense_name, 'leg': e.get_trip_leg_display() if leg else '', 'amount': int(e.amount),
-        'payer': e.get_expense_payer_type_display(), 'company_borne': e.company_borne, 'status': e.get_status_display(),
-        'invoice': e.invoice_number or '',
+        'id': e.id, 'name': e.expense_name, 'leg': e.get_trip_leg_display() if leg else '', 'amount': int(e.amount),
+        'payer': e.get_expense_payer_type_display(), 'company_borne': e.company_borne if borne is None else borne,
+        'status': e.get_status_display(), 'invoice': e.invoice_number or '',
     }
 
 
-def build_line(party_type, trip, adjustment=0, split_ratio=None, note=''):
+def build_line(party_type, trip, adjustment=0, split_ratio=None, note='', borne_overrides=None):
     """Bản chụp một chuyến cho bảng kê; chỉ đưa vào các trường phù hợp với đối tượng quyết toán."""
     line = _trip_base(trip)
     expenses = _live_expenses(trip)
@@ -59,10 +59,15 @@ def build_line(party_type, trip, adjustment=0, split_ratio=None, note=''):
         advances = [a for a in trip.driver_advances.all() if not a.is_deleted and a.status == DriverAdvanceStatus.ADVANCED]
         advance = int(sum(a.amount for a in advances))
         spent = int(sum(e.amount for e in expenses))
+        # Khoản tài xế chịu (trừ lương): theo lựa chọn khi quyết toán, mặc định theo khoản chi
+        overrides = borne_overrides or {}
+        expense_lines = [_expense_line(e, borne=overrides.get(e.id, e.company_borne)) for e in expenses]
+        salary_deduct = sum(x['amount'] for x in expense_lines if not x['company_borne'])
         line.update({
             'driver_name': (trip.driver.nickname or trip.driver.full_name) if trip.driver else '',
             'license_plate': trip.vehicle.license_plate if trip.vehicle else '',
-            'expense_lines': [_expense_line(e) for e in expenses],
+            'expense_lines': expense_lines,
+            'salary_deduct': salary_deduct,
             'advance_lines': [{
                 'code': a.code, 'source': a.get_advance_source_display(), 'source_code': a.advance_source,
                 'date': a.advance_date.strftime('%d/%m/%Y'), 'amount': int(a.amount), 'purpose': a.purpose,
@@ -118,7 +123,7 @@ def _totals(party_type, lines):
 LINE_FIELD_LABELS = {
     'adjustment': 'Phát sinh', 'adjustment_note': 'Lý do phát sinh', 'split_ratio': 'Tỷ lệ thù lao cắt kéo',
     'advance': 'Tạm ứng', 'spent': 'Thực chi', 'freight': 'Cước vận chuyển', 'freight_cost': 'Cước thuê xe',
-    'expense_total': 'Tổng chi phí/chi hộ', 'total': 'Chênh lệch/Phải thu/Phải trả',
+    'expense_total': 'Tổng chi phí/chi hộ', 'salary_deduct': 'Trừ lương tài xế', 'total': 'Chênh lệch/Phải thu/Phải trả',
 }
 
 
@@ -188,11 +193,13 @@ def _parse_maps(data):
         ratios = {int(k): float(x) for k, x in (data.get('split_ratios') or {}).items()}
         adjusts = {int(k): int(x) for k, x in (data.get('adjustments') or {}).items()}
         notes = {int(k): str(x or '').strip()[:255] for k, x in (data.get('adjustment_notes') or {}).items()}
+        # salary_deductions: {mã khoản chi: true nếu trừ lương tài xế} -> company_borne = not deduct
+        borne = {int(k): not bool(x) for k, x in (data.get('salary_deductions') or {}).items()}
     except (TypeError, ValueError, AttributeError):
-        return None, None, None, 'Tỷ lệ thù lao hoặc số phát sinh không hợp lệ'
+        return None, None, None, None, 'Tỷ lệ thù lao hoặc số phát sinh không hợp lệ'
     if any(r < 0 or r > 100 for r in ratios.values()):
-        return None, None, None, 'Tỷ lệ thù lao phải nằm trong khoảng 0 - 100%'
-    return ratios, adjusts, notes, ''
+        return None, None, None, None, 'Tỷ lệ thù lao phải nằm trong khoảng 0 - 100%'
+    return ratios, adjusts, notes, borne, ''
 
 
 def _already_settled(party_type, trip):
@@ -225,7 +232,7 @@ class SettlementVoucherListCreateAPIView(APIView):
             trip_ids = list(DispatchTrip.objects.filter(trip_code__in=request.data['trip_codes'], is_deleted=False).values_list('id', flat=True))
         if not isinstance(trip_ids, list) or not trip_ids:
             return Response({'error': 'Vui lòng chọn ít nhất một chuyến để quyết toán'}, status=status.HTTP_400_BAD_REQUEST)
-        ratios, adjusts, notes, err = _parse_maps(request.data)
+        ratios, adjusts, notes, borne, err = _parse_maps(request.data)
         if err:
             return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -259,7 +266,7 @@ class SettlementVoucherListCreateAPIView(APIView):
 
         vouchers = []
         for (party_ref, party_name), group in groups.items():
-            lines = [build_line(party_type, t, adjusts.get(t.id, 0), ratios.get(t.id), notes.get(t.id, '')) for t in group]
+            lines = [build_line(party_type, t, adjusts.get(t.id, 0), ratios.get(t.id), notes.get(t.id, ''), borne) for t in group]
             missing = _missing_adjustment_note(lines)
             if missing:
                 transaction.set_rollback(True)
@@ -301,7 +308,7 @@ class SettlementVoucherDetailAPIView(APIView):
             return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
         if v.status != VoucherStatus.DRAFT:
             return Response({'error': 'Phiếu đã duyệt, cần Mở lại phiếu trước khi chỉnh sửa'}, status=status.HTTP_400_BAD_REQUEST)
-        ratios, adjusts, notes, err = _parse_maps(request.data)
+        ratios, adjusts, notes, borne, err = _parse_maps(request.data)
         if err:
             return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
         old_lines = v.lines
@@ -314,7 +321,10 @@ class SettlementVoucherDetailAPIView(APIView):
             adj = adjusts.get(t.id, prev.get('adjustment', 0)) if 'adjustments' in request.data else prev.get('adjustment', 0)
             ratio = ratios.get(t.id, prev.get('split_ratio')) if 'split_ratios' in request.data else prev.get('split_ratio')
             note = notes.get(t.id, prev.get('adjustment_note', '')) if 'adjustment_notes' in request.data else prev.get('adjustment_note', '')
-            lines.append(build_line(v.party_type, t, adj, ratio, note))
+            # Lựa chọn trừ lương đã lưu trên phiếu, được ghi đè bởi lựa chọn mới gửi lên
+            kept = {x['id']: x['company_borne'] for x in prev.get('expense_lines', []) if 'id' in x}
+            kept.update(borne)
+            lines.append(build_line(v.party_type, t, adj, ratio, note, kept))
         missing = _missing_adjustment_note(lines)
         if missing:
             return Response({'error': f'Nhập lý do cho số phát sinh của chuyến: {", ".join(missing[:5])}'}, status=status.HTTP_400_BAD_REQUEST)
@@ -375,6 +385,12 @@ class SettlementVoucherApproveAPIView(APIView):
         for t in trips:
             line = lines.get(t.id, {})
             if v.party_type == VoucherPartyType.DRIVER:
+                # Ghi lựa chọn "trừ lương tài xế" lên khoản chi trước khi chốt sổ (khoản chi bị khóa sau khi chốt)
+                chosen = {x['id']: x['company_borne'] for x in line.get('expense_lines', []) if 'id' in x}
+                for exp in t.expenses.filter(is_deleted=False, id__in=list(chosen)):
+                    if exp.company_borne != chosen[exp.id]:
+                        exp.company_borne = chosen[exp.id]
+                        exp.save(update_fields=['company_borne', 'updated_at'])
                 if t.is_split_trip and 'split_ratio' in line:
                     t.driver_split_ratio = line['split_ratio']
                 t.is_expenses_settled = True

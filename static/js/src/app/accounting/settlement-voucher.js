@@ -72,9 +72,9 @@ function settleHeadCols(party, anySplit) {
     const th = (t, o = {}) => `<th class="${SETTLE_TH}" ${o.cs ? `colspan="${o.cs}"` : ''} ${o.rs ? `rowspan="${o.rs}"` : ''}>${t}</th>`;
     const lead = th('STT', { rs: 2 }) + th('Mã chuyến', { rs: 2 }) + th('Số cont / Loại', { rs: 2 }) + th('Tuyến', { rs: 2 });
     if (party === 'DRIVER') {
-        return `<tr>${lead}${th('Tài xế / Xe', { rs: 2 })}${th('Tạm ứng', { cs: 3 })}${th('Chi phí phát sinh', { cs: 4 })}
-            ${th('Tổng tạm ứng', { rs: 2 })}${th('Thực chi', { rs: 2 })}${th('Phát sinh KT', { rs: 2 })}${th('Lý do phát sinh', { rs: 2 })}${anySplit ? th('Tỷ lệ thù lao cắt kéo', { rs: 2 }) : ''}${th('Chênh lệch', { rs: 2 })}</tr>
-            <tr>${th('Mã phiếu')}${th('Nguồn tiền')}${th('Số tiền')}${th('Khoản mục')}${th('Chặng')}${th('Loại chi')}${th('Số tiền')}</tr>`;
+        return `<tr>${lead}${th('Tài xế / Xe', { rs: 2 })}${th('Tạm ứng', { cs: 3 })}${th('Chi phí phát sinh', { cs: 5 })}
+            ${th('Tổng tạm ứng', { rs: 2 })}${th('Thực chi', { rs: 2 })}${th('Trừ lương TX', { rs: 2 })}${th('Phát sinh KT', { rs: 2 })}${th('Lý do phát sinh', { rs: 2 })}${anySplit ? th('Tỷ lệ thù lao cắt kéo', { rs: 2 }) : ''}${th('Chênh lệch', { rs: 2 })}</tr>
+            <tr>${th('Mã phiếu')}${th('Nguồn tiền')}${th('Số tiền')}${th('Khoản mục')}${th('Chặng')}${th('Loại chi')}${th('Trừ lương')}${th('Số tiền')}</tr>`;
     }
     if (party === 'PARTNER') {
         return `<tr>${lead}${th('Xe / Tài xế', { rs: 2 })}${th('Cước thuê xe', { rs: 2 })}${th('Chi phí hoàn trả đối tác', { cs: 3 })}
@@ -102,12 +102,15 @@ function settleLineRow(party, l, i, editable) {
         + rs(`${escapeHtml(l.container_number)}<div class="text-[10px] text-slate-500">${escapeHtml(l.container_type)}</div>`, 'whitespace-nowrap')
         + rs(escapeHtml(l.route), 'min-w-[170px]');
     const total = rs('', 'text-right tabular-nums font-mono font-bold whitespace-nowrap').replace('<td ', `<td data-line-total="${l.trip_id}" `);
+    // Ô tích "Trừ lương tài xế": khoản chi này tài xế tự chịu, trừ vào lương thay vì công ty chịu
+    const deductCell = (e) => `<td class="${SETTLE_TD} text-center"><input type="checkbox" data-deduct-expense="${e.id}" data-deduct-trip="${l.trip_id}" data-deduct-amount="${e.amount}"
+        ${e.company_borne === false ? 'checked' : ''} ${editable ? '' : 'disabled'} onchange="recalcSettleVoucher()" class="w-4 h-4 cursor-pointer" title="Tích nếu khoản này trừ vào lương tài xế"></td>`;
     const expCells = (e, withLeg, withPayer) => e
         ? `<td class="${SETTLE_TD}">${escapeHtml(e.name)}${e.invoice ? `<div class="text-[10px] text-slate-500 font-mono">${escapeHtml(e.invoice)}</div>` : ''}</td>`
           + (withLeg ? `<td class="${SETTLE_TD}">${escapeHtml(e.leg || '')}</td>` : '')
-          + (withPayer ? `<td class="${SETTLE_TD}">${escapeHtml(e.payer || '')}${e.company_borne === false ? ' · trừ lương' : ''}</td>` : '')
+          + (withPayer ? `<td class="${SETTLE_TD}">${escapeHtml(e.payer || '')}</td>${deductCell(e)}` : '')
           + num(e.amount)
-        : `<td class="${SETTLE_TD}"></td>${withLeg ? `<td class="${SETTLE_TD}"></td>` : ''}${withPayer ? `<td class="${SETTLE_TD}"></td>` : ''}<td class="${SETTLE_TD}"></td>`;
+        : `<td class="${SETTLE_TD}"></td>${withLeg ? `<td class="${SETTLE_TD}"></td>` : ''}${withPayer ? `<td class="${SETTLE_TD}"></td><td class="${SETTLE_TD}"></td>` : ''}<td class="${SETTLE_TD}"></td>`;
 
     let tail, mid;
     if (party === 'DRIVER') {
@@ -120,6 +123,7 @@ function settleLineRow(party, l, i, editable) {
                 <span class="font-black" id="settle-split2-${l.trip_id}">${100 - l.split_ratio}%</span></div></div>` : '';
         mid = rs(`${escapeHtml(l.driver_name)}<div class="text-[10px] text-slate-500">${escapeHtml(l.license_plate)}</div>`, 'whitespace-nowrap');
         tail = rs(formatMoneyVND(l.advance), 'text-right tabular-nums font-mono') + rs(formatMoneyVND(l.spent), 'text-right tabular-nums font-mono')
+            + rs('', 'text-right tabular-nums font-mono').replace('<td ', `<td data-line-deduct="${l.trip_id}" `)
             + rs(adjInput) + rs(noteInput) + (settleAnySplit ? rs(split) : '') + total;
     } else if (party === 'PARTNER') {
         mid = rs(`${escapeHtml(l.license_plate)}<div class="text-[10px] text-slate-500">${escapeHtml(l.driver_name)}</div>`, 'whitespace-nowrap') + rs(formatMoneyVND(l.freight_cost), 'text-right tabular-nums font-mono');
@@ -172,10 +176,10 @@ function showSettlementVoucherModal(v, opts = {}) {
                 ${escapeHtml(b.name)} · ${escapeHtml(b.code)}${b.status === 'APPROVED' ? ' ✓' : ''}</button>`).join('')}
         </div>` : '';
     // Dòng tổng: số cột đứng trước cột "Tổng tạm ứng" / "Cước" thay đổi theo đối tượng
-    const footLead = party === 'DRIVER' ? 12 : (party === 'PARTNER' ? 9 : 8);
+    const footLead = party === 'DRIVER' ? 13 : (party === 'PARTNER' ? 9 : 8);
     const foot = party === 'DRIVER'
         ? `<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-advance"></td><td class="${SETTLE_TD} text-right font-mono" id="settle-foot-spent"></td>
-           <td class="${SETTLE_TD} text-right font-mono" id="settle-foot-adj"></td><td class="${SETTLE_TD}"></td>${settleAnySplit ? `<td class="${SETTLE_TD}"></td>` : ''}`
+           <td class="${SETTLE_TD} text-right font-mono" id="settle-foot-deduct"></td><td class="${SETTLE_TD} text-right font-mono" id="settle-foot-adj"></td><td class="${SETTLE_TD}"></td>${settleAnySplit ? `<td class="${SETTLE_TD}"></td>` : ''}`
         : (party === 'PARTNER'
             ? `<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-advance"></td><td class="${SETTLE_TD} text-right font-mono" id="settle-foot-adj"></td><td class="${SETTLE_TD}"></td>`
             : `<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-adj"></td><td class="${SETTLE_TD}"></td>`);
@@ -321,15 +325,26 @@ function recalcSettleVoucher() {
             cell.classList.toggle('text-blue-700', v.party_type === 'DRIVER' && t > 0);
         }
     });
+    // Tổng khoản trừ lương tài xế theo các ô đã tích (không đổi số tiền mặt hoàn ứng, chỉ ghi nhận để trừ lương)
+    let deductTotal = 0;
+    v.lines.forEach(l => {
+        let d = 0;
+        document.querySelectorAll(`[data-deduct-trip="${l.trip_id}"]:checked`).forEach(cb => { d += parseInt(cb.getAttribute('data-deduct-amount'), 10) || 0; });
+        deductTotal += d;
+        const cell = document.querySelector(`[data-line-deduct="${l.trip_id}"]`);
+        if (cell) cell.innerText = d ? formatMoneyVND(d) : '';
+    });
     const amt = document.getElementById('settle-total-amount');
     let text;
     if (v.party_type === 'DRIVER') text = net > 0 ? `TÀI XẾ NỘP LẠI: ${formatMoneyVND(net)}` : (net < 0 ? `CÔNG TY CHI BÙ: ${formatMoneyVND(-net)}` : 'CÂN BẰNG: 0');
     else text = `${v.party_type === 'PARTNER' ? 'TỔNG PHẢI TRẢ' : 'TỔNG PHẢI THU'}: ${formatMoneyVND(net)}`;
+    if (v.party_type === 'DRIVER' && deductTotal > 0) text += `  ·  TRỪ LƯƠNG TÀI XẾ: ${formatMoneyVND(deductTotal)}`;
     if (amt) amt.innerText = text;
     const setFoot = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = formatMoneyVND(val); };
     setFoot('settle-foot-advance', v.lines.reduce((s, l) => s + (l.advance || 0), 0));
     setFoot('settle-foot-spent', v.lines.reduce((s, l) => s + (l.spent || 0), 0));
     setFoot('settle-foot-adj', adjTotal);
+    if (document.getElementById('settle-foot-deduct')) document.getElementById('settle-foot-deduct').innerText = deductTotal ? formatMoneyVND(deductTotal) : '';
     setFoot('settle-foot-total', net);
 }
 
@@ -340,8 +355,10 @@ function collectSettleVoucherForm() {
     document.querySelectorAll('[data-adjust-trip]').forEach(i => { adjustments[i.getAttribute('data-adjust-trip')] = parseSignedVN(i.value); });
     const adjustment_notes = {};
     document.querySelectorAll('[data-adjust-note-trip]').forEach(i => { adjustment_notes[i.getAttribute('data-adjust-note-trip')] = i.value.trim(); });
+    const salary_deductions = {};
+    document.querySelectorAll('[data-deduct-expense]').forEach(cb => { salary_deductions[cb.getAttribute('data-deduct-expense')] = cb.checked; });
     return {
-        split_ratios, adjustments, adjustment_notes,
+        split_ratios, adjustments, adjustment_notes, salary_deductions,
         notes: document.getElementById('settle-voucher-notes')?.value || '',
         with_cash: !!document.getElementById('settle-voucher-cash')?.checked,
         payment_method: document.getElementById('settle-voucher-method')?.value || 'BANK',
@@ -426,7 +443,7 @@ function printSettleVoucher() {
     clone.querySelectorAll('[data-detail-trip], button').forEach(el => el.remove());
     clone.querySelectorAll('input').forEach(inp => {
         const span = document.createElement('span');
-        span.textContent = inp.value + (inp.hasAttribute('data-split-trip') ? '%' : '');
+        span.textContent = inp.type === 'checkbox' ? (inp.checked ? '✓' : '') : inp.value + (inp.hasAttribute('data-split-trip') ? '%' : '');
         inp.replaceWith(span);
     });
     const party = SETTLE_PARTY_LABEL[v.party_type];

@@ -258,6 +258,34 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(overlap.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual([v['id'] for v in overlap.data['existing_vouchers']], [vid])
 
+    def test_voucher_driver_salary_deduction_option(self):
+        """Tích 'Trừ lương tài xế' khi quyết toán: lưu trên phiếu, giữ qua lần sửa, ghi vào khoản chi khi duyệt, có log."""
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        res = self.client.post(base, {'party_type': 'DRIVER', 'trip_ids': [self.trip1.id]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        vid = res.data['voucher']['id']
+        line = res.data['voucher']['lines'][0]
+        self.assertEqual((line['salary_deduct'], line['expense_lines'][0]['id']), (0, self.exp1.id))
+
+        # Tích trừ lương: số tiền mặt hoàn ứng không đổi, chỉ ghi nhận khoản trừ lương
+        res = self.client.put(f'{base}{vid}/', {'salary_deductions': {str(self.exp1.id): True}}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        line = res.data['voucher']['lines'][0]
+        self.assertEqual((line['salary_deduct'], res.data['voucher']['amount']), (500000, 500000))
+        self.assertIn(('Trừ lương tài xế', 0, 500000), [(c['field'], c['old'], c['new']) for c in res.data['voucher']['logs'][-1]['changes']])
+
+        # Sửa các thông tin khác không làm mất lựa chọn đã tích
+        res = self.client.put(f'{base}{vid}/', {'notes': 'ghi chú'}, format='json')
+        self.assertEqual(res.data['voucher']['lines'][0]['salary_deduct'], 500000)
+        self.exp1.refresh_from_db()
+        self.assertTrue(self.exp1.company_borne)  # chưa duyệt thì chưa đổi khoản chi
+
+        res = self.client.post(f'{base}{vid}/approve/', {}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.exp1.refresh_from_db()
+        self.assertFalse(self.exp1.company_borne)
+
     def test_voucher_partner_direction_flips_when_advance_exceeds_cost(self):
         self.client.force_authenticate(user=self.accountant_user)
         self.trip1.subcontractor_cost = 1000000
