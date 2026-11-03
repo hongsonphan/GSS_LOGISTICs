@@ -24757,7 +24757,9 @@ function settleLineRow(party, l, i, editable) {
     ).join('') || '<span class="text-slate-400 italic">Không có</span>';
     const adjInput = `<input type="number" step="1000" value="${l.adjustment || 0}" ${editable ? '' : 'disabled'} data-adjust-trip="${l.trip_id}"
         oninput="recalcSettleVoucher()" class="w-28 px-1.5 py-1 text-right font-mono font-bold border border-amber-300 rounded bg-amber-50 disabled:bg-slate-50 disabled:border-slate-200"
-        title="Số phát sinh do Kế toán/Hành chính nhập (+ cộng thêm, - trừ bớt)">`;
+        title="Số phát sinh do Kế toán/Hành chính nhập (+ cộng thêm, - trừ bớt)">
+        <input type="text" maxlength="255" value="${escapeHtml(l.adjustment_note || '')}" ${editable ? '' : 'disabled'} data-adjust-note-trip="${l.trip_id}"
+        placeholder="Lý do phát sinh (bắt buộc)" class="mt-1 w-28 px-1.5 py-1 text-[11px] border border-amber-300 rounded bg-amber-50 disabled:bg-slate-50 disabled:border-slate-200">`;
     const common = `<td class="px-2 py-2 text-center">${i + 1}</td>
         <td class="px-2 py-2 font-bold">${escapeHtml(l.trip_code)}<div class="text-[10px] text-slate-500 font-normal">${escapeHtml(l.date)}</div></td>`;
     const cont = `<td class="px-2 py-2">${escapeHtml(l.container_number)}<div class="text-[10px] text-slate-500">${escapeHtml(l.container_type)}</div></td>
@@ -24847,6 +24849,7 @@ function showSettlementVoucherModal(v, opts = {}) {
                             <option value="CASH" ${v.payment_method === 'CASH' ? 'selected' : ''}>Tiền mặt</option></select>
                     </div>
                 </div>
+                ${settleLogSection(v)}
                 <p class="mt-2 text-[11px] text-slate-500">Bảng kê chỉ hiển thị thông tin liên quan đến ${SETTLE_PARTY_LABEL[party].toLowerCase()}. Chỉ người có quyền Kế toán/Hành chính mới nhập phát sinh, duyệt, mở lại hoặc xóa phiếu.</p>
             </div>
             <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 flex-wrap">
@@ -24855,12 +24858,38 @@ function showSettlementVoucherModal(v, opts = {}) {
                 <button type="button" data-voucher-action onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50"><i class="ph-bold ph-trash"></i> Xóa</button>
                 <button type="button" data-voucher-action onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50"><i class="ph-bold ph-floppy-disk"></i> Lưu</button>
                 <button type="button" data-voucher-action onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold"><i class="ph-bold ph-seal-check"></i> Duyệt phiếu</button>`
-                : `<button type="button" data-voucher-action onclick="reopenSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold"><i class="ph-bold ph-lock-key-open"></i> Mở lại để sửa</button>`}
+                : `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="Lý do mở lại (bắt buộc)" class="flex-1 min-w-[200px] px-2.5 py-1.5 border border-slate-300 rounded-lg">
+                <button type="button" data-voucher-action onclick="reopenSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold"><i class="ph-bold ph-lock-key-open"></i> Mở lại để sửa</button>`}
             </div>
         </div>`;
     if (readonly) modal.querySelectorAll('[data-voucher-action]').forEach(el => el.remove());
     document.body.appendChild(modal);
     recalcSettleVoucher();
+}
+
+function settleLogValue(v) {
+    if (v === null || v === undefined || v === '') return '<span class="text-slate-400">trống</span>';
+    if (typeof v === 'number') return formatMoneyVND(v);
+    if (typeof v === 'boolean') return v ? 'Có' : 'Không';
+    return escapeHtml(String(v));
+}
+
+function settleLogSection(v) {
+    const logs = v.logs || [];
+    if (!logs.length) return '';
+    const items = logs.slice().reverse().map(g => {
+        const changes = (g.changes || []).map(c =>
+            `<li>${c.trip_code ? `<span class="font-mono font-bold">${escapeHtml(c.trip_code)}</span> · ` : ''}${escapeHtml(c.field)}: ${settleLogValue(c.old)} ➔ <strong>${settleLogValue(c.new)}</strong></li>`).join('');
+        return `<div class="py-1.5 border-b border-slate-100 last:border-0">
+            <div class="flex flex-wrap items-center gap-x-2"><strong class="text-slate-800">${escapeHtml(g.action_label)}</strong>
+                <span class="text-slate-500">${escapeHtml(g.actor || 'hệ thống')} · ${escapeHtml(g.at)}</span>
+                <span class="font-mono text-slate-600">Số tiền sau: ${formatMoneyVND(g.amount_after)}</span></div>
+            ${g.reason ? `<div class="text-slate-600">Lý do: ${escapeHtml(g.reason)}</div>` : ''}
+            ${changes ? `<ul class="list-disc pl-5 text-[11px] text-slate-600">${changes}</ul>` : ''}</div>`;
+    }).join('');
+    return `<details class="mt-3 border border-slate-200 rounded-lg" ${logs.length <= 3 ? 'open' : ''}>
+        <summary class="px-3 py-2 font-bold text-slate-700 cursor-pointer">Lịch sử thay đổi (${logs.length})</summary>
+        <div class="px-3 pb-2 max-h-56 overflow-auto">${items}</div></details>`;
 }
 
 function closeSettleVoucherModal() {
@@ -24908,8 +24937,10 @@ function collectSettleVoucherForm() {
     document.querySelectorAll('[data-split-trip]').forEach(i => { split_ratios[i.getAttribute('data-split-trip')] = parseFloat(i.value) || 50; });
     const adjustments = {};
     document.querySelectorAll('[data-adjust-trip]').forEach(i => { adjustments[i.getAttribute('data-adjust-trip')] = parseInt(i.value || '0', 10) || 0; });
+    const adjustment_notes = {};
+    document.querySelectorAll('[data-adjust-note-trip]').forEach(i => { adjustment_notes[i.getAttribute('data-adjust-note-trip')] = i.value.trim(); });
     return {
-        split_ratios, adjustments,
+        split_ratios, adjustments, adjustment_notes,
         notes: document.getElementById('settle-voucher-notes')?.value || '',
         with_cash: !!document.getElementById('settle-voucher-cash')?.checked,
         payment_method: document.getElementById('settle-voucher-method')?.value || 'BANK',
@@ -24956,13 +24987,19 @@ async function approveSettleVoucher() {
 
 async function reopenSettleVoucher() {
     const v = currentSettleVoucher;
+    const reason = (document.getElementById('settle-reopen-reason')?.value || '').trim();
+    if (!reason) {
+        showToast('warning', 'Nhập lý do mở lại phiếu để lưu vết', 'Thiếu lý do');
+        document.getElementById('settle-reopen-reason')?.focus();
+        return;
+    }
     const ok = await showConfirmModal({
         title: 'Mở Lại Phiếu Quyết Toán',
         message: `Mở lại phiếu ${v.code}? Các chuyến sẽ được mở khóa${v.cash_transaction_code ? ` và phiếu ${v.cash_transaction_code} trong Sổ quỹ sẽ bị xóa` : ''}.`,
         confirmText: 'Mở lại', cancelText: 'Huỷ bỏ', type: 'warning', icon: 'ph-bold ph-lock-key-open text-2xl'
     });
     if (!ok) return;
-    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/reopen/`, 'POST', {}, 'Đã mở lại phiếu');
+    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/reopen/`, 'POST', { reason }, 'Đã mở lại phiếu');
     if (data) showSettlementVoucherModal(data.voucher);
 }
 

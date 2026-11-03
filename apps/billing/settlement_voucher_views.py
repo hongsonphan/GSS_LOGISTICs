@@ -16,8 +16,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.billing.models import (
-    ApprovalStatus, CashFlowCategory, CashTransaction, DriverAdvanceStatus, PaymentMethod, SettlementDiffType,
-    SettlementVoucher, TransactionType, VoucherPartyType, VoucherStatus,
+    ApprovalStatus, CashFlowCategory, CashTransaction, DriverAdvanceStatus, PaymentMethod, ReimbursementStatus, SettlementDiffType,
+    SettlementVoucher, SettlementVoucherLog, TransactionType, VoucherPartyType, VoucherStatus,
 )
 from apps.dispatch.models import DispatchTrip, TripStatus
 from core.permissions import CanViewSettlementVoucherReport, IsAccountant
@@ -43,12 +43,13 @@ def _trip_base(trip):
     }
 
 
-def build_line(party_type, trip, adjustment=0, split_ratio=None):
+def build_line(party_type, trip, adjustment=0, split_ratio=None, note=''):
     """Bản chụp một chuyến cho bảng kê; chỉ đưa vào các trường phù hợp với đối tượng quyết toán."""
     line = _trip_base(trip)
     expenses = _live_expenses(trip)
     if party_type == VoucherPartyType.DRIVER:
-        advance = int(sum(a.amount for a in trip.driver_advances.all() if not a.is_deleted))
+        advance = int(sum(a.amount for a in trip.driver_advances.all()
+                          if not a.is_deleted and a.status == DriverAdvanceStatus.ADVANCED))
         spent = int(sum(e.amount for e in expenses))
         line.update({
             'driver_name': (trip.driver.nickname or trip.driver.full_name) if trip.driver else '',
@@ -76,7 +77,10 @@ def build_line(party_type, trip, adjustment=0, split_ratio=None):
             'total': cost + reimb_total - advance + adjustment,
         })
     else:
-        obh = [e for e in expenses if e.is_on_behalf_of_customer]
+        # Khoản chi hộ đã gửi Debit Note hoặc đã thu hồi được thu ở luồng riêng, không tính lại để tránh thu trùng
+        obh = [e for e in expenses if e.is_on_behalf_of_customer
+               and e.reimbursement_status in (ReimbursementStatus.NOT_APPLICABLE, ReimbursementStatus.PENDING)
+               and not e.debit_note_number]
         revenue = int(trip.cached_revenue or 0)
         line.update({
             'booking_or_bill': trip.booking_or_bill or '',
@@ -85,6 +89,7 @@ def build_line(party_type, trip, adjustment=0, split_ratio=None):
             'total': revenue + int(sum(e.amount for e in obh)) + adjustment,
         })
     line['adjustment'] = adjustment
+    line['adjustment_note'] = note
     return line
 
 
@@ -93,8 +98,49 @@ def _totals(party_type, lines):
     if party_type == VoucherPartyType.DRIVER:
         return abs(net), ('RECEIVE' if net > 0 else 'PAY')
     if party_type == VoucherPartyType.PARTNER:
-        return abs(net), 'PAY'
+        # Tạm ứng vượt cước: đối tác nợ lại công ty
+        return abs(net), ('PAY' if net >= 0 else 'RECEIVE')
     return abs(net), 'RECEIVE'
+
+
+LINE_FIELD_LABELS = {
+    'adjustment': 'Phát sinh', 'adjustment_note': 'Lý do phát sinh', 'split_ratio': 'Tỷ lệ thù lao cắt kéo',
+    'advance': 'Tạm ứng', 'spent': 'Thực chi', 'freight': 'Cước vận chuyển', 'freight_cost': 'Cước thuê xe',
+    'expense_total': 'Tổng chi phí/chi hộ', 'total': 'Chênh lệch/Phải thu/Phải trả',
+}
+
+
+def _line_view(line):
+    view = {k: line.get(k) for k in LINE_FIELD_LABELS if k in line}
+    if 'expense_lines' in line:
+        view['expense_total'] = sum(int(e['amount']) for e in line['expense_lines'])
+    return view
+
+
+def _diff_lines(old_lines, new_lines):
+    """So sánh hai bản chụp bảng kê, trả về danh sách thay đổi theo từng chuyến."""
+    old_by_trip = {l['trip_id']: l for l in old_lines}
+    changes = []
+    for line in new_lines:
+        old_view = _line_view(old_by_trip.get(line['trip_id'], {}))
+        for key, new_val in _line_view(line).items():
+            old_val = old_view.get(key)
+            if old_val != new_val:
+                changes.append({'field': LINE_FIELD_LABELS[key], 'trip_code': line['trip_code'], 'old': old_val, 'new': new_val})
+    return changes
+
+
+def _write_log(voucher, request, action, changes=None, reason=''):
+    emp = getattr(request.user, 'employee', None)
+    label = (emp.full_name if emp else '') or getattr(request.user, 'username', '') or 'hệ thống'
+    SettlementVoucherLog.objects.create(
+        voucher=voucher, action=action, actor=emp, actor_label=label[:150], reason=(reason or '').strip()[:255],
+        changes=changes or [], amount_after=voucher.amount,
+    )
+
+
+def _missing_adjustment_note(lines):
+    return [l['trip_code'] for l in lines if int(l.get('adjustment') or 0) != 0 and not (l.get('adjustment_note') or '').strip()]
 
 
 def _party_of(party_type, trip):
@@ -118,6 +164,10 @@ def serialize(v, with_lines=True):
     }
     if with_lines:
         data['lines'] = v.lines
+        data['logs'] = [{
+            'action': g.action, 'action_label': g.get_action_display(), 'actor': g.actor_label, 'reason': g.reason,
+            'changes': g.changes, 'amount_after': int(g.amount_after), 'at': timezone.localtime(g.created_at).strftime('%d/%m/%Y %H:%M'),
+        } for g in v.logs.all()]
     return data
 
 
@@ -125,11 +175,12 @@ def _parse_maps(data):
     try:
         ratios = {int(k): float(x) for k, x in (data.get('split_ratios') or {}).items()}
         adjusts = {int(k): int(x) for k, x in (data.get('adjustments') or {}).items()}
+        notes = {int(k): str(x or '').strip()[:255] for k, x in (data.get('adjustment_notes') or {}).items()}
     except (TypeError, ValueError, AttributeError):
-        return None, None, 'Tỷ lệ thù lao hoặc số phát sinh không hợp lệ'
+        return None, None, None, 'Tỷ lệ thù lao hoặc số phát sinh không hợp lệ'
     if any(r < 0 or r > 100 for r in ratios.values()):
-        return None, None, 'Tỷ lệ thù lao phải nằm trong khoảng 0 - 100%'
-    return ratios, adjusts, ''
+        return None, None, None, 'Tỷ lệ thù lao phải nằm trong khoảng 0 - 100%'
+    return ratios, adjusts, notes, ''
 
 
 def _already_settled(party_type, trip):
@@ -162,7 +213,7 @@ class SettlementVoucherListCreateAPIView(APIView):
             trip_ids = list(DispatchTrip.objects.filter(trip_code__in=request.data['trip_codes'], is_deleted=False).values_list('id', flat=True))
         if not isinstance(trip_ids, list) or not trip_ids:
             return Response({'error': 'Vui lòng chọn ít nhất một chuyến để quyết toán'}, status=status.HTTP_400_BAD_REQUEST)
-        ratios, adjusts, err = _parse_maps(request.data)
+        ratios, adjusts, notes, err = _parse_maps(request.data)
         if err:
             return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -189,7 +240,11 @@ class SettlementVoucherListCreateAPIView(APIView):
 
         vouchers = []
         for (party_ref, party_name), group in groups.items():
-            lines = [build_line(party_type, t, adjusts.get(t.id, 0), ratios.get(t.id)) for t in group]
+            lines = [build_line(party_type, t, adjusts.get(t.id, 0), ratios.get(t.id), notes.get(t.id, '')) for t in group]
+            missing = _missing_adjustment_note(lines)
+            if missing:
+                transaction.set_rollback(True)
+                return Response({'error': f'Nhập lý do cho số phát sinh của chuyến: {", ".join(missing[:5])}'}, status=status.HTTP_400_BAD_REQUEST)
             amount, direction = _totals(party_type, lines)
             code = next_code(SettlementVoucher, 'code', f"{PARTY_PREFIX[party_type]}.{timezone.now().strftime('%y%m')}.", 3)
             voucher = SettlementVoucher.objects.create(
@@ -200,6 +255,7 @@ class SettlementVoucherListCreateAPIView(APIView):
                 created_by=getattr(request.user, 'employee', None),
             )
             voucher.trips.set(group)
+            _write_log(voucher, request, 'CREATE', reason=voucher.notes)
             vouchers.append(voucher)
         return Response({'success': True, 'voucher': serialize(vouchers[0]), 'vouchers': [serialize(v, with_lines=False) for v in vouchers]},
                         status=status.HTTP_201_CREATED)
@@ -226,17 +282,23 @@ class SettlementVoucherDetailAPIView(APIView):
             return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
         if v.status != VoucherStatus.DRAFT:
             return Response({'error': 'Phiếu đã duyệt, cần Mở lại phiếu trước khi chỉnh sửa'}, status=status.HTTP_400_BAD_REQUEST)
-        ratios, adjusts, err = _parse_maps(request.data)
+        ratios, adjusts, notes, err = _parse_maps(request.data)
         if err:
             return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
-        old = {l['trip_id']: l for l in v.lines}
+        old_lines = v.lines
+        old_header = {'notes': v.notes, 'payment_method': v.payment_method, 'with_cash': v.with_cash}
+        old = {l['trip_id']: l for l in old_lines}
         trips = v.trips.select_related('driver', 'vehicle', 'customer', 'subcontractor', 'dropoff_driver').prefetch_related('expenses', 'driver_advances')
         lines = []
         for t in trips:
             prev = old.get(t.id, {})
             adj = adjusts.get(t.id, prev.get('adjustment', 0)) if 'adjustments' in request.data else prev.get('adjustment', 0)
             ratio = ratios.get(t.id, prev.get('split_ratio')) if 'split_ratios' in request.data else prev.get('split_ratio')
-            lines.append(build_line(v.party_type, t, adj, ratio))
+            note = notes.get(t.id, prev.get('adjustment_note', '')) if 'adjustment_notes' in request.data else prev.get('adjustment_note', '')
+            lines.append(build_line(v.party_type, t, adj, ratio, note))
+        missing = _missing_adjustment_note(lines)
+        if missing:
+            return Response({'error': f'Nhập lý do cho số phát sinh của chuyến: {", ".join(missing[:5])}'}, status=status.HTTP_400_BAD_REQUEST)
         v.lines = lines
         v.amount, v.direction = _totals(v.party_type, lines)
         for field in ('notes', 'payment_method'):
@@ -245,6 +307,12 @@ class SettlementVoucherDetailAPIView(APIView):
         if 'with_cash' in request.data:
             v.with_cash = bool(request.data['with_cash'])
         v.save()
+        changes = _diff_lines(old_lines, lines)
+        header_labels = {'notes': 'Ghi chú', 'payment_method': 'Hình thức thanh toán', 'with_cash': 'Phát sinh phiếu Thu/Chi'}
+        changes += [{'field': header_labels[k], 'trip_code': '', 'old': old_header[k], 'new': getattr(v, k)}
+                    for k in old_header if old_header[k] != getattr(v, k)]
+        if changes:
+            _write_log(v, request, 'UPDATE', changes)
         return Response({'success': True, 'voucher': serialize(v)})
 
     patch = put
@@ -256,6 +324,7 @@ class SettlementVoucherDetailAPIView(APIView):
             return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
         if v.status != VoucherStatus.DRAFT:
             return Response({'error': 'Phiếu đã duyệt, cần Mở lại phiếu trước khi xóa'}, status=status.HTTP_400_BAD_REQUEST)
+        _write_log(v, request, 'DELETE', reason=request.data.get('reason', ''))
         v.delete()
         return Response({'success': True, 'message': f'Đã xóa phiếu {v.code}'})
 
@@ -298,10 +367,15 @@ class SettlementVoucherApproveAPIView(APIView):
                 t.save()
                 t.expenses.filter(is_deleted=False).exclude(status=ApprovalStatus.REJECTED).update(status=ApprovalStatus.SETTLED)
                 spent = line.get('spent', 0) + line.get('adjustment', 0)
-                for adv in t.driver_advances.filter(is_deleted=False, status=DriverAdvanceStatus.ADVANCED):
-                    diff = int(adv.amount) - spent
+                # Phân bổ thực chi lần lượt lên từng phiếu tạm ứng; phiếu cuối nhận phần còn lại (kể cả phần vượt)
+                advances = list(t.driver_advances.filter(is_deleted=False, status=DriverAdvanceStatus.ADVANCED).order_by('advance_date', 'id'))
+                remaining = spent
+                for idx, adv in enumerate(advances):
+                    share = remaining if idx == len(advances) - 1 else min(int(adv.amount), max(remaining, 0))
+                    remaining -= share
+                    diff = int(adv.amount) - share
                     adv.status = DriverAdvanceStatus.SETTLED
-                    adv.actual_spent = spent
+                    adv.actual_spent = share
                     adv.settlement_diff_type = (SettlementDiffType.DRIVER_REFUND if diff > 0
                                                 else SettlementDiffType.COMPANY_REIMBURSE if diff < 0 else SettlementDiffType.BALANCED)
                     adv.refund_amount = max(diff, 0)
@@ -346,6 +420,7 @@ class SettlementVoucherApproveAPIView(APIView):
         v.approved_by = emp
         v.approved_at = now
         v.save()
+        _write_log(v, request, 'APPROVE')
         return Response({'success': True, 'message': f'Đã duyệt phiếu {v.code}', 'voucher': serialize(v)})
 
 
@@ -362,6 +437,9 @@ class SettlementVoucherReopenAPIView(APIView):
             return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
         if v.status != VoucherStatus.APPROVED:
             return Response({'error': 'Phiếu chưa được duyệt'}, status=status.HTTP_400_BAD_REQUEST)
+        reason = (request.data.get('reason') or '').strip()
+        if not reason:
+            return Response({'error': 'Nhập lý do mở lại phiếu để lưu vết'}, status=status.HTTP_400_BAD_REQUEST)
 
         for t in v.trips.all():
             if v.party_type == VoucherPartyType.DRIVER:
@@ -396,6 +474,7 @@ class SettlementVoucherReopenAPIView(APIView):
         v.approved_by = None
         v.approved_at = None
         v.save()
+        _write_log(v, request, 'REOPEN', reason=reason)
         return Response({'success': True, 'message': f'Đã mở lại phiếu {v.code}', 'voucher': serialize(v)})
 
 
