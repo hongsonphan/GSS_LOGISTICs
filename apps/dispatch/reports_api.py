@@ -1533,12 +1533,22 @@ class ReportsAPIView(APIView):
                 customer_collected_map[p_name] = customer_collected_map.get(p_name, 0) + int(tx.amount)
 
         # Lấy các chuyến đã hoàn thành giao hàng (COMPLETED / DELIVERED) hoặc đã phát sinh doanh thu trong kỳ
+        # Chuyến đã quyết toán với khách (phiếu quyết toán khách hàng hoặc đã chốt đối soát) luôn được đưa vào công nợ,
+        # không phụ thuộc trạng thái chạy xe hay việc đã có ngày chạy hay chưa.
         completed_trips_in_period = trips_qs.filter(
-            status__in=[TripStatus.COMPLETED, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.DRAFT],
-            loading_date__isnull=False
+            Q(status__in=[TripStatus.COMPLETED, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.DRAFT],
+              loading_date__isnull=False)
+            | Q(is_customer_settled=True) | Q(id__in=customer_voucher_trip_ids)
         ).select_related(
             'customer', 'vehicle', 'driver', 'booking_order'
         ).prefetch_related('expenses', 'documents')
+
+        approved_customer_lines = {}
+        for voucher in SettlementVoucher.objects.filter(
+                party_type='CUSTOMER', status='APPROVED', is_deleted=False,
+                trips__in=completed_trips_in_period.values('id')).distinct():
+            for ln in voucher.lines or []:
+                approved_customer_lines[ln.get('trip_id')] = ln
 
         for t in completed_trips_in_period:
             cust_obj = t.customer
@@ -1614,12 +1624,20 @@ class ReportsAPIView(APIView):
 
             rev, exp, prof = get_trip_financials(t)
             reim = sum(e.amount for e in t.expenses.all() if not e.is_deleted and e.is_on_behalf_of_customer)
-            trip_total = rev + reim
+            adj = 0
+            v_line = approved_customer_lines.get(t.id)
+            if v_line is not None and is_cust_settled:
+                # Đã quyết toán qua phiếu: công nợ chính thức = số liệu chốt trên phiếu (cước + chi hộ + phát sinh)
+                rev = int(v_line.get('freight') or 0)
+                reim = sum(int(e.get('amount') or 0) for e in v_line.get('expense_lines', []))
+                adj = int(v_line.get('adjustment') or 0)
+            trip_total = rev + reim + adj
 
             c_entry['freight_revenue'] += rev
             c_entry['reimbursable_amount'] += reim
+            c_entry['adjustment_amount'] = c_entry.get('adjustment_amount', 0) + adj
 
-            t_date = t.loading_date
+            t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
             days_diff = (today - t_date).days if t_date else 0
 
             # QUY TẮC CỐT LÕI: CHỈ KHI ĐÃ QUYẾT TOÁN VỚI KHÁCH HÀNG THÌ MỚI TÍNH CÔNG NỢ (AR)
@@ -1661,6 +1679,7 @@ class ReportsAPIView(APIView):
                 'driver_name': drv_name,
                 'revenue': rev,
                 'reimbursable': reim,
+                'adjustment': adj,
                 'total_receivable': trip_total,
                 # 4 Trạng thái chuẩn xác:
                 'is_trip_completed': True,                     # 1. Đã hoàn thành chuyến

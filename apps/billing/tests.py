@@ -363,6 +363,34 @@ class DriverBatchSettlementTests(TestCase):
         codes = [t['trip_code'] for v in (fleet.get('fleet_pnl') or fleet.get('vehicles') or []) for t in v.get('trips', [])]
         self.assertNotIn('ACC-TEST-001', codes)
 
+    def test_ar_report_counts_approved_customer_voucher_even_if_trip_not_run(self):
+        """Công nợ phải thu: phiếu quyết toán khách đã duyệt (chuyến chưa chạy, chưa có ngày chạy) vẫn thành công nợ chính thức,
+        số tiền theo phiếu (cước + chi hộ + phát sinh)."""
+        admin = User.objects.create_user(username='rep_admin3', password='password123', is_staff=True, is_superuser=True)
+        trip = DispatchTrip.objects.create(
+            trip_code='AR-TEST-001', customer=self.customer, vehicle=self.vehicle,
+            status=TripStatus.ACCEPTED, cached_revenue=Decimal('2000000'))
+        TripExpense.objects.create(trip=trip, driver=self.driver_emp, category=ExpenseCategory.TOLL_FEE, amount=100000,
+                                   status=ApprovalStatus.APPROVED, is_on_behalf_of_customer=True)
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        res = self.client.post(base, {'party_type': 'CUSTOMER', 'trip_ids': [trip.id], 'adjustments': {str(trip.id): 50000},
+                                      'adjustment_notes': {str(trip.id): 'Phụ phí dầu'}}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+
+        def ar_row():
+            self.client.force_authenticate(user=admin)
+            data = self.client.get('/api/reports/?period=all').data
+            self.client.force_authenticate(user=self.accountant_user)
+            return next((c for c in data['report13_ar_aging']['customers'] if c['customer_name'] == self.customer.name), None)
+
+        row = ar_row()
+        self.assertEqual(row['reconciled_amount'] if row else 0, 0)  # mới lưu, chưa duyệt: chưa tính công nợ
+        self.assertEqual(self.client.post(f"{base}{res.data['voucher']['id']}/approve/", {}, format='json').status_code, status.HTTP_200_OK)
+        row = ar_row()
+        self.assertEqual(row['reconciled_amount'], 2150000)
+        self.assertEqual((row['freight_revenue'], row['reimbursable_amount'], row['adjustment_amount']), (2000000, 100000, 50000))
+
     def test_voucher_partner_direction_flips_when_advance_exceeds_cost(self):
         self.client.force_authenticate(user=self.accountant_user)
         self.trip1.subcontractor_cost = 1000000
