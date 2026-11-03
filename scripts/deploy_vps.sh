@@ -39,6 +39,8 @@ bash scripts/backup_vps.sh
 
 step "2b/7 Build image mới và CHẠY THỬ trên bản sao CSDL production (chưa đụng dữ liệu thật)"
 $DC build web
+# Chạy thử dùng --no-deps nên phải bật sẵn Redis (bộ nhớ đệm REDIS_URL), nếu không signal danh mục sẽ lỗi kết nối
+$DC up -d redis
 PG="$DC exec -T db"
 $PG dropdb -U bim_logistics_user --if-exists bim_preflight
 $PG createdb -U bim_logistics_user bim_preflight

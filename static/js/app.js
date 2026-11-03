@@ -2170,7 +2170,7 @@ function attachAutoNumberFormat(inputEl, onChangeCallback) {
 function initAllNumberInputs() {
     document.querySelectorAll('.input-number-vn, [data-format="number"]').forEach(el => {
         const cb = (el.id === 'quote-unit-price' || el.id === 'quote-monthly-trips') 
-            ? calculateQuoteExpectedRevenue 
+            ? (typeof calculateQuoteExpectedRevenue === 'function' ? calculateQuoteExpectedRevenue : null)
             : null;
         attachAutoNumberFormat(el, cb);
     });
@@ -13704,7 +13704,7 @@ function renderBookingsTable(bookings) {
             </td>
             <!-- Các Cột Mở Rộng Từ Database Cho Bảng Booking (Mặc định ẩn) -->
             <td data-col-key="customer_short" class="p-3.5 font-bold text-slate-800 text-xs whitespace-nowrap" style="display:none">
-                ${escapeHtml(b.customer_short || b.customer || '-')}
+                ${escapeHtml((b.customer_short || b.customer || '-').toUpperCase())}
             </td>
             <td data-col-key="customer_code" class="p-3.5 font-mono font-bold text-teal-800 text-xs whitespace-nowrap" style="display:none">
                 ${escapeHtml(b.customer_code || '-')}
@@ -14266,99 +14266,27 @@ function renderQuotationsTable(quotations) {
         const quoteHash = s.hashid || s.id;
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition-colors';
-                tr.innerHTML = `
+        tr.innerHTML = `
             <td data-col-key="stt" class="p-3.5 text-center font-mono text-xs font-bold text-slate-500 tabular-nums select-none border-r border-slate-200/70 w-12">
                 ${idx + 1}
             </td>
-            <td data-col-key="booking_code" class="p-3.5 whitespace-nowrap">
-                <div class="flex items-center flex-wrap gap-1">
-                    <span class="font-bold text-slate-900 font-heading font-mono text-sm">${escapeHtml(formatCodeCompact(b.booking_code))}</span>
-                    ${urgentBadge}
-                    ${dropHookBadge}
-                </div>
-            </td>
-            <td data-col-key="loading_date" class="p-3.5 whitespace-nowrap">
+            <td data-col-key="code" class="p-3.5 font-black text-indigo-950 font-heading text-sm">
                 <div class="flex flex-col">
-                    <p class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                        <i class="ph-bold ph-calendar-blank text-slate-400 text-xs shrink-0"></i>
-                        <span>${b.loading_date}</span>
-                    </p>
-                    ${b.loading_time ? `<p class="text-xs text-slate-500 font-medium mt-0.5 pl-4">${formatTimeString(b.loading_time)}</p>` : ''}
+                    <a href="/sales/quotations/${quoteHash}" onclick="event.preventDefault(); viewQuotationDetail('${quoteHash}');" 
+                        class="hover:text-teal-700 hover:underline transition-colors cursor-pointer" title="Mở trang toàn màn hình: /sales/quotations/${quoteHash}">
+                        ${formatCodeCompact(s.code)}
+                    </a>
+                    ${methodBadge ? `<div class="mt-0.5">${methodBadge}</div>` : ''}
                 </div>
             </td>
-            <td data-col-key="customer_service" class="p-3.5">
-                <p class="font-bold text-slate-900 text-sm truncate max-w-[200px]" title="${escapeHtml(b.customer)}">${escapeHtml(b.customer)}</p>
-                <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1.5 truncate">
-                    <span class="font-bold text-teal-800">${svcTag}</span>
-                    ${b.shipping_line ? `<span class="text-slate-300">·</span><span class="font-medium text-slate-600 truncate max-w-[120px]">${escapeHtml(b.shipping_line)}</span>` : ''}
-                </p>
-            </td>
-            <td data-col-key="booking_bl" class="p-3.5 font-mono">
-                <p class="font-bold text-indigo-950 text-sm truncate max-w-[150px] font-mono">${escapeHtml(b.booking_number || '-')}</p>
-                <p class="text-xs text-slate-500 font-medium truncate max-w-[150px] mt-0.5 font-sans">${escapeHtml(b.vessel_voyage || '-')}</p>
-            </td>
-            <td data-col-key="cont_cargo" class="p-3.5">
-                <div class="flex flex-col">
-                    <p class="font-bold text-slate-900 text-sm">Cont ${escapeHtml(b.container_size)}</p>
-                    <p class="text-xs text-slate-500 font-medium truncate max-w-[140px] mt-0.5" title="${escapeHtml(b.commodity || 'Hàng hóa')}">${escapeHtml(b.commodity || 'Hàng hóa')}</p>
-                </div>
-            </td>
-            <td data-col-key="progress_percent" class="p-3.5">
-                <div class="flex items-center space-x-1.5 mb-1">
-                    <span class="font-bold text-slate-900 text-sm tabular-nums">${b.progress}</span>
-                    <div class="w-12 bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                        <div class="bg-teal-600 h-1.5 rounded-full" style="width: ${b.progress_percent}%"></div>
-                    </div>
-                </div>
-                <div>${statusBadge}</div>
-            </td>
-            <td data-col-key="route" class="p-3.5">
-                <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
-                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy cont:</strong> ${cleanLoc(b.pickup)}</p>
-                    <p class="truncate text-slate-900 font-bold"><strong class="text-blue-900 font-bold">2. Kho đóng/trả:</strong> ${cleanLoc(b.delivery)}</p>
-                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-amber-800 font-bold">3. Trả cont:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
-                </div>
-            </td>
-            <td data-col-key="closing_time" class="p-3.5 font-mono">
-                <p class="font-bold text-rose-700 text-sm">${b.closing_time || '-'}</p>
-                ${b.si_cutoff ? `<p class="text-xs text-slate-500 mt-0.5 font-sans">SI: ${b.si_cutoff}</p>` : ''}
-            </td>
-            <td data-col-key="price" class="p-3.5 text-right font-black text-slate-900 text-sm tabular-nums">
-                ${new Intl.NumberFormat('vi-VN').format(b.price)} đ
-            </td>
-            <!-- Các Cột Mở Rộng Từ Database Cho Bảng Booking (Mặc định ẩn) -->
-            <td data-col-key="customer_short" class="p-3.5 font-bold text-slate-800 text-xs whitespace-nowrap" style="display:none">
-                ${escapeHtml(b.customer_short || b.customer || '-')}
-            </td>
-            <td data-col-key="customer_code" class="p-3.5 font-mono font-bold text-teal-800 text-xs whitespace-nowrap" style="display:none">
-                ${escapeHtml(b.customer_code || '-')}
-            </td>
-            <td data-col-key="booking_type" class="p-3.5 text-xs font-bold text-slate-700 whitespace-nowrap" style="display:none">
-                ${svcTag}
-            </td>
-            <td data-col-key="container_size" class="p-3.5 text-xs font-mono font-bold text-teal-900 whitespace-nowrap" style="display:none">
-                Cont ${escapeHtml(b.container_size || '40')}
-            </td>
-            <td data-col-key="shipping_line" class="p-3.5 text-xs font-bold text-blue-700 whitespace-nowrap" style="display:none">
-                ${escapeHtml(b.shipping_line || '-')}
-            </td>
-            <td data-col-key="vessel_voyage" class="p-3.5 text-xs font-mono text-slate-700 whitespace-nowrap" style="display:none">
-                ${escapeHtml(b.vessel_voyage || '-')}
-            </td>
-            <td data-col-key="pickup_loc" class="p-3.5 text-xs text-teal-700 font-semibold truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.pickup || '-')}">
-                ${cleanLoc(b.pickup)}
-            </td>
-            <td data-col-key="delivery_loc" class="p-3.5 text-xs text-slate-800 font-semibold truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.delivery || '-')}">
-                ${cleanLoc(b.delivery)}
-            </td>
-            <td data-col-key="dropoff_loc" class="p-3.5 text-xs text-indigo-700 font-semibold truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.dropoff || '-')}">
-                ${cleanLoc(b.dropoff)}
-            </td>
-            <td data-col-key="si_cutoff" class="p-3.5 text-xs font-mono text-rose-600 whitespace-nowrap" style="display:none">
-                ${escapeHtml(b.si_cutoff || '-')}
-            </td>
-            <td data-col-key="created_at" class="p-3.5 text-xs font-mono text-slate-500 whitespace-nowrap" style="display:none">
-                ${escapeHtml(b.created_at || b.loading_date || '-')}
+            <td data-col-key="created_at" class="p-3.5 text-center whitespace-nowrap text-xs font-semibold text-slate-700">${escapeHtml(s.created_at || '-')}</td>
+            <td data-col-key="customer" class="p-3.5 font-bold text-slate-900 text-sm">${escapeHtml(s.customer)}</td>
+            <td data-col-key="route" class="p-3.5 font-medium text-slate-700 text-[13px]">${routeDisplay}</td>
+            <td data-col-key="unit_price" class="p-3.5 font-semibold text-slate-700 tabular-nums text-sm text-right">${new Intl.NumberFormat('vi-VN').format(s.unit_price)} đ</td>
+            <td data-col-key="monthly_trips" class="p-3.5 text-center font-bold text-teal-700 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(s.monthly_trips || 0)} <span class="text-xs text-slate-400 font-normal">chuyến</span></td>
+            <td data-col-key="expected_revenue" class="p-3.5 text-right font-black text-emerald-700 tabular-nums font-heading text-sm">${new Intl.NumberFormat('vi-VN').format(s.expected_revenue)} đ</td>
+            <td data-col-key="status" class="p-3.5 whitespace-nowrap">
+                <span class="text-xs ${statusCls}">${escapeHtml(s.status)}</span>
             </td>
             <td data-col-key="actions" class="p-3.5 text-center">
                 <div class="inline-flex items-center gap-1.5 justify-center">
@@ -38626,7 +38554,7 @@ function applyReport12Filters() {
     if (tfoot) {
         tfoot.innerHTML = `
             <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
-                <td colspan="8" class="text-right uppercase">TỔNG CỘNG: ${list.length} Chuyến Vận Tải:</td>
+                <td colspan="7" class="text-right uppercase">TỔNG CỘNG: ${list.length} Chuyến Vận Tải:</td>
                 <td class="text-right text-slate-900 font-mono font-black tabular-nums">${formatMoneyVND(totalRev)}</td>
                 <td class="text-right text-rose-700 font-mono font-black tabular-nums">${formatMoneyVND(totalExp)}</td>
                 <td class="text-right text-indigo-700 font-mono font-black tabular-nums">${formatMoneyVND(totalReim)}</td>
