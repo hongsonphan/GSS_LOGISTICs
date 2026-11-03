@@ -116,16 +116,17 @@ class ReportsAPIView(APIView):
         # Nhóm Báo Cáo 1 (Doanh Thu Thực Hiện - 4 Báo Cáo: Đội Xe, Khách Hàng, Tuyến & Gom Chuyến):
         # CHỈ GHI NHẬN CÁC CHUYẾN ĐÃ HOÀN THÀNH CHUYẾN (ĐÃ GIAO NHẬN THÀNH CÔNG, CÓ POD).
         # Các chuyến đang chạy (IN_TRANSIT), chưa chạy (DRAFT/DISPATCHED) KHÔNG thể hiện ở nhóm này.
-        # NGOẠI LỆ: chuyến đã được lập phiếu quyết toán (đã lưu hoặc đã duyệt) hoặc đã chốt đối soát với khách
-        # thì luôn hiển thị, để số liệu quyết toán và báo cáo doanh thu thực hiện luôn khớp nhau.
         COMPLETED_EARNED_STATUSES = [TripStatus.DELIVERED, TripStatus.COMPLETED]
-        settled_trip_ids = SettlementVoucher.trips.through.objects.filter(
-            settlementvoucher__is_deleted=False).values('dispatchtrip_id')
-        earned_trips_qs = trips_qs.filter(
-            Q(status__in=COMPLETED_EARNED_STATUSES) | Q(is_customer_settled=True) | Q(id__in=settled_trip_ids)
+        earned_trips_qs = trips_qs.filter(status__in=COMPLETED_EARNED_STATUSES)
+        # RIÊNG báo cáo theo khách hàng: chuyến đã lập phiếu quyết toán khách (đã lưu hoặc đã duyệt) hoặc đã chốt
+        # đối soát thì luôn hiển thị dù chưa chạy xong; phần chưa chạy được tách ở cột "Doanh thu chưa thực hiện".
+        customer_voucher_trip_ids = SettlementVoucher.trips.through.objects.filter(
+            settlementvoucher__is_deleted=False, settlementvoucher__party_type='CUSTOMER').values('dispatchtrip_id')
+        customer_trips_qs = trips_qs.filter(
+            Q(status__in=COMPLETED_EARNED_STATUSES) | Q(is_customer_settled=True) | Q(id__in=customer_voucher_trip_ids)
         )
         # Chuyến đã lưu phiếu quyết toán nhưng chưa duyệt (khách hàng / tài xế / đối tác 3PL)
-        saved_customer = draft_voucher_codes('CUSTOMER', earned_trips_qs)
+        saved_customer = draft_voucher_codes('CUSTOMER', customer_trips_qs)
         saved_driver = draft_voucher_codes('DRIVER', earned_trips_qs)
         saved_partner = draft_voucher_codes('PARTNER', trips_qs)
 
@@ -779,7 +780,8 @@ class ReportsAPIView(APIView):
         customer_analytics_dict = {}
         total_system_teu = 0.0
 
-        for t in earned_trips_qs:
+        for t in customer_trips_qs:
+            is_realized = t.status in COMPLETED_EARNED_STATUSES
             c_name = t.customer.name if t.customer else 'Khách vãng lai'
             c_code = t.customer.code if t.customer else 'CUST_WALKIN'
 
@@ -803,7 +805,8 @@ class ReportsAPIView(APIView):
                 teu_factor = 2.0
                 is_40 = True
 
-            total_system_teu += teu_factor
+            if is_realized:
+                total_system_teu += teu_factor
 
             if c_name not in customer_analytics_dict:
                 customer_analytics_dict[c_name] = {
@@ -815,6 +818,8 @@ class ReportsAPIView(APIView):
                     'saved_trips_count': 0,
                     'settled_revenue': 0,
                     'pending_revenue': 0,
+                    'unrealized_revenue': 0,
+                    'unrealized_trips_count': 0,
                     'containers_count': 0,
                     'total_teu': 0.0,
                     'teu_20_count': 0,
@@ -833,6 +838,36 @@ class ReportsAPIView(APIView):
                 }
 
             row = customer_analytics_dict[c_name]
+            if not is_realized:
+                # Đã quyết toán với khách nhưng chuyến chưa chạy xong: chỉ theo dõi ở "Doanh thu chưa thực hiện"
+                rev_u, _exp_u, _prof_u = get_trip_financials(t)
+                t_date_u = t.loading_date or (t.created_at.date() if t.created_at else None)
+                settled_u = bool(t.is_customer_settled or t.customer_settlement_status == 'SETTLED')
+                saved_u = '' if settled_u else saved_customer.get(t.id, '')
+                row['unrealized_revenue'] += rev_u
+                row['unrealized_trips_count'] += 1
+                row['trips'].append({
+                    'id': t.id,
+                    'trip_code': t.trip_code,
+                    'date': t_date_u.strftime('%d/%m/%Y') if t_date_u else '-',
+                    'customer_name': c_name,
+                    'customer_code': c_code,
+                    'driver_name': t.driver.nickname or t.driver.full_name if t.driver else '-',
+                    'vehicle_plate': t.vehicle.license_plate if t.vehicle else 'Chưa gán xe',
+                    'container_number': t.container_number or '-',
+                    'container_type': t.container_type or '40HC',
+                    'route': f"{t.pickup_location or 'Cảng'} ➔ {t.delivery_warehouse or t.dropoff_location or 'Kho KH'}",
+                    'status': t.status,
+                    'status_label': t.get_status_display(),
+                    'is_realized': False,
+                    'is_settled': settled_u,
+                    'settlement_status': 'Đã đối soát' if settled_u else (SAVED_LABEL if saved_u else 'Chờ đối soát'),
+                    'saved_voucher_code': saved_u,
+                    'revenue': 0,
+                    'unrealized_revenue': rev_u,
+                    'expense': 0,
+                })
+                continue
             row['trips_count'] += 1
             row['containers_count'] += (2 if t.is_twin_container else 1)
             row['total_teu'] += teu_factor
@@ -2096,6 +2131,7 @@ class ReportsAPIView(APIView):
             'report7_customer_analytics': {
                 'total_system_teu': round(total_system_teu, 2),
                 'total_customer_revenue': total_revenue,
+                'total_unrealized_revenue': sum(c['unrealized_revenue'] for c in customer_analytics_list),
                 'top_key_account': top_key_account,
                 'top_key_account_share': top_key_account_share,
                 'avg_teu_per_trip': avg_teu_per_trip,
