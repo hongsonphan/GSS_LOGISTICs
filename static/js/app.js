@@ -3364,12 +3364,12 @@ if (typeof window !== 'undefined') {
         });
     }
 
-    // 2. Định kỳ 15 giây kiểm tra version ngầm siêu nhẹ (~1ms) khi tab đang hoạt động
+    // 2. Định kỳ 5 giây kiểm tra version ngầm siêu nhẹ (~1ms) khi tab đang hoạt động
     setInterval(() => {
         if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
             checkAndSyncMasterData(false);
         }
-    }, 15000);
+    }, 5000);
 }
 
 // Cung cấp hàm toàn cục cho toàn hệ thống

@@ -967,6 +967,17 @@ class ReferentialDeletionLocksTestCase(TestCase):
         self.assertEqual(res_create_spl.status_code, status.HTTP_201_CREATED)
         self.assertTrue(res_create_spl.data['data']['code'].startswith('SPL'))
 
+    def test_new_driver_bumps_version_after_commit_and_appears_in_form_options(self):
+        from apps.master_data.version import get_master_data_version
+        from apps.personnel.models import Employee, EmployeeRole, Department
+        v1 = get_master_data_version()
+        with self.captureOnCommitCallbacks(execute=True):
+            Employee.objects.create(code='TX-SYNC-01', full_name='Tài Xế Đồng Bộ', nickname='SYNC1',
+                                    role=EmployeeRole.DRIVER, department=Department.FLEET, phone_number='0900000001')
+        self.assertGreater(get_master_data_version(), v1)
+        res = self.client.get('/api/master-data/form-options/')
+        self.assertIn('SYNC1', [d['nickname'] for d in res.data['drivers']])
+
     def test_master_data_version_api_and_signal_bump(self):
         from apps.master_data.version import get_master_data_version
         from apps.customers.models import Customer

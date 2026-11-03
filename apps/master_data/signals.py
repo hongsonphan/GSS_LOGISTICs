@@ -1,4 +1,5 @@
 import logging
+from django.db import transaction
 from django.db.models.signals import post_save, post_delete
 from apps.master_data.version import bump_master_data_version
 
@@ -35,6 +36,9 @@ def connect_master_data_signals():
     def _on_master_data_changed(sender, **kwargs):
         new_version = bump_master_data_version()
         logger.debug(f"[MasterData Sync] Signal từ {sender.__name__} -> bump version lên {new_version}")
+        # Tăng thêm một lần SAU khi giao dịch commit: nếu client đã tải lại giữa lúc bump đầu và lúc commit
+        # (nhận dữ liệu cũ), version mới buộc nó tải lại để thấy bản ghi vừa tạo.
+        transaction.on_commit(bump_master_data_version)
 
     for m in models_to_watch:
         post_save.connect(_on_master_data_changed, sender=m, weak=False)
