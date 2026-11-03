@@ -17,6 +17,7 @@ from apps.billing.models import (
     DriverAdvanceStatus, AdvanceSourceType, SettlementDiffType,
     CashTransaction, TransactionType, CashFlowCategory, ReimbursementStatus
 )
+from apps.billing.models import SettlementVoucher
 from apps.billing.voucher_status import SAVED_LABEL, draft_voucher_codes
 from apps.fleet.models import Vehicle, Trailer
 from apps.customers.models import Customer, Quotation, BookingOrder
@@ -114,9 +115,15 @@ class ReportsAPIView(APIView):
         # QUY CHUẨN KẾ TOÁN & ĐIỀU HÀNH VẬN TẢI CHO NHÓM DOANH THU THỰC HIỆN:
         # Nhóm Báo Cáo 1 (Doanh Thu Thực Hiện - 4 Báo Cáo: Đội Xe, Khách Hàng, Tuyến & Gom Chuyến):
         # CHỈ GHI NHẬN CÁC CHUYẾN ĐÃ HOÀN THÀNH CHUYẾN (ĐÃ GIAO NHẬN THÀNH CÔNG, CÓ POD).
-        # Các chuyến đang chạy (IN_TRANSIT), chưa chạy (DRAFT/DISPATCHED) tuyệt đối KHÔNG thể hiện ở nhóm này.
+        # Các chuyến đang chạy (IN_TRANSIT), chưa chạy (DRAFT/DISPATCHED) KHÔNG thể hiện ở nhóm này.
+        # NGOẠI LỆ: chuyến đã được lập phiếu quyết toán (đã lưu hoặc đã duyệt) hoặc đã chốt đối soát với khách
+        # thì luôn hiển thị, để số liệu quyết toán và báo cáo doanh thu thực hiện luôn khớp nhau.
         COMPLETED_EARNED_STATUSES = [TripStatus.DELIVERED, TripStatus.COMPLETED]
-        earned_trips_qs = trips_qs.filter(status__in=COMPLETED_EARNED_STATUSES)
+        settled_trip_ids = SettlementVoucher.trips.through.objects.filter(
+            settlementvoucher__is_deleted=False).values('dispatchtrip_id')
+        earned_trips_qs = trips_qs.filter(
+            Q(status__in=COMPLETED_EARNED_STATUSES) | Q(is_customer_settled=True) | Q(id__in=settled_trip_ids)
+        )
         # Chuyến đã lưu phiếu quyết toán nhưng chưa duyệt (khách hàng / tài xế / đối tác 3PL)
         saved_customer = draft_voucher_codes('CUSTOMER', earned_trips_qs)
         saved_driver = draft_voucher_codes('DRIVER', earned_trips_qs)

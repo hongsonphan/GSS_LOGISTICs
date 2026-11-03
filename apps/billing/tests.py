@@ -331,6 +331,24 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(self.client.post(f"{base}{res.data['voucher']['id']}/approve/", {}, format='json').status_code, status.HTTP_200_OK)
         self.assertEqual(trip_statuses(), {'Đã đối soát'})
 
+    def test_realized_revenue_report_includes_trips_with_settlement_voucher_even_if_not_delivered(self):
+        """Chuyến chưa giao (vd ACCEPTED) nhưng đã có phiếu quyết toán thì vẫn phải hiện trong báo cáo doanh thu thực hiện."""
+        admin = User.objects.create_user(username='rep_admin2', password='password123', is_staff=True, is_superuser=True)
+        trip = DispatchTrip.objects.create(
+            trip_code='ACC-TEST-001', customer=self.customer, vehicle=self.vehicle,  # chưa gán tài xế như chuyến mới nhận lệnh
+            status=TripStatus.ACCEPTED, loading_date=datetime.date.today())
+
+        def summary_trips():
+            self.client.force_authenticate(user=admin)
+            data = self.client.get('/api/reports/?period=all').data
+            self.client.force_authenticate(user=self.accountant_user)
+            return data['summary']['total_trips'] if 'total_trips' in data['summary'] else data['summary'].get('trips')
+
+        before = summary_trips()
+        res = self.client.post('/api/accounting/settlement-vouchers/', {'party_type': 'CUSTOMER', 'trip_ids': [trip.id]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        self.assertEqual(summary_trips(), before + 1)
+
     def test_voucher_partner_direction_flips_when_advance_exceeds_cost(self):
         self.client.force_authenticate(user=self.accountant_user)
         self.trip1.subcontractor_cost = 1000000
