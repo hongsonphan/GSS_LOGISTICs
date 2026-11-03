@@ -24834,8 +24834,8 @@ function settleLineRow(party, l, i, editable) {
     const advs = party === 'DRIVER' ? (l.advance_lines || []) : [];
     const n = Math.max(1, exps.length, advs.length);
     const rs = (html, cls = '') => `<td rowspan="${n}" class="${SETTLE_TD} ${cls}">${html}</td>`;
-    const adjInput = `<input type="number" step="1000" value="${l.adjustment || 0}" ${editable ? '' : 'disabled'} data-adjust-trip="${l.trip_id}"
-        oninput="recalcSettleVoucher()" class="w-28 px-1.5 py-1 text-right font-mono font-bold border border-amber-300 rounded bg-amber-50 disabled:bg-transparent disabled:border-transparent"
+    const adjInput = `<input type="text" inputmode="numeric" value="${formatSignedVN(l.adjustment || 0)}" ${editable ? '' : 'disabled'} data-adjust-trip="${l.trip_id}"
+        oninput="onSettleAdjustInput(this)" class="w-28 px-1.5 py-1 text-right font-mono font-bold border border-amber-300 rounded bg-amber-50 disabled:bg-transparent disabled:border-transparent"
         title="Số phát sinh do Kế toán/Hành chính nhập (+ cộng thêm, - trừ bớt)">`;
     const noteInput = `<input type="text" maxlength="255" value="${escapeHtml(l.adjustment_note || '')}" ${editable ? '' : 'disabled'} data-adjust-note-trip="${l.trip_id}"
         placeholder="Lý do (bắt buộc nếu có phát sinh)" class="w-52 px-1.5 py-1 border border-amber-300 rounded bg-amber-50 disabled:bg-transparent disabled:border-transparent">`;
@@ -25017,6 +25017,26 @@ function closeSettleVoucherModal() {
     if (typeof loadAccountingData === 'function' && document.getElementById('subtab-acct-settlements') && !document.getElementById('subtab-acct-settlements').classList.contains('hidden')) loadAccountingData();
 }
 
+// Số nguyên có dấu (+/-) hiển thị dấu phân cách hàng nghìn kiểu Việt Nam: -1.234.000
+function formatSignedVN(val) {
+    const str = String(val === null || val === undefined ? '' : val);
+    const digits = str.replace(/\D/g, '');
+    if (!digits) return str.trim() === '-' ? '-' : '0';
+    return (str.trim().startsWith('-') ? '-' : '') + new Intl.NumberFormat('vi-VN').format(parseInt(digits, 10));
+}
+
+function parseSignedVN(val) {
+    const str = String(val === null || val === undefined ? '' : val);
+    const n = parseInt(str.replace(/\D/g, ''), 10) || 0;
+    return str.trim().startsWith('-') ? -n : n;
+}
+
+function onSettleAdjustInput(inp) {
+    const f = formatSignedVN(inp.value);
+    if (inp.value !== f && !(inp.value.trim() === '-' && f === '-')) inp.value = f;
+    recalcSettleVoucher();
+}
+
 function onSettleSplitInput(inp) {
     let r = parseFloat(inp.value);
     if (isNaN(r)) r = 50;
@@ -25031,7 +25051,7 @@ function recalcSettleVoucher() {
     let net = 0;
     let adjTotal = 0;
     v.lines.forEach(l => {
-        const adj = parseInt(document.querySelector(`[data-adjust-trip="${l.trip_id}"]`)?.value || '0', 10) || 0;
+        const adj = parseSignedVN(document.querySelector(`[data-adjust-trip="${l.trip_id}"]`)?.value);
         const t = settleVoucherTotal(v.party_type, l, adj);
         net += t;
         adjTotal += adj;
@@ -25058,7 +25078,7 @@ function collectSettleVoucherForm() {
     const split_ratios = {};
     document.querySelectorAll('[data-split-trip]').forEach(i => { split_ratios[i.getAttribute('data-split-trip')] = parseFloat(i.value) || 50; });
     const adjustments = {};
-    document.querySelectorAll('[data-adjust-trip]').forEach(i => { adjustments[i.getAttribute('data-adjust-trip')] = parseInt(i.value || '0', 10) || 0; });
+    document.querySelectorAll('[data-adjust-trip]').forEach(i => { adjustments[i.getAttribute('data-adjust-trip')] = parseSignedVN(i.value); });
     const adjustment_notes = {};
     document.querySelectorAll('[data-adjust-note-trip]').forEach(i => { adjustment_notes[i.getAttribute('data-adjust-note-trip')] = i.value.trim(); });
     return {
@@ -25150,15 +25170,34 @@ function printSettleVoucher() {
         span.textContent = inp.value + (inp.hasAttribute('data-split-trip') ? '%' : '');
         inp.replaceWith(span);
     });
+    const party = SETTLE_PARTY_LABEL[v.party_type];
+    const co = typeof getSystemCompanyProfile === 'function' ? getSystemCompanyProfile() : {};
+    // Kỳ quyết toán lấy theo ngày chạy sớm nhất và muộn nhất của các chuyến trong phiếu
+    const toTime = (d) => { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(d || ''); return m ? new Date(+m[3], +m[2] - 1, +m[1]).getTime() : null; };
+    const dated = v.lines.filter(l => toTime(l.date) !== null).sort((a, b) => toTime(a.date) - toTime(b.date));
+    const fromDate = dated.length ? dated[0].date : '....../....../........';
+    const toDate = dated.length ? dated[dated.length - 1].date : '....../....../........';
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(v.created_at || '');
+    const createdText = m ? `Ngày ${m[1]} tháng ${m[2]} năm ${m[3]}` : '';
     const w = window.open('', '_blank');
     if (!w) { showToast('warning', 'Trình duyệt đang chặn cửa sổ in', 'Không thể in'); return; }
     w.document.write(`<html><head><title>${escapeHtml(v.code)}</title><style>
-        body{font-family:Arial,sans-serif;font-size:11px;padding:16px}table{width:100%;border-collapse:collapse}
-        th,td{border:1px solid #94a3b8;padding:4px 6px;vertical-align:top}th{background:#f1f5f9}.r{text-align:right}</style></head>
-        <body><h2 style="text-align:center;margin-bottom:4px">BẢNG KÊ QUYẾT TOÁN ${SETTLE_PARTY_LABEL[v.party_type].toUpperCase()}</h2>
-        <p style="text-align:center;margin-top:0">Số: ${escapeHtml(v.code)} · Đối tượng: <b>${escapeHtml(v.party_name)}</b> · Ngày lập: ${escapeHtml(v.created_at)}</p>
+        @page{size:A4 landscape;margin:10mm}
+        body{font-family:Arial,sans-serif;font-size:11px;padding:8px}table{width:100%;border-collapse:collapse}
+        th,td{border:1px solid #94a3b8;padding:4px 6px;vertical-align:top}th{background:#f1f5f9}.r{text-align:right}
+        .head{display:flex;align-items:center;gap:12px;border-bottom:1px solid #94a3b8;padding-bottom:8px;margin-bottom:8px}
+        .head img{height:52px;width:auto}.head .co{font-size:12px}.head .co b{font-size:13px;text-transform:uppercase}
+        .sign td{border:none;text-align:center;width:25%}</style></head>
+        <body>
+        <div class="head"><img src="${location.origin}/static/images/trienvo_logo.png" alt="">
+            <div class="co"><b>${escapeHtml(co.company_name || '')}</b><br>${escapeHtml(co.address || '')}<br>MST: ${escapeHtml(co.tax_code || '')} · ĐT: ${escapeHtml(co.phone || '')}</div></div>
+        <h2 style="text-align:center;margin:6px 0 2px">BẢNG KÊ QUYẾT TOÁN ${party.toUpperCase()}</h2>
+        <p style="text-align:center;margin:0 0 2px">Từ ngày ${escapeHtml(fromDate)} đến ngày ${escapeHtml(toDate)}</p>
+        <p style="text-align:center;margin:0 0 8px">Số: ${escapeHtml(v.code)} · Đối tượng: <b>${escapeHtml(v.party_name)}</b></p>
         ${clone.outerHTML}${v.notes ? `<p>Ghi chú: ${escapeHtml(v.notes)}</p>` : ''}
-        <table style="margin-top:30px;border:none"><tr style="text-align:center"><td style="border:none">Người lập</td><td style="border:none">Kế toán trưởng</td><td style="border:none">Xác nhận của ${SETTLE_PARTY_LABEL[v.party_type].toLowerCase()}</td></tr></table>
+        <p style="text-align:right;margin:18px 40px 4px;font-style:italic">${escapeHtml(createdText)}</p>
+        <table class="sign" style="border:none"><tr style="font-weight:bold"><td>Người lập</td><td>Kế toán</td><td>Giám đốc</td><td>Xác nhận của ${party.toLowerCase()}</td></tr>
+            <tr><td style="height:70px"></td><td></td><td></td><td></td></tr></table>
         </body></html>`);
     w.document.close();
     w.focus();
@@ -25236,6 +25275,7 @@ window.loadVoucherTab = loadVoucherTab;
 window.renderVoucherTab = renderVoucherTab;
 window.closeSettleVoucherModal = closeSettleVoucherModal;
 window.onSettleSplitInput = onSettleSplitInput;
+window.onSettleAdjustInput = onSettleAdjustInput;
 window.recalcSettleVoucher = recalcSettleVoucher;
 window.saveSettleVoucher = saveSettleVoucher;
 window.approveSettleVoucher = approveSettleVoucher;
