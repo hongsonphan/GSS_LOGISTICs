@@ -452,10 +452,12 @@ function renderDispatchTable(trips) {
                 </p>
             </td>
             <td data-col-key="expense" class="px-3 py-2 border-r border-slate-200/70">
-                <div class="text-[13px] font-bold text-slate-800 flex items-center space-x-1.5 truncate" title="${escapeHtml(trip.pickup)} ➔ ${escapeHtml(trip.dropoff || 'Hạ bãi')}">
-                    <span class="text-teal-700">${escapeHtml(trip.pickup)}</span>
-                    <i class="ph ph-arrow-right text-slate-400 text-xs shrink-0"></i>
-                    <span class="text-indigo-700">${escapeHtml(trip.dropoff || 'Bãi rỗng')}</span>
+                <div class="text-[12px] font-bold text-slate-800 flex items-center space-x-1 truncate" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup)} ➔ 2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse)} ➔ 3. Nơi trả cont: ${escapeHtml(trip.dropoff || 'Trả cont')}">
+                    <span class="text-teal-700 truncate max-w-[90px]" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup)}">${escapeHtml(trip.pickup)}</span>
+                    <i class="ph ph-caret-right text-slate-300 text-xs shrink-0"></i>
+                    <span class="text-blue-900 truncate max-w-[90px]" title="2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse)}">${escapeHtml(trip.warehouse)}</span>
+                    <i class="ph ph-caret-right text-slate-300 text-xs shrink-0"></i>
+                    <span class="text-amber-800 truncate max-w-[90px]" title="3. Nơi trả cont: ${escapeHtml(trip.dropoff || 'Trả cont')}">${escapeHtml(trip.dropoff || 'Trả cont')}</span>
                 </div>
                 <div class="mt-0.5 flex items-center space-x-2 text-[11.5px]">
                     <span class="text-[11px] font-bold ${typeColor}">${displayShipmentType}</span>
@@ -522,14 +524,32 @@ function renderDispatchTable(trips) {
             <td data-col-key="dem_expiry" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-semibold text-slate-700 text-xs" style="display:none">
                 ${escapeHtml(trip.dem_expiry_date || '-')}
             </td>
-            <td data-col-key="pickup_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-teal-700 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.pickup || '-')}">
-                ${escapeHtml(trip.pickup || '-')}
+            <!-- 1. NƠI LẤY CONT -->
+            <td data-col-key="pickup_location" class="px-3 py-2 border-r border-slate-200/70 text-xs" style="display:none">
+                <div class="flex items-center gap-1.5 truncate max-w-[200px]" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup || '-')}">
+                    <span class="px-1.5 py-0.2 rounded font-bold font-heading uppercase text-[9.5px] shrink-0 ${isExport ? 'bg-teal-50 text-teal-700 border border-teal-200' : (isImport ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-purple-50 text-purple-700 border border-purple-200')}">
+                        ${isExport ? 'Lấy Vỏ' : (isImport ? 'Lấy Hàng' : 'Nhận Hàng')}
+                    </span>
+                    <span class="font-bold text-slate-800 truncate">${escapeHtml(trip.pickup || '-')}</span>
+                </div>
             </td>
-            <td data-col-key="warehouse_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-slate-800 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.warehouse || '-')}">
-                ${escapeHtml(trip.warehouse || '-')}
+            <!-- 2. KHO ĐÓNG/ TRẢ HÀNG -->
+            <td data-col-key="warehouse_location" class="px-3 py-2 border-r border-slate-200/70 text-xs" style="display:none">
+                <div class="flex items-center gap-1.5 truncate max-w-[200px]" title="2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse || '-')}">
+                    <span class="px-1.5 py-0.2 rounded font-bold font-heading uppercase text-[9.5px] shrink-0 ${isExport ? 'bg-blue-50 text-blue-700 border border-blue-200' : (isImport ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-purple-50 text-purple-700 border border-purple-200')}">
+                        ${isExport ? 'Đóng Hàng' : (isImport ? 'Dỡ Hàng' : 'Giao Nhận')}
+                    </span>
+                    <span class="font-bold text-slate-800 truncate">${escapeHtml(trip.warehouse || '-')}</span>
+                </div>
             </td>
-            <td data-col-key="dropoff_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-indigo-700 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.dropoff || '-')}">
-                ${escapeHtml(trip.dropoff || '-')}
+            <!-- 3. NƠI TRẢ CONT -->
+            <td data-col-key="dropoff_location" class="px-3 py-2 border-r border-slate-200/70 text-xs" style="display:none">
+                <div class="flex items-center gap-1.5 truncate max-w-[200px]" title="3. Nơi trả cont: ${escapeHtml(trip.dropoff || '-')}">
+                    <span class="px-1.5 py-0.2 rounded font-bold font-heading uppercase text-[9.5px] shrink-0 ${isExport ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : (isImport ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200')}">
+                        ${isExport ? 'Hạ Hàng' : (isImport ? 'Trả Rỗng' : 'Trả Cont')}
+                    </span>
+                    <span class="font-bold text-slate-800 truncate">${escapeHtml(trip.dropoff || '-')}</span>
+                </div>
             </td>
             <td data-col-key="commercial_invoice" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono text-xs font-bold text-teal-800" style="display:none">
                 ${escapeHtml(trip.commercial_invoice || '-')}

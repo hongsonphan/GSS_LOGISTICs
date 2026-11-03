@@ -1,0 +1,51 @@
+=== 15 CHUYEN XE LIVE TREN DATABASE VPS ===
+Mã chuyến: DV.2611.010 | ID: 163 | Loại hàng: Xuất
+   [1] Nơi lấy (pickup_location):        'ICD TANAMEXCO'
+   [2] Kho đóng/giao (warehouse_location): 'ANDI - TVL'
+   [3] Nơi hạ (dropoff_location):          'ICD TANAMEXCO'
+   FKs: pickup_loc=[Cảng Cạn (ICD)] ICD TANAMEXCO (TANAMEXCO), warehouse_loc=[Kho Hàng / Nhà Máy] ANDI - TVL (ANDI___TVL), dropoff_loc=[Cảng Cạn (ICD)] ICD TANAMEXCO (TANAMEXCO)
+-----------------------------------------------------------------
+Mã chuyến: DV.2611.009 | ID: 162 | Loại hàng: Xuất
+   [1] Nơi lấy (pickup_location):        'MACSTAR TÂN VẠN'
+   [2] Kho đóng/giao (warehouse_location): 'KHO AN DI'
+   [3] Nơi hạ (dropoff_location):          'ICD TANAMEXCO'
+   FKs: pickup_loc=[Bãi Rỗng / Depot] MACSTAR TÂN VẠN (MACSTAR), warehouse_loc=[Kho Hàng / Nhà Máy] KHO AN DI (KHO_AN_DI), dropoff_loc=[Cảng Cạn (ICD)] ICD TANAMEXCO (TANAMEXCO)
+-----------------------------------------------------------------
+Mã chuyến: DV.2611.008 | ID: 161 | Loại hàng: Xuất
+   [1] Nơi lấy (pickup_location):        'MACSTAR TÂN VẠN'
+   [2] Kho đóng/giao (warehouse_location): 'KHO AN DI'
+   [3] Nơi hạ (dropoff_location):          'ICD TANAMEXCO'
+   FKs: pickup_loc=[Bãi Rỗng / Depot] MACSTAR TÂN VẠN (MACSTAR), warehouse_loc=[Kho Hàng / Nhà Máy] KHO AN DI (KHO_AN_DI), dropoff_loc=[Cảng Cạn (ICD)] ICD TANAMEXCO (TANAMEXCO)
+-----------------------------------------------------------------
+Mã chuyến: DV.2611.007 | ID: 160 | Loại hàng: DOMESTIC
+   [1] Nơi lấy (pickup_location):        'NHÀ MÁY TAKIGAWA VSIP 2A'
+   [2] Kho đóng/giao (warehouse_location): 'VSIP3'
+   [3] Nơi hạ (dropoff_location):          'TAKIGAWA VSIP 3'
+   FKs: pickup_loc=[Cảng Biển] NHÀ MÁY TAKIGAWA VSIP 2A (TCV (2A)), warehouse_loc=[Kho Hàng / Nhà Máy] VSIP3 (VSIP3), dropoff_loc=[Cảng Biển] TAKIGAWA VSIP 3 (TCV (3))
+-----------------------------------------------------------------
+Mã chuyến: DV.2611.006 | ID: 159 | Loại hàng: DOMESTIC
+   [1] Nơi lấy (pickup_location):        'TAKIGAWA VSIP 3'
+   [2] Kho đóng/giao (warehouse_location): 'VSIP2'
+   [3] Nơi hạ (dropoff_location):          'TAKIGAWA VSIP 2A'
+   FKs: pickup_loc=[Cảng Biển] TAKIGAWA VSIP 3 (TCV (3)), warehouse_loc=[Kho Hàng / Nhà Máy] VSIP2 (VSIP2), dropoff_loc=[Cảng Biển] TAKIGAWA VSIP 2A (TCV (2))
+-----------------------------------------------------------------
+Mã chuyến: DV.2611.005 | ID: 158 | Loại hàng: Xuất
+   [1] Nơi lấy (pickup_location):        'ICD PHƯỚC LONG'
+   [2] Kho đóng/giao (warehouse_location): 'ANDI - TVL'
+   [3] Nơi hạ (dropoff_location):          'ICD PHƯỚC LONG 3'
+   FKs: pickup_loc=[Cảng Cạn (ICD)] ICD PHƯỚC LONG 3 (ICD_PH__C_LONG_3), warehouse_loc=[Kho Hàng / Nhà Máy] ANDI - TVL (ANDI___TVL), dropoff_loc=[Cảng Cạn (ICD)] ICD TANAMEXCO (TANAMEXCO)
+-----------------------------------------------------------------
+Mã chuyến: DV.2611.004 | ID: 157 | Loại hàng: Nội địa
+   [1] Nơi lấy (pickup_location):        'TAKIGAWA VSIP 3'
+   [2] Kho đóng/giao (warehouse_location): 'VSIP2'
+   [3] Nơi hạ (dropoff_location):          'TAKIGAWA VSIP 2A'
+   FKs: pickup_loc=[Cảng Biển] TAKIGAWA VSIP 3 (TCV (3)), warehouse_loc=[Kho Hàng / Nhà Máy] VSIP2 (VSIP2), dropoff_loc=[Cảng Biển] TAKIGAWA VSIP 2A (TCV (2))
+-----------------------------------------------------------------
+Mã chuyến: DV.2611.003 | ID: 156 | Loại hàng: Nội địa
+   [1] Nơi lấy (pickup_location):        'TAKIGAWA VSIP 3'
+   [2] Kho đóng/giao (warehouse_location): 'VSIP2'
+   [3] Nơi hạ (dropoff_location):          'HẠ BÃI'
+   FKs: pickup_loc=[Cảng Biển] TAKIGAWA VSIP 3 (TCV (3)), warehouse_loc=[Kho Hàng / Nhà Máy] VSIP2 (VSIP2), dropoff_loc=[Bãi Rỗng / Depot] Hạ bãi (H__B_I)
+-----------------------------------------------------------------
+
+=== 10 DON HANG BOOKING LIVE TREN DATABASE VPS ===

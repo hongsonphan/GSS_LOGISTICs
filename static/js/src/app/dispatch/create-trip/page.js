@@ -109,6 +109,11 @@ function handleCargoTypeChange() {
     const contCond = document.getElementById('select-container-condition');
     const damageDesc = document.getElementById('inp-damage-desc');
 
+    const hintEl = document.getElementById('trip-create-route-hint') || document.getElementById('trip-modal-route-hint');
+    const badgePickup = document.getElementById('badge-create-pickup');
+    const badgeWh = document.getElementById('badge-create-warehouse');
+    const badgeDrop = document.getElementById('badge-create-dropoff');
+
     if (type === 'Xuất') {
         // Hàng Xuất: CẦN Cắt CY/SI (Closing time tàu xuất). KHÔNG CẦN Free DEM/DET & EIR bốc dỡ
         if (colCutoff) {
@@ -123,6 +128,10 @@ function handleCargoTypeChange() {
             if (contCond) contCond.disabled = true;
             if (damageDesc) damageDesc.disabled = true;
         }
+        if (hintEl) { hintEl.textContent = 'Hàng Xuất: Lấy Vỏ Rỗng ➔ Đóng Hàng ➔ Hạ Cont Hàng'; hintEl.className = 'text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200 font-heading'; }
+        if (badgePickup) { badgePickup.textContent = 'Lấy Vỏ'; badgePickup.className = 'text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 uppercase'; }
+        if (badgeWh) { badgeWh.textContent = 'Kho Đóng'; badgeWh.className = 'text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 uppercase'; }
+        if (badgeDrop) { badgeDrop.textContent = 'Hạ Cont Xuất'; badgeDrop.className = 'text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 uppercase'; }
     } else if (type === 'Nhập') {
         // Hàng Nhập: CẦN Hạn Free DEM/DET & Giám định vỏ EIR. KHÔNG CÓ Closing time tàu xuất
         if (colCutoff) {
@@ -137,6 +146,10 @@ function handleCargoTypeChange() {
             if (contCond) contCond.disabled = false;
             if (damageDesc) damageDesc.disabled = false;
         }
+        if (hintEl) { hintEl.textContent = 'Hàng Nhập: Cảng Lấy Cont Hàng ➔ Dỡ / Rút Hàng ➔ Depot Trả Vỏ Rỗng'; hintEl.className = 'text-[11px] font-bold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 font-heading'; }
+        if (badgePickup) { badgePickup.textContent = 'Lấy Cont Hàng'; badgePickup.className = 'text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 uppercase'; }
+        if (badgeWh) { badgeWh.textContent = 'Kho Dỡ / Trả'; badgeWh.className = 'text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 uppercase'; }
+        if (badgeDrop) { badgeDrop.textContent = 'Hạ Trả Vỏ'; badgeDrop.className = 'text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200 uppercase'; }
     } else if (type === 'Nội địa') {
         // Hàng Nội Địa: KHÔNG CẦN CẢ HAI MỤC TRÊN (Không có tàu quốc tế, không có Free DEM/DET ngoại tệ)
         if (colCutoff) {
@@ -151,6 +164,10 @@ function handleCargoTypeChange() {
             if (contCond) contCond.disabled = true;
             if (damageDesc) damageDesc.disabled = true;
         }
+        if (hintEl) { hintEl.textContent = 'Nội Địa: Điểm Nhận Hàng ➔ Kho Giao / Nhận ➔ Bãi Hạ / Trả Cont'; hintEl.className = 'text-[11px] font-bold text-purple-800 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200 font-heading'; }
+        if (badgePickup) { badgePickup.textContent = 'Điểm Nhận'; badgePickup.className = 'text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 uppercase'; }
+        if (badgeWh) { badgeWh.textContent = 'Kho Giao/Nhận'; badgeWh.className = 'text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200 uppercase'; }
+        if (badgeDrop) { badgeDrop.textContent = 'Bãi Hạ/Trả'; badgeDrop.className = 'text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 uppercase'; }
     }
 }
 window.handleCargoTypeChange = handleCargoTypeChange;

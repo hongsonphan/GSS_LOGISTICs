@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.31] - 2026-11-03 (Chuẩn Hóa Bản Chất & Thứ Tự 3 Điểm Vận Chuyển: Nơi Lấy Cont | Kho Đóng/ Trả Hàng | Nơi Trả Cont)
+
+### 1. Chuẩn Hóa Tên Gọi & Thứ Tự 3 Cột Lộ Trình Vận Chuyển:
+- **Chuẩn Hóa 3 Cột Theo Đúng Bản Chất Thực Tế:**
+  * Điểm 1: **NƠI LẤY CONT** (Pickup Location) — Nơi lấy vỏ rỗng (Xuất) hoặc Cảng lấy cont hàng (Nhập).
+  * Điểm 2: **KHO ĐÓNG/ TRẢ HÀNG** (Warehouse Location) — Kho/Nhà máy đóng hàng (Xuất) hoặc Kho dỡ/rút hàng (Nhập).
+  * Điểm 3: **NƠI TRẢ CONT** (Dropoff Location) — Cảng hạ cont hàng xuất (Xuất) hoặc Depot hạ trả vỏ rỗng (Nhập).
+- **Phân Biệt Ngữ Cảnh Từng Loại Hình Hàng Hóa (Export / Import / Domestic):**
+  * Hàng Xuất (Export FCL): `Lấy Vỏ Rỗng` ➔ `Đóng Hàng` ➔ `Hạ Cont Hàng (Cảng Xuất)`.
+  * Hàng Nhập (Import FCL): `Cảng Lấy Cont Hàng` ➔ `Dỡ / Rút Hàng Khách` ➔ `Depot Hạ Trả Vỏ Rỗng`.
+  * Nội Địa (Domestic FTL): `Điểm Nhận Hàng` ➔ `Kho Giao / Nhận` ➔ `Bãi Hạ / Điểm Trả Cont`.
+
+### 2. Đồng Bộ Hóa Toàn Diện Trên Mọi Màn Hình Hệ Thống:
+- **Bảng Điều Vận (`view_dispatch.html` & `trip-list.js`):**
+  * Cột lộ trình tổng hợp hiển thị rõ 3 chặng liên hoàn: `Nơi Lấy ➔ Kho Đóng/Trả ➔ Nơi Trả` kèm tooltip chi tiết từng mốc.
+  * Ba cột độc lập `pickup_location`, `warehouse_location`, `dropoff_location` trong Customizer được gắn nhãn chuẩn `Nơi Lấy Cont`, `Kho Đóng/ Trả Hàng`, `Nơi Trả Cont`, kèm sub-badge màu sắc theo bản chất loại hàng.
+- **Màn Hình Chi Tiết Chuyến Xe (`view_trip_detail.html` & `trip-detail.js`):**
+  * Tái cấu trúc khối **HÀNH TRÌNH 3 ĐIỂM CHUẨN** với 3 thẻ card trực quan:
+    `1. Nơi Lấy Cont` | `2. Kho Đóng/ Trả Hàng` | `3. Nơi Trả Cont`.
+  * Header có badge động nhận diện bản chất luồng vận chuyển theo `shipment_type`.
+- **Màn Hình Tạo Chuyến Xe (`view_create_trip.html`, `modal_create_trip.html` & `create-trip/page.js`):**
+  * Section 2 chuẩn hóa tiêu đề: `2. Lộ Trình 3 Điểm Chuẩn (Nơi Lấy Cont ➔ Kho Đóng/ Trả Hàng ➔ Nơi Trả Cont)`.
+  * Sự kiện đổi Loại hình (`handleCargoTypeChange`) tự động cập nhật hint và badge gợi ý ngữ cảnh theo Xuất/Nhập/Nội địa.
+- **Bảng Đơn Hàng Booking (`view_sales.html` & `sales-lists.js`):**
+  * Cột Lộ trình hiển thị: `1. Lấy cont: ... | 2. Kho đóng/trả: ... | 3. Trả cont: ...`.
+- **Dọn Dẹp Dữ Liệu Master Data (Database Production):**
+  * Chuẩn hóa 4 bản ghi địa điểm Takigawa (`NHÀ MÁY TAKIGAWA VSIP 2A`, `TAKIGAWA VSIP 3`, ...) từ nhầm lẫn `PORT` (Cảng biển) sang đúng bản chất `WAREHOUSE_FACTORY` (Kho Hàng / Nhà Máy).
+
+---
+
 ## [v4.7.30] - 2026-11-02 (Tùy Biến Cột Toàn Diện: Nạp Đầy Đủ Trường Dữ Liệu Database Lên Tùy Chỉnh Cột & Hỗ Trợ Tìm Kiếm Cột Thông Minh)
 
 ### 1. Nâng Cấp Bộ Máy Quản Lý Cột Bảng Dữ Liệu (`static/js/src/app/core/table-manager.js`):

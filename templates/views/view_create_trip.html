@@ -449,54 +449,59 @@
                     </div>
                 </div>
 
-                <!-- Section 2: Lộ Trình 3 Điểm -->
+                <!-- Section 2: Lộ Trình 3 Điểm Chuẩn Hóa -->
                 <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-3">
-                    <h4 class="font-bold text-slate-800 pb-2 border-b border-slate-100 flex items-center font-heading text-xs uppercase tracking-wider mb-0">
-                        <i class="ph-bold ph-map-pin text-teal-600 mr-2 text-base"></i> 2. Lộ Trình Vận Chuyển (Nơi Lấy - Đóng/Trả - Nơi Hạ)
-                    </h4>
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100 flex-wrap gap-2">
+                        <h4 class="font-bold text-slate-800 flex items-center font-heading text-xs uppercase tracking-wider mb-0">
+                            <i class="ph-bold ph-map-pin text-teal-600 mr-2 text-base"></i> 2. Lộ Trình 3 Điểm Chuẩn (Nơi Lấy Cont ➔ Kho Đóng/ Trả Hàng ➔ Nơi Trả Cont)
+                        </h4>
+                        <span id="trip-create-route-hint" class="text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200 font-heading">
+                            Hàng Xuất: Lấy Vỏ Rỗng ➔ Đóng Hàng ➔ Hạ Cont Hàng
+                        </span>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
                             <div class="flex items-center justify-between h-5 mb-1">
-                                <label class="block font-bold text-teal-900 text-xs truncate" for="inp-pickup">
-                                    1. Nơi Lấy (Cảng / ICD) <span class="text-rose-500">*</span>
+                                <label class="block font-bold text-teal-900 text-xs truncate" for="inp-pickup" id="lbl-create-pickup">
+                                    1. Nơi Lấy Cont <span class="text-rose-500">*</span>
                                 </label>
-<!-- Đã loại bỏ nút Tạo mới Nơi lấy -->
+                                <span class="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 uppercase" id="badge-create-pickup">Lấy Vỏ</span>
                             </div>
                             <select
                                 id="inp-pickup"
                                 class="form-select h-9 px-2.5 py-1 font-bold text-teal-900 uppercase text-xs w-full rounded-lg"
                             >
-                                <option value="">-- Chọn Cảng / Depot Lấy --</option>
+                                <option value="">-- Chọn Nơi Lấy Cont (Cảng/Depot) --</option>
                             </select>
                             <div id="err-pickup" class="field-error-msg hidden"></div>
                         </div>
                         <div>
                             <div class="flex items-center justify-between h-5 mb-1">
-                                <label class="block font-bold text-amber-900 text-xs truncate" for="inp-warehouse">
-                                    2. Nơi Đóng/Trả (Kho KH) <span class="text-rose-500">*</span>
+                                <label class="block font-bold text-blue-900 text-xs truncate" for="inp-warehouse" id="lbl-create-warehouse">
+                                    2. Kho Đóng/ Trả Hàng <span class="text-rose-500">*</span>
                                 </label>
-<!-- Đã loại bỏ nút Tạo mới Kho KH -->
+                                <span class="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 uppercase" id="badge-create-warehouse">Kho Đóng</span>
                             </div>
                             <select
                                 id="inp-warehouse"
-                                class="form-select h-9 px-2.5 py-1 font-bold text-amber-900 uppercase text-xs w-full rounded-lg"
+                                class="form-select h-9 px-2.5 py-1 font-bold text-blue-950 uppercase text-xs w-full rounded-lg"
                             >
-                                <option value="">-- Chọn Kho Khách Hàng --</option>
+                                <option value="">-- Chọn Kho Đóng / Trả Hàng --</option>
                             </select>
                             <div id="err-warehouse" class="field-error-msg hidden"></div>
                         </div>
                         <div>
                             <div class="flex items-center justify-between h-5 mb-1">
-                                <label class="block font-bold text-emerald-900 text-xs truncate" for="inp-dropoff">
-                                    3. Nơi Hạ (Bãi Rỗng / Cảng)
+                                <label class="block font-bold text-amber-900 text-xs truncate" for="inp-dropoff" id="lbl-create-dropoff">
+                                    3. Nơi Trả Cont
                                 </label>
-<!-- Đã loại bỏ nút Tạo mới Nơi hạ -->
+                                <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 uppercase" id="badge-create-dropoff">Hạ Cont</span>
                             </div>
                             <select
                                 id="inp-dropoff"
-                                class="form-select h-9 px-2.5 py-1 font-bold text-emerald-900 uppercase text-xs w-full rounded-lg"
+                                class="form-select h-9 px-2.5 py-1 font-bold text-amber-950 uppercase text-xs w-full rounded-lg"
                             >
-                                <option value="">-- Chọn Nơi Hạ Cont --</option>
+                                <option value="">-- Chọn Nơi Trả Cont (Cảng/Bãi) --</option>
                             </select>
                         </div>
                     </div>

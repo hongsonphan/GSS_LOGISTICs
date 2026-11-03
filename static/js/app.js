@@ -8137,10 +8137,12 @@ function renderDispatchTable(trips) {
                 </p>
             </td>
             <td data-col-key="expense" class="px-3 py-2 border-r border-slate-200/70">
-                <div class="text-[13px] font-bold text-slate-800 flex items-center space-x-1.5 truncate" title="${escapeHtml(trip.pickup)} ➔ ${escapeHtml(trip.dropoff || 'Hạ bãi')}">
-                    <span class="text-teal-700">${escapeHtml(trip.pickup)}</span>
-                    <i class="ph ph-arrow-right text-slate-400 text-xs shrink-0"></i>
-                    <span class="text-indigo-700">${escapeHtml(trip.dropoff || 'Bãi rỗng')}</span>
+                <div class="text-[12px] font-bold text-slate-800 flex items-center space-x-1 truncate" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup)} ➔ 2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse)} ➔ 3. Nơi trả cont: ${escapeHtml(trip.dropoff || 'Trả cont')}">
+                    <span class="text-teal-700 truncate max-w-[90px]" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup)}">${escapeHtml(trip.pickup)}</span>
+                    <i class="ph ph-caret-right text-slate-300 text-xs shrink-0"></i>
+                    <span class="text-blue-900 truncate max-w-[90px]" title="2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse)}">${escapeHtml(trip.warehouse)}</span>
+                    <i class="ph ph-caret-right text-slate-300 text-xs shrink-0"></i>
+                    <span class="text-amber-800 truncate max-w-[90px]" title="3. Nơi trả cont: ${escapeHtml(trip.dropoff || 'Trả cont')}">${escapeHtml(trip.dropoff || 'Trả cont')}</span>
                 </div>
                 <div class="mt-0.5 flex items-center space-x-2 text-[11.5px]">
                     <span class="text-[11px] font-bold ${typeColor}">${displayShipmentType}</span>
@@ -8207,14 +8209,32 @@ function renderDispatchTable(trips) {
             <td data-col-key="dem_expiry" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-semibold text-slate-700 text-xs" style="display:none">
                 ${escapeHtml(trip.dem_expiry_date || '-')}
             </td>
-            <td data-col-key="pickup_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-teal-700 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.pickup || '-')}">
-                ${escapeHtml(trip.pickup || '-')}
+            <!-- 1. NƠI LẤY CONT -->
+            <td data-col-key="pickup_location" class="px-3 py-2 border-r border-slate-200/70 text-xs" style="display:none">
+                <div class="flex items-center gap-1.5 truncate max-w-[200px]" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup || '-')}">
+                    <span class="px-1.5 py-0.2 rounded font-bold font-heading uppercase text-[9.5px] shrink-0 ${isExport ? 'bg-teal-50 text-teal-700 border border-teal-200' : (isImport ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-purple-50 text-purple-700 border border-purple-200')}">
+                        ${isExport ? 'Lấy Vỏ' : (isImport ? 'Lấy Hàng' : 'Nhận Hàng')}
+                    </span>
+                    <span class="font-bold text-slate-800 truncate">${escapeHtml(trip.pickup || '-')}</span>
+                </div>
             </td>
-            <td data-col-key="warehouse_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-slate-800 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.warehouse || '-')}">
-                ${escapeHtml(trip.warehouse || '-')}
+            <!-- 2. KHO ĐÓNG/ TRẢ HÀNG -->
+            <td data-col-key="warehouse_location" class="px-3 py-2 border-r border-slate-200/70 text-xs" style="display:none">
+                <div class="flex items-center gap-1.5 truncate max-w-[200px]" title="2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse || '-')}">
+                    <span class="px-1.5 py-0.2 rounded font-bold font-heading uppercase text-[9.5px] shrink-0 ${isExport ? 'bg-blue-50 text-blue-700 border border-blue-200' : (isImport ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-purple-50 text-purple-700 border border-purple-200')}">
+                        ${isExport ? 'Đóng Hàng' : (isImport ? 'Dỡ Hàng' : 'Giao Nhận')}
+                    </span>
+                    <span class="font-bold text-slate-800 truncate">${escapeHtml(trip.warehouse || '-')}</span>
+                </div>
             </td>
-            <td data-col-key="dropoff_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-indigo-700 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.dropoff || '-')}">
-                ${escapeHtml(trip.dropoff || '-')}
+            <!-- 3. NƠI TRẢ CONT -->
+            <td data-col-key="dropoff_location" class="px-3 py-2 border-r border-slate-200/70 text-xs" style="display:none">
+                <div class="flex items-center gap-1.5 truncate max-w-[200px]" title="3. Nơi trả cont: ${escapeHtml(trip.dropoff || '-')}">
+                    <span class="px-1.5 py-0.2 rounded font-bold font-heading uppercase text-[9.5px] shrink-0 ${isExport ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : (isImport ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200')}">
+                        ${isExport ? 'Hạ Hàng' : (isImport ? 'Trả Rỗng' : 'Trả Cont')}
+                    </span>
+                    <span class="font-bold text-slate-800 truncate">${escapeHtml(trip.dropoff || '-')}</span>
+                </div>
             </td>
             <td data-col-key="commercial_invoice" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono text-xs font-bold text-teal-800" style="display:none">
                 ${escapeHtml(trip.commercial_invoice || '-')}
@@ -8695,10 +8715,46 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const notesEl = document.getElementById('detail-cargo-notes');
         if (notesEl) notesEl.innerText = trip.cargo_notes || 'Không có lưu ý đặc biệt';
 
-        // Hành trình 3 điểm
-        setText('detail-pickup', trip.pickup);
-        setText('detail-warehouse', trip.warehouse);
+        // Hành trình 3 điểm chuẩn hóa: Nơi Lấy Cont | Kho Đóng/ Trả Hàng | Nơi Trả Cont
+        setText('detail-pickup', trip.pickup || '-');
+        setText('detail-warehouse', trip.warehouse || '-');
         setText('detail-dropoff', trip.dropoff || 'Hạ bãi rỗng');
+
+        // Phân loại bản chất luồng vận chuyển theo Loại Hình Hàng Hóa
+        const rawType = ((trip.type_raw || trip.type || '') + '').toUpperCase();
+        const isImport = rawType.includes('IMPORT') || rawType.includes('NHẬP') || rawType.includes('NHAP');
+        const isExport = rawType.includes('EXPORT') || rawType.includes('XUẤT') || rawType.includes('XUAT');
+
+        const natureBadge = document.getElementById('detail-route-nature-badge');
+        const pickupSub = document.getElementById('detail-pickup-sub');
+        const warehouseSub = document.getElementById('detail-warehouse-sub');
+        const dropoffSub = document.getElementById('detail-dropoff-sub');
+
+        if (isExport) {
+            if (natureBadge) {
+                natureBadge.textContent = 'Hàng Xuất (Lấy Rỗng ➔ Đóng Hàng ➔ Hạ Xuất)';
+                natureBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-heading bg-emerald-100 text-emerald-800 border border-emerald-300';
+            }
+            if (pickupSub) { pickupSub.textContent = 'Lấy Vỏ Rỗng'; pickupSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 font-heading uppercase'; }
+            if (warehouseSub) { warehouseSub.textContent = 'Đóng Hàng'; warehouseSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 font-heading uppercase'; }
+            if (dropoffSub) { dropoffSub.textContent = 'Hạ Cont Hàng (Cảng Xuất)'; dropoffSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-heading uppercase'; }
+        } else if (isImport) {
+            if (natureBadge) {
+                natureBadge.textContent = 'Hàng Nhập (Lấy Cont Hàng ➔ Rút Hàng ➔ Trả Rỗng)';
+                natureBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-heading bg-blue-100 text-blue-800 border border-blue-300';
+            }
+            if (pickupSub) { pickupSub.textContent = 'Cảng Lấy Cont Hàng'; pickupSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 font-heading uppercase'; }
+            if (warehouseSub) { warehouseSub.textContent = 'Dỡ / Rút Hàng Khách'; warehouseSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 font-heading uppercase'; }
+            if (dropoffSub) { dropoffSub.textContent = 'Depot Hạ Trả Vỏ Rỗng'; dropoffSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 font-heading uppercase'; }
+        } else {
+            if (natureBadge) {
+                natureBadge.textContent = 'Nội Địa (Nhận Hàng ➔ Giao Hàng ➔ Trả Cont)';
+                natureBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-heading bg-purple-100 text-purple-800 border border-purple-300';
+            }
+            if (pickupSub) { pickupSub.textContent = 'Điểm Nhận Hàng'; pickupSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 font-heading uppercase'; }
+            if (warehouseSub) { warehouseSub.textContent = 'Kho Giao / Nhận'; warehouseSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200 font-heading uppercase'; }
+            if (dropoffSub) { dropoffSub.textContent = 'Bãi Hạ / Điểm Trả'; dropoffSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-heading uppercase'; }
+        }
 
         // Link Zalo và Màn hình Tài xế Mobile
         const driverToken = trip.driver_hashid || trip.hashid || trip.trip_code;
@@ -11496,6 +11552,11 @@ function handleCargoTypeChange() {
     const contCond = document.getElementById('select-container-condition');
     const damageDesc = document.getElementById('inp-damage-desc');
 
+    const hintEl = document.getElementById('trip-create-route-hint') || document.getElementById('trip-modal-route-hint');
+    const badgePickup = document.getElementById('badge-create-pickup');
+    const badgeWh = document.getElementById('badge-create-warehouse');
+    const badgeDrop = document.getElementById('badge-create-dropoff');
+
     if (type === 'Xuất') {
         // Hàng Xuất: CẦN Cắt CY/SI (Closing time tàu xuất). KHÔNG CẦN Free DEM/DET & EIR bốc dỡ
         if (colCutoff) {
@@ -11510,6 +11571,10 @@ function handleCargoTypeChange() {
             if (contCond) contCond.disabled = true;
             if (damageDesc) damageDesc.disabled = true;
         }
+        if (hintEl) { hintEl.textContent = 'Hàng Xuất: Lấy Vỏ Rỗng ➔ Đóng Hàng ➔ Hạ Cont Hàng'; hintEl.className = 'text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200 font-heading'; }
+        if (badgePickup) { badgePickup.textContent = 'Lấy Vỏ'; badgePickup.className = 'text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 uppercase'; }
+        if (badgeWh) { badgeWh.textContent = 'Kho Đóng'; badgeWh.className = 'text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 uppercase'; }
+        if (badgeDrop) { badgeDrop.textContent = 'Hạ Cont Xuất'; badgeDrop.className = 'text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 uppercase'; }
     } else if (type === 'Nhập') {
         // Hàng Nhập: CẦN Hạn Free DEM/DET & Giám định vỏ EIR. KHÔNG CÓ Closing time tàu xuất
         if (colCutoff) {
@@ -11524,6 +11589,10 @@ function handleCargoTypeChange() {
             if (contCond) contCond.disabled = false;
             if (damageDesc) damageDesc.disabled = false;
         }
+        if (hintEl) { hintEl.textContent = 'Hàng Nhập: Cảng Lấy Cont Hàng ➔ Dỡ / Rút Hàng ➔ Depot Trả Vỏ Rỗng'; hintEl.className = 'text-[11px] font-bold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 font-heading'; }
+        if (badgePickup) { badgePickup.textContent = 'Lấy Cont Hàng'; badgePickup.className = 'text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 uppercase'; }
+        if (badgeWh) { badgeWh.textContent = 'Kho Dỡ / Trả'; badgeWh.className = 'text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 uppercase'; }
+        if (badgeDrop) { badgeDrop.textContent = 'Hạ Trả Vỏ'; badgeDrop.className = 'text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200 uppercase'; }
     } else if (type === 'Nội địa') {
         // Hàng Nội Địa: KHÔNG CẦN CẢ HAI MỤC TRÊN (Không có tàu quốc tế, không có Free DEM/DET ngoại tệ)
         if (colCutoff) {
@@ -11538,6 +11607,10 @@ function handleCargoTypeChange() {
             if (contCond) contCond.disabled = true;
             if (damageDesc) damageDesc.disabled = true;
         }
+        if (hintEl) { hintEl.textContent = 'Nội Địa: Điểm Nhận Hàng ➔ Kho Giao / Nhận ➔ Bãi Hạ / Trả Cont'; hintEl.className = 'text-[11px] font-bold text-purple-800 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200 font-heading'; }
+        if (badgePickup) { badgePickup.textContent = 'Điểm Nhận'; badgePickup.className = 'text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 uppercase'; }
+        if (badgeWh) { badgeWh.textContent = 'Kho Giao/Nhận'; badgeWh.className = 'text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200 uppercase'; }
+        if (badgeDrop) { badgeDrop.textContent = 'Bãi Hạ/Trả'; badgeDrop.className = 'text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 uppercase'; }
     }
 }
 window.handleCargoTypeChange = handleCargoTypeChange;
@@ -13568,9 +13641,9 @@ function renderBookingsTable(bookings) {
             </td>
             <td data-col-key="route" class="p-3.5">
                 <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
-                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
-                    <p class="truncate text-slate-900 font-bold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
-                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
+                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy cont:</strong> ${cleanLoc(b.pickup)}</p>
+                    <p class="truncate text-slate-900 font-bold"><strong class="text-blue-900 font-bold">2. Kho đóng/trả:</strong> ${cleanLoc(b.delivery)}</p>
+                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-amber-800 font-bold">3. Trả cont:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
                 </div>
             </td>
             <td data-col-key="closing_time" class="p-3.5 font-mono">
@@ -14192,9 +14265,9 @@ function renderQuotationsTable(quotations) {
             </td>
             <td data-col-key="route" class="p-3.5">
                 <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
-                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
-                    <p class="truncate text-slate-900 font-bold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
-                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
+                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy cont:</strong> ${cleanLoc(b.pickup)}</p>
+                    <p class="truncate text-slate-900 font-bold"><strong class="text-blue-900 font-bold">2. Kho đóng/trả:</strong> ${cleanLoc(b.delivery)}</p>
+                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-amber-800 font-bold">3. Trả cont:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
                 </div>
             </td>
             <td data-col-key="closing_time" class="p-3.5 font-mono">

@@ -185,21 +185,53 @@
                     </div>
                 </div>
 
-                <!-- Lộ trình 3 điểm thực tế: Cảng lấy -> Kho khách -> Cảng hạ -->
+                <!-- Lộ trình 3 điểm thực tế: Nơi lấy cont -> Kho đóng/trả hàng -> Nơi trả cont -->
                 <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
-                    <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2 font-heading">Hành trình 3 điểm chuẩn:</p>
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider font-heading flex items-center gap-1.5">
+                            <i class="ph-bold ph-map-trifold text-teal-700 text-sm"></i>
+                            <span>Hành trình 3 điểm chuẩn:</span>
+                        </p>
+                        <span id="detail-route-nature-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-heading bg-teal-100 text-teal-800 border border-teal-200">
+                            Hàng Xuất
+                        </span>
+                    </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div class="bg-white p-2.5 rounded-lg border border-slate-200">
-                            <span class="text-[10px] font-bold text-teal-700 uppercase block mb-0.5">1. Cảng / Bãi lấy cont</span>
-                            <p class="text-[13px] font-bold text-slate-800" id="detail-pickup">-</p>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs hover:border-teal-300 transition-colors">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] font-black text-teal-800 uppercase tracking-wider font-heading flex items-center gap-1">
+                                    <i class="ph-bold ph-signpost text-teal-600"></i>
+                                    <span>1. Nơi Lấy Cont</span>
+                                </span>
+                                <span id="detail-pickup-sub" class="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 font-heading uppercase">
+                                    Lấy Vỏ Rỗng
+                                </span>
+                            </div>
+                            <p class="text-[13.5px] font-bold text-slate-900 leading-snug break-words" id="detail-pickup">-</p>
                         </div>
-                        <div class="bg-white p-2.5 rounded-lg border border-slate-200">
-                            <span class="text-[10px] font-bold text-blue-700 uppercase block mb-0.5">2. Kho đóng / trả hàng</span>
-                            <p class="text-[13px] font-bold text-slate-800" id="detail-warehouse">-</p>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs hover:border-blue-300 transition-colors">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] font-black text-blue-900 uppercase tracking-wider font-heading flex items-center gap-1">
+                                    <i class="ph-bold ph-warehouse text-blue-600"></i>
+                                    <span>2. Kho Đóng / Trả Hàng</span>
+                                </span>
+                                <span id="detail-warehouse-sub" class="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 font-heading uppercase">
+                                    Đóng Hàng
+                                </span>
+                            </div>
+                            <p class="text-[13.5px] font-bold text-slate-900 leading-snug break-words" id="detail-warehouse">-</p>
                         </div>
-                        <div class="bg-white p-2.5 rounded-lg border border-slate-200">
-                            <span class="text-[10px] font-bold text-amber-700 uppercase block mb-0.5">3. Cảng / Bãi hạ cont</span>
-                            <p class="text-[13px] font-bold text-slate-800" id="detail-dropoff">-</p>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs hover:border-amber-300 transition-colors">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] font-black text-amber-900 uppercase tracking-wider font-heading flex items-center gap-1">
+                                    <i class="ph-bold ph-anchor text-amber-600"></i>
+                                    <span>3. Nơi Trả Cont</span>
+                                </span>
+                                <span id="detail-dropoff-sub" class="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200 font-heading uppercase">
+                                    Hạ Cont Hàng
+                                </span>
+                            </div>
+                            <p class="text-[13.5px] font-bold text-slate-900 leading-snug break-words" id="detail-dropoff">-</p>
                         </div>
                     </div>
                 </div>
