@@ -203,9 +203,17 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             }
         }
 
-        // Vị trí cont
+        // Quy cách cont & Chế độ vận hành
         const contLocBadge = document.getElementById('detail-cont-location-badge');
-        if (contLocBadge) contLocBadge.innerText = trip.cont_location_type || 'Nhà máy';
+        if (contLocBadge) {
+            if (trip.is_split_trip) {
+                contLocBadge.innerText = 'Cắt Kéo / Drop & Hook';
+                contLocBadge.className = 'text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-800';
+            } else {
+                contLocBadge.innerText = trip.container_type || 'Cont Tiêu Chuẩn';
+                contLocBadge.className = 'text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded bg-teal-100 text-teal-800';
+            }
+        }
 
         setText('detail-booking', trip.booking !== '-' ? `B/L: ${trip.booking}` : 'B/L: Chưa có');
         setText('detail-seal', trip.seal !== '-' ? `Seal: ${trip.seal}` : 'Seal: Chưa cập nhật');

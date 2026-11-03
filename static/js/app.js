@@ -8127,14 +8127,14 @@ function renderDispatchTable(trips) {
                 </div>
             </td>
             <td data-col-key="notes" class="px-3 py-2 border-r border-slate-200/70">
-                <div class="flex items-center">
-                    <span class="text-[11px] font-bold uppercase ${trip.cont_location_type === 'BÃI TVL' ? 'text-purple-700' : 'text-slate-600'}">
-                        <i class="ph ph-map-pin"></i> ${escapeHtml(trip.cont_location_type)}
-                    </span>
-                </div>
-                <p class="text-[11.5px] text-slate-500 font-medium italic line-clamp-1 max-w-[200px] mt-0.5" title="${escapeHtml(trip.cargo_notes || 'Không có lưu ý')}">
-                    ${trip.cargo_notes ? `<i class="ph ph-info text-amber-600"></i> ${escapeHtml(trip.cargo_notes)}` : '<span class="text-slate-400 font-normal">Không có lưu ý</span>'}
-                </p>
+                ${trip.cargo_notes ? `
+                    <div class="text-[11.5px] text-slate-700 font-medium line-clamp-2 max-w-[210px] flex items-start gap-1" title="${escapeHtml(trip.cargo_notes)}">
+                        <i class="ph ph-note-pencil text-amber-600 shrink-0 mt-0.5"></i>
+                        <span>${escapeHtml(trip.cargo_notes)}</span>
+                    </div>
+                ` : `
+                    <span class="text-slate-300 font-mono text-xs select-none">-</span>
+                `}
             </td>
             <td data-col-key="expense" class="px-3 py-2 border-r border-slate-200/70">
                 <div class="text-[12px] font-bold text-slate-800 flex items-center space-x-1 truncate" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup)} ➔ 2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse)} ➔ 3. Nơi trả cont: ${escapeHtml(trip.dropoff || 'Trả cont')}">
@@ -8646,9 +8646,17 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             }
         }
 
-        // Vị trí cont
+        // Quy cách cont & Chế độ vận hành
         const contLocBadge = document.getElementById('detail-cont-location-badge');
-        if (contLocBadge) contLocBadge.innerText = trip.cont_location_type || 'Nhà máy';
+        if (contLocBadge) {
+            if (trip.is_split_trip) {
+                contLocBadge.innerText = 'Cắt Kéo / Drop & Hook';
+                contLocBadge.className = 'text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-800';
+            } else {
+                contLocBadge.innerText = trip.container_type || 'Cont Tiêu Chuẩn';
+                contLocBadge.className = 'text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded bg-teal-100 text-teal-800';
+            }
+        }
 
         setText('detail-booking', trip.booking !== '-' ? `B/L: ${trip.booking}` : 'B/L: Chưa có');
         setText('detail-seal', trip.seal !== '-' ? `Seal: ${trip.seal}` : 'Seal: Chưa cập nhật');

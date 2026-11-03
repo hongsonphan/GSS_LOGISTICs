@@ -2,6 +2,19 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.32] - 2026-11-03 (Tối Ưu & Loại Bỏ Dữ Liệu Rác: Chuẩn Hóa Cột 'Ghi Chú Vận Chuyển', Loại Bỏ 'Vị Trí Cont' Gây Nhiễu)
+
+### 1. Loại Bỏ Dữ Liệu Rác & Xung Đột "Vị Trí Cont":
+- **Khắc Phục Xung Đột Nghiệp Vụ:** Loại bỏ hoàn toàn nhãn tĩnh BÃI TVL / NHÀ MÁY khỏi cột Lưu ý của bảng Điều Vận, tránh gây hiểu lầm mâu thuẫn với Lộ trình 3 Điểm (Lấy ➔ Kho ➔ Trả).
+- **Đổi Tên Cột Chuẩn Bản Chất:** Cột 'Lưu Ý & Vị Trí Cont' đổi thành **'Ghi Chú Vận Chuyển'**.
+- **Hiển Thị Tinh Gọn (Zero-Noise UI):**
+  * Khi có ghi chú: hiển thị nội dung kèm icon bút chì ghi chú.
+  * Khi không có ghi chú: hiển thị dấu '-' mờ thanh lịch, không in lặp lại chữ 'Không có lưu ý' làm rối mắt.
+
+### 2. Tinh Chỉnh Thẻ Chi Tiết Chuyến Xe (view_trip_detail.html & trip-detail.js):
+- Thẻ 'Số Cont & Vị Trí' đổi thành **'Số Container & Quy Cách'**.
+- Huy hiệu góc phải phản ánh đúng thực tế: Chuyến cắt kéo hiển thị 'Cắt Kéo / Drop & Hook'; chuyến bình thường hiển thị loại quy cách container, loại bỏ nhãn tĩnh 'Nhà máy'.
+
 ## [v4.7.31] - 2026-11-03 (Chuẩn Hóa Bản Chất & Thứ Tự 3 Điểm Vận Chuyển: Nơi Lấy Cont | Kho Đóng/ Trả Hàng | Nơi Trả Cont)
 
 ### 1. Chuẩn Hóa Tên Gọi & Thứ Tự 3 Cột Lộ Trình Vận Chuyển:
