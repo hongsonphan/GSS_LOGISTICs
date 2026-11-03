@@ -36338,6 +36338,7 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="ownership">${ownershipBadge}</td>
                 <td data-col-key="settlement_status" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">
                     ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
+                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đã lưu phiếu quyết toán, chờ duyệt">+${item.saved_trips_count} đã lưu</div>` : ''}
                 </td>
                 <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">${item.trips_count}</td>
                 <td data-col-key="containers_count" class="text-center font-black text-teal-800 text-[13px] tabular-nums bg-teal-50/40">${contsCount}</td>
@@ -37687,6 +37688,7 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="top_route" class="text-[13px] text-slate-600 max-w-xs truncate" title="${escapeHtml(item.top_route)}">${escapeHtml(item.top_route)}</td>
                 <td data-col-key="settlement_status" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">
                     ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
+                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đã lưu phiếu quyết toán, chờ duyệt">+${item.saved_trips_count} đã lưu</div>` : ''}
                 </td>
                 <td data-col-key="revenue" class="text-right font-black text-indigo-700 text-[13px] tabular-nums">${revDisplay}</td>
                 <td data-col-key="settled_revenue" class="text-right font-bold text-slate-800 text-[13px] tabular-nums">${formatMoneyVND(item.settled_revenue || 0)}</td>
@@ -38344,7 +38346,9 @@ function applyReport11Filters() {
 
         const statusBadge = item.is_settled
             ? '<span class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã hoàn ứng</span>'
-            : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Đang tạm ứng</span>';
+            : (item.saved_voucher_code
+                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đã lưu QT (chờ duyệt)</span>'
+                : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Đang tạm ứng</span>');
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -38511,7 +38515,9 @@ function applyReport12Filters() {
 
         const settlementBadge = item.is_settled
             ? '<span class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã Quyết Toán</span>'
-            : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-hourglass"></i> Chưa Chốt</span>';
+            : (item.saved_voucher_code
+                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đã lưu QT (chờ duyệt)</span>'
+                : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-hourglass"></i> Chưa Chốt</span>');
 
         const podBadge = item.has_pod
             ? '<span class="text-xs font-bold text-emerald-700 uppercase inline-flex items-center gap-1"><i class="ph-bold ph-file-check"></i> Đã Thu POD</span>'
@@ -39621,7 +39627,9 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
         const isSettled = Boolean(t.is_settled || t.settlement_status === 'Đã đối soát');
         const settlementBadge = isSettled
             ? '<span class="font-bold text-emerald-700 text-xs" title="Chuyến xe đã được kế toán đối soát & quyết toán công nợ">Đã Đối Soát</span>'
-            : '<span class="font-bold text-amber-600 text-xs" title="Chuyến xe đã giao hàng thành công, đang chờ đối soát công nợ">Chờ Đối Soát</span>';
+            : (t.saved_voucher_code
+                ? `<span class="font-bold text-sky-700 text-xs" title="Đã lưu phiếu quyết toán ${escapeHtml(t.saved_voucher_code)}, chờ duyệt">Đã Lưu QT (chờ duyệt)</span>`
+                : '<span class="font-bold text-amber-600 text-xs" title="Chuyến xe đã giao hàng thành công, đang chờ đối soát công nợ">Chờ Đối Soát</span>');
 
         let partnerCol = '';
         if (mode === 'VEHICLE') {

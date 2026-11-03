@@ -300,6 +300,37 @@ class DriverBatchSettlementTests(TestCase):
             codes[party] = res.data['voucher']['code']
         self.assertEqual(codes, {'DRIVER': f'QTTX.{yymm}.001', 'CUSTOMER': f'QTKH.{yymm}.001', 'PARTNER': f'QT3PL.{yymm}.001'})
 
+    def test_reports_show_saved_and_reconciled_customer_settlement_status(self):
+        """Phiếu khách hàng mới lưu -> báo cáo hiện 'Đã lưu quyết toán (chờ duyệt)'; duyệt xong -> 'Đã đối soát'."""
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        admin = User.objects.create_user(username='rep_admin', password='password123', is_staff=True, is_superuser=True)
+
+        def trip_statuses():
+            self.client.force_authenticate(user=admin)
+            data = self.client.get('/api/reports/?period=all').data
+            found = []
+
+            def walk(node):
+                if isinstance(node, dict):
+                    if node.get('trip_code') == self.trip1.trip_code and 'settlement_status' in node:
+                        found.append(node['settlement_status'])
+                    for v in node.values():
+                        walk(v)
+                elif isinstance(node, list):
+                    for v in node:
+                        walk(v)
+            walk(data)
+            self.client.force_authenticate(user=self.accountant_user)
+            return set(found)
+
+        self.assertEqual(trip_statuses(), {'Chờ đối soát'})
+        res = self.client.post(base, {'party_type': 'CUSTOMER', 'trip_ids': [self.trip1.id]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        self.assertEqual(trip_statuses(), {'Đã lưu quyết toán (chờ duyệt)'})
+        self.assertEqual(self.client.post(f"{base}{res.data['voucher']['id']}/approve/", {}, format='json').status_code, status.HTTP_200_OK)
+        self.assertEqual(trip_statuses(), {'Đã đối soát'})
+
     def test_voucher_partner_direction_flips_when_advance_exceeds_cost(self):
         self.client.force_authenticate(user=self.accountant_user)
         self.trip1.subcontractor_cost = 1000000
