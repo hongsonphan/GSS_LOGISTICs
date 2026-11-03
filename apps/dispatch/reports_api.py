@@ -17,6 +17,7 @@ from apps.billing.models import (
     DriverAdvanceStatus, AdvanceSourceType, SettlementDiffType,
     CashTransaction, TransactionType, CashFlowCategory, ReimbursementStatus
 )
+from apps.billing.voucher_status import SAVED_LABEL, draft_voucher_codes
 from apps.fleet.models import Vehicle, Trailer
 from apps.customers.models import Customer, Quotation, BookingOrder
 from apps.personnel.models import Employee, EmployeeRole
@@ -116,6 +117,10 @@ class ReportsAPIView(APIView):
         # Các chuyến đang chạy (IN_TRANSIT), chưa chạy (DRAFT/DISPATCHED) tuyệt đối KHÔNG thể hiện ở nhóm này.
         COMPLETED_EARNED_STATUSES = [TripStatus.DELIVERED, TripStatus.COMPLETED]
         earned_trips_qs = trips_qs.filter(status__in=COMPLETED_EARNED_STATUSES)
+        # Chuyến đã lưu phiếu quyết toán nhưng chưa duyệt (khách hàng / tài xế / đối tác 3PL)
+        saved_customer = draft_voucher_codes('CUSTOMER', earned_trips_qs)
+        saved_driver = draft_voucher_codes('DRIVER', earned_trips_qs)
+        saved_partner = draft_voucher_codes('PARTNER', trips_qs)
 
         # Helper tính doanh thu / chi phí thực tế cho từng chuyến nếu cache chưa cập nhật
         def get_trip_financials(t):
@@ -182,6 +187,7 @@ class ReportsAPIView(APIView):
                     'trips_count': 0,
                     'settled_trips_count': 0,
                     'pending_settlement_trips_count': 0,
+                    'saved_trips_count': 0,
                     'settled_revenue': 0,
                     'pending_revenue': 0,
                     'containers_count': 0,
@@ -203,11 +209,13 @@ class ReportsAPIView(APIView):
 
             t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
             is_cust_settled = bool(t.is_customer_settled or t.customer_settlement_status == 'SETTLED')
+            saved_code = '' if is_cust_settled else saved_customer.get(t.id, '')
             if is_cust_settled:
                 vehicles_dict[plate]['settled_trips_count'] += 1
                 vehicles_dict[plate]['settled_revenue'] += rev
             else:
                 vehicles_dict[plate]['pending_settlement_trips_count'] += 1
+                vehicles_dict[plate]['saved_trips_count'] += 1 if saved_code else 0
                 vehicles_dict[plate]['pending_revenue'] += rev
             vehicles_dict[plate]['trips'].append({
                 'id': t.id,
@@ -223,7 +231,8 @@ class ReportsAPIView(APIView):
                 'status': t.status,
                 'status_label': t.get_status_display(),
                 'is_settled': is_cust_settled,
-                'settlement_status': 'Đã đối soát' if is_cust_settled else 'Chờ đối soát',
+                'settlement_status': 'Đã đối soát' if is_cust_settled else (SAVED_LABEL if saved_code else 'Chờ đối soát'),
+                'saved_voucher_code': saved_code,
                 'revenue': rev,
                 'expense': exp,
             })
@@ -495,6 +504,7 @@ class ReportsAPIView(APIView):
             total_route_cost += t_direct_exp
 
             is_cust_settled = bool(t.is_customer_settled or t.customer_settlement_status == 'SETTLED')
+            saved_code = '' if is_cust_settled else saved_customer.get(t.id, '')
             trip_item = {
                 'id': t.id,
                 'trip_code': t.trip_code,
@@ -509,7 +519,8 @@ class ReportsAPIView(APIView):
                 'status': t.status,
                 'status_label': t.get_status_display(),
                 'is_settled': is_cust_settled,
-                'settlement_status': 'Đã đối soát' if is_cust_settled else 'Chờ đối soát',
+                'settlement_status': 'Đã đối soát' if is_cust_settled else (SAVED_LABEL if saved_code else 'Chờ đối soát'),
+                'saved_voucher_code': saved_code,
                 'revenue': rev,
                 'expense': t_direct_exp,
                 'bot_fee': t_bot,
@@ -794,6 +805,7 @@ class ReportsAPIView(APIView):
                     'trips_count': 0,
                     'settled_trips_count': 0,
                     'pending_settlement_trips_count': 0,
+                    'saved_trips_count': 0,
                     'settled_revenue': 0,
                     'pending_revenue': 0,
                     'containers_count': 0,
@@ -831,11 +843,13 @@ class ReportsAPIView(APIView):
 
             t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
             is_cust_settled = bool(t.is_customer_settled or t.customer_settlement_status == 'SETTLED')
+            saved_code = '' if is_cust_settled else saved_customer.get(t.id, '')
             if is_cust_settled:
                 row['settled_trips_count'] += 1
                 row['settled_revenue'] += rev
             else:
                 row['pending_settlement_trips_count'] += 1
+                row['saved_trips_count'] += 1 if saved_code else 0
                 row['pending_revenue'] += rev
             row['trips'].append({
                 'id': t.id,
@@ -851,7 +865,8 @@ class ReportsAPIView(APIView):
                 'status': t.status,
                 'status_label': t.get_status_display(),
                 'is_settled': is_cust_settled,
-                'settlement_status': 'Đã đối soát' if is_cust_settled else 'Chờ đối soát',
+                'settlement_status': 'Đã đối soát' if is_cust_settled else (SAVED_LABEL if saved_code else 'Chờ đối soát'),
+                'saved_voucher_code': saved_code,
                 'revenue': rev,
                 'expense': exp,
             })
@@ -905,6 +920,7 @@ class ReportsAPIView(APIView):
             settled = cost if t.subcontractor_settlement_status == 'SETTLED' else advance
             balance = max(0, cost - settled)
 
+            sub_saved = t.subcontractor_settlement_status != 'SETTLED' and t.id in saved_partner
             total_gross_payable += cost
             total_subcontractor_advance += advance
             total_subcontractor_settled += settled
@@ -938,6 +954,7 @@ class ReportsAPIView(APIView):
                     'advance_amount': 0,
                     'settled_amount': 0,
                     'balance_due': 0,
+                    'saved_trips_count': 0,
                     'settlement_status': 'Chờ quyết toán'
                 }
 
@@ -947,6 +964,7 @@ class ReportsAPIView(APIView):
             s_row['advance_amount'] += advance
             s_row['settled_amount'] += settled
             s_row['balance_due'] += balance
+            s_row['saved_trips_count'] += 1 if sub_saved else 0
 
             subcontractor_trips_data.append({
                 'trip_code': t.trip_code,
@@ -959,7 +977,8 @@ class ReportsAPIView(APIView):
                 'gross_cost': cost,
                 'advance': advance,
                 'balance': balance,
-                'status': t.get_subcontractor_settlement_status_display() if hasattr(t, 'get_subcontractor_settlement_status_display') else t.subcontractor_settlement_status,
+                'status': SAVED_LABEL if sub_saved else (t.get_subcontractor_settlement_status_display() if hasattr(t, 'get_subcontractor_settlement_status_display') else t.subcontractor_settlement_status),
+                'saved_voucher_code': saved_partner.get(t.id, '') if sub_saved else '',
                 'bank_info': bank_info
             })
 
@@ -971,6 +990,8 @@ class ReportsAPIView(APIView):
                 s['settlement_status'] = 'Đã tạm ứng 1 phần'
             else:
                 s['settlement_status'] = 'Chờ xuất UNC thanh toán'
+            if s['balance_due'] > 0 and s['saved_trips_count'] > 0:
+                s['settlement_status'] = f"{SAVED_LABEL}: {s['saved_trips_count']}/{s['trips_count']} chuyến"
         subcontractors_summary.sort(key=lambda x: x['balance_due'], reverse=True)
 
         total_balance_due = max(0, total_gross_payable - total_subcontractor_settled)
@@ -1293,7 +1314,8 @@ class ReportsAPIView(APIView):
                 'settlement_action': 'REFUND' if diff > 0 else ('REIMBURSE' if diff < 0 else 'BALANCED'),
                 'settlement_action_label': 'Tài xế nộp lại' if diff > 0 else ('Cty/ĐV bù thêm' if diff < 0 else 'Khớp đúng'),
                 'status': adv_status,
-                'status_label': 'Đã hoàn ứng' if is_settled else 'Đang tạm ứng',
+                'status_label': 'Đã hoàn ứng' if is_settled else (SAVED_LABEL if t.id in saved_driver else 'Đang tạm ứng'),
+                'saved_voucher_code': '' if is_settled else saved_driver.get(t.id, ''),
                 'is_settled': is_settled,
                 'settled_at': settled_at_str,
                 'settled_by': settled_by_name,
@@ -1401,6 +1423,7 @@ class ReportsAPIView(APIView):
                 'profit': prof,
                 'margin_percent': margin,
                 'is_settled': is_settled,
+                'saved_voucher_code': '' if is_settled else saved_driver.get(t.id, ''),
                 'is_carry_over': is_carry_over,
                 'category_tag': category_tag,
                 'category_label': category_label,

@@ -4,6 +4,46 @@ from ._common import *  # noqa: F401,F403
 from core.permissions import any_module_view  # noqa: E402
 
 
+# Thông số điều chỉnh cước theo giá dầu (kiểu %/số tiền) và phụ phí hạ xa của báo giá
+_SURCHARGE_INT_FIELDS = ('far_drop_free_km', 'far_drop_step_km')
+_SURCHARGE_NUM_FIELDS = ('fuel_amount_per_step', 'far_drop_ratio_percent', 'far_drop_amount_per_step')
+_SURCHARGE_TYPE_FIELDS = ('fuel_adjust_type', 'far_drop_adjust_type')
+
+
+def _surcharge_dict(q):
+    return {
+        'fuel_adjust_type': q.fuel_adjust_type,
+        'fuel_amount_per_step': float(q.fuel_amount_per_step or 0),
+        'far_drop_enabled': bool(q.far_drop_enabled),
+        'far_drop_free_km': q.far_drop_free_km or 0,
+        'far_drop_step_km': q.far_drop_step_km or 10,
+        'far_drop_adjust_type': q.far_drop_adjust_type,
+        'far_drop_ratio_percent': float(q.far_drop_ratio_percent or 0),
+        'far_drop_amount_per_step': float(q.far_drop_amount_per_step or 0),
+    }
+
+
+def _surcharge_kwargs(data, only_present=False):
+    """Đọc các trường mới từ request; only_present=True: chỉ lấy trường có gửi lên (để không ghi đè khi cập nhật)."""
+    out = {}
+    for key in _SURCHARGE_TYPE_FIELDS:
+        if key in data or not only_present:
+            out[key] = data.get(key) if data.get(key) in ('PERCENT', 'AMOUNT') else 'PERCENT'
+    for key in _SURCHARGE_NUM_FIELDS + _SURCHARGE_INT_FIELDS:
+        if key in data or not only_present:
+            try:
+                value = float(data.get(key) or 0)
+            except (TypeError, ValueError):
+                value = 0
+            value = max(value, 0)
+            out[key] = int(value) if key in _SURCHARGE_INT_FIELDS else value
+    if 'far_drop_step_km' in out and out['far_drop_step_km'] <= 0:
+        out['far_drop_step_km'] = 10
+    if 'far_drop_enabled' in data or not only_present:
+        out['far_drop_enabled'] = bool(data.get('far_drop_enabled'))
+    return out
+
+
 class BookingActiveAPIView(APIView):
     """API lấy danh sách các Booking đang hoạt động để Điều độ viên chọn kế thừa khi tạo lệnh."""
     permission_classes = [any_module_view('sales', 'dispatch', 'accounting')]
@@ -252,6 +292,7 @@ class SalesAPIView(APIView):
                 'fuel_step_vnd': float(q.fuel_step_vnd or 1000),
                 'fuel_ratio_percent': float(q.fuel_ratio_percent or 3.5),
                 'fuel_surcharge_formula': q.fuel_surcharge_formula or '',
+                **_surcharge_dict(q),
                 'origin_zone': q.origin_zone or '',
                 'destination_zone': q.destination_zone or '',
                 'estimated_km': q.estimated_km or 0,
@@ -766,6 +807,7 @@ class SalesAPIView(APIView):
                     fuel_step_vnd=fuel_step_vnd,
                     fuel_ratio_percent=fuel_ratio_percent,
                     fuel_surcharge_formula=fuel_surcharge_formula,
+                    **_surcharge_kwargs(data),
                     origin_zone=first_orig_zone,
                     destination_zone=first_dest_zone,
                     estimated_km=first_est_km,
@@ -872,6 +914,7 @@ class QuotationDetailAPIView(APIView):
             'fuel_step_vnd': float(q.fuel_step_vnd or 1000),
             'fuel_ratio_percent': float(q.fuel_ratio_percent or 3.5),
             'fuel_surcharge_formula': q.fuel_surcharge_formula or '',
+            **_surcharge_dict(q),
             'origin_zone': q.origin_zone or '',
             'destination_zone': q.destination_zone or '',
             'estimated_km': q.estimated_km or 0,
@@ -923,6 +966,8 @@ class QuotationDetailAPIView(APIView):
             q.fuel_ratio_percent = float(data['fuel_ratio_percent'])
         if 'fuel_surcharge_formula' in data:
             q.fuel_surcharge_formula = data['fuel_surcharge_formula'].strip()
+        for key, value in _surcharge_kwargs(data, only_present=True).items():
+            setattr(q, key, value)
 
         if 'origin_zone' in data:
             q.origin_zone = data['origin_zone'].strip()
@@ -1033,6 +1078,7 @@ class QuotationDetailAPIView(APIView):
                 'fuel_step_vnd': float(q.fuel_step_vnd),
                 'fuel_ratio_percent': float(q.fuel_ratio_percent),
                 'fuel_surcharge_formula': q.fuel_surcharge_formula,
+                **_surcharge_dict(q),
                 'origin_zone': q.origin_zone,
                 'destination_zone': q.destination_zone,
                 'estimated_km': q.estimated_km,

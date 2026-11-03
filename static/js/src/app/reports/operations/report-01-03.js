@@ -114,6 +114,7 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="ownership">${ownershipBadge}</td>
                 <td data-col-key="settlement_status" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">
                     ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
+                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đã lưu phiếu quyết toán, chờ duyệt">+${item.saved_trips_count} đã lưu</div>` : ''}
                 </td>
                 <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">${item.trips_count}</td>
                 <td data-col-key="containers_count" class="text-center font-black text-teal-800 text-[13px] tabular-nums bg-teal-50/40">${contsCount}</td>

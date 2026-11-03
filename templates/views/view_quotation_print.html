@@ -45,7 +45,7 @@
 
         <!-- Khổ giấy A4 hiển thị toàn trang -->
         <div class="flex justify-center overflow-x-auto pb-8">
-            <div id="quotation-printable-area" class="w-full max-w-[840px] bg-white p-6 sm:p-12 border border-slate-300 shadow-xl rounded-sm text-slate-900 font-sans leading-relaxed text-xs">
+            <div id="quotation-printable-area" class="w-[210mm] max-w-full min-h-[297mm] bg-white p-[12mm] border border-slate-300 shadow-xl rounded-sm text-slate-900 font-sans leading-relaxed text-xs">
                 
                 <!-- ========================================================================= -->
                 <!-- MẪU 1: TIÊU CHUẨN DOANH NGHIỆP (QUỐC HIỆU & ĐIỀU KHOẢN TVL) -->
@@ -148,11 +148,19 @@
                         <div class="grid grid-cols-3 gap-2 py-1 text-center font-medium border-y border-slate-200">
                             <div>Giá dầu DO cơ sở (P0): <strong id="print-q1-fuel-p0" class="text-slate-950 font-bold">21.000 đ/lít</strong></div>
                             <div>Biên độ biến động: <strong id="print-q1-fuel-step" class="text-slate-950 font-bold">±1.000 đ/lít</strong></div>
-                            <div>Tỷ lệ điều chỉnh: <strong id="print-q1-fuel-ratio" class="text-slate-950 font-bold">±3.5% cước</strong></div>
+                            <div><span id="print-q1-fuel-ratio-label">Tỷ lệ điều chỉnh:</span> <strong id="print-q1-fuel-ratio" class="text-slate-950 font-bold">±3.5% cước</strong></div>
                         </div>
                         <p class="text-[11px] text-slate-700 leading-tight italic" id="print-q1-fuel-formula">
                             Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng 3.5%.
                         </p>
+                        <p class="text-[11px] text-slate-800 leading-tight"><strong>Ví dụ:</strong> <span id="print-q1-fuel-example"></span></p>
+                    </div>
+
+                    <!-- 5b. Khối Phụ Phí Hạ Xa (chỉ hiển thị khi báo giá có hạ xa) -->
+                    <div id="print-q1-fardrop-box" class="p-2.5 border border-slate-300 rounded bg-white space-y-1 text-xs text-slate-900 hidden">
+                        <div class="font-bold text-slate-950 uppercase text-[11px]">* PHỤ PHÍ HẠ XA (HẠ VỎ XA HƠN VỊ TRÍ HẠ BAN ĐẦU):</div>
+                        <p class="text-[11px] text-slate-700 leading-tight italic" id="print-q1-fardrop-desc"></p>
+                        <p class="text-[11px] text-slate-800 leading-tight"><strong>Ví dụ:</strong> <span id="print-q1-fardrop-example"></span></p>
                     </div>
 
                     <!-- 6. Ghi Chú & Điều Khoản (Notes) -->
@@ -265,6 +273,12 @@
                         <p class="text-[11px] text-slate-800" id="print-q2-fuel-desc">Mỗi khi giá dầu thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước điều chỉnh tương ứng 3.5%.</p>
                     </div>
 
+                    <!-- Khối Phụ phí hạ xa Mẫu 2 -->
+                    <div id="print-q2-fardrop-box" class="p-2 border border-slate-400 space-y-1 text-xs hidden">
+                        <p class="font-bold uppercase text-slate-950">* PHỤ PHÍ HẠ XA:</p>
+                        <p class="text-[11px] text-slate-800" id="print-q2-fardrop-desc"></p>
+                    </div>
+
                     <!-- Ghi chú Mẫu 2 -->
                     <div class="space-y-1 text-xs text-slate-800">
                         <p class="font-bold uppercase">* GHI CHÚ & QUY ĐỊNH:</p>
@@ -364,6 +378,12 @@
                     <div id="print-q3-fuel-box" class="p-2 border border-slate-400 space-y-1 text-xs hidden">
                         <p class="font-bold uppercase text-slate-950">* CƠ CHẾ ĐIỀU CHỈNH THEO GIÁ XĂNG DẦU:</p>
                         <p class="text-[11px] text-slate-800" id="print-q3-fuel-desc">Mỗi khi giá dầu thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước điều chỉnh tương ứng 3.5%.</p>
+                    </div>
+
+                    <!-- Khối Phụ phí hạ xa Mẫu 3 -->
+                    <div id="print-q3-fardrop-box" class="p-2 border border-slate-400 space-y-1 text-xs hidden">
+                        <p class="font-bold uppercase text-slate-950">* PHỤ PHÍ HẠ XA:</p>
+                        <p class="text-[11px] text-slate-800" id="print-q3-fardrop-desc"></p>
                     </div>
 
                     <!-- Ghi chú Mẫu 3 -->

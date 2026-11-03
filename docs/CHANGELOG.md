@@ -2,6 +2,98 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.36] - 2026-11-03 (Khắc Phục Lỗi Unclosed DIV Khiến Các Modal Cột, Sửa Chuyến Bị Chặn Hiển Thị)
+
+### 1. Khắc Phục Nguyên Nhân Cốt Lõi Khiến Nút 'Cột' & 'Sửa' Bị Mất Tác Dụng:
+- **Phát Hiện & Khắc Phục Lỗi Cấu Trúc DOM:** Trong tệp `templates/components/modal_create_trip.html`, tại khu vực grid 4 cột (Cắt CY, Invoice, Dock, Giờ hẹn), tồn tại 2 thẻ `<div>` mở thừa chưa được đóng (do quá trình lược bỏ trường vị trí cont trước đó).
+- **Hệ Quả Nghiêm Trọng:** Do cấu trúc DOM không cân bằng, trình duyệt đã vô tình đưa toàn bộ các modal phía sau (`modal_edit_trip.html` - Form Sửa Chuyến, `modal_column_customizer.html` - Modal Tùy Chỉnh Cột, v.v.) vào làm phần tử con bên trong `modal-create-trip`. Khi `modal-create-trip` đang ở trạng thái ẩn (`display: none`), tất cả các modal con này đều bị ẩn theo (kích thước `0x0px`), khiến việc bấm nút `Cột` hay `Sửa` hoàn toàn không thể hiển thị lên màn hình.
+- **Xử Lý:** Đã đóng chuẩn xác thẻ lưới grid trong `modal_create_trip.html`, đưa số thẻ `<div>` mở và đóng về cân bằng tuyệt đối (0 unclosed divs). Tất cả modal đã được giải phóng trở về cấp độ body độc lập.
+
+### 2. Tăng Cường Tính Ổn Định & Tương Tác Cho Màn Hình Chi Tiết Chuyến Xe:
+- **Nút 'Sửa' (`view_trip_detail.html`):** Bổ sung thuộc tính `type="button"` và con trỏ `cursor-pointer`.
+- **Hàm `openModalEditTrip` & `deleteOrCancelTrip` (`trip-actions.js`):** Bổ sung đa tầng fallback lấy mã chuyến từ tiêu đề chi tiết `#detail-id` và tiêu đề modal `#edit-modal-trip-code`, đảm bảo luôn mở được form sửa và xóa chuyến trong mọi trường hợp.
+
+## [v4.7.35] - 2026-11-03 (Hoàn Trả Giao Diện Thao Tác Bảng Điều Vận Về Cặp Nút [Xem] & [Xóa] Chuẩn Gốc)
+
+### 1. Hoàn Trả Giao Diện Cột Thao Tác (`trip-list.js`):
+- **Thu Hồi Nút Sửa Ngoài Bảng:** Đã loại bỏ nút `Sửa` phát sinh thêm ở cột Thao tác trên từng dòng của Bảng Điều Vận.
+- **Giữ Nguyên Giao Diện Cũ Chuẩn Mực:** Cột Thao tác quay về đúng 2 nút gốc ban đầu: **`[Xem]`** và **`[Xóa]`**, đảm bảo không gian bảng thoáng đãng, không làm thay đổi thói quen sử dụng của người dùng.
+- **Bảo Toàn Hiệu Lực Các Nút:** Giữ nguyên 100% các sửa đổi kỹ thuật giúp Form Sửa (`modal_edit_trip.html` & `trip-actions.js`) và các nút thao tác hệ thống hoạt động chính xác, không còn bị chặn âm thầm (silent validation) khi lưu.
+
+## [v4.7.34] - 2026-11-03 (Rà Soát & Khắc Phục Triệt Để Toàn Bộ Các Nút Bị Mất Tác Dụng)
+
+### 1. Khắc Phục Nút 'Lưu' Form Sửa Chuyến Xe (`modal_edit_trip.html` & `trip-actions.js`):
+- **Loại Bỏ Lỗi Trình Duyệt Silent Block:** Chuyển nút Lưu từ `type="submit"` thành `type="button"` với sự kiện `onclick="submitEditTripForm()"`.
+- **Loại Bỏ Required HTML5 Ẩn:** Bỏ thuộc tính `required` ở các ô (đặc biệt là Điểm 3 Hạ Cont - DB blank=True), chuyển toàn bộ sang cơ chế Javascript Toast validation thân thiện:
+  * Nếu thiếu Khách hàng / Điểm 1 / Điểm 2: Bật Toast cảnh báo rõ ràng và focus ô thiếu, không để form bị treo âm thầm.
+- **Tăng Cường Nhận Diện Mã Chuyến:** Bổ sung fallback lấy mã chuyến từ thẻ `#edit-modal-trip-code` giúp form luôn lưu được dữ liệu ngay cả khi mở từ các ngữ cảnh khác nhau.
+
+### 2. Bổ Sung Nút 'Sửa' Trực Tiếp Trên Bảng Điều Vận (`trip-list.js`):
+- Bổ sung nút **`Sửa`** (icon bút chì) vào cột Thao tác trên từng dòng của Bảng Điều Vận bên cạnh 2 nút `Xem` và `Xóa`.
+- Cho phép điều độ viên bấm sửa tức thì mọi thông tin chuyến xe mà không cần phải chuyển trang vào Chi Tiết.
+
+### 3. Tối Ưu Nút 'Hủy / Xóa Chuyến' & Cơ Chế Đóng Modal (`ui.js`):
+- `deleteOrCancelTrip()` hỗ trợ fallback lấy mã chuyến từ modal header, đảm bảo hộp thoại xác nhận xóa luôn mở đúng chuyến.
+- Hàm `closeModal(id)` đóng đồng thời cả 2 class `hidden-view` và `hidden` để đảm bảo modal biến mất 100%.
+
+## [v4.7.33] - 2026-11-03 (Đồng Bộ Chuẩn Hóa Toàn Diện Form Tạo Mới & Chỉnh Sửa Chuyến Xe Điều Vận)
+
+### 1. Chuẩn Hóa Tên Trường & Loại Bỏ Trường Rác 'Vị Trí Cont':
+- **Modal Chỉnh Sửa Chuyến Xe (`modal_edit_trip.html`):**
+  * Loại bỏ dropdown tĩnh `Vị Trí Cont` (BÃI TVL / NHÀ MÁY) gây mâu thuẫn lộ trình 3 điểm; chuyển thành hidden input.
+  * Hàng trên chia 2 cột thoáng đẹp: `Hóa Đơn Thương Mại (Invoice)` | `Hạn Miễn Phí Vỏ (Free DET - Ngày)`.
+  * Chuẩn hóa nhãn: `Lưu Ý Của Điều Độ / Hàng Hóa` ➔ **`Ghi Chú Vận Chuyển / Hàng Hóa`** (đồng bộ chuẩn 100% với cột `Ghi Chú Vận Chuyển` trên bảng Điều Vận).
+- **Trang Tạo Chuyến Mới & Modal Tạo Chuyến Nhanh (`view_create_trip.html` & `modal_create_trip.html`):**
+  * Loại bỏ dropdown `Vị Trí Vỏ Hiện Tại` (`inp-cont-loc`), gom gọn grid từ 5 cột về 4 cột cân đối, rộng rãi:
+    1. `Cắt CY / SI` (24h)
+    2. `Hóa Đơn Thương Mại (Invoice)`
+    3. `Cửa Dock Kho (Cửa Xuất)`
+    4. `Giờ Hẹn Đóng Hàng` (24h)
+  * Chuẩn hóa nhãn ghi chú điều độ: `Ghi chú phí Công ty chịu / Lưu ý Điều độ` ➔ **`Ghi Chú Vận Chuyển / Lưu Ý Điều Độ`**.
+
+## [v4.7.32] - 2026-11-03 (Tối Ưu & Loại Bỏ Dữ Liệu Rác: Chuẩn Hóa Cột 'Ghi Chú Vận Chuyển', Loại Bỏ 'Vị Trí Cont' Gây Nhiễu)
+
+### 1. Loại Bỏ Dữ Liệu Rác & Xung Đột "Vị Trí Cont":
+- **Khắc Phục Xung Đột Nghiệp Vụ:** Loại bỏ hoàn toàn nhãn tĩnh BÃI TVL / NHÀ MÁY khỏi cột Lưu ý của bảng Điều Vận, tránh gây hiểu lầm mâu thuẫn với Lộ trình 3 Điểm (Lấy ➔ Kho ➔ Trả).
+- **Đổi Tên Cột Chuẩn Bản Chất:** Cột 'Lưu Ý & Vị Trí Cont' đổi thành **'Ghi Chú Vận Chuyển'**.
+- **Hiển Thị Tinh Gọn (Zero-Noise UI):**
+  * Khi có ghi chú: hiển thị nội dung kèm icon bút chì ghi chú.
+  * Khi không có ghi chú: hiển thị dấu '-' mờ thanh lịch, không in lặp lại chữ 'Không có lưu ý' làm rối mắt.
+
+### 2. Tinh Chỉnh Thẻ Chi Tiết Chuyến Xe (view_trip_detail.html & trip-detail.js):
+- Thẻ 'Số Cont & Vị Trí' đổi thành **'Số Container & Quy Cách'**.
+- Huy hiệu góc phải phản ánh đúng thực tế: Chuyến cắt kéo hiển thị 'Cắt Kéo / Drop & Hook'; chuyến bình thường hiển thị loại quy cách container, loại bỏ nhãn tĩnh 'Nhà máy'.
+
+## [v4.7.31] - 2026-11-03 (Chuẩn Hóa Bản Chất & Thứ Tự 3 Điểm Vận Chuyển: Nơi Lấy Cont | Kho Đóng/ Trả Hàng | Nơi Trả Cont)
+
+### 1. Chuẩn Hóa Tên Gọi & Thứ Tự 3 Cột Lộ Trình Vận Chuyển:
+- **Chuẩn Hóa 3 Cột Theo Đúng Bản Chất Thực Tế:**
+  * Điểm 1: **NƠI LẤY CONT** (Pickup Location) — Nơi lấy vỏ rỗng (Xuất) hoặc Cảng lấy cont hàng (Nhập).
+  * Điểm 2: **KHO ĐÓNG/ TRẢ HÀNG** (Warehouse Location) — Kho/Nhà máy đóng hàng (Xuất) hoặc Kho dỡ/rút hàng (Nhập).
+  * Điểm 3: **NƠI TRẢ CONT** (Dropoff Location) — Cảng hạ cont hàng xuất (Xuất) hoặc Depot hạ trả vỏ rỗng (Nhập).
+- **Phân Biệt Ngữ Cảnh Từng Loại Hình Hàng Hóa (Export / Import / Domestic):**
+  * Hàng Xuất (Export FCL): `Lấy Vỏ Rỗng` ➔ `Đóng Hàng` ➔ `Hạ Cont Hàng (Cảng Xuất)`.
+  * Hàng Nhập (Import FCL): `Cảng Lấy Cont Hàng` ➔ `Dỡ / Rút Hàng Khách` ➔ `Depot Hạ Trả Vỏ Rỗng`.
+  * Nội Địa (Domestic FTL): `Điểm Nhận Hàng` ➔ `Kho Giao / Nhận` ➔ `Bãi Hạ / Điểm Trả Cont`.
+
+### 2. Đồng Bộ Hóa Toàn Diện Trên Mọi Màn Hình Hệ Thống:
+- **Bảng Điều Vận (`view_dispatch.html` & `trip-list.js`):**
+  * Cột lộ trình tổng hợp hiển thị rõ 3 chặng liên hoàn: `Nơi Lấy ➔ Kho Đóng/Trả ➔ Nơi Trả` kèm tooltip chi tiết từng mốc.
+  * Ba cột độc lập `pickup_location`, `warehouse_location`, `dropoff_location` trong Customizer được gắn nhãn chuẩn `Nơi Lấy Cont`, `Kho Đóng/ Trả Hàng`, `Nơi Trả Cont`, kèm sub-badge màu sắc theo bản chất loại hàng.
+- **Màn Hình Chi Tiết Chuyến Xe (`view_trip_detail.html` & `trip-detail.js`):**
+  * Tái cấu trúc khối **HÀNH TRÌNH 3 ĐIỂM CHUẨN** với 3 thẻ card trực quan:
+    `1. Nơi Lấy Cont` | `2. Kho Đóng/ Trả Hàng` | `3. Nơi Trả Cont`.
+  * Header có badge động nhận diện bản chất luồng vận chuyển theo `shipment_type`.
+- **Màn Hình Tạo Chuyến Xe (`view_create_trip.html`, `modal_create_trip.html` & `create-trip/page.js`):**
+  * Section 2 chuẩn hóa tiêu đề: `2. Lộ Trình 3 Điểm Chuẩn (Nơi Lấy Cont ➔ Kho Đóng/ Trả Hàng ➔ Nơi Trả Cont)`.
+  * Sự kiện đổi Loại hình (`handleCargoTypeChange`) tự động cập nhật hint và badge gợi ý ngữ cảnh theo Xuất/Nhập/Nội địa.
+- **Bảng Đơn Hàng Booking (`view_sales.html` & `sales-lists.js`):**
+  * Cột Lộ trình hiển thị: `1. Lấy cont: ... | 2. Kho đóng/trả: ... | 3. Trả cont: ...`.
+- **Dọn Dẹp Dữ Liệu Master Data (Database Production):**
+  * Chuẩn hóa 4 bản ghi địa điểm Takigawa (`NHÀ MÁY TAKIGAWA VSIP 2A`, `TAKIGAWA VSIP 3`, ...) từ nhầm lẫn `PORT` (Cảng biển) sang đúng bản chất `WAREHOUSE_FACTORY` (Kho Hàng / Nhà Máy).
+
+---
+
 ## [v4.7.30] - 2026-11-02 (Tùy Biến Cột Toàn Diện: Nạp Đầy Đủ Trường Dữ Liệu Database Lên Tùy Chỉnh Cột & Hỗ Trợ Tìm Kiếm Cột Thông Minh)
 
 ### 1. Nâng Cấp Bộ Máy Quản Lý Cột Bảng Dữ Liệu (`static/js/src/app/core/table-manager.js`):

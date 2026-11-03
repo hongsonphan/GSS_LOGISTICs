@@ -44,7 +44,7 @@
               <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-customer">
                 Khách Hàng <span class="text-rose-500">*</span>
               </label>
-              <select id="edit-inp-customer" required class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs w-full">
+              <select id="edit-inp-customer" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs w-full">
                 <option value="">-- Chọn Khách Hàng --</option>
               </select>
             </div>
@@ -110,21 +110,21 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <div>
               <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-pickup">
-                Điểm 1 (Lấy Cont) <span class="text-rose-500">*</span>
+                1. Nơi Lấy Cont <span class="text-rose-500">*</span>
               </label>
-              <input id="edit-inp-pickup" required type="text" placeholder="VD: CẢNG CÁT LÁI" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase w-full">
+              <input id="edit-inp-pickup" type="text" placeholder="VD: CẢNG CÁT LÁI" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase w-full">
             </div>
             <div>
               <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-warehouse">
-                Điểm 2 (Giao Kho) <span class="text-rose-500">*</span>
+                2. Kho Đóng/ Trả Hàng <span class="text-rose-500">*</span>
               </label>
-              <input id="edit-inp-warehouse" required type="text" placeholder="VD: KHO WCA SÓNG THẦN" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-bold text-teal-900 w-full">
+              <input id="edit-inp-warehouse" type="text" placeholder="VD: KHO WCA SÓNG THẦN" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-bold text-teal-900 w-full">
             </div>
             <div>
               <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-dropoff">
-                Điểm 3 (Hạ Cont) <span class="text-rose-500">*</span>
+                3. Nơi Trả Cont <span class="text-rose-500">*</span>
               </label>
-              <input id="edit-inp-dropoff" required type="text" placeholder="VD: BÃI RỖNG TRIỀN VÕ" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase w-full">
+              <input id="edit-inp-dropoff" type="text" placeholder="VD: BÃI RỖNG TRIỀN VÕ" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase w-full">
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
@@ -196,29 +196,22 @@
           </div>
         </div>
 
-        <!-- 5. Thông tin Phụ & Ghi Chú -->
+        <!-- 5. Thông tin Phụ & Ghi Chú Vận Chuyển -->
         <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs space-y-2">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <input type="hidden" id="edit-inp-location-type" value="NHÀ MÁY" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-invoice">Hóa Đơn Thương Mại</label>
-              <input id="edit-inp-invoice" type="text" placeholder="VD: INV-998811" class="form-input h-8.5 px-2.5 py-1 text-xs w-full">
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-invoice">Hóa Đơn Thương Mại (Invoice)</label>
+              <input id="edit-inp-invoice" type="text" placeholder="VD: INV-998811" class="form-input h-8.5 px-2.5 py-1 text-xs w-full rounded-lg font-mono font-bold text-teal-800">
             </div>
             <div>
-              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-free-det">Hạn Free DET (Ngày)</label>
-              <input id="edit-inp-free-det" type="number" min="0" placeholder="VD: 5" class="form-input h-8.5 px-2.5 py-1 text-xs w-full">
-            </div>
-            <div>
-              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-location-type">Vị Trí Cont</label>
-              <select id="edit-inp-location-type" class="form-select h-8.5 px-2 py-1 text-xs w-full">
-                <option value="BÃI TVL">BÃI TVL</option>
-                <option value="NHÀ MÁY">NHÀ MÁY</option>
-                <option value="CẢNG / ICD">CẢNG / ICD</option>
-              </select>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-free-det">Hạn Miễn Phí Vỏ (Free DET - Ngày)</label>
+              <input id="edit-inp-free-det" type="number" min="0" placeholder="VD: 7" class="form-input h-8.5 px-2.5 py-1 text-xs w-full rounded-lg font-bold text-amber-900">
             </div>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-notes">Lưu Ý Của Điều Độ / Hàng Hóa</label>
-            <textarea id="edit-inp-notes" rows="2" placeholder="Ghi chú thêm về chuyến xe, lưu ý cẩu hạ, phí cty chịu..." class="form-textarea w-full text-xs p-2 rounded-lg border border-slate-300"></textarea>
+            <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-notes">Ghi Chú Vận Chuyển / Hàng Hóa</label>
+            <textarea id="edit-inp-notes" rows="2" placeholder="Ghi chú đóng hàng, dỡ hàng, cẩu hạ bãi, lưu ý của khách hàng hoặc phí công ty chịu..." class="form-textarea w-full text-xs p-2 rounded-lg border border-slate-300"></textarea>
           </div>
         </div>
 
@@ -240,7 +233,8 @@
               Đóng
             </button>
             <button
-              type="submit"
+              type="button"
+              onclick="submitEditTripForm()"
               id="btn-save-edit-trip"
               class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 font-heading transition-all"
             >

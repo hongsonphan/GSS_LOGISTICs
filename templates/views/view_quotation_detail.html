@@ -72,7 +72,7 @@
                             <span class="text-[10.5px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">Công thức cước động</span>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                             <div>
                                 <label class="block font-bold text-slate-700 text-[11px] mb-1">Giá Dầu Cơ Sở P0 (đ/lít)</label>
                                 <div class="relative">
@@ -92,6 +92,15 @@
                             </div>
 
                             <div>
+                                <label class="block font-bold text-slate-700 text-[11px] mb-1">Cách Điều Chỉnh Cước</label>
+                                <select id="fullpage-quote-fuel-type" onchange="updateFullpageFuelFormulaText()"
+                                    class="w-full h-8.5 px-2 py-1 bg-white border border-amber-300 rounded-lg font-bold text-amber-950 text-xs">
+                                    <option value="PERCENT">Theo tỷ lệ % cước</option>
+                                    <option value="AMOUNT">Theo số tiền</option>
+                                </select>
+                            </div>
+
+                            <div id="fullpage-quote-fuel-ratio-wrap">
                                 <label class="block font-bold text-slate-700 text-[11px] mb-1">Tỷ Lệ Điều Chỉnh Cước (%)</label>
                                 <div class="relative">
                                     <input type="number" step="0.1" id="fullpage-quote-fuel-ratio" value="3.5" oninput="updateFullpageFuelFormulaText()"
@@ -99,11 +108,65 @@
                                     <span class="absolute right-2.5 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">%</span>
                                 </div>
                             </div>
+
+                            <div id="fullpage-quote-fuel-amount-wrap" class="hidden">
+                                <label class="block font-bold text-slate-700 text-[11px] mb-1">Số Tiền Điều Chỉnh Mỗi Bước</label>
+                                <div class="relative">
+                                    <input type="text" inputmode="numeric" id="fullpage-quote-fuel-amount" value="0" oninput="updateFullpageFuelFormulaText()"
+                                        class="input-number-vn w-full h-8.5 px-3 py-1 bg-white border border-amber-300 rounded-lg font-mono font-bold text-amber-950 text-xs pr-16 text-right">
+                                    <span class="absolute right-2.5 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">đ/chuyến</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="p-2.5 bg-white/95 rounded-lg border border-amber-200 text-xs text-amber-950 leading-relaxed font-medium">
                             <span class="font-bold text-amber-950">Quy tắc điều chỉnh:</span> 
                             <span id="fullpage-quote-fuel-formula-display">Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi 1.000 đ/lít so với giá cơ sở (21.000 đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng 3.5%.</span>
+                            <div class="mt-1 text-amber-900"><span class="font-bold">Ví dụ:</span> <span id="fullpage-quote-fuel-example"></span></div>
+                        </div>
+                    </div>
+
+                    <!-- KHU VỰC PHỤ PHÍ HẠ XA (cùng cơ chế điều chỉnh với giá dầu, tính theo số km hạ xa) -->
+                    <div class="space-y-2.5">
+                        <label class="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                            <input type="checkbox" id="fullpage-quote-fardrop-enabled" onchange="updateFullpageFuelFormulaText()" class="w-4 h-4 text-teal-600 rounded">
+                            <span>Báo giá có phụ phí hạ xa (hạ vỏ xa hơn vị trí hạ ban đầu)</span>
+                        </label>
+                        <div id="fullpage-quote-fardrop-box" class="bg-sky-50/70 p-3.5 rounded-xl border border-sky-200/80 space-y-2.5 hidden">
+                            <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                                <div>
+                                    <label class="block font-bold text-slate-700 text-[11px] mb-1">Miễn Phí Đến (km)</label>
+                                    <input type="number" min="0" step="1" id="fullpage-quote-fardrop-free-km" value="0" oninput="updateFullpageFuelFormulaText()"
+                                        class="w-full h-8.5 px-3 py-1 bg-white border border-sky-300 rounded-lg font-mono font-bold text-sky-950 text-xs text-right">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 text-[11px] mb-1">Mỗi Bước Hạ Xa (km)</label>
+                                    <input type="number" min="1" step="1" id="fullpage-quote-fardrop-step-km" value="10" oninput="updateFullpageFuelFormulaText()"
+                                        class="w-full h-8.5 px-3 py-1 bg-white border border-sky-300 rounded-lg font-mono font-bold text-sky-950 text-xs text-right">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 text-[11px] mb-1">Cách Điều Chỉnh Cước</label>
+                                    <select id="fullpage-quote-fardrop-type" onchange="updateFullpageFuelFormulaText()"
+                                        class="w-full h-8.5 px-2 py-1 bg-white border border-sky-300 rounded-lg font-bold text-sky-950 text-xs">
+                                        <option value="PERCENT">Theo tỷ lệ % cước</option>
+                                        <option value="AMOUNT">Theo số tiền</option>
+                                    </select>
+                                </div>
+                                <div id="fullpage-quote-fardrop-ratio-wrap">
+                                    <label class="block font-bold text-slate-700 text-[11px] mb-1">Tỷ Lệ Mỗi Bước (%)</label>
+                                    <input type="number" min="0" step="0.1" id="fullpage-quote-fardrop-ratio" value="0" oninput="updateFullpageFuelFormulaText()"
+                                        class="w-full h-8.5 px-3 py-1 bg-white border border-sky-300 rounded-lg font-mono font-bold text-sky-950 text-xs text-right">
+                                </div>
+                                <div id="fullpage-quote-fardrop-amount-wrap" class="hidden">
+                                    <label class="block font-bold text-slate-700 text-[11px] mb-1">Số Tiền Mỗi Bước (đ/chuyến)</label>
+                                    <input type="text" inputmode="numeric" id="fullpage-quote-fardrop-amount" value="0" oninput="updateFullpageFuelFormulaText()"
+                                        class="input-number-vn w-full h-8.5 px-3 py-1 bg-white border border-sky-300 rounded-lg font-mono font-bold text-sky-950 text-xs text-right">
+                                </div>
+                            </div>
+                            <div class="p-2.5 bg-white/95 rounded-lg border border-sky-200 text-xs text-sky-950 leading-relaxed font-medium">
+                                <span class="font-bold">Quy tắc hạ xa:</span> <span id="fullpage-quote-fardrop-formula-display"></span>
+                                <div class="mt-1 text-sky-900"><span class="font-bold">Ví dụ:</span> <span id="fullpage-quote-fardrop-example"></span></div>
+                            </div>
                         </div>
                     </div>
                 </div>

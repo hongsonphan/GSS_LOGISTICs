@@ -773,3 +773,23 @@ class SettlementVoucher(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"[{self.code}] {self.party_name}: {self.amount:,} đ ({self.get_status_display()})"
+
+
+class SettlementVoucherLog(TimeStampedModel):
+    """Nhật ký từng thao tác trên phiếu quyết toán (lập, sửa, duyệt, mở lại, xóa) để truy vết số liệu."""
+    ACTION_CHOICES = [
+        ('CREATE', 'Lập phiếu'), ('UPDATE', 'Chỉnh sửa'), ('APPROVE', 'Duyệt'), ('REOPEN', 'Mở lại'), ('DELETE', 'Xóa'),
+    ]
+    voucher = models.ForeignKey(SettlementVoucher, on_delete=models.CASCADE, related_name='logs')
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    actor = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    actor_label = models.CharField(max_length=150, blank=True)
+    reason = models.CharField(max_length=255, blank=True)
+    changes = models.JSONField(default=list, help_text="Danh sách thay đổi: [{field, trip_code, old, new}]")
+    amount_after = models.DecimalField(max_digits=14, decimal_places=0, default=0)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+
+    def __str__(self):
+        return f"{self.voucher_id} {self.action} {self.created_at:%d/%m/%Y %H:%M}"

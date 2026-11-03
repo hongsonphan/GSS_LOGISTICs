@@ -2093,7 +2093,10 @@ async function openModal(id, extraParam = null) {
 function closeModal(id) { 
     closeAllSearchableComboboxes();
     const el = document.getElementById(id);
-    if (el) el.classList.add('hidden-view'); 
+    if (el) {
+        el.classList.add('hidden-view');
+        el.classList.add('hidden');
+    } 
     if (id === 'modal-ocr') resetOcr();
     if (id === 'modal-create-trip') clearBookingFileSelection();
     if (id === 'modal-booking') clearSaleBookingFileSelection();
@@ -5218,7 +5221,7 @@ window.addEventListener('popstate', (event) => {
     window.canAccess = canAccess;
 
     const VIEW_MODULE = {
-        'view-dieu-van': 'dispatch', 'view-trip-detail': 'dispatch', 'view-create-trip': 'dispatch', 'view-quyet-toan': 'accounting',
+        'view-dieu-van': 'dispatch', 'view-trip-detail': 'dispatch', 'view-create-trip': 'dispatch', 'view-quyet-toan': 'accounting', 'view-settlement-voucher': 'accounting',
         'view-kinh-doanh': 'sales', 'view-quotation-detail': 'sales', 'view-booking-detail': 'sales',
         'view-xe-bai': 'fleet', 'view-hai-quan': 'customs', 'view-customs-form': 'customs',
         'view-nhan-su': 'hr', 'view-employee-form': 'hr', 'view-contract-detail': 'hr', 'view-payroll-slip-detail': 'payroll',
@@ -8127,20 +8130,22 @@ function renderDispatchTable(trips) {
                 </div>
             </td>
             <td data-col-key="notes" class="px-3 py-2 border-r border-slate-200/70">
-                <div class="flex items-center">
-                    <span class="text-[11px] font-bold uppercase ${trip.cont_location_type === 'BÃI TVL' ? 'text-purple-700' : 'text-slate-600'}">
-                        <i class="ph ph-map-pin"></i> ${escapeHtml(trip.cont_location_type)}
-                    </span>
-                </div>
-                <p class="text-[11.5px] text-slate-500 font-medium italic line-clamp-1 max-w-[200px] mt-0.5" title="${escapeHtml(trip.cargo_notes || 'Không có lưu ý')}">
-                    ${trip.cargo_notes ? `<i class="ph ph-info text-amber-600"></i> ${escapeHtml(trip.cargo_notes)}` : '<span class="text-slate-400 font-normal">Không có lưu ý</span>'}
-                </p>
+                ${trip.cargo_notes ? `
+                    <div class="text-[11.5px] text-slate-700 font-medium line-clamp-2 max-w-[210px] flex items-start gap-1" title="${escapeHtml(trip.cargo_notes)}">
+                        <i class="ph ph-note-pencil text-amber-600 shrink-0 mt-0.5"></i>
+                        <span>${escapeHtml(trip.cargo_notes)}</span>
+                    </div>
+                ` : `
+                    <span class="text-slate-300 font-mono text-xs select-none">-</span>
+                `}
             </td>
             <td data-col-key="expense" class="px-3 py-2 border-r border-slate-200/70">
-                <div class="text-[13px] font-bold text-slate-800 flex items-center space-x-1.5 truncate" title="${escapeHtml(trip.pickup)} ➔ ${escapeHtml(trip.dropoff || 'Hạ bãi')}">
-                    <span class="text-teal-700">${escapeHtml(trip.pickup)}</span>
-                    <i class="ph ph-arrow-right text-slate-400 text-xs shrink-0"></i>
-                    <span class="text-indigo-700">${escapeHtml(trip.dropoff || 'Bãi rỗng')}</span>
+                <div class="text-[12px] font-bold text-slate-800 flex items-center space-x-1 truncate" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup)} ➔ 2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse)} ➔ 3. Nơi trả cont: ${escapeHtml(trip.dropoff || 'Trả cont')}">
+                    <span class="text-teal-700 truncate max-w-[90px]" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup)}">${escapeHtml(trip.pickup)}</span>
+                    <i class="ph ph-caret-right text-slate-300 text-xs shrink-0"></i>
+                    <span class="text-blue-900 truncate max-w-[90px]" title="2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse)}">${escapeHtml(trip.warehouse)}</span>
+                    <i class="ph ph-caret-right text-slate-300 text-xs shrink-0"></i>
+                    <span class="text-amber-800 truncate max-w-[90px]" title="3. Nơi trả cont: ${escapeHtml(trip.dropoff || 'Trả cont')}">${escapeHtml(trip.dropoff || 'Trả cont')}</span>
                 </div>
                 <div class="mt-0.5 flex items-center space-x-2 text-[11.5px]">
                     <span class="text-[11px] font-bold ${typeColor}">${displayShipmentType}</span>
@@ -8207,14 +8212,32 @@ function renderDispatchTable(trips) {
             <td data-col-key="dem_expiry" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono font-semibold text-slate-700 text-xs" style="display:none">
                 ${escapeHtml(trip.dem_expiry_date || '-')}
             </td>
-            <td data-col-key="pickup_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-teal-700 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.pickup || '-')}">
-                ${escapeHtml(trip.pickup || '-')}
+            <!-- 1. NƠI LẤY CONT -->
+            <td data-col-key="pickup_location" class="px-3 py-2 border-r border-slate-200/70 text-xs" style="display:none">
+                <div class="flex items-center gap-1.5 truncate max-w-[200px]" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup || '-')}">
+                    <span class="px-1.5 py-0.2 rounded font-bold font-heading uppercase text-[9.5px] shrink-0 ${isExport ? 'bg-teal-50 text-teal-700 border border-teal-200' : (isImport ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-purple-50 text-purple-700 border border-purple-200')}">
+                        ${isExport ? 'Lấy Vỏ' : (isImport ? 'Lấy Hàng' : 'Nhận Hàng')}
+                    </span>
+                    <span class="font-bold text-slate-800 truncate">${escapeHtml(trip.pickup || '-')}</span>
+                </div>
             </td>
-            <td data-col-key="warehouse_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-slate-800 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.warehouse || '-')}">
-                ${escapeHtml(trip.warehouse || '-')}
+            <!-- 2. KHO ĐÓNG/ TRẢ HÀNG -->
+            <td data-col-key="warehouse_location" class="px-3 py-2 border-r border-slate-200/70 text-xs" style="display:none">
+                <div class="flex items-center gap-1.5 truncate max-w-[200px]" title="2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse || '-')}">
+                    <span class="px-1.5 py-0.2 rounded font-bold font-heading uppercase text-[9.5px] shrink-0 ${isExport ? 'bg-blue-50 text-blue-700 border border-blue-200' : (isImport ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-purple-50 text-purple-700 border border-purple-200')}">
+                        ${isExport ? 'Đóng Hàng' : (isImport ? 'Dỡ Hàng' : 'Giao Nhận')}
+                    </span>
+                    <span class="font-bold text-slate-800 truncate">${escapeHtml(trip.warehouse || '-')}</span>
+                </div>
             </td>
-            <td data-col-key="dropoff_location" class="px-3 py-2 border-r border-slate-200/70 font-semibold text-indigo-700 text-xs truncate max-w-[180px]" style="display:none" title="${escapeHtml(trip.dropoff || '-')}">
-                ${escapeHtml(trip.dropoff || '-')}
+            <!-- 3. NƠI TRẢ CONT -->
+            <td data-col-key="dropoff_location" class="px-3 py-2 border-r border-slate-200/70 text-xs" style="display:none">
+                <div class="flex items-center gap-1.5 truncate max-w-[200px]" title="3. Nơi trả cont: ${escapeHtml(trip.dropoff || '-')}">
+                    <span class="px-1.5 py-0.2 rounded font-bold font-heading uppercase text-[9.5px] shrink-0 ${isExport ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : (isImport ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200')}">
+                        ${isExport ? 'Hạ Hàng' : (isImport ? 'Trả Rỗng' : 'Trả Cont')}
+                    </span>
+                    <span class="font-bold text-slate-800 truncate">${escapeHtml(trip.dropoff || '-')}</span>
+                </div>
             </td>
             <td data-col-key="commercial_invoice" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-mono text-xs font-bold text-teal-800" style="display:none">
                 ${escapeHtml(trip.commercial_invoice || '-')}
@@ -8273,16 +8296,16 @@ function renderDispatchTable(trips) {
                 ${escapeHtml(trip.startTime || '-')}
             </td>
             <!-- Cột Thao Tác Cố Định -->
-            <td data-col-key="actions" class="px-2.5 py-2 text-center whitespace-nowrap">
+            <td data-col-key="actions" class="px-2 py-2 text-center whitespace-nowrap">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <button type="button" onclick="event.stopPropagation(); viewTripDetail('${tripIdentifier}')" 
-                        class="px-2 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xem chi tiết phiếu điều độ ${trip.id}">
                         <i class="ph-bold ph-eye"></i>
                         <span>Xem</span>
                     </button>
                     <button type="button" onclick="event.stopPropagation(); deleteOrCancelTrip('${tripIdentifier}')" 
-                        class="px-2 py-1 bg-transparent hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xóa phiếu điều độ ${trip.id}">
                         <i class="ph-bold ph-trash"></i>
                         <span>Xóa</span>
@@ -8626,9 +8649,17 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             }
         }
 
-        // Vị trí cont
+        // Quy cách cont & Chế độ vận hành
         const contLocBadge = document.getElementById('detail-cont-location-badge');
-        if (contLocBadge) contLocBadge.innerText = trip.cont_location_type || 'Nhà máy';
+        if (contLocBadge) {
+            if (trip.is_split_trip) {
+                contLocBadge.innerText = 'Cắt Kéo / Drop & Hook';
+                contLocBadge.className = 'text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-800';
+            } else {
+                contLocBadge.innerText = trip.container_type || 'Cont Tiêu Chuẩn';
+                contLocBadge.className = 'text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded bg-teal-100 text-teal-800';
+            }
+        }
 
         setText('detail-booking', trip.booking !== '-' ? `B/L: ${trip.booking}` : 'B/L: Chưa có');
         setText('detail-seal', trip.seal !== '-' ? `Seal: ${trip.seal}` : 'Seal: Chưa cập nhật');
@@ -8695,10 +8726,46 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const notesEl = document.getElementById('detail-cargo-notes');
         if (notesEl) notesEl.innerText = trip.cargo_notes || 'Không có lưu ý đặc biệt';
 
-        // Hành trình 3 điểm
-        setText('detail-pickup', trip.pickup);
-        setText('detail-warehouse', trip.warehouse);
+        // Hành trình 3 điểm chuẩn hóa: Nơi Lấy Cont | Kho Đóng/ Trả Hàng | Nơi Trả Cont
+        setText('detail-pickup', trip.pickup || '-');
+        setText('detail-warehouse', trip.warehouse || '-');
         setText('detail-dropoff', trip.dropoff || 'Hạ bãi rỗng');
+
+        // Phân loại bản chất luồng vận chuyển theo Loại Hình Hàng Hóa
+        const rawType = ((trip.type_raw || trip.type || '') + '').toUpperCase();
+        const isImport = rawType.includes('IMPORT') || rawType.includes('NHẬP') || rawType.includes('NHAP');
+        const isExport = rawType.includes('EXPORT') || rawType.includes('XUẤT') || rawType.includes('XUAT');
+
+        const natureBadge = document.getElementById('detail-route-nature-badge');
+        const pickupSub = document.getElementById('detail-pickup-sub');
+        const warehouseSub = document.getElementById('detail-warehouse-sub');
+        const dropoffSub = document.getElementById('detail-dropoff-sub');
+
+        if (isExport) {
+            if (natureBadge) {
+                natureBadge.textContent = 'Hàng Xuất (Lấy Rỗng ➔ Đóng Hàng ➔ Hạ Xuất)';
+                natureBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-heading bg-emerald-100 text-emerald-800 border border-emerald-300';
+            }
+            if (pickupSub) { pickupSub.textContent = 'Lấy Vỏ Rỗng'; pickupSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 font-heading uppercase'; }
+            if (warehouseSub) { warehouseSub.textContent = 'Đóng Hàng'; warehouseSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 font-heading uppercase'; }
+            if (dropoffSub) { dropoffSub.textContent = 'Hạ Cont Hàng (Cảng Xuất)'; dropoffSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-heading uppercase'; }
+        } else if (isImport) {
+            if (natureBadge) {
+                natureBadge.textContent = 'Hàng Nhập (Lấy Cont Hàng ➔ Rút Hàng ➔ Trả Rỗng)';
+                natureBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-heading bg-blue-100 text-blue-800 border border-blue-300';
+            }
+            if (pickupSub) { pickupSub.textContent = 'Cảng Lấy Cont Hàng'; pickupSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 font-heading uppercase'; }
+            if (warehouseSub) { warehouseSub.textContent = 'Dỡ / Rút Hàng Khách'; warehouseSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 font-heading uppercase'; }
+            if (dropoffSub) { dropoffSub.textContent = 'Depot Hạ Trả Vỏ Rỗng'; dropoffSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 font-heading uppercase'; }
+        } else {
+            if (natureBadge) {
+                natureBadge.textContent = 'Nội Địa (Nhận Hàng ➔ Giao Hàng ➔ Trả Cont)';
+                natureBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-heading bg-purple-100 text-purple-800 border border-purple-300';
+            }
+            if (pickupSub) { pickupSub.textContent = 'Điểm Nhận Hàng'; pickupSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 font-heading uppercase'; }
+            if (warehouseSub) { warehouseSub.textContent = 'Kho Giao / Nhận'; warehouseSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200 font-heading uppercase'; }
+            if (dropoffSub) { dropoffSub.textContent = 'Bãi Hạ / Điểm Trả'; dropoffSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-heading uppercase'; }
+        }
 
         // Link Zalo và Màn hình Tài xế Mobile
         const driverToken = trip.driver_hashid || trip.hashid || trip.trip_code;
@@ -9796,7 +9863,12 @@ window.submitReassignDriver = submitReassignDriver;
 // PHÂN HỆ HIỆU CHỈNH LỆNH ĐIỀU ĐỘNG & HỦY CHUYẾN XE (TRIP CRUD)
 // =========================================================================
 async function openModalEditTrip(tripCode = null) {
-    const code = tripCode || (window.currentTripDetail ? window.currentTripDetail.id : null);
+    const detailId = document.getElementById('detail-id')?.innerText?.trim();
+    const modalTripCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
+    const code = tripCode 
+        || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null)
+        || (detailId && detailId !== 'TVL-XXX' ? detailId : null)
+        || (modalTripCode && modalTripCode !== 'TVL-XXX' ? modalTripCode : null);
     if (!code) {
         showToast('warning', 'Vui lòng chọn chuyến xe cần hiệu chỉnh!');
         return;
@@ -10028,9 +10100,32 @@ window.onEditDropoffDriverChange = onEditDropoffDriverChange;
 
 
 async function submitEditTripForm() {
+    const modalCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
     const trip = window.currentTripDetail;
-    if (!trip) {
-        showToast('danger', 'Không tìm thấy thông tin chuyến xe để cập nhật');
+    const tripCode = (trip && (trip.id || trip.trip_code)) || (modalCode && modalCode !== 'TVL-XXX' ? modalCode : null);
+
+    if (!tripCode) {
+        showToast('warning', 'Không tìm thấy thông tin chuyến xe để cập nhật');
+        return;
+    }
+
+    // Kiểm tra tính hợp lệ của các trường bắt buộc với thông báo trực quan
+    const custId = document.getElementById('edit-inp-customer')?.value;
+    if (!custId) {
+        showToast('warning', 'Vui lòng chọn Khách Hàng!');
+        document.getElementById('edit-inp-customer')?.focus();
+        return;
+    }
+    const pickup = document.getElementById('edit-inp-pickup')?.value?.trim();
+    if (!pickup) {
+        showToast('warning', 'Vui lòng nhập 1. Nơi Lấy Cont!');
+        document.getElementById('edit-inp-pickup')?.focus();
+        return;
+    }
+    const warehouse = document.getElementById('edit-inp-warehouse')?.value?.trim();
+    if (!warehouse) {
+        showToast('warning', 'Vui lòng nhập 2. Kho Đóng/ Trả Hàng!');
+        document.getElementById('edit-inp-warehouse')?.focus();
         return;
     }
 
@@ -10066,15 +10161,20 @@ async function submitEditTripForm() {
     };
 
     try {
-        const res = await fetchWithAuth(`/api/trips/${trip.id}/`, {
+        const res = await fetchWithAuth(`/api/trips/${encodeURIComponent(tripCode)}/`, {
             method: 'PATCH',
             body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (res.ok) {
             closeModal('modal-edit-trip');
-            showToast('success', `Đã cập nhật lệnh điều động ${trip.id} thành công!`, 'Lưu Thành Công');
-            await viewTripDetail(trip.id);
+            showToast('success', `Đã cập nhật lệnh điều động ${tripCode} thành công!`, 'Lưu Thành Công');
+            
+            // Nếu đang mở trang Chi tiết chuyến xe thì tải lại dữ liệu mới nhất
+            const detailView = document.getElementById('view-trip-detail');
+            if (detailView && !detailView.classList.contains('hidden-view')) {
+                if (typeof viewTripDetail === 'function') await viewTripDetail(tripCode);
+            }
             if (typeof loadTripsData === 'function') loadTripsData();
         } else {
             showToast('danger', data.error || data.message || 'Lỗi khi cập nhật chuyến xe');
@@ -10092,7 +10192,12 @@ async function submitEditTripForm() {
 window.submitEditTripForm = submitEditTripForm;
 
 async function deleteOrCancelTrip(tripCode = null) {
-    const code = tripCode || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null);
+    const detailId = document.getElementById('detail-id')?.innerText?.trim();
+    const modalTripCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
+    const code = tripCode 
+        || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null)
+        || (detailId && detailId !== 'TVL-XXX' ? detailId : null)
+        || (modalTripCode && modalTripCode !== 'TVL-XXX' ? modalTripCode : null);
     if (!code) {
         showToast('warning', 'Không xác định được mã phiếu điều độ cần xóa!');
         return;
@@ -11496,6 +11601,11 @@ function handleCargoTypeChange() {
     const contCond = document.getElementById('select-container-condition');
     const damageDesc = document.getElementById('inp-damage-desc');
 
+    const hintEl = document.getElementById('trip-create-route-hint') || document.getElementById('trip-modal-route-hint');
+    const badgePickup = document.getElementById('badge-create-pickup');
+    const badgeWh = document.getElementById('badge-create-warehouse');
+    const badgeDrop = document.getElementById('badge-create-dropoff');
+
     if (type === 'Xuất') {
         // Hàng Xuất: CẦN Cắt CY/SI (Closing time tàu xuất). KHÔNG CẦN Free DEM/DET & EIR bốc dỡ
         if (colCutoff) {
@@ -11510,6 +11620,10 @@ function handleCargoTypeChange() {
             if (contCond) contCond.disabled = true;
             if (damageDesc) damageDesc.disabled = true;
         }
+        if (hintEl) { hintEl.textContent = 'Hàng Xuất: Lấy Vỏ Rỗng ➔ Đóng Hàng ➔ Hạ Cont Hàng'; hintEl.className = 'text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200 font-heading'; }
+        if (badgePickup) { badgePickup.textContent = 'Lấy Vỏ'; badgePickup.className = 'text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 uppercase'; }
+        if (badgeWh) { badgeWh.textContent = 'Kho Đóng'; badgeWh.className = 'text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 uppercase'; }
+        if (badgeDrop) { badgeDrop.textContent = 'Hạ Cont Xuất'; badgeDrop.className = 'text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 uppercase'; }
     } else if (type === 'Nhập') {
         // Hàng Nhập: CẦN Hạn Free DEM/DET & Giám định vỏ EIR. KHÔNG CÓ Closing time tàu xuất
         if (colCutoff) {
@@ -11524,6 +11638,10 @@ function handleCargoTypeChange() {
             if (contCond) contCond.disabled = false;
             if (damageDesc) damageDesc.disabled = false;
         }
+        if (hintEl) { hintEl.textContent = 'Hàng Nhập: Cảng Lấy Cont Hàng ➔ Dỡ / Rút Hàng ➔ Depot Trả Vỏ Rỗng'; hintEl.className = 'text-[11px] font-bold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 font-heading'; }
+        if (badgePickup) { badgePickup.textContent = 'Lấy Cont Hàng'; badgePickup.className = 'text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 uppercase'; }
+        if (badgeWh) { badgeWh.textContent = 'Kho Dỡ / Trả'; badgeWh.className = 'text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 uppercase'; }
+        if (badgeDrop) { badgeDrop.textContent = 'Hạ Trả Vỏ'; badgeDrop.className = 'text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200 uppercase'; }
     } else if (type === 'Nội địa') {
         // Hàng Nội Địa: KHÔNG CẦN CẢ HAI MỤC TRÊN (Không có tàu quốc tế, không có Free DEM/DET ngoại tệ)
         if (colCutoff) {
@@ -11538,6 +11656,10 @@ function handleCargoTypeChange() {
             if (contCond) contCond.disabled = true;
             if (damageDesc) damageDesc.disabled = true;
         }
+        if (hintEl) { hintEl.textContent = 'Nội Địa: Điểm Nhận Hàng ➔ Kho Giao / Nhận ➔ Bãi Hạ / Trả Cont'; hintEl.className = 'text-[11px] font-bold text-purple-800 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200 font-heading'; }
+        if (badgePickup) { badgePickup.textContent = 'Điểm Nhận'; badgePickup.className = 'text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 uppercase'; }
+        if (badgeWh) { badgeWh.textContent = 'Kho Giao/Nhận'; badgeWh.className = 'text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200 uppercase'; }
+        if (badgeDrop) { badgeDrop.textContent = 'Bãi Hạ/Trả'; badgeDrop.className = 'text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 uppercase'; }
     }
 }
 window.handleCargoTypeChange = handleCargoTypeChange;
@@ -13568,9 +13690,9 @@ function renderBookingsTable(bookings) {
             </td>
             <td data-col-key="route" class="p-3.5">
                 <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
-                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
-                    <p class="truncate text-slate-900 font-bold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
-                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
+                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy cont:</strong> ${cleanLoc(b.pickup)}</p>
+                    <p class="truncate text-slate-900 font-bold"><strong class="text-blue-900 font-bold">2. Kho đóng/trả:</strong> ${cleanLoc(b.delivery)}</p>
+                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-amber-800 font-bold">3. Trả cont:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
                 </div>
             </td>
             <td data-col-key="closing_time" class="p-3.5 font-mono">
@@ -14192,9 +14314,9 @@ function renderQuotationsTable(quotations) {
             </td>
             <td data-col-key="route" class="p-3.5">
                 <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
-                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
-                    <p class="truncate text-slate-900 font-bold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
-                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
+                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy cont:</strong> ${cleanLoc(b.pickup)}</p>
+                    <p class="truncate text-slate-900 font-bold"><strong class="text-blue-900 font-bold">2. Kho đóng/trả:</strong> ${cleanLoc(b.delivery)}</p>
+                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-amber-800 font-bold">3. Trả cont:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
                 </div>
             </td>
             <td data-col-key="closing_time" class="p-3.5 font-mono">
@@ -14711,15 +14833,91 @@ function onFullpageQuotationPricingMethodChange(method) {
     }
 }
 
-function updateFullpageFuelFormulaText() {
-    const basePrice = parseNumberVN(document.getElementById('fullpage-quote-base-fuel-price')?.value) || 21000;
-    const step = parseNumberVN(document.getElementById('fullpage-quote-fuel-step')?.value) || 1000;
-    const ratio = parseFloat(document.getElementById('fullpage-quote-fuel-ratio')?.value) || 3.5;
-    const formulaEl = document.getElementById('fullpage-quote-fuel-formula-display');
-    if (formulaEl) {
-        formulaEl.innerText = `Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi ${new Intl.NumberFormat('vi-VN').format(step)} đ/lít so với giá cơ sở (${new Intl.NumberFormat('vi-VN').format(basePrice)} đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng ${ratio}%.`;
+// Diễn giải quy tắc + ví dụ cho điều chỉnh giá dầu và phụ phí hạ xa (dùng chung cho form và bản in báo giá)
+function buildQuoteSurchargeTexts(q, basePrice) {
+    const vn = (n) => new Intl.NumberFormat('vi-VN').format(Math.round(Number(n) || 0));
+    const B = Number(basePrice) > 0 ? Number(basePrice) : 3500000;
+    const out = { fuelRule: '', fuelExample: '', farRule: '', farExample: '' };
+
+    const p0 = Number(q.base_fuel_price) || 21000;
+    const step = Number(q.fuel_step_vnd) || 1000;
+    const fuelAmount = q.fuel_adjust_type === 'AMOUNT';
+    const fuelRatio = Number(q.fuel_ratio_percent) || 0;
+    const fuelMoney = Number(q.fuel_amount_per_step) || 0;
+    out.fuelRule = `Mỗi khi giá dầu DO 0.05S Petrolimex tăng/giảm ${vn(step)} đ/lít so với giá cơ sở (${vn(p0)} đ/lít), đơn giá cước vận chuyển sẽ tăng/giảm tương ứng ${fuelAmount ? `${vn(fuelMoney)} đ/chuyến` : `${fuelRatio}% cước`}.`;
+    const fuelSteps = 2;
+    const fuelDelta = fuelAmount ? fuelMoney * fuelSteps : Math.round(B * fuelRatio / 100 * fuelSteps);
+    out.fuelExample = `giá dầu tăng lên ${vn(p0 + step * fuelSteps)} đ/lít (+${vn(step * fuelSteps)} đ/lít = ${fuelSteps} bước) → cước ${vn(B)} đ + ${fuelAmount ? `${fuelSteps} × ${vn(fuelMoney)} đ` : `${fuelSteps} × ${fuelRatio}% × ${vn(B)} đ`} = ${vn(B + fuelDelta)} đ/chuyến. Giá dầu giảm thì trừ tương ứng.`;
+
+    if (q.far_drop_enabled) {
+        const free = parseInt(q.far_drop_free_km) || 0;
+        const stepKm = parseInt(q.far_drop_step_km) || 10;
+        const farAmount = q.far_drop_adjust_type === 'AMOUNT';
+        const farRatio = Number(q.far_drop_ratio_percent) || 0;
+        const farMoney = Number(q.far_drop_amount_per_step) || 0;
+        out.farRule = `Nếu hạ vỏ cách vị trí hạ ban đầu${free > 0 ? ` quá ${free} km` : ''}, cứ mỗi ${stepKm} km (hoặc phần lẻ) hạ xa, cước vận chuyển tăng thêm ${farAmount ? `${vn(farMoney)} đ/chuyến` : `${farRatio}% cước`}.`;
+        const km = free + stepKm * 2;
+        const farSteps = Math.ceil((km - free) / stepKm);
+        const farDelta = farAmount ? farMoney * farSteps : Math.round(B * farRatio / 100 * farSteps);
+        out.farExample = `hạ xa ${km} km${free > 0 ? ` (miễn ${free} km đầu)` : ''} = ${farSteps} bước → cước ${vn(B)} đ + ${farAmount ? `${farSteps} × ${vn(farMoney)} đ` : `${farSteps} × ${farRatio}% × ${vn(B)} đ`} = ${vn(B + farDelta)} đ/chuyến.`;
     }
+    return out;
 }
+
+// Đọc các thông số mới (kiểu điều chỉnh giá dầu theo %/số tiền và phụ phí hạ xa) từ form báo giá toàn trang
+function readFullpageSurchargeFields() {
+    const val = (id) => document.getElementById(id)?.value;
+    return {
+        fuel_adjust_type: val('fullpage-quote-fuel-type') || 'PERCENT',
+        fuel_amount_per_step: parseNumberVN(val('fullpage-quote-fuel-amount')),
+        far_drop_enabled: !!document.getElementById('fullpage-quote-fardrop-enabled')?.checked,
+        far_drop_free_km: parseInt(val('fullpage-quote-fardrop-free-km')) || 0,
+        far_drop_step_km: parseInt(val('fullpage-quote-fardrop-step-km')) || 10,
+        far_drop_adjust_type: val('fullpage-quote-fardrop-type') || 'PERCENT',
+        far_drop_ratio_percent: parseFloat(val('fullpage-quote-fardrop-ratio')) || 0,
+        far_drop_amount_per_step: parseNumberVN(val('fullpage-quote-fardrop-amount')),
+    };
+}
+
+function fillFullpageSurchargeFields(q = {}) {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    set('fullpage-quote-fuel-type', q.fuel_adjust_type || 'PERCENT');
+    set('fullpage-quote-fuel-amount', formatNumberVN(q.fuel_amount_per_step || 0) || '0');
+    const cb = document.getElementById('fullpage-quote-fardrop-enabled');
+    if (cb) cb.checked = !!q.far_drop_enabled;
+    set('fullpage-quote-fardrop-free-km', q.far_drop_free_km || 0);
+    set('fullpage-quote-fardrop-step-km', q.far_drop_step_km || 10);
+    set('fullpage-quote-fardrop-type', q.far_drop_adjust_type || 'PERCENT');
+    set('fullpage-quote-fardrop-ratio', q.far_drop_ratio_percent || 0);
+    set('fullpage-quote-fardrop-amount', formatNumberVN(q.far_drop_amount_per_step || 0) || '0');
+    updateFullpageFuelFormulaText();
+}
+
+function updateFullpageFuelFormulaText() {
+    const q = Object.assign({
+        base_fuel_price: parseNumberVN(document.getElementById('fullpage-quote-base-fuel-price')?.value) || 21000,
+        fuel_step_vnd: parseNumberVN(document.getElementById('fullpage-quote-fuel-step')?.value) || 1000,
+        fuel_ratio_percent: parseFloat(document.getElementById('fullpage-quote-fuel-ratio')?.value) || 0,
+    }, readFullpageSurchargeFields());
+    const firstPrice = parseNumberVN(document.querySelector('#fullpage-quote-routes-tbody .fullpage-item-price')?.value);
+    const texts = buildQuoteSurchargeTexts(q, firstPrice);
+    const show = (id, on) => document.getElementById(id)?.classList.toggle('hidden', !on);
+    show('fullpage-quote-fuel-ratio-wrap', q.fuel_adjust_type !== 'AMOUNT');
+    show('fullpage-quote-fuel-amount-wrap', q.fuel_adjust_type === 'AMOUNT');
+    show('fullpage-quote-fardrop-box', q.far_drop_enabled);
+    show('fullpage-quote-fardrop-ratio-wrap', q.far_drop_adjust_type !== 'AMOUNT');
+    show('fullpage-quote-fardrop-amount-wrap', q.far_drop_adjust_type === 'AMOUNT');
+    const setText = (id, t) => { const el = document.getElementById(id); if (el) el.innerText = t; };
+    setText('fullpage-quote-fuel-formula-display', texts.fuelRule);
+    setText('fullpage-quote-fuel-example', texts.fuelExample);
+    setText('fullpage-quote-fardrop-formula-display', texts.farRule);
+    setText('fullpage-quote-fardrop-example', texts.farExample);
+}
+
+// Đổi đơn giá tuyến đầu tiên thì cập nhật lại ví dụ
+document.addEventListener('input', (e) => {
+    if (e.target && e.target.classList && e.target.classList.contains('fullpage-item-price')) updateFullpageFuelFormulaText();
+});
 
 function setFullpageQuickQuoteNote(type) {
     const noteEl = document.getElementById('fullpage-quote-notes');
@@ -14944,6 +15142,7 @@ async function openCreateQuotationPage(updateHistory = true) {
     if (stepInput) stepInput.value = formatNumberVN(1000);
     const ratioInput = document.getElementById('fullpage-quote-fuel-ratio');
     if (ratioInput) ratioInput.value = 3.5;
+    fillFullpageSurchargeFields({});
 
     onFullpageQuotationPricingMethodChange('MULTI_ROUTE');
 
@@ -15050,6 +15249,7 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
         if (stepInput) stepInput.value = formatNumberVN(q.fuel_step_vnd || 1000);
         const ratioInput = document.getElementById('fullpage-quote-fuel-ratio');
         if (ratioInput) ratioInput.value = q.fuel_ratio_percent || 3.5;
+        fillFullpageSurchargeFields(q);
 
         onFullpageQuotationPricingMethodChange(q.pricing_method || 'MULTI_ROUTE');
 
@@ -15219,6 +15419,7 @@ function printQuotationFromFullPage() {
             base_fuel_price: parseNumberVN(document.getElementById('fullpage-quote-base-fuel-price')?.value) || 21000,
             fuel_step_vnd: parseNumberVN(document.getElementById('fullpage-quote-fuel-step')?.value) || 1000,
             fuel_ratio_percent: parseFloat(document.getElementById('fullpage-quote-fuel-ratio')?.value) || 3.5,
+            ...readFullpageSurchargeFields(),
             cargo_type: document.getElementById('fullpage-quote-cargo-type')?.value || 'Container 40HC / Hàng tổng hợp',
             contact_person: document.getElementById('fullpage-quote-contact-person')?.value?.trim() || '',
             contact_phone: document.getElementById('fullpage-quote-contact-phone')?.value?.trim() || '',
@@ -15339,6 +15540,7 @@ async function saveFullpageQuotation(e) {
             base_fuel_price: baseFuelPrice,
             fuel_step_vnd: fuelStep,
             fuel_ratio_percent: fuelRatio,
+            ...readFullpageSurchargeFields(),
             status: statusVal,
             template_type: templateType,
             cargo_type: cargoType,
@@ -15524,7 +15726,11 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     const p0Val = Number(q.base_fuel_price || 21000);
     const stepVal = Number(q.fuel_step_vnd || 1000);
     const ratioVal = Number(q.fuel_ratio_percent || 3.5);
-    const formulaText = q.fuel_surcharge_formula || `Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi ${new Intl.NumberFormat('vi-VN').format(stepVal)} đ/lít so với giá cơ sở (${new Intl.NumberFormat('vi-VN').format(p0Val)} đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng ${ratioVal}%.`;
+    // Diễn giải & ví dụ dựng theo thông số hiện tại (có hỗ trợ điều chỉnh theo số tiền và phụ phí hạ xa)
+    const surcharge = buildQuoteSurchargeTexts(q, Number(items[0] && items[0].unit_price) || 0);
+    const isFarDrop = Boolean(q.far_drop_enabled);
+    const fuelByAmount = q.fuel_adjust_type === 'AMOUNT';
+    const formulaText = surcharge.fuelRule;
 
     // 1. Điền dữ liệu MẪU 1: STANDARD (TVL Tiêu Chuẩn)
     const p1DatePlace = document.getElementById('print-q1-date-place');
@@ -15585,13 +15791,28 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
             const stepEl = document.getElementById('print-q1-fuel-step');
             if (stepEl) stepEl.innerText = `±${new Intl.NumberFormat('vi-VN').format(stepVal)} đ/lít`;
             const ratioEl = document.getElementById('print-q1-fuel-ratio');
-            if (ratioEl) ratioEl.innerText = `±${ratioVal}% cước`;
+            const ratioLabel = document.getElementById('print-q1-fuel-ratio-label');
+            if (ratioLabel) ratioLabel.innerText = fuelByAmount ? 'Số tiền điều chỉnh:' : 'Tỷ lệ điều chỉnh:';
+            if (ratioEl) ratioEl.innerText = fuelByAmount ? `±${new Intl.NumberFormat('vi-VN').format(Number(q.fuel_amount_per_step) || 0)} đ/chuyến` : `±${ratioVal}% cước`;
             const formEl = document.getElementById('print-q1-fuel-formula');
             if (formEl) formEl.innerText = formulaText;
+            const exEl = document.getElementById('print-q1-fuel-example');
+            if (exEl) exEl.innerText = surcharge.fuelExample;
         } else {
             p1FuelBox.classList.add('hidden');
         }
     }
+
+    // Phụ phí hạ xa (cả 3 mẫu in)
+    [['print-q1-fardrop', true], ['print-q2-fardrop', false], ['print-q3-fardrop', false]].forEach(([prefix, ownExample]) => {
+        const box = document.getElementById(`${prefix}-box`);
+        if (!box) return;
+        box.classList.toggle('hidden', !isFarDrop);
+        const descEl = document.getElementById(`${prefix}-desc`);
+        if (descEl) descEl.innerText = ownExample ? surcharge.farRule : `${surcharge.farRule} Ví dụ: ${surcharge.farExample}`;
+        const exEl = document.getElementById(`${prefix}-example`);
+        if (exEl) exEl.innerText = surcharge.farExample;
+    });
 
     const p1Notes = document.getElementById('print-q1-notes-content');
     if (p1Notes) p1Notes.innerText = notesText;
@@ -15644,7 +15865,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
         if (isFuelAdjusted) {
             p2FuelBox.classList.remove('hidden');
             const descEl = document.getElementById('print-q2-fuel-desc');
-            if (descEl) descEl.innerText = formulaText;
+            if (descEl) descEl.innerText = `${formulaText} Ví dụ: ${surcharge.fuelExample}`;
         } else {
             p2FuelBox.classList.add('hidden');
         }
@@ -15704,7 +15925,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
         if (isFuelAdjusted) {
             p3FuelBox.classList.remove('hidden');
             const descEl = document.getElementById('print-q3-fuel-desc');
-            if (descEl) descEl.innerText = formulaText;
+            if (descEl) descEl.innerText = `${formulaText} Ví dụ: ${surcharge.fuelExample}`;
         } else {
             p3FuelBox.classList.add('hidden');
         }
@@ -24623,6 +24844,9 @@ function exportSettlementToExcel() {
 const SETTLE_VOUCHER_API = '/api/accounting/settlement-vouchers/';
 const SETTLE_PARTY_LABEL = { DRIVER: 'Tài Xế', PARTNER: 'Đối Tác 3PL', CUSTOMER: 'Khách Hàng' };
 let currentSettleVoucher = null;
+let settleVoucherOrigin = '';
+// Nhiều đối tượng trong một lần chọn: mỗi đối tượng một phiếu, chuyển qua lại ngay trên trang
+let settleBatch = [];
 
 function settleVoucherTotal(party, line, adj) {
     if (party === 'DRIVER') return (line.advance || 0) - (line.spent || 0) - adj;
@@ -24644,13 +24868,22 @@ async function openSettlementStatement(partyType, ids, extra = {}) {
         if (typeof ids[0] === 'string') body.trip_codes = ids; else body.trip_ids = ids;
         const res = await fetchWithAuth(SETTLE_VOUCHER_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const data = await res.json();
+        if (!res.ok && data.existing_vouchers && data.existing_vouchers.length) {
+            // Chuyến đã nằm trong phiếu khác (thường là phiếu nháp lập trước đó): đề nghị mở phiếu đó
+            const ex = data.existing_vouchers[0];
+            const open = await showConfirmModal({
+                title: 'Chuyến đã có phiếu quyết toán',
+                message: `${data.error}. Mở phiếu ${ex.code} để xem, sửa hoặc xóa?`,
+                confirmText: 'Mở phiếu', cancelText: 'Đóng', type: 'warning', icon: 'ph-bold ph-files text-2xl'
+            });
+            if (open) openSettlementVoucher(ex.id);
+            return;
+        }
         if (!res.ok || !data.success) throw new Error(data.error || data.detail || 'Không thể lập bảng kê quyết toán');
         const made = data.vouchers || [data.voucher];
+        settleBatch = made.length > 1 ? made.map(v => ({ id: v.id, code: v.code, name: v.party_name, status: v.status })) : [];
         if (made.length > 1) {
-            // Nhiều đối tượng trong một lần chọn: mỗi đối tượng một bảng kê riêng, mở danh sách để rà soát từng phiếu
             showToast('success', `Đã lập ${made.length} bảng kê (mỗi ${SETTLE_PARTY_LABEL[partyType].toLowerCase()} một phiếu): ${made.map(v => v.code).join(', ')}`, 'Tách phiếu theo đối tượng');
-            if (typeof switchAccountingSubTab === 'function') switchAccountingSubTab('acct-vouchers');
-            return;
         }
         showSettlementVoucherModal(data.voucher);
     } catch (err) {
@@ -24659,6 +24892,7 @@ async function openSettlementStatement(partyType, ids, extra = {}) {
 }
 
 async function openSettlementVoucher(id) {
+    if (!settleBatch.some(b => b.id === id)) settleBatch = [];
     try {
         const res = await fetchWithAuth(`${SETTLE_VOUCHER_API}${id}/`);
         const data = await res.json();
@@ -24670,126 +24904,240 @@ async function openSettlementVoucher(id) {
     }
 }
 
-function settleLineRow(party, l, i, editable) {
-    const lines = (l.expense_lines || []).map(e =>
-        `<div class="flex justify-between gap-3"><span>${escapeHtml(e.name)}${e.leg ? ` <span class="text-slate-400">(${escapeHtml(e.leg)})</span>` : ''}</span><span class="tabular-nums font-mono">${formatMoneyVND(e.amount)}</span></div>`
-    ).join('') || '<span class="text-slate-400 italic">Không có</span>';
-    const adjInput = `<input type="number" step="1000" value="${l.adjustment || 0}" ${editable ? '' : 'disabled'} data-adjust-trip="${l.trip_id}"
-        oninput="recalcSettleVoucher()" class="w-28 px-1.5 py-1 text-right font-mono font-bold border border-amber-300 rounded bg-amber-50 disabled:bg-slate-50 disabled:border-slate-200"
-        title="Số phát sinh do Kế toán/Hành chính nhập (+ cộng thêm, - trừ bớt)">`;
-    const common = `<td class="px-2 py-2 text-center">${i + 1}</td>
-        <td class="px-2 py-2 font-bold">${escapeHtml(l.trip_code)}<div class="text-[10px] text-slate-500 font-normal">${escapeHtml(l.date)}</div></td>`;
-    const cont = `<td class="px-2 py-2">${escapeHtml(l.container_number)}<div class="text-[10px] text-slate-500">${escapeHtml(l.container_type)}</div></td>
-        <td class="px-2 py-2">${escapeHtml(l.route)}</td>`;
-    const total = `<td class="px-2 py-2 text-right tabular-nums font-mono font-bold" data-line-total="${l.trip_id}"></td>`;
+// Bảng kê quyết toán dạng bảng tính (Excel): mỗi chuyến chiếm một khối dòng, các khoản tạm ứng / chi phí xếp từng dòng
+const SETTLE_TD = 'border border-slate-300 px-2 py-1 align-top';
+const SETTLE_TH = 'border border-slate-300 px-2 py-1.5 bg-slate-100 text-slate-800 font-bold text-center whitespace-nowrap';
 
+function settleHeadCols(party, anySplit) {
+    const th = (t, o = {}) => `<th class="${SETTLE_TH}" ${o.cs ? `colspan="${o.cs}"` : ''} ${o.rs ? `rowspan="${o.rs}"` : ''}>${t}</th>`;
+    const lead = th('STT', { rs: 2 }) + th('Mã chuyến', { rs: 2 }) + th('Số cont / Loại', { rs: 2 }) + th('Tuyến', { rs: 2 });
     if (party === 'DRIVER') {
-        const split = l.is_split_trip ? `
-            <div class="p-1.5 rounded-lg border-2 border-rose-400 bg-rose-50">
-                <div class="text-[10px] font-black text-rose-700 mb-1">CẮT KÉO - KIỂM TRA KỸ TỶ LỆ THÙ LAO</div>
-                <div class="flex items-center gap-1 text-[11px] font-bold text-rose-800">
-                    <span class="truncate">${escapeHtml(l.driver_name)}</span>
-                    <input type="number" min="0" max="100" step="1" value="${l.split_ratio}" ${editable ? '' : 'disabled'} data-split-trip="${l.trip_id}"
-                        oninput="onSettleSplitInput(this)" class="w-14 px-1 py-0.5 text-center font-black text-rose-800 border border-rose-400 rounded bg-white">%
-                    <span class="text-slate-400">/</span>
-                    <span class="truncate">${escapeHtml(l.dropoff_driver_name || 'Chưa gán tài 2')}</span>
-                    <span class="w-12 text-center font-black" id="settle-split2-${l.trip_id}">${100 - l.split_ratio}%</span>
-                </div>
-            </div>` : '<span class="text-slate-400">-</span>';
-        return `<tr class="border-b border-slate-100 align-top">${common}
-            <td class="px-2 py-2">${escapeHtml(l.driver_name)}<div class="text-[10px] text-slate-500">${escapeHtml(l.license_plate)}</div></td>${cont}
-            <td class="px-2 py-2 text-[11px] min-w-[200px]">${lines}</td>
-            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.advance)}</td>
-            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.spent)}</td>
-            <td class="px-2 py-2">${adjInput}</td><td class="px-2 py-2 min-w-[210px]">${split}</td>${total}</tr>`;
+        return `<tr>${lead}${th('Tài xế / Xe', { rs: 2 })}${th('Tạm ứng', { cs: 3 })}${th('Chi phí phát sinh', { cs: 5 })}
+            ${th('Tổng tạm ứng', { rs: 2 })}${th('Thực chi', { rs: 2 })}${th('Trừ lương TX', { rs: 2 })}${th('Phát sinh KT', { rs: 2 })}${th('Lý do phát sinh', { rs: 2 })}${anySplit ? th('Tỷ lệ thù lao cắt kéo', { rs: 2 }) : ''}${th('Chênh lệch', { rs: 2 })}</tr>
+            <tr>${th('Mã phiếu')}${th('Nguồn tiền')}${th('Số tiền')}${th('Khoản mục')}${th('Chặng')}${th('Loại chi')}${th('Trừ lương')}${th('Số tiền')}</tr>`;
     }
     if (party === 'PARTNER') {
-        return `<tr class="border-b border-slate-100 align-top">${common}
-            <td class="px-2 py-2">${escapeHtml(l.license_plate)}<div class="text-[10px] text-slate-500">${escapeHtml(l.driver_name)}</div></td>${cont}
-            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.freight_cost)}</td>
-            <td class="px-2 py-2 text-[11px] min-w-[200px]">${lines}</td>
-            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.advance)}</td>
-            <td class="px-2 py-2">${adjInput}</td>${total}</tr>`;
+        return `<tr>${lead}${th('Xe / Tài xế', { rs: 2 })}${th('Cước thuê xe', { rs: 2 })}${th('Chi phí hoàn trả đối tác', { cs: 3 })}
+            ${th('Đã tạm ứng', { rs: 2 })}${th('Phát sinh KT', { rs: 2 })}${th('Lý do phát sinh', { rs: 2 })}${th('Phải trả', { rs: 2 })}</tr>
+            <tr>${th('Khoản mục')}${th('Chặng')}${th('Số tiền')}</tr>`;
     }
-    return `<tr class="border-b border-slate-100 align-top">${common}
-        <td class="px-2 py-2">${escapeHtml(l.booking_or_bill)}</td>${cont}
-        <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.freight)}</td>
-        <td class="px-2 py-2 text-[11px] min-w-[200px]">${lines}</td>
-        <td class="px-2 py-2">${adjInput}</td>${total}</tr>`;
+    return `<tr>${lead}${th('Booking / Bill', { rs: 2 })}${th('Cước vận chuyển', { rs: 2 })}${th('Chi hộ khách hàng', { cs: 2 })}
+        ${th('Phát sinh KT', { rs: 2 })}${th('Lý do phát sinh', { rs: 2 })}${th('Phải thu', { rs: 2 })}</tr>
+        <tr>${th('Khoản mục')}${th('Số tiền')}</tr>`;
 }
 
-function settleHeadCols(party) {
-    const th = (t, r) => `<th class="px-2 py-2 ${r ? 'text-right' : 'text-left'}">${t}</th>`;
-    const base = '<th class="px-2 py-2">STT</th>' + th('Mã chuyến') ;
-    if (party === 'DRIVER') return base + th('Tài xế / Xe') + th('Số cont / Loại') + th('Tuyến') + th('Chi phí phát sinh (hạ xa, dầu, vé...)') + th('Tạm ứng', 1) + th('Thực chi', 1) + th('Phát sinh', 1) + th('Tỷ lệ thù lao cắt kéo') + th('Chênh lệch', 1);
-    if (party === 'PARTNER') return base + th('Xe / Tài xế') + th('Số cont / Loại') + th('Tuyến') + th('Cước thuê xe', 1) + th('Chi phí hoàn trả đối tác') + th('Đã tạm ứng', 1) + th('Phát sinh', 1) + th('Phải trả', 1);
-    return base + th('Booking / Bill') + th('Số cont / Loại') + th('Tuyến') + th('Cước vận chuyển', 1) + th('Chi hộ') + th('Phát sinh', 1) + th('Phải thu', 1);
+// Một chuyến = nhiều dòng của bảng: dòng đầu mang thông tin chuyến và tổng, các dòng sau chỉ thêm khoản tạm ứng / chi phí
+function settleLineRow(party, l, i, editable) {
+    const num = (v) => `<td class="${SETTLE_TD} text-right tabular-nums font-mono">${formatMoneyVND(v)}</td>`;
+    const exps = l.expense_lines || [];
+    const advs = party === 'DRIVER' ? (l.advance_lines || []) : [];
+    const n = Math.max(1, exps.length, advs.length);
+    const rs = (html, cls = '') => `<td rowspan="${n}" class="${SETTLE_TD} ${cls}">${html}</td>`;
+    const adjInput = `<input type="text" inputmode="numeric" value="${formatSignedVN(l.adjustment || 0)}" ${editable ? '' : 'disabled'} data-adjust-trip="${l.trip_id}"
+        oninput="onSettleAdjustInput(this)" class="w-28 px-1.5 py-1 text-right font-mono font-bold border border-amber-300 rounded bg-amber-50 disabled:bg-transparent disabled:border-transparent"
+        title="Số phát sinh do Kế toán/Hành chính nhập (+ cộng thêm, - trừ bớt)">`;
+    const noteInput = `<input type="text" maxlength="255" value="${escapeHtml(l.adjustment_note || '')}" ${editable ? '' : 'disabled'} data-adjust-note-trip="${l.trip_id}"
+        placeholder="Lý do (bắt buộc nếu có phát sinh)" class="w-52 px-1.5 py-1 border border-amber-300 rounded bg-amber-50 disabled:bg-transparent disabled:border-transparent">`;
+    const lead = rs(i + 1, 'text-center') + rs(`<b>${escapeHtml(l.trip_code)}</b><div class="text-[10px] text-slate-500">${escapeHtml(l.date)}</div>`, 'whitespace-nowrap')
+        + rs(`${escapeHtml(l.container_number)}<div class="text-[10px] text-slate-500">${escapeHtml(l.container_type)}</div>`, 'whitespace-nowrap')
+        + rs(escapeHtml(l.route), 'min-w-[170px]');
+    const total = rs('', 'text-right tabular-nums font-mono font-bold whitespace-nowrap').replace('<td ', `<td data-line-total="${l.trip_id}" `);
+    // Ô tích "Trừ lương tài xế": khoản chi này tài xế tự chịu, trừ vào lương thay vì công ty chịu
+    const deductCell = (e) => `<td class="${SETTLE_TD} text-center"><input type="checkbox" data-deduct-expense="${e.id}" data-deduct-trip="${l.trip_id}" data-deduct-amount="${e.amount}"
+        ${e.company_borne === false ? 'checked' : ''} ${editable ? '' : 'disabled'} onchange="recalcSettleVoucher()" class="w-4 h-4 cursor-pointer" title="Tích nếu khoản này trừ vào lương tài xế"></td>`;
+    const expCells = (e, withLeg, withPayer) => e
+        ? `<td class="${SETTLE_TD}">${escapeHtml(e.name)}${e.invoice ? `<div class="text-[10px] text-slate-500 font-mono">${escapeHtml(e.invoice)}</div>` : ''}</td>`
+          + (withLeg ? `<td class="${SETTLE_TD}">${escapeHtml(e.leg || '')}</td>` : '')
+          + (withPayer ? `<td class="${SETTLE_TD}">${escapeHtml(e.payer || '')}</td>${deductCell(e)}` : '')
+          + num(e.amount)
+        : `<td class="${SETTLE_TD}"></td>${withLeg ? `<td class="${SETTLE_TD}"></td>` : ''}${withPayer ? `<td class="${SETTLE_TD}"></td><td class="${SETTLE_TD}"></td>` : ''}<td class="${SETTLE_TD}"></td>`;
+
+    let tail, mid;
+    if (party === 'DRIVER') {
+        const split = l.is_split_trip ? `<div class="p-1 rounded border-2 border-rose-400 bg-rose-50 text-[11px] font-bold text-rose-800">
+                <div class="text-[10px] font-black">CẮT KÉO - KIỂM TRA TỶ LỆ</div>
+                <div class="flex items-center gap-1"><span class="truncate max-w-[90px]">${escapeHtml(l.driver_name)}</span>
+                <input type="number" min="0" max="100" step="1" value="${l.split_ratio}" ${editable ? '' : 'disabled'} data-split-trip="${l.trip_id}" oninput="onSettleSplitInput(this)"
+                    class="w-12 px-1 py-0.5 text-center font-black border border-rose-400 rounded bg-white">%
+                <span>/</span><span class="truncate max-w-[90px]">${escapeHtml(l.dropoff_driver_name || 'Chưa gán tài 2')}</span>
+                <span class="font-black" id="settle-split2-${l.trip_id}">${100 - l.split_ratio}%</span></div></div>` : '';
+        mid = rs(`${escapeHtml(l.driver_name)}<div class="text-[10px] text-slate-500">${escapeHtml(l.license_plate)}</div>`, 'whitespace-nowrap');
+        tail = rs(formatMoneyVND(l.advance), 'text-right tabular-nums font-mono') + rs(formatMoneyVND(l.spent), 'text-right tabular-nums font-mono')
+            + rs('', 'text-right tabular-nums font-mono').replace('<td ', `<td data-line-deduct="${l.trip_id}" `)
+            + rs(adjInput) + rs(noteInput) + (settleAnySplit ? rs(split) : '') + total;
+    } else if (party === 'PARTNER') {
+        mid = rs(`${escapeHtml(l.license_plate)}<div class="text-[10px] text-slate-500">${escapeHtml(l.driver_name)}</div>`, 'whitespace-nowrap') + rs(formatMoneyVND(l.freight_cost), 'text-right tabular-nums font-mono');
+        tail = rs(formatMoneyVND(l.advance), 'text-right tabular-nums font-mono') + rs(adjInput) + rs(noteInput) + total;
+    } else {
+        mid = rs(escapeHtml(l.booking_or_bill)) + rs(formatMoneyVND(l.freight), 'text-right tabular-nums font-mono');
+        tail = rs(adjInput) + rs(noteInput) + total;
+    }
+
+    let html = '';
+    for (let r = 0; r < n; r++) {
+        let cells = '';
+        if (party === 'DRIVER') {
+            const a = advs[r];
+            cells = (a ? `<td class="${SETTLE_TD} font-mono">${escapeHtml(a.code)}</td><td class="${SETTLE_TD}">${escapeHtml(a.source)}</td>${num(a.amount)}`
+                       : `<td class="${SETTLE_TD}"></td><td class="${SETTLE_TD}"></td><td class="${SETTLE_TD}"></td>`) + expCells(exps[r], true, true);
+        } else if (party === 'PARTNER') {
+            cells = expCells(exps[r], true, false);
+        } else {
+            cells = expCells(exps[r], false, false);
+        }
+        html += `<tr class="${r === 0 ? '' : ''}">${r === 0 ? lead + mid : ''}${cells}${r === 0 ? tail : ''}</tr>`;
+    }
+    return html;
 }
 
+let settleAnySplit = false;
+
+// Bảng kê quyết toán dạng bảng tính toàn màn hình: chỉ gồm bảng, ghi chú/thanh toán, thao tác và lịch sử thu gọn
 function showSettlementVoucherModal(v, opts = {}) {
     currentSettleVoucher = v;
     const readonly = !!opts.readonly;
-    document.getElementById('settle-voucher-modal')?.remove();
     const draft = v.status === 'DRAFT' && !readonly;
     const party = v.party_type;
+    settleAnySplit = party === 'DRIVER' && v.lines.some(l => l.is_split_trip);
     const body = v.lines.map((l, i) => settleLineRow(party, l, i, draft)).join('');
 
-    const modal = document.createElement('div');
-    modal.id = 'settle-voucher-modal';
-    modal.className = 'fixed inset-0 z-[1000] bg-slate-900/60 flex items-center justify-center p-3';
-    modal.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+    const activeView = document.querySelector('.view:not(.hidden-view)');
+    if (activeView && activeView.id !== 'view-settlement-voucher') {
+        settleVoucherOrigin = activeView.id.replace('view-', '');
+    }
+    const root = document.getElementById('settle-page-root');
+    if (!root) return;
+    const inBatch = settleBatch.find(b => b.id === v.id);
+    if (inBatch) inBatch.status = v.status;
+    const batchBar = settleBatch.length > 1 ? `
+        <div class="bg-white p-2 rounded-xl border border-slate-200 flex items-center gap-2 flex-wrap text-xs no-print">
+            <span class="font-bold text-slate-600 px-2">${settleBatch.length} phiếu trong lần chọn này:</span>
+            ${settleBatch.map(b => `<button type="button" onclick="openSettlementVoucher(${b.id})" class="px-3 py-1.5 rounded-lg font-bold border cursor-pointer ${b.id === v.id ? 'bg-teal-700 text-white border-teal-700' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}">
+                ${escapeHtml(b.name)} · ${escapeHtml(b.code)}${b.status === 'APPROVED' ? ' ✓' : ''}</button>`).join('')}
+        </div>` : '';
+    // Dòng tổng: số cột đứng trước cột "Tổng tạm ứng" / "Cước" thay đổi theo đối tượng
+    const footLead = party === 'DRIVER' ? 13 : (party === 'PARTNER' ? 9 : 8);
+    const foot = party === 'DRIVER'
+        ? `<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-advance"></td><td class="${SETTLE_TD} text-right font-mono" id="settle-foot-spent"></td>
+           <td class="${SETTLE_TD} text-right font-mono" id="settle-foot-deduct"></td><td class="${SETTLE_TD} text-right font-mono" id="settle-foot-adj"></td><td class="${SETTLE_TD}"></td>${settleAnySplit ? `<td class="${SETTLE_TD}"></td>` : ''}`
+        : (party === 'PARTNER'
+            ? `<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-advance"></td><td class="${SETTLE_TD} text-right font-mono" id="settle-foot-adj"></td><td class="${SETTLE_TD}"></td>`
+            : `<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-adj"></td><td class="${SETTLE_TD}"></td>`);
+    root.innerHTML = `${batchBar}
+        <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 no-print">
+            <div class="flex items-center gap-3 flex-wrap">
+                <button type="button" onclick="closeSettleVoucherModal()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 font-heading border border-slate-200 cursor-pointer">
+                    <i class="ph-bold ph-arrow-left"></i><span>Quay lại</span></button>
                 <div>
-                    <h3 class="font-bold text-slate-900 font-heading">Bảng Kê Quyết Toán ${SETTLE_PARTY_LABEL[party]} - <span class="font-mono">${escapeHtml(v.code)}</span></h3>
-                    <p class="text-xs text-slate-500">Đối tượng: <strong>${escapeHtml(v.party_name)}</strong> · ${v.lines.length} chuyến ·
+                    <h3 class="font-bold text-sm sm:text-base font-heading text-slate-900">Bảng kê quyết toán ${SETTLE_PARTY_LABEL[party].toLowerCase()} - <span class="font-mono">${escapeHtml(v.code)}</span></h3>
+                    <p class="text-xs text-slate-500">Đối tượng: <strong>${escapeHtml(v.party_name)}</strong> · ${v.lines.length} chuyến · Lập ${escapeHtml(v.created_at)} ·
                         <span class="font-bold ${draft ? 'text-amber-700' : 'text-emerald-700'}">${escapeHtml(v.status_label)}</span>
                         ${v.cash_transaction_code ? ` · Phiếu ${v.direction === 'RECEIVE' ? 'thu' : 'chi'}: <strong>${escapeHtml(v.cash_transaction_code)}</strong>` : ''}</p>
                 </div>
-                <button type="button" onclick="closeSettleVoucherModal()" class="text-slate-500 hover:text-rose-600"><i class="ph-bold ph-x text-lg"></i></button>
             </div>
-            <div class="overflow-auto p-3 text-xs">
-                <table class="w-full text-xs border-collapse" id="settle-voucher-table" data-no-col-manager data-no-toolbar>
-                    <thead class="bg-slate-50 text-slate-700 font-bold"><tr>${settleHeadCols(party)}</tr></thead>
-                    <tbody>${body}</tbody>
-                    <tfoot><tr class="bg-slate-50 font-black"><td colspan="20" class="px-2 py-2 text-right font-mono text-sm"><span id="settle-total-amount"></span></td></tr></tfoot>
-                </table>
-                <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div class="md:col-span-2"><label class="font-bold text-slate-700">Ghi chú</label>
-                        <input id="settle-voucher-notes" type="text" value="${escapeHtml(v.notes || '')}" ${draft ? '' : 'disabled'}
-                            class="mt-1 w-full px-2.5 py-1.5 border border-slate-300 rounded-lg disabled:bg-slate-50"></div>
-                    <div class="p-2 rounded-lg border border-slate-200 bg-slate-50">
-                        <label class="flex items-center gap-2 font-bold text-slate-800"><input type="checkbox" id="settle-voucher-cash" ${v.with_cash ? 'checked' : ''} ${draft ? '' : 'disabled'}>
-                            Phát sinh phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} khi duyệt</label>
-                        <select id="settle-voucher-method" ${draft ? '' : 'disabled'} class="mt-1.5 w-full px-2 py-1 border border-slate-300 rounded-lg font-bold">
-                            <option value="BANK" ${v.payment_method === 'BANK' ? 'selected' : ''}>Chuyển khoản</option>
-                            <option value="CASH" ${v.payment_method === 'CASH' ? 'selected' : ''}>Tiền mặt</option></select>
-                    </div>
-                </div>
-                <p class="mt-2 text-[11px] text-slate-500">Bảng kê chỉ hiển thị thông tin liên quan đến ${SETTLE_PARTY_LABEL[party].toLowerCase()}. Chỉ người có quyền Kế toán/Hành chính mới nhập phát sinh, duyệt, mở lại hoặc xóa phiếu.</p>
+            <button type="button" onclick="printSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"><i class="ph-bold ph-printer"></i> In bảng kê</button>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 overflow-auto text-xs" style="max-height:calc(100vh - 290px)">
+            <table class="w-full text-xs border-collapse" id="settle-voucher-table" data-no-col-manager data-no-toolbar>
+                <thead class="sticky top-0 z-10">${settleHeadCols(party, settleAnySplit)}</thead>
+                <tbody>${body}</tbody>
+                <tfoot>
+                    <tr class="bg-slate-50 font-black"><td colspan="${footLead}" class="${SETTLE_TD} text-right">TỔNG CỘNG</td>${foot}<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-total"></td></tr>
+                    <tr class="bg-slate-100 font-black"><td colspan="40" class="px-2 py-2 text-right font-mono text-sm"><span id="settle-total-amount"></span></td></tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-3 flex flex-wrap items-center gap-3 text-xs no-print">
+            <label class="font-bold text-slate-700">Ghi chú</label>
+            <input id="settle-voucher-notes" type="text" value="${escapeHtml(v.notes || '')}" ${draft ? '' : 'disabled'}
+                class="flex-1 min-w-[220px] px-2.5 py-1.5 border border-slate-300 rounded-lg disabled:bg-slate-50">
+            <label class="flex items-center gap-2 font-bold text-slate-800"><input type="checkbox" id="settle-voucher-cash" ${v.with_cash ? 'checked' : ''} ${draft ? '' : 'disabled'}>
+                Phát sinh phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} khi duyệt</label>
+            <select id="settle-voucher-method" ${draft ? '' : 'disabled'} class="px-2 py-1 border border-slate-300 rounded-lg font-bold">
+                <option value="BANK" ${v.payment_method === 'BANK' ? 'selected' : ''}>Chuyển khoản</option>
+                <option value="CASH" ${v.payment_method === 'CASH' ? 'selected' : ''}>Tiền mặt</option></select>
+            <div class="flex items-center gap-2 ml-auto">
+            ${draft ? `
+            <button type="button" data-voucher-action onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50 cursor-pointer"><i class="ph-bold ph-trash"></i> Xóa</button>
+            <button type="button" data-voucher-action onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50 cursor-pointer"><i class="ph-bold ph-floppy-disk"></i> Lưu</button>
+            <button type="button" data-voucher-action onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-seal-check"></i> Duyệt phiếu</button>`
+            : `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="Lý do mở lại (bắt buộc)" class="w-64 px-2.5 py-1.5 border border-slate-300 rounded-lg">
+            <button type="button" data-voucher-action onclick="reopenSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold cursor-pointer"><i class="ph-bold ph-lock-key-open"></i> Mở lại để sửa</button>`}
             </div>
-            <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 flex-wrap">
-                <button type="button" onclick="printSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-slate-700 hover:bg-slate-50"><i class="ph-bold ph-printer"></i> In bảng kê</button>
-                ${draft ? `
-                <button type="button" data-voucher-action onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50"><i class="ph-bold ph-trash"></i> Xóa</button>
-                <button type="button" data-voucher-action onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50"><i class="ph-bold ph-floppy-disk"></i> Lưu</button>
-                <button type="button" data-voucher-action onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold"><i class="ph-bold ph-seal-check"></i> Duyệt phiếu</button>`
-                : `<button type="button" data-voucher-action onclick="reopenSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold"><i class="ph-bold ph-lock-key-open"></i> Mở lại để sửa</button>`}
-            </div>
-        </div>`;
-    if (readonly) modal.querySelectorAll('[data-voucher-action]').forEach(el => el.remove());
-    document.body.appendChild(modal);
+        </div>
+        ${(v.logs || []).length ? `<div class="bg-white rounded-xl border border-slate-200 px-3 py-2 text-xs no-print">${settleLogSection(v, false)}</div>` : ''}`;
+    if (readonly) root.querySelectorAll('[data-voucher-action]').forEach(el => el.remove());
+
+    document.querySelectorAll('.view').forEach(view => view.classList.add('hidden-view'));
+    document.getElementById('view-settlement-voucher').classList.remove('hidden-view');
+    if (typeof setTopbarFullpageMode === 'function') {
+        setTopbarFullpageMode({
+            backFn: closeSettleVoucherModal,
+            prefix: settleVoucherOrigin === 'ke-toan' ? 'Tài chính & Kế toán' : 'Quyết toán',
+            title: `Quyết Toán ${SETTLE_PARTY_LABEL[party]} | ${v.code}`,
+        });
+    }
     recalcSettleVoucher();
 }
 
+function settleLogValue(v) {
+    if (v === null || v === undefined || v === '') return '<span class="text-slate-400">trống</span>';
+    if (typeof v === 'number') return formatMoneyVND(v);
+    if (typeof v === 'boolean') return v ? 'Có' : 'Không';
+    return escapeHtml(String(v));
+}
+
+function settleLogSection(v, open = false) {
+    const logs = v.logs || [];
+    if (!logs.length) return '';
+    const items = logs.slice().reverse().map(g => {
+        const changes = (g.changes || []).map(c =>
+            `<li>${c.trip_code ? `<span class="font-mono font-bold">${escapeHtml(c.trip_code)}</span> · ` : ''}${escapeHtml(c.field)}: ${settleLogValue(c.old)} ➔ <strong>${settleLogValue(c.new)}</strong></li>`).join('');
+        return `<div class="py-1.5 border-b border-slate-100 last:border-0">
+            <div class="flex flex-wrap items-center gap-x-2"><strong class="text-slate-800">${escapeHtml(g.action_label)}</strong>
+                <span class="text-slate-500">${escapeHtml(g.actor || 'hệ thống')} · ${escapeHtml(g.at)}</span>
+                <span class="font-mono text-slate-600">Số tiền sau: ${formatMoneyVND(g.amount_after)}</span></div>
+            ${g.reason ? `<div class="text-slate-600">Lý do: ${escapeHtml(g.reason)}</div>` : ''}
+            ${changes ? `<ul class="list-disc pl-5 text-[11px] text-slate-600">${changes}</ul>` : ''}</div>`;
+    }).join('');
+    return `<details class="mt-3 border border-slate-200 rounded-lg" ${open ? 'open' : ''}>
+        <summary class="px-3 py-2 font-bold text-slate-700 cursor-pointer">Lịch sử thay đổi (${logs.length})</summary>
+        <div class="px-3 pb-2 max-h-56 overflow-auto">${items}</div></details>`;
+}
+
 function closeSettleVoucherModal() {
-    document.getElementById('settle-voucher-modal')?.remove();
     currentSettleVoucher = null;
+    settleBatch = [];
+    // Quay về màn hình đã mở phiếu (Kế toán / Quyết toán gom chuyến / Điều vận...)
+    const back = settleVoucherOrigin && settleVoucherOrigin !== 'settlement-voucher' ? settleVoucherOrigin : 'ke-toan';
+    if (typeof resetTopbarStandardMode === 'function') resetTopbarStandardMode(back);
+    if (typeof switchTab === 'function' && document.getElementById(`view-${back}`)) switchTab(back, true);
+    else document.getElementById('view-settlement-voucher')?.classList.add('hidden-view');
     if (typeof loadSettlementData === 'function' && document.getElementById('page-settle-tbody')) loadSettlementData();
     if (typeof loadSubcontractorData === 'function' && document.getElementById('subcon-select-all')) loadSubcontractorData();
     if (typeof loadCustomerSettlementsData === 'function' && document.getElementById('cust-settle-tbody')) loadCustomerSettlementsData();
     if (document.getElementById('voucher-tab-tbody') && !document.getElementById('subtab-acct-vouchers')?.classList.contains('hidden')) loadVoucherTab();
     if (typeof loadAccountingData === 'function' && document.getElementById('subtab-acct-settlements') && !document.getElementById('subtab-acct-settlements').classList.contains('hidden')) loadAccountingData();
+}
+
+// Số nguyên có dấu (+/-) hiển thị dấu phân cách hàng nghìn kiểu Việt Nam: -1.234.000
+function formatSignedVN(val) {
+    const str = String(val === null || val === undefined ? '' : val);
+    const digits = str.replace(/\D/g, '');
+    if (!digits) return str.trim() === '-' ? '-' : '0';
+    return (str.trim().startsWith('-') ? '-' : '') + new Intl.NumberFormat('vi-VN').format(parseInt(digits, 10));
+}
+
+function parseSignedVN(val) {
+    const str = String(val === null || val === undefined ? '' : val);
+    const n = parseInt(str.replace(/\D/g, ''), 10) || 0;
+    return str.trim().startsWith('-') ? -n : n;
+}
+
+function onSettleAdjustInput(inp) {
+    const f = formatSignedVN(inp.value);
+    if (inp.value !== f && !(inp.value.trim() === '-' && f === '-')) inp.value = f;
+    recalcSettleVoucher();
 }
 
 function onSettleSplitInput(inp) {
@@ -24804,10 +25152,12 @@ function recalcSettleVoucher() {
     const v = currentSettleVoucher;
     if (!v) return;
     let net = 0;
+    let adjTotal = 0;
     v.lines.forEach(l => {
-        const adj = parseInt(document.querySelector(`[data-adjust-trip="${l.trip_id}"]`)?.value || '0', 10) || 0;
+        const adj = parseSignedVN(document.querySelector(`[data-adjust-trip="${l.trip_id}"]`)?.value);
         const t = settleVoucherTotal(v.party_type, l, adj);
         net += t;
+        adjTotal += adj;
         const cell = document.querySelector(`[data-line-total="${l.trip_id}"]`);
         if (cell) {
             cell.innerText = formatMoneyVND(t);
@@ -24815,20 +25165,40 @@ function recalcSettleVoucher() {
             cell.classList.toggle('text-blue-700', v.party_type === 'DRIVER' && t > 0);
         }
     });
+    // Tổng khoản trừ lương tài xế theo các ô đã tích (không đổi số tiền mặt hoàn ứng, chỉ ghi nhận để trừ lương)
+    let deductTotal = 0;
+    v.lines.forEach(l => {
+        let d = 0;
+        document.querySelectorAll(`[data-deduct-trip="${l.trip_id}"]:checked`).forEach(cb => { d += parseInt(cb.getAttribute('data-deduct-amount'), 10) || 0; });
+        deductTotal += d;
+        const cell = document.querySelector(`[data-line-deduct="${l.trip_id}"]`);
+        if (cell) cell.innerText = d ? formatMoneyVND(d) : '';
+    });
     const amt = document.getElementById('settle-total-amount');
     let text;
     if (v.party_type === 'DRIVER') text = net > 0 ? `TÀI XẾ NỘP LẠI: ${formatMoneyVND(net)}` : (net < 0 ? `CÔNG TY CHI BÙ: ${formatMoneyVND(-net)}` : 'CÂN BẰNG: 0');
     else text = `${v.party_type === 'PARTNER' ? 'TỔNG PHẢI TRẢ' : 'TỔNG PHẢI THU'}: ${formatMoneyVND(net)}`;
+    if (v.party_type === 'DRIVER' && deductTotal > 0) text += `  ·  TRỪ LƯƠNG TÀI XẾ: ${formatMoneyVND(deductTotal)}`;
     if (amt) amt.innerText = text;
+    const setFoot = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = formatMoneyVND(val); };
+    setFoot('settle-foot-advance', v.lines.reduce((s, l) => s + (l.advance || 0), 0));
+    setFoot('settle-foot-spent', v.lines.reduce((s, l) => s + (l.spent || 0), 0));
+    setFoot('settle-foot-adj', adjTotal);
+    if (document.getElementById('settle-foot-deduct')) document.getElementById('settle-foot-deduct').innerText = deductTotal ? formatMoneyVND(deductTotal) : '';
+    setFoot('settle-foot-total', net);
 }
 
 function collectSettleVoucherForm() {
     const split_ratios = {};
     document.querySelectorAll('[data-split-trip]').forEach(i => { split_ratios[i.getAttribute('data-split-trip')] = parseFloat(i.value) || 50; });
     const adjustments = {};
-    document.querySelectorAll('[data-adjust-trip]').forEach(i => { adjustments[i.getAttribute('data-adjust-trip')] = parseInt(i.value || '0', 10) || 0; });
+    document.querySelectorAll('[data-adjust-trip]').forEach(i => { adjustments[i.getAttribute('data-adjust-trip')] = parseSignedVN(i.value); });
+    const adjustment_notes = {};
+    document.querySelectorAll('[data-adjust-note-trip]').forEach(i => { adjustment_notes[i.getAttribute('data-adjust-note-trip')] = i.value.trim(); });
+    const salary_deductions = {};
+    document.querySelectorAll('[data-deduct-expense]').forEach(cb => { salary_deductions[cb.getAttribute('data-deduct-expense')] = cb.checked; });
     return {
-        split_ratios, adjustments,
+        split_ratios, adjustments, adjustment_notes, salary_deductions,
         notes: document.getElementById('settle-voucher-notes')?.value || '',
         with_cash: !!document.getElementById('settle-voucher-cash')?.checked,
         payment_method: document.getElementById('settle-voucher-method')?.value || 'BANK',
@@ -24875,13 +25245,19 @@ async function approveSettleVoucher() {
 
 async function reopenSettleVoucher() {
     const v = currentSettleVoucher;
+    const reason = (document.getElementById('settle-reopen-reason')?.value || '').trim();
+    if (!reason) {
+        showToast('warning', 'Nhập lý do mở lại phiếu để lưu vết', 'Thiếu lý do');
+        document.getElementById('settle-reopen-reason')?.focus();
+        return;
+    }
     const ok = await showConfirmModal({
         title: 'Mở Lại Phiếu Quyết Toán',
         message: `Mở lại phiếu ${v.code}? Các chuyến sẽ được mở khóa${v.cash_transaction_code ? ` và phiếu ${v.cash_transaction_code} trong Sổ quỹ sẽ bị xóa` : ''}.`,
         confirmText: 'Mở lại', cancelText: 'Huỷ bỏ', type: 'warning', icon: 'ph-bold ph-lock-key-open text-2xl'
     });
     if (!ok) return;
-    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/reopen/`, 'POST', {}, 'Đã mở lại phiếu');
+    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/reopen/`, 'POST', { reason }, 'Đã mở lại phiếu');
     if (data) showSettlementVoucherModal(data.voucher);
 }
 
@@ -24893,7 +25269,10 @@ async function deleteSettleVoucher() {
     });
     if (!ok) return;
     const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/`, 'DELETE', null, 'Đã xóa phiếu');
-    if (data) closeSettleVoucherModal();
+    if (!data) return;
+    settleBatch = settleBatch.filter(b => b.id !== v.id);
+    if (settleBatch.length) openSettlementVoucher(settleBatch[0].id);
+    else closeSettleVoucherModal();
 }
 
 function printSettleVoucher() {
@@ -24901,20 +25280,40 @@ function printSettleVoucher() {
     const table = document.getElementById('settle-voucher-table');
     if (!v || !table) return;
     const clone = table.cloneNode(true);
+    clone.querySelectorAll('[data-detail-trip], button').forEach(el => el.remove());
     clone.querySelectorAll('input').forEach(inp => {
         const span = document.createElement('span');
-        span.textContent = inp.value + (inp.hasAttribute('data-split-trip') ? '%' : '');
+        span.textContent = inp.type === 'checkbox' ? (inp.checked ? '✓' : '') : inp.value + (inp.hasAttribute('data-split-trip') ? '%' : '');
         inp.replaceWith(span);
     });
+    const party = SETTLE_PARTY_LABEL[v.party_type];
+    const co = typeof getSystemCompanyProfile === 'function' ? getSystemCompanyProfile() : {};
+    // Kỳ quyết toán lấy theo ngày chạy sớm nhất và muộn nhất của các chuyến trong phiếu
+    const toTime = (d) => { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(d || ''); return m ? new Date(+m[3], +m[2] - 1, +m[1]).getTime() : null; };
+    const dated = v.lines.filter(l => toTime(l.date) !== null).sort((a, b) => toTime(a.date) - toTime(b.date));
+    const fromDate = dated.length ? dated[0].date : '....../....../........';
+    const toDate = dated.length ? dated[dated.length - 1].date : '....../....../........';
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(v.created_at || '');
+    const createdText = m ? `Ngày ${m[1]} tháng ${m[2]} năm ${m[3]}` : '';
     const w = window.open('', '_blank');
     if (!w) { showToast('warning', 'Trình duyệt đang chặn cửa sổ in', 'Không thể in'); return; }
     w.document.write(`<html><head><title>${escapeHtml(v.code)}</title><style>
-        body{font-family:Arial,sans-serif;font-size:11px;padding:16px}table{width:100%;border-collapse:collapse}
-        th,td{border:1px solid #94a3b8;padding:4px 6px;vertical-align:top}th{background:#f1f5f9}.r{text-align:right}</style></head>
-        <body><h2 style="text-align:center;margin-bottom:4px">BẢNG KÊ QUYẾT TOÁN ${SETTLE_PARTY_LABEL[v.party_type].toUpperCase()}</h2>
-        <p style="text-align:center;margin-top:0">Số: ${escapeHtml(v.code)} · Đối tượng: <b>${escapeHtml(v.party_name)}</b> · Ngày lập: ${escapeHtml(v.created_at)}</p>
+        @page{size:A4 landscape;margin:10mm}
+        body{font-family:Arial,sans-serif;font-size:11px;padding:8px}table{width:100%;border-collapse:collapse}
+        th,td{border:1px solid #94a3b8;padding:4px 6px;vertical-align:top}th{background:#f1f5f9}.r{text-align:right}
+        .head{display:flex;align-items:center;gap:12px;border-bottom:1px solid #94a3b8;padding-bottom:8px;margin-bottom:8px}
+        .head img{height:52px;width:auto}.head .co{font-size:12px}.head .co b{font-size:13px;text-transform:uppercase}
+        .sign td{border:none;text-align:center;width:25%}</style></head>
+        <body>
+        <div class="head"><img src="${location.origin}/static/images/trienvo_logo.png" alt="">
+            <div class="co"><b>${escapeHtml(co.company_name || '')}</b><br>${escapeHtml(co.address || '')}<br>MST: ${escapeHtml(co.tax_code || '')} · ĐT: ${escapeHtml(co.phone || '')}</div></div>
+        <h2 style="text-align:center;margin:6px 0 2px">BẢNG KÊ QUYẾT TOÁN ${party.toUpperCase()}</h2>
+        <p style="text-align:center;margin:0 0 2px">Từ ngày ${escapeHtml(fromDate)} đến ngày ${escapeHtml(toDate)}</p>
+        <p style="text-align:center;margin:0 0 8px">Số: ${escapeHtml(v.code)} · Đối tượng: <b>${escapeHtml(v.party_name)}</b></p>
         ${clone.outerHTML}${v.notes ? `<p>Ghi chú: ${escapeHtml(v.notes)}</p>` : ''}
-        <table style="margin-top:30px;border:none"><tr style="text-align:center"><td style="border:none">Người lập</td><td style="border:none">Kế toán trưởng</td><td style="border:none">Xác nhận của ${SETTLE_PARTY_LABEL[v.party_type].toLowerCase()}</td></tr></table>
+        <p style="text-align:right;margin:18px 40px 4px;font-style:italic">${escapeHtml(createdText)}</p>
+        <table class="sign" style="border:none"><tr style="font-weight:bold"><td>Người lập</td><td>Kế toán</td><td>Giám đốc</td><td>Xác nhận của ${party.toLowerCase()}</td></tr>
+            <tr><td style="height:70px"></td><td></td><td></td><td></td></tr></table>
         </body></html>`);
     w.document.close();
     w.focus();
@@ -24992,6 +25391,7 @@ window.loadVoucherTab = loadVoucherTab;
 window.renderVoucherTab = renderVoucherTab;
 window.closeSettleVoucherModal = closeSettleVoucherModal;
 window.onSettleSplitInput = onSettleSplitInput;
+window.onSettleAdjustInput = onSettleAdjustInput;
 window.recalcSettleVoucher = recalcSettleVoucher;
 window.saveSettleVoucher = saveSettleVoucher;
 window.approveSettleVoucher = approveSettleVoucher;
@@ -35938,6 +36338,7 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="ownership">${ownershipBadge}</td>
                 <td data-col-key="settlement_status" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">
                     ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
+                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đã lưu phiếu quyết toán, chờ duyệt">+${item.saved_trips_count} đã lưu</div>` : ''}
                 </td>
                 <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">${item.trips_count}</td>
                 <td data-col-key="containers_count" class="text-center font-black text-teal-800 text-[13px] tabular-nums bg-teal-50/40">${contsCount}</td>
@@ -37287,6 +37688,7 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="top_route" class="text-[13px] text-slate-600 max-w-xs truncate" title="${escapeHtml(item.top_route)}">${escapeHtml(item.top_route)}</td>
                 <td data-col-key="settlement_status" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">
                     ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
+                    ${Number(item.saved_trips_count) > 0 ? `<div class="text-[10px] font-bold text-amber-700" title="Đã lưu phiếu quyết toán, chờ duyệt">+${item.saved_trips_count} đã lưu</div>` : ''}
                 </td>
                 <td data-col-key="revenue" class="text-right font-black text-indigo-700 text-[13px] tabular-nums">${revDisplay}</td>
                 <td data-col-key="settled_revenue" class="text-right font-bold text-slate-800 text-[13px] tabular-nums">${formatMoneyVND(item.settled_revenue || 0)}</td>
@@ -37944,7 +38346,9 @@ function applyReport11Filters() {
 
         const statusBadge = item.is_settled
             ? '<span class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã hoàn ứng</span>'
-            : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Đang tạm ứng</span>';
+            : (item.saved_voucher_code
+                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đã lưu QT (chờ duyệt)</span>'
+                : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Đang tạm ứng</span>');
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -38111,7 +38515,9 @@ function applyReport12Filters() {
 
         const settlementBadge = item.is_settled
             ? '<span class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã Quyết Toán</span>'
-            : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-hourglass"></i> Chưa Chốt</span>';
+            : (item.saved_voucher_code
+                ? '<span class="text-xs font-bold text-sky-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-floppy-disk"></i> Đã lưu QT (chờ duyệt)</span>'
+                : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-hourglass"></i> Chưa Chốt</span>');
 
         const podBadge = item.has_pod
             ? '<span class="text-xs font-bold text-emerald-700 uppercase inline-flex items-center gap-1"><i class="ph-bold ph-file-check"></i> Đã Thu POD</span>'
@@ -39221,7 +39627,9 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
         const isSettled = Boolean(t.is_settled || t.settlement_status === 'Đã đối soát');
         const settlementBadge = isSettled
             ? '<span class="font-bold text-emerald-700 text-xs" title="Chuyến xe đã được kế toán đối soát & quyết toán công nợ">Đã Đối Soát</span>'
-            : '<span class="font-bold text-amber-600 text-xs" title="Chuyến xe đã giao hàng thành công, đang chờ đối soát công nợ">Chờ Đối Soát</span>';
+            : (t.saved_voucher_code
+                ? `<span class="font-bold text-sky-700 text-xs" title="Đã lưu phiếu quyết toán ${escapeHtml(t.saved_voucher_code)}, chờ duyệt">Đã Lưu QT (chờ duyệt)</span>`
+                : '<span class="font-bold text-amber-600 text-xs" title="Chuyến xe đã giao hàng thành công, đang chờ đối soát công nợ">Chờ Đối Soát</span>');
 
         let partnerCol = '';
         if (mode === 'VEHICLE') {

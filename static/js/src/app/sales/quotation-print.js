@@ -96,7 +96,11 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     const p0Val = Number(q.base_fuel_price || 21000);
     const stepVal = Number(q.fuel_step_vnd || 1000);
     const ratioVal = Number(q.fuel_ratio_percent || 3.5);
-    const formulaText = q.fuel_surcharge_formula || `Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi ${new Intl.NumberFormat('vi-VN').format(stepVal)} đ/lít so với giá cơ sở (${new Intl.NumberFormat('vi-VN').format(p0Val)} đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng ${ratioVal}%.`;
+    // Diễn giải & ví dụ dựng theo thông số hiện tại (có hỗ trợ điều chỉnh theo số tiền và phụ phí hạ xa)
+    const surcharge = buildQuoteSurchargeTexts(q, Number(items[0] && items[0].unit_price) || 0);
+    const isFarDrop = Boolean(q.far_drop_enabled);
+    const fuelByAmount = q.fuel_adjust_type === 'AMOUNT';
+    const formulaText = surcharge.fuelRule;
 
     // 1. Điền dữ liệu MẪU 1: STANDARD (TVL Tiêu Chuẩn)
     const p1DatePlace = document.getElementById('print-q1-date-place');
@@ -157,13 +161,28 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
             const stepEl = document.getElementById('print-q1-fuel-step');
             if (stepEl) stepEl.innerText = `±${new Intl.NumberFormat('vi-VN').format(stepVal)} đ/lít`;
             const ratioEl = document.getElementById('print-q1-fuel-ratio');
-            if (ratioEl) ratioEl.innerText = `±${ratioVal}% cước`;
+            const ratioLabel = document.getElementById('print-q1-fuel-ratio-label');
+            if (ratioLabel) ratioLabel.innerText = fuelByAmount ? 'Số tiền điều chỉnh:' : 'Tỷ lệ điều chỉnh:';
+            if (ratioEl) ratioEl.innerText = fuelByAmount ? `±${new Intl.NumberFormat('vi-VN').format(Number(q.fuel_amount_per_step) || 0)} đ/chuyến` : `±${ratioVal}% cước`;
             const formEl = document.getElementById('print-q1-fuel-formula');
             if (formEl) formEl.innerText = formulaText;
+            const exEl = document.getElementById('print-q1-fuel-example');
+            if (exEl) exEl.innerText = surcharge.fuelExample;
         } else {
             p1FuelBox.classList.add('hidden');
         }
     }
+
+    // Phụ phí hạ xa (cả 3 mẫu in)
+    [['print-q1-fardrop', true], ['print-q2-fardrop', false], ['print-q3-fardrop', false]].forEach(([prefix, ownExample]) => {
+        const box = document.getElementById(`${prefix}-box`);
+        if (!box) return;
+        box.classList.toggle('hidden', !isFarDrop);
+        const descEl = document.getElementById(`${prefix}-desc`);
+        if (descEl) descEl.innerText = ownExample ? surcharge.farRule : `${surcharge.farRule} Ví dụ: ${surcharge.farExample}`;
+        const exEl = document.getElementById(`${prefix}-example`);
+        if (exEl) exEl.innerText = surcharge.farExample;
+    });
 
     const p1Notes = document.getElementById('print-q1-notes-content');
     if (p1Notes) p1Notes.innerText = notesText;
@@ -216,7 +235,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
         if (isFuelAdjusted) {
             p2FuelBox.classList.remove('hidden');
             const descEl = document.getElementById('print-q2-fuel-desc');
-            if (descEl) descEl.innerText = formulaText;
+            if (descEl) descEl.innerText = `${formulaText} Ví dụ: ${surcharge.fuelExample}`;
         } else {
             p2FuelBox.classList.add('hidden');
         }
@@ -276,7 +295,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
         if (isFuelAdjusted) {
             p3FuelBox.classList.remove('hidden');
             const descEl = document.getElementById('print-q3-fuel-desc');
-            if (descEl) descEl.innerText = formulaText;
+            if (descEl) descEl.innerText = `${formulaText} Ví dụ: ${surcharge.fuelExample}`;
         } else {
             p3FuelBox.classList.add('hidden');
         }

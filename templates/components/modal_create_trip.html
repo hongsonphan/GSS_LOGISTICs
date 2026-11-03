@@ -319,7 +319,8 @@
           </div>
 
           <!-- Thông tin Cắt CY, Invoice, Cửa Dock, Thời gian & Vị trí -->
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-2.5 pt-0.5">
+          <input type="hidden" id="inp-cont-loc" value="NHÀ MÁY" />
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-2.5 pt-0.5">
             <div class="md:col-span-1">
               <div class="flex items-center justify-between h-5 mb-1">
                 <label class="block font-bold text-rose-700 text-xs truncate" for="inp-cutoff-date">
@@ -363,7 +364,7 @@
             </div>
             <div>
               <div class="flex items-center justify-between h-5 mb-1">
-                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-invoice">Hóa Đơn TM (Invoice)</label>
+                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-invoice">Hóa Đơn Thương Mại (Invoice)</label>
               </div>
               <input
                 id="inp-invoice"
@@ -374,7 +375,7 @@
             </div>
             <div>
               <div class="flex items-center justify-between h-5 mb-1">
-                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-dock">Cửa Xuất (Dock Kho)</label>
+                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-dock">Cửa Dock Kho (Cửa Xuất)</label>
               </div>
               <input
                 id="inp-dock"
@@ -412,16 +413,6 @@
                 <button type="button" onclick="setTripLoadTime('18:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">18:00</button>
                 <button type="button" onclick="setTripLoadTime('20:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">20:00</button>
               </div>
-            </div>
-            <div>
-              <div class="flex items-center justify-between h-5 mb-1">
-                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-cont-loc">Vị Trí Vỏ Hiện Tại</label>
-              </div>
-              <select id="inp-cont-loc" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-800 text-xs w-full">
-                <option value="NHÀ MÁY" selected>Tại Nhà Máy Khách Hàng</option>
-                <option value="BÃI TVL">Tại Bãi Triền Võ</option>
-                <option value="CẢNG / DEPOT">Tại Cảng / Bãi Cont</option>
-              </select>
             </div>
           </div>
 
@@ -483,18 +474,23 @@
           </div>
         </div>
 
-        <!-- Section 2: Lộ Trình 3 Điểm -->
+        <!-- Section 2: Lộ Trình 3 Điểm Chuẩn Hóa -->
         <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2.5">
-          <h4
-            class="font-bold text-slate-800 pb-1.5 border-b border-slate-100 flex items-center font-heading text-xs uppercase tracking-wider mb-0"
-          >
-            <i class="ph-bold ph-map-pin text-teal-600 mr-1.5 text-sm"></i> 2. Lộ Trình Vận Chuyển (Nơi Lấy - Đóng/Trả - Nơi Hạ)
-          </h4>
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 flex-wrap gap-2">
+            <h4
+              class="font-bold text-slate-800 flex items-center font-heading text-xs uppercase tracking-wider mb-0"
+            >
+              <i class="ph-bold ph-map-pin text-teal-600 mr-1.5 text-sm"></i> 2. Lộ Trình 3 Điểm Chuẩn (Nơi Lấy Cont ➔ Kho Đóng/ Trả Hàng ➔ Nơi Trả Cont)
+            </h4>
+            <span id="trip-modal-route-hint" class="text-[10.5px] font-bold text-teal-800 bg-teal-50 px-2 py-0.2 rounded-full border border-teal-200 font-heading">
+              Hàng Xuất: Lấy Vỏ Rỗng ➔ Đóng Hàng ➔ Hạ Cont Hàng
+            </span>
+          </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             <div>
               <div class="flex items-center justify-between h-5 mb-1">
                 <label class="block font-bold text-teal-900 text-xs truncate" for="inp-pickup">
-                  1. Nơi Lấy (Cảng / ICD) <span class="text-rose-500">*</span>
+                  1. Nơi Lấy Cont <span class="text-rose-500">*</span>
                 </label>
                 <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-pickup')" 
                   class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 flex items-center gap-0.5">
@@ -505,43 +501,43 @@
                 id="inp-pickup"
                 class="form-select h-8.5 px-2 py-1 font-bold text-teal-900 uppercase text-xs w-full"
               >
-                <option value="">-- Chọn Cảng / Depot Lấy --</option>
+                <option value="">-- Chọn Nơi Lấy Cont (Cảng/Depot) --</option>
               </select>
               <div id="err-pickup" class="field-error-msg hidden"></div>
             </div>
             <div>
               <div class="flex items-center justify-between h-5 mb-1">
-                <label class="block font-bold text-amber-900 text-xs truncate" for="inp-warehouse">
-                  2. Nơi Đóng/Trả (Kho KH) <span class="text-rose-500">*</span>
+                <label class="block font-bold text-blue-900 text-xs truncate" for="inp-warehouse">
+                  2. Kho Đóng/ Trả Hàng <span class="text-rose-500">*</span>
                 </label>
                 <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-warehouse')" 
-                  class="text-[10px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 flex items-center gap-0.5">
+                  class="text-[10px] font-bold text-blue-800 hover:text-blue-950 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 flex items-center gap-0.5">
                   <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm
                 </button>
               </div>
               <select
                 id="inp-warehouse"
-                class="form-select h-8.5 px-2 py-1 font-bold text-amber-900 uppercase text-xs w-full"
+                class="form-select h-8.5 px-2 py-1 font-bold text-blue-950 uppercase text-xs w-full"
               >
-                <option value="">-- Chọn Kho Khách Hàng --</option>
+                <option value="">-- Chọn Kho Đóng / Trả Hàng --</option>
               </select>
               <div id="err-warehouse" class="field-error-msg hidden"></div>
             </div>
             <div>
               <div class="flex items-center justify-between h-5 mb-1">
-                <label class="block font-bold text-emerald-900 text-xs truncate" for="inp-dropoff">
-                  3. Nơi Hạ (Bãi Rỗng / Cảng)
+                <label class="block font-bold text-amber-900 text-xs truncate" for="inp-dropoff">
+                  3. Nơi Trả Cont
                 </label>
                 <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-dropoff')" 
-                  class="text-[10px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 flex items-center gap-0.5">
+                  class="text-[10px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 flex items-center gap-0.5">
                   <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm
                 </button>
               </div>
               <select
                 id="inp-dropoff"
-                class="form-select h-8.5 px-2 py-1 font-bold text-emerald-900 uppercase text-xs w-full"
+                class="form-select h-8.5 px-2 py-1 font-bold text-amber-950 uppercase text-xs w-full"
               >
-                <option value="">-- Chọn Nơi Hạ Cont --</option>
+                <option value="">-- Chọn Nơi Trả Cont (Cảng/Bãi) --</option>
               </select>
             </div>
           </div>
@@ -716,7 +712,7 @@
             <!-- 3. Ghi chú điều độ -->
             <div class="md:col-span-4">
               <div class="flex items-center justify-between h-5 mb-1">
-                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-notes">Ghi chú phí Công ty chịu / Lưu ý Điều độ</label>
+                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-notes">Ghi Chú Vận Chuyển / Lưu Ý Điều Độ</label>
               </div>
               <input
                 id="inp-notes"

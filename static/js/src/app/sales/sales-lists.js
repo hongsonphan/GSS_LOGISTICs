@@ -400,9 +400,9 @@ function renderBookingsTable(bookings) {
             </td>
             <td data-col-key="route" class="p-3.5">
                 <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
-                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
-                    <p class="truncate text-slate-900 font-bold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
-                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
+                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy cont:</strong> ${cleanLoc(b.pickup)}</p>
+                    <p class="truncate text-slate-900 font-bold"><strong class="text-blue-900 font-bold">2. Kho đóng/trả:</strong> ${cleanLoc(b.delivery)}</p>
+                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-amber-800 font-bold">3. Trả cont:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
                 </div>
             </td>
             <td data-col-key="closing_time" class="p-3.5 font-mono">
@@ -1024,9 +1024,9 @@ function renderQuotationsTable(quotations) {
             </td>
             <td data-col-key="route" class="p-3.5">
                 <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
-                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
-                    <p class="truncate text-slate-900 font-bold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
-                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
+                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy cont:</strong> ${cleanLoc(b.pickup)}</p>
+                    <p class="truncate text-slate-900 font-bold"><strong class="text-blue-900 font-bold">2. Kho đóng/trả:</strong> ${cleanLoc(b.delivery)}</p>
+                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-amber-800 font-bold">3. Trả cont:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
                 </div>
             </td>
             <td data-col-key="closing_time" class="p-3.5 font-mono">

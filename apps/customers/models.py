@@ -159,6 +159,31 @@ class Quotation(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         help_text="Diễn giải công thức phụ phí / điều chỉnh xăng dầu"
     )
 
+    # Cách điều chỉnh theo giá dầu: theo tỷ lệ % cước hoặc theo số tiền cố định mỗi bước biến động
+    fuel_adjust_type = models.CharField(
+        max_length=10, default='PERCENT', choices=[('PERCENT', 'Theo tỷ lệ % cước'), ('AMOUNT', 'Theo số tiền')],
+        help_text="Điều chỉnh cước theo giá dầu: theo % hay theo số tiền mỗi bước"
+    )
+    fuel_amount_per_step = models.DecimalField(
+        max_digits=12, decimal_places=0, default=0,
+        help_text="Số tiền cước điều chỉnh (VNĐ/chuyến) trên mỗi bước biến động giá dầu"
+    )
+
+    # Phụ phí hạ xa: hạ vỏ cách vị trí hạ ban đầu thì điều chỉnh cước theo số km (cùng cơ chế giá dầu)
+    far_drop_enabled = models.BooleanField(default=False, help_text="Báo giá có phụ phí hạ xa")
+    far_drop_free_km = models.IntegerField(default=0, help_text="Số km hạ xa miễn phụ phí so với vị trí hạ ban đầu")
+    far_drop_step_km = models.IntegerField(default=10, help_text="Mỗi bao nhiêu km hạ xa thì điều chỉnh một bước")
+    far_drop_adjust_type = models.CharField(
+        max_length=10, default='PERCENT', choices=[('PERCENT', 'Theo tỷ lệ % cước'), ('AMOUNT', 'Theo số tiền')],
+        help_text="Điều chỉnh cước hạ xa: theo % hay theo số tiền mỗi bước"
+    )
+    far_drop_ratio_percent = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0, help_text="Tỷ lệ điều chỉnh cước (%) trên mỗi bước km hạ xa"
+    )
+    far_drop_amount_per_step = models.DecimalField(
+        max_digits=12, decimal_places=0, default=0, help_text="Số tiền điều chỉnh (VNĐ/chuyến) trên mỗi bước km hạ xa"
+    )
+
     notes = models.TextField(blank=True, default='', help_text="Điều khoản & ghi chú báo giá (VAT, bốc xếp, phí neo, điều khoản thương mại)")
     template_type = models.CharField(
         max_length=30,

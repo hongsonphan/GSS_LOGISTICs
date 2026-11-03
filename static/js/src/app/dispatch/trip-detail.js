@@ -203,9 +203,17 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             }
         }
 
-        // Vị trí cont
+        // Quy cách cont & Chế độ vận hành
         const contLocBadge = document.getElementById('detail-cont-location-badge');
-        if (contLocBadge) contLocBadge.innerText = trip.cont_location_type || 'Nhà máy';
+        if (contLocBadge) {
+            if (trip.is_split_trip) {
+                contLocBadge.innerText = 'Cắt Kéo / Drop & Hook';
+                contLocBadge.className = 'text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-800';
+            } else {
+                contLocBadge.innerText = trip.container_type || 'Cont Tiêu Chuẩn';
+                contLocBadge.className = 'text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded bg-teal-100 text-teal-800';
+            }
+        }
 
         setText('detail-booking', trip.booking !== '-' ? `B/L: ${trip.booking}` : 'B/L: Chưa có');
         setText('detail-seal', trip.seal !== '-' ? `Seal: ${trip.seal}` : 'Seal: Chưa cập nhật');
@@ -272,10 +280,46 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const notesEl = document.getElementById('detail-cargo-notes');
         if (notesEl) notesEl.innerText = trip.cargo_notes || 'Không có lưu ý đặc biệt';
 
-        // Hành trình 3 điểm
-        setText('detail-pickup', trip.pickup);
-        setText('detail-warehouse', trip.warehouse);
+        // Hành trình 3 điểm chuẩn hóa: Nơi Lấy Cont | Kho Đóng/ Trả Hàng | Nơi Trả Cont
+        setText('detail-pickup', trip.pickup || '-');
+        setText('detail-warehouse', trip.warehouse || '-');
         setText('detail-dropoff', trip.dropoff || 'Hạ bãi rỗng');
+
+        // Phân loại bản chất luồng vận chuyển theo Loại Hình Hàng Hóa
+        const rawType = ((trip.type_raw || trip.type || '') + '').toUpperCase();
+        const isImport = rawType.includes('IMPORT') || rawType.includes('NHẬP') || rawType.includes('NHAP');
+        const isExport = rawType.includes('EXPORT') || rawType.includes('XUẤT') || rawType.includes('XUAT');
+
+        const natureBadge = document.getElementById('detail-route-nature-badge');
+        const pickupSub = document.getElementById('detail-pickup-sub');
+        const warehouseSub = document.getElementById('detail-warehouse-sub');
+        const dropoffSub = document.getElementById('detail-dropoff-sub');
+
+        if (isExport) {
+            if (natureBadge) {
+                natureBadge.textContent = 'Hàng Xuất (Lấy Rỗng ➔ Đóng Hàng ➔ Hạ Xuất)';
+                natureBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-heading bg-emerald-100 text-emerald-800 border border-emerald-300';
+            }
+            if (pickupSub) { pickupSub.textContent = 'Lấy Vỏ Rỗng'; pickupSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 font-heading uppercase'; }
+            if (warehouseSub) { warehouseSub.textContent = 'Đóng Hàng'; warehouseSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 font-heading uppercase'; }
+            if (dropoffSub) { dropoffSub.textContent = 'Hạ Cont Hàng (Cảng Xuất)'; dropoffSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-heading uppercase'; }
+        } else if (isImport) {
+            if (natureBadge) {
+                natureBadge.textContent = 'Hàng Nhập (Lấy Cont Hàng ➔ Rút Hàng ➔ Trả Rỗng)';
+                natureBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-heading bg-blue-100 text-blue-800 border border-blue-300';
+            }
+            if (pickupSub) { pickupSub.textContent = 'Cảng Lấy Cont Hàng'; pickupSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 font-heading uppercase'; }
+            if (warehouseSub) { warehouseSub.textContent = 'Dỡ / Rút Hàng Khách'; warehouseSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 font-heading uppercase'; }
+            if (dropoffSub) { dropoffSub.textContent = 'Depot Hạ Trả Vỏ Rỗng'; dropoffSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 font-heading uppercase'; }
+        } else {
+            if (natureBadge) {
+                natureBadge.textContent = 'Nội Địa (Nhận Hàng ➔ Giao Hàng ➔ Trả Cont)';
+                natureBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-heading bg-purple-100 text-purple-800 border border-purple-300';
+            }
+            if (pickupSub) { pickupSub.textContent = 'Điểm Nhận Hàng'; pickupSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 font-heading uppercase'; }
+            if (warehouseSub) { warehouseSub.textContent = 'Kho Giao / Nhận'; warehouseSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200 font-heading uppercase'; }
+            if (dropoffSub) { dropoffSub.textContent = 'Bãi Hạ / Điểm Trả'; dropoffSub.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-heading uppercase'; }
+        }
 
         // Link Zalo và Màn hình Tài xế Mobile
         const driverToken = trip.driver_hashid || trip.hashid || trip.trip_code;
