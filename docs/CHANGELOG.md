@@ -2,6 +2,13 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.35] - 2026-11-03 (Hoàn Trả Giao Diện Thao Tác Bảng Điều Vận Về Cặp Nút [Xem] & [Xóa] Chuẩn Gốc)
+
+### 1. Hoàn Trả Giao Diện Cột Thao Tác (`trip-list.js`):
+- **Thu Hồi Nút Sửa Ngoài Bảng:** Đã loại bỏ nút `Sửa` phát sinh thêm ở cột Thao tác trên từng dòng của Bảng Điều Vận.
+- **Giữ Nguyên Giao Diện Cũ Chuẩn Mực:** Cột Thao tác quay về đúng 2 nút gốc ban đầu: **`[Xem]`** và **`[Xóa]`**, đảm bảo không gian bảng thoáng đãng, không làm thay đổi thói quen sử dụng của người dùng.
+- **Bảo Toàn Hiệu Lực Các Nút:** Giữ nguyên 100% các sửa đổi kỹ thuật giúp Form Sửa (`modal_edit_trip.html` & `trip-actions.js`) và các nút thao tác hệ thống hoạt động chính xác, không còn bị chặn âm thầm (silent validation) khi lưu.
+
 ## [v4.7.34] - 2026-11-03 (Rà Soát & Khắc Phục Triệt Để Toàn Bộ Các Nút Bị Mất Tác Dụng)
 
 ### 1. Khắc Phục Nút 'Lưu' Form Sửa Chuyến Xe (`modal_edit_trip.html` & `trip-actions.js`):
