@@ -1,5 +1,7 @@
 """Dashboard Ban Giám Đốc và biểu đồ pivot."""
 from ._common import *  # noqa: F401,F403
+from django.db.models import Count, Sum  # noqa: F401
+from django.db.models.functions import Coalesce, TruncDate
 
 def _scrub_financial(user, data):
     """Người không có quyền xem tài chính (Báo cáo tài chính / Kế toán): ẩn số dư quỹ, doanh thu, lãi lỗ."""
@@ -234,25 +236,42 @@ class DashboardBGDAPIView(APIView):
 
         elif total_days <= 45 or period in ['7_days', 'this_month']:
             # Hiển thị theo TỪNG NGÀY (Daily Granularity)
+            # Gom nhóm theo ngày bằng vài truy vấn thay vì 4-5 truy vấn cho mỗi ngày
+            trip_by_day = {
+                r['day']: r for r in DispatchTrip.objects.filter(
+                    Q(loading_date__range=[start_date, end_date]) | Q(loading_date__isnull=True, created_at__date__range=[start_date, end_date]),
+                    is_deleted=False
+                ).annotate(day=Coalesce('loading_date', TruncDate('created_at'))).values('day').annotate(
+                    rev=Sum('cached_revenue'), exp=Sum('cached_expense'), n=Count('id'),
+                    done=Count('id', filter=Q(status=TripStatus.DELIVERED)),
+                )
+            }
+            bk_by_day = {
+                r['day']: r for r in BookingOrder.objects.filter(
+                    created_at__date__range=[start_date, end_date], is_deleted=False
+                ).annotate(day=TruncDate('created_at')).values('day').annotate(cont=Sum('total_containers'), n=Count('id'))
+            }
+            adv_by_day = {
+                r['advance_date']: r['amt'] for r in DriverTripAdvance.objects.filter(
+                    advance_date__range=[start_date, end_date], is_deleted=False
+                ).values('advance_date').annotate(amt=Sum('amount'))
+            }
             cur_date = start_date
             while cur_date <= end_date:
                 chart_days.append(cur_date.strftime("%d/%m"))
-                d_trips = DispatchTrip.objects.filter(
-                    Q(loading_date=cur_date) | Q(loading_date__isnull=True, created_at__date=cur_date),
-                    is_deleted=False
-                )
-                d_rev = int(d_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
-                d_exp = int(d_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
+                t = trip_by_day.get(cur_date) or {}
+                d_rev = int(t.get('rev') or 0)
+                d_exp = int(t.get('exp') or 0)
                 chart_revenue.append(d_rev)
                 chart_expense.append(d_exp)
                 chart_profit.append(d_rev - d_exp)
-                chart_trips_total.append(d_trips.count())
-                chart_trips_completed.append(d_trips.filter(status=TripStatus.DELIVERED).count())
-                d_bk = BookingOrder.objects.filter(created_at__date=cur_date, is_deleted=False)
-                chart_bookings_containers.append(int(d_bk.aggregate(t=Sum('total_containers'))['t'] or d_bk.count()))
-                chart_advances.append(int(DriverTripAdvance.objects.filter(advance_date=cur_date, is_deleted=False).aggregate(t=Sum('amount'))['t'] or 0))
+                chart_trips_total.append(t.get('n') or 0)
+                chart_trips_completed.append(t.get('done') or 0)
+                bk = bk_by_day.get(cur_date) or {}
+                chart_bookings_containers.append(int(bk.get('cont') or bk.get('n') or 0))
+                chart_advances.append(int(adv_by_day.get(cur_date) or 0))
                 cur_date += datetime.timedelta(days=1)
-            
+
             days_count = max(total_days, 1)
             avg_rev = round(agg_revenue / days_count)
             avg_exp = round(agg_expense / days_count)
