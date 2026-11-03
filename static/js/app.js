@@ -25000,6 +25000,7 @@ function showSettlementVoucherModal(v, opts = {}) {
     const approved = v.status === 'APPROVED' && !readonly;
     const settled = v.status === 'SETTLED' && !readonly;
     const cashEditable = draft || approved;
+    const hasPay = (v.payments || []).length > 0;
     const party = v.party_type;
     settleAnySplit = party === 'DRIVER' && v.lines.some(l => l.is_split_trip);
     const body = v.lines.map((l, i) => settleLineRow(party, l, i, draft)).join('');
@@ -25061,6 +25062,7 @@ function showSettlementVoucherModal(v, opts = {}) {
                     class="flex-1 min-w-[260px] px-2.5 py-1.5 border border-slate-300 rounded-lg">`
                 : `<div class="basis-full text-slate-700"><b class="${v.counterparty_confirmed ? 'text-emerald-700' : 'text-rose-700'}">${v.counterparty_confirmed ? '✓ Đối tượng đã xác nhận' : 'Chưa có xác nhận của đối tượng'}</b>
                     ${v.counterparty_confirmed_at ? ` · ${escapeHtml(v.counterparty_confirmed_at)}` : ''}${v.counterparty_confirm_note ? ` · ${escapeHtml(v.counterparty_confirm_note)}` : ''}</div>`}
+            ${(approved || settled) ? settlePaymentPanel(v, approved) : ''}
             <label class="flex items-center gap-2 font-bold text-slate-800"><input type="checkbox" id="settle-voucher-cash" ${v.with_cash ? 'checked' : ''} ${cashEditable ? '' : 'disabled'}>
                 Phát sinh phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} khi quyết toán</label>
             <select id="settle-voucher-method" ${cashEditable ? '' : 'disabled'} class="px-2 py-1 border border-slate-300 rounded-lg font-bold">
@@ -25071,11 +25073,10 @@ function showSettlementVoucherModal(v, opts = {}) {
             <button type="button" data-voucher-action onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50 cursor-pointer"><i class="ph-bold ph-trash"></i> Xóa</button>
             <button type="button" data-voucher-action onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50 cursor-pointer"><i class="ph-bold ph-floppy-disk"></i> Lưu</button>
             <button type="button" data-voucher-action onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-seal-check"></i> Duyệt phiếu</button>`
-            : (approved ? `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="Lý do mở lại đối soát (bắt buộc)" class="w-64 px-2.5 py-1.5 border border-slate-300 rounded-lg">
-            <button type="button" data-voucher-action onclick="reopenSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-amber-500 font-bold text-amber-800 hover:bg-amber-50 cursor-pointer"><i class="ph-bold ph-lock-key-open"></i> Mở lại đối soát</button>
-            <button type="button" data-voucher-action onclick="settleSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-handshake"></i> Quyết toán</button>`
-            : (settled ? `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="Lý do hủy quyết toán (bắt buộc)" class="w-64 px-2.5 py-1.5 border border-slate-300 rounded-lg">
-            <button type="button" data-voucher-action onclick="unsettleSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold cursor-pointer"><i class="ph-bold ph-arrow-counter-clockwise"></i> Hủy quyết toán</button>` : ''))}
+            : ((approved || settled) ? `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="${hasPay ? 'Lý do hủy quyết toán' : 'Lý do mở lại đối soát'} (bắt buộc)" class="w-64 px-2.5 py-1.5 border border-slate-300 rounded-lg">
+            ${hasPay
+                ? `<button type="button" data-voucher-action onclick="unsettleSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold cursor-pointer"><i class="ph-bold ph-arrow-counter-clockwise"></i> Hủy quyết toán</button>`
+                : `<button type="button" data-voucher-action onclick="reopenSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-amber-500 font-bold text-amber-800 hover:bg-amber-50 cursor-pointer"><i class="ph-bold ph-lock-key-open"></i> Mở lại đối soát</button>`}` : '')}
             </div>
         </div>
         ${(v.logs || []).length ? `<div class="bg-white rounded-xl border border-slate-200 px-3 py-2 text-xs no-print">${settleLogSection(v, false)}</div>` : ''}`;
@@ -25091,6 +25092,67 @@ function showSettlementVoucherModal(v, opts = {}) {
         });
     }
     recalcSettleVoucher();
+}
+
+// Bước 3 - Quyết toán: các lần thu/chi hoặc cấn trừ đã ghi nhận và ô nhập lần thanh toán mới
+function settlePaymentPanel(v, canPay) {
+    const rows = (v.payments || []).map(p => `<tr>
+        <td class="${SETTLE_TD}">${escapeHtml(p.date)}</td><td class="${SETTLE_TD}">${escapeHtml(p.kind_label)}${p.offset_code ? ` <b>${escapeHtml(p.offset_code)}</b>` : ''}</td>
+        <td class="${SETTLE_TD}">${escapeHtml(p.method)}</td><td class="${SETTLE_TD} font-mono">${p.cash_codes.map(escapeHtml).join(', ')}</td>
+        <td class="${SETTLE_TD} text-right font-mono font-bold">${formatMoneyVND(p.amount)}</td><td class="${SETTLE_TD}">${escapeHtml(p.note)}</td></tr>`).join('')
+        || `<tr><td colspan="6" class="${SETTLE_TD} text-slate-400 italic">Chưa ghi nhận lần thanh toán nào</td></tr>`;
+    const total = formatMoneyVND(v.amount);
+    return `<div class="basis-full border border-slate-200 rounded-lg p-2 space-y-2 bg-slate-50/60">
+        <div class="font-bold text-slate-800">Quyết toán: đã thanh toán / cấn trừ <span class="font-mono text-emerald-700">${formatMoneyVND(v.settled_amount || 0)}</span> / ${total}
+            · còn lại <span class="font-mono ${v.remaining_amount > 0 ? 'text-amber-700' : 'text-emerald-700'}">${formatMoneyVND(v.remaining_amount || 0)}</span></div>
+        <table class="w-full border-collapse text-[11px]"><thead><tr>${['Ngày', 'Hình thức', 'Phương thức', 'Phiếu thu/chi', 'Số tiền', 'Ghi chú'].map(t => `<th class="${SETTLE_TH}">${t}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
+        ${canPay ? `<div class="flex flex-wrap items-center gap-2" data-voucher-action>
+            <input id="settle-pay-amount" type="text" inputmode="numeric" value="${formatSignedVN(v.remaining_amount || 0)}" oninput="this.value = formatSignedVN(this.value).replace('-', '')"
+                class="w-36 px-2 py-1.5 text-right font-mono font-bold border border-emerald-400 rounded-lg" title="Số tiền thanh toán lần này">
+            <input id="settle-pay-note" type="text" maxlength="255" placeholder="Ghi chú (số UNC, diễn giải...)" class="flex-1 min-w-[200px] px-2.5 py-1.5 border border-slate-300 rounded-lg">
+            <button type="button" onclick="settleSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-handshake"></i> Ghi nhận thanh toán</button>
+            <button type="button" onclick="openSettleOffset()" class="px-3 py-1.5 rounded-lg border border-emerald-600 font-bold text-emerald-800 hover:bg-emerald-50 cursor-pointer"><i class="ph-bold ph-arrows-left-right"></i> Cấn trừ với phiếu khác</button>
+        </div>` : ''}
+    </div>`;
+}
+
+// Cấn trừ với phiếu ngược chiều của cùng đối tượng
+async function openSettleOffset() {
+    const v = currentSettleVoucher;
+    const res = await fetchWithAuth(`${SETTLE_VOUCHER_API}${v.id}/offset/`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) { showToast('danger', data.error || 'Không tải được danh sách phiếu cấn trừ', 'Lỗi'); return; }
+    if (!data.candidates.length) {
+        showToast('info', 'Không có phiếu đã duyệt, ngược chiều thu/chi của cùng đối tượng để cấn trừ', 'Không có phiếu cấn trừ');
+        return;
+    }
+    document.getElementById('settle-offset-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'settle-offset-modal';
+    modal.className = 'fixed inset-0 z-[1000] bg-slate-900/60 flex items-center justify-center p-3';
+    modal.innerHTML = `<div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-4 space-y-3 text-xs">
+        <h3 class="font-bold text-sm font-heading">Cấn trừ phiếu ${escapeHtml(v.code)} (còn ${formatMoneyVND(v.remaining_amount)})</h3>
+        <p class="text-slate-500">Chọn phiếu ngược chiều của ${escapeHtml(v.party_name)}. Số cấn trừ tối đa là số còn lại nhỏ hơn của hai phiếu; không phát sinh phiếu thu/chi.</p>
+        ${data.candidates.map(c => {
+            const limit = Math.min(c.remaining, v.remaining_amount);
+            return `<div class="flex items-center justify-between gap-2 p-2 border border-slate-200 rounded-lg">
+                <div><b class="font-mono">${escapeHtml(c.code)}</b> · ${c.direction === 'RECEIVE' ? 'Thu' : 'Chi'} ${formatMoneyVND(c.amount)} · còn ${formatMoneyVND(c.remaining)}</div>
+                <button type="button" onclick="doSettleOffset(${c.id}, ${limit})" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold cursor-pointer">Cấn trừ ${formatMoneyVND(limit)}</button></div>`;
+        }).join('')}
+        <div class="text-right"><button type="button" onclick="document.getElementById('settle-offset-modal').remove()" class="px-3 py-1.5 rounded-lg border border-slate-300 font-bold cursor-pointer">Đóng</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+}
+
+async function doSettleOffset(otherId, amount) {
+    const v = currentSettleVoucher;
+    document.getElementById('settle-offset-modal')?.remove();
+    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/offset/`, 'POST', { other_voucher_id: otherId, amount }, 'Đã cấn trừ');
+    if (data) {
+        const fresh = await fetchWithAuth(`${SETTLE_VOUCHER_API}${v.id}/`).then(r => r.json()).catch(() => null);
+        showSettlementVoucherModal(fresh && fresh.voucher ? fresh.voucher : data.voucher);
+        if (typeof loadAccountingData === 'function') loadAccountingData();
+    }
 }
 
 // Ba bước: Đối soát -> Duyệt (lên công nợ) -> Quyết toán
@@ -25275,16 +25337,24 @@ async function approveSettleVoucher() {
 async function settleSettleVoucher() {
     const v = currentSettleVoucher;
     const withCash = !!document.getElementById('settle-voucher-cash')?.checked;
+    const amount = parseNumberVN(document.getElementById('settle-pay-amount')?.value);
+    if (v.amount > 0 && (amount <= 0 || amount > v.remaining_amount)) {
+        showToast('warning', `Số tiền thanh toán phải lớn hơn 0 và không vượt số còn lại (${formatMoneyVND(v.remaining_amount)})`, 'Số tiền không hợp lệ');
+        document.getElementById('settle-pay-amount')?.focus();
+        return;
+    }
     const ok = await showConfirmModal({
-        title: 'Quyết Toán Phiếu',
-        message: `Quyết toán phiếu ${v.code}?${withCash ? ` Hệ thống lập phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} ${formatMoneyVND(v.amount)} vào Sổ quỹ.` : ' Không lập phiếu thu/chi (đã cấn trừ bằng chứng từ khác).'} Tạm ứng của tài xế sẽ được đóng.`,
-        confirmText: 'Quyết toán', cancelText: 'Huỷ bỏ', type: 'success', icon: 'ph-bold ph-handshake text-2xl'
+        title: 'Ghi Nhận Thanh Toán',
+        message: `Ghi nhận ${formatMoneyVND(amount)} cho phiếu ${v.code}?${withCash ? ` Hệ thống lập phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} vào Sổ quỹ${v.party_type === 'CUSTOMER' ? ' (tách thu cước và thu hồi chi hộ)' : ''}.` : ' Không lập phiếu thu/chi (đã thanh toán ngoài hệ thống).'} Khi đủ số tiền phiếu thành "Đã quyết toán" và tạm ứng tài xế được đóng.`,
+        confirmText: 'Ghi nhận', cancelText: 'Huỷ bỏ', type: 'success', icon: 'ph-bold ph-handshake text-2xl'
     });
     if (!ok) return;
     const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/settle/`, 'POST', {
-        with_cash: withCash, payment_method: document.getElementById('settle-voucher-method')?.value || 'BANK' }, 'Đã quyết toán phiếu');
+        amount, with_cash: withCash, payment_method: document.getElementById('settle-voucher-method')?.value || 'BANK',
+        note: document.getElementById('settle-pay-note')?.value || '' }, 'Đã ghi nhận thanh toán');
     if (data) {
-        showSettlementVoucherModal(data.voucher);
+        const fresh = await fetchWithAuth(`${SETTLE_VOUCHER_API}${v.id}/`).then(r => r.json()).catch(() => null);
+        showSettlementVoucherModal(fresh && fresh.voucher ? fresh.voucher : data.voucher);
         if (typeof loadAccountingData === 'function') loadAccountingData();
     }
 }
@@ -25299,7 +25369,7 @@ async function unsettleSettleVoucher() {
     }
     const ok = await showConfirmModal({
         title: 'Hủy Quyết Toán',
-        message: `Hủy quyết toán phiếu ${v.code}? Phiếu quay về "Đã duyệt"${v.cash_transaction_code ? ` và phiếu ${v.cash_transaction_code} trong Sổ quỹ sẽ bị hủy` : ''}; tạm ứng được mở lại.`,
+        message: `Hủy toàn bộ thanh toán / cấn trừ của phiếu ${v.code}? Phiếu quay về "Đã duyệt"; các phiếu thu/chi đã lập bị hủy và tạm ứng được mở lại.`,
         confirmText: 'Hủy quyết toán', cancelText: 'Giữ nguyên', type: 'warning', icon: 'ph-bold ph-arrow-counter-clockwise text-2xl'
     });
     if (!ok) return;
@@ -25460,6 +25530,8 @@ window.recalcSettleVoucher = recalcSettleVoucher;
 window.saveSettleVoucher = saveSettleVoucher;
 window.approveSettleVoucher = approveSettleVoucher;
 window.settleSettleVoucher = settleSettleVoucher;
+window.openSettleOffset = openSettleOffset;
+window.doSettleOffset = doSettleOffset;
 window.unsettleSettleVoucher = unsettleSettleVoucher;
 window.reopenSettleVoucher = reopenSettleVoucher;
 window.deleteSettleVoucher = deleteSettleVoucher;

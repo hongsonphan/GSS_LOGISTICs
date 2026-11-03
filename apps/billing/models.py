@@ -496,6 +496,10 @@ class CashTransaction(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         help_text="Kế toán lập phiếu thu/chi"
     )
     notes = models.TextField(blank=True, help_text="Diễn giải chi tiết lý do thu/chi")
+    settlement_payment = models.ForeignKey(
+        'billing.SettlementVoucherPayment', on_delete=models.SET_NULL, null=True, blank=True, related_name='cash_transactions',
+        help_text="Lần thanh toán của phiếu quyết toán đã sinh ra phiếu thu/chi này"
+    )
 
     class Meta:
         ordering = ['-transaction_date', '-created_at']
@@ -802,3 +806,29 @@ class SettlementVoucherLog(TimeStampedModel):
 
     def __str__(self):
         return f"{self.voucher_id} {self.action} {self.created_at:%d/%m/%Y %H:%M}"
+
+
+class SettlementVoucherPayment(TimeStampedModel):
+    """Một lần thanh toán / cấn trừ của phiếu quyết toán (bước 3): có thể nhiều lần cho đến khi hết số tiền của phiếu."""
+    KIND_CHOICES = [
+        ('CASH', 'Thu / chi qua Sổ quỹ'),
+        ('MANUAL', 'Đã thanh toán, không lập phiếu thu/chi'),
+        ('OFFSET', 'Cấn trừ với phiếu quyết toán khác'),
+    ]
+    voucher = models.ForeignKey(SettlementVoucher, on_delete=models.CASCADE, related_name='payments')
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES, default='CASH')
+    amount = models.DecimalField(max_digits=14, decimal_places=0, default=0)
+    payment_method = models.CharField(max_length=10, choices=PaymentMethod.choices, blank=True)
+    paid_date = models.DateField()
+    note = models.CharField(max_length=255, blank=True)
+    offset_voucher = models.ForeignKey(
+        SettlementVoucher, on_delete=models.SET_NULL, null=True, blank=True, related_name='+',
+        help_text="Phiếu đối ứng khi cấn trừ"
+    )
+    created_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+
+    class Meta:
+        ordering = ['paid_date', 'id']
+
+    def __str__(self):
+        return f"{self.voucher_id} {self.kind} {self.amount:,}"

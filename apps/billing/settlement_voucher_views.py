@@ -9,6 +9,7 @@ khách hàng không thấy chi phí tài xế/đối tác.
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
@@ -17,7 +18,7 @@ from rest_framework.views import APIView
 
 from apps.billing.models import (
     ApprovalStatus, CashFlowCategory, CashTransaction, DriverAdvanceStatus, PaymentMethod, ReimbursementStatus, SettlementDiffType,
-    SettlementVoucher, SettlementVoucherLog, TransactionType, VoucherPartyType, VoucherStatus,
+    SettlementVoucher, SettlementVoucherLog, SettlementVoucherPayment, TransactionType, VoucherPartyType, VoucherStatus,
 )
 from apps.dispatch.models import DispatchTrip, TripStatus
 from core.permissions import CanViewSettlementVoucherReport, IsAccountant
@@ -166,6 +167,117 @@ def _missing_adjustment_note(lines):
     return [l['trip_code'] for l in lines if int(l.get('adjustment') or 0) != 0 and not (l.get('adjustment_note') or '').strip()]
 
 
+def _paid(v):
+    return int(v.payments.aggregate(total=Sum('amount'))['total'] or 0)
+
+
+def _remaining(v):
+    return max(int(v.amount) - _paid(v), 0)
+
+
+def _customer_reimb_share(v, amount):
+    """Phần chi hộ trong số tiền khách trả (theo tỷ lệ cơ cấu phiếu) để ghi đúng tài khoản 1388, phần còn lại là cước + phát sinh (131)."""
+    reimb = sum(int(e.get('amount') or 0) for line in (v.lines or []) for e in line.get('expense_lines', []))
+    total = int(v.amount)
+    if total <= 0 or reimb <= 0:
+        return 0
+    return min(int(round(amount * reimb / total)), amount)
+
+
+def _create_cash(v, payment, amount, emp, now):
+    """Phiếu Thu/Chi của một lần thanh toán. Khách hàng: tách phiếu thu chi hộ (Thu hồi chi hộ) khỏi phiếu thu cước."""
+    inflow = v.direction == 'RECEIVE'
+    if v.party_type == VoucherPartyType.CUSTOMER:
+        reimb = _customer_reimb_share(v, amount)
+        parts = [(CashFlowCategory.FREIGHT_REVENUE, amount - reimb), (CashFlowCategory.REIMBURSABLE_COLLECTION, reimb)]
+    elif v.party_type == VoucherPartyType.PARTNER:
+        parts = [(CashFlowCategory.SUBCONTRACTOR_PAYMENT, amount)]
+    else:
+        parts = [(CashFlowCategory.ADVANCE_REFUND if inflow else CashFlowCategory.ADVANCE_REIMBURSE, amount)]
+    prefix = f"{'PT' if inflow else 'PC'}.{now.strftime('%y%m')}."
+    made = []
+    for category, part in parts:
+        if part <= 0:
+            continue
+        made.append(CashTransaction.objects.create(
+            code=next_code(CashTransaction, 'code', prefix, 3),
+            transaction_type=TransactionType.INFLOW if inflow else TransactionType.OUTFLOW,
+            payment_method=payment.payment_method or v.payment_method, category=category, amount=part,
+            transaction_date=payment.paid_date, partner_type=CASH_PARTNER[v.party_type], partner_name=v.party_name,
+            ref_code=v.code, created_by=emp, settlement_payment=payment,
+            notes=f"Quyết toán {v.get_party_type_display()} - phiếu {v.code}",
+        ))
+    return made
+
+
+def _close_voucher(v, emp, now):
+    """Hết số tiền phải thanh toán: phiếu thành Đã quyết toán; chuyến sang SETTLED; đóng tạm ứng của tài xế."""
+    trips = list(v.trips.select_related('driver').prefetch_related('driver_advances'))
+    lines = {l['trip_id']: l for l in v.lines}
+    for t in trips:
+        line = lines.get(t.id, {})
+        if v.party_type == VoucherPartyType.DRIVER:
+            t.driver_settlement_status = 'SETTLED'
+            t.advance_settlement_status = 'SETTLED'
+            t.save(update_fields=['driver_settlement_status', 'advance_settlement_status'])
+            spent = line.get('spent', 0) + line.get('adjustment', 0)
+            # Phân bổ thực chi lần lượt lên từng phiếu tạm ứng; phiếu cuối nhận phần còn lại (kể cả phần vượt)
+            advances = list(t.driver_advances.filter(is_deleted=False, status=DriverAdvanceStatus.ADVANCED).order_by('advance_date', 'id'))
+            remaining = spent
+            for idx, adv in enumerate(advances):
+                share = remaining if idx == len(advances) - 1 else min(int(adv.amount), max(remaining, 0))
+                remaining -= share
+                diff = int(adv.amount) - share
+                adv.status = DriverAdvanceStatus.SETTLED
+                adv.actual_spent = share
+                adv.settlement_diff_type = (SettlementDiffType.DRIVER_REFUND if diff > 0
+                                            else SettlementDiffType.COMPANY_REIMBURSE if diff < 0 else SettlementDiffType.BALANCED)
+                adv.refund_amount = max(diff, 0)
+                adv.reimburse_amount = max(-diff, 0)
+                adv.settled_at = now
+                adv.settled_by = emp
+                adv.settlement_notes = f"Phiếu quyết toán {v.code}"
+                adv.save()
+        elif v.party_type == VoucherPartyType.PARTNER:
+            t.subcontractor_settlement_status = 'SETTLED'
+            t.subcontractor_settled_at = now
+            t.save(update_fields=['subcontractor_settlement_status', 'subcontractor_settled_at'])
+        else:
+            t.customer_settlement_status = 'SETTLED'
+            t.save(update_fields=['customer_settlement_status'])
+    v.status = VoucherStatus.SETTLED
+    v.settled_by = emp
+    v.settled_at = now
+    last_tx = CashTransaction.objects.filter(settlement_payment__voucher=v).order_by('-id').first()
+    v.cash_transaction = last_tx
+    v.save()
+
+
+def _revert_to_approved(v):
+    """Hủy quyết toán: chuyến về Đã duyệt, mở lại tạm ứng đã đóng."""
+    for t in v.trips.all():
+        if v.party_type == VoucherPartyType.DRIVER:
+            t.driver_settlement_status = 'APPROVED'
+            has_adv = t.driver_advances.filter(is_deleted=False).exists()
+            t.advance_settlement_status = 'ADVANCED' if has_adv else 'NO_ADVANCE'
+            t.save(update_fields=['driver_settlement_status', 'advance_settlement_status'])
+            t.driver_advances.filter(is_deleted=False, settled_at=v.settled_at).update(
+                status=DriverAdvanceStatus.ADVANCED, settled_at=None, settled_by=None, actual_spent=0,
+                refund_amount=0, reimburse_amount=0)
+        elif v.party_type == VoucherPartyType.PARTNER:
+            t.subcontractor_settlement_status = 'APPROVED'
+            t.subcontractor_settled_at = None
+            t.save(update_fields=['subcontractor_settlement_status', 'subcontractor_settled_at'])
+        else:
+            t.customer_settlement_status = 'APPROVED'
+            t.save(update_fields=['customer_settlement_status'])
+    v.status = VoucherStatus.APPROVED
+    v.settled_by = None
+    v.settled_at = None
+    v.cash_transaction = None
+    v.save()
+
+
 def _party_of(party_type, trip):
     if party_type == VoucherPartyType.DRIVER:
         return str(trip.driver_id or ''), (trip.driver.nickname or trip.driver.full_name) if trip.driver else 'Tài xế'
@@ -190,6 +302,15 @@ def serialize(v, with_lines=True):
     }
     if with_lines:
         data['lines'] = v.lines
+        paid = _paid(v)
+        data['settled_amount'] = paid
+        data['remaining_amount'] = max(int(v.amount) - paid, 0)
+        data['payments'] = [{
+            'id': pay.id, 'kind': pay.kind, 'kind_label': pay.get_kind_display(), 'amount': int(pay.amount),
+            'method': pay.get_payment_method_display() if pay.payment_method else '', 'date': pay.paid_date.strftime('%d/%m/%Y'),
+            'note': pay.note, 'cash_codes': [tx.code for tx in pay.cash_transactions.all()],
+            'offset_code': pay.offset_voucher.code if pay.offset_voucher_id else '',
+        } for pay in v.payments.select_related('offset_voucher').prefetch_related('cash_transactions')]
         data['logs'] = [{
             'action': g.action, 'action_label': g.get_action_display(), 'actor': g.actor_label, 'reason': g.reason,
             'changes': g.changes, 'amount_after': int(g.amount_after), 'at': timezone.localtime(g.created_at).strftime('%d/%m/%Y %H:%M'),
@@ -452,7 +573,7 @@ class SettlementVoucherApproveAPIView(APIView):
 
 
 class SettlementVoucherSettleAPIView(APIView):
-    """Bước 3 - QUYẾT TOÁN: cấn trừ / thu - chi thực tế, đóng tạm ứng; phát sinh phiếu Thu/Chi (nếu chọn)."""
+    """Bước 3 - QUYẾT TOÁN: ghi nhận từng lần thu/chi hoặc cấn trừ cho đến hết số tiền của phiếu (cho phép thanh toán từng phần)."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsAccountant]
     access_actions = {'POST': 'approve'}
@@ -464,115 +585,120 @@ class SettlementVoucherSettleAPIView(APIView):
             return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
         if v.status != VoucherStatus.APPROVED:
             return Response({'error': 'Chỉ quyết toán được phiếu đã duyệt (đã lên công nợ)'}, status=status.HTTP_400_BAD_REQUEST)
-        if 'with_cash' in request.data:
-            v.with_cash = bool(request.data['with_cash'])
-        if request.data.get('payment_method'):
-            v.payment_method = request.data['payment_method']
-
+        remaining = _remaining(v)
+        try:
+            amount = int(request.data['amount']) if request.data.get('amount') not in (None, '') else remaining
+        except (TypeError, ValueError):
+            return Response({'error': 'Số tiền thanh toán không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
+        if int(v.amount) > 0 and (amount <= 0 or amount > remaining):
+            return Response({'error': f'Số tiền thanh toán phải lớn hơn 0 và không vượt số còn lại ({remaining:,} đ)'}, status=status.HTTP_400_BAD_REQUEST)
+        with_cash = bool(request.data['with_cash']) if 'with_cash' in request.data else v.with_cash
+        method = request.data.get('payment_method') or v.payment_method
+        if method not in PaymentMethod.values:
+            method = PaymentMethod.BANK
         emp = getattr(request.user, 'employee', None)
         now = timezone.now()
-        trips = list(v.trips.select_related('driver').prefetch_related('driver_advances'))
-        lines = {l['trip_id']: l for l in v.lines}
+        before = _paid(v)
 
-        for t in trips:
-            line = lines.get(t.id, {})
-            if v.party_type == VoucherPartyType.DRIVER:
-                t.driver_settlement_status = 'SETTLED'
-                t.advance_settlement_status = 'SETTLED'
-                t.save(update_fields=['driver_settlement_status', 'advance_settlement_status'])
-                spent = line.get('spent', 0) + line.get('adjustment', 0)
-                # Phân bổ thực chi lần lượt lên từng phiếu tạm ứng; phiếu cuối nhận phần còn lại (kể cả phần vượt)
-                advances = list(t.driver_advances.filter(is_deleted=False, status=DriverAdvanceStatus.ADVANCED).order_by('advance_date', 'id'))
-                remaining = spent
-                for idx, adv in enumerate(advances):
-                    share = remaining if idx == len(advances) - 1 else min(int(adv.amount), max(remaining, 0))
-                    remaining -= share
-                    diff = int(adv.amount) - share
-                    adv.status = DriverAdvanceStatus.SETTLED
-                    adv.actual_spent = share
-                    adv.settlement_diff_type = (SettlementDiffType.DRIVER_REFUND if diff > 0
-                                                else SettlementDiffType.COMPANY_REIMBURSE if diff < 0 else SettlementDiffType.BALANCED)
-                    adv.refund_amount = max(diff, 0)
-                    adv.reimburse_amount = max(-diff, 0)
-                    adv.settled_at = now
-                    adv.settled_by = emp
-                    adv.settlement_notes = f"Phiếu quyết toán {v.code}"
-                    adv.save()
-            elif v.party_type == VoucherPartyType.PARTNER:
-                t.subcontractor_settlement_status = 'SETTLED'
-                t.subcontractor_settled_at = now
-                t.save(update_fields=['subcontractor_settlement_status', 'subcontractor_settled_at'])
-            else:
-                t.customer_settlement_status = 'SETTLED'
-                t.save(update_fields=['customer_settlement_status'])
-
-        if v.with_cash and v.amount > 0:
-            inflow = v.direction == 'RECEIVE'
-            if v.party_type == VoucherPartyType.CUSTOMER:
-                category = CashFlowCategory.FREIGHT_REVENUE
-            elif v.party_type == VoucherPartyType.PARTNER:
-                category = CashFlowCategory.SUBCONTRACTOR_PAYMENT
-            else:
-                category = CashFlowCategory.ADVANCE_REFUND if inflow else CashFlowCategory.ADVANCE_REIMBURSE
-            prefix = f"{'PT' if inflow else 'PC'}.{now.strftime('%y%m')}."
-            v.cash_transaction = CashTransaction.objects.create(
-                code=next_code(CashTransaction, 'code', prefix, 3),
-                transaction_type=TransactionType.INFLOW if inflow else TransactionType.OUTFLOW,
-                payment_method=v.payment_method, category=category, amount=v.amount,
-                transaction_date=now.date(), partner_type=CASH_PARTNER[v.party_type], partner_name=v.party_name,
-                ref_code=v.code, created_by=emp, notes=f"Quyết toán {v.get_party_type_display()} - phiếu {v.code}",
-            )
-
-        v.status = VoucherStatus.SETTLED
-        v.settled_by = emp
-        v.settled_at = now
+        payment = SettlementVoucherPayment.objects.create(
+            voucher=v, kind='CASH' if (with_cash and amount > 0) else 'MANUAL', amount=amount,
+            payment_method=method if with_cash else '', paid_date=now.date(),
+            note=(request.data.get('note') or '').strip()[:255], created_by=emp)
+        if with_cash and amount > 0:
+            _create_cash(v, payment, amount, emp, now)
+        v.with_cash = with_cash
+        v.payment_method = method
         v.save()
-        _write_log(v, request, 'SETTLE')
-        return Response({'success': True, 'message': f'Đã quyết toán phiếu {v.code}', 'voucher': serialize(v)})
+        if _remaining(v) == 0:
+            _close_voucher(v, emp, now)
+        _write_log(v, request, 'SETTLE', [{'field': 'Đã thanh toán', 'trip_code': '', 'old': before, 'new': _paid(v)}], reason=payment.note)
+        msg = f'Đã quyết toán phiếu {v.code}' if v.status == VoucherStatus.SETTLED else f'Đã ghi nhận thanh toán {amount:,} đ, còn lại {_remaining(v):,} đ'
+        return Response({'success': True, 'message': msg, 'voucher': serialize(v)})
+
+
+class SettlementVoucherOffsetAPIView(APIView):
+    """Cấn trừ giữa hai phiếu đã duyệt của cùng một đối tượng, ngược chiều (vd công ty phải thu và phải trả cùng tài xế / đối tác)."""
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAccountant]
+    access_actions = {'GET': 'approve', 'POST': 'approve'}
+
+    @staticmethod
+    def _candidates(v):
+        qs = SettlementVoucher.objects.filter(
+            is_deleted=False, status=VoucherStatus.APPROVED, party_type=v.party_type, party_ref=v.party_ref,
+        ).exclude(pk=v.pk).exclude(direction=v.direction)
+        return [o for o in qs if _remaining(o) > 0]
+
+    def get(self, request, pk):
+        v = SettlementVoucher.objects.filter(pk=pk, is_deleted=False).first()
+        if not v:
+            return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': True, 'candidates': [
+            {'id': o.id, 'code': o.code, 'direction': o.direction, 'amount': int(o.amount), 'remaining': _remaining(o)}
+            for o in self._candidates(v)]})
+
+    @transaction.atomic
+    def post(self, request, pk):
+        v = SettlementVoucher.objects.filter(pk=pk, is_deleted=False).first()
+        other = SettlementVoucher.objects.filter(pk=request.data.get('other_voucher_id'), is_deleted=False).first()
+        if not v or not other:
+            return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
+        if v.status != VoucherStatus.APPROVED or other.id not in {o.id for o in self._candidates(v)}:
+            return Response({'error': 'Chỉ cấn trừ được hai phiếu đã duyệt, cùng đối tượng, ngược chiều thu/chi và còn số chưa thanh toán'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        limit = min(_remaining(v), _remaining(other))
+        try:
+            amount = int(request.data['amount']) if request.data.get('amount') not in (None, '') else limit
+        except (TypeError, ValueError):
+            return Response({'error': 'Số tiền cấn trừ không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
+        if amount <= 0 or amount > limit:
+            return Response({'error': f'Số tiền cấn trừ phải lớn hơn 0 và không vượt {limit:,} đ'}, status=status.HTTP_400_BAD_REQUEST)
+        emp = getattr(request.user, 'employee', None)
+        now = timezone.now()
+        note = (request.data.get('note') or '').strip()[:255] or f'Cấn trừ {v.code} với {other.code}'
+        for a, b in ((v, other), (other, v)):
+            before = _paid(a)
+            SettlementVoucherPayment.objects.create(
+                voucher=a, kind='OFFSET', amount=amount, paid_date=now.date(), note=note, offset_voucher=b, created_by=emp)
+            if _remaining(a) == 0:
+                _close_voucher(a, emp, now)
+            _write_log(a, request, 'SETTLE', [{'field': 'Đã thanh toán', 'trip_code': '', 'old': before, 'new': _paid(a)}],
+                       reason=f'Cấn trừ với {b.code}')
+        return Response({'success': True, 'message': f'Đã cấn trừ {amount:,} đ giữa {v.code} và {other.code}', 'voucher': serialize(v)})
 
 
 class SettlementVoucherUnsettleAPIView(APIView):
-    """Hủy quyết toán (Đã quyết toán -> Đã duyệt): hủy phiếu Thu/Chi đã phát sinh và mở lại tạm ứng."""
+    """Hủy quyết toán: hủy mọi lần thanh toán / cấn trừ, hủy phiếu Thu/Chi đã phát sinh, phiếu về Đã duyệt."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsAccountant]
     access_actions = {'POST': 'approve'}
 
     @transaction.atomic
     def post(self, request, pk):
-        v = SettlementVoucher.objects.filter(pk=pk, is_deleted=False).select_related('cash_transaction').first()
+        v = SettlementVoucher.objects.filter(pk=pk, is_deleted=False).first()
         if not v:
             return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
-        if v.status != VoucherStatus.SETTLED:
-            return Response({'error': 'Phiếu chưa quyết toán'}, status=status.HTTP_400_BAD_REQUEST)
+        if v.status not in (VoucherStatus.SETTLED, VoucherStatus.APPROVED) or not v.payments.exists():
+            return Response({'error': 'Phiếu chưa có thanh toán / quyết toán nào để hủy'}, status=status.HTTP_400_BAD_REQUEST)
         reason = (request.data.get('reason') or '').strip()
         if not reason:
             return Response({'error': 'Nhập lý do hủy quyết toán để lưu vết'}, status=status.HTTP_400_BAD_REQUEST)
 
-        for t in v.trips.all():
-            if v.party_type == VoucherPartyType.DRIVER:
-                t.driver_settlement_status = 'APPROVED'
-                has_adv = t.driver_advances.filter(is_deleted=False).exists()
-                t.advance_settlement_status = 'ADVANCED' if has_adv else 'NO_ADVANCE'
-                t.save(update_fields=['driver_settlement_status', 'advance_settlement_status'])
-                t.driver_advances.filter(is_deleted=False, settled_at=v.settled_at).update(
-                    status=DriverAdvanceStatus.ADVANCED, settled_at=None, settled_by=None, actual_spent=0,
-                    refund_amount=0, reimburse_amount=0)
-            elif v.party_type == VoucherPartyType.PARTNER:
-                t.subcontractor_settlement_status = 'APPROVED'
-                t.subcontractor_settled_at = None
-                t.save(update_fields=['subcontractor_settlement_status', 'subcontractor_settled_at'])
-            else:
-                t.customer_settlement_status = 'APPROVED'
-                t.save(update_fields=['customer_settlement_status'])
-
-        if v.cash_transaction:
-            v.cash_transaction.delete()
-            v.cash_transaction = None
-        v.status = VoucherStatus.APPROVED
-        v.settled_by = None
-        v.settled_at = None
-        v.save()
-        _write_log(v, request, 'UNSETTLE', reason=reason)
+        touched = [v]
+        for pay in list(v.payments.select_related('offset_voucher')):
+            for tx in pay.cash_transactions.all():
+                tx.delete()
+            if pay.offset_voucher_id:
+                counter = pay.offset_voucher
+                counter.payments.filter(offset_voucher=v).delete()
+                if counter not in touched:
+                    touched.append(counter)
+            pay.delete()
+        for voucher in touched:
+            if voucher.status == VoucherStatus.SETTLED:
+                _revert_to_approved(voucher)
+            _write_log(voucher, request, 'UNSETTLE', reason=reason if voucher.pk == v.pk else f'{reason} (cấn trừ với {v.code})')
+        v.refresh_from_db()
         return Response({'success': True, 'message': f'Đã hủy quyết toán phiếu {v.code}', 'voucher': serialize(v)})
 
 
@@ -592,6 +718,9 @@ class SettlementVoucherReopenAPIView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         if v.status != VoucherStatus.APPROVED:
             return Response({'error': 'Phiếu chưa được duyệt'}, status=status.HTTP_400_BAD_REQUEST)
+        if v.payments.exists():
+            return Response({'error': 'Phiếu đã có thanh toán / cấn trừ: hãy Hủy quyết toán trước khi mở lại đối soát'},
+                            status=status.HTTP_400_BAD_REQUEST)
         reason = (request.data.get('reason') or '').strip()
         if not reason:
             return Response({'error': 'Nhập lý do mở lại phiếu để lưu vết'}, status=status.HTTP_400_BAD_REQUEST)

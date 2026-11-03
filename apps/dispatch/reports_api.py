@@ -17,7 +17,7 @@ from apps.billing.models import (
     DriverAdvanceStatus, AdvanceSourceType, SettlementDiffType,
     CashTransaction, TransactionType, CashFlowCategory, ReimbursementStatus
 )
-from apps.billing.models import SettlementVoucher
+from apps.billing.models import SettlementVoucher, SettlementVoucherPayment
 from apps.billing.voucher_status import SAVED_LABEL, draft_voucher_codes
 from apps.fleet.models import Vehicle, Trailer
 from apps.customers.models import Customer, Quotation, BookingOrder
@@ -1522,7 +1522,7 @@ class ReportsAPIView(APIView):
             transaction_type=TransactionType.INFLOW
         ).filter(
             Q(partner_type='CUSTOMER') | Q(category=CashFlowCategory.FREIGHT_REVENUE)
-        )
+        ).filter(settlement_payment__isnull=True)
         if start_d and end_d:
             cash_inflows = cash_inflows.filter(transaction_date__gte=start_d, transaction_date__lte=end_d)
         
@@ -1542,6 +1542,17 @@ class ReportsAPIView(APIView):
         ).select_related(
             'customer', 'vehicle', 'driver', 'booking_order'
         ).prefetch_related('expenses', 'documents')
+
+        # Đã thu theo từng phiếu quyết toán khách hàng (các lần thanh toán đã ghi nhận ở bước Quyết toán)
+        voucher_collected_map = {}
+        for pay in SettlementVoucherPayment.objects.filter(
+                voucher__party_type='CUSTOMER', voucher__status__in=('APPROVED', 'SETTLED'), voucher__is_deleted=False
+        ).select_related('voucher'):
+            if start_d and end_d and not (start_d <= pay.paid_date <= end_d):
+                continue
+            ref = pay.voucher.party_ref
+            key = int(ref) if str(ref).isdigit() else ref
+            voucher_collected_map[key] = voucher_collected_map.get(key, 0) + int(pay.amount)
 
         approved_customer_lines = {}
         for voucher in SettlementVoucher.objects.filter(
@@ -1712,7 +1723,7 @@ class ReportsAPIView(APIView):
                 continue
             
             c_name_lower = entry['customer_name'].strip().lower()
-            collected = customer_collected_map.get(c_name_lower, 0)
+            collected = customer_collected_map.get(c_name_lower, 0) + voucher_collected_map.get(entry['customer_id'], 0)
             
             # Số tiền đã thu hồi thực tế cho các đơn nợ trong kỳ (không vượt quá tổng nợ phát sinh)
             allocated_collected = min(entry['total_receivable'], collected)

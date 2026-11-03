@@ -52,6 +52,7 @@ from apps.billing.settlement_voucher_views import (
     SettlementVoucherReopenAPIView,
     SettlementVoucherSettleAPIView,
     SettlementVoucherUnsettleAPIView,
+    SettlementVoucherOffsetAPIView,
     SettlementVoucherReportAPIView,
     SettlementVoucherReportDetailAPIView,
 )
@@ -213,6 +214,7 @@ urlpatterns = [
     path('api/accounting/settlement-vouchers/<int:pk>/reopen/', SettlementVoucherReopenAPIView.as_view(), name='api-settlement-voucher-reopen'),
     path('api/accounting/settlement-vouchers/<int:pk>/settle/', SettlementVoucherSettleAPIView.as_view(), name='api-settlement-voucher-settle'),
     path('api/accounting/settlement-vouchers/<int:pk>/unsettle/', SettlementVoucherUnsettleAPIView.as_view(), name='api-settlement-voucher-unsettle'),
+    path('api/accounting/settlement-vouchers/<int:pk>/offset/', SettlementVoucherOffsetAPIView.as_view(), name='api-settlement-voucher-offset'),
 
     path('api/accounting/customer-reconciliation/', CustomerARReconciliationAPIView.as_view(), name='api-customer-ar-reconciliation'),
     path('api/accounting/customer-statement/', CustomerMonthlyStatementAPIView.as_view(), name='api-customer-statement'),
