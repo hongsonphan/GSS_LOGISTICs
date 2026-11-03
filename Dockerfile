@@ -25,12 +25,10 @@ RUN useradd --uid ${APP_UID} --create-home --shell /usr/sbin/nologin app \
     && chown -R app:app /app
 USER app
 
-# Số worker gunicorn lấy từ biến WEB_CONCURRENCY (khuyến nghị 2 x số CPU + 1)
-ENV WEB_CONCURRENCY=4
-
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8000/healthz/ || exit 1
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--timeout", "120", "--access-logfile", "-"]
+# Số worker gunicorn: lấy WEB_CONCURRENCY nếu đặt sẵn, không thì tự tính 2 x số CPU container thấy được + 1.
+CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${WEB_CONCURRENCY:-$(python -c 'import os;print(2*len(os.sched_getaffinity(0))+1)')} --timeout 120 --access-logfile -"]
