@@ -138,7 +138,10 @@ async function openModal(id, extraParam = null) {
 function closeModal(id) { 
     closeAllSearchableComboboxes();
     const el = document.getElementById(id);
-    if (el) el.classList.add('hidden-view'); 
+    if (el) {
+        el.classList.add('hidden-view');
+        el.classList.add('hidden');
+    } 
     if (id === 'modal-ocr') resetOcr();
     if (id === 'modal-create-trip') clearBookingFileSelection();
     if (id === 'modal-booking') clearSaleBookingFileSelection();
