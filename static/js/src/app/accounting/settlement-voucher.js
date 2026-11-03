@@ -28,6 +28,17 @@ async function openSettlementStatement(partyType, ids, extra = {}) {
         if (typeof ids[0] === 'string') body.trip_codes = ids; else body.trip_ids = ids;
         const res = await fetchWithAuth(SETTLE_VOUCHER_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const data = await res.json();
+        if (!res.ok && data.existing_vouchers && data.existing_vouchers.length) {
+            // Chuyến đã nằm trong phiếu khác (thường là phiếu nháp lập trước đó): đề nghị mở phiếu đó
+            const ex = data.existing_vouchers[0];
+            const open = await showConfirmModal({
+                title: 'Chuyến đã có phiếu quyết toán',
+                message: `${data.error}. Mở phiếu ${ex.code} để xem, sửa hoặc xóa?`,
+                confirmText: 'Mở phiếu', cancelText: 'Đóng', type: 'warning', icon: 'ph-bold ph-files text-2xl'
+            });
+            if (open) openSettlementVoucher(ex.id);
+            return;
+        }
         if (!res.ok || !data.success) throw new Error(data.error || data.detail || 'Không thể lập bảng kê quyết toán');
         const made = data.vouchers || [data.voucher];
         settleBatch = made.length > 1 ? made.map(v => ({ id: v.id, code: v.code, name: v.party_name, status: v.status })) : [];

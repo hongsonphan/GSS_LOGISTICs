@@ -245,6 +245,19 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual((self.adv1.actual_spent, self.adv1.refund_amount), (500000, 500000))
         self.assertEqual((adv2.actual_spent, adv2.refund_amount), (0, 200000))
 
+    def test_voucher_reselecting_same_trips_reuses_draft_and_overlap_lists_existing(self):
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        res = self.client.post(base, {'party_type': 'CUSTOMER', 'trip_ids': [self.trip1.id]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        vid = res.data['voucher']['id']
+        again = self.client.post(base, {'party_type': 'CUSTOMER', 'trip_ids': [self.trip1.id]}, format='json')
+        self.assertEqual(again.status_code, status.HTTP_200_OK, again.data)
+        self.assertEqual((again.data['voucher']['id'], again.data['reused']), (vid, True))
+        overlap = self.client.post(base, {'party_type': 'CUSTOMER', 'trip_ids': [self.trip1.id, self.trip2.id]}, format='json')
+        self.assertEqual(overlap.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual([v['id'] for v in overlap.data['existing_vouchers']], [vid])
+
     def test_voucher_partner_direction_flips_when_advance_exceeds_cost(self):
         self.client.force_authenticate(user=self.accountant_user)
         self.trip1.subcontractor_cost = 1000000
@@ -300,9 +313,9 @@ class DriverBatchSettlementTests(TestCase):
         res = self.client.post('/api/accounting/', {'action': 'batch_settle', 'trip_codes': [self.trip1.trip_code]}, format='json')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn(vcode, res.data['error'])
-        # lập phiếu thứ hai cho cùng chuyến cũng bị từ chối
+        # chọn lại đúng chuyến của phiếu nháp: mở lại phiếu cũ, không lập phiếu thứ hai
         res = self.client.post(base, {'party_type': 'DRIVER', 'trip_ids': [self.trip1.id]}, format='json')
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual((res.status_code, res.data['voucher']['id']), (status.HTTP_200_OK, vid))
         self.assertEqual(self.client.post(f'{base}{vid}/approve/', {}, format='json').status_code, status.HTTP_200_OK)
         # phiếu đã duyệt: không mở lại từng chuyến
         res = self.client.post(f'/api/trips/{self.trip1.trip_code}/unsettle-expenses/', {}, format='json')

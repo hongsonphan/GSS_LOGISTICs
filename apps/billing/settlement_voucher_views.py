@@ -239,10 +239,17 @@ class SettlementVoucherListCreateAPIView(APIView):
         done = [t.trip_code for t in trips if _already_settled(party_type, t)]
         if done:
             return Response({'error': f'Chuyến đã quyết toán: {", ".join(done[:5])}'}, status=status.HTTP_400_BAD_REQUEST)
-        taken = SettlementVoucher.objects.filter(
-            is_deleted=False, party_type=party_type, trips__in=[t.id for t in trips]).values_list('code', flat=True).distinct()
+        taken = list(SettlementVoucher.objects.filter(
+            is_deleted=False, party_type=party_type, trips__in=[t.id for t in trips]).distinct())
         if taken:
-            return Response({'error': f'Chuyến đã nằm trong phiếu quyết toán khác: {", ".join(list(taken)[:3])}'}, status=status.HTTP_400_BAD_REQUEST)
+            # Chọn lại đúng các chuyến của một phiếu nháp: mở lại phiếu đó thay vì báo lỗi
+            same = taken[0] if len(taken) == 1 and taken[0].status == VoucherStatus.DRAFT and                 set(taken[0].trips.values_list('id', flat=True)) == {t.id for t in trips} else None
+            if same:
+                return Response({'success': True, 'reused': True, 'voucher': serialize(same), 'vouchers': [serialize(same, with_lines=False)]})
+            return Response({
+                'error': f'Chuyến đã nằm trong phiếu quyết toán khác: {", ".join(v.code for v in taken[:3])}',
+                'existing_vouchers': [{'id': v.id, 'code': v.code, 'status': v.status} for v in taken[:5]],
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         groups = {}
         for t in trips:
