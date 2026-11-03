@@ -181,6 +181,10 @@ WHITENOISE_MANIFEST_STRICT = False  # thiếu mục trong manifest thì dùng t�
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+if 'test' in sys.argv[1:2]:
+    # Chạy test: file tải lên ghi vào thư mục tạm, không đụng tới media thật
+    import tempfile
+    MEDIA_ROOT = Path(tempfile.mkdtemp(prefix='bim_test_media_'))
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
