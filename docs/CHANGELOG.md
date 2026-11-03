@@ -2,6 +2,17 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.36] - 2026-11-03 (Khắc Phục Lỗi Unclosed DIV Khiến Các Modal Cột, Sửa Chuyến Bị Chặn Hiển Thị)
+
+### 1. Khắc Phục Nguyên Nhân Cốt Lõi Khiến Nút 'Cột' & 'Sửa' Bị Mất Tác Dụng:
+- **Phát Hiện & Khắc Phục Lỗi Cấu Trúc DOM:** Trong tệp `templates/components/modal_create_trip.html`, tại khu vực grid 4 cột (Cắt CY, Invoice, Dock, Giờ hẹn), tồn tại 2 thẻ `<div>` mở thừa chưa được đóng (do quá trình lược bỏ trường vị trí cont trước đó).
+- **Hệ Quả Nghiêm Trọng:** Do cấu trúc DOM không cân bằng, trình duyệt đã vô tình đưa toàn bộ các modal phía sau (`modal_edit_trip.html` - Form Sửa Chuyến, `modal_column_customizer.html` - Modal Tùy Chỉnh Cột, v.v.) vào làm phần tử con bên trong `modal-create-trip`. Khi `modal-create-trip` đang ở trạng thái ẩn (`display: none`), tất cả các modal con này đều bị ẩn theo (kích thước `0x0px`), khiến việc bấm nút `Cột` hay `Sửa` hoàn toàn không thể hiển thị lên màn hình.
+- **Xử Lý:** Đã đóng chuẩn xác thẻ lưới grid trong `modal_create_trip.html`, đưa số thẻ `<div>` mở và đóng về cân bằng tuyệt đối (0 unclosed divs). Tất cả modal đã được giải phóng trở về cấp độ body độc lập.
+
+### 2. Tăng Cường Tính Ổn Định & Tương Tác Cho Màn Hình Chi Tiết Chuyến Xe:
+- **Nút 'Sửa' (`view_trip_detail.html`):** Bổ sung thuộc tính `type="button"` và con trỏ `cursor-pointer`.
+- **Hàm `openModalEditTrip` & `deleteOrCancelTrip` (`trip-actions.js`):** Bổ sung đa tầng fallback lấy mã chuyến từ tiêu đề chi tiết `#detail-id` và tiêu đề modal `#edit-modal-trip-code`, đảm bảo luôn mở được form sửa và xóa chuyến trong mọi trường hợp.
+
 ## [v4.7.35] - 2026-11-03 (Hoàn Trả Giao Diện Thao Tác Bảng Điều Vận Về Cặp Nút [Xem] & [Xóa] Chuẩn Gốc)
 
 ### 1. Hoàn Trả Giao Diện Cột Thao Tác (`trip-list.js`):

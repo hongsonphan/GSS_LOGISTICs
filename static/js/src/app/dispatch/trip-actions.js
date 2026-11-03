@@ -301,7 +301,12 @@ window.submitReassignDriver = submitReassignDriver;
 // PHÂN HỆ HIỆU CHỈNH LỆNH ĐIỀU ĐỘNG & HỦY CHUYẾN XE (TRIP CRUD)
 // =========================================================================
 async function openModalEditTrip(tripCode = null) {
-    const code = tripCode || (window.currentTripDetail ? window.currentTripDetail.id : null);
+    const detailId = document.getElementById('detail-id')?.innerText?.trim();
+    const modalTripCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
+    const code = tripCode 
+        || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null)
+        || (detailId && detailId !== 'TVL-XXX' ? detailId : null)
+        || (modalTripCode && modalTripCode !== 'TVL-XXX' ? modalTripCode : null);
     if (!code) {
         showToast('warning', 'Vui lòng chọn chuyến xe cần hiệu chỉnh!');
         return;
@@ -625,8 +630,12 @@ async function submitEditTripForm() {
 window.submitEditTripForm = submitEditTripForm;
 
 async function deleteOrCancelTrip(tripCode = null) {
+    const detailId = document.getElementById('detail-id')?.innerText?.trim();
     const modalTripCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
-    const code = tripCode || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null) || (modalTripCode && modalTripCode !== 'TVL-XXX' ? modalTripCode : null);
+    const code = tripCode 
+        || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null)
+        || (detailId && detailId !== 'TVL-XXX' ? detailId : null)
+        || (modalTripCode && modalTripCode !== 'TVL-XXX' ? modalTripCode : null);
     if (!code) {
         showToast('warning', 'Không xác định được mã phiếu điều độ cần xóa!');
         return;
