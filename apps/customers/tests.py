@@ -120,6 +120,36 @@ class QuotationMultiRouteAndPricingMethodTestCase(TestCase):
         # Expected rev = 3.600.000 * 25 + 2.800.000 * 10 = 90.000.000 + 28.000.000 = 118.000.000
         self.assertEqual(q.expected_revenue, 118000000)
 
+    def test_quotation_fuel_amount_and_far_drop_fields_round_trip(self):
+        """Giá dầu điều chỉnh theo số tiền + phụ phí hạ xa: lưu, đọc lại, và không bị ghi đè khi cập nhật thiếu trường."""
+        payload = {
+            'action': 'create_quotation', 'customer': self.customer.name, 'pricing_method': 'FUEL_ADJUSTED',
+            'fuel_adjust_type': 'AMOUNT', 'fuel_amount_per_step': 50000,
+            'far_drop_enabled': True, 'far_drop_free_km': 5, 'far_drop_step_km': 10,
+            'far_drop_adjust_type': 'PERCENT', 'far_drop_ratio_percent': 2,
+            'items': [{'route_description': 'Cát Lái ➔ VSIP', 'unit_price': 3500000, 'expected_trips_monthly': 10}],
+        }
+        res = self.client.post('/api/sales/', data=payload, format='json')
+        self.assertEqual(res.status_code, 200, res.data)
+        q = Quotation.objects.get(pk=res.data['quotation_id'])
+        self.assertEqual((q.fuel_adjust_type, int(q.fuel_amount_per_step)), ('AMOUNT', 50000))
+        self.assertEqual((q.far_drop_enabled, q.far_drop_free_km, q.far_drop_step_km, float(q.far_drop_ratio_percent)), (True, 5, 10, 2.0))
+
+        detail = self.client.get(f'/api/quotations/{q.id}/')
+        self.assertEqual(detail.status_code, 200)
+        body = detail.data.get('quotation', detail.data)
+        self.assertEqual((body['fuel_adjust_type'], body['fuel_amount_per_step'], body['far_drop_enabled']), ('AMOUNT', 50000.0, True))
+
+        # Cập nhật không gửi các trường mới (vd form cũ): giữ nguyên giá trị đã lưu
+        self.client.put(f'/api/quotations/{q.id}/', data={'notes': 'ghi chú mới'}, format='json')
+        q.refresh_from_db()
+        self.assertEqual((q.fuel_adjust_type, q.far_drop_enabled, q.far_drop_free_km), ('AMOUNT', True, 5))
+
+        # Giá trị sai được chuẩn hóa: kiểu lạ -> PERCENT, số âm -> 0, bước km <= 0 -> 10
+        self.client.put(f'/api/quotations/{q.id}/', data={'far_drop_adjust_type': 'X', 'far_drop_amount_per_step': -5, 'far_drop_step_km': 0}, format='json')
+        q.refresh_from_db()
+        self.assertEqual((q.far_drop_adjust_type, int(q.far_drop_amount_per_step), q.far_drop_step_km), ('PERCENT', 0, 10))
+
     def test_api_quotation_detail_and_update_items(self):
         """Kiểm thử API GET & PUT /api/quotations/<id>/ với danh sách tuyến đường."""
         q = Quotation.objects.create(
