@@ -2170,7 +2170,7 @@ function attachAutoNumberFormat(inputEl, onChangeCallback) {
 function initAllNumberInputs() {
     document.querySelectorAll('.input-number-vn, [data-format="number"]').forEach(el => {
         const cb = (el.id === 'quote-unit-price' || el.id === 'quote-monthly-trips') 
-            ? calculateQuoteExpectedRevenue 
+            ? (typeof calculateQuoteExpectedRevenue === 'function' ? calculateQuoteExpectedRevenue : null)
             : null;
         attachAutoNumberFormat(el, cb);
     });
@@ -38554,7 +38554,7 @@ function applyReport12Filters() {
     if (tfoot) {
         tfoot.innerHTML = `
             <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
-                <td colspan="8" class="text-right uppercase">TỔNG CỘNG: ${list.length} Chuyến Vận Tải:</td>
+                <td colspan="7" class="text-right uppercase">TỔNG CỘNG: ${list.length} Chuyến Vận Tải:</td>
                 <td class="text-right text-slate-900 font-mono font-black tabular-nums">${formatMoneyVND(totalRev)}</td>
                 <td class="text-right text-rose-700 font-mono font-black tabular-nums">${formatMoneyVND(totalExp)}</td>
                 <td class="text-right text-indigo-700 font-mono font-black tabular-nums">${formatMoneyVND(totalReim)}</td>

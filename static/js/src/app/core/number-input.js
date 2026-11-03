@@ -65,7 +65,7 @@ function attachAutoNumberFormat(inputEl, onChangeCallback) {
 function initAllNumberInputs() {
     document.querySelectorAll('.input-number-vn, [data-format="number"]').forEach(el => {
         const cb = (el.id === 'quote-unit-price' || el.id === 'quote-monthly-trips') 
-            ? calculateQuoteExpectedRevenue 
+            ? (typeof calculateQuoteExpectedRevenue === 'function' ? calculateQuoteExpectedRevenue : null)
             : null;
         attachAutoNumberFormat(el, cb);
     });
