@@ -2,6 +2,44 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.35] - 2026-11-03 (Hoàn Trả Giao Diện Thao Tác Bảng Điều Vận Về Cặp Nút [Xem] & [Xóa] Chuẩn Gốc)
+
+### 1. Hoàn Trả Giao Diện Cột Thao Tác (`trip-list.js`):
+- **Thu Hồi Nút Sửa Ngoài Bảng:** Đã loại bỏ nút `Sửa` phát sinh thêm ở cột Thao tác trên từng dòng của Bảng Điều Vận.
+- **Giữ Nguyên Giao Diện Cũ Chuẩn Mực:** Cột Thao tác quay về đúng 2 nút gốc ban đầu: **`[Xem]`** và **`[Xóa]`**, đảm bảo không gian bảng thoáng đãng, không làm thay đổi thói quen sử dụng của người dùng.
+- **Bảo Toàn Hiệu Lực Các Nút:** Giữ nguyên 100% các sửa đổi kỹ thuật giúp Form Sửa (`modal_edit_trip.html` & `trip-actions.js`) và các nút thao tác hệ thống hoạt động chính xác, không còn bị chặn âm thầm (silent validation) khi lưu.
+
+## [v4.7.34] - 2026-11-03 (Rà Soát & Khắc Phục Triệt Để Toàn Bộ Các Nút Bị Mất Tác Dụng)
+
+### 1. Khắc Phục Nút 'Lưu' Form Sửa Chuyến Xe (`modal_edit_trip.html` & `trip-actions.js`):
+- **Loại Bỏ Lỗi Trình Duyệt Silent Block:** Chuyển nút Lưu từ `type="submit"` thành `type="button"` với sự kiện `onclick="submitEditTripForm()"`.
+- **Loại Bỏ Required HTML5 Ẩn:** Bỏ thuộc tính `required` ở các ô (đặc biệt là Điểm 3 Hạ Cont - DB blank=True), chuyển toàn bộ sang cơ chế Javascript Toast validation thân thiện:
+  * Nếu thiếu Khách hàng / Điểm 1 / Điểm 2: Bật Toast cảnh báo rõ ràng và focus ô thiếu, không để form bị treo âm thầm.
+- **Tăng Cường Nhận Diện Mã Chuyến:** Bổ sung fallback lấy mã chuyến từ thẻ `#edit-modal-trip-code` giúp form luôn lưu được dữ liệu ngay cả khi mở từ các ngữ cảnh khác nhau.
+
+### 2. Bổ Sung Nút 'Sửa' Trực Tiếp Trên Bảng Điều Vận (`trip-list.js`):
+- Bổ sung nút **`Sửa`** (icon bút chì) vào cột Thao tác trên từng dòng của Bảng Điều Vận bên cạnh 2 nút `Xem` và `Xóa`.
+- Cho phép điều độ viên bấm sửa tức thì mọi thông tin chuyến xe mà không cần phải chuyển trang vào Chi Tiết.
+
+### 3. Tối Ưu Nút 'Hủy / Xóa Chuyến' & Cơ Chế Đóng Modal (`ui.js`):
+- `deleteOrCancelTrip()` hỗ trợ fallback lấy mã chuyến từ modal header, đảm bảo hộp thoại xác nhận xóa luôn mở đúng chuyến.
+- Hàm `closeModal(id)` đóng đồng thời cả 2 class `hidden-view` và `hidden` để đảm bảo modal biến mất 100%.
+
+## [v4.7.33] - 2026-11-03 (Đồng Bộ Chuẩn Hóa Toàn Diện Form Tạo Mới & Chỉnh Sửa Chuyến Xe Điều Vận)
+
+### 1. Chuẩn Hóa Tên Trường & Loại Bỏ Trường Rác 'Vị Trí Cont':
+- **Modal Chỉnh Sửa Chuyến Xe (`modal_edit_trip.html`):**
+  * Loại bỏ dropdown tĩnh `Vị Trí Cont` (BÃI TVL / NHÀ MÁY) gây mâu thuẫn lộ trình 3 điểm; chuyển thành hidden input.
+  * Hàng trên chia 2 cột thoáng đẹp: `Hóa Đơn Thương Mại (Invoice)` | `Hạn Miễn Phí Vỏ (Free DET - Ngày)`.
+  * Chuẩn hóa nhãn: `Lưu Ý Của Điều Độ / Hàng Hóa` ➔ **`Ghi Chú Vận Chuyển / Hàng Hóa`** (đồng bộ chuẩn 100% với cột `Ghi Chú Vận Chuyển` trên bảng Điều Vận).
+- **Trang Tạo Chuyến Mới & Modal Tạo Chuyến Nhanh (`view_create_trip.html` & `modal_create_trip.html`):**
+  * Loại bỏ dropdown `Vị Trí Vỏ Hiện Tại` (`inp-cont-loc`), gom gọn grid từ 5 cột về 4 cột cân đối, rộng rãi:
+    1. `Cắt CY / SI` (24h)
+    2. `Hóa Đơn Thương Mại (Invoice)`
+    3. `Cửa Dock Kho (Cửa Xuất)`
+    4. `Giờ Hẹn Đóng Hàng` (24h)
+  * Chuẩn hóa nhãn ghi chú điều độ: `Ghi chú phí Công ty chịu / Lưu ý Điều độ` ➔ **`Ghi Chú Vận Chuyển / Lưu Ý Điều Độ`**.
+
 ## [v4.7.32] - 2026-11-03 (Tối Ưu & Loại Bỏ Dữ Liệu Rác: Chuẩn Hóa Cột 'Ghi Chú Vận Chuyển', Loại Bỏ 'Vị Trí Cont' Gây Nhiễu)
 
 ### 1. Loại Bỏ Dữ Liệu Rác & Xung Đột "Vị Trí Cont":

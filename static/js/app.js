@@ -2093,7 +2093,10 @@ async function openModal(id, extraParam = null) {
 function closeModal(id) { 
     closeAllSearchableComboboxes();
     const el = document.getElementById(id);
-    if (el) el.classList.add('hidden-view'); 
+    if (el) {
+        el.classList.add('hidden-view');
+        el.classList.add('hidden');
+    } 
     if (id === 'modal-ocr') resetOcr();
     if (id === 'modal-create-trip') clearBookingFileSelection();
     if (id === 'modal-booking') clearSaleBookingFileSelection();
@@ -8293,16 +8296,16 @@ function renderDispatchTable(trips) {
                 ${escapeHtml(trip.startTime || '-')}
             </td>
             <!-- Cột Thao Tác Cố Định -->
-            <td data-col-key="actions" class="px-2.5 py-2 text-center whitespace-nowrap">
+            <td data-col-key="actions" class="px-2 py-2 text-center whitespace-nowrap">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <button type="button" onclick="event.stopPropagation(); viewTripDetail('${tripIdentifier}')" 
-                        class="px-2 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xem chi tiết phiếu điều độ ${trip.id}">
                         <i class="ph-bold ph-eye"></i>
                         <span>Xem</span>
                     </button>
                     <button type="button" onclick="event.stopPropagation(); deleteOrCancelTrip('${tripIdentifier}')" 
-                        class="px-2 py-1 bg-transparent hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xóa phiếu điều độ ${trip.id}">
                         <i class="ph-bold ph-trash"></i>
                         <span>Xóa</span>
@@ -10092,9 +10095,32 @@ window.onEditDropoffDriverChange = onEditDropoffDriverChange;
 
 
 async function submitEditTripForm() {
+    const modalCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
     const trip = window.currentTripDetail;
-    if (!trip) {
-        showToast('danger', 'Không tìm thấy thông tin chuyến xe để cập nhật');
+    const tripCode = (trip && (trip.id || trip.trip_code)) || (modalCode && modalCode !== 'TVL-XXX' ? modalCode : null);
+
+    if (!tripCode) {
+        showToast('warning', 'Không tìm thấy thông tin chuyến xe để cập nhật');
+        return;
+    }
+
+    // Kiểm tra tính hợp lệ của các trường bắt buộc với thông báo trực quan
+    const custId = document.getElementById('edit-inp-customer')?.value;
+    if (!custId) {
+        showToast('warning', 'Vui lòng chọn Khách Hàng!');
+        document.getElementById('edit-inp-customer')?.focus();
+        return;
+    }
+    const pickup = document.getElementById('edit-inp-pickup')?.value?.trim();
+    if (!pickup) {
+        showToast('warning', 'Vui lòng nhập 1. Nơi Lấy Cont!');
+        document.getElementById('edit-inp-pickup')?.focus();
+        return;
+    }
+    const warehouse = document.getElementById('edit-inp-warehouse')?.value?.trim();
+    if (!warehouse) {
+        showToast('warning', 'Vui lòng nhập 2. Kho Đóng/ Trả Hàng!');
+        document.getElementById('edit-inp-warehouse')?.focus();
         return;
     }
 
@@ -10130,15 +10156,20 @@ async function submitEditTripForm() {
     };
 
     try {
-        const res = await fetchWithAuth(`/api/trips/${trip.id}/`, {
+        const res = await fetchWithAuth(`/api/trips/${encodeURIComponent(tripCode)}/`, {
             method: 'PATCH',
             body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (res.ok) {
             closeModal('modal-edit-trip');
-            showToast('success', `Đã cập nhật lệnh điều động ${trip.id} thành công!`, 'Lưu Thành Công');
-            await viewTripDetail(trip.id);
+            showToast('success', `Đã cập nhật lệnh điều động ${tripCode} thành công!`, 'Lưu Thành Công');
+            
+            // Nếu đang mở trang Chi tiết chuyến xe thì tải lại dữ liệu mới nhất
+            const detailView = document.getElementById('view-trip-detail');
+            if (detailView && !detailView.classList.contains('hidden-view')) {
+                if (typeof viewTripDetail === 'function') await viewTripDetail(tripCode);
+            }
             if (typeof loadTripsData === 'function') loadTripsData();
         } else {
             showToast('danger', data.error || data.message || 'Lỗi khi cập nhật chuyến xe');
@@ -10156,7 +10187,8 @@ async function submitEditTripForm() {
 window.submitEditTripForm = submitEditTripForm;
 
 async function deleteOrCancelTrip(tripCode = null) {
-    const code = tripCode || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null);
+    const modalTripCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
+    const code = tripCode || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null) || (modalTripCode && modalTripCode !== 'TVL-XXX' ? modalTripCode : null);
     if (!code) {
         showToast('warning', 'Không xác định được mã phiếu điều độ cần xóa!');
         return;

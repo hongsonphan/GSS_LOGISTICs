@@ -608,16 +608,16 @@ function renderDispatchTable(trips) {
                 ${escapeHtml(trip.startTime || '-')}
             </td>
             <!-- Cột Thao Tác Cố Định -->
-            <td data-col-key="actions" class="px-2.5 py-2 text-center whitespace-nowrap">
+            <td data-col-key="actions" class="px-2 py-2 text-center whitespace-nowrap">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <button type="button" onclick="event.stopPropagation(); viewTripDetail('${tripIdentifier}')" 
-                        class="px-2 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xem chi tiết phiếu điều độ ${trip.id}">
                         <i class="ph-bold ph-eye"></i>
                         <span>Xem</span>
                     </button>
                     <button type="button" onclick="event.stopPropagation(); deleteOrCancelTrip('${tripIdentifier}')" 
-                        class="px-2 py-1 bg-transparent hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xóa phiếu điều độ ${trip.id}">
                         <i class="ph-bold ph-trash"></i>
                         <span>Xóa</span>

@@ -285,7 +285,8 @@
                     </div>
 
                     <!-- Thông tin Cắt CY, Invoice, Cửa Dock, Thời gian & Vị trí -->
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3 pt-1">
+                    <input type="hidden" id="inp-cont-loc" value="NHÀ MÁY" />
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-1">
                         <div class="md:col-span-1 transition-all" id="col-cutoff">
                             <div class="flex items-center justify-between h-5 mb-1">
                                 <label class="block font-bold text-rose-700 text-xs truncate" for="inp-cutoff-date">
@@ -329,7 +330,7 @@
                         </div>
                         <div>
                             <div class="flex items-center justify-between h-5 mb-1">
-                                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-invoice">Hóa Đơn TM (Invoice)</label>
+                                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-invoice">Hóa Đơn Thương Mại (Invoice)</label>
                             </div>
                             <input
                                 id="inp-invoice"
@@ -340,7 +341,7 @@
                         </div>
                         <div>
                             <div class="flex items-center justify-between h-5 mb-1">
-                                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-dock">Cửa Xuất (Dock Kho)</label>
+                                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-dock">Cửa Dock Kho (Cửa Xuất)</label>
                             </div>
                             <input
                                 id="inp-dock"
@@ -378,16 +379,6 @@
                                 <button type="button" onclick="setTripLoadTime('18:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">18:00</button>
                                 <button type="button" onclick="setTripLoadTime('20:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">20:00</button>
                             </div>
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between h-5 mb-1">
-                                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-cont-loc">Vị Trí Vỏ Hiện Tại</label>
-                            </div>
-                            <select id="inp-cont-loc" class="form-select h-9 px-2.5 py-1 font-semibold text-slate-800 text-xs w-full rounded-lg">
-                                <option value="NHÀ MÁY" selected>Tại Nhà Máy Khách Hàng</option>
-                                <option value="BÃI TVL">Tại Bãi Triền Võ</option>
-                                <option value="CẢNG / DEPOT">Tại Cảng / Bãi Cont</option>
-                            </select>
                         </div>
                     </div>
 
@@ -678,7 +669,7 @@
                         <!-- 3. Ghi chú điều độ -->
                         <div class="md:col-span-4">
                             <div class="flex items-center justify-between h-5 mb-1">
-                                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-notes">Ghi chú phí Công ty chịu / Lưu ý Điều độ</label>
+                                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-notes">Ghi Chú Vận Chuyển / Lưu Ý Điều Độ</label>
                             </div>
                             <input
                                 id="inp-notes"
