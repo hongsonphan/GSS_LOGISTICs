@@ -8,7 +8,7 @@ from .models import SettlementVoucher, VoucherStatus
 def voucher_codes(trip_ids, party_type, approved_only=False):
     qs = SettlementVoucher.objects.filter(is_deleted=False, party_type=party_type, trips__id__in=list(trip_ids))
     if approved_only:
-        qs = qs.filter(status=VoucherStatus.APPROVED)
+        qs = qs.filter(status__in=(VoucherStatus.APPROVED, VoucherStatus.SETTLED))
     return sorted(set(qs.values_list('code', flat=True)))
 
 

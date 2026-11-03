@@ -106,6 +106,10 @@ jobs:
 
   secrets:
     runs-on: ubuntu-latest
+    # gitleaks gọi API liệt kê commit của PR nên cần quyền đọc pull-requests (mặc định thiếu -> 403)
+    permissions:
+      contents: read
+      pull-requests: read
     # Lịch sử git cũ còn bí mật đã lộ (đã thay trong mã hiện tại): cảnh báo nhưng không chặn triển khai.
     continue-on-error: true
     steps:

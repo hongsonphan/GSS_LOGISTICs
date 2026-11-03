@@ -120,6 +120,9 @@ if DB_HOST or 'postgresql' in DB_ENGINE:
             'PASSWORD': os.environ.get('DB_PASSWORD', ''),
             'HOST': DB_HOST or '127.0.0.1',
             'PORT': os.environ.get('DB_PORT', '5432'),
+            # Giữ kết nối Postgres giữa các request (đỡ mở kết nối mới mỗi lần gọi API)
+            'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '60')),
+            'CONN_HEALTH_CHECKS': True,
         }
     }
 else:
@@ -178,6 +181,10 @@ WHITENOISE_MANIFEST_STRICT = False  # thiếu mục trong manifest thì dùng t�
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+if 'test' in sys.argv[1:2]:
+    # Chạy test: file tải lên ghi vào thư mục tạm, không đụng tới media thật
+    import tempfile
+    MEDIA_ROOT = Path(tempfile.mkdtemp(prefix='bim_test_media_'))
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -358,17 +365,22 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or (f'{EMAIL_BRAND_NAM
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND') or (
     'django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST_USER or not DEBUG else 'django.core.mail.backends.console.EmailBackend')
 
-# Bộ nhớ đệm dùng chung giữa các tiến trình gunicorn (giới hạn tần suất API, giới hạn yêu cầu đặt lại mật khẩu).
-# Bảng bim_cache được tạo bằng migration core/0008.
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache' if 'test' in sys.argv
-        else 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'bim_cache',
-        'TIMEOUT': 3600,
-        'OPTIONS': {'MAX_ENTRIES': 20000},
+# Bộ nhớ đệm dùng chung giữa các tiến trình gunicorn (giới hạn tần suất API, giới hạn yêu cầu đặt lại mật khẩu, phiên bản danh mục).
+# Có REDIS_URL thì dùng Redis (không ghi vào Postgres mỗi request); không có thì dùng bảng bim_cache (migration core/0008).
+REDIS_URL = os.environ.get('REDIS_URL', '')
+if 'test' in sys.argv:
+    CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'bim_cache'}}
+elif REDIS_URL:
+    CACHES = {'default': {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': REDIS_URL, 'TIMEOUT': 3600}}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+            'LOCATION': 'bim_cache',
+            'TIMEOUT': 3600,
+            'OPTIONS': {'MAX_ENTRIES': 20000},
+        }
     }
-}
 
 # Nhật ký hệ thống: ghi ra console (Docker thu lại bằng `docker compose logs`)
 LOGGING = {

@@ -1,7 +1,7 @@
 """Trạng thái "đã lưu quyết toán (chờ duyệt)" của chuyến xe, dùng cho các báo cáo."""
 from apps.billing.models import SettlementVoucher, VoucherStatus
 
-SAVED_LABEL = 'Đã lưu quyết toán (chờ duyệt)'
+SAVED_LABEL = 'Đối soát (chờ duyệt)'
 
 
 def draft_voucher_codes(party_type, trips):

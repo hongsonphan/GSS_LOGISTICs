@@ -30,7 +30,7 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
         const settlementBadge = isSettled
             ? '<span class="font-bold text-emerald-700 text-xs" title="Chuyến xe đã được kế toán đối soát & quyết toán công nợ">Đã Đối Soát</span>'
             : (t.saved_voucher_code
-                ? `<span class="font-bold text-sky-700 text-xs" title="Đã lưu phiếu quyết toán ${escapeHtml(t.saved_voucher_code)}, chờ duyệt">Đã Lưu QT (chờ duyệt)</span>`
+                ? `<span class="font-bold text-sky-700 text-xs" title="Đang đối soát: phiếu ${escapeHtml(t.saved_voucher_code)}, chờ duyệt">Đối Soát (chờ duyệt)</span>`
                 : '<span class="font-bold text-amber-600 text-xs" title="Chuyến xe đã giao hàng thành công, đang chờ đối soát công nợ">Chờ Đối Soát</span>');
 
         let partnerCol = '';

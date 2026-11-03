@@ -17,6 +17,17 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: bim_logistics_redis
+    restart: unless-stopped
+    command: redis-server --save "" --appendonly no --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   web:
     build: .
     container_name: bim_logistics_web
@@ -29,6 +40,8 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DJANGO_SETTINGS_MODULE: config.settings
+      REDIS_URL: redis://redis:6379/0
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-} # để trống: Dockerfile tự tính 2 x số CPU + 1; đặt tay trong .env nếu muốn ghi đè
     ports:
       - "127.0.0.1:8085:8000" # Chỉ mở nội bộ máy chủ; truy cập từ ngoài đi qua Nginx (HTTPS)
       - "172.17.0.1:8085:8000" # Cầu nối docker0: Nginx dạng container (bim_consulting-nginx-1) gọi vào đây; không lộ ra Internet
@@ -43,10 +56,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     command: >
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120"
+             exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${WEB_CONCURRENCY:-$(python scripts/compute_gunicorn_workers.py)} --timeout 120"
 
 volumes:
   bim_logistics_postgres_data:
