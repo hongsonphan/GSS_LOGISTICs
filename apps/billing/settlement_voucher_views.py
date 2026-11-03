@@ -25,6 +25,7 @@ from core.permissions import CanViewSettlementVoucherReport, IsAccountant
 from core.security import GracefulJWTAuthentication
 from core.sequences import next_code
 
+SETTLEMENT_CASH_SUFFIX = '.ĐS'
 PARTY_PREFIX = {'DRIVER': 'QTTX', 'PARTNER': 'QT3PL', 'CUSTOMER': 'QTKH'}
 CASH_PARTNER = {'DRIVER': 'DRIVER', 'PARTNER': 'SUBCONTRACTOR', 'CUSTOMER': 'CUSTOMER'}
 # Trường trạng thái quyết toán trên chuyến theo từng đối tượng: PENDING -> RECONCILING (Đối soát) -> APPROVED (Duyệt) -> SETTLED (Quyết toán)
@@ -200,7 +201,7 @@ def _create_cash(v, payment, amount, emp, now):
         if part <= 0:
             continue
         made.append(CashTransaction.objects.create(
-            code=next_code(CashTransaction, 'code', prefix, 3),
+            code=f"{next_code(CashTransaction, 'code', prefix, 3)}{SETTLEMENT_CASH_SUFFIX}",  # số vẫn tăng chung dãy PT/PC, thêm đuôi nhận biết phiếu từ quyết toán
             transaction_type=TransactionType.INFLOW if inflow else TransactionType.OUTFLOW,
             payment_method=payment.payment_method or v.payment_method, category=category, amount=part,
             transaction_date=payment.paid_date, partner_type=CASH_PARTNER[v.party_type], partner_name=v.party_name,
@@ -291,7 +292,8 @@ def serialize(v, with_lines=True):
     data = {
         'id': v.id, 'code': v.code, 'party_type': v.party_type, 'party_type_label': v.get_party_type_display(),
         'party_name': v.party_name, 'amount': int(v.amount), 'direction': v.direction,
-        'status': v.status, 'status_label': v.get_status_display(), 'with_cash': v.with_cash,
+        'status': v.status, 'status_label': 'Mới tạo' if (v.status == VoucherStatus.DRAFT and not v.reconciled_at) else v.get_status_display(),
+        'reconciled': bool(v.reconciled_at), 'with_cash': v.with_cash,
         'counterparty_confirmed': v.counterparty_confirmed, 'counterparty_confirm_note': v.counterparty_confirm_note,
         'counterparty_confirmed_at': v.counterparty_confirmed_at.strftime('%d/%m/%Y %H:%M') if v.counterparty_confirmed_at else '',
         'settled_at': v.settled_at.strftime('%d/%m/%Y %H:%M') if v.settled_at else '',
@@ -411,7 +413,6 @@ class SettlementVoucherListCreateAPIView(APIView):
                 created_by=getattr(request.user, 'employee', None),
             )
             voucher.trips.set(group)
-            _set_stage(party_type, [t.id for t in group], 'RECONCILING')
             _write_log(voucher, request, 'CREATE', reason=voucher.notes)
             vouchers.append(voucher)
         return Response({'success': True, 'voucher': serialize(vouchers[0]), 'vouchers': [serialize(v, with_lines=False) for v in vouchers]},
@@ -474,7 +475,15 @@ class SettlementVoucherDetailAPIView(APIView):
             v.counterparty_confirm_note = (request.data['counterparty_confirm_note'] or '').strip()[:255]
         if not v.counterparty_confirmed:
             v.counterparty_confirm_note = '' if 'counterparty_confirm_note' not in request.data else v.counterparty_confirm_note
+        if request.data.get('reconcile') and not v.reconciled_at:
+            v.reconciled_at = timezone.now()
+            _set_stage(v.party_type, list(v.trips.values_list('id', flat=True)), 'RECONCILING')
+            reconciled_now = True
+        else:
+            reconciled_now = False
         v.save()
+        if reconciled_now:
+            _write_log(v, request, 'UPDATE', [{'field': 'Trạng thái', 'trip_code': '', 'old': 'Mới tạo', 'new': 'Đối soát'}])
         if was_confirmed != v.counterparty_confirmed:
             _write_log(v, request, 'CONFIRM', [{'field': 'Đối tượng xác nhận bảng kê', 'trip_code': '', 'old': was_confirmed, 'new': v.counterparty_confirmed}],
                        reason=v.counterparty_confirm_note)
@@ -514,6 +523,8 @@ class SettlementVoucherApproveAPIView(APIView):
             return Response({'error': 'Không tìm thấy phiếu quyết toán'}, status=status.HTTP_404_NOT_FOUND)
         if v.status != VoucherStatus.DRAFT:
             return Response({'error': 'Phiếu không ở bước Đối soát (đã duyệt hoặc đã quyết toán)'}, status=status.HTTP_400_BAD_REQUEST)
+        if not v.reconciled_at:
+            return Response({'error': 'Phiếu mới tạo: bấm "Lưu đối soát" và gửi bảng kê cho đối tượng trước khi duyệt'}, status=status.HTTP_400_BAD_REQUEST)
         if not v.counterparty_confirmed:
             return Response({'error': f'Chưa có xác nhận của {v.get_party_type_display().lower()} trên bảng kê đối soát. '
                                       'Tích "Đối tượng đã xác nhận" (ghi rõ ai xác nhận) trước khi duyệt'},
