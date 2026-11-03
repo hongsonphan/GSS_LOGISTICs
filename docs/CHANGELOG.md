@@ -2,6 +2,21 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.33] - 2026-11-03 (Đồng Bộ Chuẩn Hóa Toàn Diện Form Tạo Mới & Chỉnh Sửa Chuyến Xe Điều Vận)
+
+### 1. Chuẩn Hóa Tên Trường & Loại Bỏ Trường Rác 'Vị Trí Cont':
+- **Modal Chỉnh Sửa Chuyến Xe (`modal_edit_trip.html`):**
+  * Loại bỏ dropdown tĩnh `Vị Trí Cont` (BÃI TVL / NHÀ MÁY) gây mâu thuẫn lộ trình 3 điểm; chuyển thành hidden input.
+  * Hàng trên chia 2 cột thoáng đẹp: `Hóa Đơn Thương Mại (Invoice)` | `Hạn Miễn Phí Vỏ (Free DET - Ngày)`.
+  * Chuẩn hóa nhãn: `Lưu Ý Của Điều Độ / Hàng Hóa` ➔ **`Ghi Chú Vận Chuyển / Hàng Hóa`** (đồng bộ chuẩn 100% với cột `Ghi Chú Vận Chuyển` trên bảng Điều Vận).
+- **Trang Tạo Chuyến Mới & Modal Tạo Chuyến Nhanh (`view_create_trip.html` & `modal_create_trip.html`):**
+  * Loại bỏ dropdown `Vị Trí Vỏ Hiện Tại` (`inp-cont-loc`), gom gọn grid từ 5 cột về 4 cột cân đối, rộng rãi:
+    1. `Cắt CY / SI` (24h)
+    2. `Hóa Đơn Thương Mại (Invoice)`
+    3. `Cửa Dock Kho (Cửa Xuất)`
+    4. `Giờ Hẹn Đóng Hàng` (24h)
+  * Chuẩn hóa nhãn ghi chú điều độ: `Ghi chú phí Công ty chịu / Lưu ý Điều độ` ➔ **`Ghi Chú Vận Chuyển / Lưu Ý Điều Độ`**.
+
 ## [v4.7.32] - 2026-11-03 (Tối Ưu & Loại Bỏ Dữ Liệu Rác: Chuẩn Hóa Cột 'Ghi Chú Vận Chuyển', Loại Bỏ 'Vị Trí Cont' Gây Nhiễu)
 
 ### 1. Loại Bỏ Dữ Liệu Rác & Xung Đột "Vị Trí Cont":

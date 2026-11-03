@@ -319,7 +319,8 @@
           </div>
 
           <!-- Thông tin Cắt CY, Invoice, Cửa Dock, Thời gian & Vị trí -->
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-2.5 pt-0.5">
+          <input type="hidden" id="inp-cont-loc" value="NHÀ MÁY" />
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-2.5 pt-0.5">
             <div class="md:col-span-1">
               <div class="flex items-center justify-between h-5 mb-1">
                 <label class="block font-bold text-rose-700 text-xs truncate" for="inp-cutoff-date">
@@ -363,7 +364,7 @@
             </div>
             <div>
               <div class="flex items-center justify-between h-5 mb-1">
-                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-invoice">Hóa Đơn TM (Invoice)</label>
+                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-invoice">Hóa Đơn Thương Mại (Invoice)</label>
               </div>
               <input
                 id="inp-invoice"
@@ -374,7 +375,7 @@
             </div>
             <div>
               <div class="flex items-center justify-between h-5 mb-1">
-                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-dock">Cửa Xuất (Dock Kho)</label>
+                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-dock">Cửa Dock Kho (Cửa Xuất)</label>
               </div>
               <input
                 id="inp-dock"
@@ -415,14 +416,6 @@
             </div>
             <div>
               <div class="flex items-center justify-between h-5 mb-1">
-                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-cont-loc">Vị Trí Vỏ Hiện Tại</label>
-              </div>
-              <select id="inp-cont-loc" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-800 text-xs w-full">
-                <option value="NHÀ MÁY" selected>Tại Nhà Máy Khách Hàng</option>
-                <option value="BÃI TVL">Tại Bãi Triền Võ</option>
-                <option value="CẢNG / DEPOT">Tại Cảng / Bãi Cont</option>
-              </select>
-            </div>
           </div>
 
           <!-- Quản lý Hạn Free-time DEM/DET Cảng & Giám Định Vỏ Cont (EIR) -->
@@ -721,7 +714,7 @@
             <!-- 3. Ghi chú điều độ -->
             <div class="md:col-span-4">
               <div class="flex items-center justify-between h-5 mb-1">
-                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-notes">Ghi chú phí Công ty chịu / Lưu ý Điều độ</label>
+                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-notes">Ghi Chú Vận Chuyển / Lưu Ý Điều Độ</label>
               </div>
               <input
                 id="inp-notes"
