@@ -5,6 +5,8 @@ const SETTLE_VOUCHER_API = '/api/accounting/settlement-vouchers/';
 const SETTLE_PARTY_LABEL = { DRIVER: 'Tài Xế', PARTNER: 'Đối Tác 3PL', CUSTOMER: 'Khách Hàng' };
 let currentSettleVoucher = null;
 let settleVoucherOrigin = '';
+// Nhiều đối tượng trong một lần chọn: mỗi đối tượng một phiếu, chuyển qua lại ngay trên trang
+let settleBatch = [];
 
 function settleVoucherTotal(party, line, adj) {
     if (party === 'DRIVER') return (line.advance || 0) - (line.spent || 0) - adj;
@@ -28,11 +30,9 @@ async function openSettlementStatement(partyType, ids, extra = {}) {
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || data.detail || 'Không thể lập bảng kê quyết toán');
         const made = data.vouchers || [data.voucher];
+        settleBatch = made.length > 1 ? made.map(v => ({ id: v.id, code: v.code, name: v.party_name, status: v.status })) : [];
         if (made.length > 1) {
-            // Nhiều đối tượng trong một lần chọn: mỗi đối tượng một bảng kê riêng, mở danh sách để rà soát từng phiếu
             showToast('success', `Đã lập ${made.length} bảng kê (mỗi ${SETTLE_PARTY_LABEL[partyType].toLowerCase()} một phiếu): ${made.map(v => v.code).join(', ')}`, 'Tách phiếu theo đối tượng');
-            if (typeof switchAccountingSubTab === 'function') switchAccountingSubTab('acct-vouchers');
-            return;
         }
         showSettlementVoucherModal(data.voucher);
     } catch (err) {
@@ -41,6 +41,7 @@ async function openSettlementStatement(partyType, ids, extra = {}) {
 }
 
 async function openSettlementVoucher(id) {
+    if (!settleBatch.some(b => b.id === id)) settleBatch = [];
     try {
         const res = await fetchWithAuth(`${SETTLE_VOUCHER_API}${id}/`);
         const data = await res.json();
@@ -193,7 +194,15 @@ function showSettlementVoucherModal(v, opts = {}) {
     }
     const root = document.getElementById('settle-page-root');
     if (!root) return;
-    root.innerHTML = `
+    const inBatch = settleBatch.find(b => b.id === v.id);
+    if (inBatch) inBatch.status = v.status;
+    const batchBar = settleBatch.length > 1 ? `
+        <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-2 flex-wrap text-xs no-print">
+            <span class="font-bold text-slate-600 px-2">${settleBatch.length} phiếu trong lần chọn này:</span>
+            ${settleBatch.map(b => `<button type="button" onclick="openSettlementVoucher(${b.id})" class="px-3 py-1.5 rounded-lg font-bold border cursor-pointer ${b.id === v.id ? 'bg-teal-700 text-white border-teal-700' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}">
+                ${escapeHtml(b.name)} · ${escapeHtml(b.code)}${b.status === 'APPROVED' ? ' ✓' : ''}</button>`).join('')}
+        </div>` : '';
+    root.innerHTML = `${batchBar}
         <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 no-print">
             <div class="flex items-center gap-3 flex-wrap">
                 <button type="button" onclick="closeSettleVoucherModal()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 font-heading border border-slate-200 cursor-pointer">
@@ -278,6 +287,7 @@ function settleLogSection(v) {
 
 function closeSettleVoucherModal() {
     currentSettleVoucher = null;
+    settleBatch = [];
     // Quay về màn hình đã mở phiếu (Kế toán / Quyết toán gom chuyến / Điều vận...)
     const back = settleVoucherOrigin && settleVoucherOrigin !== 'settlement-voucher' ? settleVoucherOrigin : 'ke-toan';
     if (typeof resetTopbarStandardMode === 'function') resetTopbarStandardMode(back);
@@ -402,7 +412,10 @@ async function deleteSettleVoucher() {
     });
     if (!ok) return;
     const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/`, 'DELETE', null, 'Đã xóa phiếu');
-    if (data) closeSettleVoucherModal();
+    if (!data) return;
+    settleBatch = settleBatch.filter(b => b.id !== v.id);
+    if (settleBatch.length) openSettlementVoucher(settleBatch[0].id);
+    else closeSettleVoucherModal();
 }
 
 function printSettleVoucher() {
