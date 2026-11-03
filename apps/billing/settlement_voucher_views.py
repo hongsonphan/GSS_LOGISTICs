@@ -24,7 +24,7 @@ from core.permissions import CanViewSettlementVoucherReport, IsAccountant
 from core.security import GracefulJWTAuthentication
 from core.sequences import next_code
 
-PARTY_PREFIX = {'DRIVER': 'QT-TX', 'PARTNER': 'QT-DT', 'CUSTOMER': 'QT-KH'}
+PARTY_PREFIX = {'DRIVER': 'QTTX', 'PARTNER': 'QT3PL', 'CUSTOMER': 'QTKH'}
 CASH_PARTNER = {'DRIVER': 'DRIVER', 'PARTNER': 'SUBCONTRACTOR', 'CUSTOMER': 'CUSTOMER'}
 
 

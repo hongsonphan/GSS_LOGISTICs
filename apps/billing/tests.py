@@ -286,6 +286,20 @@ class DriverBatchSettlementTests(TestCase):
         self.exp1.refresh_from_db()
         self.assertFalse(self.exp1.company_borne)
 
+    def test_voucher_code_format_per_party(self):
+        """Mã phiếu: QTTX / QTKH / QT3PL + .yymm. + số thứ tự 3 chữ số (đếm riêng theo từng loại)."""
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        yymm = datetime.date.today().strftime('%y%m')
+        self.trip1.subcontractor_cost = 1000000
+        self.trip1.save()
+        codes = {}
+        for party in ('DRIVER', 'CUSTOMER', 'PARTNER'):
+            res = self.client.post(base, {'party_type': party, 'trip_ids': [self.trip1.id]}, format='json')
+            self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+            codes[party] = res.data['voucher']['code']
+        self.assertEqual(codes, {'DRIVER': f'QTTX.{yymm}.001', 'CUSTOMER': f'QTKH.{yymm}.001', 'PARTNER': f'QT3PL.{yymm}.001'})
+
     def test_voucher_partner_direction_flips_when_advance_exceeds_cost(self):
         self.client.force_authenticate(user=self.accountant_user)
         self.trip1.subcontractor_cost = 1000000
