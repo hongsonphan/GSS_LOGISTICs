@@ -24805,140 +24805,98 @@ async function openSettlementVoucher(id) {
     }
 }
 
-function settleLineRow(party, l, i, editable) {
-    const lines = (l.expense_lines || []).map(e =>
-        `<div class="flex justify-between gap-3"><span>${escapeHtml(e.name)}${e.leg ? ` <span class="text-slate-400">(${escapeHtml(e.leg)})</span>` : ''}</span><span class="tabular-nums font-mono">${formatMoneyVND(e.amount)}</span></div>`
-    ).join('') || '<span class="text-slate-400 italic">Không có</span>';
-    const adjInput = `<input type="number" step="1000" value="${l.adjustment || 0}" ${editable ? '' : 'disabled'} data-adjust-trip="${l.trip_id}"
-        oninput="recalcSettleVoucher()" class="w-28 px-1.5 py-1 text-right font-mono font-bold border border-amber-300 rounded bg-amber-50 disabled:bg-slate-50 disabled:border-slate-200"
-        title="Số phát sinh do Kế toán/Hành chính nhập (+ cộng thêm, - trừ bớt)">
-        <input type="text" maxlength="255" value="${escapeHtml(l.adjustment_note || '')}" ${editable ? '' : 'disabled'} data-adjust-note-trip="${l.trip_id}"
-        placeholder="Lý do phát sinh (bắt buộc)" class="mt-1 w-28 px-1.5 py-1 text-[11px] border border-amber-300 rounded bg-amber-50 disabled:bg-slate-50 disabled:border-slate-200">`;
-    const common = `<td class="px-2 py-2 text-center">${i + 1}</td>
-        <td class="px-2 py-2 font-bold">${escapeHtml(l.trip_code)}<div class="text-[10px] text-slate-500 font-normal">${escapeHtml(l.date)}</div>
-            <button type="button" onclick="toggleSettleDetail(${l.trip_id})" class="mt-1 text-[10px] font-bold text-teal-700 hover:underline cursor-pointer">Chi tiết</button></td>`;
-    const cont = `<td class="px-2 py-2">${escapeHtml(l.container_number)}<div class="text-[10px] text-slate-500">${escapeHtml(l.container_type)}</div></td>
-        <td class="px-2 py-2">${escapeHtml(l.route)}</td>`;
-    const total = `<td class="px-2 py-2 text-right tabular-nums font-mono font-bold" data-line-total="${l.trip_id}"></td>`;
+// Bảng kê quyết toán dạng bảng tính (Excel): mỗi chuyến chiếm một khối dòng, các khoản tạm ứng / chi phí xếp từng dòng
+const SETTLE_TD = 'border border-slate-300 px-2 py-1 align-top';
+const SETTLE_TH = 'border border-slate-300 px-2 py-1.5 bg-slate-100 text-slate-800 font-bold text-center whitespace-nowrap';
 
+function settleHeadCols(party, anySplit) {
+    const th = (t, o = {}) => `<th class="${SETTLE_TH}" ${o.cs ? `colspan="${o.cs}"` : ''} ${o.rs ? `rowspan="${o.rs}"` : ''}>${t}</th>`;
+    const lead = th('STT', { rs: 2 }) + th('Mã chuyến', { rs: 2 }) + th('Số cont / Loại', { rs: 2 }) + th('Tuyến', { rs: 2 });
     if (party === 'DRIVER') {
-        const split = l.is_split_trip ? `
-            <div class="p-1.5 rounded-lg border-2 border-rose-400 bg-rose-50">
-                <div class="text-[10px] font-black text-rose-700 mb-1">CẮT KÉO - KIỂM TRA KỸ TỶ LỆ THÙ LAO</div>
-                <div class="flex items-center gap-1 text-[11px] font-bold text-rose-800">
-                    <span class="truncate">${escapeHtml(l.driver_name)}</span>
-                    <input type="number" min="0" max="100" step="1" value="${l.split_ratio}" ${editable ? '' : 'disabled'} data-split-trip="${l.trip_id}"
-                        oninput="onSettleSplitInput(this)" class="w-14 px-1 py-0.5 text-center font-black text-rose-800 border border-rose-400 rounded bg-white">%
-                    <span class="text-slate-400">/</span>
-                    <span class="truncate">${escapeHtml(l.dropoff_driver_name || 'Chưa gán tài 2')}</span>
-                    <span class="w-12 text-center font-black" id="settle-split2-${l.trip_id}">${100 - l.split_ratio}%</span>
-                </div>
-            </div>` : '<span class="text-slate-400">-</span>';
-        return `<tr class="border-b border-slate-100 align-top">${common}
-            <td class="px-2 py-2">${escapeHtml(l.driver_name)}<div class="text-[10px] text-slate-500">${escapeHtml(l.license_plate)}</div></td>${cont}
-            <td class="px-2 py-2 text-[11px] min-w-[200px]">${lines}</td>
-            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.advance)}</td>
-            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.spent)}</td>
-            <td class="px-2 py-2">${adjInput}</td><td class="px-2 py-2 min-w-[210px]">${split}</td>${total}</tr>`;
+        return `<tr>${lead}${th('Tài xế / Xe', { rs: 2 })}${th('Tạm ứng', { cs: 3 })}${th('Chi phí phát sinh', { cs: 4 })}
+            ${th('Tổng tạm ứng', { rs: 2 })}${th('Thực chi', { rs: 2 })}${th('Phát sinh KT', { rs: 2 })}${th('Lý do phát sinh', { rs: 2 })}${anySplit ? th('Tỷ lệ thù lao cắt kéo', { rs: 2 }) : ''}${th('Chênh lệch', { rs: 2 })}</tr>
+            <tr>${th('Mã phiếu')}${th('Nguồn tiền')}${th('Số tiền')}${th('Khoản mục')}${th('Chặng')}${th('Loại chi')}${th('Số tiền')}</tr>`;
     }
     if (party === 'PARTNER') {
-        return `<tr class="border-b border-slate-100 align-top">${common}
-            <td class="px-2 py-2">${escapeHtml(l.license_plate)}<div class="text-[10px] text-slate-500">${escapeHtml(l.driver_name)}</div></td>${cont}
-            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.freight_cost)}</td>
-            <td class="px-2 py-2 text-[11px] min-w-[200px]">${lines}</td>
-            <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.advance)}</td>
-            <td class="px-2 py-2">${adjInput}</td>${total}</tr>`;
+        return `<tr>${lead}${th('Xe / Tài xế', { rs: 2 })}${th('Cước thuê xe', { rs: 2 })}${th('Chi phí hoàn trả đối tác', { cs: 3 })}
+            ${th('Đã tạm ứng', { rs: 2 })}${th('Phát sinh KT', { rs: 2 })}${th('Lý do phát sinh', { rs: 2 })}${th('Phải trả', { rs: 2 })}</tr>
+            <tr>${th('Khoản mục')}${th('Chặng')}${th('Số tiền')}</tr>`;
     }
-    return `<tr class="border-b border-slate-100 align-top">${common}
-        <td class="px-2 py-2">${escapeHtml(l.booking_or_bill)}</td>${cont}
-        <td class="px-2 py-2 text-right tabular-nums font-mono">${formatMoneyVND(l.freight)}</td>
-        <td class="px-2 py-2 text-[11px] min-w-[200px]">${lines}</td>
-        <td class="px-2 py-2">${adjInput}</td>${total}</tr>`;
+    return `<tr>${lead}${th('Booking / Bill', { rs: 2 })}${th('Cước vận chuyển', { rs: 2 })}${th('Chi hộ khách hàng', { cs: 2 })}
+        ${th('Phát sinh KT', { rs: 2 })}${th('Lý do phát sinh', { rs: 2 })}${th('Phải thu', { rs: 2 })}</tr>
+        <tr>${th('Khoản mục')}${th('Số tiền')}</tr>`;
 }
 
-function settleHeadCols(party) {
-    const th = (t, r) => `<th class="px-2 py-2 ${r ? 'text-right' : 'text-left'}">${t}</th>`;
-    const base = '<th class="px-2 py-2">STT</th>' + th('Mã chuyến') ;
-    if (party === 'DRIVER') return base + th('Tài xế / Xe') + th('Số cont / Loại') + th('Tuyến') + th('Chi phí phát sinh (hạ xa, dầu, vé...)') + th('Tạm ứng', 1) + th('Thực chi', 1) + th('Phát sinh', 1) + th('Tỷ lệ thù lao cắt kéo') + th('Chênh lệch', 1);
-    if (party === 'PARTNER') return base + th('Xe / Tài xế') + th('Số cont / Loại') + th('Tuyến') + th('Cước thuê xe', 1) + th('Chi phí hoàn trả đối tác') + th('Đã tạm ứng', 1) + th('Phát sinh', 1) + th('Phải trả', 1);
-    return base + th('Booking / Bill') + th('Số cont / Loại') + th('Tuyến') + th('Cước vận chuyển', 1) + th('Chi hộ') + th('Phát sinh', 1) + th('Phải thu', 1);
-}
+// Một chuyến = nhiều dòng của bảng: dòng đầu mang thông tin chuyến và tổng, các dòng sau chỉ thêm khoản tạm ứng / chi phí
+function settleLineRow(party, l, i, editable) {
+    const num = (v) => `<td class="${SETTLE_TD} text-right tabular-nums font-mono">${formatMoneyVND(v)}</td>`;
+    const exps = l.expense_lines || [];
+    const advs = party === 'DRIVER' ? (l.advance_lines || []) : [];
+    const n = Math.max(1, exps.length, advs.length);
+    const rs = (html, cls = '') => `<td rowspan="${n}" class="${SETTLE_TD} ${cls}">${html}</td>`;
+    const adjInput = `<input type="number" step="1000" value="${l.adjustment || 0}" ${editable ? '' : 'disabled'} data-adjust-trip="${l.trip_id}"
+        oninput="recalcSettleVoucher()" class="w-28 px-1.5 py-1 text-right font-mono font-bold border border-amber-300 rounded bg-amber-50 disabled:bg-transparent disabled:border-transparent"
+        title="Số phát sinh do Kế toán/Hành chính nhập (+ cộng thêm, - trừ bớt)">`;
+    const noteInput = `<input type="text" maxlength="255" value="${escapeHtml(l.adjustment_note || '')}" ${editable ? '' : 'disabled'} data-adjust-note-trip="${l.trip_id}"
+        placeholder="Lý do (bắt buộc nếu có phát sinh)" class="w-52 px-1.5 py-1 border border-amber-300 rounded bg-amber-50 disabled:bg-transparent disabled:border-transparent">`;
+    const lead = rs(i + 1, 'text-center') + rs(`<b>${escapeHtml(l.trip_code)}</b><div class="text-[10px] text-slate-500">${escapeHtml(l.date)}</div>`, 'whitespace-nowrap')
+        + rs(`${escapeHtml(l.container_number)}<div class="text-[10px] text-slate-500">${escapeHtml(l.container_type)}</div>`, 'whitespace-nowrap')
+        + rs(escapeHtml(l.route), 'min-w-[170px]');
+    const total = rs('', 'text-right tabular-nums font-mono font-bold whitespace-nowrap').replace('<td ', `<td data-line-total="${l.trip_id}" `);
+    const expCells = (e, withLeg, withPayer) => e
+        ? `<td class="${SETTLE_TD}">${escapeHtml(e.name)}${e.invoice ? `<div class="text-[10px] text-slate-500 font-mono">${escapeHtml(e.invoice)}</div>` : ''}</td>`
+          + (withLeg ? `<td class="${SETTLE_TD}">${escapeHtml(e.leg || '')}</td>` : '')
+          + (withPayer ? `<td class="${SETTLE_TD}">${escapeHtml(e.payer || '')}${e.company_borne === false ? ' · trừ lương' : ''}</td>` : '')
+          + num(e.amount)
+        : `<td class="${SETTLE_TD}"></td>${withLeg ? `<td class="${SETTLE_TD}"></td>` : ''}${withPayer ? `<td class="${SETTLE_TD}"></td>` : ''}<td class="${SETTLE_TD}"></td>`;
 
-// Chi tiết từng chuyến (mở rộng dưới dòng bảng kê): tạm ứng theo từng phiếu, chi phí theo loại người chi
-function settleDetailRow(party, l) {
-    const advances = (l.advance_lines || []).map(a =>
-        `<tr><td class="px-2 py-1 font-mono">${escapeHtml(a.code)}</td><td class="px-2 py-1">${escapeHtml(a.source)}</td>
-            <td class="px-2 py-1">${escapeHtml(a.date)}</td><td class="px-2 py-1 text-right font-mono">${formatMoneyVND(a.amount)}</td>
-            <td class="px-2 py-1 text-slate-500">${escapeHtml(a.purpose || '')}</td></tr>`).join('');
-    const expenses = (l.expense_lines || []).map(e =>
-        `<tr><td class="px-2 py-1">${escapeHtml(e.name)}</td><td class="px-2 py-1">${escapeHtml(e.leg || '-')}</td>
-            <td class="px-2 py-1">${escapeHtml(e.payer || '')}</td>
-            <td class="px-2 py-1">${e.company_borne === false ? 'Trừ lương tài xế' : 'Công ty chịu'}</td>
-            <td class="px-2 py-1 font-mono">${escapeHtml(e.invoice || '')}</td><td class="px-2 py-1">${escapeHtml(e.status || '')}</td>
-            <td class="px-2 py-1 text-right font-mono">${formatMoneyVND(e.amount)}</td></tr>`).join('');
-    const head = (cols) => `<thead class="bg-white text-slate-600"><tr>${cols.map(c => `<th class="px-2 py-1 ${c[1] ? 'text-right' : 'text-left'}">${c[0]}</th>`).join('')}</tr></thead>`;
-    const advBlock = party === 'DRIVER' ? `<div><div class="font-bold text-slate-700 mb-1">Tạm ứng theo phiếu</div>
-        <table class="w-full border border-slate-200 bg-white">${head([['Mã phiếu'], ['Nguồn tiền'], ['Ngày'], ['Số tiền', 1], ['Mục đích']])}
-        <tbody>${advances || '<tr><td colspan="5" class="px-2 py-2 text-slate-400 italic">Không có tạm ứng</td></tr>'}</tbody></table></div>` : '';
-    const expTitle = party === 'DRIVER' ? 'Chi phí phát sinh trong chuyến' : (party === 'PARTNER' ? 'Chi phí hoàn trả đối tác' : 'Chi hộ khách hàng');
-    return `<tr class="hidden bg-slate-50" data-detail-trip="${l.trip_id}"><td colspan="20" class="px-3 py-3"><div class="grid grid-cols-1 xl:grid-cols-2 gap-3 text-[11px]">
-        ${advBlock}
-        <div><div class="font-bold text-slate-700 mb-1">${expTitle}</div>
-        <table class="w-full border border-slate-200 bg-white">${head([['Khoản mục'], ['Chặng'], ['Loại chi'], ['Bên chịu'], ['Hóa đơn'], ['Trạng thái'], ['Số tiền', 1]])}
-        <tbody>${expenses || '<tr><td colspan="7" class="px-2 py-2 text-slate-400 italic">Không có</td></tr>'}</tbody></table></div>
-    </div></td></tr>`;
-}
-
-function toggleSettleDetail(tripId) {
-    document.querySelector(`[data-detail-trip="${tripId}"]`)?.classList.toggle('hidden');
-}
-
-function settleCard(title, value, sub, tone) {
-    return `<div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-${tone}-500">
-        <div class="text-[12px] font-bold text-slate-500 uppercase tracking-wider">${title}</div>
-        <div class="text-2xl font-black tabular-nums font-heading mt-1 text-${tone}-700">${value}</div>
-        <div class="text-xs text-slate-500 font-medium mt-1">${sub}</div></div>`;
-}
-
-// Thẻ tổng hợp phía trên bảng kê: cập nhật theo số phát sinh đang nhập
-function renderSettleSummary(v, adjTotal, net) {
-    const el = document.getElementById('settle-page-summary');
-    if (!el) return;
-    const sum = (arr, f) => arr.reduce((s, x) => s + (f(x) || 0), 0);
-    const lines = v.lines;
-    const expAll = lines.flatMap(l => l.expense_lines || []);
-    let cards;
-    if (v.party_type === 'DRIVER') {
-        const adv = lines.flatMap(l => l.advance_lines || []);
-        const fund = sum(adv.filter(a => a.source_code === 'DISPATCHER_FUND'), a => a.amount);
-        const direct = sum(adv.filter(a => a.source_code !== 'DISPATCHER_FUND'), a => a.amount);
-        const byPayer = {};
-        expAll.forEach(e => { byPayer[e.payer || 'Khác'] = (byPayer[e.payer || 'Khác'] || 0) + e.amount; });
-        const payerText = Object.entries(byPayer).map(([k, x]) => `${escapeHtml(k)}: ${formatMoneyVND(x)}`).join(' · ') || 'Không có chi phí';
-        cards = settleCard('Tổng tạm ứng', formatMoneyVND(sum(lines, l => l.advance)), `Quỹ điều vận: ${formatMoneyVND(fund)} · Công ty trực tiếp: ${formatMoneyVND(direct)}`, 'amber')
-            + settleCard('Tổng chi phí phát sinh', formatMoneyVND(sum(lines, l => l.spent)), payerText, 'teal')
-            + settleCard('Phát sinh kế toán', formatMoneyVND(adjTotal), 'Cộng thêm vào chi phí tài xế đã chi', 'sky');
-    } else if (v.party_type === 'PARTNER') {
-        cards = settleCard('Cước thuê xe', formatMoneyVND(sum(lines, l => l.freight_cost)), `${lines.length} chuyến`, 'teal')
-            + settleCard('Chi phí hoàn trả đối tác', formatMoneyVND(sum(expAll, e => e.amount)), 'Các khoản 3PL chi hộ', 'sky')
-            + settleCard('Đã tạm ứng', formatMoneyVND(sum(lines, l => l.advance)), 'Trừ vào số phải trả', 'amber');
+    let tail, mid;
+    if (party === 'DRIVER') {
+        const split = l.is_split_trip ? `<div class="p-1 rounded border-2 border-rose-400 bg-rose-50 text-[11px] font-bold text-rose-800">
+                <div class="text-[10px] font-black">CẮT KÉO - KIỂM TRA TỶ LỆ</div>
+                <div class="flex items-center gap-1"><span class="truncate max-w-[90px]">${escapeHtml(l.driver_name)}</span>
+                <input type="number" min="0" max="100" step="1" value="${l.split_ratio}" ${editable ? '' : 'disabled'} data-split-trip="${l.trip_id}" oninput="onSettleSplitInput(this)"
+                    class="w-12 px-1 py-0.5 text-center font-black border border-rose-400 rounded bg-white">%
+                <span>/</span><span class="truncate max-w-[90px]">${escapeHtml(l.dropoff_driver_name || 'Chưa gán tài 2')}</span>
+                <span class="font-black" id="settle-split2-${l.trip_id}">${100 - l.split_ratio}%</span></div></div>` : '';
+        mid = rs(`${escapeHtml(l.driver_name)}<div class="text-[10px] text-slate-500">${escapeHtml(l.license_plate)}</div>`, 'whitespace-nowrap');
+        tail = rs(formatMoneyVND(l.advance), 'text-right tabular-nums font-mono') + rs(formatMoneyVND(l.spent), 'text-right tabular-nums font-mono')
+            + rs(adjInput) + rs(noteInput) + (settleAnySplit ? rs(split) : '') + total;
+    } else if (party === 'PARTNER') {
+        mid = rs(`${escapeHtml(l.license_plate)}<div class="text-[10px] text-slate-500">${escapeHtml(l.driver_name)}</div>`, 'whitespace-nowrap') + rs(formatMoneyVND(l.freight_cost), 'text-right tabular-nums font-mono');
+        tail = rs(formatMoneyVND(l.advance), 'text-right tabular-nums font-mono') + rs(adjInput) + rs(noteInput) + total;
     } else {
-        cards = settleCard('Cước vận chuyển', formatMoneyVND(sum(lines, l => l.freight)), `${lines.length} chuyến`, 'teal')
-            + settleCard('Chi hộ khách hàng', formatMoneyVND(sum(expAll, e => e.amount)), 'Chưa gửi Debit Note / chưa thu hồi', 'sky')
-            + settleCard('Phát sinh kế toán', formatMoneyVND(adjTotal), 'Điều chỉnh có lý do', 'amber');
+        mid = rs(escapeHtml(l.booking_or_bill)) + rs(formatMoneyVND(l.freight), 'text-right tabular-nums font-mono');
+        tail = rs(adjInput) + rs(noteInput) + total;
     }
-    const resultTitle = v.party_type === 'DRIVER' ? (net > 0 ? 'Tài xế nộp lại' : (net < 0 ? 'Công ty chi bù' : 'Cân bằng'))
-        : (v.party_type === 'PARTNER' ? (net >= 0 ? 'Phải trả đối tác' : 'Đối tác hoàn lại') : 'Phải thu khách hàng');
-    el.innerHTML = cards + settleCard(resultTitle, formatMoneyVND(Math.abs(net)), `${lines.length} chuyến · ${escapeHtml(v.party_name)}`, 'emerald');
+
+    let html = '';
+    for (let r = 0; r < n; r++) {
+        let cells = '';
+        if (party === 'DRIVER') {
+            const a = advs[r];
+            cells = (a ? `<td class="${SETTLE_TD} font-mono">${escapeHtml(a.code)}</td><td class="${SETTLE_TD}">${escapeHtml(a.source)}</td>${num(a.amount)}`
+                       : `<td class="${SETTLE_TD}"></td><td class="${SETTLE_TD}"></td><td class="${SETTLE_TD}"></td>`) + expCells(exps[r], true, true);
+        } else if (party === 'PARTNER') {
+            cells = expCells(exps[r], true, false);
+        } else {
+            cells = expCells(exps[r], false, false);
+        }
+        html += `<tr class="${r === 0 ? '' : ''}">${r === 0 ? lead + mid : ''}${cells}${r === 0 ? tail : ''}</tr>`;
+    }
+    return html;
 }
 
-// Màn hình riêng của phiếu quyết toán (thay cho cửa sổ nổi): xem, hiệu chỉnh, duyệt, in và xem lịch sử thay đổi
+let settleAnySplit = false;
+
+// Bảng kê quyết toán dạng bảng tính toàn màn hình: chỉ gồm bảng, ghi chú/thanh toán, thao tác và lịch sử thu gọn
 function showSettlementVoucherModal(v, opts = {}) {
     currentSettleVoucher = v;
     const readonly = !!opts.readonly;
     const draft = v.status === 'DRAFT' && !readonly;
     const party = v.party_type;
-    const body = v.lines.map((l, i) => settleLineRow(party, l, i, draft) + settleDetailRow(party, l)).join('');
+    settleAnySplit = party === 'DRIVER' && v.lines.some(l => l.is_split_trip);
+    const body = v.lines.map((l, i) => settleLineRow(party, l, i, draft)).join('');
 
     const activeView = document.querySelector('.view:not(.hidden-view)');
     if (activeView && activeView.id !== 'view-settlement-voucher') {
@@ -24949,18 +24907,26 @@ function showSettlementVoucherModal(v, opts = {}) {
     const inBatch = settleBatch.find(b => b.id === v.id);
     if (inBatch) inBatch.status = v.status;
     const batchBar = settleBatch.length > 1 ? `
-        <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-2 flex-wrap text-xs no-print">
+        <div class="bg-white p-2 rounded-xl border border-slate-200 flex items-center gap-2 flex-wrap text-xs no-print">
             <span class="font-bold text-slate-600 px-2">${settleBatch.length} phiếu trong lần chọn này:</span>
             ${settleBatch.map(b => `<button type="button" onclick="openSettlementVoucher(${b.id})" class="px-3 py-1.5 rounded-lg font-bold border cursor-pointer ${b.id === v.id ? 'bg-teal-700 text-white border-teal-700' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}">
                 ${escapeHtml(b.name)} · ${escapeHtml(b.code)}${b.status === 'APPROVED' ? ' ✓' : ''}</button>`).join('')}
         </div>` : '';
+    // Dòng tổng: số cột đứng trước cột "Tổng tạm ứng" / "Cước" thay đổi theo đối tượng
+    const footLead = party === 'DRIVER' ? 12 : (party === 'PARTNER' ? 9 : 8);
+    const foot = party === 'DRIVER'
+        ? `<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-advance"></td><td class="${SETTLE_TD} text-right font-mono" id="settle-foot-spent"></td>
+           <td class="${SETTLE_TD} text-right font-mono" id="settle-foot-adj"></td><td class="${SETTLE_TD}"></td>${settleAnySplit ? `<td class="${SETTLE_TD}"></td>` : ''}`
+        : (party === 'PARTNER'
+            ? `<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-advance"></td><td class="${SETTLE_TD} text-right font-mono" id="settle-foot-adj"></td><td class="${SETTLE_TD}"></td>`
+            : `<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-adj"></td><td class="${SETTLE_TD}"></td>`);
     root.innerHTML = `${batchBar}
-        <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 no-print">
+        <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 no-print">
             <div class="flex items-center gap-3 flex-wrap">
                 <button type="button" onclick="closeSettleVoucherModal()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 font-heading border border-slate-200 cursor-pointer">
                     <i class="ph-bold ph-arrow-left"></i><span>Quay lại</span></button>
                 <div>
-                    <h3 class="font-bold text-sm sm:text-base font-heading text-slate-900">Quyết Toán ${SETTLE_PARTY_LABEL[party]} - <span class="font-mono">${escapeHtml(v.code)}</span></h3>
+                    <h3 class="font-bold text-sm sm:text-base font-heading text-slate-900">Bảng kê quyết toán ${SETTLE_PARTY_LABEL[party].toLowerCase()} - <span class="font-mono">${escapeHtml(v.code)}</span></h3>
                     <p class="text-xs text-slate-500">Đối tượng: <strong>${escapeHtml(v.party_name)}</strong> · ${v.lines.length} chuyến · Lập ${escapeHtml(v.created_at)} ·
                         <span class="font-bold ${draft ? 'text-amber-700' : 'text-emerald-700'}">${escapeHtml(v.status_label)}</span>
                         ${v.cash_transaction_code ? ` · Phiếu ${v.direction === 'RECEIVE' ? 'thu' : 'chi'}: <strong>${escapeHtml(v.cash_transaction_code)}</strong>` : ''}</p>
@@ -24968,36 +24934,35 @@ function showSettlementVoucherModal(v, opts = {}) {
             </div>
             <button type="button" onclick="printSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"><i class="ph-bold ph-printer"></i> In bảng kê</button>
         </div>
-        <div id="settle-page-summary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 no-print"></div>
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-3 overflow-auto text-xs">
+        <div class="bg-white rounded-xl border border-slate-200 overflow-auto text-xs" style="max-height:calc(100vh - 290px)">
             <table class="w-full text-xs border-collapse" id="settle-voucher-table" data-no-col-manager data-no-toolbar>
-                <thead class="bg-slate-50 text-slate-700 font-bold"><tr>${settleHeadCols(party)}</tr></thead>
+                <thead class="sticky top-0 z-10">${settleHeadCols(party, settleAnySplit)}</thead>
                 <tbody>${body}</tbody>
-                <tfoot><tr class="bg-slate-50 font-black"><td colspan="20" class="px-2 py-2 text-right font-mono text-sm"><span id="settle-total-amount"></span></td></tr></tfoot>
+                <tfoot>
+                    <tr class="bg-slate-50 font-black"><td colspan="${footLead}" class="${SETTLE_TD} text-right">TỔNG CỘNG</td>${foot}<td class="${SETTLE_TD} text-right font-mono" id="settle-foot-total"></td></tr>
+                    <tr class="bg-slate-100 font-black"><td colspan="40" class="px-2 py-2 text-right font-mono text-sm"><span id="settle-total-amount"></span></td></tr>
+                </tfoot>
             </table>
-            <p class="mt-2 text-[11px] text-slate-500">Bấm "Chi tiết" ở từng chuyến để xem từng phiếu tạm ứng và từng khoản chi phí. Bảng kê chỉ hiển thị thông tin liên quan đến ${SETTLE_PARTY_LABEL[party].toLowerCase()}.</p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs no-print">
-            <div class="md:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-xs p-3"><label class="font-bold text-slate-700">Ghi chú</label>
-                <input id="settle-voucher-notes" type="text" value="${escapeHtml(v.notes || '')}" ${draft ? '' : 'disabled'}
-                    class="mt-1 w-full px-2.5 py-1.5 border border-slate-300 rounded-lg disabled:bg-slate-50"></div>
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-3">
-                <label class="flex items-center gap-2 font-bold text-slate-800"><input type="checkbox" id="settle-voucher-cash" ${v.with_cash ? 'checked' : ''} ${draft ? '' : 'disabled'}>
-                    Phát sinh phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} khi duyệt</label>
-                <select id="settle-voucher-method" ${draft ? '' : 'disabled'} class="mt-1.5 w-full px-2 py-1 border border-slate-300 rounded-lg font-bold">
-                    <option value="BANK" ${v.payment_method === 'BANK' ? 'selected' : ''}>Chuyển khoản</option>
-                    <option value="CASH" ${v.payment_method === 'CASH' ? 'selected' : ''}>Tiền mặt</option></select>
-            </div>
-        </div>
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-3 text-xs no-print">${settleLogSection(v) || '<span class="text-slate-400">Chưa có lịch sử thay đổi</span>'}</div>
-        <div class="flex items-center justify-end gap-2 flex-wrap bg-white p-3 rounded-2xl border border-slate-200 shadow-xs text-xs no-print">
+        <div class="bg-white rounded-xl border border-slate-200 p-3 flex flex-wrap items-center gap-3 text-xs no-print">
+            <label class="font-bold text-slate-700">Ghi chú</label>
+            <input id="settle-voucher-notes" type="text" value="${escapeHtml(v.notes || '')}" ${draft ? '' : 'disabled'}
+                class="flex-1 min-w-[220px] px-2.5 py-1.5 border border-slate-300 rounded-lg disabled:bg-slate-50">
+            <label class="flex items-center gap-2 font-bold text-slate-800"><input type="checkbox" id="settle-voucher-cash" ${v.with_cash ? 'checked' : ''} ${draft ? '' : 'disabled'}>
+                Phát sinh phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} khi duyệt</label>
+            <select id="settle-voucher-method" ${draft ? '' : 'disabled'} class="px-2 py-1 border border-slate-300 rounded-lg font-bold">
+                <option value="BANK" ${v.payment_method === 'BANK' ? 'selected' : ''}>Chuyển khoản</option>
+                <option value="CASH" ${v.payment_method === 'CASH' ? 'selected' : ''}>Tiền mặt</option></select>
+            <div class="flex items-center gap-2 ml-auto">
             ${draft ? `
             <button type="button" data-voucher-action onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50 cursor-pointer"><i class="ph-bold ph-trash"></i> Xóa</button>
             <button type="button" data-voucher-action onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50 cursor-pointer"><i class="ph-bold ph-floppy-disk"></i> Lưu</button>
             <button type="button" data-voucher-action onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-seal-check"></i> Duyệt phiếu</button>`
-            : `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="Lý do mở lại (bắt buộc)" class="flex-1 min-w-[200px] px-2.5 py-1.5 border border-slate-300 rounded-lg">
+            : `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="Lý do mở lại (bắt buộc)" class="w-64 px-2.5 py-1.5 border border-slate-300 rounded-lg">
             <button type="button" data-voucher-action onclick="reopenSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold cursor-pointer"><i class="ph-bold ph-lock-key-open"></i> Mở lại để sửa</button>`}
-        </div>`;
+            </div>
+        </div>
+        ${(v.logs || []).length ? `<div class="bg-white rounded-xl border border-slate-200 px-3 py-2 text-xs no-print">${settleLogSection(v, false)}</div>` : ''}`;
     if (readonly) root.querySelectorAll('[data-voucher-action]').forEach(el => el.remove());
 
     document.querySelectorAll('.view').forEach(view => view.classList.add('hidden-view'));
@@ -25019,7 +24984,7 @@ function settleLogValue(v) {
     return escapeHtml(String(v));
 }
 
-function settleLogSection(v) {
+function settleLogSection(v, open = false) {
     const logs = v.logs || [];
     if (!logs.length) return '';
     const items = logs.slice().reverse().map(g => {
@@ -25032,7 +24997,7 @@ function settleLogSection(v) {
             ${g.reason ? `<div class="text-slate-600">Lý do: ${escapeHtml(g.reason)}</div>` : ''}
             ${changes ? `<ul class="list-disc pl-5 text-[11px] text-slate-600">${changes}</ul>` : ''}</div>`;
     }).join('');
-    return `<details class="mt-3 border border-slate-200 rounded-lg" ${logs.length <= 3 ? 'open' : ''}>
+    return `<details class="mt-3 border border-slate-200 rounded-lg" ${open ? 'open' : ''}>
         <summary class="px-3 py-2 font-bold text-slate-700 cursor-pointer">Lịch sử thay đổi (${logs.length})</summary>
         <div class="px-3 pb-2 max-h-56 overflow-auto">${items}</div></details>`;
 }
@@ -25082,7 +25047,11 @@ function recalcSettleVoucher() {
     if (v.party_type === 'DRIVER') text = net > 0 ? `TÀI XẾ NỘP LẠI: ${formatMoneyVND(net)}` : (net < 0 ? `CÔNG TY CHI BÙ: ${formatMoneyVND(-net)}` : 'CÂN BẰNG: 0');
     else text = `${v.party_type === 'PARTNER' ? 'TỔNG PHẢI TRẢ' : 'TỔNG PHẢI THU'}: ${formatMoneyVND(net)}`;
     if (amt) amt.innerText = text;
-    renderSettleSummary(v, adjTotal, net);
+    const setFoot = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = formatMoneyVND(val); };
+    setFoot('settle-foot-advance', v.lines.reduce((s, l) => s + (l.advance || 0), 0));
+    setFoot('settle-foot-spent', v.lines.reduce((s, l) => s + (l.spent || 0), 0));
+    setFoot('settle-foot-adj', adjTotal);
+    setFoot('settle-foot-total', net);
 }
 
 function collectSettleVoucherForm() {
@@ -25266,7 +25235,6 @@ window.openSettlementVoucherList = openSettlementVoucherList;
 window.loadVoucherTab = loadVoucherTab;
 window.renderVoucherTab = renderVoucherTab;
 window.closeSettleVoucherModal = closeSettleVoucherModal;
-window.toggleSettleDetail = toggleSettleDetail;
 window.onSettleSplitInput = onSettleSplitInput;
 window.recalcSettleVoucher = recalcSettleVoucher;
 window.saveSettleVoucher = saveSettleVoucher;
