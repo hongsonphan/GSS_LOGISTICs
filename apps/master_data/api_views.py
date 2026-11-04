@@ -2508,3 +2508,14 @@ class MasterDataVersionAPIView(APIView):
         resp = Response({'version': v})
         resp['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         return resp
+
+
+class LiveSyncVersionsAPIView(APIView):
+    """Phiên bản theo chủ đề (điều vận, kinh doanh, kế toán, ...) - client hỏi 5 giây/lần để biết có dữ liệu mới."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.master_data.version import get_topic_versions
+        resp = Response({'topics': get_topic_versions()})
+        resp['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp

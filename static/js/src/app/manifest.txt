@@ -9,6 +9,7 @@ core/time-input.js
 core/clipboard-paste.js
 core/combobox.js
 core/master-options.js
+core/live-sync.js
 core/layout.js
 core/time-picker.js
 core/router.js

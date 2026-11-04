@@ -10,3 +10,5 @@ class MasterDataConfig(AppConfig):
         partners._connect()
         from apps.master_data.signals import connect_master_data_signals
         connect_master_data_signals()
+        from apps.master_data.signals import connect_live_sync_signals
+        connect_live_sync_signals()

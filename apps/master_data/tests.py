@@ -978,6 +978,20 @@ class ReferentialDeletionLocksTestCase(TestCase):
         res = self.client.get('/api/master-data/form-options/')
         self.assertIn('SYNC1', [d['nickname'] for d in res.data['drivers']])
 
+    def test_live_sync_topic_versions_bump_on_business_data_change(self):
+        import time
+        from apps.fleet.models import Vehicle
+        res = self.client.get('/api/master-data/sync/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(set(res.data['topics']), {'dispatch', 'sales', 'accounting', 'customs', 'hr', 'fleet'})
+        before = res.data['topics']
+        time.sleep(0.01)
+        with self.captureOnCommitCallbacks(execute=True):
+            Vehicle.objects.create(license_plate='51D-111.22', vehicle_type='TRACTOR')
+        after = self.client.get('/api/master-data/sync/').data['topics']
+        self.assertGreater(after['fleet'], before['fleet'])
+        self.assertEqual(after['sales'], before['sales'])
+
     def test_master_data_version_api_and_signal_bump(self):
         from apps.master_data.version import get_master_data_version
         from apps.customers.models import Customer

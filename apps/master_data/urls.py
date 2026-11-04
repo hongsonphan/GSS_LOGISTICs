@@ -3,6 +3,7 @@ from apps.master_data.api_views import (
     MasterDataSummaryAPIView,
     MasterDataFormOptionsAPIView,
     MasterDataVersionAPIView,
+    LiveSyncVersionsAPIView,
     LocationListCreateAPIView, LocationDetailAPIView,
     ContainerTypeListCreateAPIView, ContainerTypeDetailAPIView,
     ExpenseItemListCreateAPIView, ExpenseItemDetailAPIView,
@@ -28,6 +29,7 @@ urlpatterns = [
     path('summary/', MasterDataSummaryAPIView.as_view(), name='master-summary'),
     path('form-options/', MasterDataFormOptionsAPIView.as_view(), name='master-form-options'),
     path('version/', MasterDataVersionAPIView.as_view(), name='master-data-version'),
+    path('sync/', LiveSyncVersionsAPIView.as_view(), name='live-sync-versions'),
     
     # 0. Khai báo Hệ Thống / Thông Tin Công Ty, Phân Quyền & Số Dư Đầu Kỳ
     path('company/', CompanyProfileAPIView.as_view(), name='master-company-profile'),
