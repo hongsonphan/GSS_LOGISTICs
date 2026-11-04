@@ -13,6 +13,7 @@ def draft_voucher_codes(party_type, trips):
     through = SettlementVoucher.trips.through
     rows = through.objects.filter(
         dispatchtrip_id__in=ids, settlementvoucher__party_type=party_type,
-        settlementvoucher__status=VoucherStatus.DRAFT, settlementvoucher__is_deleted=False,
+        settlementvoucher__status=VoucherStatus.DRAFT, settlementvoucher__reconciled_at__isnull=False,
+        settlementvoucher__is_deleted=False,
     ).values_list('dispatchtrip_id', 'settlementvoucher__code')
     return {trip_id: code for trip_id, code in rows}

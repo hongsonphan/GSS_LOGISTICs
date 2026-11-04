@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import shutil
@@ -207,10 +208,11 @@ class Command(BaseCommand):
             help='Bắt buộc cờ này để xác nhận xóa thực sự trong database.'
         )
         parser.add_argument(
-            '--no-clean-media',
+            '--clean-media',
             action='store_true',
-            help='Bỏ qua việc xóa tệp phát sinh trong media/.'
+            help='Xóa luôn các tệp trong media/ (mặc định KHÔNG đụng tới file).'
         )
+        parser.add_argument('--no-clean-media', action='store_true', help=argparse.SUPPRESS)
         parser.add_argument(
             '--include-personnel',
             action='store_true',
@@ -263,8 +265,11 @@ class Command(BaseCommand):
             safe_write("De thuc hien xoa that, chay: python manage.py purge_operational_data --confirm")
             return
 
+        if os.environ.get('ALLOW_PURGE_OPERATIONAL_DATA') != 'yes':
+            safe_write("TU CHOI: lenh nay xoa du lieu that. Dat ALLOW_PURGE_OPERATIONAL_DATA=yes (sau khi da sao luu) neu that su can.", self.style.ERROR)
+            return
         safe_write("Dang bat dau xoa toan bo du lieu phat sinh nghiep vu...", self.style.WARNING)
-        clean_media = not options.get('no_clean_media', False)
+        clean_media = bool(options.get('clean_media')) and not options.get('no_clean_media', False)
         purge_personnel = options.get('include_personnel', False)
         counts = run_purge_operational_data(
             clean_media=clean_media,

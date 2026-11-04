@@ -120,7 +120,7 @@ class DriverBatchSettlementTests(TestCase):
 
     def _approve(self, base, vid, **extra):
         """Bước 2 (Duyệt): đối tượng xác nhận bảng kê rồi mới duyệt."""
-        self.client.put(f'{base}{vid}/', {'counterparty_confirmed': True, 'counterparty_confirm_note': 'Xác nhận qua email'}, format='json')
+        self.client.put(f'{base}{vid}/', {'reconcile': True, 'counterparty_confirmed': True, 'counterparty_confirm_note': 'Xác nhận qua email'}, format='json')
         return self.client.post(f'{base}{vid}/approve/', extra, format='json')
 
     def test_batch_settlement_query_preview(self):
@@ -191,12 +191,21 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(update_log['action'], 'UPDATE')
         self.assertIn(('Phát sinh', 0, 50000), [(c['field'], c['old'], c['new']) for c in update_log['changes']])
 
+        # Mới tạo: chưa Lưu đối soát thì chưa duyệt được, chuyến chưa sang trạng thái Đối soát
+        self.assertEqual((res.data['voucher']['status_label'], res.data['voucher']['reconciled']), ('Mới tạo', False))
+        res = self.client.post(f'{base}{vid}/approve/', {}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Lưu đối soát', res.data['error'])
+        self.trip1.refresh_from_db()
+        self.assertNotEqual(self.trip1.driver_settlement_status, 'RECONCILING')
+        res = self.client.put(f'{base}{vid}/', {'reconcile': True}, format='json')
+        self.assertEqual((res.data['voucher']['status_label'], res.data['voucher']['reconciled']), ('Đối soát', True))
+        self.trip1.refresh_from_db()
+        self.assertEqual(self.trip1.driver_settlement_status, 'RECONCILING')
         # Bước 2 - Duyệt: cần đối tượng xác nhận bảng kê; duyệt xong chốt số liệu, chưa phát sinh tiền
         res = self.client.post(f'{base}{vid}/approve/', {}, format='json')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('xác nhận', res.data['error'])
-        self.trip1.refresh_from_db()
-        self.assertEqual(self.trip1.driver_settlement_status, 'RECONCILING')
         res = self._approve(base, vid)
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
         self.assertEqual(res.data['voucher']['status'], 'APPROVED')
@@ -234,7 +243,7 @@ class DriverBatchSettlementTests(TestCase):
         res = self.client.post(f'{base}{vid}/reopen/', {'reason': 'Nhập thiếu phí cân'}, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
         self.assertEqual([g['action'] for g in res.data['voucher']['logs']],
-                         ['CREATE', 'UPDATE', 'CONFIRM', 'APPROVE', 'SETTLE', 'UNSETTLE', 'REOPEN'])
+                         ['CREATE', 'UPDATE', 'UPDATE', 'CONFIRM', 'APPROVE', 'SETTLE', 'UNSETTLE', 'REOPEN'])
         self.assertEqual(res.data['voucher']['logs'][-1]['reason'], 'Nhập thiếu phí cân')
         self.assertFalse(res.data['voucher']['counterparty_confirmed'])
         self.trip1.refresh_from_db()
@@ -366,6 +375,8 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(trip_statuses(), {'Chờ đối soát'})
         res = self.client.post(base, {'party_type': 'CUSTOMER', 'trip_ids': [self.trip1.id]}, format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        self.assertEqual(trip_statuses(), {'Chờ đối soát'})   # mới tạo, chưa Lưu đối soát
+        self.client.put(f"{base}{res.data['voucher']['id']}/", {'reconcile': True}, format='json')
         self.assertEqual(trip_statuses(), {'Đối soát (chờ duyệt)'})
         self.assertEqual(self._approve(base, res.data['voucher']['id']).status_code, status.HTTP_200_OK)
         self.assertEqual(trip_statuses(), {'Đã đối soát'})
@@ -438,6 +449,9 @@ class DriverBatchSettlementTests(TestCase):
         vid = res.data['voucher']['id']
         self.assertEqual(res.data['voucher']['status'], 'DRAFT')
         self.trip1.refresh_from_db()
+        self.assertNotEqual(self.trip1.customer_settlement_status, 'RECONCILING')   # mới tạo, chưa Lưu đối soát
+        self.client.put(f'{base}{vid}/', {'reconcile': True}, format='json')
+        self.trip1.refresh_from_db()
         self.assertEqual((self.trip1.customer_settlement_status, self.trip1.is_customer_settled), ('RECONCILING', False))
         # chưa có xác nhận của khách: không duyệt được
         self.assertEqual(self.client.post(f'{base}{vid}/approve/', {}, format='json').status_code, status.HTTP_400_BAD_REQUEST)
@@ -471,6 +485,7 @@ class DriverBatchSettlementTests(TestCase):
         self.trip1.save()
         res = self.client.post(base, {'party_type': 'PARTNER', 'trip_ids': [self.trip1.id], 'with_cash': True}, format='json')
         vid = res.data['voucher']['id']
+        self.client.put(f'{base}{vid}/', {'reconcile': True}, format='json')
         self.trip1.refresh_from_db()
         self.assertEqual(self.trip1.subcontractor_settlement_status, 'RECONCILING')
         self.assertEqual(self._approve(base, vid).status_code, status.HTTP_200_OK)
@@ -560,6 +575,11 @@ class DriverBatchSettlementTests(TestCase):
                              ('APPROVED', 2400000, 2400000))
             cats = sorted(CashTransaction.objects.filter(ref_code=res.data['voucher']['code']).values_list('category', 'amount'))
             self.assertEqual([(c, int(a)) for c, a in cats], [('FREIGHT_REVENUE', 2150000), ('REIMBURSABLE_COLLECTION', 250000)])
+            # Mã phiếu từ quyết toán có đuôi .ĐS, số vẫn tăng đều chung dãy PT
+            codes = sorted(CashTransaction.objects.filter(ref_code=res.data['voucher']['code']).values_list('code', flat=True))
+            self.assertTrue(all(c.startswith('PT.') and c.endswith('.ĐS') for c in codes), codes)
+            nums = [int(c.split('.')[2]) for c in codes]
+            self.assertEqual(nums[1] - nums[0], 1)
             self.assertEqual((bal('131'), bal('1388')), (4300000 - 2150000, 500000 - 250000))
             # đã có thanh toán thì không mở lại đối soát trực tiếp
             self.assertEqual(self.client.post(f'{base}{vid}/reopen/', {'reason': 'x'}, format='json').status_code, 400)

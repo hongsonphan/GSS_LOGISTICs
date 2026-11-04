@@ -773,6 +773,7 @@ class SettlementVoucher(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     approved_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_settlement_vouchers')
     approved_at = models.DateTimeField(null=True, blank=True)
     # Xác nhận của đối tượng (khách hàng / tài xế / đối tác 3PL) trên bảng kê đối soát: bắt buộc trước khi Duyệt
+    reconciled_at = models.DateTimeField(null=True, blank=True, help_text="Lúc bấm Lưu đối soát (trống = phiếu mới tạo, chưa gửi đối soát)")
     counterparty_confirmed = models.BooleanField(default=False)
     counterparty_confirmed_at = models.DateTimeField(null=True, blank=True)
     counterparty_confirm_note = models.CharField(max_length=255, blank=True, help_text="Ai xác nhận / hình thức (email, ký tay...)")

@@ -157,6 +157,8 @@ function showSettlementVoucherModal(v, opts = {}) {
     currentSettleVoucher = v;
     const readonly = !!opts.readonly;
     const draft = v.status === 'DRAFT' && !readonly;
+    const isNew = draft && !v.reconciled;          // mới tạo: chưa bấm Lưu đối soát
+    const reconciling = draft && !!v.reconciled;   // đã lưu đối soát, chờ đối tượng xác nhận rồi Duyệt
     const approved = v.status === 'APPROVED' && !readonly;
     const settled = v.status === 'SETTLED' && !readonly;
     const cashEditable = draft || approved;
@@ -195,11 +197,11 @@ function showSettlementVoucherModal(v, opts = {}) {
                 <div>
                     <h3 class="font-bold text-sm sm:text-base font-heading text-slate-900">Bảng kê quyết toán ${SETTLE_PARTY_LABEL[party].toLowerCase()} - <span class="font-mono">${escapeHtml(v.code)}</span></h3>
                     <p class="text-xs text-slate-500">Đối tượng: <strong>${escapeHtml(v.party_name)}</strong> · ${v.lines.length} chuyến · Lập ${escapeHtml(v.created_at)} ·
-                        <span class="font-bold ${v.status === 'DRAFT' ? 'text-amber-700' : (v.status === 'APPROVED' ? 'text-sky-700' : 'text-emerald-700')}">${escapeHtml(v.status_label)}</span>
+                        <span class="font-bold ${isNew ? 'text-slate-600' : v.status === 'DRAFT' ? 'text-amber-700' : (v.status === 'APPROVED' ? 'text-sky-700' : 'text-emerald-700')}">${escapeHtml(v.status_label)}</span>
                         ${v.cash_transaction_code ? ` · Phiếu ${v.direction === 'RECEIVE' ? 'thu' : 'chi'}: <strong>${escapeHtml(v.cash_transaction_code)}</strong>` : ''}</p>
                 </div>
             </div>
-            ${settleStepper(v.status)}
+            ${settleStepper(v.status, v.reconciled)}
             <button type="button" onclick="printSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"><i class="ph-bold ph-printer"></i> In bảng kê</button>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 overflow-auto text-xs" style="max-height:calc(100vh - 290px)">
@@ -216,7 +218,8 @@ function showSettlementVoucherModal(v, opts = {}) {
             <label class="font-bold text-slate-700">Ghi chú</label>
             <input id="settle-voucher-notes" type="text" value="${escapeHtml(v.notes || '')}" ${draft ? '' : 'disabled'}
                 class="flex-1 min-w-[220px] px-2.5 py-1.5 border border-slate-300 rounded-lg disabled:bg-slate-50">
-            ${draft ? `<label class="flex items-center gap-2 font-bold text-slate-800 basis-full"><input type="checkbox" id="settle-confirm-cb" ${v.counterparty_confirmed ? 'checked' : ''}>
+            ${isNew ? `<div class="basis-full text-slate-600">Bấm <b>Lưu đối soát</b> để chuyển sang trạng thái "Đối soát", sau đó <b>In bảng kê</b> gửi ${SETTLE_PARTY_LABEL[party].toLowerCase()} xác nhận.</div>`
+            : reconciling ? `<label class="flex items-center gap-2 font-bold text-slate-800 basis-full"><input type="checkbox" id="settle-confirm-cb" ${v.counterparty_confirmed ? 'checked' : ''}>
                     ${SETTLE_PARTY_LABEL[party]} đã xác nhận bảng kê đối soát</label>
                 <input id="settle-confirm-note" type="text" maxlength="255" value="${escapeHtml(v.counterparty_confirm_note || '')}" placeholder="Ai xác nhận, bằng hình thức nào (email, ký tay...)"
                     class="flex-1 min-w-[260px] px-2.5 py-1.5 border border-slate-300 rounded-lg">`
@@ -229,10 +232,13 @@ function showSettlementVoucherModal(v, opts = {}) {
                 <option value="BANK" ${v.payment_method === 'BANK' ? 'selected' : ''}>Chuyển khoản</option>
                 <option value="CASH" ${v.payment_method === 'CASH' ? 'selected' : ''}>Tiền mặt</option></select>
             <div class="flex items-center gap-2 ml-auto">
-            ${draft ? `
+            ${isNew ? `
             <button type="button" data-voucher-action onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50 cursor-pointer"><i class="ph-bold ph-trash"></i> Xóa</button>
-            <button type="button" data-voucher-action onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50 cursor-pointer"><i class="ph-bold ph-floppy-disk"></i> Lưu</button>
-            <button type="button" data-voucher-action onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-seal-check"></i> Duyệt phiếu</button>`
+            <button type="button" data-voucher-action onclick="reconcileSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-floppy-disk"></i> Lưu đối soát</button>`
+            : reconciling ? `
+            <button type="button" data-voucher-action onclick="deleteSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-rose-300 font-bold text-rose-700 hover:bg-rose-50 cursor-pointer"><i class="ph-bold ph-trash"></i> Xóa</button>
+            <button type="button" data-voucher-action onclick="saveSettleVoucher()" class="px-3 py-1.5 rounded-lg border border-teal-600 font-bold text-teal-800 hover:bg-teal-50 cursor-pointer"><i class="ph-bold ph-floppy-disk"></i> Lưu thay đổi</button>
+            <button type="button" data-voucher-action onclick="approveSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-seal-check"></i> Duyệt</button>`
             : ((approved || settled) ? `<input id="settle-reopen-reason" data-voucher-action type="text" maxlength="255" placeholder="${hasPay ? 'Lý do hủy quyết toán' : 'Lý do mở lại đối soát'} (bắt buộc)" class="w-64 px-2.5 py-1.5 border border-slate-300 rounded-lg">
             ${hasPay
                 ? `<button type="button" data-voucher-action onclick="unsettleSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold cursor-pointer"><i class="ph-bold ph-arrow-counter-clockwise"></i> Hủy quyết toán</button>`
@@ -270,7 +276,7 @@ function settlePaymentPanel(v, canPay) {
             <input id="settle-pay-amount" type="text" inputmode="numeric" value="${formatSignedVN(v.remaining_amount || 0)}" oninput="this.value = formatSignedVN(this.value).replace('-', '')"
                 class="w-36 px-2 py-1.5 text-right font-mono font-bold border border-emerald-400 rounded-lg" title="Số tiền thanh toán lần này">
             <input id="settle-pay-note" type="text" maxlength="255" placeholder="Ghi chú (số UNC, diễn giải...)" class="flex-1 min-w-[200px] px-2.5 py-1.5 border border-slate-300 rounded-lg">
-            <button type="button" onclick="settleSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-handshake"></i> Ghi nhận thanh toán</button>
+            <button type="button" onclick="settleSettleVoucher()" class="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold cursor-pointer"><i class="ph-bold ph-handshake"></i> Quyết toán</button>
             <button type="button" onclick="openSettleOffset()" class="px-3 py-1.5 rounded-lg border border-emerald-600 font-bold text-emerald-800 hover:bg-emerald-50 cursor-pointer"><i class="ph-bold ph-arrows-left-right"></i> Cấn trừ với phiếu khác</button>
         </div>` : ''}
     </div>`;
@@ -316,9 +322,9 @@ async function doSettleOffset(otherId, amount) {
 }
 
 // Ba bước: Đối soát -> Duyệt (lên công nợ) -> Quyết toán
-function settleStepper(status) {
-    const idx = { DRAFT: 0, APPROVED: 1, SETTLED: 3 }[status] ?? 0;
-    const steps = ['1. Đối soát', '2. Duyệt (lên công nợ)', '3. Quyết toán'];
+function settleStepper(status, reconciled) {
+    const idx = status === 'DRAFT' ? (reconciled ? 1 : 0) : ({ APPROVED: 2, SETTLED: 4 }[status] ?? 0);
+    const steps = ['Mới tạo', '1. Đối soát', '2. Duyệt (lên công nợ)', '3. Quyết toán'];
     return `<div class="flex items-center gap-1.5 text-[11px] font-bold no-print">${steps.map((t, i) =>
         `<span class="px-2.5 py-1 rounded-full border ${i < idx ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : (i === idx ? 'bg-teal-700 text-white border-teal-700' : 'bg-white text-slate-400 border-slate-200')}">${i < idx ? '✓ ' : ''}${t}</span>`
     ).join('<span class="text-slate-300">➔</span>')}</div>`;
@@ -471,6 +477,17 @@ async function saveSettleVoucher(silent = false) {
     return data;
 }
 
+// Mới tạo -> Đối soát: lưu bảng kê, chuyển trạng thái, chuyến sang "Đối soát"; sau đó in gửi đối tượng
+async function reconcileSettleVoucher() {
+    const v = currentSettleVoucher;
+    const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/`, 'PUT', { ...collectSettleVoucherForm(), reconcile: true },
+        'Đã lưu đối soát. In bảng kê gửi đối tượng xác nhận rồi bấm Duyệt');
+    if (data) {
+        showSettlementVoucherModal(data.voucher);
+        if (typeof loadAccountingData === 'function') loadAccountingData();
+    }
+}
+
 async function approveSettleVoucher() {
     const v = currentSettleVoucher;
     if (!document.getElementById('settle-confirm-cb')?.checked) {
@@ -481,9 +498,9 @@ async function approveSettleVoucher() {
     const saved = await saveSettleVoucher(true);
     if (!saved) return;
     const ok = await showConfirmModal({
-        title: 'Duyệt Phiếu Đối Soát',
+        title: 'Duyệt',
         message: `Duyệt phiếu ${v.code}? Số liệu được chốt và lên công nợ, các chuyến bị khóa sổ. Chưa phát sinh tiền: thu/chi thực tế làm ở bước Quyết toán. Cần sửa thì "Mở lại đối soát".`,
-        confirmText: 'Duyệt phiếu', cancelText: 'Huỷ bỏ', type: 'success', icon: 'ph-bold ph-seal-check text-2xl'
+        confirmText: 'Duyệt', cancelText: 'Huỷ bỏ', type: 'success', icon: 'ph-bold ph-seal-check text-2xl'
     });
     if (!ok) return;
     const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/approve/`, 'POST', {
@@ -504,14 +521,14 @@ async function settleSettleVoucher() {
         return;
     }
     const ok = await showConfirmModal({
-        title: 'Ghi Nhận Thanh Toán',
-        message: `Ghi nhận ${formatMoneyVND(amount)} cho phiếu ${v.code}?${withCash ? ` Hệ thống lập phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} vào Sổ quỹ${v.party_type === 'CUSTOMER' ? ' (tách thu cước và thu hồi chi hộ)' : ''}.` : ' Không lập phiếu thu/chi (đã thanh toán ngoài hệ thống).'} Khi đủ số tiền phiếu thành "Đã quyết toán" và tạm ứng tài xế được đóng.`,
-        confirmText: 'Ghi nhận', cancelText: 'Huỷ bỏ', type: 'success', icon: 'ph-bold ph-handshake text-2xl'
+        title: 'Quyết Toán',
+        message: `Quyết toán ${formatMoneyVND(amount)} cho phiếu ${v.code}?${withCash ? ` Hệ thống lập phiếu ${v.direction === 'RECEIVE' ? 'Thu' : 'Chi'} (mã có đuôi .ĐS) vào Sổ quỹ${v.party_type === 'CUSTOMER' ? ' (tách thu cước và thu hồi chi hộ)' : ''}.` : ' Không lập phiếu thu/chi (đã thanh toán ngoài hệ thống).'} Khi đủ số tiền phiếu thành "Đã quyết toán" và tạm ứng tài xế được đóng.`,
+        confirmText: 'Quyết toán', cancelText: 'Huỷ bỏ', type: 'success', icon: 'ph-bold ph-handshake text-2xl'
     });
     if (!ok) return;
     const data = await settleVoucherRequest(`${SETTLE_VOUCHER_API}${v.id}/settle/`, 'POST', {
         amount, with_cash: withCash, payment_method: document.getElementById('settle-voucher-method')?.value || 'BANK',
-        note: document.getElementById('settle-pay-note')?.value || '' }, 'Đã ghi nhận thanh toán');
+        note: document.getElementById('settle-pay-note')?.value || '' }, 'Đã quyết toán');
     if (data) {
         const fresh = await fetchWithAuth(`${SETTLE_VOUCHER_API}${v.id}/`).then(r => r.json()).catch(() => null);
         showSettlementVoucherModal(fresh && fresh.voucher ? fresh.voucher : data.voucher);
@@ -688,6 +705,7 @@ window.onSettleSplitInput = onSettleSplitInput;
 window.onSettleAdjustInput = onSettleAdjustInput;
 window.recalcSettleVoucher = recalcSettleVoucher;
 window.saveSettleVoucher = saveSettleVoucher;
+window.reconcileSettleVoucher = reconcileSettleVoucher;
 window.approveSettleVoucher = approveSettleVoucher;
 window.settleSettleVoucher = settleSettleVoucher;
 window.openSettleOffset = openSettleOffset;

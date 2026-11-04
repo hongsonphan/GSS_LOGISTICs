@@ -45,7 +45,10 @@ PG="$DC exec -T db"
 $PG dropdb -U bim_logistics_user --if-exists bim_preflight
 $PG createdb -U bim_logistics_user bim_preflight
 $PG sh -c 'pg_dump -U bim_logistics_user -d bim_logistics_db --no-owner | psql -q -U bim_logistics_user -d bim_preflight' >/dev/null
-if $DC run --rm --no-deps -T -e DB_NAME=bim_preflight web sh -c \
+# media gắn CHỈ ĐỌC trong lần chạy thử: dù có lỗi mã nào cũng không thể xóa/ghi file thật
+mkdir -p media
+MEDIA_BEFORE="$(find media -type f | wc -l)"
+if $DC run --rm --no-deps -T -v "$APP_DIR/media:/app/media:ro" -e DB_NAME=bim_preflight web sh -c \
     "python manage.py migrate --noinput && python manage.py assign_default_company && python manage.py sync_trip_data && python manage.py rebuild_ledger && python manage.py migrate_legacy_access && python manage.py check"; then
     echo "Chạy thử trên bản sao CSDL: ĐẠT"
     $PG dropdb -U bim_logistics_user bim_preflight
@@ -97,6 +100,12 @@ $SUDO chown "$(id -un)":1000 .env && $SUDO chmod 640 .env
 
 step "5/7 Khởi động bản mới (tự migrate + collectstatic)"
 $DC up -d web
+
+MEDIA_AFTER="$(find media -type f | wc -l)"
+if [ "$MEDIA_AFTER" -lt "$MEDIA_BEFORE" ]; then
+    echo "CẢNH BÁO: số file media giảm từ $MEDIA_BEFORE xuống $MEDIA_AFTER sau khi cập nhật. Khôi phục từ bản sao lưu mới nhất trong /home/ubuntu/backups (media_*.tar.gz)."
+    exit 1
+fi
 
 step "6/7 Kiểm tra hệ thống"
 ok=""

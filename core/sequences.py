@@ -15,7 +15,7 @@ def _manager(model):
 def _max_existing_suffix(model, field, prefix):
     highest = 0
     for code in _manager(model).filter(**{f"{field}__startswith": prefix}).values_list(field, flat=True):
-        rest = (code or "")[len(prefix):]
+        rest = (code or "")[len(prefix):].split(".")[0]  # bỏ đuôi như .ĐS
         if rest.isdigit():
             highest = max(highest, int(rest))
     return highest
