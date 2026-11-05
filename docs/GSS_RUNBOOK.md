@@ -3,8 +3,8 @@
 ## 1. Chạy local (cổng 8088, PostgreSQL trong Docker)
 
 ```powershell
-.\scriptsun_local.ps1 -Seed     # lần đầu: DB + migrate + dữ liệu minh họa + tài khoản gss_admin + runserver 8088
-.\scriptsun_local.ps1           # các lần sau
+.\scripts\run_local.ps1 -Seed     # lần đầu: DB + migrate + dữ liệu minh họa + tài khoản gss_admin + runserver 8088
+.\scripts\run_local.ps1           # các lần sau
 ```
 
 - Database là container `gss_local_postgres` (`docker-compose.local.yml`, cổng `127.0.0.1:5437`, volume `gss_local_pgdata`), tách riêng khỏi các stack khác trên máy. Không dùng SQLite.
