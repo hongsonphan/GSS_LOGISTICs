@@ -332,7 +332,7 @@ def submit_rows(alloc, rows, source='vendor', user=None):
             raise ValidationError('Phiếu đã khóa, nhà xe không thể sửa. Liên hệ điều vận GSS.')
         if is_expired(alloc):
             raise ValidationError('Link đã hết hạn, hãy xin điều vận GSS cấp link mới.')
-    trips = {t.vendor_line_no: t for t in alloc.trips.select_for_update().filter(is_deleted=False).select_related('vehicle', 'trailer')}
+    trips = {t.vendor_line_no: t for t in alloc.trips.select_for_update(of=('self',)).filter(is_deleted=False).select_related('vehicle', 'trailer')}
     drafts = dict(alloc.draft_rows or {})
     seen_containers, results, saved = {}, [], 0
     for raw in rows:

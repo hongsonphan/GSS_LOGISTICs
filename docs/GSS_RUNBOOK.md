@@ -1,18 +1,17 @@
 # GSS – Hướng dẫn chạy & vận hành
 
-## 1. Chạy local (cổng 8088)
+## 1. Chạy local (cổng 8088, PostgreSQL trong Docker)
 
-```bash
-pip install -r requirements.txt
-export DEBUG=True SECRET_KEY=doi-khoa-nay          # PowerShell: $env:DEBUG='True'; $env:SECRET_KEY='doi-khoa-nay'
-python manage.py migrate
-python manage.py seed_gss_demo --create-admin       # cấu hình GSS + dữ liệu minh họa + tài khoản gss_admin
-python manage.py runserver 8088
+```powershell
+.\scriptsun_local.ps1 -Seed     # lần đầu: DB + migrate + dữ liệu minh họa + tài khoản gss_admin + runserver 8088
+.\scriptsun_local.ps1           # các lần sau
 ```
 
-- `--create-admin` sinh mật khẩu ngẫu nhiên và ghi vào `gss_local_credentials.txt` (đã `.gitignore`, không commit).
-- `seed_gss_demo` chỉ chạy khi `DEBUG=True`; chạy lại không nhân đôi dữ liệu.
-- Mở `http://localhost:8088/gss/` (Bảng điều hành). Camera quét QR cần `localhost` hoặc HTTPS.
+- Database là container `gss_local_postgres` (`docker-compose.local.yml`, cổng `127.0.0.1:5437`, volume `gss_local_pgdata`), tách riêng khỏi các stack khác trên máy. Không dùng SQLite.
+- Django chạy trên máy host với biến `DB_*` trỏ vào container; mật khẩu DB dev mặc định đổi bằng `GSS_LOCAL_DB_PASSWORD`.
+- Tài khoản: `gss_admin`; mật khẩu ngẫu nhiên ghi trong `gss_local_credentials.txt` (đã `.gitignore`).
+- Xóa sạch dữ liệu local: `docker compose -f docker-compose.local.yml down -v`.
+- Mở `http://localhost:8088/gss/`. Camera quét QR cần `localhost` hoặc HTTPS.
 
 ## 2. Triển khai khách mới (1 khách = 1 database)
 

@@ -1,0 +1,27 @@
+# Database PostgreSQL cho môi trường local/dev (Django chạy trên máy host, cổng 8088).
+# Tên container, cổng, volume tách riêng để không đụng stack gss_logistics / bim_logistics khác trên cùng máy.
+#   docker compose -f docker-compose.local.yml up -d
+# Mật khẩu chỉ dùng cho máy dev; đổi bằng biến GSS_LOCAL_DB_PASSWORD.
+name: gss_local
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gss_local_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gss_local_db
+      POSTGRES_USER: gss_local_user
+      POSTGRES_PASSWORD: ${GSS_LOCAL_DB_PASSWORD:-gss_local_dev_only}
+    ports:
+      - "127.0.0.1:5437:5432"
+    volumes:
+      - gss_local_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gss_local_user -d gss_local_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  gss_local_pgdata:

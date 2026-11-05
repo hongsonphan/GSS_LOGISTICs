@@ -14,6 +14,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from core.console import safe_text
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 from django.utils import timezone
 from PIL import Image
 
@@ -46,7 +47,8 @@ class Command(BaseCommand):
         if BookingOrder.objects.filter(booking_code__startswith='DEMO.').exists():
             self.stdout.write(safe_text('Dữ liệu minh họa đã có, bỏ qua.'))
         else:
-            self._seed()
+            with transaction.atomic():  # lỗi giữa chừng không để lại dữ liệu nửa vời
+                self._seed()
         if opts['create_admin']:
             self._admin()
 
