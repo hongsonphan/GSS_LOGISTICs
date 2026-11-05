@@ -68,6 +68,8 @@ INSTALLED_APPS = [
     'apps.customs',
     'apps.collaboration',
     'apps.ledger',
+    'apps.depot_yard',
+    'apps.qr_tracking',
 ]
 
 MIDDLEWARE = [
@@ -81,6 +83,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'core.audit.AuditContextMiddleware',
     'core.tenant.TenantMiddleware',
+    'core.features.FeatureGateMiddleware',
     'core.session_security.SessionSecurityMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -100,6 +103,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.access_menu',
+                'core.context_processors.brand',
             ],
         },
     },
@@ -407,6 +411,8 @@ SPECTACULAR_SETTINGS = {
 
 # Đa doanh nghiệp: người dùng đăng nhập chỉ thấy dữ liệu công ty của mình (lọc ở manager mặc định của mọi model
 # thuộc công ty — core.models.tenant_scope). Với một công ty hành vi không đổi. Tắt khẩn cấp: TENANT_ENFORCE=false
+# Loại hình DN của công ty tạo mới lần đầu: GSS_VENDOR_DEPOT_QR | INTERNAL_FLEET_PNL | ENTERPRISE_FULL
+DEFAULT_BUSINESS_MODEL = os.environ.get('DEFAULT_BUSINESS_MODEL', 'ENTERPRISE_FULL')
 TENANT_ENFORCE = _env_bool('TENANT_ENFORCE', True)
 # Content-Security-Policy (core/security_headers.py). CSP_REPORT_ONLY=true để chỉ báo cáo khi cần dò lỗi
 CSP_REPORT_ONLY = _env_bool('CSP_REPORT_ONLY', False)

@@ -17105,6 +17105,8 @@ async function openCreateBookingPage(updateHistory = true) {
         if (detInput) detInput.value = formatNumberVN(7);
         if (demInput) demInput.value = formatNumberVN(7);
         if (priceInput) priceInput.value = '';
+        fillBookingDemDet(null);
+        if (typeof renderBookingVendorAllocations === 'function') renderBookingVendorAllocations(null);
 
         if (typeof clearFullpageBookingFileSelection === 'function') clearFullpageBookingFileSelection();
         if (typeof onFullpageBookingTypeChange === 'function') onFullpageBookingTypeChange();
@@ -17249,6 +17251,8 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
         if (statusEl) statusEl.value = b.status || 'PENDING_DISPATCH';
         const notesEl = document.getElementById('fullpage-booking-notes');
         if (notesEl) notesEl.value = b.notes || '';
+        fillBookingDemDet(b);
+        if (typeof renderBookingVendorAllocations === 'function') renderBookingVendorAllocations(b);
 
         fullpageBookingFilesList = [];
         fullpageBookingExistingDocs = [];
@@ -17484,6 +17488,7 @@ async function saveFullpageBooking(e) {
         formData.append('selling_freight_price', price);
         formData.append('status', statusVal);
         formData.append('notes', notes || '');
+        collectBookingDemDet().forEach(([k, v]) => formData.append(k, v));
 
         if (fullpageBookingFilesList && fullpageBookingFilesList.length > 0) {
             formData.append('booking_file', fullpageBookingFilesList[0]);
@@ -17528,6 +17533,189 @@ async function saveFullpageBooking(e) {
             submitBtn.innerHTML = originalBtnHtml;
         }
     }
+}
+
+// ---- src/app/sales/booking-page/vendor-allocations.js ----
+// GSS: hạn lệnh DEM/DET, ghi chú điểm đến và chia cont cho nhà xe trên trang chi tiết Booking.
+
+const DEMDET_LEVELS = {
+    ok: ['bg-emerald-100 text-emerald-800', 'Còn hạn'],
+    warn: ['bg-amber-100 text-amber-800', 'Sắp hết hạn'],
+    overdue: ['bg-rose-100 text-rose-800', 'QUÁ HẠN'],
+    none: ['bg-slate-100 text-slate-600', 'Chưa có hạn'],
+};
+
+function fillBookingDemDet(b) {
+    const card = document.getElementById('fullpage-demdet-card');
+    if (card) card.classList.toggle('hidden', typeof hasFeature === 'function' && !hasFeature('dem_det_alerts'));
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v || ''; };
+    set('fullpage-booking-dem-start', b && b.dem_start_date);
+    set('fullpage-booking-det-start', b && b.det_start_date);
+    set('fullpage-booking-dem-override', b && b.dem_expiry_override);
+    set('fullpage-booking-det-override', b && b.det_expiry_override);
+    set('fullpage-booking-dest-notes', b && b.destination_notes);
+    set('fullpage-booking-road-restrictions', b && b.road_restrictions);
+    const box = document.getElementById('fullpage-demdet-summary');
+    if (!box) return;
+    box.replaceChildren();
+    if (!b) return;
+    [['Hạn DEM', b.dem], ['Hạn DET', b.det]].forEach(([label, d]) => {
+        if (!d) return;
+        const [cls, text] = DEMDET_LEVELS[d.level] || DEMDET_LEVELS.none;
+        const span = document.createElement('span');
+        span.className = 'px-2.5 py-1 rounded-lg ' + cls;
+        const date = d.expiry ? d.expiry.split('-').reverse().join('/') : '—';
+        span.textContent = `${label}: ${date} · ${text}` + (d.days_left != null && d.level !== 'none' ? ` (${d.days_left} ngày)` : '');
+        box.appendChild(span);
+    });
+}
+
+function collectBookingDemDet() {
+    const val = (id) => (document.getElementById(id)?.value || '').trim();
+    return [
+        ['dem_start_date', val('fullpage-booking-dem-start')],
+        ['det_start_date', val('fullpage-booking-det-start')],
+        ['dem_expiry_override', val('fullpage-booking-dem-override')],
+        ['det_expiry_override', val('fullpage-booking-det-override')],
+        ['destination_notes', val('fullpage-booking-dest-notes')],
+        ['road_restrictions', val('fullpage-booking-road-restrictions')],
+    ];
+}
+
+// ---------- Chia cont cho nhà xe ----------
+let vendorAllocBookingId = null;
+
+function vaEl(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+}
+
+async function renderBookingVendorAllocations(b) {
+    const host = document.getElementById('fullpage-vendor-allocations');
+    if (!host) return;
+    const enabled = typeof hasFeature !== 'function' || hasFeature('vendor_portal');
+    if (!b || !b.id || !enabled) { host.classList.add('hidden'); host.replaceChildren(); return; }
+    vendorAllocBookingId = b.id;
+    host.classList.remove('hidden');
+    host.className = 'bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3';
+    try {
+        const res = await fetchWithAuth(`/api/bookings/${b.id}/vendor-allocations/`);
+        const out = await res.json();
+        if (!res.ok || !out.success) throw new Error(out.message || 'Không tải được phiếu chia cont.');
+        paintVendorAllocations(host, out.data);
+    } catch (err) {
+        host.replaceChildren(vaEl('div', 'text-xs text-rose-600 font-semibold', err.message));
+    }
+}
+
+function paintVendorAllocations(host, data) {
+    const head = vaEl('div', 'flex flex-wrap items-center justify-between gap-2');
+    head.append(vaEl('div', 'font-bold text-slate-800 text-sm', `Chia cont cho nhà xe — đã chia ${data.allocated}/${data.total_containers}, còn ${data.remaining}`));
+    host.replaceChildren(head);
+
+    const list = vaEl('div', 'space-y-2');
+    if (!data.allocations.length) list.append(vaEl('div', 'text-xs text-slate-500', 'Chưa chia cont cho nhà xe nào.'));
+    data.allocations.forEach(a => {
+        const row = vaEl('div', 'flex flex-wrap items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs');
+        row.append(vaEl('b', 'text-slate-800', a.subcontractor));
+        row.append(vaEl('span', 'font-mono', `${a.filled}/${a.allocated_containers} xe`));
+        const st = vaEl('span', 'px-2 py-0.5 rounded-full font-bold ' + (a.locked ? 'bg-slate-200 text-slate-700' : a.expired ? 'bg-rose-100 text-rose-800' : a.status === 'SUBMITTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'),
+            a.expired ? 'Link hết hạn' : a.status_label);
+        row.append(st);
+        const spacer = vaEl('span'); spacer.style.flex = '1'; row.append(spacer);
+        const mk = (label, fn) => { const bt = vaEl('button', 'min-h-[36px] px-3 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 cursor-pointer', label); bt.type = 'button'; bt.addEventListener('click', fn); return bt; };
+        row.append(mk('Cấp link mới', () => vendorAllocAction(a.id, 'regenerate', host)));
+        row.append(mk('Đổi số cont', () => vendorAllocResize(a, host)));
+        row.append(mk(a.locked ? 'Mở khóa' : 'Khóa', () => vendorAllocAction(a.id, a.locked ? 'unlock' : 'lock', host)));
+        if (!a.filled) row.append(mk('Thu hồi', () => vendorAllocAction(a.id, 'revoke', host)));
+        list.append(row);
+    });
+    host.append(list);
+
+    if (data.remaining > 0) {
+        const form = vaEl('div', 'grid grid-cols-1 md:grid-cols-12 gap-2 items-end pt-2 border-t border-slate-100');
+        const sel = vaEl('select', 'md:col-span-6 min-h-[44px] px-3 rounded-xl border border-slate-300 text-sm bg-white');
+        sel.id = 'va-sub';
+        sel.append(new Option('— Chọn nhà xe —', ''));
+        const num = vaEl('input', 'md:col-span-3 min-h-[44px] px-3 rounded-xl border border-slate-300 text-sm');
+        num.type = 'number'; num.min = 1; num.max = data.remaining; num.value = data.remaining; num.id = 'va-count';
+        const btn = vaEl('button', 'md:col-span-3 min-h-[44px] rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm cursor-pointer', 'Chia & lấy link');
+        btn.type = 'button';
+        btn.addEventListener('click', async () => {
+            if (!sel.value) { showToast('warning', 'Hãy chọn nhà xe.'); return; }
+            btn.disabled = true;
+            try {
+                const res = await fetchWithAuth(`/api/bookings/${vendorAllocBookingId}/vendor-allocations/`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subcontractor_id: Number(sel.value), allocated_containers: Number(num.value) }),
+                });
+                const out = await res.json();
+                if (!res.ok || !out.success) { showToast('danger', out.message || 'Không chia được.'); return; }
+                showToast('success', out.message);
+                await showVendorLink(out.link);
+                await renderBookingVendorAllocations({ id: vendorAllocBookingId });
+            } finally { btn.disabled = false; }
+        });
+        form.append(sel, num, btn);
+        host.append(form);
+        fetchWithAuth('/api/master-data/subcontractors/').then(r => r.json()).then(j => {
+            (j.results || []).filter(s => s.is_active !== false && (!s.partner_type || s.partner_type === 'CARRIER'))
+                .forEach(s => sel.append(new Option(s.short_name || s.name, s.id)));
+        }).catch(() => showToast('warning', 'Không tải được danh sách nhà xe.'));
+    }
+}
+
+async function vendorAllocAction(id, action, host) {
+    if (action === 'revoke' && !window.confirm('Thu hồi phiếu này? Link của nhà xe sẽ ngừng hoạt động.')) return;
+    const res = await fetchWithAuth(`/api/vendor-allocations/${id}/`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }),
+    });
+    const out = await res.json();
+    if (!res.ok || !out.success) { showToast('danger', out.message || 'Thao tác thất bại.'); return; }
+    showToast('success', out.message);
+    if (out.link) await showVendorLink(out.link);
+    await renderBookingVendorAllocations({ id: vendorAllocBookingId });
+}
+
+async function vendorAllocResize(a, host) {
+    const v = window.prompt(`Số cont giao cho ${a.subcontractor}:`, a.allocated_containers);
+    if (v === null) return;
+    const res = await fetchWithAuth(`/api/vendor-allocations/${a.id}/`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ allocated_containers: Number(v) }),
+    });
+    const out = await res.json();
+    if (!res.ok || !out.success) { showToast('danger', out.message || 'Không đổi được.'); return; }
+    showToast('success', out.message);
+    await renderBookingVendorAllocations({ id: vendorAllocBookingId });
+}
+
+// Link chỉ hiện một lần: cho sao chép hoặc mở Zalo để gửi
+function showVendorLink(link) {
+    return new Promise(resolve => {
+        const overlay = vaEl('div', 'fixed inset-0 z-[300] bg-slate-900/60 flex items-center justify-center p-4');
+        const box = vaEl('div', 'bg-white rounded-2xl p-5 max-w-lg w-full space-y-3 shadow-xl');
+        box.append(vaEl('div', 'font-black text-slate-900', 'Link cho nhà xe'));
+        box.append(vaEl('div', 'text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2', 'Link chỉ hiện một lần. Hãy sao chép và gửi ngay; nếu mất, bấm "Cấp link mới" (link cũ sẽ ngừng hoạt động).'));
+        const inp = vaEl('input', 'w-full min-h-[44px] px-3 rounded-xl border border-slate-300 text-xs font-mono');
+        inp.readOnly = true; inp.value = link;
+        const row = vaEl('div', 'flex gap-2 justify-end');
+        const copy = vaEl('button', 'min-h-[44px] px-4 rounded-xl bg-teal-600 text-white font-bold text-sm cursor-pointer', 'Sao chép');
+        const zalo = vaEl('a', 'min-h-[44px] px-4 rounded-xl bg-blue-600 text-white font-bold text-sm flex items-center cursor-pointer', 'Gửi Zalo');
+        zalo.href = 'https://zalo.me/share?url=' + encodeURIComponent(link); zalo.target = '_blank'; zalo.rel = 'noopener noreferrer';
+        const close = vaEl('button', 'min-h-[44px] px-4 rounded-xl bg-slate-100 text-slate-700 font-bold text-sm cursor-pointer', 'Đóng');
+        copy.addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(link); copy.textContent = 'Đã sao chép ✓'; }
+            catch (e) { inp.select(); document.execCommand('copy'); copy.textContent = 'Đã sao chép ✓'; }
+        });
+        close.addEventListener('click', () => { overlay.remove(); resolve(); });
+        row.append(copy, zalo, close);
+        box.append(inp, row);
+        overlay.append(box);
+        document.body.append(overlay);
+        inp.select();
+    });
 }
 
 // ---- src/app/sales/booking-page/print.js ----
@@ -31150,6 +31338,16 @@ function injectMasterDataModalFields(data) {
                     <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Giờ làm việc kho, quy định vào cổng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
             </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <label class="block font-bold text-slate-700 text-xs mb-1">Ghi Chú Điểm Đến (cho tài xế)</label>
+                    <textarea id="mdf-destination-notes" rows="3" placeholder="Người nhận hàng, cổng vào, quy định bảo hộ, đăng ký bảo vệ..." class="form-input px-2.5 py-1.5 text-xs text-slate-800 w-full">${escapeHtml(d.destination_notes || '')}</textarea>
+                </div>
+                <div class="md:col-span-6">
+                    <label class="block font-bold text-slate-700 text-xs mb-1">Lưu Ý Cấm Đường / Giờ Cấm Tải</label>
+                    <textarea id="mdf-road-restrictions" rows="3" placeholder="Tuyến cấm container, khung giờ cấm, cầu yếu, đoạn sửa chữa..." class="form-input px-2.5 py-1.5 text-xs text-slate-800 w-full">${escapeHtml(d.road_restrictions || '')}</textarea>
+                </div>
+            </div>
             <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
@@ -32172,6 +32370,8 @@ async function submitMasterDataForm(e) {
             contact_person: document.getElementById('mdf-contact-person')?.value || '',
             contact_phone: document.getElementById('mdf-contact-phone').value,
             notes: document.getElementById('mdf-notes')?.value || '',
+            destination_notes: document.getElementById('mdf-destination-notes')?.value || '',
+            road_restrictions: document.getElementById('mdf-road-restrictions')?.value || '',
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'customers') {
@@ -32768,6 +32968,76 @@ function renderCompanyProfileView(company) {
             </div>
         </div>
     `;
+    renderBusinessProfileCard(company, container);
+}
+
+// Loại hình doanh nghiệp + bật/tắt từng tính năng (core/features.py)
+function renderBusinessProfileCard(company, container) {
+    if (!company.business_model) return;
+    const wrap = container.firstElementChild;
+    if (!wrap) return;
+    const labels = company.feature_labels || {};
+    const effective = company.effective_features || {};
+    const overrides = company.enabled_features || {};
+    const options = (company.business_model_choices || []).map(c =>
+        `<option value="${escapeHtml(c.value)}" ${c.value === company.business_model ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('');
+    const rows = Object.keys(labels).map(k => `
+        <label class="flex items-center gap-3 min-h-[44px] px-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
+            <input type="checkbox" data-feature="${escapeHtml(k)}" class="w-5 h-5 accent-teal-600" ${effective[k] ? 'checked' : ''}>
+            <span class="text-xs font-semibold text-slate-700">${escapeHtml(labels[k])}</span>
+            ${k in overrides ? '<span class="ml-auto text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">Tùy chỉnh</span>' : ''}
+        </label>`).join('');
+    const card = document.createElement('div');
+    card.id = 'md-business-profile';
+    card.className = 'bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-4';
+    card.innerHTML = `
+        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm border-b border-slate-100 pb-2.5">
+            <i class="ph-bold ph-sliders-horizontal text-lg text-teal-600"></i>
+            <span>7. Loại Hình Doanh Nghiệp & Phân Hệ Sử Dụng</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <label class="md:col-span-2">
+                <span class="block text-slate-500 font-medium text-[11px] mb-1">Loại hình (chọn xong bấm Lưu để áp dụng gói mặc định)</span>
+                <select id="bp-model" class="w-full min-h-[44px] rounded-xl border border-slate-300 px-3 text-sm bg-white">${options}</select>
+            </label>
+            <label>
+                <span class="block text-slate-500 font-medium text-[11px] mb-1">Cảnh báo DEM/DET khi còn ≤ (ngày)</span>
+                <input id="bp-warn" type="number" min="0" max="30" value="${Number(company.warn_days ?? 2)}" class="w-full min-h-[44px] rounded-xl border border-slate-300 px-3 text-sm">
+            </label>
+        </div>
+        <div id="bp-features" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">${rows}</div>
+        <div class="flex justify-end">
+            <button id="bp-save" class="min-h-[44px] px-5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-sm font-black cursor-pointer">Lưu loại hình</button>
+        </div>`;
+    wrap.appendChild(card);
+
+    // Đổi loại hình -> làm mới các ô tích theo gói (chỉ xem trước, chưa lưu)
+    const presets = company.model_presets || {};
+    card.querySelector('#bp-model').addEventListener('change', (e) => {
+        const preset = presets[e.target.value];
+        if (preset) card.querySelectorAll('[data-feature]').forEach(cb => { cb.checked = preset.includes(cb.dataset.feature); });
+    });
+    card.querySelector('#bp-save').addEventListener('click', async () => {
+        const model = card.querySelector('#bp-model').value;
+        const checked = {};
+        card.querySelectorAll('[data-feature]').forEach(cb => { checked[cb.dataset.feature] = cb.checked; });
+        // Chỉ lưu phần khác gói mặc định làm ghi đè, để đổi loại hình sau này vẫn áp đúng gói
+        const preset = presets[model] || [];
+        Object.keys(checked).forEach(k => { if (checked[k] === preset.includes(k)) delete checked[k]; });
+        try {
+            const res = await fetchWithAuth('/api/master-data/company/', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ business_model: model, enabled_features: checked, warn_days: card.querySelector('#bp-warn').value }),
+            });
+            const out = await res.json();
+            if (!res.ok || !out.success) { showToast('danger', out.message || 'Không lưu được loại hình.'); return; }
+            showToast('success', 'Đã lưu. Đang tải lại để áp dụng menu mới...');
+            setTimeout(() => window.location.reload(), 800);
+        } catch (err) {
+            showToast('danger', 'Lỗi kết nối, vui lòng thử lại.');
+        }
+    });
 }
 
 let rolesPermissionsDataCache = null;

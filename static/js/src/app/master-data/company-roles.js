@@ -355,6 +355,76 @@ function renderCompanyProfileView(company) {
             </div>
         </div>
     `;
+    renderBusinessProfileCard(company, container);
+}
+
+// Loại hình doanh nghiệp + bật/tắt từng tính năng (core/features.py)
+function renderBusinessProfileCard(company, container) {
+    if (!company.business_model) return;
+    const wrap = container.firstElementChild;
+    if (!wrap) return;
+    const labels = company.feature_labels || {};
+    const effective = company.effective_features || {};
+    const overrides = company.enabled_features || {};
+    const options = (company.business_model_choices || []).map(c =>
+        `<option value="${escapeHtml(c.value)}" ${c.value === company.business_model ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('');
+    const rows = Object.keys(labels).map(k => `
+        <label class="flex items-center gap-3 min-h-[44px] px-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
+            <input type="checkbox" data-feature="${escapeHtml(k)}" class="w-5 h-5 accent-teal-600" ${effective[k] ? 'checked' : ''}>
+            <span class="text-xs font-semibold text-slate-700">${escapeHtml(labels[k])}</span>
+            ${k in overrides ? '<span class="ml-auto text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">Tùy chỉnh</span>' : ''}
+        </label>`).join('');
+    const card = document.createElement('div');
+    card.id = 'md-business-profile';
+    card.className = 'bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-4';
+    card.innerHTML = `
+        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm border-b border-slate-100 pb-2.5">
+            <i class="ph-bold ph-sliders-horizontal text-lg text-teal-600"></i>
+            <span>7. Loại Hình Doanh Nghiệp & Phân Hệ Sử Dụng</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <label class="md:col-span-2">
+                <span class="block text-slate-500 font-medium text-[11px] mb-1">Loại hình (chọn xong bấm Lưu để áp dụng gói mặc định)</span>
+                <select id="bp-model" class="w-full min-h-[44px] rounded-xl border border-slate-300 px-3 text-sm bg-white">${options}</select>
+            </label>
+            <label>
+                <span class="block text-slate-500 font-medium text-[11px] mb-1">Cảnh báo DEM/DET khi còn ≤ (ngày)</span>
+                <input id="bp-warn" type="number" min="0" max="30" value="${Number(company.warn_days ?? 2)}" class="w-full min-h-[44px] rounded-xl border border-slate-300 px-3 text-sm">
+            </label>
+        </div>
+        <div id="bp-features" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">${rows}</div>
+        <div class="flex justify-end">
+            <button id="bp-save" class="min-h-[44px] px-5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-sm font-black cursor-pointer">Lưu loại hình</button>
+        </div>`;
+    wrap.appendChild(card);
+
+    // Đổi loại hình -> làm mới các ô tích theo gói (chỉ xem trước, chưa lưu)
+    const presets = company.model_presets || {};
+    card.querySelector('#bp-model').addEventListener('change', (e) => {
+        const preset = presets[e.target.value];
+        if (preset) card.querySelectorAll('[data-feature]').forEach(cb => { cb.checked = preset.includes(cb.dataset.feature); });
+    });
+    card.querySelector('#bp-save').addEventListener('click', async () => {
+        const model = card.querySelector('#bp-model').value;
+        const checked = {};
+        card.querySelectorAll('[data-feature]').forEach(cb => { checked[cb.dataset.feature] = cb.checked; });
+        // Chỉ lưu phần khác gói mặc định làm ghi đè, để đổi loại hình sau này vẫn áp đúng gói
+        const preset = presets[model] || [];
+        Object.keys(checked).forEach(k => { if (checked[k] === preset.includes(k)) delete checked[k]; });
+        try {
+            const res = await fetchWithAuth('/api/master-data/company/', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ business_model: model, enabled_features: checked, warn_days: card.querySelector('#bp-warn').value }),
+            });
+            const out = await res.json();
+            if (!res.ok || !out.success) { showToast('danger', out.message || 'Không lưu được loại hình.'); return; }
+            showToast('success', 'Đã lưu. Đang tải lại để áp dụng menu mới...');
+            setTimeout(() => window.location.reload(), 800);
+        } catch (err) {
+            showToast('danger', 'Lỗi kết nối, vui lòng thử lại.');
+        }
+    });
 }
 
 let rolesPermissionsDataCache = null;

@@ -1,0 +1,29 @@
+{% load static %}<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>{{ company_name }} · Điều hành GSS</title>
+<link rel="stylesheet" href="{% static 'css/gss.css' %}">
+</head>
+<body>
+<div class="topbar">
+  <h1>{{ company_name }} · Điều hành</h1>
+  <span class="grow"></span>
+  <a href="/">Về hệ thống chính</a>
+  <a href="/logout/">Đăng xuất</a>
+</div>
+<nav class="tabs" role="tablist" id="tabs">
+  <button role="tab" data-tab="dashboard" aria-selected="true">Tổng quan nhà xe</button>
+  <button role="tab" data-tab="dispatch" aria-selected="false">Điều vận</button>
+  {% if features.depot_yard %}<button role="tab" data-tab="depot" aria-selected="false">Bãi cont Đắk Nông</button>{% endif %}
+  {% if features.qr_tracking %}<button role="tab" data-tab="scan" aria-selected="false">Quét QR</button>{% endif %}
+  {% if features.pod_templates %}<button role="tab" data-tab="pod" aria-selected="false">Mẫu biên bản</button>{% endif %}
+</nav>
+<main id="view"></main>
+<script>window.GSS = { features: {{ features_json|safe }} };</script>
+<script src="{% static 'js/gss/common.js' %}"></script>
+<script src="{% static 'js/gss/console.js' %}"></script>
+</body>
+</html>

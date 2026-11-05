@@ -5,6 +5,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
 
+from apps.dispatch.vendor_views import vendor_portal_view
+from apps.dispatch.gss_views import gss_console_view, qr_trip_page_view
+from apps.dispatch.api_views import gss as gss_api
+from apps.depot_yard import api as depot_api
+from apps.qr_tracking import api as qr_api
 from apps.dispatch.views import index_view, login_view, logout_view, driver_portal_view, public_tracking_view, help_view, news_detail_page_view
 from apps.dispatch.api_views import (
     DashboardBGDAPIView,
@@ -27,6 +32,9 @@ from apps.dispatch.api_views import (
     QuotationDetailAPIView,
     QuotationStatusAPIView,
     BookingOrderDetailAPIView,
+    BookingVendorAllocationsAPIView,
+    VendorAllocationDetailAPIView,
+    VendorPortalAPIView,
     BookingOrderStatusAPIView,
     BookingDocumentDeleteAPIView,
     CustomsAPIView,
@@ -144,6 +152,9 @@ urlpatterns = [
     path('help', help_view, name='help-alias-noslash'),
 
     # Mobile Portal dành riêng cho Tài xế xe đầu kéo (Capability Token HashID)
+    path('vendor/<str:token>/', vendor_portal_view, name='vendor-portal'),
+    path('q/<str:token>/', qr_trip_page_view, name='qr-trip-page'),
+    path('gss/', gss_console_view, name='gss-console'),
     path('driver/<str:trip_hash>/', driver_portal_view, name='driver-portal'),
     path('driver/<str:trip_hash>', driver_portal_view, name='driver-portal-noslash'),
 
@@ -197,6 +208,39 @@ urlpatterns = [
     path('api/bookings/<int:pk>/', BookingOrderDetailAPIView.as_view(), name='api-booking-detail'),
     path('api/bookings/<int:pk>/status/', BookingOrderStatusAPIView.as_view(), name='api-booking-status'),
     path('api/bookings/<int:pk>/documents/<int:doc_id>/', BookingDocumentDeleteAPIView.as_view(), name='api-booking-doc-delete'),
+    path('api/bookings/<int:pk>/vendor-allocations/', BookingVendorAllocationsAPIView.as_view(), name='api-booking-vendor-allocations'),
+    path('api/vendor-allocations/<int:pk>/', VendorAllocationDetailAPIView.as_view(), name='api-vendor-allocation-detail'),
+    path('api/vendor/<str:token>/', VendorPortalAPIView.as_view(), name='api-vendor-portal'),
+    # GSS: điều vận Nhận–Giao–Hạ, chứng từ, kiện hàng lẻ, tem QR
+    path('api/gss/dashboard/', gss_api.GssDashboardAPIView.as_view()),
+    path('api/gss/trips/', gss_api.GssTripListAPIView.as_view()),
+    path('api/gss/trips/<str:code>/', gss_api.GssTripDetailAPIView.as_view()),
+    path('api/gss/trips/<str:code>/step/', gss_api.GssTripStepAPIView.as_view()),
+    path('api/gss/trips/<str:code>/attachments/', gss_api.GssTripAttachmentsAPIView.as_view()),
+    path('api/gss/trips/<str:code>/attachments/<int:doc_id>/', gss_api.GssTripAttachmentDetailAPIView.as_view()),
+    path('api/gss/trips/<str:code>/message/', gss_api.GssTripMessageAPIView.as_view()),
+    path('api/gss/trips/<str:code>/pod/', gss_api.GssTripPodAPIView.as_view()),
+    path('api/gss/trips/<str:code>/qr.svg', gss_api.GssTripQrAPIView.as_view()),
+    path('api/gss/trips/<str:code>/labels/', gss_api.GssLabelsAPIView.as_view()),
+    path('api/gss/trips/<str:code>/packages/', gss_api.GssPackagesAPIView.as_view()),
+    path('api/gss/packages/<int:pk>/', gss_api.GssPackageDetailAPIView.as_view()),
+    path('api/gss/packages/<int:pk>/scan/', gss_api.GssPackageScanAPIView.as_view()),
+    path('api/gss/resolve/', gss_api.GssResolveQrAPIView.as_view()),
+    path('api/gss/pod-templates/', gss_api.GssPodTemplatesAPIView.as_view()),
+    path('api/gss/pod-templates/<int:pk>/', gss_api.GssPodTemplateDetailAPIView.as_view()),
+    path('api/gss/pod-templates/<int:pk>/preview/', gss_api.GssPodTemplatePreviewAPIView.as_view()),
+    path('api/gss/customers/<int:pk>/pod-template/', gss_api.GssCustomerPodTemplateAPIView.as_view()),
+    path('api/depot/yards/', depot_api.YardListAPIView.as_view()),
+    path('api/depot/stats/', depot_api.DepotStatsAPIView.as_view()),
+    path('api/depot/lookup/', depot_api.DepotLookupAPIView.as_view()),
+    path('api/depot/movements/', depot_api.MovementListCreateAPIView.as_view()),
+    path('api/depot/movements/<int:pk>/', depot_api.MovementDetailAPIView.as_view()),
+    path('api/depot/movements/<int:pk>/gate-out/', depot_api.MovementGateOutAPIView.as_view()),
+    path('api/depot/movements/<int:pk>/photos/', depot_api.MovementPhotosAPIView.as_view()),
+    path('api/qr/t/<str:token>/', qr_api.TripQrInfoAPIView.as_view()),
+    path('api/qr/t/<str:token>/step/', qr_api.TripQrStepAPIView.as_view()),
+    path('api/qr/t/<str:token>/attachments/', qr_api.TripQrAttachmentsAPIView.as_view()),
+    path('api/qr/p/<str:token>/scan/', qr_api.PackageQrScanAPIView.as_view()),
     path('api/customs/', include('apps.customs.urls')),
     path('api/accounting/', AccountingAPIView.as_view(), name='api-accounting'),
     path('api/accounting/advances/', AccountingAdvancesAPIView.as_view(), name='api-accounting-advances'),

@@ -1,6 +1,20 @@
 """Chi tiết & trạng thái booking, xoá tài liệu booking."""
 from ._common import *  # noqa: F401,F403
 
+def _parse_optional_date(value):
+    """'' / None -> None; 'YYYY-MM-DD' -> date; sai định dạng -> ValueError."""
+    import datetime as _dt
+    if value in (None, ''):
+        return None
+    return _dt.date.fromisoformat(str(value).strip())
+
+
+def describe_dem_det(expiry):
+    from apps.customers.dem_det import describe
+    from apps.master_data.models import CompanyProfile
+    return describe(expiry, CompanyProfile.get_default_company().warn_days)
+
+
 class BookingOrderDetailAPIView(APIView):
     """API Xem chi tiết, Cập nhật và Xóa mềm Đơn Đặt Hàng / Booking."""
     parser_classes = (MultiPartParser, FormParser, JSONParser)
@@ -115,6 +129,12 @@ class BookingOrderDetailAPIView(APIView):
             'loading_time': b.loading_time,
             'free_time_detention': b.free_time_detention,
             'free_time_demurrage': b.free_time_demurrage,
+            'dem_start_date': b.dem_start_date.isoformat() if b.dem_start_date else '',
+            'det_start_date': b.det_start_date.isoformat() if b.det_start_date else '',
+            'dem_expiry_override': b.dem_expiry_override.isoformat() if b.dem_expiry_override else '',
+            'det_expiry_override': b.det_expiry_override.isoformat() if b.det_expiry_override else '',
+            'dem': describe_dem_det(b.dem_expiry), 'det': describe_dem_det(b.det_expiry),
+            'destination_notes': b.destination_notes, 'road_restrictions': b.road_restrictions,
             'selling_freight_price': float(b.selling_freight_price),
             'status': b.status,
             'status_label': b.get_status_display(),
@@ -212,6 +232,16 @@ class BookingOrderDetailAPIView(APIView):
             b.free_time_detention = int(data['free_time_detention'])
         if 'free_time_demurrage' in data and data['free_time_demurrage'] is not None:
             b.free_time_demurrage = int(data['free_time_demurrage'])
+        for fld in ('dem_start_date', 'det_start_date', 'dem_expiry_override', 'det_expiry_override'):
+            if fld in data:
+                try:
+                    setattr(b, fld, _parse_optional_date(data[fld]))
+                except ValueError:
+                    return Response({'error': f'Ngày không hợp lệ ở trường {fld} (định dạng YYYY-MM-DD).'}, status=status.HTTP_400_BAD_REQUEST)
+        if 'destination_notes' in data:
+            b.destination_notes = str(data['destination_notes'] or '').strip()
+        if 'road_restrictions' in data:
+            b.road_restrictions = str(data['road_restrictions'] or '').strip()
         if 'selling_freight_price' in data:
             try:
                 price_val = float(data.get('selling_freight_price') or 0)

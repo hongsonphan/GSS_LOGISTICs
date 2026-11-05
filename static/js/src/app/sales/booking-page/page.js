@@ -91,6 +91,8 @@ async function openCreateBookingPage(updateHistory = true) {
         if (detInput) detInput.value = formatNumberVN(7);
         if (demInput) demInput.value = formatNumberVN(7);
         if (priceInput) priceInput.value = '';
+        fillBookingDemDet(null);
+        if (typeof renderBookingVendorAllocations === 'function') renderBookingVendorAllocations(null);
 
         if (typeof clearFullpageBookingFileSelection === 'function') clearFullpageBookingFileSelection();
         if (typeof onFullpageBookingTypeChange === 'function') onFullpageBookingTypeChange();
@@ -235,6 +237,8 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
         if (statusEl) statusEl.value = b.status || 'PENDING_DISPATCH';
         const notesEl = document.getElementById('fullpage-booking-notes');
         if (notesEl) notesEl.value = b.notes || '';
+        fillBookingDemDet(b);
+        if (typeof renderBookingVendorAllocations === 'function') renderBookingVendorAllocations(b);
 
         fullpageBookingFilesList = [];
         fullpageBookingExistingDocs = [];
@@ -470,6 +474,7 @@ async function saveFullpageBooking(e) {
         formData.append('selling_freight_price', price);
         formData.append('status', statusVal);
         formData.append('notes', notes || '');
+        collectBookingDemDet().forEach(([k, v]) => formData.append(k, v));
 
         if (fullpageBookingFilesList && fullpageBookingFilesList.length > 0) {
             formData.append('booking_file', fullpageBookingFilesList[0]);

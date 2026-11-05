@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
@@ -21,6 +22,8 @@ class Location(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     contact_person = models.CharField(max_length=100, blank=True)
     contact_phone = models.CharField(max_length=20, blank=True)
     notes = models.TextField(blank=True)
+    destination_notes = models.TextField(blank=True, help_text="Hướng dẫn tài xế khi tiếp cận (liên hệ, cổng vào, an toàn lao động...)")
+    road_restrictions = models.TextField(blank=True, help_text="Cấm đường / giờ cấm tải / cầu yếu quanh địa điểm")
     is_active = models.BooleanField(default=True, db_index=True)
 
     class Meta:
@@ -309,6 +312,16 @@ class CompanyProfile(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     notes = models.TextField(blank=True, help_text="Ghi chú cấu hình và chính sách vận hành")
     is_default = models.BooleanField(default=True, help_text="Là hồ sơ công ty mặc định")
 
+    # Loại hình doanh nghiệp: quyết định các phân hệ được bật (xem core/features.py)
+    business_model = models.CharField(
+        max_length=30, default='ENTERPRISE_FULL', choices=[
+            ('GSS_VENDOR_DEPOT_QR', 'Điều phối nhà xe, Bãi cont & QR (GSS)'),
+            ('INTERNAL_FLEET_PNL', 'Đội xe nội bộ & P&L'),
+            ('ENTERPRISE_FULL', 'Toàn bộ tính năng'),
+        ], help_text="Loại hình doanh nghiệp")
+    enabled_features = models.JSONField(default=dict, blank=True, help_text="Ghi đè bật/tắt từng tính năng: {tên: true/false}")
+    warn_days = models.PositiveSmallIntegerField(default=2, help_text="Cảnh báo DEM/DET khi còn ≤ n ngày")
+
     class Meta:
         ordering = ['-is_default', 'company_name']
         verbose_name = 'Thông tin Công ty / Khai báo Hệ thống'
@@ -348,6 +361,7 @@ class CompanyProfile(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
                 cbm_formula_divisor=5000,
                 logo_url='/static/images/trienvo_logo.png',
                 is_default=True,
+                business_model=getattr(settings, 'DEFAULT_BUSINESS_MODEL', 'ENTERPRISE_FULL'),
             )
         return obj
 

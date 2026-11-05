@@ -92,6 +92,8 @@ async function submitMasterDataForm(e) {
             contact_person: document.getElementById('mdf-contact-person')?.value || '',
             contact_phone: document.getElementById('mdf-contact-phone').value,
             notes: document.getElementById('mdf-notes')?.value || '',
+            destination_notes: document.getElementById('mdf-destination-notes')?.value || '',
+            road_restrictions: document.getElementById('mdf-road-restrictions')?.value || '',
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'customers') {
