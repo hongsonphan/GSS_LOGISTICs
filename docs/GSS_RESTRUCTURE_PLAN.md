@@ -1,7 +1,78 @@
 # GSS LOGISTICS – PHÂN TÍCH HIỆU CHỈNH & KẾ HOẠCH TÁI CẤU TRÚC
 
+## 0. HANDOFF – ĐỌC PHẦN NÀY TRƯỚC (cập nhật 05/11/2026)
+
+> Dành cho các session/agent khác cùng làm dự án GSS. Phần này **thay thế** mọi chỗ mâu thuẫn trong §1–§5 bên dưới (đó là phân tích ban đầu, giữ để tham khảo lý do).
+> **Trước khi làm bất cứ việc gì: đọc mục 0.1–0.7, chạy `git log --oneline` trên nhánh dưới đây, và hỏi người dùng nếu việc của bạn chạm vào mục "Đã làm".**
+
+### 0.1. Vị trí mã
+- **Nhánh làm việc:** `claude/gss-logistics-restructure-04b156` (worktree `.claude/worktrees/gss-logistics-restructure-04b156`). Commit local: `d9f0511` (GĐ0–5), `06f6893` (Postgres Docker + sửa khóa dòng), `8fb5d7c` (docs).
+- **Chưa push, chưa merge vào `master`.** `origin` = GitHub `hongsonphan/BIM_LOGISTICS`, `vps` = máy chủ production. Theo `CLAUDE.md`, push `master` sẽ tự deploy: **không push/merge khi người dùng chưa cho phép.**
+- Các worktree khác trên máy (`eager-haslett-1d5af3` detached tại `master`, `pw-local-cong-8088-9a7a41`, các worktree BIM_Logistics) **không chứa công việc này.** Muốn dùng, hãy merge/cherry-pick nhánh trên, đừng viết lại.
+- File BRD gốc `docs/BRD_GREEN_SOLUTIONS_SMART_GSS.md` chỉ nằm ở checkout gốc `E:\Bim_Logisstic_GSS\docs\` (chưa commit), không có trong nhánh này.
+
+### 0.2. Quyết định kiến trúc đã chốt (đừng đảo lại nếu chưa hỏi)
+1. **Mở rộng `DispatchTrip`**, không tạo `ContainerLeg`. 1 `DispatchTrip` = 1 dòng điều vận của 1 cont.
+2. **`step_status`** (READY → ARRIVED_AT_PICKUP → LOADED_ON_VEHICLE* → ARRIVED_AT_DELIVERY → UNLOADED* → RETURNING_EMPTY → EMPTY_RETURNED*; `*` cần ≥1 chứng từ) là máy trạng thái GSS, độc lập với `TripStatus` cũ; mỗi lần chuyển đồng bộ **một chiều** sang `TripStatus`. Logic ở `apps/dispatch/gss_workflow.py`. **Không** dùng `core/workflows.py` cũ cho GSS.
+3. Giao diện GSS là **trang độc lập mobile-first** (`static/css/gss.css`, `static/js/gss/*`), **không** viết thêm vào SPA cũ (`static/js/src/app`) ngoài vài chỗ đã làm ở Booking/Danh mục/Công ty.
+4. **QR không nhúng dữ liệu**: token ký HMAC `T<id>.<sig>` / `P<id>.<sig>` (`core/qr_tokens.py`), vô hiệu hóa bằng cách tăng `qr_version`. Link nhà xe lưu **băm SHA-256**, chỉ hiện 1 lần.
+5. **Ẩn tính năng phải chặn ở API**, không chỉ ẩn menu: `core/features.py` (`FeatureGateMiddleware` + `GATED_PREFIXES`). Thêm module mới → thêm tính năng vào `FEATURES`/`PROFILES` và tiền tố URL vào `GATED_PREFIXES`.
+6. Đa tenant trong 1 DB (`Company`, `CompanyOwnedModel`) giữ nguyên, chạy 1 công ty/DB; không phát triển thêm. Module kế toán/lương/hải quan **giữ nhưng ẩn** bằng flag.
+7. Không xóa cứng: dùng `SoftDeleteModel`; chứng từ/ảnh gỡ = xóa mềm, giữ file.
+
+### 0.3. Đã làm (đừng làm lại) → ở đâu
+
+| Hạng mục | Mã nguồn chính | Test |
+| :-- | :-- | :-- |
+| Loại hình DN + feature flag (`business_model`, `enabled_features`, `warn_days`), thẻ cài đặt "mục 7" ở Thông tin công ty | `core/features.py`, `apps/master_data/models.py` (`CompanyProfile`), `apps/master_data/api_views.py`, `static/js/src/app/master-data/company-roles.js` | `core/test_features.py` |
+| Booking: DEM/DET tự tính (`dem_start_date`, `det_start_date`, override), ghi chú điểm đến, cấm đường (cả `Location`) | `apps/customers/dem_det.py`, `apps/customers/models.py`, `apps/dispatch/api_views/bookings.py`, `sales/booking-page/vendor-allocations.js` | `apps/dispatch/test_vendor.py` |
+| Chia cont cho nhà xe + Vendor Link `/vendor/<token>/` | `BookingVendorAllocation` (`apps/dispatch/models.py`), `vendor_service.py`, `api_views/vendor.py`, `vendor_views.py`, `templates/vendor_portal.html` | `test_vendor.py` |
+| Workflow Nhận–Giao–Hạ, đổi vỏ hạ rỗng, hủy chuyến | `gss_workflow.py` (`DispatchTrip.step_status`, `return_container_number`, `is_container_swapped`, `container_swap_reason`, 6 mốc thời gian) | `apps/dispatch/test_gss.py` |
+| Chứng từ 1–10 file/chặng | `gss_attachments.py`, `TripDocument.workflow_stage/sequence_no` | `test_gss.py` |
+| Tin nhắn tài xế (`DriverNotificationLog`), POD theo khách (`PodTemplate`, `Customer.pod_template`, bộ lọc allowlist) | `gss_messages.py`, `api_views/gss.py` | `test_gss.py` |
+| Bãi cont Đắk Nông (Gate-in/out, tồn bãi, ảnh ≤10) | app `apps/depot_yard` (`models.py`, `service.py`, `api.py`) | `test_gss.py` |
+| Dashboard ma trận nhà xe (ô số = danh sách cùng 1 bộ lọc) | `gss_dashboard.py` | `test_gss.py` |
+| QR lệnh/kiện hàng lẻ có seal, trang tài xế `/q/<token>/` | app `apps/qr_tracking` (`service.py`, `api.py`), `core/qr_tokens.py`, `templates/qr_trip.html`, `static/js/gss/qr_trip.js` | `test_gss.py` |
+| Bảng điều hành `/gss/` (Tổng quan · Điều vận · Bãi · Quét QR · Mẫu biên bản) | `apps/dispatch/gss_views.py`, `templates/gss_console.html`, `static/js/gss/console.js`, `common.js` | `test_gss.py` (trang render) |
+| Lệnh `init_gss`, `seed_gss_demo`; đổi tên thương hiệu trang đăng nhập theo gói | `apps/dispatch/management/commands/`, `core/context_processors.py` (`brand`) | `CommandTests` |
+
+URL/API mới: `/gss/`, `/vendor/<token>/`, `/q/<token>/`, `/api/gss/*`, `/api/depot/*`, `/api/qr/*`, `/api/bookings/<id>/vendor-allocations/`, `/api/vendor-allocations/<id>/`, `/api/vendor/<token>/` (khai báo trong `config/urls.py`).
+
+### 0.4. Chạy & kiểm thử
+- **Chạy local:** `.\scripts\run_local.ps1 -Seed` → server `http://localhost:8088/gss/`, **DB là PostgreSQL trong Docker** (container `gss_local_postgres`, `127.0.0.1:5437`, file `docker-compose.local.yml`). **Không dùng SQLite.** Tài khoản `gss_admin`, mật khẩu ở `gss_local_credentials.txt` (gitignore).
+- **Cảnh báo trùng tài nguyên trên máy này:** cổng **8088** đang dùng bởi server của session `gss-logistics-restructure`; stack `gss_logistics_*` (web 8086, Postgres 5436, worktree `eager-haslett`) và `bim_logistics_*` (5435) là của việc khác – **đừng dừng/xóa**. Worktree `pw-local-cong-8088-9a7a41` có tên gợi ý cũng nhắm cổng 8088: kiểm tra `netstat -ano | findstr :8088` trước khi bật server.
+- **Test:** `DEBUG=True SECRET_KEY=x python manage.py test core apps` → hiện **407 test đạt** (cả SQLite và Postgres).
+- **Bắt buộc trước commit (CLAUDE.md):** `python scripts/build_app_js.py` và `python scripts/build_css.py` (hook `.githooks/pre-commit` tự kiểm). `static/css/gss.css` và `static/js/gss/*` **không** nằm trong pipeline build (viết tay).
+- **Postgres ≠ SQLite:** `select_for_update()` kèm `select_related` trên FK nullable bị Postgres từ chối → dùng `select_for_update(of=('self',))`. Luôn chạy test trên Postgres trước khi coi là xong.
+- **Windows:** console cp1252 không in được tiếng Việt → lệnh quản trị dùng `core/console.safe_text`.
+
+### 0.5. Điều chỉnh so với BRD/thiết kế ban đầu
+- `DispatchTrip.vehicle` là FK bắt buộc ⇒ chuyến chỉ sinh khi nhà xe nhập **biển số đầu kéo**; dòng chưa có biển số lưu nháp trong `BookingVendorAllocation.draft_rows`.
+- Dùng lại `BookingOrder.free_time_demurrage/detention` làm số ngày miễn phí (không thêm cột trùng). Hạn = ngày bắt đầu + (số ngày − 1).
+- Nhà xe chỉ sửa dòng khi `step_status` ∈ {READY, ARRIVED_AT_PICKUP}; sau đó chỉ điều vận (staff) sửa.
+- Cảnh báo seal sai ghi vào `TrackingEventLog` (`SEAL_ALERT`), không tạo `TripException` vì model đó bắt buộc `reported_by` là Employee.
+- Zalo: chỉ soạn + sao chép + mở chat; chưa có ZNS/SMS. `opened_at` chỉ có khi tài xế mở link.
+
+### 0.6. Việc CHƯA làm (có thể nhận – hỏi người dùng trước)
+1. Màn điều vận **sửa dòng xe/tài thay nhà xe** trên trang Booking (API `PUT /api/vendor-allocations/<id>/` đã sẵn sàng).
+2. Ô DEM/DET + ghi chú cho **modal tạo booking nhanh** (hiện chỉ trang chi tiết Booking có).
+3. Cột DEM/DET trong bảng "Điều vận" của **SPA cũ**; menu/tiêu đề SPA chính vẫn mang tên BIM Logistics (chỉ trang đăng nhập và `/gss/` đã đổi).
+4. Màn **quản trị nhiều bãi** (`Yard` đã hỗ trợ), vai trò **Thủ bãi** riêng (hiện dùng quyền module Điều vận).
+5. Tích hợp **Zalo ZNS / SMS** (cần nhà cung cấp, chi phí).
+6. **Kiểm thử camera quét QR trên thiết bị thật**, kiểm thử tải, sao lưu/khôi phục, Dockerfile/compose production cho GSS (mới có compose DB local).
+7. Dữ liệu pháp lý mặc định của Triền Võ còn trong `CompanyProfile.get_default_company()` (test cũ kiểm tra chuỗi "TRIỀN VÕ"); hiện xử lý bằng lệnh `init_gss`.
+8. Merge nhánh này vào `master` + triển khai VPS (chỉ khi người dùng đồng ý).
+
+### 0.7. Quy tắc phối hợp để không trùng lặp
+- Trước khi sửa: xem `git log` nhánh `claude/gss-logistics-restructure-04b156`; tìm trong bảng 0.3 xem đã có chưa.
+- Mỗi session làm trên **worktree/nhánh riêng**, chỉ sửa tập file riêng; cần chạm file chung (`config/urls.py`, `apps/dispatch/models.py`, `core/features.py`, migration) thì báo người dùng và merge từ nhánh này trước.
+- Migration: đánh số tiếp từ `dispatch 0025`, `customers 0023`, `master_data 0018`, `documents 0004`, `depot_yard 0001`, `qr_tracking 0001`; hai session cùng tạo migration sẽ xung đột → chỉ một session tạo migration tại một thời điểm.
+- Cập nhật chính file này (§0) mỗi khi hoàn thành/đổi hướng một hạng mục.
+
+---
+
 > Nguồn: `BRD_GREEN_SOLUTIONS_SMART_GSS.md` v1.0.0 (04/11/2026) đối chiếu với mã BIM Logistics v4.7.x.
-> Trạng thái: **ĐÃ DUYỆT HƯỚNG – đang triển khai.**
+> Trạng thái: **GĐ0–5 đã xong trên nhánh local (chưa merge/push). Xem mục 0.**
 >
 > **Quyết định đã chốt (05/11/2026):** mở rộng `DispatchTrip` (phương án B), **không** tạo `ContainerLeg`. Hệ quả:
 > - Một `DispatchTrip` = một dòng điều vận của một cont; cont đôi dùng `trip_group` (hoặc cột cont 2 sẵn có), không sinh model gốc mới.
