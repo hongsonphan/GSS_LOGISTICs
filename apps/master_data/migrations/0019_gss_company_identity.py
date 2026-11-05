@@ -40,7 +40,7 @@ def forwards(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('master_data', '0017_companyprofile_company_name_en_and_more'),
+        ('master_data', '0018_companyprofile_company_name_en_and_more'),
         ('core', '0017_report_settlement_vouchers_permission'),
     ]
     operations = [migrations.RunPython(forwards, migrations.RunPython.noop)]

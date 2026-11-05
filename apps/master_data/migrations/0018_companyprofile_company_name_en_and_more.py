@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('master_data', '0016_backfill_partners'),
+        ('master_data', '0017_alter_companyprofile_address_and_more'),
     ]
 
     operations = [
