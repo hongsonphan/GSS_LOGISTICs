@@ -34380,7 +34380,7 @@ function onOpeningBalanceAccountChange() {
 
     const acc = accSelect.value;
     const suggestions = openingBalanceState.data.suggestions || {};
-    const company = suggestions.company || { code: 'TVL', name: 'TRIỀN VÕ LOGISTICS', full_name: 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ' };
+    const company = suggestions.company || { code: 'GSS', name: 'Green Solutions Supply Co., Ltd.', full_name: 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH' };
 
     // Hiển thị/ẩn ô số tài khoản ngân hàng nếu chọn TK 112
     if (acc.startsWith('112')) {
@@ -34397,24 +34397,24 @@ function onOpeningBalanceAccountChange() {
         // Tiền mặt tại quỹ: chọn công ty mình
         groupTitle = 'Đơn vị / Công ty';
         list = [
-            { code: company.code || 'TVL', name: company.name || 'TRIỀN VÕ LOGISTICS', bank: '' },
+            { code: company.code || 'GSS', name: company.name || 'Green Solutions Supply Co., Ltd.', bank: '' },
             { code: 'QTM_VP', name: 'Quỹ Tiền Mặt Văn Phòng (Cát Lái)', bank: '' },
             { code: 'QTM_TN', name: 'Quỹ Tiền Mặt Chi Nhánh Tây Ninh', bank: '' }
         ];
         if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
 
         // Tự động gán sẵn nếu form đang trống và không ở chế độ sửa
-        if (!openingBalanceState.editingId && codeInput && (!codeInput.value || codeInput.value === 'TVL')) {
-            codeInput.value = company.code || 'TVL';
-            if (nameInput) nameInput.value = company.name || 'TRIỀN VÕ LOGISTICS';
+        if (!openingBalanceState.editingId && codeInput && (!codeInput.value || codeInput.value === 'GSS')) {
+            codeInput.value = company.code || 'GSS';
+            if (nameInput) nameInput.value = company.name || 'Green Solutions Supply Co., Ltd.';
         }
     } else if (acc.startsWith('112')) {
         // Tiền gửi Ngân hàng: tài khoản ngân hàng công ty mình
         groupTitle = 'Ngân hàng Công ty';
         list = [
             { 
-                code: company.code || 'TVL', 
-                name: (company.name || 'TRIỀN VÕ LOGISTICS') + (company.bank_name ? ` - ${company.bank_name}` : ''), 
+                code: company.code || 'GSS', 
+                name: (company.name || 'Green Solutions Supply Co., Ltd.') + (company.bank_name ? ` - ${company.bank_name}` : ''), 
                 bank: company.bank_account_number || '' 
             }
         ];
@@ -34422,8 +34422,8 @@ function onOpeningBalanceAccountChange() {
 
         if (!openingBalanceState.editingId && bankAccInput && !bankAccInput.value && company.bank_account_number) {
             bankAccInput.value = company.bank_account_number;
-            if (codeInput) codeInput.value = company.code || 'TVL';
-            if (nameInput) nameInput.value = company.name || 'TRIỀN VÕ LOGISTICS';
+            if (codeInput) codeInput.value = company.code || 'GSS';
+            if (nameInput) nameInput.value = company.name || 'Green Solutions Supply Co., Ltd.';
         }
     } else if (acc === '131' || acc === '1388') {
         // 131 - Phải thu Khách hàng

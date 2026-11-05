@@ -2093,9 +2093,9 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
         # Gợi ý đối tượng từ dữ liệu hệ thống
         company = CompanyProfile.get_default_company()
         company_data = {
-            'code': 'TVL',
-            'name': company.short_name or company.company_name or 'TRIỀN VÕ LOGISTICS',
-            'full_name': company.company_name or 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ',
+            'code': 'GSS',
+            'name': company.short_name or company.company_name or 'Green Solutions Supply Co., Ltd.',
+            'full_name': company.company_name or 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH',
             'bank_account_number': company.bank_account_number or '',
             'bank_name': company.bank_name or '',
         }
