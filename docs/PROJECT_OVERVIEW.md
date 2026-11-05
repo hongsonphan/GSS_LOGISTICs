@@ -1,27 +1,36 @@
-# BIM LOGISTICS PLATFORM — TỔNG QUAN KIẾN TRÚC HỆ THỐNG
+# GSS LOGISTICS PLATFORM — TỔNG QUAN KIẾN TRÚC HỆ THỐNG
 ## System Architecture & C4 Model Overview
 
-> **Hệ thống:** BIM Logistics Platform (TMS & WMS)  
-> **Tổ chức chủ quản:** Triền Võ Logistics (Thuộc hệ sinh thái BIM Ecosystem)  
-> **Phiên bản:** v4.7.18 (Production)  
+> **Hệ thống:** GSS Logistics Platform (TMS & WMS)  
+> **Tổ chức chủ quản:** Green Solutions Smart (GSS)  
+> **Mã dự án / Repo:** GSS-TMS-2026 · `GSS_LOGISTICs` (tách ra từ nền tảng BIM Logistics, độc lập mã nguồn, CSDL và máy chủ)  
+> **Phiên bản nền:** v4.7.19 (kế thừa từ BIM Logistics)  
 > **Cập nhật lần cuối:** 01/11/2026  
 > **Tiêu chuẩn kiến trúc:** ISO/IEC/IEEE 42010, Arc42 Template & C4 Model  
-> **Trạng thái:** Production-Ready
+> **Trạng thái:** Đang tái cấu trúc cho GSS (chưa có môi trường Production riêng)
+
+---
+
+## 0. ĐỊNH VỊ DỰ ÁN GSS_LOGISTICs
+
+- **GSS_LOGISTICs** là dự án **độc lập**, khởi đầu từ bản sao của nền tảng BIM Logistics rồi tái cấu trúc cho Green Solutions Smart (GSS). Repo, CSDL, cổng, tên container và máy chủ triển khai đều tách riêng, **không dùng chung** với BIM Logistics.
+- Đặc tả nghiệp vụ & lộ trình riêng của GSS nằm ở [`BRD_GREEN_SOLUTIONS_SMART_GSS.md`](BRD_GREEN_SOLUTIONS_SMART_GSS.md): điều phối nhà xe (Vendor), kiểm soát chứng từ Nhận – Giao – Hạ rỗng, Bãi Cont Đắk Nông, mã QR cho Cont và hàng lẻ có Seal.
+- Các phần mô tả bên dưới phản ánh **nền tảng hiện có** trong mã nguồn. Hạng mục GSS chưa lập trình được đánh dấu **[KẾ HOẠCH]**.
 
 ---
 
 ## 1. BỐI CẢNH VÀ MỤC TIÊU HỆ THỐNG (SYSTEM CONTEXT & GOALS)
 
 ### 1.1 Giới Thiệu Chung
-**BIM Logistics** là nền tảng Quản trị Vận tải (TMS - Transportation Management System) và Quản trị Kho vận (WMS - Warehouse Management System) chuyên biệt cho ngành vận tải container FCL (Full Container Load), hàng rời LTL và vận tải đa phương thức tại Việt Nam.
+**GSS Logistics** là nền tảng Quản trị Vận tải (TMS - Transportation Management System) và Quản trị Kho vận (WMS - Warehouse Management System) chuyên biệt cho ngành vận tải container FCL (Full Container Load), hàng rời LTL và vận tải đa phương thức tại Việt Nam.
 
-Nền tảng đóng vai trò hạt nhân vận hành của **Triền Võ Logistics**, kết nối thông suốt giữa Ban Giám Đốc, Bộ phận Kinh doanh & Báo giá, Đội ngũ Điều độ Vận tải, Lái xe Hiện trường, Khách hàng Doanh nghiệp và các Đối tác vận tải thuê ngoài (3PL).
+Nền tảng đóng vai trò hạt nhân vận hành của **GSS**, kết nối thông suốt giữa Ban Giám Đốc, Bộ phận Kinh doanh & Báo giá, Đội ngũ Điều độ Vận tải, Lái xe Hiện trường, Khách hàng Doanh nghiệp và các Đối tác vận tải thuê ngoài (3PL).
 
 ### 1.2 Bảng Mục Tiêu Kiến Trúc & Nghiệp Vụ
 | Phân hệ / Bounded Context | Trách nhiệm Kiến trúc cốt lõi | Các chỉ số vận hành chính (KPIs) |
 |---|---|---|
 | **Điều Vận & Chuyến Xe (`dispatch`)** | Máy trạng thái 11 bước, Lộ trình 3 điểm, Cắt kéo (Drop & Hook), Ghép đôi 2 cont 20ft, Cảnh báo Free-time DEM/DET. | Vòng quay đầu xe, Tỷ lệ đúng giờ (OTP $\ge 95\%$), Tỷ lệ xe nhà khai thác ($\ge 80\%$). |
-| **Tài Chính & Kế Toán (`billing`)** | Hạch toán Sổ Quỹ Thu - Chi (Mẫu S03a-DN), Bảng kê 8 khoản chi Triền Võ, Tạm ứng 2 cấp (Quỹ điều vận & Ứng chuyến), Bảng kê AR/AP. | Zero Variance P&L (Sai số 0đ), Thời gian chốt sổ chuyến xe $\le 24$h sau hoàn tất POD. |
+| **Tài Chính & Kế Toán (`billing`)** | Hạch toán Sổ Quỹ Thu - Chi (Mẫu S03a-DN), Bảng kê 8 khoản chi phí phát sinh, Tạm ứng 2 cấp (Quỹ điều vận & Ứng chuyến), Bảng kê AR/AP. | Zero Variance P&L (Sai số 0đ), Thời gian chốt sổ chuyến xe $\le 24$h sau hoàn tất POD. |
 | **Kinh Doanh & CRM (`customers`)** | Báo giá đa phương thức (theo chuyến, bậc thang, điều chỉnh giá dầu DO), Quản lý Booking đơn hàng, Phễu khách hàng. | Tỷ lệ chuyển đổi báo giá thành booking, Doanh thu kế hoạch vs. thực tế. |
 | **Đội Xe & Thiết Bị (`fleet`)** | Quản trị hồ sơ Đầu kéo, Rơ-moóc, kiểm soát hạn đăng kiểm, bảo trì định kỳ, tỷ lệ xe nhà vs. xe thầu phụ 3PL. | Tỷ lệ xe sẵn sàng hoạt động ($\ge 90\%$), Tỷ lệ chạy rỗng một chiều ($\le 25\%$). |
 | **Nhân Sự & Tiền Lương (`personnel`)** | Hồ sơ nhân sự 360°, HĐLĐ, Thuế TNCN (Luật 109/2025/QH15, NQ 110/2025), Động cơ tính lương Hybrid Payroll. | Thời gian chốt bảng lương tháng $\le 3$ ngày, Độ chính xác tính lương 100%. |
@@ -44,23 +53,21 @@ flowchart TD
     UserAccountant["📑 Kế Toán Viên<br/>(Phòng Tài Chính - Kế Toán)"]
     UserDirector["👔 Ban Giám Đốc<br/>(Chỉ huy & Điều hành)"]
 
-    SystemBIM["📦 HỆ THỐNG BIM LOGISTICS (TMS & WMS)<br/>[Django Modular Monolith + SPA Client]"]
+    SystemGSS["📦 HỆ THỐNG GSS LOGISTICS (TMS & WMS)<br/>[Django Modular Monolith + SPA Client]"]
 
     ExtPort["🏢 Cảng Biển & ICD / Depot Bãi Rỗng<br/>(Tân Cảng, SPITC, Cát Lái...)"]
     ExtCarrier3PL["🤝 Đối Tác Vận Tải 3PL / Xe Bạn<br/>(Đơn vị thầu phụ ngoài)"]
     ExtEInvoice["🧾 Hệ Thống Tra Cứu Hóa Đơn Điện Tử<br/>(VNPT, Viettel, M-Invoice...)"]
-    ExtEcosystem["🏢 Hệ Sinh Thái BIM Ecosystem<br/>(Bim_ERP & Bim_Consulting)"]
 
-    UserClient -->|"Gửi Yêu Cầu Báo Giá & Booking"| SystemBIM
-    UserDriver -->|"Báo Mốc Kho, Nộp Chi Phí, Gửi Ảnh EIR/POD"| SystemBIM
-    UserDispatcher -->|"Phát Lệnh Điều Động, Điều Xe & Mooc"| SystemBIM
-    UserAccountant -->|"Khóa Sổ Chuyến, Quản Lý Quỹ, Đối Soát AR/AP"| SystemBIM
-    UserDirector -->|"Theo Dõi KPI, Dòng Tiền & P&L Thời Gian Thực"| SystemBIM
+    UserClient -->|"Gửi Yêu Cầu Báo Giá & Booking"| SystemGSS
+    UserDriver -->|"Báo Mốc Kho, Nộp Chi Phí, Gửi Ảnh EIR/POD"| SystemGSS
+    UserDispatcher -->|"Phát Lệnh Điều Động, Điều Xe & Mooc"| SystemGSS
+    UserAccountant -->|"Khóa Sổ Chuyến, Quản Lý Quỹ, Đối Soát AR/AP"| SystemGSS
+    UserDirector -->|"Theo Dõi KPI, Dòng Tiền & P&L Thời Gian Thực"| SystemGSS
 
-    SystemBIM -->|"Đối chiếu phiếu EIR, Hạ cont rỗng"| ExtPort
-    SystemBIM -->|"Điều động xe thầu & Quyết toán cước 3PL"| ExtCarrier3PL
-    SystemBIM -->|"Tra cứu tính hợp lệ hóa đơn nâng hạ/BOT"| ExtEInvoice
-    SystemBIM <-->|"Đồng bộ dữ liệu tài chính & nhân sự"| ExtEcosystem
+    SystemGSS -->|"Đối chiếu phiếu EIR, Hạ cont rỗng"| ExtPort
+    SystemGSS -->|"Điều động xe thầu & Quyết toán cước 3PL"| ExtCarrier3PL
+    SystemGSS -->|"Tra cứu tính hợp lệ hóa đơn nâng hạ/BOT"| ExtEInvoice
 ```
 
 ### 2.2 C4 Level 2: Container Diagram (Kiến Trúc Thành Phần Chạy)
@@ -74,13 +81,13 @@ flowchart TD
 
     subgraph AppServer["LỚP MÁY CHỦ ỨNG DỤNG (APPLICATION LAYER)"]
         ReverseProxy["🌐 Reverse Proxy (Nginx / Cloudflare)<br/>SSL Termination, Rate Limiting, Security Headers"]
-        DjangoApp["⚙️ Django 4.x Modular Monolith Backend<br/>(Django REST Framework, JWT & Session Auth)<br/>Port: 8085"]
+        DjangoApp["⚙️ Django 5.2 Modular Monolith Backend<br/>(Django REST Framework, JWT & Session Auth)<br/>Port: 8086"]
         OCREngine["👁️ OCR AI Vision Subsystem<br/>(Trích xuất số Cont, số Chì từ ảnh chứng từ)"]
         WorkflowEngine["🔄 State Machine Engine<br/>(core.workflows — Kiểm soát 11 bước bất biến)"]
     end
 
     subgraph DataLayer["LỚP DỮ LIỆU & LƯU TRỮ (DATA LAYER)"]
-        PostgreSQL[("🐘 PostgreSQL 16 (Docker) / SQLite3 (Dev)<br/>Port: 5435<br/>Relational DB, Soft-Delete, Indexes")]
+        PostgreSQL[("🐘 PostgreSQL 16 (Docker) / SQLite3 (Dev)<br/>Port: 5436<br/>Relational DB, Soft-Delete, Indexes")]
         FileStorage["📁 Static & Media File Storage<br/>(Chứng từ PDF/Ảnh POD/EIR $\le 5$MB)"]
     end
 
@@ -98,17 +105,21 @@ flowchart TD
 ## 3. CẤU TRÚC THƯ MỤC CHUẨN MODULAR MONOLITH
 
 ```text
-e:/Bim_Logistics/
+e:/GSS_LOGISTICs/
 ├── apps/                               # Các phân hệ nghiệp vụ độc lập (Bounded Contexts)
 │   ├── billing/                        # Quản trị Tài chính, Sổ Quỹ Thu - Chi, Chi phí & Đối soát
+│   ├── collaboration/                  # Tin tức nội bộ, Công việc, Chat nhóm
 │   ├── customers/                      # CRM Khách hàng, Báo giá Đa phương thức, Booking Order
 │   ├── customs/                        # Dịch vụ Hải quan & Phân luồng tờ khai
 │   ├── dispatch/                       # Điều vận chuyến xe, Lộ trình 3 điểm, Cắt kéo, Timeline
 │   ├── documents/                      # Quản lý chứng từ pháp lý số & Nhận diện OCR AI
 │   ├── exceptions/                     # Ghi nhận & Xử lý sự cố bất thường (OS&D)
 │   ├── fleet/                          # Quản trị Đội xe, Rơ-moóc, Hạn đăng kiểm & bảo trì
+│   ├── ledger/                         # Sổ cái, bút toán & kỳ kế toán
 │   ├── master_data/                    # Danh mục Cảng/ICD/Kho, Biểu cước, Quy cách Cont, 3PL
-│   └── personnel/                      # Nhân sự 360°, HĐLĐ, Thuế TNCN & Lương Hybrid Payroll
+│   ├── personnel/                      # Nhân sự 360°, HĐLĐ, Thuế TNCN & Lương Hybrid Payroll
+│   ├── depot_yard/                     # [KẾ HOẠCH – BRD GSS] Quản lý Bãi Cont Đắk Nông (Gate-in / Gate-out)
+│   └── qr_tracking/                    # [KẾ HOẠCH – BRD GSS] Mã QR Lệnh/Cont & Hàng lẻ có Seal
 ├── core/                               # Nền tảng dùng chung toàn hệ thống
 │   ├── models/                         # BaseModel, TimeStampedModel, SoftDeleteModel
 │   ├── workflows/                      # State Machine Engine cho đơn vận và chuyến xe
@@ -124,7 +135,7 @@ e:/Bim_Logistics/
 │   ├── API_REFERENCE.md                # Tài liệu hợp đồng RESTful API đầy đủ
 │   ├── DATABASE_SCHEMA.md              # Sơ đồ CSDL, ORM, Core ERD & chiến lược Indexing
 │   ├── OPERATIONAL_WORKFLOW.md         # Quy trình điều vận 11 bước, State Machine & Vòng đời chi phí
-│   ├── UI_UX_GUIDELINES.md             # Design Tokens BIM & Thang đo Typography 7 bậc
+│   ├── UI_UX_GUIDELINES.md             # Design Tokens GSS & Thang đo Typography 7 bậc
 │   ├── DEVELOPMENT_PLAN.md             # Lộ trình TMS nâng cao, ADRs & On-Premise
 │   ├── CHANGELOG.md                    # Nhật ký phát hành phiên bản (SemVer)
 │   └── USER_GUIDE.md                   # Cẩm nang hướng dẫn sử dụng phần mềm cho người dùng cuối
@@ -168,14 +179,14 @@ Hệ thống sử dụng dịch vụ email SMTP phục vụ 3 mục đích an ni
 
 **Quy trình cấu hình trên máy chủ (VPS Production):**
 1. **Khởi tạo Mật khẩu ứng dụng (Google App Password):**
-   - Đăng nhập tài khoản email gửi thông báo (khuyến nghị: `noreply.trienvo@gmail.com` hoặc `noreply@trienvo.com`).
+   - Đăng nhập tài khoản email gửi thông báo (khuyến nghị: `noreply@<tên-miền-GSS>`).
    - Mở Cài đặt bảo mật Google Account $\rightarrow$ Kích hoạt Xác minh 2 bước $\rightarrow$ Tạo Mật khẩu ứng dụng (App Password) 16 ký tự.
 2. **Khai báo biến môi trường `.env` trên VPS:**
    ```bash
-   EMAIL_HOST_USER=noreply.trienvo@gmail.com
+   EMAIL_HOST_USER=noreply@<tên-miền-GSS>
    EMAIL_HOST_PASSWORD=abcdefghijklmnop      # 16 ký tự App Password viết liền
-   EMAIL_BRAND_NAME=Triền Võ Logistics
-   DEFAULT_FROM_EMAIL=Triền Võ Logistics <noreply.trienvo@gmail.com>
+   EMAIL_BRAND_NAME=GSS Logistics
+   DEFAULT_FROM_EMAIL=GSS Logistics <noreply@<tên-miền-GSS>>
    ```
 3. **Khởi động lại dịch vụ Container:**
    ```bash
@@ -185,6 +196,6 @@ Hệ thống sử dụng dịch vụ email SMTP phục vụ 3 mục đích an ni
 ### 5.2 Cấu Hình Môi Trường Runtime & Ports
 | Dịch vụ | Container Name | Port Nội Bộ | Port Công Khai | Ghi chú an ninh |
 |---|---|---|---|---|
-| **Web Application** | `bim_logistics_web` | 8000 | 8085 | Định tuyến qua Reverse Proxy Nginx, bật SSL/HTTPS |
-| **Database Server** | `bim_logistics_db` | 5432 | 5435 (Local only) | Chỉ mở kết nối nội bộ trong mạng Docker, đóng Internet |
-| **Cache Engine** | In-memory / Redis | 6379 | — | Lưu trữ tạm thời trạng thái và cache KPI Dashboard |
+| **Web Application** | `gss_logistics_web` | 8000 | 8086 | Định tuyến qua Reverse Proxy Nginx, bật SSL/HTTPS |
+| **Database Server** | `gss_logistics_postgres` | 5432 | 5436 (Local only) | Chỉ mở kết nối nội bộ trong mạng Docker, đóng Internet |
+| **Cache Engine** | `gss_logistics_redis` (Redis) | 6379 | — | Lưu trữ tạm thời trạng thái và cache KPI Dashboard |

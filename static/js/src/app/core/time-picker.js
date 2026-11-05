@@ -1,5 +1,5 @@
 // ==========================================
-// BIM 24-HOUR INTERACTIVE TIME PICKER SYSTEM
+// GSS 24-HOUR INTERACTIVE TIME PICKER SYSTEM
 // ==========================================
 let currentBim24hTarget = null;
 let currentBim24hHour = '17';

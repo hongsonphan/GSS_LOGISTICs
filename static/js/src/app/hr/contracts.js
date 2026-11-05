@@ -825,7 +825,7 @@ function printCurrentContract() {
 
 
 // =========================================================================
-// BIM LOGISTICS — SEARCH & FILTER HELPER FUNCTIONS FOR TABLES
+// GSS LOGISTICS — SEARCH & FILTER HELPER FUNCTIONS FOR TABLES
 // =========================================================================
 function filterContractsTable() {
     const q = (document.getElementById('contract-search-input')?.value || '').toLowerCase().trim();

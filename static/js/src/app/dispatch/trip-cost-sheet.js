@@ -399,7 +399,7 @@ function buildDriverZaloMessage(trip) {
     const dropoff = trip.dropoff || trip.dropoff_location || '-';
     const loadingTimeStr = trip.loading_time ? `\n⏰ Giờ hẹn đóng hàng: ${trip.loading_time}` : '';
 
-    return `🚚 LỆNH ĐIỀU XE BIM LOGISTICS:
+    return `🚚 LỆNH ĐIỀU XE GSS LOGISTICS:
 • Chuyến: ${tripCode}
 • Xe: ${vehicle} | Mooc: ${trailer}
 • Cont: ${cont}${contType} | Seal: ${seal}
@@ -459,7 +459,7 @@ window.copyCustomerTrackingLink = function() {
     const trackingToken = trip.tracking_hashid || trip.hashid || trip.trip_code;
     const trackingUrl = `${window.location.origin}/tracking/${trackingToken}/`;
     const destWarehouse = trip.delivery_warehouse || trip.warehouse || 'Kho Khách Hàng';
-    const message = `THÔNG TIN TRA CỨU VẬN ĐƠN CONTAINER - BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nContainer: ${trip.container || '-'} (${trip.container_type || '40HC'})\nSố Chì (Seal): ${trip.seal || 'Chưa bấm'}\nKho Giao Hàng: ${destWarehouse}\n- Quý khách có thể theo dõi tiến độ chuyến xe thời gian thực tại: ${trackingUrl}`;
+    const message = `THÔNG TIN TRA CỨU VẬN ĐƠN CONTAINER - GSS LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nContainer: ${trip.container || '-'} (${trip.container_type || '40HC'})\nSố Chì (Seal): ${trip.seal || 'Chưa bấm'}\nKho Giao Hàng: ${destWarehouse}\n- Quý khách có thể theo dõi tiến độ chuyến xe thời gian thực tại: ${trackingUrl}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).then(() => {

@@ -1,9 +1,9 @@
-# BIM LOGISTICS — CODING STANDARDS & ENGINEERING GUIDELINES
-(QUY CHUẨN LẬP TRÌNH & KIẾN TRÚC HỆ THỐNG BIM_LOGISTICS — ISO 25010 CODE QUALITY)
+# GSS LOGISTICS — CODING STANDARDS & ENGINEERING GUIDELINES
+(QUY CHUẨN LẬP TRÌNH & KIẾN TRÚC HỆ THỐNG GSS_LOGISTICS — ISO 25010 CODE QUALITY)
 > **Phiên bản:** v4.7.19 | **Cập nhật lần cuối:** 01/11/2026 | **Trạng thái:** Active Standard
 
-> **Kế thừa & Tổng hợp từ:** `Bim_ERP-Solutions` (Modular Monolith, Data Safety, Defensive Backend) và `Bim_Consulting` (Business First, State Machine, Caching Signals & Design Tokens).  
-> **Áp dụng cho:** Toàn bộ mã nguồn, cấu hình database, API và giao diện của nền tảng **Bim_Logistics** (TMS, WMS, Fleet & Supply Chain Management).
+> **Kế thừa & Tổng hợp từ:** `GSS` (Modular Monolith, Data Safety, Defensive Backend) và `GSS` (Business First, State Machine, Caching Signals & Design Tokens).  
+> **Áp dụng cho:** Toàn bộ mã nguồn, cấu hình database, API và giao diện của nền tảng **GSS_LOGISTICs** (TMS, WMS, Fleet & Supply Chain Management).
 
 ---
 
@@ -13,9 +13,9 @@
 - Mọi quyết định kỹ thuật (cấu trúc bảng, API, UI/UX) đều phải phục vụ trực tiếp cho tính liên tục của chuỗi cung ứng và hiện trường vận tải (tài xế, điều phối, thủ kho). Không tối ưu kỹ thuật bằng cách phá vỡ luồng vận hành thực tế.
 
 ### 2. Kiến trúc Modular Monolith
-Hệ thống tổ chức theo mô hình Modular Monolith đồng bộ với BIM ERP:
+Hệ thống tổ chức theo mô hình Modular Monolith đồng bộ với GSS:
 ```text
-Bim_Logistics/
+GSS_LOGISTICs/
 ├── core/                  # Nền tảng dùng chung
 │   ├── models/            # BaseModel, TimeStampedModel, SoftDeleteModel
 │   ├── audit/             # ActivityLog, TrackingEventLog
@@ -81,7 +81,7 @@ Bim_Logistics/
 
 ## IV. QUY CHUẨN GIAO DIỆN & TRẢI NGHIỆM (UI/UX & DESIGN TOKENS)
 
-Hệ thống kế thừa chuẩn mực bảng màu thương hiệu của BIM Ecosystem:
+Hệ thống kế thừa chuẩn mực bảng màu thương hiệu của GSS:
 
 | Token | Màu Tailwind | Ý nghĩa & Phạm vi Ứng dụng trong Logistics |
 | :--- | :--- | :--- |
@@ -108,13 +108,13 @@ Hệ thống kế thừa chuẩn mực bảng màu thương hiệu của BIM Eco
 1. **Chuỗi sự kiện bất biến (Immutable Event Sourcing):** Mọi sự kiện quét mã vạch, thay đổi vị trí trạm, bàn giao ký nhận và hình ảnh chứng từ POD phải được ghi nhận vào `TrackingEventLog` với đầy đủ: `timestamp`, `actor_id`, `latitude/longitude`, `event_type`.
 2. **Tuân thủ Pháp lý & Thuế Việt Nam:**
    - Vận đơn (BOL) và Biên bản giao nhận (POD) phải đầy đủ trường thông tin theo quy định của Luật Thương mại 2005.
-   - Luồng tính phí vận tải, phụ phí xăng dầu và lưu kho bãi phải khớp đúng với quy định hóa đơn điện tử dịch vụ logistics (Nghị định 123/2020/NĐ-CP) để sẵn sàng kết nối sang phân hệ Kế toán của `Bim_ERP-Solutions`.
+   - Luồng tính phí vận tải, phụ phí xăng dầu và lưu kho bãi phải khớp đúng với quy định hóa đơn điện tử dịch vụ logistics (Nghị định 123/2020/NĐ-CP) để sẵn sàng kết nối sang phân hệ Kế toán của `GSS`.
 
 ---
 
-## VI. QUY CHUẨN TRÌNH BÀY BẢNG DỮ LIỆU ENTERPRISE (BIM TABLE STANDARD)
+## VI. QUY CHUẨN TRÌNH BÀY BẢNG DỮ LIỆU ENTERPRISE (GSS TABLE STANDARD)
 
-Toàn bộ bảng dữ liệu danh mục, điều vận, đối soát và kế toán trên hệ thống BIM Logistics bắt buộc tuân thủ quy chuẩn thiết kế gọn gàng, giãn dòng chuẩn như Excel, tối ưu hóa không gian hiển thị (hiển thị trọn vẹn 20 dòng trên màn hình tiêu chuẩn):
+Toàn bộ bảng dữ liệu danh mục, điều vận, đối soát và kế toán trên hệ thống GSS Logistics bắt buộc tuân thủ quy chuẩn thiết kế gọn gàng, giãn dòng chuẩn như Excel, tối ưu hóa không gian hiển thị (hiển thị trọn vẹn 20 dòng trên màn hình tiêu chuẩn):
 
 ### 1. Kích Thước & Giãn Dòng Chuẩn (Dimensions & Density)
 - **Tiêu đề bảng (Header `<th>`):**
@@ -147,9 +147,9 @@ Toàn bộ bảng dữ liệu danh mục, điều vận, đối soát và kế t
 
 ---
 
-## VII. QUY CHUẨN THIẾT KẾ FORM NHẬP LIỆU CHUẨN QUỐC TẾ (BIM ENTERPRISE FORM STANDARDS)
+## VII. QUY CHUẨN THIẾT KẾ FORM NHẬP LIỆU CHUẨN QUỐC TẾ (GSS ENTERPRISE FORM STANDARDS)
 
-Toàn bộ các Form tạo mới, chỉnh sửa (Modal Popup, Full Page Form, Drawer Form) trong hệ thống BIM Logistics bắt buộc tuân thủ 6 nguyên tắc vàng về tính hài hòa, thẩm mỹ cao cấp và trải nghiệm người dùng:
+Toàn bộ các Form tạo mới, chỉnh sửa (Modal Popup, Full Page Form, Drawer Form) trong hệ thống GSS Logistics bắt buộc tuân thủ 6 nguyên tắc vàng về tính hài hòa, thẩm mỹ cao cấp và trải nghiệm người dùng:
 
 ### 1. Nguyên Tắc Lưới Bố Cục Cân Bằng (Strict Balanced Grid)
 - **Tỷ lệ lưới:** Sử dụng hệ lưới chuẩn 12 cột (12-column grid) hoặc chia đều 2 cột (`grid-cols-1 md:grid-cols-2 gap-4 md:gap-5`) và 3 cột (`md:grid-cols-3 gap-3.5`).

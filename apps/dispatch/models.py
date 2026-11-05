@@ -22,7 +22,7 @@ class TripStatus(models.TextChoices):
 
 class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
-    Bảng hạt nhân của toàn bộ hệ thống điều độ vận tải Bim Logistics.
+    Bảng hạt nhân của toàn bộ hệ thống điều độ vận tải GSS Logistics.
     Quản lý luồng 10 bước, đối soát chứng từ và lợi nhuận chuyến xe.
     """
     trip_code = models.CharField(max_length=30, unique=True, db_index=True) # TVL-0916-001...

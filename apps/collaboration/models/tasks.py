@@ -90,7 +90,7 @@ class OfficeTask(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Thời điểm hoàn thành")
     progress_percent = models.PositiveSmallIntegerField(default=0, verbose_name="Tiến độ (%)")
 
-    # Quản lý đề xuất & Phê duyệt gia hạn hạn chót (Chuẩn ERP Bim Logistics)
+    # Quản lý đề xuất & Phê duyệt gia hạn hạn chót (Chuẩn ERP GSS Logistics)
     extension_status = models.CharField(
         max_length=20,
         choices=TaskExtensionStatus.choices,

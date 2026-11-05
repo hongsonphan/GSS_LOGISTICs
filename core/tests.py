@@ -25,7 +25,7 @@ from apps.billing.models import (
 from core.workflows import transition_trip, can_transition
 from core.validators import validate_uploaded_document
 
-class BimLogisticsCoreTestCase(TestCase):
+class GssLogisticsCoreTestCase(TestCase):
     def setUp(self):
         self.customer = Customer.objects.create(
             code="CUST_TEST",
@@ -255,7 +255,7 @@ class BimLogisticsCoreTestCase(TestCase):
         response = self.client.get('/login/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Đăng nhập hệ thống')
-        self.assertContains(response, 'BIM LOGISTICS')
+        self.assertContains(response, 'GSS LOGISTICS')
 
     def test_login_post_success_and_logout(self):
         """Kiểm tra đăng nhập thành công cấp Session và JWT token."""
@@ -2506,7 +2506,7 @@ class CurrentUserProfileAPITestCase(TestCase):
         self.user = User.objects.create_user(
             username="test_profile_user",
             password="InitialPassword@2026",
-            email="test_initial@bim.info.vn"
+            email="test_initial@gss-logistics.example.com"
         )
         self.employee = Employee.objects.create(
             user=self.user,
@@ -2523,7 +2523,7 @@ class CurrentUserProfileAPITestCase(TestCase):
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertEqual(data['username'], 'test_profile_user')
-        self.assertEqual(data['email'], 'test_initial@bim.info.vn')
+        self.assertEqual(data['email'], 'test_initial@gss-logistics.example.com')
         self.assertIsNotNone(data['employee'])
         self.assertEqual(data['employee']['full_name'], 'Nguyễn Văn Ban Đầu')
 
@@ -2531,21 +2531,21 @@ class CurrentUserProfileAPITestCase(TestCase):
         self.client.force_login(self.user)
         payload = {
             'full_name': 'Nguyễn Văn Cập Nhật',
-            'email': 'updated_email@bim.info.vn',
+            'email': 'updated_email@gss-logistics.example.com',
             'phone_number': '0988777666'
         }
         res = self.client.patch('/api/auth/me/', data=json.dumps(payload), content_type='application/json')
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertEqual(data['user']['full_name'], 'Nguyễn Văn Cập Nhật')
-        self.assertEqual(data['user']['email'], 'updated_email@bim.info.vn')
+        self.assertEqual(data['user']['email'], 'updated_email@gss-logistics.example.com')
         self.assertEqual(data['user']['phone_number'], '0988777666')
 
         # Kiểm tra database cập nhật
         self.employee.refresh_from_db()
         self.user.refresh_from_db()
         self.assertEqual(self.employee.full_name, 'Nguyễn Văn Cập Nhật')
-        self.assertEqual(self.user.email, 'updated_email@bim.info.vn')
+        self.assertEqual(self.user.email, 'updated_email@gss-logistics.example.com')
         self.assertEqual(self.employee.phone_number, '0988777666')
 
     def test_patch_profile_password_change(self):

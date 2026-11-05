@@ -1,7 +1,7 @@
 # SECURITY_AUDIT.md — SECURITY ARCHITECTURE & DATA PRIVACY COMPLIANCE
 ## 20 Tiêu Chuẩn An Ninh Chuỗi Cung Ứng & Tuân Thủ Bảo Vệ Dữ Liệu Cá Nhân
 
-> **Hệ thống:** BIM Logistics Platform (TMS, WMS & Fleet)  
+> **Hệ thống:** GSS Logistics Platform (TMS, WMS & Fleet)  
 > **Phiên bản:** v4.7.19 | **Cập nhật lần cuối:** 01/11/2026  
 > **Tiêu chuẩn an toàn:** OWASP Top 10, ISO/IEC 27001 & NIST Cybersecurity Framework  
 > **Căn cứ pháp lý:** Luật Bảo vệ dữ liệu cá nhân (số 91/2025/QH15) & Nghị định 356/2025/NĐ-CP (thay thế NĐ 13/2023/NĐ-CP)
@@ -106,7 +106,7 @@ Bạn là chuyên gia về **Kiểm tra An ninh Ứng dụng Chuỗi cung ứng 
 > **Căn cứ pháp lý:** Luật Bảo vệ dữ liệu cá nhân (số 91/2025/QH15) và Nghị định 356/2025/NĐ-CP (có hiệu lực từ 01/01/2026, thay thế Nghị định 13/2023/NĐ-CP).
 
 ### 1. Phân Định Vai Trò Pháp Lý
-- **Bên Kiểm Soát Dữ Liệu (Data Controller):** Doanh nghiệp sử dụng phần mềm (Triền Võ Logistics) — quyết định mục đích và phạm vi thu thập dữ liệu nhân viên, tài xế, khách hàng.
+- **Bên Kiểm Soát Dữ Liệu (Data Controller):** Doanh nghiệp sử dụng phần mềm (GSS) — quyết định mục đích và phạm vi thu thập dữ liệu nhân viên, tài xế, khách hàng.
 - **Bên Xử Lý Dữ Liệu (Data Processor):** Đơn vị cung cấp và vận hành nền tảng — lưu trữ, sao lưu, bảo trì kỹ thuật theo hợp đồng xử lý dữ liệu.
 
 ### 2. Danh Mục Dữ Liệu Cá Nhân Hệ Thống Xử Lý (PII Inventory)

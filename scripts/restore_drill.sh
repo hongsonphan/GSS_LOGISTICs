@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # DIỄN TẬP KHÔI PHỤC (chạy trên VPS, chỉ đọc với dữ liệu thật)
-# - Lấy bản sao lưu CSDL mới nhất, khôi phục vào CSDL tạm bim_restore_drill (cùng container Postgres)
+# - Lấy bản sao lưu CSDL mới nhất, khôi phục vào CSDL tạm gss_restore_drill (cùng container Postgres)
 # - So số dòng các bảng chính với CSDL đang chạy, kiểm tra file media nén đọc được
 # - Xoá CSDL tạm. Thoát mã khác 0 nếu khôi phục lỗi hoặc dữ liệu lệch bất thường.
 # Chạy tay: bash scripts/restore_drill.sh   |  Tự động: .github/workflows/restore-drill.yml (hằng tuần)
@@ -11,7 +11,7 @@ BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/backups}"
 DB_CONTAINER="${DB_CONTAINER:-gss_logistics_postgres}"
 DB_USER="${DB_USER:-gss_logistics_user}"
 DB_NAME="${DB_NAME:-gss_logistics_db}"
-DRILL_DB="bim_restore_drill"
+DRILL_DB="gss_restore_drill"
 DOCKER="docker"; docker ps >/dev/null 2>&1 || DOCKER="sudo docker"
 PSQL="$DOCKER exec -i $DB_CONTAINER psql -v ON_ERROR_STOP=1 -q -U $DB_USER"
 

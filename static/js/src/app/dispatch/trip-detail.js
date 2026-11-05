@@ -1,8 +1,8 @@
 /**
  * ==========================================================================
- * BIM LOGISTICS — FRONTEND APPLICATION LOGIC (TMS & FLEET)
- * Triết lý: Graceful Notification, Defensive UI & Bim Enterprise Table Standard
- * Kế thừa từ Bim_ERP-Solutions
+ * GSS LOGISTICS — FRONTEND APPLICATION LOGIC (TMS & FLEET)
+ * Triết lý: Graceful Notification, Defensive UI & GSS Enterprise Table Standard
+ * Kế thừa từ GSS
  * ==========================================================================
  */
 

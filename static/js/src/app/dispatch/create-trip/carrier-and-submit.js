@@ -153,7 +153,7 @@ function onSubDriverSelectChange(val, triggerEl = null) {
     }
 }
 
-// --- 4. TẠO LỆNH ĐIỀU ĐỘNG VỚI DEFENSIVE VALIDATION (Bim_ERP Standard) ---
+// --- 4. TẠO LỆNH ĐIỀU ĐỘNG VỚI DEFENSIVE VALIDATION (GSS Standard) ---
 async function submitNewTrip(sourceEl = null) {
     // 1. Xác định context container chính xác: Nếu modal đang hiển thị thì ưu tiên modal, ngược lại nếu view-create-trip đang mở thì dùng view-create-trip
     const modalEl = document.getElementById('modal-create-trip');

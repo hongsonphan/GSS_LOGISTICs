@@ -1,4 +1,4 @@
-// Đồng bộ dữ liệu hiện trường sang Mobile Driver Sync (Simulator Chuẩn BIM)
+// Đồng bộ dữ liệu hiện trường sang Mobile Driver Sync (Simulator Chuẩn GSS)
 function renderDriverMobileApp(trip) {
     if (!trip) return;
 

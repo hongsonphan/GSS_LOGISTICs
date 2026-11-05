@@ -2,7 +2,7 @@ from django.contrib.auth.backends import ModelBackend
 
 class BimPermissionBackend(ModelBackend):
     """
-    Custom Authentication Backend cho BIM Logistics.
+    Custom Authentication Backend cho GSS Logistics.
     Kế thừa chuẩn ModelBackend của Django, nhưng bổ sung cơ chế loại trừ quyền
     (Excluded / Negative Permissions) từ Employee.excluded_permissions.
     Xác thực mật khẩu chỉ qua mã băm (không có mật khẩu dự phòng).

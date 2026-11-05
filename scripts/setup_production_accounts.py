@@ -92,9 +92,9 @@ print("=== THIẾT LẬP VÀ KIỂM CHỨNG TÀI KHOẢN PRODUCTION TRIỀN VÕ 
 for acc in ACCOUNTS_CONFIG:
     u, created = User.objects.get_or_create(username=acc['username'])
     # Không bao giờ ghi đè mật khẩu tài khoản đang vận hành. Tài khoản mới: mật khẩu lấy từ biến môi trường
-    # BIM_PASSWORD_<TÊN_ĐĂNG_NHẬP>; không có thì khoá mật khẩu và dùng "Quên mật khẩu" để người dùng tự đặt.
+    # GSS_PASSWORD_<TÊN_ĐĂNG_NHẬP>; không có thì khoá mật khẩu và dùng "Quên mật khẩu" để người dùng tự đặt.
     if created:
-        env_pw = os.environ.get('BIM_PASSWORD_' + acc['username'].upper(), '')
+        env_pw = os.environ.get('GSS_PASSWORD_' + acc['username'].upper(), '')
         if env_pw:
             u.set_password(env_pw)
         else:

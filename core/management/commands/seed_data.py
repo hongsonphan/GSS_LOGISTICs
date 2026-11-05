@@ -11,7 +11,7 @@ from apps.exceptions.models import TripException, ExceptionType, ExceptionSeveri
 from core.models import TrackingEventLog
 
 class Command(BaseCommand):
-    help = 'Nạp toàn bộ dữ liệu mẫu nghiệp vụ thực tế cho Bim Logistics'
+    help = 'Nạp toàn bộ dữ liệu mẫu nghiệp vụ thực tế cho GSS Logistics'
 
     def handle(self, *args, **options):
         self.stdout.write("Bat dau nap du lieu mau (Seeding data)...")

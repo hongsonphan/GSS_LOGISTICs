@@ -1,6 +1,6 @@
 /**
  * =========================================================================================
- * BIM LOGISTICS — UNIVERSAL TABLE COLUMN MANAGER (QUẢN LÝ CỘT BẢNG DỮ LIỆU TOÀN DIỆN)
+ * GSS LOGISTICS — UNIVERSAL TABLE COLUMN MANAGER (QUẢN LÝ CỘT BẢNG DỮ LIỆU TOÀN DIỆN)
  * =========================================================================================
  * Chuẩn mực UI/UX SaaS Quốc Tế (Notion / Salesforce / SAP Data Management Standard)
  * - Tùy biến Ẩn / Hiện cột (Column Visibility Toggle)
@@ -910,7 +910,7 @@
 
 
     // =========================================================================
-    // BIM LOGISTICS — UNIVERSAL CLIENT-SIDE TABLE SORTER (SẮP XẾP BẢNG TOÀN CỤC)
+    // GSS LOGISTICS — UNIVERSAL CLIENT-SIDE TABLE SORTER (SẮP XẾP BẢNG TOÀN CỤC)
     // =========================================================================
     const BimTableSorter = {
         sortStates: {},
@@ -1051,7 +1051,7 @@
     };
 
     // =========================================================================
-    // BIM LOGISTICS — UNIVERSAL TABLE FOOTER TOTALS (DÒNG TỔNG CỘNG BẢNG DỮ LIỆU)
+    // GSS LOGISTICS — UNIVERSAL TABLE FOOTER TOTALS (DÒNG TỔNG CỘNG BẢNG DỮ LIỆU)
     // =========================================================================
     const BimTableFooter = {
         render: function(tableId, config) {
@@ -1100,7 +1100,7 @@
 
     /**
      * =========================================================================
-     * BIM TABLE RESIZABLE (KÉO THẢ THAY ĐỔI CHIỀU RỘNG CỘT TRỰC TIẾP TRÊN BẢNG)
+     * GSS TABLE RESIZABLE (KÉO THẢ THAY ĐỔI CHIỀU RỘNG CỘT TRỰC TIẾP TRÊN BẢNG)
      * =========================================================================
      * - Rê chuột vào mép giữa 2 cột: con trỏ chuyển thành col-resize (kéo qua lại).
      * - Thanh chỉ dẫn Guide Line màu xanh Teal (#0d9488) chạy dọc bảng khi kéo.

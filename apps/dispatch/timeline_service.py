@@ -719,7 +719,7 @@ def build_customer_milestones(trip: DispatchTrip):
             {
                 'step': 1,
                 'title': 'Tiếp nhận đơn',
-                'desc': 'Đơn hàng vận chuyển đã được tiếp nhận và xác nhận trên hệ thống BIM Logistics',
+                'desc': 'Đơn hàng vận chuyển đã được tiếp nhận và xác nhận trên hệ thống GSS Logistics',
                 'is_done': m1_done,
                 'is_active': m1_active,
                 'time': m1_time

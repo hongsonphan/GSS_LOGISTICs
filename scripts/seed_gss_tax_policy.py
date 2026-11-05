@@ -17,7 +17,7 @@ from apps.personnel.models import (
 )
 
 print("=" * 80)
-print("ĐỒNG BỘ CHÍNH SÁCH, BIỂU THUẾ & DANH MỤC THU NHẬP TỪ BIM ERP")
+print("ĐỒNG BỘ CHÍNH SÁCH, BIỂU THUẾ & DANH MỤC THU NHẬP TỪ GSS")
 print("Cập nhật theo Luật Thuế TNCN 109/2025/QH15 & Nghị quyết 110/2025/UBTVQH15")
 print("=" * 80)
 
@@ -99,7 +99,7 @@ policy = PayrollPolicyConfig.objects.filter(is_active=True).first()
 if not policy:
     policy = PayrollPolicyConfig.objects.create()
 
-policy.name = "Chính sách Lương chuẩn 2026 (Bim ERP)"
+policy.name = "Chính sách Lương chuẩn 2026 (GSS)"
 policy.personal_relief = Decimal('15500000')      # 15.5tr/tháng theo NQ 110/2025
 policy.dependent_relief = Decimal('6200000')       # 6.2tr/người/tháng theo NQ 110/2025
 policy.standard_working_days = Decimal('26.0')
@@ -116,7 +116,7 @@ print(f"  [+] Ngày công tiêu chuẩn: {policy.standard_working_days} ngày/th
 print(f"  [+] Căn cứ pháp lý: {policy.legal_basis}")
 
 # 3. TỶ LỆ TRÍCH NỘP THEO LƯƠNG (LUẬT BHXH 2024 & LUẬT CÔNG ĐOÀN 2024)
-print("\n>>> 3. Cập nhật Tỷ lệ trích nộp Bảo hiểm & Công đoàn theo chuẩn Bim ERP...")
+print("\n>>> 3. Cập nhật Tỷ lệ trích nộp Bảo hiểm & Công đoàn theo chuẩn GSS...")
 rate = SalaryDeductionRate.objects.filter(is_active=True).first()
 if not rate:
     rate = SalaryDeductionRate.objects.create()
@@ -141,7 +141,7 @@ print(f"  [+] Người lao động đóng: {(rate.bhxh_employee_rate + rate.bhyt
 print(f"  [+] Doanh nghiệp đóng: {(rate.bhxh_employer_rate + rate.bhyt_employer_rate + rate.bhtn_employer_rate + rate.union_employer_rate)*100:.1f}% (BHXH 17.5% + BHYT 3% + BHTN 1% + KPCĐ 2%)")
 
 # 4. DANH MỤC THAM SỐ CHÍNH SÁCH LƯƠNG & THUẾ (PAYROLL PARAMETERS)
-print("\n>>> 4. Đồng bộ 20 Tham số chính sách Lương từ Bim ERP (PayrollParameter)...")
+print("\n>>> 4. Đồng bộ 20 Tham số chính sách Lương từ GSS (PayrollParameter)...")
 parameters_data = [
     ("GT_BANTHAN", "Mức giảm trừ gia cảnh: Bản thân", Decimal("15500000"), "VNĐ / tháng", "Nghị quyết số 110/2025/UBTVQH15, ban hành ngày 17/10/2025", 1),
     ("GT_PHUTHUOC", "Mức giảm trừ gia cảnh: Người phụ thuộc", Decimal("6200000"), "VNĐ / người / tháng", "Nghị quyết số 110/2025/UBTVQH15, ban hành ngày 17/10/2025", 2),
@@ -180,8 +180,8 @@ for code, name, val, unit, basis, ord_val in parameters_data:
     )
     print(f"  [+] [{p_obj.code}] {p_obj.name}: {p_obj.value:,.0f} {p_obj.unit}")
 
-# 5. BẢNG PHỤ CẤP, TRỢ CẤP & PHÚC LỢI (ALLOWANCE GROUPS & TYPES TỪ BIM ERP)
-print("\n>>> 5. Đồng bộ Bảng Phụ cấp, Trợ cấp & Phúc lợi từ Bim ERP...")
+# 5. BẢNG PHỤ CẤP, TRỢ CẤP & PHÚC LỢI (ALLOWANCE GROUPS & TYPES TỪ GSS)
+print("\n>>> 5. Đồng bộ Bảng Phụ cấp, Trợ cấp & Phúc lợi từ GSS...")
 
 # Nhóm I: Phụ cấp lương (ghi HĐLĐ, đóng BHXH)
 g1, _ = AllowanceGroup.objects.update_or_create(
@@ -268,7 +268,7 @@ for code, name, cat, def_amt, l1, l2, is_ins, is_tax, basis in allowances_g3:
     print(f"  [+] Nhóm III: [{code}] {name} (BHXH={is_ins}, TNCN={is_tax})")
 
 # 6. BẢNG KÝ HIỆU CHẤM CÔNG CHUẨN (ATTENDANCE CODES)
-print("\n>>> 6. Đồng bộ Danh mục Ký hiệu Chấm công từ Bim ERP...")
+print("\n>>> 6. Đồng bộ Danh mục Ký hiệu Chấm công từ GSS...")
 attendance_codes_data = [
     ("X", "Đi làm đủ ngày (Đủ công)", Decimal("1.0"), Decimal("100.0"), True, "teal", 1),
     ("X/2", "Đi làm nửa ngày (Nửa công)", Decimal("0.5"), Decimal("50.0"), True, "sky", 2),
@@ -294,4 +294,4 @@ for code, name, weight, rate, is_paid, color, order in attendance_codes_data:
     )
     print(f"  [+] Ký hiệu [{code}]: {name} (Hệ số: {weight}, Lương: {rate}%)")
 
-print("\n🎉 HOÀN TẤT ĐỒNG BỘ 100% CHÍNH SÁCH, BIỂU THUẾ, DANH MỤC THU NHẬP & KÝ HIỆU CHẤM CÔNG TỪ BIM ERP!")
+print("\n🎉 HOÀN TẤT ĐỒNG BỘ 100% CHÍNH SÁCH, BIỂU THUẾ, DANH MỤC THU NHẬP & KÝ HIỆU CHẤM CÔNG TỪ GSS!")

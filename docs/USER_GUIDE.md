@@ -1,10 +1,10 @@
-# SỔ TAY HƯỚNG DẪN SỬ DỤNG BIM LOGISTICS
+# SỔ TAY HƯỚNG DẪN SỬ DỤNG GSS LOGISTICS
 
 **Quy trình vận hành & cẩm nang thao tác từng màn hình — Phiên bản v1.1 (10/2026)**
 
-> **BIM LOGISTICS - BIZ SOLUTIONS** · Hotline: 0903.012.099 · Email: bimconsultingvn@gmail.com
+> **GSS LOGISTICS - GREEN SOLUTIONS SMART** · Liên hệ quản trị viên hệ thống GSS để được hỗ trợ
 >
-> Tra cứu trực tuyến trong phần mềm: bấm nút **Trợ giúp** trên thanh trên cùng, hoặc mở `https://logistics.bim.info.vn/helps`
+> Tra cứu trực tuyến trong phần mềm: bấm nút **Trợ giúp** trên thanh trên cùng, hoặc mở đường dẫn `/helps` của hệ thống
 
 **Cách đọc sổ tay này:**
 
@@ -440,7 +440,7 @@ Bảng hiển thị danh sách tài khoản: Họ tên / Nhân sự, Tài khoả
 |---|---|
 | Tài Khoản Kế Toán \* | 1111 Tiền mặt · 1121/1122 Tiền gửi ngân hàng · 131 Phải thu khách hàng · 141 Tạm ứng · 331 Phải trả NCC / thầu phụ · 334 Phải trả người lao động |
 | Ngày Chốt Số Dư Đầu Kỳ \* | Ngày chốt sổ trước khi chạy phần mềm |
-| Tên Đối Tượng / Quỹ / Tài Khoản \* | `Quỹ tiền mặt Triền Võ`, `KH Công ty ABC` |
+| Tên Đối Tượng / Quỹ / Tài Khoản \* | `Quỹ tiền mặt GSS`, `KH Công ty ABC` |
 | Mã Đối Tượng / Biển Số / Mã NV | Mã KH, mã tài xế… |
 | Tính Chất Số Dư \* | **Dư Nợ** (tiền, tài sản, phải thu) hoặc **Dư Có** (phải trả) |
 | Số Tiền (VNĐ) \* | |
@@ -1127,5 +1127,5 @@ Liên hệ quản trị viên hệ thống để đặt lại mật khẩu. Sau 
 
 ---
 
-*Hỗ trợ kỹ thuật: Hotline 0903.012.099 · Email bimconsultingvn@gmail.com*
+*Hỗ trợ kỹ thuật: Liên hệ quản trị viên hệ thống GSS để được hỗ trợ*
 

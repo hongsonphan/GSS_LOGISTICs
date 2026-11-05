@@ -33,8 +33,8 @@ def _client_ip(request):
 @never_cache
 def login_view(request):
     """
-    Trang Đăng nhập Quản trị & Vận hành Bim Logistics (TMS).
-    Kế thừa chuẩn giao diện & quy chuẩn bảo mật từ hệ sinh thái BIM Ecosystem.
+    Trang Đăng nhập Quản trị & Vận hành GSS Logistics (TMS).
+    Kế thừa chuẩn giao diện & quy chuẩn bảo mật từ hệ sinh thái GSS Ecosystem.
     Hỗ trợ xác thực kép: Django Session Cookie + JWT Access Token.
     Có kiểm tra CSRF. Khi token hết hạn (ví dụ bấm Back), CSRF_FAILURE_VIEW đưa người dùng về lại trang này.
     Sai mật khẩu quá LOGIN_MAX_FAILURES lần trong LOGIN_LOCKOUT_SECONDS giây sẽ bị khoá tạm thời theo IP + tài khoản.
@@ -157,7 +157,7 @@ def logout_view(request):
 
 @never_cache
 def index_view(request, *args, **kwargs):
-    """Giao diện Quản trị Điều vận Bim Logistics (Hỗ trợ SPA Clean Semantic Routes)."""
+    """Giao diện Quản trị Điều vận GSS Logistics (Hỗ trợ SPA Clean Semantic Routes)."""
     if not request.user.is_authenticated:
         return redirect_to_login(request.get_full_path(), "/login/")
 
@@ -253,7 +253,7 @@ def index_view(request, *args, **kwargs):
 @never_cache
 def help_view(request):
     """
-    Trang Trung Tâm Trợ Giúp & Hướng Dẫn Sử Dụng Toàn Diện BIM Logistics (/helps).
+    Trang Trung Tâm Trợ Giúp & Hướng Dẫn Sử Dụng Toàn Diện GSS Logistics (/helps).
     Cung cấp tài liệu hướng dẫn tương tác, tra cứu trường dữ liệu và quy trình SOP từng phân hệ.
     Bảo mật: Yêu cầu nhân viên đăng nhập hệ thống trước khi xem tài liệu SOP nội bộ.
     """
@@ -386,7 +386,7 @@ def driver_portal_view(request, trip_hash):
 
     # Số điện thoại điều độ liên hệ
     dispatcher_phone = ''
-    dispatcher_name = 'Điều độ BIM Logistics'
+    dispatcher_name = 'Điều độ GSS Logistics'
     if trip.dispatcher:
         dispatcher_phone = trip.dispatcher.phone_number
         dispatcher_name = trip.dispatcher.nickname or trip.dispatcher.full_name

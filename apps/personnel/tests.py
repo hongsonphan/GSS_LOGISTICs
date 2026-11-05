@@ -421,7 +421,7 @@ class PersonnelHRMAPITestCase(TestCase):
 
     def test_active_contract_integration_and_union_deduction(self):
         """
-        Kiểm thử chuyên sâu tính lương theo Hợp Đồng Lao Động Hiện Hành (BIM ERP Standard):
+        Kiểm thử chuyên sâu tính lương theo Hợp Đồng Lao Động Hiện Hành (chuẩn GSS):
         - HĐLĐ thiết lập: Lương CB, Lương BHXH, Phụ cấp, Trợ cấp, Tỷ lệ hưởng lương, Trích nộp BHXH/Thuế/Công đoàn
         - Phụ lục điều chỉnh mức lương mới
         - Tính toán kỳ lương: Kế thừa đầy đủ các thông số HĐ hiện hành & phụ lục, trích 1% đoàn phí công đoàn NLĐ.

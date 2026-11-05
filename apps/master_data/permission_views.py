@@ -11,7 +11,7 @@ from core.permissions import CanAdministerAccess
 
 class RolesPermissionsAPIView(APIView):
     """
-    API Quản lý Phân Quyền & Vai Trò người dùng hệ thống BIM Logistics.
+    API Quản lý Phân Quyền & Vai Trò người dùng hệ thống GSS Logistics.
     Chuẩn Django Permission Model kết hợp Group Kế Thừa và Loại Trừ/Bổ Sung Cá Nhân.
     """
     # Chỉ người có quyền Quản trị hệ thống (trước đây mọi tài khoản đăng nhập đều xem được danh sách người dùng/quyền)

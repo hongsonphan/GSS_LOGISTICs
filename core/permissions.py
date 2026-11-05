@@ -437,7 +437,7 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
 
 def check_can_edit_or_delete(user, obj, owner_field='created_by', action='edit'):
     """
-    Kiểm tra quyền Sửa/Xóa theo nguyên tắc BIM Logistics:
+    Kiểm tra quyền Sửa/Xóa theo nguyên tắc GSS Logistics:
     1. Ban Giám Đốc (DIRECTOR) hoặc Quản trị viên (superuser): Toàn quyền.
     2. Người tạo (Owner): Được quyền Xem, Sửa, Xóa (với điều kiện chưa phát sinh ràng buộc nghiệp vụ khi Xóa).
     3. Trưởng bộ phận (is_department_head): Được quyền sửa/xóa đối với phiếu của nhân viên trong bộ phận.

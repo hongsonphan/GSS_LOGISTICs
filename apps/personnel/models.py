@@ -613,7 +613,7 @@ class ContractAppendix(TimeStampedModel, SoftDeleteModel):
 
 class AttendanceCode(TimeStampedModel):
     """
-    Bảng khai báo ký hiệu chấm công chuẩn toàn hệ thống (Bim ERP standard).
+    Bảng khai báo ký hiệu chấm công chuẩn toàn hệ thống (chuẩn GSS).
     X (Đủ công), X/2 (Nửa công), P (Phép năm hưởng lương), L (Nghỉ Lễ hưởng lương),
     CT (Công tác), Ro (Nghỉ không lương), Om (Nghỉ ốm BHXH).
     """
@@ -696,7 +696,7 @@ class TaxBracketStatus(models.TextChoices):
 class TaxBracket(TimeStampedModel):
     """
     Biểu thuế thu nhập cá nhân (TNCN) lũy tiến từng phần.
-    Kế thừa chuẩn mực Bim ERP, cập nhật Luật Thuế TNCN số 109/2025/QH15 (Biểu thuế 5 bậc từ 01/01/2026).
+    Kế thừa chuẩn mực GSS, cập nhật Luật Thuế TNCN số 109/2025/QH15 (Biểu thuế 5 bậc từ 01/01/2026).
     """
     bracket_level = models.IntegerField(unique=True, help_text="Bậc thuế (1 đến 5 hoặc 7)")
     min_income = models.DecimalField(max_digits=15, decimal_places=0, default=0, help_text="Thu nhập tính thuế tối thiểu (VNĐ)")
@@ -742,7 +742,7 @@ class TaxBracket(TimeStampedModel):
 class PayrollPolicyConfig(TimeStampedModel):
     """
     Cấu hình tham số tính lương & chính sách giảm trừ thuế TNCN toàn hệ thống.
-    Đồng bộ chuẩn Bim ERP theo Nghị quyết 110/2025/UBTVQH15 và Nghị định 73/2024/NĐ-CP.
+    Đồng bộ chuẩn GSS theo Nghị quyết 110/2025/UBTVQH15 và Nghị định 73/2024/NĐ-CP.
     """
     name = models.CharField(max_length=100, default='Chính sách Lương chuẩn 2026', help_text="Tên chính sách")
     personal_relief = models.DecimalField(max_digits=15, decimal_places=0, default=15500000, help_text="Giảm trừ gia cảnh bản thân (15,500,000 đ/tháng)")
@@ -771,7 +771,7 @@ class PayrollPolicyConfig(TimeStampedModel):
 
 class PayrollParameter(TimeStampedModel):
     """
-    Chi tiết từng tham số chính sách Lương & Thuế theo từng kỳ hiệu lực (kế thừa từ Bim ERP).
+    Chi tiết từng tham số chính sách Lương & Thuế theo từng kỳ hiệu lực (kế thừa từ GSS).
     """
     code = models.CharField(max_length=50, unique=True, db_index=True, help_text="Mã tham số")
     name = models.CharField(max_length=200, help_text="Tên tham số chính sách")
@@ -793,7 +793,7 @@ class PayrollParameter(TimeStampedModel):
 class SalaryDeductionRate(TimeStampedModel):
     """
     Tỷ lệ trích đóng các khoản bảo hiểm bắt buộc và công đoàn.
-    Đồng bộ chuẩn Bim ERP theo Luật BHXH 2024, Luật BHYT, Luật Việc làm và Luật Công đoàn 2024.
+    Đồng bộ chuẩn GSS theo Luật BHXH 2024, Luật BHYT, Luật Việc làm và Luật Công đoàn 2024.
     """
     name = models.CharField(max_length=100, default='Quy định BHXH & Công đoàn Việt Nam')
     # Tỷ lệ trích phần Người lao động (10.5% + 1% nếu tham gia đoàn viên)
@@ -820,7 +820,7 @@ class SalaryDeductionRate(TimeStampedModel):
 
 class AllowanceGroup(TimeStampedModel):
     """
-    BẢNG CHA: Nhóm Khoản Thu nhập / Phụ cấp / Trợ cấp / Hỗ trợ (Kế thừa từ Bim ERP).
+    BẢNG CHA: Nhóm Khoản Thu nhập / Phụ cấp / Trợ cấp / Hỗ trợ (Kế thừa từ GSS).
     """
     code = models.CharField(max_length=30, unique=True, help_text="Mã nhóm khoản (PHU_CAP_LUONG, TRO_CAP, HO_TRO_PHUC_LOI)")
     name = models.CharField(max_length=150, help_text="Tên nhóm khoản")
@@ -837,7 +837,7 @@ class AllowanceGroup(TimeStampedModel):
 
 class AllowanceType(TimeStampedModel):
     """
-    BẢNG CON: Chi tiết các khoản Phụ cấp, Trợ cấp & Hỗ trợ (Kế thừa từ Bim ERP).
+    BẢNG CON: Chi tiết các khoản Phụ cấp, Trợ cấp & Hỗ trợ (Kế thừa từ GSS).
     Tích hợp isBHXH, isTNCN, định mức và căn cứ pháp lý.
     """
     CATEGORY_CHOICES = [

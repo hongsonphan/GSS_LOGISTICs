@@ -259,7 +259,7 @@ async function openEditEmployeePage(id, updateHistory = true) {
     handleEmployeeRoleChange();
     loadAvailableUsers(emp.id, emp.user);
 
-    // RENDER CARD 4: THÔNG TIN HỢP ĐỒNG LAO ĐỘNG HIỆN HÀNH (BIM ERP STANDARD - MASTER 360°)
+    // RENDER CARD 4: THÔNG TIN HỢP ĐỒNG LAO ĐỘNG HIỆN HÀNH (GSS STANDARD - MASTER 360°)
     const contractCard = document.getElementById('emp-active-contract-card');
     const badgeContainer = document.getElementById('emp-contract-badge-container');
     const infoBox = document.getElementById('emp-contract-info-box');

@@ -358,7 +358,7 @@ EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', True)
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_TIMEOUT = 15
-EMAIL_BRAND_NAME = os.environ.get('EMAIL_BRAND_NAME', 'BIM Logistics')
+EMAIL_BRAND_NAME = os.environ.get('EMAIL_BRAND_NAME', 'GSS Logistics')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or (f'{EMAIL_BRAND_NAME} <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'noreply@localhost')
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND') or (
     'django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST_USER or not DEBUG else 'django.core.mail.backends.console.EmailBackend')
@@ -396,8 +396,8 @@ LOGGING = {
 
 # Tài liệu API tự sinh (OpenAPI 3) — chỉ quản trị viên xem được tại /api/docs/
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'BIM Logistics API',
-    'DESCRIPTION': 'API nội bộ hệ thống quản lý vận tải BIM Logistics',
+    'TITLE': 'GSS Logistics API',
+    'DESCRIPTION': 'API nội bộ hệ thống quản lý vận tải GSS Logistics',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAdminUser'],

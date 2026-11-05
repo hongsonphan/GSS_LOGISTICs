@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # GSS LOGISTICS — AUTOMATED PRODUCTION DEPLOYMENT & HEALTH CHECK SCRIPT
-# Hệ sinh thái BIM Ecosystem - Triền Võ Logistics
+# Hệ sinh thái GSS Ecosystem - Triền Võ Logistics
 # ==============================================================================
 set -e
 

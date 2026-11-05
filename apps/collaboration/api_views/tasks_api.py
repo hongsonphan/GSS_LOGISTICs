@@ -651,7 +651,7 @@ class OfficeTaskDirectoryAPIView(views.APIView):
 
 class OfficeTaskExtensionAPIView(views.APIView):
     """
-    Quản lý luồng Đề xuất gia hạn và Phê duyệt gia hạn hạn chót công việc (Chuẩn ERP Bim Logistics).
+    Quản lý luồng Đề xuất gia hạn và Phê duyệt gia hạn hạn chót công việc (Chuẩn ERP GSS Logistics).
     - action = 'request': CHỈ Người phụ trách công việc (Assignee) mới có quyền yêu cầu gia hạn kèm lý do.
     - action = 'approve': Người giao việc (Reporter) hoặc Admin duyệt dời hạn chót.
     - action = 'reject': Người giao việc (Reporter) hoặc Admin từ chối đề xuất dời hạn (bắt buộc ghi lý do).

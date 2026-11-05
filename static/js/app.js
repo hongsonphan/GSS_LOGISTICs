@@ -6,7 +6,7 @@
 // ---- src/app/core/table-manager.js ----
 /**
  * =========================================================================================
- * BIM LOGISTICS — UNIVERSAL TABLE COLUMN MANAGER (QUẢN LÝ CỘT BẢNG DỮ LIỆU TOÀN DIỆN)
+ * GSS LOGISTICS — UNIVERSAL TABLE COLUMN MANAGER (QUẢN LÝ CỘT BẢNG DỮ LIỆU TOÀN DIỆN)
  * =========================================================================================
  * Chuẩn mực UI/UX SaaS Quốc Tế (Notion / Salesforce / SAP Data Management Standard)
  * - Tùy biến Ẩn / Hiện cột (Column Visibility Toggle)
@@ -916,7 +916,7 @@
 
 
     // =========================================================================
-    // BIM LOGISTICS — UNIVERSAL CLIENT-SIDE TABLE SORTER (SẮP XẾP BẢNG TOÀN CỤC)
+    // GSS LOGISTICS — UNIVERSAL CLIENT-SIDE TABLE SORTER (SẮP XẾP BẢNG TOÀN CỤC)
     // =========================================================================
     const BimTableSorter = {
         sortStates: {},
@@ -1057,7 +1057,7 @@
     };
 
     // =========================================================================
-    // BIM LOGISTICS — UNIVERSAL TABLE FOOTER TOTALS (DÒNG TỔNG CỘNG BẢNG DỮ LIỆU)
+    // GSS LOGISTICS — UNIVERSAL TABLE FOOTER TOTALS (DÒNG TỔNG CỘNG BẢNG DỮ LIỆU)
     // =========================================================================
     const BimTableFooter = {
         render: function(tableId, config) {
@@ -1106,7 +1106,7 @@
 
     /**
      * =========================================================================
-     * BIM TABLE RESIZABLE (KÉO THẢ THAY ĐỔI CHIỀU RỘNG CỘT TRỰC TIẾP TRÊN BẢNG)
+     * GSS TABLE RESIZABLE (KÉO THẢ THAY ĐỔI CHIỀU RỘNG CỘT TRỰC TIẾP TRÊN BẢNG)
      * =========================================================================
      * - Rê chuột vào mép giữa 2 cột: con trỏ chuyển thành col-resize (kéo qua lại).
      * - Thanh chỉ dẫn Guide Line màu xanh Teal (#0d9488) chạy dọc bảng khi kéo.
@@ -1953,7 +1953,7 @@ async function fetchWithAuth(url, options = {}) {
 }
 
 // ---- src/app/core/ui.js ----
-// --- GRACEFUL TOAST NOTIFICATION (Bim_ERP-Solutions Standard) ---
+// --- GRACEFUL TOAST NOTIFICATION (GSS Standard) ---
 function showToast(type, message, title = '') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -1990,7 +1990,7 @@ function showToast(type, message, title = '') {
     }, 4500);
 }
 
-// --- GLOBAL ENTERPRISE CONFIRMATION MODAL (Bim_ERP-Solutions Standard) ---
+// --- GLOBAL ENTERPRISE CONFIRMATION MODAL (GSS Standard) ---
 let _globalConfirmResolver = null;
 
 function showConfirmModal(options = {}) {
@@ -2553,7 +2553,7 @@ window.attachPastedImage = attachPastedImage;
 
 // ---- src/app/core/combobox.js ----
 // =========================================================================
-// UNIVERSAL SEARCHABLE DROPDOWN / COMBOBOX COMPONENT (BIM TMS STANDARD)
+// UNIVERSAL SEARCHABLE DROPDOWN / COMBOBOX COMPONENT (GSS TMS STANDARD)
 // Chuẩn Tìm Kiếm Dropdown: Dòng đầu tiên có kính lúp để tìm kiếm + Cho phép
 // gõ trực tiếp từ khóa vào ô để lọc nhanh thời gian thực.
 // =========================================================================
@@ -3277,7 +3277,7 @@ function populateMasterDataDropdowns() {
             if (currentVal) {
                 setSelectValueCaseInsensitive(sel, currentVal);
             }
-            // Tự động nâng cấp sang Searchable Combobox chuẩn Bim TMS (Kính lúp dòng 1 + gõ free-text)
+            // Tự động nâng cấp sang Searchable Combobox chuẩn GSS TMS (Kính lúp dòng 1 + gõ free-text)
             makeSearchableSelect(sel);
         });
     }
@@ -3882,7 +3882,7 @@ function expandSidebar(savePreference = true) {
 window.expandSidebar = expandSidebar;
 
 /**
- * Chuẩn hóa trạng thái Sidebar tập trung duy nhất từ localStorage (Bim_ERP Standard):
+ * Chuẩn hóa trạng thái Sidebar tập trung duy nhất từ localStorage (GSS Standard):
  * - Nếu là Mobile / Tablet (< 1024px): Mặc định luôn thu gọn drawer, không lưu đè preference desktop.
  * - Nếu là Desktop (>= 1024px):
  *   + bim_sidebar_collapsed === 'true': Ở trạng thái Hide (collapsed), hỗ trợ Hover Peek.
@@ -3946,7 +3946,7 @@ function toggleSidebar() {
 window.toggleSidebar = toggleSidebar;
 
 /**
- * Khởi tạo tính năng Hover Peek cho Sidebar trên Desktop (Bim_ERP Standard):
+ * Khởi tạo tính năng Hover Peek cho Sidebar trên Desktop (GSS Standard):
  * - Khi sidebar đang ở trạng thái Hide (collapsed):
  *   Quơ con chuột vào nút hide (hình) sẽ hiển thị sidebar ra dạng flyout để bấm chọn menu.
  * - Rời con chuột đi (khỏi nút và khỏi sidebar) -> sidebar tự động hide lại.
@@ -4137,7 +4137,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ---- src/app/core/time-picker.js ----
 // ==========================================
-// BIM 24-HOUR INTERACTIVE TIME PICKER SYSTEM
+// GSS 24-HOUR INTERACTIVE TIME PICKER SYSTEM
 // ==========================================
 let currentBim24hTarget = null;
 let currentBim24hHour = '17';
@@ -8509,9 +8509,9 @@ window.handleDispatchSortChange = handleDispatchSortChange;
 // ---- src/app/dispatch/trip-detail.js ----
 /**
  * ==========================================================================
- * BIM LOGISTICS — FRONTEND APPLICATION LOGIC (TMS & FLEET)
- * Triết lý: Graceful Notification, Defensive UI & Bim Enterprise Table Standard
- * Kế thừa từ Bim_ERP-Solutions
+ * GSS LOGISTICS — FRONTEND APPLICATION LOGIC (TMS & FLEET)
+ * Triết lý: Graceful Notification, Defensive UI & GSS Enterprise Table Standard
+ * Kế thừa từ GSS
  * ==========================================================================
  */
 
@@ -9537,7 +9537,7 @@ function buildDriverZaloMessage(trip) {
     const dropoff = trip.dropoff || trip.dropoff_location || '-';
     const loadingTimeStr = trip.loading_time ? `\n⏰ Giờ hẹn đóng hàng: ${trip.loading_time}` : '';
 
-    return `🚚 LỆNH ĐIỀU XE BIM LOGISTICS:
+    return `🚚 LỆNH ĐIỀU XE GSS LOGISTICS:
 • Chuyến: ${tripCode}
 • Xe: ${vehicle} | Mooc: ${trailer}
 • Cont: ${cont}${contType} | Seal: ${seal}
@@ -9597,7 +9597,7 @@ window.copyCustomerTrackingLink = function() {
     const trackingToken = trip.tracking_hashid || trip.hashid || trip.trip_code;
     const trackingUrl = `${window.location.origin}/tracking/${trackingToken}/`;
     const destWarehouse = trip.delivery_warehouse || trip.warehouse || 'Kho Khách Hàng';
-    const message = `THÔNG TIN TRA CỨU VẬN ĐƠN CONTAINER - BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nContainer: ${trip.container || '-'} (${trip.container_type || '40HC'})\nSố Chì (Seal): ${trip.seal || 'Chưa bấm'}\nKho Giao Hàng: ${destWarehouse}\n- Quý khách có thể theo dõi tiến độ chuyến xe thời gian thực tại: ${trackingUrl}`;
+    const message = `THÔNG TIN TRA CỨU VẬN ĐƠN CONTAINER - GSS LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nContainer: ${trip.container || '-'} (${trip.container_type || '40HC'})\nSố Chì (Seal): ${trip.seal || 'Chưa bấm'}\nKho Giao Hàng: ${destWarehouse}\n- Quý khách có thể theo dõi tiến độ chuyến xe thời gian thực tại: ${trackingUrl}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).then(() => {
@@ -10745,7 +10745,7 @@ async function driverDeleteExpense(expenseId) {
 }
 
 // ---- src/app/dispatch/driver-simulator.js ----
-// Đồng bộ dữ liệu hiện trường sang Mobile Driver Sync (Simulator Chuẩn BIM)
+// Đồng bộ dữ liệu hiện trường sang Mobile Driver Sync (Simulator Chuẩn GSS)
 function renderDriverMobileApp(trip) {
     if (!trip) return;
 
@@ -12405,7 +12405,7 @@ function onSubDriverSelectChange(val, triggerEl = null) {
     }
 }
 
-// --- 4. TẠO LỆNH ĐIỀU ĐỘNG VỚI DEFENSIVE VALIDATION (Bim_ERP Standard) ---
+// --- 4. TẠO LỆNH ĐIỀU ĐỘNG VỚI DEFENSIVE VALIDATION (GSS Standard) ---
 async function submitNewTrip(sourceEl = null) {
     // 1. Xác định context container chính xác: Nếu modal đang hiển thị thì ưu tiên modal, ngược lại nếu view-create-trip đang mở thì dùng view-create-trip
     const modalEl = document.getElementById('modal-create-trip');
@@ -19497,7 +19497,7 @@ function printCurrentContract() {
 
 
 // =========================================================================
-// BIM LOGISTICS — SEARCH & FILTER HELPER FUNCTIONS FOR TABLES
+// GSS LOGISTICS — SEARCH & FILTER HELPER FUNCTIONS FOR TABLES
 // =========================================================================
 function filterContractsTable() {
     const q = (document.getElementById('contract-search-input')?.value || '').toLowerCase().trim();
@@ -21010,7 +21010,7 @@ async function openEditEmployeePage(id, updateHistory = true) {
     handleEmployeeRoleChange();
     loadAvailableUsers(emp.id, emp.user);
 
-    // RENDER CARD 4: THÔNG TIN HỢP ĐỒNG LAO ĐỘNG HIỆN HÀNH (BIM ERP STANDARD - MASTER 360°)
+    // RENDER CARD 4: THÔNG TIN HỢP ĐỒNG LAO ĐỘNG HIỆN HÀNH (GSS STANDARD - MASTER 360°)
     const contractCard = document.getElementById('emp-active-contract-card');
     const badgeContainer = document.getElementById('emp-contract-badge-container');
     const infoBox = document.getElementById('emp-contract-info-box');
@@ -22966,7 +22966,7 @@ async function settleDispatcherFund(fundId) {
 // =============================================================================
 // =============================================================================
 // -------------------------------------------------------------
-// BIM ACCOUNTING ADVANCE & SETTLEMENT CONTROLLERS
+// GSS ACCOUNTING ADVANCE & SETTLEMENT CONTROLLERS
 // -------------------------------------------------------------
 let currentActiveAdvance = null;
 
@@ -23185,7 +23185,7 @@ window.recalculateActualExpensesFromTrip = recalculateActualExpensesFromTrip;
 window.submitSettleAdvanceForm = submitSettleAdvanceForm;
 
 // ---- src/app/accounting/advances/driver-advance-detail.js ----
-// BIM ACCOUNTING ADVANCES & FUNDS - COMPREHENSIVE CRUD (VIEW, EDIT, SAVE, PRINT, DELETE)
+// GSS ACCOUNTING ADVANCES & FUNDS - COMPREHENSIVE CRUD (VIEW, EDIT, SAVE, PRINT, DELETE)
 // =============================================================================
 let currentActiveDriverAdvance = null;
 let currentActiveDispatcherFund = null;
@@ -32477,7 +32477,7 @@ function syncCompanyProfileToPrintForms() {
         el.innerText = co.tax_code;
     });
 
-    // 8. Đồng bộ Logo Công ty Triền Võ (không lấy nhầm logo chung BIM)
+    // 8. Đồng bộ Logo Công ty Triền Võ (không lấy nhầm logo chung GSS)
     let compLogo = co.logo_url || '/static/images/trienvo_logo.png';
     if (!compLogo || compLogo.endsWith('/logo.png') || compLogo.includes('static/images/logo.png')) {
         compLogo = '/static/images/trienvo_logo.png';
@@ -40774,7 +40774,7 @@ window.printCustomerSettlementVoucher = printCustomerSettlementVoucher;
 
 // ---- src/app/reports/report-print.js ----
 // -------------------------------------------------------------
-// IN ẤN BÁO CÁO QUẢN TRỊ DOANH NGHIỆP (BIM TMS BI REPORTS)
+// IN ẤN BÁO CÁO QUẢN TRỊ DOANH NGHIỆP (GSS TMS BI REPORTS)
 // -------------------------------------------------------------
 const REPORT_PRINT_METADATA = {
     'report-1': {
@@ -40990,7 +40990,7 @@ function renderReportPrintContent(reportKey) {
     if (exportDateEl) exportDateEl.innerText = `Ngày in: ${dateStr} ${timeStr}`;
 
     const subtitleEl = document.getElementById('print-rep-period-subtitle');
-    if (subtitleEl) subtitleEl.innerText = `Kỳ báo cáo: ${periodLabel} • Đơn vị tiền tệ: VNĐ • Xuất tự động từ Hệ thống BIM Logistics`;
+    if (subtitleEl) subtitleEl.innerText = `Kỳ báo cáo: ${periodLabel} • Đơn vị tiền tệ: VNĐ • Xuất tự động từ Hệ thống GSS Logistics`;
 
     const authorEl = document.getElementById('print-rep-sign-author');
     if (authorEl) {
@@ -42346,8 +42346,8 @@ function formatNewsDate(dateStr) {
 
 /**
  * ==========================================================================
- * BIM LOGISTICS — COLLABORATION MODULE (NEWS, TASKS, IN-APP TEAM CHAT)
- * Kế thừa chuẩn quốc tế từ Bim Ecosystem (Bim_Consulting & Bim_ERP-Solutions)
+ * GSS LOGISTICS — COLLABORATION MODULE (NEWS, TASKS, IN-APP TEAM CHAT)
+ * Kế thừa chuẩn quốc tế từ GSS Ecosystem (GSS)
  * Áp dụng riêng cho Ban Giám Đốc, Quản lý và Cán bộ Nhân viên Văn phòng
  * ==========================================================================
  */
@@ -43614,7 +43614,7 @@ function printCurrentTaskSlip() {
                 <tr>
                     <td>
                         <div class="company-title">CÔNG TY TNHH VẬN TẢI & LOGISTICS TRIỀN VÕ</div>
-                        <div style="font-size: 11px; color: #64748b;">Hệ sinh thái Quản trị Vận tải & Chuỗi cung ứng BIM Logistics</div>
+                        <div style="font-size: 11px; color: #64748b;">Hệ sinh thái Quản trị Vận tải & Chuỗi cung ứng GSS Logistics</div>
                     </td>
                     <td style="text-align: right; font-size: 11px; color: #64748b;">
                         Ngày in: ${new Date().toLocaleDateString('vi-VN')}

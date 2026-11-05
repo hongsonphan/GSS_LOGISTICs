@@ -562,7 +562,7 @@ class DriverAdvanceSettleAPIView(APIView):
 
 
 class DriverAdvanceDetailAPIView(APIView):
-    """API Chi Tiết, Cập Nhật & Xóa Mềm Phiếu Tạm Ứng Chuyến Của Tài Xế (CRUD Chuẩn BIM)."""
+    """API Chi Tiết, Cập Nhật & Xóa Mềm Phiếu Tạm Ứng Chuyến Của Tài Xế (CRUD Chuẩn GSS)."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsDispatcherOrAccountant]
 
@@ -738,7 +738,7 @@ class DriverAdvanceDetailAPIView(APIView):
 
 
 class DispatcherFundDetailAPIView(APIView):
-    """API Chi Tiết, Cập Nhật & Xóa Mềm Quỹ Điều Vận (CRUD Chuẩn BIM)."""
+    """API Chi Tiết, Cập Nhật & Xóa Mềm Quỹ Điều Vận (CRUD Chuẩn GSS)."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsDispatcherOrAccountant]
 

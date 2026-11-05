@@ -64,7 +64,7 @@ function syncCompanyProfileToPrintForms() {
         el.innerText = co.tax_code;
     });
 
-    // 8. Đồng bộ Logo Công ty Triền Võ (không lấy nhầm logo chung BIM)
+    // 8. Đồng bộ Logo Công ty Triền Võ (không lấy nhầm logo chung GSS)
     let compLogo = co.logo_url || '/static/images/trienvo_logo.png';
     if (!compLogo || compLogo.endsWith('/logo.png') || compLogo.includes('static/images/logo.png')) {
         compLogo = '/static/images/trienvo_logo.png';

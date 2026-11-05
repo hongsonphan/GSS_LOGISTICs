@@ -434,7 +434,7 @@ function expandSidebar(savePreference = true) {
 window.expandSidebar = expandSidebar;
 
 /**
- * Chuẩn hóa trạng thái Sidebar tập trung duy nhất từ localStorage (Bim_ERP Standard):
+ * Chuẩn hóa trạng thái Sidebar tập trung duy nhất từ localStorage (GSS Standard):
  * - Nếu là Mobile / Tablet (< 1024px): Mặc định luôn thu gọn drawer, không lưu đè preference desktop.
  * - Nếu là Desktop (>= 1024px):
  *   + bim_sidebar_collapsed === 'true': Ở trạng thái Hide (collapsed), hỗ trợ Hover Peek.
@@ -498,7 +498,7 @@ function toggleSidebar() {
 window.toggleSidebar = toggleSidebar;
 
 /**
- * Khởi tạo tính năng Hover Peek cho Sidebar trên Desktop (Bim_ERP Standard):
+ * Khởi tạo tính năng Hover Peek cho Sidebar trên Desktop (GSS Standard):
  * - Khi sidebar đang ở trạng thái Hide (collapsed):
  *   Quơ con chuột vào nút hide (hình) sẽ hiển thị sidebar ra dạng flyout để bấm chọn menu.
  * - Rời con chuột đi (khỏi nút và khỏi sidebar) -> sidebar tự động hide lại.

@@ -1,10 +1,11 @@
-# FEATURES.md — BIM LOGISTICS PLATFORM
+# FEATURES.md — GSS LOGISTICS PLATFORM
 ## Tài liệu Đặc tả Tính năng Đầy đủ (Living Document)
 
 > **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 2026-11-01
 > **Trạng thái:** Production-Ready
-> **Công ty:** Triền Võ Logistics (BIM Ecosystem)
-> **Mục đích:** Tài liệu này ghi nhận **toàn bộ tính năng đã được lập trình và triển khai** trên nền tảng BIM Logistics, được cập nhật liên tục sau mỗi thay đổi. Dùng để tham khảo trước khi phát triển tính năng mới (tránh viết lại những gì đã có).
+> **Đơn vị:** Green Solutions Smart (GSS) · Dự án GSS-TMS-2026 (repo `GSS_LOGISTICs`)
+> **Lưu ý:** Tài liệu mô tả tính năng của nền tảng hiện có (kế thừa từ BIM Logistics). Hạng mục riêng của GSS chưa lập trình xem BRD, được đánh dấu [KẾ HOẠCH].
+> **Mục đích:** Tài liệu này ghi nhận **toàn bộ tính năng đã được lập trình và triển khai** trên nền tảng GSS Logistics, được cập nhật liên tục sau mỗi thay đổi. Dùng để tham khảo trước khi phát triển tính năng mới (tránh viết lại những gì đã có).
 
 > [!IMPORTANT]
 > **Quy ước cập nhật:** Bất kỳ khi nào thêm tính năng mới hoặc thay đổi tính năng cũ, bắt buộc cập nhật file này đồng thời với `docs/CHANGELOG.md`.
@@ -47,7 +48,7 @@
 | **Database** | SQLite3 (dev) / PostgreSQL (prod) | Kế thừa `TimeStampedModel` + `SoftDeleteModel` |
 | **REST API** | Django REST Framework | JWT Auth + Session Auth, Base URL `localhost:8085` |
 | **Frontend** | Vanilla JS SPA (`app.js` ~1MB) | Không reload trang, 14 view, quản lý cột động |
-| **Styling** | Tailwind CSS | Design Tokens BIM: Teal/Emerald/Amber/Rose |
+| **Styling** | Tailwind CSS | Design Tokens GSS: Teal/Emerald/Amber/Rose |
 | **Charts** | Chart.js | Revenue/expense bar chart, trend lines |
 | **Auth** | `simplejwt` + Django Sessions | JWT (4h access, 7d refresh) + Token Blacklist |
 | **Media** | File upload cục bộ | `booking_files/`, `receipts/`, `documents/`, `incidents/` |
@@ -344,9 +345,9 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 | *(Chi hộ KH — riêng biệt)* | is_on_behalf_of_customer / TVL_OBH / SUB_OBH |
 
 **Cụm 3 Nút Phân Loại Trách Nhiệm Chi Phí (Touch Target >= 48px):**
-- **[ 🏢 Chi phí TVL ] (TVL_COST - Mặc định):** Chi phí do Triền Võ chịu -> tính vào cached_expense chuyến xe.
-- **[ ↗ TVL chi hộ ] (TVL_OBH):** Triền Võ ứng tiền trước chi hộ cho Khách hàng -> thu lại qua Debit Note -> không tính vào chi phí TVL.
-- **[ 🔄 3PL chi hộ ] (SUB_OBH):** Tài xế/chủ xe 3PL tự chi tiền trước cho Khách hàng -> Triền Võ hoàn tiền lại cho 3PL trong Bảng Kê Quyết Toán Thầu Phụ (sub_reimbursable_expenses) -> đồng thời thu lại từ Khách qua Debit Note -> không tính vào chi phí TVL.
+- **[ 🏢 Chi phí TVL ] (TVL_COST - Mặc định):** Chi phí do GSS chịu -> tính vào cached_expense chuyến xe.
+- **[ ↗ TVL chi hộ ] (TVL_OBH):** GSS ứng tiền trước chi hộ cho Khách hàng -> thu lại qua Debit Note -> không tính vào chi phí TVL.
+- **[ 🔄 3PL chi hộ ] (SUB_OBH):** Tài xế/chủ xe 3PL tự chi tiền trước cho Khách hàng -> GSS hoàn tiền lại cho 3PL trong Bảng Kê Quyết Toán Thầu Phụ (sub_reimbursable_expenses) -> đồng thời thu lại từ Khách qua Debit Note -> không tính vào chi phí TVL.
 
 **Thông tin mỗi khoản chi:**
 - Đơn vị phát hành, Số hóa đơn, Mã tra cứu HĐĐT, Link tra cứu
@@ -541,7 +542,7 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 - Tham số hệ thống: VAT mặc định, Giá dầu tham chiếu, Hệ số CBM
 
 ### 13.10 Tính năng Xuất Mẫu & Nhập Danh Mục Ban Đầu Từ Excel (Master Data Import/Export)
-- **Tải Mẫu Excel Chuẩn Hóa:** Cho phép tải template Excel (`.xlsx`) cho 12 danh mục với header chuẩn BIM Logistics, giải thích định dạng và dữ liệu mẫu thực tế.
+- **Tải Mẫu Excel Chuẩn Hóa:** Cho phép tải template Excel (`.xlsx`) cho 12 danh mục với header chuẩn GSS Logistics, giải thích định dạng và dữ liệu mẫu thực tế.
 - **Nhập Danh Mục Hàng Loạt:** Hỗ trợ kéo thả/chọn file Excel để nạp dữ liệu ban đầu cho các bảng Cảng bãi, Khách hàng, Biểu cước, Đội xe, Lương chuyến, Khoản chi, Số dư đầu kỳ.
 - **Cơ Chế Upsert Thông Minh:** Tự động nhận diện bản ghi đã tồn tại qua mã định danh để cập nhật thông tin thay vì báo lỗi trùng lặp.
 - **API Endpoints:**

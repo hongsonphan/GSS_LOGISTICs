@@ -1,4 +1,4 @@
-# BIM LOGISTICS — DATABASE SCHEMA & ORM ARCHITECTURE
+# GSS LOGISTICS — DATABASE SCHEMA & ORM ARCHITECTURE
 ## Data Layer Architecture & Relational Entity-Relationship Specification
 
 > **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 01/11/2026  
@@ -59,7 +59,7 @@ erDiagram
 ### B. Phân hệ Nhân sự & Tiền lương (`apps/personnel`)
 - `personnel.Employee`: Quản lý hồ sơ nhân thân cá nhân 360° (độc lập với công ty), CCCD, MST cá nhân, số sổ BHXH, tài khoản ngân hàng chi lương, thông tin GPLX hạng C/FC/FE, người phụ thuộc giảm trừ gia cảnh. Tích hợp các Helper Properties tự động kế thừa chế độ kinh tế từ HĐLĐ hiện hành (`active_contract`).
 - `personnel.EmployeeDependent`: Người phụ thuộc đăng ký giảm trừ gia cảnh thuế TNCN theo quy định (Nghị quyết 110/2025/UBTVQH15: 6.2tr/người/tháng).
-- `personnel.LaborContract`: Hợp đồng lao động chuẩn BIM ERP (Thử việc, Xác định thời hạn, Không xác định thời hạn, Thời vụ), lưu trữ các cam kết kinh tế: Lương CB, Lương BHXH, Phụ cấp cố định, Trợ cấp phúc lợi, Tổng thu nhập HĐ, Tỷ lệ hưởng lương %, Cờ tham gia BHXH (`is_social_insurance_participant`), Tính thuế TNCN (`is_taxable`), Đoàn viên Công đoàn (`is_union_member`), Phân loại cư trú thuế TNCN (`tax_resident_type`).
+- `personnel.LaborContract`: Hợp đồng lao động chuẩn GSS (Thử việc, Xác định thời hạn, Không xác định thời hạn, Thời vụ), lưu trữ các cam kết kinh tế: Lương CB, Lương BHXH, Phụ cấp cố định, Trợ cấp phúc lợi, Tổng thu nhập HĐ, Tỷ lệ hưởng lương %, Cờ tham gia BHXH (`is_social_insurance_participant`), Tính thuế TNCN (`is_taxable`), Đoàn viên Công đoàn (`is_union_member`), Phân loại cư trú thuế TNCN (`tax_resident_type`).
 - `personnel.ContractAppendix`: Phụ lục hợp đồng lao động điều chỉnh mức lương chính, lương BHXH, phụ cấp, trợ cấp, phòng ban và chức vụ mới.
 - `personnel.TaxBracket`: Biểu thuế TNCN lũy tiến từng phần (hỗ trợ Luật 109/2025/QH15 Biểu thuế 5 bậc từ 2026 và 7 bậc truyền thống) kèm số trừ nhanh chuẩn pháp luật Việt Nam.
 - `personnel.SalaryDeductionRate`: Tỷ lệ trích nộp bảo hiểm bắt buộc và công đoàn (NLĐ: BHXH 8%, BHYT 1.5%, BHTN 1%, Đoàn phí 1%; Doanh nghiệp: BHXH 17.5%, BHYT 3%, BHTN 1%, KPCĐ 2%).
@@ -98,7 +98,7 @@ erDiagram
 - `documents.TripDocument`: Lưu trữ ảnh chụp phiếu EIR lấy cont, EIR hạ cont, biên bản giao nhận hàng (POD), phiếu cân xe, hóa đơn nâng hạ, và file Booking / Lệnh cấp rỗng (`BOOKING_NOTE`) kèm kết quả nhận diện OCR AI. Tự động sinh bản ghi chứng từ khi chuyến xe có file booking đính kèm.
 
 ### H. Phân hệ Chi phí & Đối chiếu (`apps/billing`)
-- `billing.TripExpense`: Chi phí phát sinh hiện trường liên kết trực tiếp tới `master_data.ExpenseItem` (`expense_item`) và tương thích ngược với 8 danh mục Bảng Kê Chi Phí Triền Võ (`category`). Hỗ trợ phân loại 3 dòng chi phí chuẩn tài xế (`expense_payer_type`: TVL_COST, TVL_OBH, SUB_OBH), cờ hoàn chi hộ cho nhà xe thầu phụ `reimburse_to_subcontractor`, cờ thu hộ/chi hộ khách hàng `is_on_behalf_of_customer`, lưu trữ đầy đủ metadata hóa đơn điện tử: đơn vị phát hành (`invoice_issuer`), số hóa đơn (`invoice_number`), mã tra cứu (`invoice_lookup_code`), link tra cứu online (`invoice_lookup_url`), tiền trước thuế, thuế suất và tiền thuế GTGT. Tự động tính tổng chi phí và cập nhật P&L chuyến xe.
+- `billing.TripExpense`: Chi phí phát sinh hiện trường liên kết trực tiếp tới `master_data.ExpenseItem` (`expense_item`) và tương thích ngược với 8 danh mục Bảng Kê Chi Phí GSS (`category`). Hỗ trợ phân loại 3 dòng chi phí chuẩn tài xế (`expense_payer_type`: TVL_COST, TVL_OBH, SUB_OBH), cờ hoàn chi hộ cho nhà xe thầu phụ `reimburse_to_subcontractor`, cờ thu hộ/chi hộ khách hàng `is_on_behalf_of_customer`, lưu trữ đầy đủ metadata hóa đơn điện tử: đơn vị phát hành (`invoice_issuer`), số hóa đơn (`invoice_number`), mã tra cứu (`invoice_lookup_code`), link tra cứu online (`invoice_lookup_url`), tiền trước thuế, thuế suất và tiền thuế GTGT. Tự động tính tổng chi phí và cập nhật P&L chuyến xe.
 - `billing.DispatcherAdvanceFund`: Quỹ tạm ứng Cấp 1 cấp cho Điều phối viên để điều hành đội xe.
 - `billing.DriverTripAdvance`: Quỹ tạm ứng Cấp 2 cấp cho Tài xế theo từng chuyến xe.
 - `billing.CashTransaction`: Sổ quỹ dòng tiền Thu - Chi tổng hợp (Mẫu S03a-DN), hỗ trợ thu cước, chi thầu phụ, nạp ETC, tiền mặt và ngân hàng.

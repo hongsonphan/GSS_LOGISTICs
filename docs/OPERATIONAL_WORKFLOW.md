@@ -1,9 +1,9 @@
-# BIM LOGISTICS — OPERATIONAL WORKFLOW & EXPENSE LIFECYCLE ARCHITECTURE
+# GSS LOGISTICS — OPERATIONAL WORKFLOW & EXPENSE LIFECYCLE ARCHITECTURE
 ## Quy Trình Điều Vận 11 Bước, Máy Trạng Thái Chuyến Xe & Vòng Đời Chi Phí Kế Toán
 
-> **Hệ thống:** BIM Logistics Platform (TMS, WMS & Financial Subsystem)  
+> **Hệ thống:** GSS Logistics Platform (TMS, WMS & Financial Subsystem)  
 > **Phiên bản:** v4.7.19 | **Cập nhật lần cuối:** 01/11/2026  
-> **Áp dụng:** Phòng Điều vận, Đội ngũ Lái xe, Phòng Kế toán - Tài chính & Ban Giám Đốc Triền Võ  
+> **Áp dụng:** Phòng Điều vận, Đội ngũ Lái xe, Phòng Kế toán - Tài chính & Ban Giám Đốc GSS  
 > **Tiêu chuẩn:** ISO/IEC/IEEE 42010, Mẫu S03a-DN (Bộ Tài Chính) & Arc42 Section 6 (Runtime Architecture)
 
 ---
@@ -150,8 +150,8 @@ stateDiagram-v2
 | **8** | **Chi Phí Khác** | `OTHER` | Vá lốp khẩn cấp, rửa vỏ cont bẩn, bảo quản nhiệt độ cont lạnh. |
 
 ### 5.2 Ba Dòng Phân Loại Chi Trả (`expense_payer_type`)
-1. **`TVL_COST` (Chi Phí Nội Bộ Triền Võ):** Chi phí phục vụ vận hành do Triền Võ chịu. Được trừ vào doanh thu để tính Lợi nhuận gộp P&L của chuyến xe.
-2. **`TVL_OBH` (Triền Võ Chi Hộ Khách Hàng — On Behalf of Customer):** Tiền Triền Võ ứng trước cho chủ hàng. Gom vào **Bảng Kê Chi Hộ (Debit Note)** để thu lại 100%, không tính vào P&L chuyến xe.
+1. **`TVL_COST` (Chi Phí Nội Bộ GSS):** Chi phí phục vụ vận hành do GSS chịu. Được trừ vào doanh thu để tính Lợi nhuận gộp P&L của chuyến xe.
+2. **`TVL_OBH` (GSS Chi Hộ Khách Hàng — On Behalf of Customer):** Tiền GSS ứng trước cho chủ hàng. Gom vào **Bảng Kê Chi Hộ (Debit Note)** để thu lại 100%, không tính vào P&L chuyến xe.
 3. **`SUB_OBH` (Chi Hộ Xe Bạn / Thầu Phụ 3PL):** Tiền tài xế nộp hộ cho xe thuê ngoài 3PL. Được cấn trừ khi lập Bảng Kê Quyết Toán Công Nợ Thầu Phụ (`SubcontractorSettlement`).
 
 ---

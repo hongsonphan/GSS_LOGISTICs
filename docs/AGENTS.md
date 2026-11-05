@@ -1,9 +1,10 @@
 # AGENTS.md — AI AGENT GOVERNANCE & ENGINEERING PROTOCOLS
 ## Hướng Dẫn Kỹ Thuật, Đạo Đức Vận Hành & Bản Đồ Kiến Trúc Dành Cho AI Agent
 
-> **Hệ thống:** BIM Logistics Platform (TMS, WMS, Fleet & Supply Chain Management)  
-> **Hệ sinh thái:** BIM Ecosystem (BIM ERP Solutions & BIM Consulting)  
-> **Phiên bản:** v4.7.19 | **Cập nhật lần cuối:** 01/11/2026  
+> **Hệ thống:** GSS Logistics Platform (TMS, WMS, Fleet & Supply Chain Management)  
+> **Đơn vị phát triển:** Green Solutions Smart (GSS)  
+> **Dự án:** GSS-TMS-2026 (repo `GSS_LOGISTICs`) — đặc tả nghiệp vụ tại `docs/BRD_GREEN_SOLUTIONS_SMART_GSS.md`  
+> **Phiên bản nền:** v4.7.19 | **Cập nhật lần cuối:** 01/11/2026  
 > **Tiêu chuẩn quản trị:** ISO/IEC/IEEE 42010 Architecture Governance  
 > **Nguyên tắc đánh đổi (Tradeoff):** Tính chính xác của hành trình, an toàn dữ liệu vận đơn/POD và tính liên tục của vận hành cao hơn tốc độ viết code. Không phán đoán mò.
 
@@ -11,7 +12,7 @@
 
 ## I. NHẬN DIỆN DỰ ÁN & CHỈ THỊ BẮT BUỘC (PROJECT IDENTITY & CORE INVARIANTS)
 
-**BIM Logistics** là nền tảng Quản trị Vận tải (TMS), Quản trị Kho bãi (WMS), Quản trị Đội xe (Fleet Management) và Đối soát Chi phí Vận tải Đa phương thức phục vụ Triền Võ Logistics.
+**GSS Logistics** là nền tảng Quản trị Vận tải (TMS), Quản trị Kho bãi (WMS), Quản trị Đội xe (Fleet Management) và Đối soát Chi phí Vận tải Đa phương thức phục vụ GSS.
 
 > [!IMPORTANT]
 > **5 NGUYÊN TẮC BẤT KHẢ XÂM PHẠM (ARCHITECTURAL INVARIANTS):**
@@ -42,7 +43,7 @@
 - **Tập trung đúng trọng tâm (Scope Containment):** Chỉ sửa đúng tệp, đúng hàm, đúng component được yêu cầu. Tuyệt đối không sửa lan man ngoài phạm vi gây xáo trộn codebase.
 - **Đánh giá tác động liên đới (Impact Assessment):** Trước khi sửa/xóa bất kỳ hàm JS, biến, CSS class, template component hoặc API endpoint nào, bắt buộc rà soát toàn bộ các phân hệ phụ thuộc để đồng bộ.
 - **Bảo toàn tính nguyên vẹn cú pháp:** Giữ nghiêm ngặt cấu trúc cú pháp HTML/JS/CSS để lỗi cục bộ không gây tê liệt toàn trang.
-- **Tuân thủ quy ước đặt tên:** Sử dụng PascalCase cho Models, snake_case cho fields/methods/APIs; bảng màu đồng bộ hệ thống BIM (Teal chủ đạo, Emerald thành công, Amber cảnh báo, Rose lỗi/hỏng hóc).
+- **Tuân thủ quy ước đặt tên:** Sử dụng PascalCase cho Models, snake_case cho fields/methods/APIs; bảng màu đồng bộ hệ thống GSS (Teal chủ đạo, Emerald thành công, Amber cảnh báo, Rose lỗi/hỏng hóc).
 
 ### 4. Goal-Driven Execution & Verification
 **Xác định tiêu chí kiểm chứng (Verify). Chạy vòng lặp đến khi đạt chuẩn 100%.**
@@ -61,14 +62,14 @@ Hệ thống tài liệu dự án được cấu trúc theo chuẩn quốc tế 
 |:---:|---|---|---|---|
 | **01** | **Documentation Hub** | [`README.md`](README.md) | Cổng thông tin điều hướng toàn bộ 13 tài liệu kiến trúc phần mềm | Arc42 Section 1 |
 | **02** | **Agent Governance** | [`AGENTS.md`](AGENTS.md) | *(File này)* Nhận diện dự án, 4 quy tắc hành vi, kiểm chứng & bản đồ tài liệu | ISO 42010 Governance |
-| **03** | **Coding Standards** | [`CODING_STANDARDS.md`](CODING_STANDARDS.md) | Clean Architecture, Django ORM First, Defensive Backend, Design Tokens BIM | ISO 25010 Quality |
+| **03** | **Coding Standards** | [`CODING_STANDARDS.md`](CODING_STANDARDS.md) | Clean Architecture, Django ORM First, Defensive Backend, Design Tokens GSS | ISO 25010 Quality |
 | **04** | **Security & Privacy** | [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md) | 20 chuẩn an ninh TMS/WMS + Luật Bảo vệ dữ liệu cá nhân (91/2025/QH15 & NĐ 356) | OWASP / ISO 27001 |
 | **05** | **System Overview & C4** | [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) | Tổng quan hệ thống, C4 Level 1 & Level 2, Bounded Contexts & Cấu hình Email SMTP | C4 Architecture Model |
 | **06** | **Feature Specifications** | [`FEATURES.md`](FEATURES.md) | Đặc tả 22 phân hệ tính năng nghiệp vụ TMS/WMS, UI details, tổng hợp 25 Models | Functional Requirements |
 | **07** | **API Reference** | [`API_REFERENCE.md`](API_REFERENCE.md) | Hợp đồng giao tiếp RESTful API 9 phân hệ, Auth JWT/Session, payloads, mã lỗi | OpenAPI 3.0 Contract |
 | **08** | **Database Schema** | [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) | Sơ đồ CSDL, ORM, Core Domain ERD 25 models, chiến lược Indexing & Signals | Data Layer Architecture |
 | **09** | **Operational Workflow** | [`OPERATIONAL_WORKFLOW.md`](OPERATIONAL_WORKFLOW.md) | Chu trình 11 bước, State Machine chuyến xe, Vòng đời chi phí & Sổ quỹ S03a-DN | State Machine Architecture |
-| **10** | **UI/UX Guidelines** | [`UI_UX_GUIDELINES.md`](UI_UX_GUIDELINES.md) | Triết lý Field-First, Design Tokens BIM, Thang đo Typography 7 bậc chuẩn ERP | ISO 9241 Ergonomics |
+| **10** | **UI/UX Guidelines** | [`UI_UX_GUIDELINES.md`](UI_UX_GUIDELINES.md) | Triết lý Field-First, Design Tokens GSS, Thang đo Typography 7 bậc chuẩn ERP | ISO 9241 Ergonomics |
 | **11** | **Development Roadmap** | [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md) | Lộ trình TMS nâng cao, 5 Architecture Decision Records (ADRs) & On-Premise MISA | Architecture Roadmap & ADR |
 | **12** | **Release Changelog** | [`CHANGELOG.md`](CHANGELOG.md) | Lịch sử phát hành và thay đổi mã nguồn chi tiết từ v1.0.0 đến v4.7.19 | SemVer / Keep a Changelog |
 | **13** | **System User Manual** | [`USER_GUIDE.md`](USER_GUIDE.md) | Cẩm nang hướng dẫn sử dụng phần mềm toàn diện từng màn hình cho người dùng cuối | End-User Operational Manual |

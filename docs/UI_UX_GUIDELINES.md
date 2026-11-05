@@ -1,7 +1,7 @@
-# BIM LOGISTICS — NGUYÊN TẮC UI/UX & DESIGN SYSTEM
+# GSS LOGISTICS — NGUYÊN TẮC UI/UX & DESIGN SYSTEM
 
-> **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 01/11/2026 | **Tiêu chuẩn:** ISO 9241 & BIM Design System  
-> Tài liệu này định nghĩa toàn bộ nguyên tắc thiết kế giao diện, hệ thống màu sắc, typography, component pattern và trải nghiệm người dùng áp dụng xuyên suốt nền tảng BIM Logistics.
+> **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 01/11/2026 | **Tiêu chuẩn:** ISO 9241 & GSS Design System  
+> Tài liệu này định nghĩa toàn bộ nguyên tắc thiết kế giao diện, hệ thống màu sắc, typography, component pattern và trải nghiệm người dùng áp dụng xuyên suốt nền tảng GSS Logistics.
 
 ---
 
@@ -31,11 +31,11 @@ Người dùng chính gồm 3 nhóm với điều kiện sử dụng rất khác
 
 ## 2. HỆ THỐNG MÀU SẮC (COLOR DESIGN TOKENS)
 
-### 2.1 Bảng Màu Thương Hiệu BIM
+### 2.1 Bảng Màu Thương Hiệu GSS
 
 | Token | Màu Tailwind | Hex | Ý nghĩa |
 |---|---|---|---|
-| **Primary** | `teal-700` / `teal-800` | `#0f766e` / `#115e59` | Màu chủ đạo thương hiệu BIM |
+| **Primary** | `teal-700` / `teal-800` | `#0f766e` / `#115e59` | Màu chủ đạo thương hiệu GSS |
 | **Success** | `emerald-600` / `emerald-700` | `#059669` / `#047857` | Thành công, hoàn tất, hợp lệ |
 | **Warning** | `amber-500` / `amber-600` | `#f59e0b` / `#d97706` | Cảnh báo, đang xử lý, cần chú ý |
 | **Danger** | `rose-600` / `rose-700` | `#e11d48` / `#be123c` | Lỗi, sự cố, chi phí, nguy hiểm |
@@ -425,9 +425,9 @@ Giao diện điện thoại giả lập với:
 
 ---
 
-## 11. BỘ NGUYÊN TẮC THIẾT KẾ FORM CHUẨN (BIM FORM DESIGN SYSTEM)
+## 11. BỘ NGUYÊN TẮC THIẾT KẾ FORM CHUẨN (GSS FORM DESIGN SYSTEM)
 
-Dựa trên nghiên cứu chuẩn mực từ 4 hệ thống SaaS/ERP quốc tế hàng đầu (E-Commerce ERP, Dynamic CRM Data Entry, Contact Profile và Candidate Document Portal), BIM Logistics chuẩn hóa toàn bộ các Form nhập liệu theo các nguyên tắc sau:
+Dựa trên nghiên cứu chuẩn mực từ 4 hệ thống SaaS/ERP quốc tế hàng đầu (E-Commerce ERP, Dynamic CRM Data Entry, Contact Profile và Candidate Document Portal), GSS Logistics chuẩn hóa toàn bộ các Form nhập liệu theo các nguyên tắc sau:
 
 ### 11.1 Cấu Trúc Bố Cục (Form Layout Architecture)
 

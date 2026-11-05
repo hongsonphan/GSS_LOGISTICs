@@ -454,7 +454,7 @@ CATALOG_REGISTRY = {
 def generate_catalog_template(catalog_key):
     """
     Tạo tệp Excel mẫu chuẩn hóa (.xlsx) cho danh mục được chọn,
-    kèm tiêu đề thương hiệu BIM, định dạng cột, hướng dẫn chi tiết và dữ liệu mẫu thực tế.
+    kèm tiêu đề thương hiệu GSS, định dạng cột, hướng dẫn chi tiết và dữ liệu mẫu thực tế.
     """
     config = CATALOG_REGISTRY.get(catalog_key)
     if not config:
@@ -465,7 +465,7 @@ def generate_catalog_template(catalog_key):
     ws.title = config.get('sheet_name', 'MasterData')
     ws.views.sheetView[0].showGridLines = True
 
-    # Palettes (Chuẩn Design Tokens BIM Logistics)
+    # Palettes (Chuẩn Design Tokens GSS Logistics)
     header_fill = PatternFill(start_color="115E59", end_color="115E59", fill_type="solid") # Teal 800
     sample_fill = PatternFill(start_color="F0FDFA", end_color="F0FDFA", fill_type="solid") # Teal 50
     note_fill = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")   # Slate 50
@@ -579,7 +579,7 @@ def generate_catalog_data_export(catalog_key):
     ws.row_dimensions[1].height = 28
 
     ws.merge_cells(f'A2:{last_col_letter}2')
-    ws['A2'].value = f"Ngày xuất: {timezone.now().strftime('%d/%m/%Y %H:%M')} | Hệ Thống Quản Trị Vận Tải Triền Võ (BIM Logistics)"
+    ws['A2'].value = f"Ngày xuất: {timezone.now().strftime('%d/%m/%Y %H:%M')} | Hệ Thống Quản Trị Vận Tải Triền Võ (GSS Logistics)"
     ws['A2'].font = subtitle_font
     ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
     ws.row_dimensions[2].height = 20

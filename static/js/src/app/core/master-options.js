@@ -109,7 +109,7 @@ function populateMasterDataDropdowns() {
             if (currentVal) {
                 setSelectValueCaseInsensitive(sel, currentVal);
             }
-            // Tự động nâng cấp sang Searchable Combobox chuẩn Bim TMS (Kính lúp dòng 1 + gõ free-text)
+            // Tự động nâng cấp sang Searchable Combobox chuẩn GSS TMS (Kính lúp dòng 1 + gõ free-text)
             makeSearchableSelect(sel);
         });
     }

@@ -2166,7 +2166,7 @@ class DashboardPivotChartAPIView(APIView):
 
         formatted_total = f"{total_sum:,.0f} đ" if is_currency else f"{int(total_sum)} {unit}"
 
-        # Bảng màu thương hiệu BIM Logistics
+        # Bảng màu thương hiệu GSS Logistics
         bim_palette = [
             'rgba(15, 118, 110, 0.85)',   # Teal 700
             'rgba(16, 185, 129, 0.85)',  # Emerald 500

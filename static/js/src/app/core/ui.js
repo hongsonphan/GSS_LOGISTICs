@@ -1,4 +1,4 @@
-// --- GRACEFUL TOAST NOTIFICATION (Bim_ERP-Solutions Standard) ---
+// --- GRACEFUL TOAST NOTIFICATION (GSS Standard) ---
 function showToast(type, message, title = '') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -35,7 +35,7 @@ function showToast(type, message, title = '') {
     }, 4500);
 }
 
-// --- GLOBAL ENTERPRISE CONFIRMATION MODAL (Bim_ERP-Solutions Standard) ---
+// --- GLOBAL ENTERPRISE CONFIRMATION MODAL (GSS Standard) ---
 let _globalConfirmResolver = null;
 
 function showConfirmModal(options = {}) {

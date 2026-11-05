@@ -1,4 +1,4 @@
-// BIM ACCOUNTING ADVANCES & FUNDS - COMPREHENSIVE CRUD (VIEW, EDIT, SAVE, PRINT, DELETE)
+// GSS ACCOUNTING ADVANCES & FUNDS - COMPREHENSIVE CRUD (VIEW, EDIT, SAVE, PRINT, DELETE)
 // =============================================================================
 let currentActiveDriverAdvance = null;
 let currentActiveDispatcherFund = null;

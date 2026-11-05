@@ -440,7 +440,7 @@ class CustomsExportExcelAPIView(APIView):
 
         ws.merge_cells('A2:L2')
         sub_cell = ws['A2']
-        sub_cell.value = f"Ngày xuất báo cáo: {timezone.now().strftime('%d/%m/%Y %H:%M')} | BIM LOGISTICS TMS PLATFORM"
+        sub_cell.value = f"Ngày xuất báo cáo: {timezone.now().strftime('%d/%m/%Y %H:%M')} | GSS LOGISTICS TMS PLATFORM"
         sub_cell.font = Font(name='Arial', size=9, italic=True, color='64748B')
         sub_cell.alignment = Alignment(horizontal='center', vertical='center')
 

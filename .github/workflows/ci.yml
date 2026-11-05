@@ -14,12 +14,12 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: bim_ci
-          POSTGRES_USER: bim_ci
-          POSTGRES_PASSWORD: bim_ci_password
+          POSTGRES_DB: gss_ci
+          POSTGRES_USER: gss_ci
+          POSTGRES_PASSWORD: gss_ci_password
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U bim_ci -d bim_ci"
+          --health-cmd "pg_isready -U gss_ci -d gss_ci"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       DEBUG: "False"
@@ -27,9 +27,9 @@ jobs:
       DB_ENGINE: django.db.backends.postgresql
       DB_HOST: 127.0.0.1
       DB_PORT: "5432"
-      DB_NAME: bim_ci
-      DB_USER: bim_ci
-      DB_PASSWORD: bim_ci_password
+      DB_NAME: gss_ci
+      DB_USER: gss_ci
+      DB_PASSWORD: gss_ci_password
       SECURE_SSL_REDIRECT: "False"
     steps:
       - uses: actions/checkout@v4

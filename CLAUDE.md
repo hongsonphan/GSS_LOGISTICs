@@ -1,4 +1,7 @@
-# BIM Logistics – quy tắc làm việc
+# GSS Logistics (repo GSS_LOGISTICs) – quy tắc làm việc
+
+Dự án GSS-TMS-2026 của Green Solutions Smart, **tách độc lập** khỏi BIM Logistics: repo, CSDL, cổng (web 8086, Postgres 5436), tên container (`gss_logistics_*`) và máy chủ đều riêng. Đặc tả nghiệp vụ: `docs/BRD_GREEN_SOLUTIONS_SMART_GSS.md`.
+Không thêm khoá SSH / secret / domain của máy chủ BIM Logistics vào repo này.
 
 ## Build bắt buộc trước khi commit (CI sẽ đỏ nếu quên)
 
@@ -24,4 +27,7 @@ python scripts/build_css.py --check
 
 ## Triển khai
 
-Push lên `master` -> CI -> workflow Deploy VPS tự chạy (`scripts/deploy_vps.sh`). Không push `master` khi CI cục bộ ở trên chưa khớp.
+- Workflow `Deploy VPS` **chỉ chạy tay** (tab Actions) và cần khai báo VPS riêng của GSS: secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` và biến `SITE_URL`. Thư mục trên VPS: `/home/ubuntu/GSS_LOGISTICS`.
+- `Uptime`, `Restore drill`, `ZAP` cũng đang chỉ chạy tay cho tới khi có domain/VPS của GSS.
+- Khi đã có VPS riêng: thêm lại trigger `workflow_run` (sau CI xanh) vào `.github/workflows/deploy.yml`.
+- Không push `master` khi CI cục bộ ở trên chưa khớp.

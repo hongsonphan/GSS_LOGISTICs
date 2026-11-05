@@ -1,4 +1,4 @@
-# BIM LOGISTICS — API REFERENCE (Tài liệu REST API Đầy Đủ)
+# GSS LOGISTICS — API REFERENCE (Tài liệu REST API Đầy Đủ)
 ## Interface Architecture & RESTful API Specification
 
 > **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 01/11/2026  

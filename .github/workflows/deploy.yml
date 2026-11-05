@@ -2,7 +2,7 @@
 # Muốn bật tự chạy sau CI xanh: thêm lại khối workflow_run bên dưới sau khi đã có VPS GSS riêng.
 # Cần thêm biến (Variables) SITE_URL, vd https://domain-cua-gss.vn
 # Cần khai báo trong GitHub > Settings > Secrets and variables > Actions:
-#   VPS_HOST (IP máy chủ của dự án GSS (KHÔNG dùng máy chủ BIM Logistics cũ)), VPS_USER (vd ubuntu), VPS_SSH_KEY (nội dung khoá riêng SSH)
+#   VPS_HOST (IP máy chủ của dự án GSS (KHÔNG dùng máy chủ GSS Logistics cũ)), VPS_USER (vd ubuntu), VPS_SSH_KEY (nội dung khoá riêng SSH)
 # Trên VPS, scripts/deploy_vps.sh tự: sao lưu -> chạy thử trên bản sao CSDL -> cập nhật -> kiểm tra -> quay về nếu lỗi.
 name: Deploy VPS
 

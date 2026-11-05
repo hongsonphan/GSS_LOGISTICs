@@ -1,8 +1,25 @@
 # KẾ HOẠCH PHÁT TRIỂN HỆ THỐNG BÁO CÁO & ĐIỀU VẬN NÂNG CAO (TMS ADVANCED ROADMAP)
-> **Dự án:** BIM Logistics Platform — Nền tảng Quản trị Vận tải & Chuỗi cung ứng (Triền Võ Logistics)  
-> **Phiên bản tài liệu:** v4.7.18  
+> **Dự án:** GSS Logistics Platform — Nền tảng Quản trị Vận tải & Chuỗi cung ứng (GSS)  
+> **Phiên bản tài liệu:** v4.7.19 (nền kế thừa từ BIM Logistics) · **Dự án:** GSS-TMS-2026 (repo `GSS_LOGISTICs`)  
 > **Cập nhật lần cuối:** 01/11/2026 | **Tiêu chuẩn:** Arc42 Section 9 & 11 (Architecture Roadmap & ADRs)  
 > **Trạng thái:** Sẵn sàng thực thi (Ready for Execution)
+
+---
+
+## 0. LỘ TRÌNH RIÊNG CỦA DỰ ÁN GSS (GSS-TMS-2026)
+
+Chi tiết nghiệp vụ nằm ở [`BRD_GREEN_SOLUTIONS_SMART_GSS.md`](BRD_GREEN_SOLUTIONS_SMART_GSS.md). Bảng dưới theo dõi tiến độ; cập nhật cột *Trạng thái* khi hoàn thành từng giai đoạn.
+
+| Giai đoạn | Nội dung chính | Trạng thái |
+|---|---|---|
+| **0. Tách dự án** | Repo `GSS_LOGISTICs` độc lập; đổi tên container/CSDL/cổng (web 8086, Postgres 5436); gỡ domain & máy chủ BIM cũ; khoá workflow deploy/uptime/ZAP cho tới khi có VPS riêng của GSS | ✅ Hoàn thành |
+| **1. SaaS Core** | `CompanyProfile.business_model` + `enabled_features`, ẩn/hiện Sidebar & Dashboard theo loại hình doanh nghiệp | ⏳ [KẾ HOẠCH] |
+| **2. Booking & Vendor Link** | Hạn lệnh DEM/DET, ghi chú điểm đến, cấm đường tại Booking; `BookingVendorAllocation` và trang Vendor Portal nhập N dòng Xe/Tài/Cont | ⏳ [KẾ HOẠCH] |
+| **3. Điều vận Nhận – Giao – Hạ** | Bắt buộc 1–10 chứng từ/bước; đổi số cont khi hạ rỗng; gửi tin Tài xế; mẫu biên bản POD theo khách hàng | ⏳ [KẾ HOẠCH] |
+| **4. Bãi Cont Đắk Nông & Dashboard Nhà xe** | Gate-in/Gate-out, tồn bãi thời gian thực; ma trận theo dõi Nhà xe | ⏳ [KẾ HOẠCH] |
+| **5. QR Code** | QR lệnh/container, hàng lẻ theo kiện có Seal, trình quét QR bằng camera | ⏳ [KẾ HOẠCH] |
+
+> Các mục 1–8 bên dưới là lộ trình kỹ thuật kế thừa từ nền tảng BIM Logistics (báo cáo quản trị, triển khai On-Premise, ADR). Chỉ giữ lại những mục còn phù hợp với GSS.
 
 ---
 
@@ -82,7 +99,7 @@ flowchart TD
 
 #### Cơ chế hoạt động & Chỉ số:
 1. **Theo dõi vị trí thời gian thực:**
-   - Cont đang lấy tại Cảng/Depot $\rightarrow$ Đang di chuyển trên đường $\rightarrow$ Đang nằm tại bãi đệm Triền Võ $\rightarrow$ Đang cắt mooc tại kho khách $\rightarrow$ Đã hạ bãi rỗng/cảng chỉ định.
+   - Cont đang lấy tại Cảng/Depot $\rightarrow$ Đang di chuyển trên đường $\rightarrow$ Đang nằm tại bãi đệm GSS $\rightarrow$ Đang cắt mooc tại kho khách $\rightarrow$ Đã hạ bãi rỗng/cảng chỉ định.
 2. **Hệ thống Đèn Giao Thông Cảnh Báo Free-Time:**
    - 🟢 **Màu Xanh (An Toàn):** Còn hạn Free-time $> 48$ giờ.
    - 🟡 **Màu Vàng (Cảnh Báo):** Còn hạn Free-time $\le 24$ giờ $\rightarrow$ Đẩy thông báo lên màn hình điều vận ưu tiên xếp xe hạ cont.
@@ -95,7 +112,7 @@ flowchart TD
 ### BÁO CÁO 3: ĐÚNG GIỜ & CHẤT LƯỢNG DỊCH VỤ CAM KẾT (ON-TIME PERFORMANCE - OTP)
 
 * **Đối tượng sử dụng:** Ban Giám Đốc, Bộ phận CSKH, Trưởng phòng Vận hành.
-* **Mục đích:** Đo lường độ tin cậy dịch vụ của Triền Võ đối với các chủ hàng lớn (SAMSUNG, P&G, Unilever, Lotte...).
+* **Mục đích:** Đo lường độ tin cậy dịch vụ của GSS đối với các chủ hàng lớn (SAMSUNG, P&G, Unilever, Lotte...).
 
 #### 3 Mốc Đo Lường Cốt Tử (SLA Milestones):
 1. **Lấy Cont Đúng Giờ (Pickup On-Time):** Đúng giờ mở cổng Depot/Cảng, hoàn tất thủ tục EIR điện tử.
@@ -198,11 +215,11 @@ gantt
     - Tab 3: *Đúng Giờ & Chất Lượng Dịch Vụ (OTP)*.
     - Tab 4: *Chi Phí Tuyến & Hoàn Chi Hộ*.
   - Tích hợp biểu đồ trực quan (Biểu đồ cột chồng, Biểu đồ đường xu hướng, Đồng hồ đo công suất Gauge).
-  - Tuân thủ nghiêm ngặt Design Token hệ thống BIM: Màu Teal chủ đạo (`#0f766e`), Emerald thành công, Amber cảnh báo hạn, Rose nguy cấp quá hạn.
+  - Tuân thủ nghiêm ngặt Design Token hệ thống GSS: Màu Teal chủ đạo (`#0f766e`), Emerald thành công, Amber cảnh báo hạn, Rose nguy cấp quá hạn.
 
 ### SPRINT 4: TÍNH NĂNG XUẤT DỮ LIỆU EXCEL & IN ẤN BIỂU MẪU CHUẨN
 * **Nhiệm vụ:**
-  - Tích hợp xuất file Excel (`openpyxl` / `xlsx`) định dạng chuẩn kế toán Việt Nam: Tiêu đề công ty Triền Võ, có kẻ bảng, định dạng số tiền VNĐ và phân trang rõ ràng.
+  - Tích hợp xuất file Excel (`openpyxl` / `xlsx`) định dạng chuẩn kế toán Việt Nam: Tiêu đề công ty GSS, có kẻ bảng, định dạng số tiền VNĐ và phân trang rõ ràng.
   - Hỗ trợ in ấn hoặc xuất PDF: Bảng kê chi phí đối soát chuyến xe, Biên bản giao nhận POD kèm hình ảnh OCR.
 
 ### SPRINT 5: TỰ ĐỘNG HÓA CẢNH BÁO TỨC THÌ (PROACTIVE ALERTING)
@@ -232,20 +249,20 @@ gantt
 1. **Chuẩn Cơ sở dữ liệu Doanh nghiệp:** Sử dụng 100% **PostgreSQL 16** (Không dùng SQLite để tránh lỗi khóa bảng `Database is locked` khi nhiều phòng ban và tài xế đồng thời truy cập/ghi nhận chi phí, POD).
 2. **Kỹ thuật viên Phụ trách Triển khai (IT-Assisted Setup):** Không bắt khách hàng tự cài đặt. Kỹ thuật viên của công ty chúng ta sẽ trực tiếp thực hiện qua UltraViewer/TeamViewer hoặc tại văn phòng khách hàng bằng bộ công cụ **Deployment Wizard** đóng gói sẵn.
 3. **Bảo toàn Dữ liệu Khách hàng (Data Isolation & Safe Storage):**
-   - Khách hàng được quyền chọn ổ đĩa lưu trữ an toàn (ví dụ: `D:\BIM_LOGISTICS_DATA` hoặc `E:\BIM_LOGISTICS_DATA`).
+   - Khách hàng được quyền chọn ổ đĩa lưu trữ an toàn (ví dụ: `D:\GSS_LOGISTICS_DATA` hoặc `E:\GSS_LOGISTICS_DATA`).
    - Tách biệt hoàn toàn khỏi ổ `C:\` để tránh mất dữ liệu khi cài lại hệ điều hành Windows.
 
 ### 6.2. Bộ Công Cụ & Tính Năng Cần Xây Dựng Khi Bắt Đầu Triển Khai
 * **Sprint DEP-1: Setup Wizard Console / Script Triển Khai Tự Động**
   - Script tương tác hỏi kỹ thuật viên: Tên công ty khách hàng, đường dẫn thư mục lưu DB trên ổ đĩa, port mạng LAN, loại dữ liệu khởi tạo.
   - Tự động map volume PostgreSQL vào thư mục vật lý được chỉ định.
-  - Tự động cấu hình file `.env` bảo mật và mở cổng Windows Firewall cho mạng LAN (`8085`).
+  - Tự động cấu hình file `.env` bảo mật và mở cổng Windows Firewall cho mạng LAN (`8086`).
 * **Sprint DEP-2: Cơ Chế Phân Loại Dữ Liệu Khởi Tạo (Seed Modes)**
   - Tùy chọn 1: `DEMO_DATA` — Tự động nạp đầu xe, rơ-moóc, biểu cước, tài xế và các chuyến xe mẫu để đào tạo nhân sự khách hàng dùng thử.
   - Tùy chọn 2: `CLEAN_PRODUCTION` — Chỉ nạp Master Data chuẩn (Cảng biển, ICD, Depot, quy chuẩn Cont 20/40/45, danh mục chi phí nâng hạ/cầu đường).
   - Lệnh dọn rác giao dịch dùng thử: `python manage.py purge_transactions --keep-master-data` để chuyển từ giai đoạn Demo sang Chạy thật mà không mất danh mục đã nhập.
 * **Sprint DEP-3: Bộ Tiện Ích Sao Lưu & Phục Hồi (Auto-Backup & Maintenance)**
-  - Tự động thiết lập lịch backup định kỳ hàng ngày (Windows Task Scheduler $\rightarrow$ `pg_dump` $\rightarrow$ nén file `.dump` lưu tại `D:\BIM_LOGISTICS_DATA\Backups\`).
+  - Tự động thiết lập lịch backup định kỳ hàng ngày (Windows Task Scheduler $\rightarrow$ `pg_dump` $\rightarrow$ nén file `.dump` lưu tại `D:\GSS_LOGISTICS_DATA\Backups\`).
   - Nút sao lưu nhanh và tải bản backup trực tiếp trên giao diện Quản trị Hệ thống.
 
 ---
@@ -256,7 +273,7 @@ gantt
 
 | Mã ADR | Tiêu đề Quyết định | Bối cảnh & Phương án đánh đổi | Quyết định được chọn | Trạng thái |
 |---|---|---|---|---|
-| **ADR-001** | Modular Monolith vs. Microservices | Đội ngũ tinh gọn, yêu cầu tính toàn vẹn giao dịch ACID cao trong quản lý vận đơn và đối soát tài chính P&L. | **Modular Monolith (Django 4.x)**: Cách ly nghiệp vụ qua bounded apps, chia sẻ database giao dịch, tránh chi phí vận hành mạng phân tán. | ✅ Accepted |
+| **ADR-001** | Modular Monolith vs. Microservices | Đội ngũ tinh gọn, yêu cầu tính toàn vẹn giao dịch ACID cao trong quản lý vận đơn và đối soát tài chính P&L. | **Modular Monolith (Django 5.2)**: Cách ly nghiệp vụ qua bounded apps, chia sẻ database giao dịch, tránh chi phí vận hành mạng phân tán. | ✅ Accepted |
 | **ADR-002** | Vanilla JS SPA vs. Nặng Frontend Framework (React/Next) | Hiện trường mạng 4G/3G chập chờn, máy tính văn phòng cấu hình trung bình, cần tải trang tức thì dưới 1s. | **Vanilla JS ES6+ SPA kết hợp Tailwind CSS**: Đóng gói qua `build_app_js.py`, không cần runtime framework nặng, phản hồi tức thời. | ✅ Accepted |
 | **ADR-003** | Soft-Delete vs. Hard-Delete | Vận đơn, ảnh POD, phiếu EIR và chi phí là chứng cứ pháp lý giải quyết khiếu nại và bảo hiểm hàng hải. | **Bắt buộc 100% Soft-Delete**: Tuyệt đối cấm `.delete()`, kế thừa `SoftDeleteModel` và lưu vết thời gian. | ✅ Accepted |
 | **ADR-004** | Signal Denormalization Caching vs. Real-Time Query Aggregation | Bảng kê chi phí và dashboard BGĐ đòi hỏi hiển thị tức thời mà không quét toàn bảng (Full-table scan). | **Django Signals Caching**: Tự động tính toán P&L lưu vào `cached_revenue`, `cached_expense`, `cached_profit` trên `DispatchTrip`. | ✅ Accepted |

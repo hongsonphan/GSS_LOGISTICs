@@ -122,7 +122,7 @@ def send_mail(to, subject, template, context):
     """Gửi email HTML + văn bản. Trả về True nếu gửi được."""
     if not to or not email_enabled():
         return False
-    ctx = {'brand': getattr(settings, 'EMAIL_BRAND_NAME', 'BIM Logistics'), **context}
+    ctx = {'brand': getattr(settings, 'EMAIL_BRAND_NAME', 'GSS Logistics'), **context}
     try:
         text = render_to_string(f'emails/{template}.txt', ctx)
         html = render_to_string(f'emails/{template}.html', ctx)
@@ -144,21 +144,21 @@ def reset_link(user, request=None):
 def send_reset_email(user, request=None, by_admin=None):
     to = user_email(user)
     hours = max(1, settings.PASSWORD_RESET_TIMEOUT // 3600)
-    return send_mail(to, f'[{getattr(settings, "EMAIL_BRAND_NAME", "BIM Logistics")}] Đặt lại mật khẩu', 'password_reset', {
+    return send_mail(to, f'[{getattr(settings, "EMAIL_BRAND_NAME", "GSS Logistics")}] Đặt lại mật khẩu', 'password_reset', {
         'name': display_name(user), 'username': user.username, 'link': reset_link(user, request), 'hours': hours,
         'by_admin': display_name(by_admin) if by_admin else '', 'ip': client_ip(request) if request else '',
     })
 
 
 def notify_password_changed(user, request=None):
-    send_mail(user_email(user), f'[{getattr(settings, "EMAIL_BRAND_NAME", "BIM Logistics")}] Mật khẩu đã được thay đổi', 'password_changed', {
+    send_mail(user_email(user), f'[{getattr(settings, "EMAIL_BRAND_NAME", "GSS Logistics")}] Mật khẩu đã được thay đổi', 'password_changed', {
         'name': display_name(user), 'username': user.username, 'when': timezone.localtime().strftime('%H:%M %d/%m/%Y'),
         'ip': client_ip(request) if request else '', 'reset_url': f'{site_url(request)}/password-reset/',
     })
 
 
 def notify_new_device(user, request):
-    send_mail(user_email(user), f'[{getattr(settings, "EMAIL_BRAND_NAME", "BIM Logistics")}] Đăng nhập từ thiết bị mới', 'new_login', {
+    send_mail(user_email(user), f'[{getattr(settings, "EMAIL_BRAND_NAME", "GSS Logistics")}] Đăng nhập từ thiết bị mới', 'new_login', {
         'name': display_name(user), 'username': user.username, 'when': timezone.localtime().strftime('%H:%M %d/%m/%Y'),
         'ip': client_ip(request), 'device': device_key(user_agent(request)).replace('/', ' · '),
         'reset_url': f'{site_url(request)}/password-reset/',

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   BIM LOGISTICS — UI/UX ENTERPRISE DESIGN SYSTEM
+   GSS LOGISTICS — UI/UX ENTERPRISE DESIGN SYSTEM
    Chuẩn hóa Giao diện Vận hành Chuỗi Cung ứng & Logistics Enterprise
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -24,7 +24,7 @@
     --font-size-sub: 11.5px;
     --font-size-caption: 11px;
 
-    /* Bảng màu Brand Tokens đồng bộ BIM ERP */
+    /* Bảng màu Brand Tokens đồng bộ GSS */
     --color-primary: #0d9488;      /* Teal 600 */
     --color-primary-hover: #0f766e;/* Teal 700 */
     --color-primary-dark: #115e59; /* Teal 800 */
@@ -35,7 +35,7 @@
     --color-danger: #e11d48;       /* Rose 600 */
     --color-info: #2563eb;         /* Blue 600 */
 
-    /* Sidebar Contrast Colors chuẩn Bim_ERP-Solutions */
+    /* Sidebar Contrast Colors chuẩn GSS */
     --sidebar-bg: #253147;
     --sidebar-header-bg: #1a2334;
     --sidebar-text: #e2e8f0;
@@ -223,7 +223,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     letter-spacing: 0.01em;
 }
 
-/* ── 2. SIDEBAR CONTRAST THEME (280px / 17.5rem chuẩn Bim ERP) ── */
+/* ── 2. SIDEBAR CONTRAST THEME (280px / 17.5rem chuẩn GSS) ── */
 .app-sidebar {
     width: 17.5rem !important; /* 280px width: tiêu đề không bao giờ bị rớt dòng */
     background-color: var(--sidebar-bg);
@@ -305,7 +305,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     font-weight: 700;
 }
 
-/* ── 3. BUTTON DESIGN SYSTEM (Bim Enterprise Standard: Outline Default -> Hover Full Solid Fill) ── */
+/* ── 3. BUTTON DESIGN SYSTEM (GSS Enterprise Standard: Outline Default -> Hover Full Solid Fill) ── */
 /* Mọi nút trong hệ thống: Mặc định không màu (nền trong suốt), viền có màu chuẩn. Khi rê chuột vào mới hiển thị FULL MÀU */
 
 button,
@@ -673,7 +673,7 @@ button[class*="bg-red-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled
     color: var(--color-warning) !important;
 }
 
-/* ── 5. BIM LOGISTICS ENTERPRISE TABLE SYSTEM ── */
+/* ── 5. GSS LOGISTICS ENTERPRISE TABLE SYSTEM ── */
 .erp-table-container {
     border: 1px solid #cbd5e1;
     border-radius: 8px;
@@ -853,7 +853,7 @@ table.bim-table tfoot tr {
     text-decoration: underline;
 }
 
-/* ── 5.1 QUY CHUẨN ĐỒNG BỘ TYPOGRAPHY BẢNG BÁO CÁO & BẢNG BIỂU HỆ THỐNG (BIM UNIFIED TABLE TYPOGRAPHY) ── */
+/* ── 5.1 QUY CHUẨN ĐỒNG BỘ TYPOGRAPHY BẢNG BÁO CÁO & BẢNG BIỂU HỆ THỐNG (GSS UNIFIED TABLE TYPOGRAPHY) ── */
 /* Mọi bảng dữ liệu, báo cáo thống kê, modal: font chuẩn là 13px, font phụ/sub là 12px */
 table th, .erp-table th, .bim-table th {
     font-family: var(--font-heading) !important;
@@ -1451,7 +1451,7 @@ input[list="list-times-24h"]::-webkit-list-button {
         touch-action: pan-x pan-y !important;
     }
 
-    /* 4. Chuẩn hóa Màn hình Chat trên Di động (Full Visual Viewport chuẩn Bim Ecosystem) */
+    /* 4. Chuẩn hóa Màn hình Chat trên Di động (Full Visual Viewport chuẩn GSS Ecosystem) */
     #chat-bubble-container.chat-is-open #chat-bubble-btn {
         display: none !important;
     }
@@ -1500,7 +1500,7 @@ input[list="list-times-24h"]::-webkit-list-button {
     fill: #ffffff !important;
 }
 
-/* ── UNIVERSAL SEARCHABLE COMBOBOX DROPDOWN (BIM TMS STANDARD) ── */
+/* ── UNIVERSAL SEARCHABLE COMBOBOX DROPDOWN (GSS TMS STANDARD) ── */
 .bim-combobox-wrapper {
     position: relative;
     width: 100%;
@@ -1549,7 +1549,7 @@ input[list="list-times-24h"]::-webkit-list-button {
 }
 
 
-/* ── BIM TABLE COLUMN RESIZER & TEXT OVERFLOW ENHANCEMENT ── */
+/* ── GSS TABLE COLUMN RESIZER & TEXT OVERFLOW ENHANCEMENT ── */
 .bim-col-resizer {
     position: absolute;
     top: 0;

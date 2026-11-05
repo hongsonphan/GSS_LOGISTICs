@@ -1,4 +1,4 @@
-# ---- Image chạy BIM Logistics (Django + Gunicorn) ----
+# ---- Image chạy GSS Logistics (Django + Gunicorn) ----
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

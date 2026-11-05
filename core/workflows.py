@@ -1,5 +1,5 @@
 """
-State Machine Engine cho vòng đời vận tải Bim Logistics (TMS).
+State Machine Engine cho vòng đời vận tải GSS Logistics (TMS).
 Đảm bảo kiểm soát chuyển trạng thái nghiêm ngặt, không cho phép nhảy cóc.
 """
 

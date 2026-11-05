@@ -174,11 +174,9 @@ sidebar = f'''<!-- MAIN WRAPPER -->
                 <div class="bg-teal-50/80 border border-teal-200/80 rounded-2xl p-4 text-xs">
                     <div class="font-black text-teal-900 flex items-center gap-2 mb-1.5 font-heading">
                         <i class="ph-bold ph-headphones text-teal-700 text-base"></i>
-                        <span class="text-xs sm:text-[13px]">BIM LOGISTICS - BIZ SOLUTIONS</span>
+                        <span class="text-xs sm:text-[13px]">GSS LOGISTICS - GREEN SOLUTIONS SMART</span>
                     </div>
                     <div class="space-y-1 text-xs text-slate-700 mt-2">
-                        <div>Hotline: <strong class="text-teal-900 font-mono font-bold text-[13px]">0903.012.099</strong></div>
-                        <div>Email: <a href="mailto:bimconsultingvn@gmail.com" class="text-teal-800 font-medium hover:underline">bimconsultingvn@gmail.com</a></div>
                     </div>
                 </div>
             </div>
@@ -195,7 +193,7 @@ for pi, p in enumerate(parts):
     for s in p['sections']:
         main.append(render_section(s))
 main.append('''                <div class="pt-8 border-t border-slate-200 text-center text-xs text-slate-500">
-                    <p class="font-bold text-slate-800 font-heading">© 2026 Bản quyền thuộc BIM LOGISTICS — BIZ SOLUTIONS</p>
+                    <p class="font-bold text-slate-800 font-heading">© 2026 Bản quyền thuộc GSS LOGISTICS — GREEN SOLUTIONS SMART</p>
                 </div>
             </div>
         </main>

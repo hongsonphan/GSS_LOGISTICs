@@ -14,8 +14,8 @@ function formatNewsDate(dateStr) {
 
 /**
  * ==========================================================================
- * BIM LOGISTICS — COLLABORATION MODULE (NEWS, TASKS, IN-APP TEAM CHAT)
- * Kế thừa chuẩn quốc tế từ Bim Ecosystem (Bim_Consulting & Bim_ERP-Solutions)
+ * GSS LOGISTICS — COLLABORATION MODULE (NEWS, TASKS, IN-APP TEAM CHAT)
+ * Kế thừa chuẩn quốc tế từ GSS Ecosystem (GSS)
  * Áp dụng riêng cho Ban Giám Đốc, Quản lý và Cán bộ Nhân viên Văn phòng
  * ==========================================================================
  */

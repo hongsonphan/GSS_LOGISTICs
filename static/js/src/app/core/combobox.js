@@ -1,5 +1,5 @@
 // =========================================================================
-// UNIVERSAL SEARCHABLE DROPDOWN / COMBOBOX COMPONENT (BIM TMS STANDARD)
+// UNIVERSAL SEARCHABLE DROPDOWN / COMBOBOX COMPONENT (GSS TMS STANDARD)
 // Chuẩn Tìm Kiếm Dropdown: Dòng đầu tiên có kính lúp để tìm kiếm + Cho phép
 // gõ trực tiếp từ khóa vào ô để lọc nhanh thời gian thực.
 // =========================================================================

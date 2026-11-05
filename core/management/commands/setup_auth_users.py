@@ -11,13 +11,13 @@ class Command(BaseCommand):
         # Tài khoản demo có mật khẩu mẫu cố định -> tuyệt đối không chạy trên hệ thống thật
         if not settings.DEBUG:
             raise CommandError('setup_auth_users chỉ dùng cho môi trường dev/demo (DEBUG=True). Không chạy trên production.')
-        self.stdout.write(self.style.NOTICE("=== THIET LAP TAI KHOAN NGUOI DUNG BIM LOGISTICS ==="))
+        self.stdout.write(self.style.NOTICE("=== THIET LAP TAI KHOAN NGUOI DUNG GSS LOGISTICS ==="))
 
         demo_accounts = [
             {
                 'username': 'admin',
                 'password': 'Admin@2026',
-                'email': 'admin@bim.info.vn',
+                'email': 'admin@gss-logistics.example.com',
                 'is_staff': True,
                 'is_superuser': True,
                 'emp_code': 'BGD01',
@@ -30,7 +30,7 @@ class Command(BaseCommand):
             {
                 'username': 'dieudo',
                 'password': 'DieuDo@2026',
-                'email': 'dieudo@bim.info.vn',
+                'email': 'dieudo@gss-logistics.example.com',
                 'is_staff': True,
                 'is_superuser': False,
                 'emp_code': 'DD001',
@@ -43,7 +43,7 @@ class Command(BaseCommand):
             {
                 'username': 'ketoan',
                 'password': 'KeToan@2026',
-                'email': 'ketoan@bim.info.vn',
+                'email': 'ketoan@gss-logistics.example.com',
                 'is_staff': False,
                 'is_superuser': False,
                 'emp_code': 'KT001',
@@ -56,7 +56,7 @@ class Command(BaseCommand):
             {
                 'username': 'sales',
                 'password': 'Sales@2026',
-                'email': 'sales@bim.info.vn',
+                'email': 'sales@gss-logistics.example.com',
                 'is_staff': False,
                 'is_superuser': False,
                 'emp_code': 'KD001',
@@ -70,7 +70,7 @@ class Command(BaseCommand):
             {
                 'username': 'nhansu',
                 'password': 'NhanSu@2026',
-                'email': 'nhansu@bim.info.vn',
+                'email': 'nhansu@gss-logistics.example.com',
                 'is_staff': False,
                 'is_superuser': False,
                 'emp_code': 'NS001',
