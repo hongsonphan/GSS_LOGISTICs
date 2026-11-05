@@ -498,7 +498,7 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
             return self.vehicle.subcontractor.name
         if self.vehicle and self.vehicle.ownership_type == 'SUBCONTRACTOR':
             return "Đơn vị 3PL ngoài"
-        return "Đội xe nội bộ TVL"
+        return "Đội xe nội bộ GSS"
 
     @property
     def tracking_hashid(self):

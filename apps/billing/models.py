@@ -3,7 +3,7 @@ from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
 class ExpenseCategory(models.TextChoices):
     """
-    8 danh mục chi phí phát sinh chuẩn theo Bảng Kê Chi Phí thực tế của Triền Võ Logistics.
+    8 danh mục chi phí phát sinh chuẩn theo Bảng Kê Chi Phí thực tế của Green Solutions Supply.
     """
     LIFT_ON = 'LIFT_ON', 'Nâng'
     LIFT_OFF = 'LIFT_OFF', 'Hạ'
@@ -22,8 +22,8 @@ class ExpenseCategory(models.TextChoices):
     REPAIR_TIRE = 'REPAIR_TIRE', 'Vá vỏ / Sửa chữa gấp (Cũ)'
 
 class ExpensePayerType(models.TextChoices):
-    TVL_COST = 'TVL_COST', 'Chi phí TVL'
-    TVL_OBH = 'TVL_OBH', 'TVL chi hộ'
+    TVL_COST = 'TVL_COST', 'Chi phí công ty'
+    TVL_OBH = 'TVL_OBH', 'Công ty chi hộ'
     SUB_OBH = 'SUB_OBH', '3PL chi hộ'
 
 class ApprovalStatus(models.TextChoices):
@@ -54,7 +54,7 @@ class ReimbursementStatus(models.TextChoices):
 
 class TripExpense(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
-    Chi phí phát sinh hiện trường theo Bảng Kê Chi Phí thực tế của Triền Võ Logistics.
+    Chi phí phát sinh hiện trường theo Bảng Kê Chi Phí thực tế của Green Solutions Supply.
     Lưu vết đầy đủ hóa đơn điện tử, mã tra cứu, link tra cứu, tiền thuế VAT và ảnh chứng từ.
     Đặc biệt: Ghi nhận chính xác Tài xế & Đầu kéo chịu trách nhiệm chi phí theo từng chặng (Chạy thẳng / Cắt kéo).
     """
@@ -123,7 +123,7 @@ class TripExpense(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         choices=ExpensePayerType.choices,
         default='TVL_COST',
         db_index=True,
-        help_text="Phân loại dòng chi phí: Chi phí TVL, TVL chi hộ Khách, hoặc 3PL chi hộ Khách"
+        help_text="Phân loại dòng chi phí: Chi phí công ty, Công ty chi hộ Khách, hoặc 3PL chi hộ Khách"
     )
     reimburse_to_subcontractor = models.BooleanField(
         default=False,
@@ -208,7 +208,7 @@ class TripExpense(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         if self.is_on_behalf_of_customer and self.expense_payer_type == ExpensePayerType.TVL_COST:
             self.expense_payer_type = ExpensePayerType.SUB_OBH if self.reimburse_to_subcontractor else ExpensePayerType.TVL_OBH
 
-        # Đồng bộ trạng thái theo 3 nút: Chi phí TVL | TVL chi hộ | 3PL chi hộ
+        # Đồng bộ trạng thái theo 3 nút: Chi phí công ty | Công ty chi hộ | 3PL chi hộ
         if self.expense_payer_type == ExpensePayerType.TVL_COST:
             self.is_on_behalf_of_customer = False
             self.reimburse_to_subcontractor = False

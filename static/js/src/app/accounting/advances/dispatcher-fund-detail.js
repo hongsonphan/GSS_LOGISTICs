@@ -252,7 +252,7 @@ async function printDispatcherFundVoucher(fundId) {
         const fund = data.fund;
 
         const company = window.SYSTEM_COMPANY || {};
-        const compName = company.name || 'CÔNG TY TNHH VẬN TẢI & GIAO NHẬN TRIỀN VÕ';
+        const compName = company.name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH';
         const compAddress = company.address || 'Hồ Chí Minh, Việt Nam';
         const compTax = company.tax_code || '0318000000';
         const compPhone = company.phone || '0900.000.000';
@@ -330,7 +330,7 @@ async function printDispatcherFundVoucher(fundId) {
         </tr>
         <tr>
             <td class="label">Bộ phận công tác:</td>
-            <td>Phòng Điều Phối & Quản Lý Đội Xe Vận Tải Triền Võ</td>
+            <td>Phòng Điều Phối & Quản Lý Đội Xe Vận Tải GSS</td>
         </tr>
         <tr>
             <td class="label">Mục đích cấp quỹ:</td>

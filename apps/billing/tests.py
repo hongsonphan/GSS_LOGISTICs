@@ -284,7 +284,7 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(line['spent'], 500000)
         self.assertEqual([a['code'] for a in line['advance_lines']], ['TUTX-TEST-001', 'TUTX-TEST-002'])
         self.assertEqual(line['advance_lines'][0]['source_code'], 'COMPANY_DIRECT')
-        self.assertEqual(line['expense_lines'][0]['payer'], 'Chi phí TVL')
+        self.assertEqual(line['expense_lines'][0]['payer'], 'Chi phí công ty')
         vid = res.data['voucher']['id']
         self.assertEqual(self._approve(base, vid).status_code, status.HTTP_200_OK)
         self.assertEqual(self.client.post(f'{base}{vid}/settle/', {}, format='json').status_code, status.HTTP_200_OK)
@@ -885,7 +885,7 @@ class DriverBatchSettlementTests(TestCase):
         """Kiểm tra 3 nút chi phí: TVL_COST | TVL_OBH | SUB_OBH và tác động lên cached_expense."""
         from apps.billing.models import ExpensePayerType, ReimbursementStatus
 
-        # 1. Chi phí TVL: TVL chịu -> TÍNH vào chi phí vận hành chuyến đi
+        # 1. Chi phí công ty: TVL chịu -> TÍNH vào chi phí vận hành chuyến đi
         exp_cost = TripExpense.objects.create(
             trip=self.trip1,
             category=ExpenseCategory.TOLL_FEE,
@@ -896,7 +896,7 @@ class DriverBatchSettlementTests(TestCase):
         self.assertFalse(exp_cost.reimburse_to_subcontractor)
         self.assertEqual(exp_cost.reimbursement_status, ReimbursementStatus.NOT_APPLICABLE)
 
-        # 2. TVL chi hộ: TVL ứng trước thu lại từ khách -> KHÔNG tính vào chi phí vận hành
+        # 2. Công ty chi hộ: TVL ứng trước thu lại từ khách -> KHÔNG tính vào chi phí vận hành
         exp_tvl_obh = TripExpense.objects.create(
             trip=self.trip1,
             category=ExpenseCategory.LIFT_ON,

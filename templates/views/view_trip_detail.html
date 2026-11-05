@@ -1,4 +1,4 @@
-<!-- 2.1 TRIP DETAIL VIEW (Chi tiết chuyến & Bảng Kê Chi Phí Triền Võ Chuẩn) -->
+<!-- 2.1 TRIP DETAIL VIEW (Chi tiết chuyến & Bảng Kê Chi Phí GSS Chuẩn) -->
 <div id="view-trip-detail" class="view hidden-view h-full flex flex-col bg-slate-50 overflow-hidden relative">
     <!-- Top Header -->
     <div class="bg-white border-b border-slate-200 px-6 py-3.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 sticky top-0 z-10 shadow-2xs shrink-0">
@@ -443,7 +443,7 @@
                 </div>
             </div>
 
-            <!-- HÀNG 3: BẢNG KÊ CHI PHÍ TRIỀN VÕ & TÓM TẮT P&L (FULL-WIDTH TIÊU CHUẨN KẾ TOÁN) -->
+            <!-- HÀNG 3: BẢNG KÊ CHI PHÍ GSS & TÓM TẮT P&L (FULL-WIDTH TIÊU CHUẨN KẾ TOÁN) -->
             <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs relative" id="cost-sheet-card">
                 <!-- Settlement Banner if Settled -->
                 <div id="cost-sheet-settled-banner" class="hidden mb-4 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between">
@@ -974,7 +974,7 @@
     </div>
 </div>
 
-<!-- MODAL THÊM KHOẢN MỤC CHI PHÍ PHÁT SINH CHUẨN TRIỀN VÕ -->
+<!-- MODAL THÊM KHOẢN MỤC CHI PHÍ PHÁT SINH CHUẨN GSS -->
 <div id="modal-add-expense"
     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden-view">
     <div
@@ -984,7 +984,7 @@
                 <i class="ph-bold ph-receipt text-teal-400 text-2xl"></i>
                 <div>
                     <h3 class="font-bold text-base font-heading">Thêm Khoản Chi Phát Sinh</h3>
-                    <p class="text-xs text-slate-400">Theo chuẩn Bảng Kê Chi Phí Triền Võ</p>
+                    <p class="text-xs text-slate-400">Theo chuẩn Bảng Kê Chi Phí GSS</p>
                 </div>
             </div>
             <button onclick="closeModalAddExpense()" class="text-slate-400 hover:text-white p-1 rounded-lg">
@@ -1078,19 +1078,19 @@
                         Phân loại chi phí <span class="text-rose-500">*</span>
                     </label>
                     <span id="expense-payer-badge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading">
-                        🏢 Chi phí của Triền Võ
+                        🏢 Chi phí của GSS
                     </span>
                 </div>
                 <div class="grid grid-cols-3 gap-2 p-1 bg-slate-200/80 rounded-xl" id="expense-payer-button-group">
                     <button type="button" id="btn-payer-tvl-cost" onclick="selectExpensePayer('TVL_COST')"
                         class="payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn">
                         <i class="ph-bold ph-buildings text-sm sm:text-base"></i>
-                        <span>Chi phí TVL</span>
+                        <span>Chi phí công ty</span>
                     </button>
                     <button type="button" id="btn-payer-tvl-obh" onclick="selectExpensePayer('TVL_OBH')"
                         class="payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn">
                         <i class="ph-bold ph-arrow-up-right text-sm sm:text-base text-sky-600"></i>
-                        <span>TVL chi hộ</span>
+                        <span>Công ty chi hộ</span>
                     </button>
                     <button type="button" id="btn-payer-sub-obh" onclick="selectExpensePayer('SUB_OBH')"
                         class="payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn">
@@ -1101,7 +1101,7 @@
                 <input type="hidden" id="expense-payer-type-input" value="TVL_COST">
                 <input type="checkbox" id="expense-on-behalf-checkbox" class="sr-only">
                 <p id="expense-payer-guide" class="text-xs text-slate-600 italic px-1 pt-0.5">
-                    🏢 <strong>Chi phí TVL:</strong> Đưa vào chi phí vận hành chuyến xe của Triền Võ.
+                    🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.
                 </p>
             </div>
 
@@ -1224,19 +1224,19 @@
                         Phân loại chi phí <span class="text-rose-500">*</span>
                     </label>
                     <span id="edit-expense-payer-badge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading">
-                        🏢 Chi phí của Triền Võ
+                        🏢 Chi phí của GSS
                     </span>
                 </div>
                 <div class="grid grid-cols-3 gap-2 p-1 bg-slate-200/80 rounded-xl" id="edit-expense-payer-button-group">
                     <button type="button" id="btn-edit-payer-tvl-cost" onclick="selectEditExpensePayer('TVL_COST')"
                         class="edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn">
                         <i class="ph-bold ph-buildings text-sm sm:text-base"></i>
-                        <span>Chi phí TVL</span>
+                        <span>Chi phí công ty</span>
                     </button>
                     <button type="button" id="btn-edit-payer-tvl-obh" onclick="selectEditExpensePayer('TVL_OBH')"
                         class="edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn">
                         <i class="ph-bold ph-arrow-up-right text-sm sm:text-base text-sky-600"></i>
-                        <span>TVL chi hộ</span>
+                        <span>Công ty chi hộ</span>
                     </button>
                     <button type="button" id="btn-edit-payer-sub-obh" onclick="selectEditExpensePayer('SUB_OBH')"
                         class="edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn">
@@ -1247,7 +1247,7 @@
                 <input type="hidden" id="edit-expense-payer-type-input" value="TVL_COST">
                 <input type="checkbox" id="edit-expense-on-behalf-checkbox" class="sr-only">
                 <p id="edit-expense-payer-guide" class="text-xs text-slate-600 italic px-1 pt-0.5">
-                    🏢 <strong>Chi phí TVL:</strong> Đưa vào chi phí vận hành chuyến xe của Triền Võ.
+                    🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.
                 </p>
             </div>
 
@@ -1516,7 +1516,7 @@
     </div>
 </div>
 
-<!-- MODAL THÊM KHOẢN MỤC CHI PHÍ PHÁT SINH CHUẨN TRIỀN VÕ -->
+<!-- MODAL THÊM KHOẢN MỤC CHI PHÍ PHÁT SINH CHUẨN GSS -->
 <div id="modal-add-expense"
     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden-view">
     <div
@@ -1526,7 +1526,7 @@
                 <i class="ph-bold ph-receipt text-teal-400 text-2xl"></i>
                 <div>
                     <h3 class="font-bold text-base font-heading">Thêm Khoản Chi Phát Sinh</h3>
-                    <p class="text-xs text-slate-400">Theo chuẩn Bảng Kê Chi Phí Triền Võ</p>
+                    <p class="text-xs text-slate-400">Theo chuẩn Bảng Kê Chi Phí GSS</p>
                 </div>
             </div>
             <button onclick="closeModalAddExpense()" class="text-slate-400 hover:text-white p-1 rounded-lg">
@@ -1620,19 +1620,19 @@
                         Phân loại chi phí <span class="text-rose-500">*</span>
                     </label>
                     <span id="expense-payer-badge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading">
-                        🏢 Chi phí của Triền Võ
+                        🏢 Chi phí của GSS
                     </span>
                 </div>
                 <div class="grid grid-cols-3 gap-2 p-1 bg-slate-200/80 rounded-xl" id="expense-payer-button-group">
                     <button type="button" id="btn-payer-tvl-cost" onclick="selectExpensePayer('TVL_COST')"
                         class="payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn">
                         <i class="ph-bold ph-buildings text-sm sm:text-base"></i>
-                        <span>Chi phí TVL</span>
+                        <span>Chi phí công ty</span>
                     </button>
                     <button type="button" id="btn-payer-tvl-obh" onclick="selectExpensePayer('TVL_OBH')"
                         class="payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn">
                         <i class="ph-bold ph-arrow-up-right text-sm sm:text-base text-sky-600"></i>
-                        <span>TVL chi hộ</span>
+                        <span>Công ty chi hộ</span>
                     </button>
                     <button type="button" id="btn-payer-sub-obh" onclick="selectExpensePayer('SUB_OBH')"
                         class="payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn">
@@ -1643,7 +1643,7 @@
                 <input type="hidden" id="expense-payer-type-input" value="TVL_COST">
                 <input type="checkbox" id="expense-on-behalf-checkbox" class="sr-only">
                 <p id="expense-payer-guide" class="text-xs text-slate-600 italic px-1 pt-0.5">
-                    🏢 <strong>Chi phí TVL:</strong> Đưa vào chi phí vận hành chuyến xe của Triền Võ.
+                    🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.
                 </p>
             </div>
 
@@ -1766,19 +1766,19 @@
                         Phân loại chi phí <span class="text-rose-500">*</span>
                     </label>
                     <span id="edit-expense-payer-badge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading">
-                        🏢 Chi phí của Triền Võ
+                        🏢 Chi phí của GSS
                     </span>
                 </div>
                 <div class="grid grid-cols-3 gap-2 p-1 bg-slate-200/80 rounded-xl" id="edit-expense-payer-button-group">
                     <button type="button" id="btn-edit-payer-tvl-cost" onclick="selectEditExpensePayer('TVL_COST')"
                         class="edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn">
                         <i class="ph-bold ph-buildings text-sm sm:text-base"></i>
-                        <span>Chi phí TVL</span>
+                        <span>Chi phí công ty</span>
                     </button>
                     <button type="button" id="btn-edit-payer-tvl-obh" onclick="selectEditExpensePayer('TVL_OBH')"
                         class="edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn">
                         <i class="ph-bold ph-arrow-up-right text-sm sm:text-base text-sky-600"></i>
-                        <span>TVL chi hộ</span>
+                        <span>Công ty chi hộ</span>
                     </button>
                     <button type="button" id="btn-edit-payer-sub-obh" onclick="selectEditExpensePayer('SUB_OBH')"
                         class="edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn">
@@ -1789,7 +1789,7 @@
                 <input type="hidden" id="edit-expense-payer-type-input" value="TVL_COST">
                 <input type="checkbox" id="edit-expense-on-behalf-checkbox" class="sr-only">
                 <p id="edit-expense-payer-guide" class="text-xs text-slate-600 italic px-1 pt-0.5">
-                    🏢 <strong>Chi phí TVL:</strong> Đưa vào chi phí vận hành chuyến xe của Triền Võ.
+                    🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.
                 </p>
             </div>
 

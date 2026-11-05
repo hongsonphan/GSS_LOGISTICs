@@ -90,7 +90,7 @@ class ExpenseItem(TimeStampedModel, SoftDeleteModel):
 class DriverSalaryTariff(TimeStampedModel, SoftDeleteModel):
     """
     Biểu phí Lương chuyến Lái xe Container tính theo lộ trình vận chuyển hàng hóa.
-    (Áp dụng chuẩn theo Thông báo lương chính thức của Triền Võ Logistics)
+    (Áp dụng chuẩn theo Thông báo lương chính thức của Green Solutions Supply)
     """
     area_group = models.CharField(max_length=100, db_index=True, help_text="Nhóm khu vực kho: Củ Chi, Long An, Tây Ninh, Bình Dương, Đồng Nai, TP.HCM, Vũng Tàu, Tuyến đặc thù")
     route_name = models.CharField(max_length=200, help_text="Tên chi tiết tuyến / KCN / Nhà máy (vd: KCN Phước Đông, KCN Tân Phú Trung...)")
@@ -123,7 +123,7 @@ class AllowanceCategory(models.TextChoices):
 class DriverAllowanceCatalog(TimeStampedModel, SoftDeleteModel):
     """
     Danh mục Phụ cấp cảng xa, Kiểm hóa và Tác nghiệp vận chuyển.
-    (Chuẩn theo văn bản Triền Võ Logistics: Hiệp Phước, Cái Mép, Nhơn Trạch, TTI cắt kéo...)
+    (Chuẩn theo văn bản Green Solutions Supply: Hiệp Phước, Cái Mép, Nhơn Trạch, TTI cắt kéo...)
     """
     code = models.CharField(max_length=50, unique=True, db_index=True)
     name = models.CharField(max_length=150)
@@ -277,35 +277,36 @@ class CompanyProfile(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     Khai báo Thông tin Công ty & Tham số Hệ thống Cài đặt Tổng thể (System Settings).
     Lưu trữ pháp nhân doanh nghiệp, thông tin thuế, tài khoản ngân hàng và tham số tính cước.
     """
-    company_name = models.CharField(max_length=255, default='CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ', help_text="Tên pháp nhân công ty")
-    short_name = models.CharField(max_length=100, blank=True, default='TRIỀN VÕ LOGISTICS', help_text="Tên thương hiệu / viết tắt")
-    tax_code = models.CharField(max_length=50, blank=True, default='0312345678', help_text="Mã số thuế")
-    phone = models.CharField(max_length=50, blank=True, default='0903.123.456', help_text="Hotline / Số điện thoại liên hệ")
-    email = models.CharField(max_length=100, blank=True, default='Phongkinhdoanh.tvl@trienvo.com', help_text="Email liên hệ")
-    website = models.CharField(max_length=255, blank=True, default='https://trienvo.com', help_text="Website công ty")
-    address = models.CharField(max_length=255, blank=True, default='153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh', help_text="Địa chỉ trụ sở chính")
-    representative_name = models.CharField(max_length=100, blank=True, default='Võ Văn Triền', help_text="Người đại diện pháp luật")
+    company_name = models.CharField(max_length=255, default='CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH', help_text="Tên pháp nhân công ty")
+    company_name_en = models.CharField(max_length=255, blank=True, default='GREEN SOLUTIONS SUPPLY COMPANY LIMITED', help_text="Tên quốc tế / tên tiếng Anh")
+    short_name = models.CharField(max_length=100, blank=True, default='Green Solutions Supply Co., Ltd.', help_text="Tên thương hiệu / viết tắt")
+    tax_code = models.CharField(max_length=50, blank=True, default='0316657112', help_text="Mã số thuế")
+    phone = models.CharField(max_length=50, blank=True, default='', help_text="Hotline / Số điện thoại liên hệ")
+    email = models.CharField(max_length=100, blank=True, default='', help_text="Email liên hệ")
+    website = models.CharField(max_length=255, blank=True, default='', help_text="Website công ty")
+    address = models.CharField(max_length=255, blank=True, default='302/5 Lê Đức Thọ, Phường An Nhơn, TP Hồ Chí Minh, Việt Nam', help_text="Địa chỉ trụ sở chính")
+    representative_name = models.CharField(max_length=100, blank=True, default='', help_text="Người đại diện pháp luật")
     representative_role = models.CharField(max_length=100, blank=True, default='Giám Đốc', help_text="Chức vụ người đại diện")
-    bank_account_number = models.CharField(max_length=50, blank=True, default='19030000000001', help_text="Số tài khoản ngân hàng")
-    bank_name = models.CharField(max_length=150, blank=True, default='Ngân hàng TMCP Kỹ Thương Việt Nam (Techcombank)', help_text="Tên ngân hàng")
-    bank_branch = models.CharField(max_length=150, blank=True, default='Chi nhánh Nam Sài Gòn', help_text="Chi nhánh ngân hàng")
-    operating_license = models.CharField(max_length=100, blank=True, default='GP-VT-2024/TPHCM', help_text="Giấy phép kinh doanh vận tải")
+    bank_account_number = models.CharField(max_length=50, blank=True, default='', help_text="Số tài khoản ngân hàng")
+    bank_name = models.CharField(max_length=150, blank=True, default='', help_text="Tên ngân hàng")
+    bank_branch = models.CharField(max_length=150, blank=True, default='', help_text="Chi nhánh ngân hàng")
+    operating_license = models.CharField(max_length=100, blank=True, default='', help_text="Giấy phép kinh doanh vận tải")
     
     # Thông tin Chi nhánh & Văn phòng Đại diện
-    branch_name = models.CharField(max_length=200, blank=True, default='Văn Phòng Chi Nhánh', help_text="Tên chi nhánh / Văn phòng đại diện")
+    branch_name = models.CharField(max_length=200, blank=True, default='', help_text="Tên chi nhánh / Văn phòng đại diện")
     branch_address = models.CharField(max_length=255, blank=True, default='', help_text="Địa chỉ văn phòng chi nhánh")
     branch_phone = models.CharField(max_length=50, blank=True, default='', help_text="Điện thoại / Hotline chi nhánh")
 
     # Thông tin Bãi đỗ xe & Trạm điều phối nội bộ
-    fleet_yard_name = models.CharField(max_length=200, blank=True, default='Bãi Đỗ Xe & Trạm Điều Phối TVL', help_text="Tên bãi đỗ xe / Depot")
-    fleet_yard_address = models.CharField(max_length=255, blank=True, default='Đường Nguyễn Thị Định, P. Cát Lái, TP. Thủ Đức, TP. Hồ Chí Minh', help_text="Địa chỉ bãi đỗ xe")
-    fleet_yard_hotline = models.CharField(max_length=50, blank=True, default='0903.999.888', help_text="Hotline quản lý trực bãi xe")
+    fleet_yard_name = models.CharField(max_length=200, blank=True, default='', help_text="Tên bãi đỗ xe / Depot")
+    fleet_yard_address = models.CharField(max_length=255, blank=True, default='', help_text="Địa chỉ bãi đỗ xe")
+    fleet_yard_hotline = models.CharField(max_length=50, blank=True, default='', help_text="Hotline quản lý trực bãi xe")
 
     # Tham số vận hành & Cấu hình hệ thống
     default_vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=8.00, help_text="Thuế suất VAT mặc định (%)")
     fuel_reference_price = models.DecimalField(max_digits=12, decimal_places=0, default=21000, help_text="Giá dầu tham chiếu chuẩn (VNĐ/Lít)")
     cbm_formula_divisor = models.IntegerField(default=5000, help_text="Hệ số quy đổi thể tích CBM (mặc định 5000)")
-    logo_url = models.CharField(max_length=255, blank=True, default='/static/images/trienvo_logo.png', help_text="Đường dẫn file logo công ty")
+    logo_url = models.CharField(max_length=255, blank=True, default='/static/images/gss_logo.svg', help_text="Đường dẫn file logo công ty")
     notes = models.TextField(blank=True, help_text="Ghi chú cấu hình và chính sách vận hành")
     is_default = models.BooleanField(default=True, help_text="Là hồ sơ công ty mặc định")
 
@@ -324,29 +325,16 @@ class CompanyProfile(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
             obj = cls.objects.first()
         if not obj:
             obj = cls.objects.create(
-                company_name='CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ',
-                short_name='TRIỀN VÕ LOGISTICS',
-                tax_code='0314567890',
-                phone='0965 559 561',
-                email='Phongkinhdoanh.tvl@trienvo.com',
-                website='https://trienvo.com',
-                address='153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh',
-                representative_name='Võ Văn Triền',
+                company_name='CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH',
+                company_name_en='GREEN SOLUTIONS SUPPLY COMPANY LIMITED',
+                short_name='Green Solutions Supply Co., Ltd.',
+                tax_code='0316657112',
+                address='302/5 Lê Đức Thọ, Phường An Nhơn, TP Hồ Chí Minh, Việt Nam',
                 representative_role='Giám Đốc',
-                bank_account_number='19030000000001',
-                bank_name='Ngân hàng TMCP Kỹ Thương Việt Nam (Techcombank)',
-                bank_branch='Chi nhánh Nam Sài Gòn',
-                operating_license='GP-VT-2024/TPHCM',
-                branch_name='Văn Phòng Chi Nhánh Tây Ninh',
-                branch_address='Khu Công Nghiệp Phước Đông, Huyện Gò Dầu, Tỉnh Tây Ninh',
-                branch_phone='0903.123.789',
-                fleet_yard_name='Bãi Đỗ Xe & Trạm Điều Phối Cát Lái TVL',
-                fleet_yard_address='Đường Nguyễn Thị Định, P. Cát Lái, TP. Thủ Đức, TP. Hồ Chí Minh',
-                fleet_yard_hotline='0903.999.888',
                 default_vat_rate=8.00,
                 fuel_reference_price=21000,
                 cbm_formula_divisor=5000,
-                logo_url='/static/images/trienvo_logo.png',
+                logo_url='/static/images/gss_logo.svg',
                 is_default=True,
             )
         return obj

@@ -327,7 +327,7 @@ class QuotationEnterprisePrintAPITest(TestCase):
     """Kiểm thử tính năng Báo giá, Ghi chú điều khoản & Mẫu in Doanh Nghiệp."""
 
     def setUp(self):
-        self.user = User.objects.create_superuser(username='sales_admin', email='sales@trienvo.com', password='password123')
+        self.user = User.objects.create_superuser(username='sales_admin', email='user@gss-logistics.example.com', password='password123')
         self.client.force_login(self.user)
         self.customer = Customer.objects.create(
             code='CUST_MOL',
@@ -734,7 +734,7 @@ class EndToEndLogisticsWorkflowSimulationTestCase(TestCase):
     """
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_superuser(username='admin_sim', email='admin@trienvo.vn', password='password123')
+        self.user = User.objects.create_superuser(username='admin_sim', email='user@gss-logistics.example.com', password='password123')
         self.client.force_login(self.user)
 
         # 1. Nhân sự

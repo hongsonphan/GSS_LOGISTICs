@@ -19,7 +19,7 @@ class Command(BaseCommand):
         # 1. Nhân sự & Tài xế
         employees_data = [
             {'code': 'DD001', 'full_name': 'Trần Điều Độ', 'nickname': 'ĐIỀU ĐỘ CHÍNH', 'phone': '0908111222', 'dept': Department.DISPATCH, 'role': EmployeeRole.DISPATCHER},
-            {'code': 'BGD01', 'full_name': 'Triền Võ Giám Đốc', 'nickname': 'BGD', 'phone': '0909000111', 'dept': Department.MANAGEMENT, 'role': EmployeeRole.DIRECTOR},
+            {'code': 'BGD01', 'full_name': 'GSS Giám Đốc', 'nickname': 'BGD', 'phone': '0909000111', 'dept': Department.MANAGEMENT, 'role': EmployeeRole.DIRECTOR},
             {'code': 'TX001', 'full_name': 'Nguyễn Văn Bụi', 'nickname': 'BỤI 94', 'phone': '0901234567', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 7500000, 'current_advance': 3000000},
             {'code': 'TX002', 'full_name': 'Trần Văn Li', 'nickname': 'LIBRA', 'phone': '0902345678', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 8500000, 'current_advance': 0},
             {'code': 'TX003', 'full_name': 'Lê Hòa', 'nickname': 'HÒA PHÁT', 'phone': '0903456789', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 7500000, 'current_advance': 5000000},

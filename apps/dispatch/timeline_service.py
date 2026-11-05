@@ -1,6 +1,6 @@
 """
 Service đồng bộ máy trạng thái và chuẩn hóa Quy trình Điều vận 10 Bước (TMS).
-Đảm bảo 100% chuyến xe trong hệ thống luôn có đầy đủ 10 bước tiến độ thực tế theo SOP Triền Võ.
+Đảm bảo 100% chuyến xe trong hệ thống luôn có đầy đủ 10 bước tiến độ thực tế theo SOP GSS.
 """
 
 from datetime import timedelta

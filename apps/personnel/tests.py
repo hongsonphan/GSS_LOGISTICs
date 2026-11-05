@@ -565,7 +565,7 @@ class PersonnelHRMAPITestCase(TestCase):
         # Thêm 2 dòng nhân viên mới vào file Excel
         # Dòng 1: Tài xế mới để trống mã NV (tự sinh TX...)
         ws.append([
-            '', 'Phan Minh Hoàng', 'HOÀNG 50B', '0937888999', 'hoang.phan@trienvo.vn',
+            '', 'Phan Minh Hoàng', 'HOÀNG 50B', '0937888999', 'user@gss-logistics.example.com',
             'Đội Xe & Bãi', 'Tài xế', 'Nam', '1990-08-12', '079090001234', '2020-05-10', 'Cục CS QLHC về TTXH',
             '8090001234', '7990001234', 'Xã Phú Hữu, Nhơn Trạch, Đồng Nai', 'Bãi xe Suối Tiên',
             '012345678901', 'Vietcombank', 'CN Thủ Đức', 'PHAN MINH HOANG', '2024-01-15',
@@ -574,7 +574,7 @@ class PersonnelHRMAPITestCase(TestCase):
 
         # Dòng 2: Kế toán mới có mã chỉ định KT901
         ws.append([
-            'KT901', 'Vũ Thị Thanh Thảo', 'THẢO KT', '0912444555', 'thao.vu@trienvo.vn',
+            'KT901', 'Vũ Thị Thanh Thảo', 'THẢO KT', '0912444555', 'user@gss-logistics.example.com',
             'Kế Toán Tài Chính', 'Kế toán viên', 'Nữ', '1996-03-25', '079096005555', '2022-01-15', 'Cục CS QLHC về TTXH',
             '8096005555', '7996005555', 'Q. Bình Thạnh, TP.HCM', 'Q. Bình Thạnh, TP.HCM',
             '987654321098', 'Techcombank', 'CN Sài Gòn', 'VU THI THANH THAO', '2024-02-01',
@@ -730,13 +730,13 @@ class PersonnelHRMAPITestCase(TestCase):
         """Kiểm thử khi cập nhật Họ Tên & Email của User trong Django Admin thì Employee tự động đồng bộ."""
         self.director_user.last_name = "Nguyễn Minh"
         self.director_user.first_name = "Thuận"
-        self.director_user.email = "dieudo.tvl@trienvo.com"
+        self.director_user.email = "user@gss-logistics.example.com"
         self.director_user.save()
 
         # Reload Employee và kiểm tra
         emp = Employee.objects.get(id=self.director_emp.id)
         self.assertEqual(emp.full_name, "Nguyễn Minh Thuận")
-        self.assertEqual(emp.email, "dieudo.tvl@trienvo.com")
+        self.assertEqual(emp.email, "user@gss-logistics.example.com")
 
 
 

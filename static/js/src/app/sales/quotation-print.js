@@ -116,7 +116,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     if (p1Contact) p1Contact.innerText = q.contact_person || q.customer_contact || 'Phòng Xuất Nhập Khẩu / Logistics';
 
     const p1Phone = document.getElementById('print-q1-contact-phone');
-    if (p1Phone) p1Phone.innerText = q.contact_phone || q.customer_phone || '0965 559 561';
+    if (p1Phone) p1Phone.innerText = q.contact_phone || q.customer_phone || '';
 
     const p1Address = document.getElementById('print-q1-customer-address');
     if (p1Address) p1Address.innerText = q.customer_address || 'Địa chỉ kho khách hàng';
@@ -258,7 +258,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     if (p3Contact) p3Contact.innerText = q.contact_person || q.customer_contact || 'Phòng Xuất Nhập Khẩu';
 
     const p3Phone = document.getElementById('print-q3-client-phone');
-    if (p3Phone) p3Phone.innerText = [q.contact_phone || q.customer_phone, q.contact_email].filter(Boolean).join(' / ') || '0965 559 561';
+    if (p3Phone) p3Phone.innerText = [q.contact_phone || q.customer_phone, q.contact_email].filter(Boolean).join(' / ') || '';
 
     const p3Cargo = document.getElementById('print-q3-cargo-desc');
     if (p3Cargo) p3Cargo.innerText = q.cargo_type || 'Container 40HC / Hàng xuất nhập khẩu';

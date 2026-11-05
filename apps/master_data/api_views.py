@@ -122,7 +122,7 @@ class MasterDataFormOptionsAPIView(APIView):
             else:
                 warehouses.append(loc_dict)
 
-        # 3. Tài xế Nội bộ TVL (Chỉ lọc nhân sự Bác tài đang hoạt động, loại trừ nhân viên văn phòng)
+        # 3. Tài xế Nội bộ GSS (Chỉ lọc nhân sự Bác tài đang hoạt động, loại trừ nhân viên văn phòng)
         from apps.personnel.models import EmployeeRole, Department
         drivers = []
         for drv in Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True).exclude(department__in=[Department.MANAGEMENT, Department.ACCOUNTING, Department.SALES, Department.HR, Department.DISPATCH]).order_by('nickname', 'full_name'):
@@ -1849,6 +1849,7 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
         c_dict = {
             'id': company.id,
             'company_name': company.company_name,
+            'company_name_en': company.company_name_en,
             'short_name': company.short_name,
             'tax_code': company.tax_code,
             'phone': company.phone,
@@ -1898,6 +1899,8 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
         data = request.data
         if 'company_name' in data and data['company_name'].strip():
             company.company_name = data['company_name'].strip()
+        if 'company_name_en' in data:
+            company.company_name_en = (data['company_name_en'] or '').strip()
         if 'short_name' in data:
             company.short_name = data['short_name'].strip()
         if 'tax_code' in data:
@@ -1962,6 +1965,7 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
             'data': {
                 'id': company.id,
                 'company_name': company.company_name,
+                'company_name_en': company.company_name_en,
                 'short_name': company.short_name,
                 'tax_code': company.tax_code,
                 'phone': company.phone,
@@ -2093,9 +2097,9 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
         # Gợi ý đối tượng từ dữ liệu hệ thống
         company = CompanyProfile.get_default_company()
         company_data = {
-            'code': 'TVL',
-            'name': company.short_name or company.company_name or 'TRIỀN VÕ LOGISTICS',
-            'full_name': company.company_name or 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ',
+            'code': 'GSS',
+            'name': company.short_name or company.company_name or 'Green Solutions Supply Co., Ltd.',
+            'full_name': company.company_name or 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH',
             'bank_account_number': company.bank_account_number or '',
             'bank_name': company.bank_name or '',
         }

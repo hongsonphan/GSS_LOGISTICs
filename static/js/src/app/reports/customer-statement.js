@@ -612,7 +612,7 @@ function printCustomerARStatement(customerId) {
         }
     }
 
-    // Đảm bảo đồng bộ thông tin pháp lý công ty Triền Võ lên header bản in
+    // Đảm bảo đồng bộ thông tin pháp lý công ty GSS lên header bản in
     if (typeof syncCompanyProfileToPrintForms === 'function') {
         syncCompanyProfileToPrintForms();
     }
@@ -755,7 +755,7 @@ function renderCustomerFreightStatementUI(data) {
     if (elSignComp) elSignComp.innerText = comp.company_name || 'CÔNG TY TNHH DỊCH VỤ GIAO NHẬN VẬN TẢI TRIỂN VÕ';
 
     const elRepName = document.getElementById('cfs-sign-representative-name');
-    if (elRepName) elRepName.innerText = comp.representative_name || 'Võ Văn Triền';
+    if (elRepName) elRepName.innerText = comp.representative_name || '';
 
     const elThVat = document.getElementById('cfs-th-vat-rate');
     if (elThVat) elThVat.innerText = period.vat_rate > 0 ? `VAT ${period.vat_rate}%` : 'VAT 0%';

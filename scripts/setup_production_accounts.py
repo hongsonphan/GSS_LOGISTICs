@@ -16,7 +16,7 @@ from apps.personnel.models import Employee, Department, EmployeeRole
 ACCOUNTS_CONFIG = [
     {
         'username': 'admin',
-        'email': 'admin@trienvo.com',
+        'email': 'user@gss-logistics.example.com',
         'first_name': 'Võ',
         'last_name': 'Triền',
         'code': 'BGD01',
@@ -28,7 +28,7 @@ ACCOUNTS_CONFIG = [
     },
     {
         'username': 'dieudo',
-        'email': 'dieudo@trienvo.com',
+        'email': 'user@gss-logistics.example.com',
         'first_name': 'Trần',
         'last_name': 'Điều Độ',
         'code': 'DD001',
@@ -40,7 +40,7 @@ ACCOUNTS_CONFIG = [
     },
     {
         'username': 'ketoan',
-        'email': 'ketoan@trienvo.com',
+        'email': 'user@gss-logistics.example.com',
         'first_name': 'Trần Thị',
         'last_name': 'Kế Toán',
         'code': 'KT001',
@@ -52,7 +52,7 @@ ACCOUNTS_CONFIG = [
     },
     {
         'username': 'sales',
-        'email': 'sales@trienvo.com',
+        'email': 'user@gss-logistics.example.com',
         'first_name': 'Lê Hoàng',
         'last_name': 'Nam',
         'code': 'KD001',
@@ -64,7 +64,7 @@ ACCOUNTS_CONFIG = [
     },
     {
         'username': 'nhansu',
-        'email': 'nhansu@trienvo.com',
+        'email': 'user@gss-logistics.example.com',
         'first_name': 'Lê Thị Thu',
         'last_name': 'Thảo',
         'code': 'NS001',
@@ -76,7 +76,7 @@ ACCOUNTS_CONFIG = [
     },
     {
         'username': 'taixe',
-        'email': 'taixe@trienvo.com',
+        'email': 'user@gss-logistics.example.com',
         'first_name': 'Hoàng Văn',
         'last_name': 'Thật',
         'code': 'TX001',
@@ -88,7 +88,7 @@ ACCOUNTS_CONFIG = [
     },
 ]
 
-print("=== THIẾT LẬP VÀ KIỂM CHỨNG TÀI KHOẢN PRODUCTION TRIỀN VÕ LOGISTICS ===")
+print("=== THIẾT LẬP VÀ KIỂM CHỨNG TÀI KHOẢN PRODUCTION Green Solutions Supply Co., Ltd. ===")
 for acc in ACCOUNTS_CONFIG:
     u, created = User.objects.get_or_create(username=acc['username'])
     # Không bao giờ ghi đè mật khẩu tài khoản đang vận hành. Tài khoản mới: mật khẩu lấy từ biến môi trường

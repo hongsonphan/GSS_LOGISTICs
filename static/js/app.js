@@ -8519,7 +8519,7 @@ let currentActiveTripCode = null;
 let currentActiveTripData = null;
 let currentOcrMode = 'phi-ton';
 
-// --- 3. XEM CHI TIẾT CHUYẾN XE & BẢNG KÊ CHI PHÍ TRIỀN VÕ ---
+// --- 3. XEM CHI TIẾT CHUYẾN XE & BẢNG KÊ CHI PHÍ GSS ---
 async function viewTripDetail(tripCode, updateHistory = true) {
     currentActiveTripCode = tripCode;
     try {
@@ -8926,7 +8926,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             profitEl.innerText = `${formatMoney(trip.financials.profit)} (${trip.financials.margin_percent}%)`;
         }
 
-        // --- RENDER BẢNG KÊ CHI PHÍ (8 MỤC CHUẨN TRIỀN VÕ) ---
+        // --- RENDER BẢNG KÊ CHI PHÍ (8 MỤC CHUẨN GSS) ---
         renderCostSheetTable(trip);
 
         // --- RENDER MOBILE SIMULATOR DATA ---
@@ -9136,7 +9136,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
 }
 
 // ---- src/app/dispatch/trip-cost-sheet.js ----
-// Hàm render Bảng Kê Chi Phí 8 Mục chuẩn theo 5 ảnh thực tế của Triền Võ
+// Hàm render Bảng Kê Chi Phí 8 Mục chuẩn theo 5 ảnh thực tế của GSS
 function renderCostSheetTable(trip) {
     const tbody = document.getElementById('cost-sheet-tbody');
     if (!tbody) return;
@@ -10378,23 +10378,23 @@ function selectExpensePayer(payerType) {
         if (btnCost) btnCost.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
-            badge.innerText = "🏢 Chi phí của Triền Võ";
+            badge.innerText = "🏢 Chi phí của GSS";
         }
-        if (guide) guide.innerHTML = "🏢 <strong>Chi phí TVL:</strong> Đưa vào chi phí vận hành chuyến xe của Triền Võ.";
+        if (guide) guide.innerHTML = "🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.";
     } else if (payerType === 'TVL_OBH') {
         if (btnTvlObh) btnTvlObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
-            badge.innerText = "↗ Triền Võ chi hộ Khách hàng";
+            badge.innerText = "↗ GSS chi hộ Khách hàng";
         }
-        if (guide) guide.innerHTML = "↗ <strong>TVL chi hộ:</strong> Triền Võ ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
+        if (guide) guide.innerHTML = "↗ <strong>Công ty chi hộ:</strong> GSS ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
     } else if (payerType === 'SUB_OBH') {
         if (btnSubObh) btnSubObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-amber-600 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-heading";
             badge.innerText = "🔄 3PL chi hộ Khách hàng";
         }
-        if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ Triền Võ hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
+        if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ GSS hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
     }
 }
 
@@ -10422,23 +10422,23 @@ function selectEditExpensePayer(payerType) {
         if (btnCost) btnCost.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
-            badge.innerText = "🏢 Chi phí của Triền Võ";
+            badge.innerText = "🏢 Chi phí của GSS";
         }
-        if (guide) guide.innerHTML = "🏢 <strong>Chi phí TVL:</strong> Đưa vào chi phí vận hành chuyến xe của Triền Võ.";
+        if (guide) guide.innerHTML = "🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.";
     } else if (payerType === 'TVL_OBH') {
         if (btnTvlObh) btnTvlObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
-            badge.innerText = "↗ Triền Võ chi hộ Khách hàng";
+            badge.innerText = "↗ GSS chi hộ Khách hàng";
         }
-        if (guide) guide.innerHTML = "↗ <strong>TVL chi hộ:</strong> Triền Võ ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
+        if (guide) guide.innerHTML = "↗ <strong>Công ty chi hộ:</strong> GSS ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
     } else if (payerType === 'SUB_OBH') {
         if (btnSubObh) btnSubObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-amber-600 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-heading";
             badge.innerText = "🔄 3PL chi hộ Khách hàng";
         }
-        if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ Triền Võ hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
+        if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ GSS hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
     }
 }
 
@@ -14594,7 +14594,7 @@ const DEFAULT_QUOTATION_NOTES = {
     fcl: `1. Đơn giá trên chưa bao gồm thuế giá trị gia tăng (VAT 8% / 10%). Đã bao gồm chi phí nhiên liệu, lương lái xe và phí cầu đường BOT.
 2. Chưa bao gồm phí nâng hạ cont tại cảng/ICD và phí bốc xếp hàng hóa tại kho của Quý khách hàng.
 3. Thời gian lưu xe (Free-time): Miễn phí 12 giờ đầu kể từ khi xe đến kho; Phí neo tính sau 12h: Xe đầu kéo 1.500.000 VNĐ/đêm, Rơ-moóc 1.000.000 VNĐ/đêm.
-4. Triền Võ Logistics cam kết điều xe đúng chủng loại, đảm bảo tải trọng quy định, bảo toàn nguyên vẹn seal chì và phẩm chất hàng hóa.
+4. Green Solutions Supply cam kết điều xe đúng chủng loại, đảm bảo tải trọng quy định, bảo toàn nguyên vẹn seal chì và phẩm chất hàng hóa.
 5. Báo giá có hiệu lực trong vòng 30 ngày kể từ ngày ban hành.`,
 
     ftl: `1. Đơn giá trên chưa bao gồm thuế VAT (8% / 10%) và chưa bao gồm chi phí bốc xếp tại hai đầu kho.
@@ -15737,7 +15737,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     if (p1Contact) p1Contact.innerText = q.contact_person || q.customer_contact || 'Phòng Xuất Nhập Khẩu / Logistics';
 
     const p1Phone = document.getElementById('print-q1-contact-phone');
-    if (p1Phone) p1Phone.innerText = q.contact_phone || q.customer_phone || '0965 559 561';
+    if (p1Phone) p1Phone.innerText = q.contact_phone || q.customer_phone || '';
 
     const p1Address = document.getElementById('print-q1-customer-address');
     if (p1Address) p1Address.innerText = q.customer_address || 'Địa chỉ kho khách hàng';
@@ -15879,7 +15879,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     if (p3Contact) p3Contact.innerText = q.contact_person || q.customer_contact || 'Phòng Xuất Nhập Khẩu';
 
     const p3Phone = document.getElementById('print-q3-client-phone');
-    if (p3Phone) p3Phone.innerText = [q.contact_phone || q.customer_phone, q.contact_email].filter(Boolean).join(' / ') || '0965 559 561';
+    if (p3Phone) p3Phone.innerText = [q.contact_phone || q.customer_phone, q.contact_email].filter(Boolean).join(' / ') || '';
 
     const p3Cargo = document.getElementById('print-q3-cargo-desc');
     if (p3Cargo) p3Cargo.innerText = q.cargo_type || 'Container 40HC / Hàng xuất nhập khẩu';
@@ -17683,7 +17683,7 @@ async function openDirectPrintBooking(bookingId) {
                     <div class="header">
                         <div>
                             <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">${co.company_name}</div>
-                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Đ/c: ${co.address || '—'} • Hotline: ${co.phone || '0965.559.561'}${co.tax_code ? ` • MST: ${co.tax_code}` : ''}</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Đ/c: ${co.address || '—'} • Hotline: ${co.phone || '—'}${co.tax_code ? ` • MST: ${co.tax_code}` : ''}</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">${b.booking_code || ('BK-' + b.id)}</div>
@@ -17755,7 +17755,7 @@ async function openDirectPrintBooking(bookingId) {
 
                     <div class="footer-note">
                         <span>* Phiếu tiếp nhận vận tải là căn cứ điều phối và đối chiếu giao nhận hàng hóa.</span>
-                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '0965.559.561'}</span>
+                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '—'}</span>
                     </div>
                 </div>
             </body>
@@ -21500,7 +21500,7 @@ async function openDirectPrintEmployee(empId) {
                     <div class="header">
                         <div>
                             <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">${co.company_name} — PHÒNG HÀNH CHÍNH NHÂN SỰ</div>
-                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline: ${co.phone || '0965.559.561'} • Đ/c: ${co.address || '—'}</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline: ${co.phone || '—'} • Đ/c: ${co.address || '—'}</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">MÃ NV: ${emp.code || emp.id}</div>
@@ -21560,7 +21560,7 @@ async function openDirectPrintEmployee(empId) {
 
                     <div class="footer-note">
                         <span>* Hồ sơ nhân sự lưu hành nội bộ, bảo mật thông tin theo quy định doanh nghiệp.</span>
-                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '0965.559.561'}</span>
+                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '—'}</span>
                     </div>
                 </div>
             </body>
@@ -23537,7 +23537,7 @@ async function printDriverAdvanceVoucher(advanceId) {
         const adv = data.advance;
 
         const company = window.SYSTEM_COMPANY || {};
-        const compName = company.name || 'CÔNG TY TNHH VẬN TẢI & GIAO NHẬN TRIỀN VÕ';
+        const compName = company.name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH';
         const compAddress = company.address || 'Hồ Chí Minh, Việt Nam';
         const compTax = company.tax_code || '0318000000';
         const compPhone = company.phone || '0900.000.000';
@@ -23947,7 +23947,7 @@ async function printDispatcherFundVoucher(fundId) {
         const fund = data.fund;
 
         const company = window.SYSTEM_COMPANY || {};
-        const compName = company.name || 'CÔNG TY TNHH VẬN TẢI & GIAO NHẬN TRIỀN VÕ';
+        const compName = company.name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH';
         const compAddress = company.address || 'Hồ Chí Minh, Việt Nam';
         const compTax = company.tax_code || '0318000000';
         const compPhone = company.phone || '0900.000.000';
@@ -24025,7 +24025,7 @@ async function printDispatcherFundVoucher(fundId) {
         </tr>
         <tr>
             <td class="label">Bộ phận công tác:</td>
-            <td>Phòng Điều Phối & Quản Lý Đội Xe Vận Tải Triền Võ</td>
+            <td>Phòng Điều Phối & Quản Lý Đội Xe Vận Tải GSS</td>
         </tr>
         <tr>
             <td class="label">Mục đích cấp quỹ:</td>
@@ -24097,7 +24097,7 @@ function printSettlementAdvanceVoucher() {
     const notes = document.getElementById('settle-adv-notes')?.value || adv.settlement_notes || '';
 
     const company = window.SYSTEM_COMPANY || {};
-    const compName = company.name || 'CÔNG TY TNHH VẬN TẢI & GIAO NHẬN TRIỀN VÕ';
+    const compName = company.name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH';
     const compAddress = company.address || 'Hồ Chí Minh, Việt Nam';
 
     const printWindow = window.open('', '_blank', 'width=900,height=800');
@@ -25447,7 +25447,7 @@ function printSettleVoucher() {
         .head img{height:52px;width:auto}.head .co{font-size:12px}.head .co b{font-size:13px;text-transform:uppercase}
         .sign td{border:none;text-align:center;width:25%}</style></head>
         <body>
-        <div class="head"><img src="${location.origin}/static/images/trienvo_logo.png" alt="">
+        <div class="head"><img src="${location.origin}/static/images/gss_logo.svg" alt="">
             <div class="co"><b>${escapeHtml(co.company_name || '')}</b><br>${escapeHtml(co.address || '')}<br>MST: ${escapeHtml(co.tax_code || '')} · ĐT: ${escapeHtml(co.phone || '')}</div></div>
         <h2 style="text-align:center;margin:6px 0 2px">BẢNG KÊ QUYẾT TOÁN ${party.toUpperCase()}</h2>
         <p style="text-align:center;margin:0 0 2px">Từ ngày ${escapeHtml(fromDate)} đến ngày ${escapeHtml(toDate)}</p>
@@ -26449,7 +26449,7 @@ function renderFullpageVoucherContent(tx) {
     const amountFormatted = new Intl.NumberFormat('vi-VN').format(Math.round(tx.amount || 0)) + ' đ';
     const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
     const co = getSystemCompanyProfile();
-    const compDisplayName = co.short_name || co.company_name || 'Triền Võ Logistics';
+    const compDisplayName = co.short_name || co.company_name || 'Green Solutions Supply';
     const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - ${compDisplayName}` : `Đội xe vận tải ${compDisplayName}`;
     const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
     const attachmentsFormatted = tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc';
@@ -27003,7 +27003,7 @@ async function openDirectPrintCashVoucher(voucherIdentifier) {
         const amountFormatted = new Intl.NumberFormat('vi-VN').format(Math.round(tx.amount || 0)) + ' đ';
         const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
         const co = getSystemCompanyProfile();
-        const compDisplayName = co.short_name || co.company_name || 'Triền Võ Logistics';
+        const compDisplayName = co.short_name || co.company_name || 'Green Solutions Supply';
         const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - ${compDisplayName}` : `Đội xe vận tải ${compDisplayName}`;
         const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
         const attachmentsFormatted = tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc';
@@ -27698,7 +27698,7 @@ function printSubcontractorVoucher(tripId = null) {
     if (!trip) return;
 
     const company = window.SYSTEM_COMPANY || {};
-    const compName = company.name || 'CÔNG TY TNHH VẬN TẢI & GIAO NHẬN TRIỀN VÕ';
+    const compName = company.name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH';
     const compAddress = company.address || 'Hồ Chí Minh, Việt Nam';
 
     const printWindow = window.open('', '_blank', 'width=900,height=800');
@@ -30001,8 +30001,8 @@ function renderMasterDataTable(items, total = items.length) {
             return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 ${renderMdSttTd(stt)}
-                <td class="py-2.5 px-3 text-[13px] font-bold text-teal-950 border-r border-slate-200">${escapeHtml(item.company_name || 'CÔNG TY TNHH VẬN TẢI TRIỀN VÕ')}</td>
-                <td class="py-2.5 px-3 text-[12px] font-bold text-teal-700 border-r border-slate-200">${escapeHtml(item.short_name || 'TRIỀN VÕ LOGISTICS')}</td>
+                <td class="py-2.5 px-3 text-[13px] font-bold text-teal-950 border-r border-slate-200">${escapeHtml(item.company_name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH')}</td>
+                <td class="py-2.5 px-3 text-[12px] font-bold text-teal-700 border-r border-slate-200">${escapeHtml(item.short_name || 'Green Solutions Supply Co., Ltd.')}</td>
                 <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-slate-800 border-r border-slate-200">${escapeHtml(item.tax_code || '—')}</td>
                 <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-emerald-700 border-r border-slate-200">${escapeHtml(item.phone || item.hotline || '—')}</td>
                 <td class="py-2.5 px-3 text-[12px] text-blue-700 border-r border-slate-200">${escapeHtml(item.email || '—')}</td>
@@ -30817,13 +30817,13 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tên Pháp Nhân Đầy Đủ <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-cp-name" value="${escapeHtml(d.company_name || '')}" placeholder="VD: CÔNG TY TNHH VẬN TẢI TRIỀN VÕ" class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                    <input type="text" id="mdf-cp-name" value="${escapeHtml(d.company_name || '')}" placeholder="VD: CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH" class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tên Thương Hiệu / Viết Tắt</label>
                     </div>
-                    <input type="text" id="mdf-cp-short-name" value="${escapeHtml(d.short_name || '')}" placeholder="VD: TRIỀN VÕ LOGISTICS" class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-teal-700 w-full">
+                    <input type="text" id="mdf-cp-short-name" value="${escapeHtml(d.short_name || '')}" placeholder="VD: Green Solutions Supply Co., Ltd." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-teal-700 w-full">
                 </div>
             </div>
 
@@ -30871,13 +30871,13 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Email Liên Hệ</label>
                     </div>
-                    <input type="email" id="mdf-cp-email" value="${escapeHtml(d.email || '')}" placeholder="VD: contact@trienvo.com" class="form-input h-8.5 px-2.5 py-1 text-xs text-blue-700 w-full">
+                    <input type="email" id="mdf-cp-email" value="${escapeHtml(d.email || '')}" placeholder="VD: —" class="form-input h-8.5 px-2.5 py-1 text-xs text-blue-700 w-full">
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Website Công Ty</label>
                     </div>
-                    <input type="text" id="mdf-cp-website" value="${escapeHtml(d.website || '')}" placeholder="VD: https://trienvo.com" class="form-input h-8.5 px-2.5 py-1 text-xs text-teal-700 w-full">
+                    <input type="text" id="mdf-cp-website" value="${escapeHtml(d.website || '')}" placeholder="VD: " class="form-input h-8.5 px-2.5 py-1 text-xs text-teal-700 w-full">
                 </div>
             </div>
 
@@ -31316,7 +31316,7 @@ function injectMasterDataModalFields(data) {
                         <option value="Hiệp Phước (Nhà Bè)">
                         <option value="SPITC / Phú Hữu">
                         <option value="Sóng Thần / Dĩ An">
-                        <option value="Bãi Triền Võ (TVL)">
+                        <option value="Bãi GSS">
                     </datalist>
                 </div>
                 <div class="md:col-span-6">
@@ -32030,7 +32030,7 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tên Đối Tượng / Quỹ / Tài Khoản <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-ob-name" value="${escapeHtml(d.entity_name || '')}" placeholder="VD: Quỹ tiền mặt Triền Võ, KH Công ty ABC, Tài xế Nguyễn Văn A..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                    <input type="text" id="mdf-ob-name" value="${escapeHtml(d.entity_name || '')}" placeholder="VD: Quỹ tiền mặt GSS, KH Công ty ABC, Tài xế Nguyễn Văn A..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -32415,13 +32415,13 @@ function getSystemCompanyProfile() {
     const comp = (typeof masterDataCache !== 'undefined' && masterDataCache['company']) || window.SYSTEM_COMPANY || {};
     return {
         id: comp.id || 1,
-        company_name: comp.company_name || 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ',
-        short_name: comp.short_name || 'TRIỀN VÕ LOGISTICS',
-        address: comp.headquarters_address || comp.address || '153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh',
-        tax_code: comp.tax_code || '0314567890',
-        phone: comp.hotline || comp.phone || '0965 559 561',
-        email: comp.email || 'phongkinhdoanh.tvl@trienvo.com',
-        representative_name: comp.representative_name || 'Võ Văn Triền',
+        company_name: comp.company_name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH',
+        short_name: comp.short_name || 'Green Solutions Supply Co., Ltd.',
+        address: comp.headquarters_address || comp.address || '302/5 Lê Đức Thọ, Phường An Nhơn, TP Hồ Chí Minh, Việt Nam',
+        tax_code: comp.tax_code || '0316657112',
+        phone: comp.hotline || comp.phone || '',
+        email: comp.email || '—',
+        representative_name: comp.representative_name || '',
         representative_role: comp.representative_role || 'Giám Đốc',
         bank_account_number: comp.bank_account_number || '',
         bank_name: comp.bank_name || '',
@@ -32433,7 +32433,7 @@ function getSystemCompanyProfile() {
         fleet_yard_name: comp.fleet_yard_name || '',
         fleet_yard_address: comp.fleet_yard_address || '',
         fleet_yard_hotline: comp.fleet_yard_hotline || '',
-        logo_url: comp.logo_url || '/static/images/trienvo_logo.png'
+        logo_url: comp.logo_url || '/static/images/gss_logo.svg'
     };
 }
 window.getSystemCompanyProfile = getSystemCompanyProfile;
@@ -32477,14 +32477,14 @@ function syncCompanyProfileToPrintForms() {
         el.innerText = co.tax_code;
     });
 
-    // 8. Đồng bộ Logo Công ty Triền Võ (không lấy nhầm logo chung GSS)
-    let compLogo = co.logo_url || '/static/images/trienvo_logo.png';
+    // 8. Đồng bộ Logo Công ty GSS (không lấy nhầm logo chung GSS)
+    let compLogo = co.logo_url || '/static/images/gss_logo.svg';
     if (!compLogo || compLogo.endsWith('/logo.png') || compLogo.includes('static/images/logo.png')) {
-        compLogo = '/static/images/trienvo_logo.png';
+        compLogo = '/static/images/gss_logo.svg';
     }
     document.querySelectorAll('.print-comp-logo').forEach(el => {
         el.src = compLogo;
-        el.onerror = () => { el.src = '/media/trienvo_logo.png'; };
+        el.onerror = () => { el.src = '/media/gss_logo.svg'; };
     });
 }
 window.syncCompanyProfileToPrintForms = syncCompanyProfileToPrintForms;
@@ -32510,7 +32510,7 @@ async function loadCompanyProfile() {
 
         if (profile.short_name || profile.company_name) {
             const el = document.getElementById('md-stat-company');
-            if (el) el.innerText = profile.short_name || 'Triền Võ';
+            if (el) el.innerText = profile.short_name || 'GSS';
         }
 
         // Tự động đồng bộ lên tất cả các mẫu in
@@ -32554,7 +32554,7 @@ function renderCompanyProfileView(company) {
                     <div>
                         <div class="flex items-center gap-2 flex-wrap mb-1">
                             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-500/30 text-teal-200 border border-teal-400/30">
-                                ${escapeHtml(company.short_name || 'TRIỀN VÕ LOGISTICS')}
+                                ${escapeHtml(company.short_name || 'Green Solutions Supply Co., Ltd.')}
                             </span>
                             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
                                 <i class="ph-bold ph-check-circle"></i> Đang hoạt động
@@ -32564,7 +32564,7 @@ function renderCompanyProfileView(company) {
                             </span>
                         </div>
                         <h2 class="text-lg md:text-xl font-black font-heading tracking-tight text-white leading-snug">
-                            ${escapeHtml(company.company_name || 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ')}
+                            ${escapeHtml(company.company_name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH')}
                         </h2>
                         <p class="text-xs text-teal-200/80 mt-1 flex items-center gap-1.5 flex-wrap">
                             <span><i class="ph-bold ph-map-pin text-teal-300"></i> ${escapeHtml(company.address || '---')}</span>
@@ -34380,7 +34380,7 @@ function onOpeningBalanceAccountChange() {
 
     const acc = accSelect.value;
     const suggestions = openingBalanceState.data.suggestions || {};
-    const company = suggestions.company || { code: 'TVL', name: 'TRIỀN VÕ LOGISTICS', full_name: 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ' };
+    const company = suggestions.company || { code: 'GSS', name: 'Green Solutions Supply Co., Ltd.', full_name: 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH' };
 
     // Hiển thị/ẩn ô số tài khoản ngân hàng nếu chọn TK 112
     if (acc.startsWith('112')) {
@@ -34397,24 +34397,24 @@ function onOpeningBalanceAccountChange() {
         // Tiền mặt tại quỹ: chọn công ty mình
         groupTitle = 'Đơn vị / Công ty';
         list = [
-            { code: company.code || 'TVL', name: company.name || 'TRIỀN VÕ LOGISTICS', bank: '' },
+            { code: company.code || 'GSS', name: company.name || 'Green Solutions Supply Co., Ltd.', bank: '' },
             { code: 'QTM_VP', name: 'Quỹ Tiền Mặt Văn Phòng (Cát Lái)', bank: '' },
             { code: 'QTM_TN', name: 'Quỹ Tiền Mặt Chi Nhánh Tây Ninh', bank: '' }
         ];
         if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
 
         // Tự động gán sẵn nếu form đang trống và không ở chế độ sửa
-        if (!openingBalanceState.editingId && codeInput && (!codeInput.value || codeInput.value === 'TVL')) {
-            codeInput.value = company.code || 'TVL';
-            if (nameInput) nameInput.value = company.name || 'TRIỀN VÕ LOGISTICS';
+        if (!openingBalanceState.editingId && codeInput && (!codeInput.value || codeInput.value === 'GSS')) {
+            codeInput.value = company.code || 'GSS';
+            if (nameInput) nameInput.value = company.name || 'Green Solutions Supply Co., Ltd.';
         }
     } else if (acc.startsWith('112')) {
         // Tiền gửi Ngân hàng: tài khoản ngân hàng công ty mình
         groupTitle = 'Ngân hàng Công ty';
         list = [
             { 
-                code: company.code || 'TVL', 
-                name: (company.name || 'TRIỀN VÕ LOGISTICS') + (company.bank_name ? ` - ${company.bank_name}` : ''), 
+                code: company.code || 'GSS', 
+                name: (company.name || 'Green Solutions Supply Co., Ltd.') + (company.bank_name ? ` - ${company.bank_name}` : ''), 
                 bank: company.bank_account_number || '' 
             }
         ];
@@ -34422,8 +34422,8 @@ function onOpeningBalanceAccountChange() {
 
         if (!openingBalanceState.editingId && bankAccInput && !bankAccInput.value && company.bank_account_number) {
             bankAccInput.value = company.bank_account_number;
-            if (codeInput) codeInput.value = company.code || 'TVL';
-            if (nameInput) nameInput.value = company.name || 'TRIỀN VÕ LOGISTICS';
+            if (codeInput) codeInput.value = company.code || 'GSS';
+            if (nameInput) nameInput.value = company.name || 'Green Solutions Supply Co., Ltd.';
         }
     } else if (acc === '131' || acc === '1388') {
         // 131 - Phải thu Khách hàng
@@ -40515,7 +40515,7 @@ function printCustomerARStatement(customerId) {
         }
     }
 
-    // Đảm bảo đồng bộ thông tin pháp lý công ty Triền Võ lên header bản in
+    // Đảm bảo đồng bộ thông tin pháp lý công ty GSS lên header bản in
     if (typeof syncCompanyProfileToPrintForms === 'function') {
         syncCompanyProfileToPrintForms();
     }
@@ -40658,7 +40658,7 @@ function renderCustomerFreightStatementUI(data) {
     if (elSignComp) elSignComp.innerText = comp.company_name || 'CÔNG TY TNHH DỊCH VỤ GIAO NHẬN VẬN TẢI TRIỂN VÕ';
 
     const elRepName = document.getElementById('cfs-sign-representative-name');
-    if (elRepName) elRepName.innerText = comp.representative_name || 'Võ Văn Triền';
+    if (elRepName) elRepName.innerText = comp.representative_name || '';
 
     const elThVat = document.getElementById('cfs-th-vat-rate');
     if (elThVat) elThVat.innerText = period.vat_rate > 0 ? `VAT ${period.vat_rate}%` : 'VAT 0%';
@@ -41901,7 +41901,7 @@ async function openDirectPrintCustoms(customsId) {
                     <div class="header">
                         <div>
                             <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">${co.company_name} — PHÒNG THỦ TỤC HẢI QUAN</div>
-                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline thông quan: ${co.phone || '0965.559.561'} • Đ/c: ${co.address || '—'} • Cổng kết nối VNACCS/VCIS EDI Gateway</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline thông quan: ${co.phone || '—'} • Đ/c: ${co.address || '—'} • Cổng kết nối VNACCS/VCIS EDI Gateway</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">TK: ${item.declaration_number}</div>
@@ -41977,7 +41977,7 @@ async function openDirectPrintCustoms(customsId) {
 
                     <div class="footer-note">
                         <span>* Phiếu theo dõi thủ tục hải quan lưu kèm hồ sơ chứng từ điện tử gốc.</span>
-                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '0965.559.561'}</span>
+                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '—'}</span>
                     </div>
                 </div>
             </body>
@@ -43613,7 +43613,7 @@ function printCurrentTaskSlip() {
             <table class="header-table">
                 <tr>
                     <td>
-                        <div class="company-title">CÔNG TY TNHH VẬN TẢI & LOGISTICS TRIỀN VÕ</div>
+                        <div class="company-title">CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH</div>
                         <div style="font-size: 11px; color: #64748b;">Hệ sinh thái Quản trị Vận tải & Chuỗi cung ứng GSS Logistics</div>
                     </td>
                     <td style="text-align: right; font-size: 11px; color: #64748b;">
@@ -44999,7 +44999,7 @@ function showChatRoomsList() {
     document.getElementById('chat-btn-back-rooms').classList.add('hidden');
 
     document.getElementById('chat-header-title').textContent = 'Trò Chuyện Nội Bộ';
-    document.getElementById('chat-header-subtitle').textContent = 'Văn phòng Triền Võ Logistics';
+    document.getElementById('chat-header-subtitle').textContent = 'Văn phòng Green Solutions Supply';
 
     loadChatRooms();
 }

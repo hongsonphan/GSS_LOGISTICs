@@ -22,7 +22,7 @@ def ensure_default_system_rooms():
     all_hands = ChatRoom.objects.filter(room_type=RoomType.COMPANY).first()
     if not all_hands:
         ChatRoom.objects.create(
-            name="Toàn thể Văn phòng Triền Võ Logistics",
+            name="Toàn thể Văn phòng Green Solutions Supply",
             room_type=RoomType.COMPANY,
             description="Kênh thảo luận chung cho toàn thể cán bộ nhân viên văn phòng",
             last_message_at=timezone.now()

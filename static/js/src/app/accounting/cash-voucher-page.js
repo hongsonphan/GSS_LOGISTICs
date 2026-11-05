@@ -37,7 +37,7 @@ function renderFullpageVoucherContent(tx) {
     const amountFormatted = new Intl.NumberFormat('vi-VN').format(Math.round(tx.amount || 0)) + ' đ';
     const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
     const co = getSystemCompanyProfile();
-    const compDisplayName = co.short_name || co.company_name || 'Triền Võ Logistics';
+    const compDisplayName = co.short_name || co.company_name || 'Green Solutions Supply';
     const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - ${compDisplayName}` : `Đội xe vận tải ${compDisplayName}`;
     const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
     const attachmentsFormatted = tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc';
@@ -591,7 +591,7 @@ async function openDirectPrintCashVoucher(voucherIdentifier) {
         const amountFormatted = new Intl.NumberFormat('vi-VN').format(Math.round(tx.amount || 0)) + ' đ';
         const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
         const co = getSystemCompanyProfile();
-        const compDisplayName = co.short_name || co.company_name || 'Triền Võ Logistics';
+        const compDisplayName = co.short_name || co.company_name || 'Green Solutions Supply';
         const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - ${compDisplayName}` : `Đội xe vận tải ${compDisplayName}`;
         const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
         const attachmentsFormatted = tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc';

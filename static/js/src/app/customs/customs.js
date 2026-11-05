@@ -742,7 +742,7 @@ async function openDirectPrintCustoms(customsId) {
                     <div class="header">
                         <div>
                             <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">${co.company_name} — PHÒNG THỦ TỤC HẢI QUAN</div>
-                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline thông quan: ${co.phone || '0965.559.561'} • Đ/c: ${co.address || '—'} • Cổng kết nối VNACCS/VCIS EDI Gateway</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline thông quan: ${co.phone || '—'} • Đ/c: ${co.address || '—'} • Cổng kết nối VNACCS/VCIS EDI Gateway</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">TK: ${item.declaration_number}</div>
@@ -818,7 +818,7 @@ async function openDirectPrintCustoms(customsId) {
 
                     <div class="footer-note">
                         <span>* Phiếu theo dõi thủ tục hải quan lưu kèm hồ sơ chứng từ điện tử gốc.</span>
-                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '0965.559.561'}</span>
+                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '—'}</span>
                     </div>
                 </div>
             </body>

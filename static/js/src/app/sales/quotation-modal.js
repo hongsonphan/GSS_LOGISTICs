@@ -143,7 +143,7 @@ const DEFAULT_QUOTATION_NOTES = {
     fcl: `1. Đơn giá trên chưa bao gồm thuế giá trị gia tăng (VAT 8% / 10%). Đã bao gồm chi phí nhiên liệu, lương lái xe và phí cầu đường BOT.
 2. Chưa bao gồm phí nâng hạ cont tại cảng/ICD và phí bốc xếp hàng hóa tại kho của Quý khách hàng.
 3. Thời gian lưu xe (Free-time): Miễn phí 12 giờ đầu kể từ khi xe đến kho; Phí neo tính sau 12h: Xe đầu kéo 1.500.000 VNĐ/đêm, Rơ-moóc 1.000.000 VNĐ/đêm.
-4. Triền Võ Logistics cam kết điều xe đúng chủng loại, đảm bảo tải trọng quy định, bảo toàn nguyên vẹn seal chì và phẩm chất hàng hóa.
+4. Green Solutions Supply cam kết điều xe đúng chủng loại, đảm bảo tải trọng quy định, bảo toàn nguyên vẹn seal chì và phẩm chất hàng hóa.
 5. Báo giá có hiệu lực trong vòng 30 ngày kể từ ngày ban hành.`,
 
     ftl: `1. Đơn giá trên chưa bao gồm thuế VAT (8% / 10%) và chưa bao gồm chi phí bốc xếp tại hai đầu kho.

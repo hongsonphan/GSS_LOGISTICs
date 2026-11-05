@@ -189,7 +189,7 @@ class Quotation(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         max_length=30,
         default='STANDARD',
         choices=[
-            ('STANDARD', 'Mẫu 1: Tiêu Chuẩn Doanh Nghiệp (Quốc hiệu & Điều khoản TVL)'),
+            ('STANDARD', 'Mẫu 1: Tiêu Chuẩn Doanh Nghiệp (Quốc hiệu & Điều khoản GSS)'),
             ('TABLE_MATRIX', 'Mẫu 2: Bảng Cước & Khung Đối Tác (To/From Matrix)'),
             ('PROJECT_DETAIL', 'Mẫu 3: Chi Tiết Dịch Vụ & Lộ Trình Dự Án'),
         ],

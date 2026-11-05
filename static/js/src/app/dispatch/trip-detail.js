@@ -10,7 +10,7 @@ let currentActiveTripCode = null;
 let currentActiveTripData = null;
 let currentOcrMode = 'phi-ton';
 
-// --- 3. XEM CHI TIẾT CHUYẾN XE & BẢNG KÊ CHI PHÍ TRIỀN VÕ ---
+// --- 3. XEM CHI TIẾT CHUYẾN XE & BẢNG KÊ CHI PHÍ GSS ---
 async function viewTripDetail(tripCode, updateHistory = true) {
     currentActiveTripCode = tripCode;
     try {
@@ -417,7 +417,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             profitEl.innerText = `${formatMoney(trip.financials.profit)} (${trip.financials.margin_percent}%)`;
         }
 
-        // --- RENDER BẢNG KÊ CHI PHÍ (8 MỤC CHUẨN TRIỀN VÕ) ---
+        // --- RENDER BẢNG KÊ CHI PHÍ (8 MỤC CHUẨN GSS) ---
         renderCostSheetTable(trip);
 
         // --- RENDER MOBILE SIMULATOR DATA ---

@@ -749,7 +749,7 @@ async function openDirectPrintEmployee(empId) {
                     <div class="header">
                         <div>
                             <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">${co.company_name} — PHÒNG HÀNH CHÍNH NHÂN SỰ</div>
-                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline: ${co.phone || '0965.559.561'} • Đ/c: ${co.address || '—'}</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline: ${co.phone || '—'} • Đ/c: ${co.address || '—'}</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">MÃ NV: ${emp.code || emp.id}</div>
@@ -809,7 +809,7 @@ async function openDirectPrintEmployee(empId) {
 
                     <div class="footer-note">
                         <span>* Hồ sơ nhân sự lưu hành nội bộ, bảo mật thông tin theo quy định doanh nghiệp.</span>
-                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '0965.559.561'}</span>
+                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '—'}</span>
                     </div>
                 </div>
             </body>

@@ -19,7 +19,7 @@ EMPLOYEE_COLUMNS = [
     {'key': 'full_name', 'header': 'Họ Và Tên (*)', 'required': True, 'type': 'str', 'sample': 'Nguyễn Văn An'},
     {'key': 'nickname', 'header': 'Biệt Danh Hiện Trường', 'required': False, 'type': 'str', 'sample': 'AN 51D'},
     {'key': 'phone_number', 'header': 'Số Điện Thoại (*)', 'required': True, 'type': 'str', 'sample': '0908123456'},
-    {'key': 'email', 'header': 'Email', 'required': False, 'type': 'str', 'sample': 'an.nguyen@trienvo.vn'},
+    {'key': 'email', 'header': 'Email', 'required': False, 'type': 'str', 'sample': 'user@gss-logistics.example.com'},
     {'key': 'department', 'header': 'Phòng Ban (*)', 'required': False, 'type': 'str', 'sample': 'Đội Xe & Bãi'},
     {'key': 'role', 'header': 'Chức Vụ / Vị Trí (*)', 'required': False, 'type': 'str', 'sample': 'Tài xế'},
     {'key': 'gender', 'header': 'Giới Tính (Nam/Nữ)', 'required': False, 'type': 'str', 'sample': 'Nam'},
@@ -45,21 +45,21 @@ EMPLOYEE_COLUMNS = [
 
 EMPLOYEE_SAMPLES = [
     [
-        'TX001', 'Nguyễn Văn An', 'AN 51D', '0908123456', 'an.nguyen@trienvo.vn',
+        'TX001', 'Nguyễn Văn An', 'AN 51D', '0908123456', 'user@gss-logistics.example.com',
         'Đội Xe & Bãi', 'Tài xế', 'Nam', '1988-05-15', '079088012345', '2021-04-10', 'Cục CS QLHC về TTXH',
         '8012345678', '7912345678', 'Ấp 2, Xã An Phước, Long Thành, Đồng Nai', 'Bãi xe Suối Tiên, TP. Thủ Đức',
         '1903123456789', 'Techcombank', 'CN Sài Gòn', 'NGUYEN VAN AN', '2023-01-10',
         6500000, 5000000, '790123456789', '2028-05-15', 'Hoạt động'
     ],
     [
-        'DD001', 'Trần Quốc Dũng', 'DŨNG ĐIỀU ĐỘ', '0918765432', 'dung.tran@trienvo.vn',
+        'DD001', 'Trần Quốc Dũng', 'DŨNG ĐIỀU ĐỘ', '0918765432', 'user@gss-logistics.example.com',
         'Phòng Điều Vận', 'Điều độ viên', 'Nam', '1992-09-20', '079092054321', '2022-08-15', 'Cục CS QLHC về TTXH',
         '8092054321', '7992054321', '15/4 Lê Văn Việt, Tăng Nhơn Phú B, TP. Thủ Đức', '15/4 Lê Văn Việt, TP. Thủ Đức',
         '0441000987654', 'Vietcombank', 'CN Thủ Thiêm', 'TRAN QUOC DUNG', '2022-03-01',
         9000000, 6000000, '', '', 'Hoạt động'
     ],
     [
-        'KT001', 'Lê Thị Bích Ngọc', 'NGỌC KẾ TOÁN', '0933555777', 'ngoc.le@trienvo.vn',
+        'KT001', 'Lê Thị Bích Ngọc', 'NGỌC KẾ TOÁN', '0933555777', 'user@gss-logistics.example.com',
         'Kế Toán Tài Chính', 'Kế toán viên', 'Nữ', '1995-11-28', '079095099887', '2023-02-20', 'Cục CS QLHC về TTXH',
         '8095099887', '7995099887', '48 Nguyễn Huệ, P. Bến Nghé, Quận 1, TP.HCM', '72/5 Điện Biên Phủ, Bình Thạnh, TP.HCM',
         '0071000555777', 'MB Bank', 'CN Hồ Chí Minh', 'LE THI BICH NGOC', '2023-06-15',
@@ -236,7 +236,7 @@ def parse_gender_val(val):
 
 def generate_employee_template():
     """
-    Tạo file Excel mẫu nhập liệu Hồ Sơ Nhân Sự (Format chuẩn Triền Võ Logistics)
+    Tạo file Excel mẫu nhập liệu Hồ Sơ Nhân Sự (Format chuẩn Green Solutions Supply)
     """
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -246,7 +246,7 @@ def generate_employee_template():
     # 1. Tiêu đề lớn
     total_cols = len(EMPLOYEE_COLUMNS)
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_cols)
-    title_cell = ws.cell(row=1, column=1, value="MẪU NHẬP HỒ SƠ NHÂN SỰ & TÀI XẾ — TRIỀN VÕ LOGISTICS")
+    title_cell = ws.cell(row=1, column=1, value="MẪU NHẬP HỒ SƠ NHÂN SỰ & TÀI XẾ — Green Solutions Supply Co., Ltd.")
     title_cell.font = Font(name="Arial", size=13, bold=True, color="FFFFFF")
     title_cell.fill = PatternFill(start_color="0F766E", end_color="0F766E", fill_type="solid")
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
@@ -516,7 +516,7 @@ def export_employees_to_excel(queryset=None):
 
     total_cols = len(EMPLOYEE_COLUMNS)
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_cols)
-    title_cell = ws.cell(row=1, column=1, value=f"DANH SÁCH NHÂN SỰ & TÀI XẾ TRIỀN VÕ LOGISTICS — {timezone.now().strftime('%d/%m/%Y')}")
+    title_cell = ws.cell(row=1, column=1, value=f"DANH SÁCH NHÂN SỰ & TÀI XẾ Green Solutions Supply Co., Ltd. — {timezone.now().strftime('%d/%m/%Y')}")
     title_cell.font = Font(name="Arial", size=13, bold=True, color="FFFFFF")
     title_cell.fill = PatternFill(start_color="0F766E", end_color="0F766E", fill_type="solid")
     title_cell.alignment = Alignment(horizontal="center", vertical="center")

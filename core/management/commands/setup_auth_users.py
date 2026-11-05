@@ -22,7 +22,7 @@ class Command(BaseCommand):
                 'is_superuser': True,
                 'emp_code': 'BGD01',
                 'full_name': 'Võ Triền (Giám Đốc)',
-                'nickname': 'TRIỀN VÕ',
+                'nickname': 'GSS',
                 'role': EmployeeRole.DIRECTOR,
                 'department': Department.MANAGEMENT,
                 'phone': '0901234567',

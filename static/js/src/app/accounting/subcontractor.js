@@ -606,7 +606,7 @@ function printSubcontractorVoucher(tripId = null) {
     if (!trip) return;
 
     const company = window.SYSTEM_COMPANY || {};
-    const compName = company.name || 'CÔNG TY TNHH VẬN TẢI & GIAO NHẬN TRIỀN VÕ';
+    const compName = company.name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH';
     const compAddress = company.address || 'Hồ Chí Minh, Việt Nam';
 
     const printWindow = window.open('', '_blank', 'width=900,height=800');

@@ -1,4 +1,4 @@
-// Hàm render Bảng Kê Chi Phí 8 Mục chuẩn theo 5 ảnh thực tế của Triền Võ
+// Hàm render Bảng Kê Chi Phí 8 Mục chuẩn theo 5 ảnh thực tế của GSS
 function renderCostSheetTable(trip) {
     const tbody = document.getElementById('cost-sheet-tbody');
     if (!tbody) return;

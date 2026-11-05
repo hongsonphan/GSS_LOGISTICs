@@ -55,7 +55,7 @@
   - [C14. Biểu đồ tùy biến trên Dashboard](#c14-biểu-đồ-tùy-biến-trên-dashboard)
 - **PHẦN D. HỎI ĐÁP & XỬ LÝ SỰ CỐ THƯỜNG GẶP**
   - [D1. Khi tạo lệnh, ô Tài xế hoặc Đầu kéo không có tên cần chọn?](#d1-khi-tạo-lệnh-ô-tài-xế-hoặc-đầu-kéo-không-có-tên-cần-chọn)
-  - [D2. Chọn "Chi phí TVL", "TVL chi hộ" hay "3PL chi hộ"?](#d2-chọn-chi-phí-tvl-tvl-chi-hộ-hay-3pl-chi-hộ)
+  - [D2. Chọn "Chi phí công ty", "Công ty chi hộ" hay "3PL chi hộ"?](#d2-chọn-chi-phí-tvl-tvl-chi-hộ-hay-3pl-chi-hộ)
   - [D3. Vì sao không xóa được khách hàng, xe, khoản mục chi…?](#d3-vì-sao-không-xóa-được-khách-hàng-xe-khoản-mục-chi)
   - [D4. In báo giá, lệnh xe, phiếu thu chi bị lệch, mất màu?](#d4-in-báo-giá-lệnh-xe-phiếu-thu-chi-bị-lệch-mất-màu)
   - [D5. Tài xế mất vé BOT hoặc quên chụp POD?](#d5-tài-xế-mất-vé-bot-hoặc-quên-chụp-pod)
@@ -237,8 +237,8 @@ Mỗi tài khoản gắn với một nhân sự có **Phòng ban** và **Chức 
 
 | Nhóm thông tin | Ô nhập | Ghi chú / ví dụ |
 |---|---|---|
-| 1. Pháp lý & định danh | Tên Pháp Nhân Đầy Đủ \* | `CÔNG TY TNHH VẬN TẢI TRIỀN VÕ` |
-| | Tên Thương Hiệu / Viết Tắt | `TRIỀN VÕ LOGISTICS` |
+| 1. Pháp lý & định danh | Tên Pháp Nhân Đầy Đủ \* | `CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH` |
+| | Tên Thương Hiệu / Viết Tắt | `Green Solutions Supply Co., Ltd.` |
 | | Mã Số Thuế (MST) \* | 10 hoặc 13 số |
 | | Giấy Phép KD Vận Tải | Số giấy phép kinh doanh vận tải |
 | | Người Đại Diện & Chức Vụ | Họ tên + chức vụ (mặc định *Giám Đốc*) – in ở ô ký duyệt |
@@ -654,14 +654,14 @@ Chi phí có thể do **tài xế kê trên điện thoại** (C4) hoặc **văn
 | Thành tiền (VNĐ) \* | |
 | Số hóa đơn, Mã tra cứu HĐĐT, Đơn vị thu / phát hành, Link tra cứu HĐĐT | Bắt buộc với khoản mục yêu cầu hóa đơn |
 | Ghi chú chi phí | |
-| **Phân loại chi phí \*** | **`Chi phí TVL`** · **`TVL chi hộ`** · **`3PL chi hộ`** (giải thích bên dưới) |
+| **Phân loại chi phí \*** | **`Chi phí công ty`** · **`Công ty chi hộ`** · **`3PL chi hộ`** (giải thích bên dưới) |
 
 3. Bấm **`Lưu`**. Muốn sửa / xóa: dùng biểu tượng bút / thùng rác ở dòng chi phí (**`Cập Nhật`** để lưu).
 
 | Phân loại | Bản chất | Hệ thống xử lý |
 |---|---|---|
-| **Chi phí TVL** | Công ty chịu (BOT, cân xe, bốc xếp…) | Tính vào chi phí chuyến – làm giảm lợi nhuận chuyến |
-| **TVL chi hộ** | Công ty trả trước thay khách (nâng hạ, cược vỏ…) | **Không** trừ lợi nhuận chuyến; chuyển sang danh sách thu hồi **Debit Note** (Kế toán ➔ Tab 6) |
+| **Chi phí công ty** | Công ty chịu (BOT, cân xe, bốc xếp…) | Tính vào chi phí chuyến – làm giảm lợi nhuận chuyến |
+| **Công ty chi hộ** | Công ty trả trước thay khách (nâng hạ, cược vỏ…) | **Không** trừ lợi nhuận chuyến; chuyển sang danh sách thu hồi **Debit Note** (Kế toán ➔ Tab 6) |
 | **3PL chi hộ** | Tài xế xe bạn tự trả trước | Cộng hoàn cho nhà xe khi quyết toán 3PL (Kế toán ➔ Tab 7) |
 
 **Đính kèm hóa đơn / chứng từ:** **`Đính Kèm Chứng Từ / POD`** ➔ chọn **`Chi Phí Phát Sinh`** (tải ảnh hóa đơn, nhập khoản mục, số tiền, số HĐ, mã tra cứu) hoặc **`Chứng Từ Nghiệm Thu (EIR / POD)`** (chọn loại: EIR, POD có chữ ký, phiếu cân, hóa đơn GTGT cảng, ảnh giám định vỏ; nhập số cont, seal) ➔ **`Lưu & Đính Kèm`**.
@@ -716,7 +716,7 @@ Bấm nhầm *Từ chối*: bấm **`BẤM NHẦM? BẤM ĐỂ NHẬN CHUYẾN L
 
 **Ký nhận điện tử (E-POD):** **`Thủ Kho Ký E-POD`** ➔ thủ kho ký tay lên màn hình ➔ nhập **Họ tên người ký \*** (SĐT tùy chọn) ➔ **`Xác Nhận & Lưu E-POD`**. Bấm **`Xóa ký lại`** nếu ký hỏng.
 
-**Kê chi phí đi đường:** **`Kê Chi Phí`** ➔ **`+ THÊM KHOẢN CHI PHÍ MỚI`** cho từng khoản: chọn người chịu (**Chi phí TVL / TVL chi hộ / 3PL chi hộ** – xem C3.5), loại chi phí (Vé BOT, Nâng cont, Hạ cont, Cược vỏ, Phiếu cân, Bốc xếp, Khác), **số tiền \***, số hóa đơn / vé, ghi chú ➔ **`LƯU & GỬI DUYỆT`**. Khoản đã kê xem ở mục **Chi Phí Đã Kê**, sửa / xóa được khi chưa chốt sổ.
+**Kê chi phí đi đường:** **`Kê Chi Phí`** ➔ **`+ THÊM KHOẢN CHI PHÍ MỚI`** cho từng khoản: chọn người chịu (**Chi phí công ty / Công ty chi hộ / 3PL chi hộ** – xem C3.5), loại chi phí (Vé BOT, Nâng cont, Hạ cont, Cược vỏ, Phiếu cân, Bốc xếp, Khác), **số tiền \***, số hóa đơn / vé, ghi chú ➔ **`LƯU & GỬI DUYỆT`**. Khoản đã kê xem ở mục **Chi Phí Đã Kê**, sửa / xóa được khi chưa chốt sổ.
 
 **Các nút khác:** **`Báo Sự Cố`** (chọn loại, mô tả, chụp ảnh ➔ **`GỬI CẢNH BÁO KHẨN TỚI ĐIỀU ĐỘ`**) · **`Gọi Điều Độ`** · **`Gọi Nhận Hàng`** · **`Sửa số Cont / Seal`** (trong *Chi tiết vận đơn*) · **Nhật ký mốc thời gian** · **Chứng từ & hình ảnh đã nộp** · **Báo mốc thủ công**. Thông tin tạm ứng chuyến, hạn Free DET, giờ cắt máng, tình trạng tờ khai hải quan hiển thị trong *Chi tiết vận đơn*. Tài xế **không** thấy doanh thu hay lợi nhuận.
 
@@ -897,7 +897,7 @@ Tab **4. Quyết Toán Tài Xế**: mỗi dòng là một chuyến với Doanh t
 
 ### C7.6. Khoản chi hộ & Debit Note
 
-Tab **6. Khoản Chi Hộ** liệt kê mọi khoản **TVL chi hộ** từ các chuyến.
+Tab **6. Khoản Chi Hộ** liệt kê mọi khoản **Công ty chi hộ** từ các chuyến.
 
 1. Lọc *Chờ thu / Chưa gửi Debit Note*, tích chọn các khoản của cùng một khách.
 2. **`+ Gom Nhóm Lập Debit Note`** ➔ nhập **Mã số Debit Note \*** (in trên bảng kê gửi khách), **Kênh thu tiền \*** (chuyển khoản / tiền mặt), ngân hàng nhận, ghi chú ➔ **`Xác Nhận Lập Debit Note`**. Trạng thái *Đã xuất Debit Note*.
@@ -1058,12 +1058,12 @@ Bảng đầu kéo hiển thị: biển số, loại, tài xế mặc định, h
 - Ô đầu kéo xe nhà chỉ hiện **xe nhà**; xe đang *Hư hỏng / Bảo trì* hoặc *Ngừng sử dụng* sẽ không được gợi ý. Kiểm tra ở Xe & Bãi (C8).
 - Chọn **Xe Bạn / 3PL** thì danh sách xe và tài xế lọc theo **nhà xe đã chọn** – khai báo đội xe, tài xế của nhà xe ở Cài đặt ➔ Thầu Phụ & Nhà Cung Cấp (B9), hoặc chọn *+ Nhập biển số / tài xế mới* để nhập tay.
 
-## D2. Chọn "Chi phí TVL", "TVL chi hộ" hay "3PL chi hộ"?
+## D2. Chọn "Chi phí công ty", "Công ty chi hộ" hay "3PL chi hộ"?
 
 | Chọn | Khi nào | Ví dụ |
 |---|---|---|
-| **Chi phí TVL** | Công ty chịu chi phí, không thu lại của khách | Vé BOT, cân xe, bốc xếp, bồi dưỡng kho |
-| **TVL chi hộ** | Công ty trả trước, sẽ thu lại 100% từ khách qua Debit Note | Phí nâng hạ hãng tàu, cược vỏ, vệ sinh cont |
+| **Chi phí công ty** | Công ty chịu chi phí, không thu lại của khách | Vé BOT, cân xe, bốc xếp, bồi dưỡng kho |
+| **Công ty chi hộ** | Công ty trả trước, sẽ thu lại 100% từ khách qua Debit Note | Phí nâng hạ hãng tàu, cược vỏ, vệ sinh cont |
 | **3PL chi hộ** | Tài xế xe bạn tự trả trước, công ty hoàn lại khi quyết toán cước | Nhà xe trả phí nâng hạ, lưu ca |
 
 Chọn sai sẽ làm sai lợi nhuận chuyến và công nợ – sửa lại khoản chi trước khi kế toán chốt sổ.

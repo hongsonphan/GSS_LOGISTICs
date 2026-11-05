@@ -202,7 +202,7 @@ Cho phép người dùng tự do phân tích dữ liệu đa chiều theo nhu c�
   - `FLAT_CHARTER` — Trọn gói / Bao chuyến / Theo tháng
 - **Trạng thái báo giá:** `Đang thương lượng` → `Chờ BGĐ duyệt` → `Đã duyệt` / `Từ chối` / `Hết hiệu lực`
 - **3 Mẫu in báo giá (Print Template):**
-  - Mẫu 1: Tiêu chuẩn Doanh nghiệp (Quốc hiệu & Điều khoản TVL)
+  - Mẫu 1: Tiêu chuẩn Doanh nghiệp (Quốc hiệu & Điều khoản GSS)
   - Mẫu 2: Bảng cước & Khung đối tác (To/From Matrix)
   - Mẫu 3: Chi tiết Dịch vụ & Lộ trình Dự án
 - **Hiệu lực báo giá:** Quản lý ngày hết hiệu lực, thông tin người phụ trách và liên hệ
@@ -250,7 +250,7 @@ Cho phép người dùng tự do phân tích dữ liệu đa chiều theo nhu c�
 - **3 loại hàng:** Hàng Nhập | Hàng Xuất | Nội địa
 - **Tách Biệt 2 Trường Độc Lập — Tài Xế & "Đầu kéo/ Xe tải":**
   * Không gán cố định 1-1, cho phép 1 tài xế lái nhiều xe (khi xe bảo dưỡng) và nhiều tài xế thay phiên lái 1 xe (ca ngày/đêm).
-  * **Chế độ Xe Nhà (TVL):**
+  * **Chế độ Xe Nhà (GSS):**
     - Ô 1: `Tài xế nhận lệnh (Toàn trình) *` — Chỉ load tài xế nội bộ TVL (`Employee` có `role=DRIVER`).
     - Ô 2: `Đầu kéo/ Xe tải TVL *` — Chỉ load xe nội bộ TVL (`ownership_type=OWNED`). Dropdown hiển thị kèm loại xe: `51C-123.45 (Đầu kéo Container)`, `50E-112.34 (Xe tải 10 Tấn)`...
     - Cơ chế gợi ý thông minh 2 chiều: chọn tài gợi ý xe, chọn xe gợi ý tài (không ép buộc).
@@ -345,8 +345,8 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 | *(Chi hộ KH — riêng biệt)* | is_on_behalf_of_customer / TVL_OBH / SUB_OBH |
 
 **Cụm 3 Nút Phân Loại Trách Nhiệm Chi Phí (Touch Target >= 48px):**
-- **[ 🏢 Chi phí TVL ] (TVL_COST - Mặc định):** Chi phí do GSS chịu -> tính vào cached_expense chuyến xe.
-- **[ ↗ TVL chi hộ ] (TVL_OBH):** GSS ứng tiền trước chi hộ cho Khách hàng -> thu lại qua Debit Note -> không tính vào chi phí TVL.
+- **[ 🏢 Chi phí công ty ] (TVL_COST - Mặc định):** Chi phí do GSS chịu -> tính vào cached_expense chuyến xe.
+- **[ ↗ Công ty chi hộ ] (TVL_OBH):** GSS ứng tiền trước chi hộ cho Khách hàng -> thu lại qua Debit Note -> không tính vào chi phí TVL.
 - **[ 🔄 3PL chi hộ ] (SUB_OBH):** Tài xế/chủ xe 3PL tự chi tiền trước cho Khách hàng -> GSS hoàn tiền lại cho 3PL trong Bảng Kê Quyết Toán Thầu Phụ (sub_reimbursable_expenses) -> đồng thời thu lại từ Khách qua Debit Note -> không tính vào chi phí TVL.
 
 **Thông tin mỗi khoản chi:**

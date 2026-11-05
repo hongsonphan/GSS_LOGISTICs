@@ -56,7 +56,7 @@ Hệ thống được phát triển trên cùng một nền tảng lõi nhưng p
 ```mermaid
 flowchart TD
     A["Khai báo Công ty (CompanyProfile)"] --> B{"Chọn Loại Hình Doanh Nghiệp"}
-    B -->|Gói 1: INTERNAL_FLEET_PNL| C["Vận tải Đội xe Nội bộ & P&L<br/>(Chuẩn Triền Võ)"]
+    B -->|Gói 1: INTERNAL_FLEET_PNL| C["Vận tải Đội xe Nội bộ & P&L<br/>(Chuẩn GSS)"]
     B -->|Gói 2: GSS_VENDOR_DEPOT_QR| D["Điều phối Nhà xe, Bãi Cont & QR<br/>(Chuẩn Green Solutions Smart)"]
     B -->|Gói 3: ENTERPRISE_FULL| E["Tổ hợp Logistics Toàn diện<br/>(Full Modules)"]
     
@@ -400,7 +400,7 @@ Dự án được chia thành **5 Giai đoạn (Sprints)** tuần tự, đảm b
   1. ✅ *Đã làm:* nhân bản codebase sang repo `GSS_LOGISTICs`, tách tên/cổng/CSDL/máy chủ khỏi BIM Logistics (xem mục 0 của `DEVELOPMENT_PLAN.md`).
   2. Nâng cấp `CompanyProfile` với bộ chọn **Loại hình Doanh nghiệp (`GSS_VENDOR_DEPOT_QR`)** và bảng bật/tắt cấu phần `enabled_features`.
   3. Xây dựng cơ chế tự động ẩn/hiện Sidebar, Dashboard và các trường trên Form theo loại hình công ty đã chọn.
-- **Kết quả bàn giao:** Chuyển đổi qua lại giữa mô hình *Triền Võ* và mô hình *Green Solutions Smart (GSS)* chỉ bằng 1 cú nhấp chuột trong phần Cài đặt Công ty.
+- **Kết quả bàn giao:** Chuyển đổi qua lại giữa mô hình *GSS* và mô hình *Green Solutions Smart (GSS)* chỉ bằng 1 cú nhấp chuột trong phần Cài đặt Công ty.
 
 ### Giai đoạn 2: Nghiệp vụ Booking (DEM/DET, Điểm đến, Cấm đường) & Chia Cont qua Vendor Link
 - **Công việc:**

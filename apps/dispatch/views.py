@@ -235,7 +235,7 @@ def index_view(request, *args, **kwargs):
             'operating_license': company.operating_license,
             'default_vat_rate': float(company.default_vat_rate) if company.default_vat_rate else 8.0,
             'fuel_reference_price': float(company.fuel_reference_price) if company.fuel_reference_price else 21000.0,
-            'logo_url': company.logo_url or '/static/images/trienvo_logo.png',
+            'logo_url': company.logo_url or '/static/images/gss_logo.svg',
         }
     except Exception as e:
         company_profile_data = {}
@@ -689,7 +689,7 @@ def news_detail_page_view(request, post_identifier):
             'operating_license': company.operating_license,
             'default_vat_rate': float(company.default_vat_rate) if company.default_vat_rate else 8.0,
             'fuel_reference_price': float(company.fuel_reference_price) if company.fuel_reference_price else 21000.0,
-            'logo_url': company.logo_url or '/static/images/trienvo_logo.png',
+            'logo_url': company.logo_url or '/static/images/gss_logo.svg',
         } if company else {}
     except Exception:
         company_profile_data = {}

@@ -1499,7 +1499,7 @@ class PayrollSlipPrintAPIView(APIView):
                 'email': company.email,
                 'representative_name': company.representative_name,
                 'representative_role': company.representative_role,
-                'logo_url': company.logo_url or '/static/images/trienvo_logo.png',
+                'logo_url': company.logo_url or '/static/images/gss_logo.svg',
             },
             'slip': PayrollSlipSerializer(slip).data,
             'employee': {

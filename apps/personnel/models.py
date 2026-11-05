@@ -78,7 +78,7 @@ class PayrollPeriodStatus(models.TextChoices):
 
 class Employee(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
-    Hồ sơ nhân sự toàn diện 360° Triền Võ Logistics.
+    Hồ sơ nhân sự toàn diện 360° Green Solutions Supply.
     Quản lý đầy đủ định danh pháp lý, ngân hàng, BHXH, thuế TNCN, giấy phép lái xe và phân quyền.
     """
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='employee')
@@ -424,7 +424,7 @@ class EmployeeDependent(TimeStampedModel, SoftDeleteModel):
 
 class LaborContract(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
-    Hợp đồng lao động Triền Võ Logistics.
+    Hợp đồng lao động Green Solutions Supply.
     Lưu vết thời hạn, mức lương, chế độ bảo hiểm và file scan hợp đồng có chữ ký.
     """
     contract_number = models.CharField(max_length=50, unique=True, db_index=True)
@@ -437,7 +437,7 @@ class LaborContract(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True, help_text="Để trống nếu là HĐ không xác định thời hạn")
     job_title = models.CharField(max_length=100, blank=True, help_text="Chức danh công việc chi tiết theo HĐ")
-    working_address = models.CharField(max_length=255, blank=True, default="Văn phòng / Bãi xe Triền Võ Logistics")
+    working_address = models.CharField(max_length=255, blank=True, default="Văn phòng / Bãi xe Green Solutions Supply")
 
     # Chế độ tiền lương & trợ cấp theo HĐ
     base_salary = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Mức lương chính theo HĐ")
@@ -869,7 +869,7 @@ class AllowanceType(TimeStampedModel):
 
 class PayrollPeriod(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
-    Kỳ tính lương hàng tháng của Triền Võ Logistics (Payroll Period).
+    Kỳ tính lương hàng tháng của Green Solutions Supply (Payroll Period).
     Vòng đời quản lý: DRAFT ➔ REVIEWED ➔ LOCKED ➔ PAID.
     Khi PAID, tự động liên thông tạo phiếu chi trên Sổ Quỹ (CashTransaction).
     """

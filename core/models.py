@@ -121,7 +121,7 @@ class DocumentSequence(models.Model):
 
 
 class Company(TimeStampedModel):
-    """Doanh nghiệp sử dụng hệ thống (tenant). Hiện tại chỉ có Triền Võ; sẵn sàng phục vụ nhiều công ty khi bán SaaS."""
+    """Doanh nghiệp sử dụng hệ thống (tenant). Hiện tại chỉ có GSS; sẵn sàng phục vụ nhiều công ty khi bán SaaS."""
     code = models.CharField(max_length=30, unique=True)
     name = models.CharField(max_length=255)
     tax_code = models.CharField(max_length=30, blank=True, default='')

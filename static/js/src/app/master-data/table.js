@@ -94,8 +94,8 @@ function renderMasterDataTable(items, total = items.length) {
             return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 ${renderMdSttTd(stt)}
-                <td class="py-2.5 px-3 text-[13px] font-bold text-teal-950 border-r border-slate-200">${escapeHtml(item.company_name || 'CÔNG TY TNHH VẬN TẢI TRIỀN VÕ')}</td>
-                <td class="py-2.5 px-3 text-[12px] font-bold text-teal-700 border-r border-slate-200">${escapeHtml(item.short_name || 'TRIỀN VÕ LOGISTICS')}</td>
+                <td class="py-2.5 px-3 text-[13px] font-bold text-teal-950 border-r border-slate-200">${escapeHtml(item.company_name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH')}</td>
+                <td class="py-2.5 px-3 text-[12px] font-bold text-teal-700 border-r border-slate-200">${escapeHtml(item.short_name || 'Green Solutions Supply Co., Ltd.')}</td>
                 <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-slate-800 border-r border-slate-200">${escapeHtml(item.tax_code || '—')}</td>
                 <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-emerald-700 border-r border-slate-200">${escapeHtml(item.phone || item.hotline || '—')}</td>
                 <td class="py-2.5 px-3 text-[12px] text-blue-700 border-r border-slate-200">${escapeHtml(item.email || '—')}</td>

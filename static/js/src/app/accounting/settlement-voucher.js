@@ -616,7 +616,7 @@ function printSettleVoucher() {
         .head img{height:52px;width:auto}.head .co{font-size:12px}.head .co b{font-size:13px;text-transform:uppercase}
         .sign td{border:none;text-align:center;width:25%}</style></head>
         <body>
-        <div class="head"><img src="${location.origin}/static/images/trienvo_logo.png" alt="">
+        <div class="head"><img src="${location.origin}/static/images/gss_logo.svg" alt="">
             <div class="co"><b>${escapeHtml(co.company_name || '')}</b><br>${escapeHtml(co.address || '')}<br>MST: ${escapeHtml(co.tax_code || '')} · ĐT: ${escapeHtml(co.phone || '')}</div></div>
         <h2 style="text-align:center;margin:6px 0 2px">BẢNG KÊ QUYẾT TOÁN ${party.toUpperCase()}</h2>
         <p style="text-align:center;margin:0 0 2px">Từ ngày ${escapeHtml(fromDate)} đến ngày ${escapeHtml(toDate)}</p>

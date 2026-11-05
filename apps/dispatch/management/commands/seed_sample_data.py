@@ -46,28 +46,28 @@ class Command(BaseCommand):
 
 
 
-        # 1. Bảo tồn & Chuẩn hóa Hồ sơ Công ty Triền Võ
+        # 1. Bảo tồn & Chuẩn hóa Hồ sơ Công ty GSS
         company = CompanyProfile.get_default_company()
-        company.company_name = 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ'
+        company.company_name = 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH'
 
-        company.short_name = 'TRIỀN VÕ LOGISTICS'
-        company.tax_code = '0314567890'
-        company.phone = '0965 559 561'
-        company.email = 'phongkinhdoanh.tvl@trienvo.com'
-        company.website = 'https://trienvo.com'
-        company.address = '153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh'
-        company.bank_account_number = '19030000000001'
-        company.bank_name = 'Ngân hàng TMCP Kỹ Thương Việt Nam (Techcombank) - CN Nam Sài Gòn'
+        company.short_name = 'Green Solutions Supply Co., Ltd.'
+        company.tax_code = '0316657112'
+        company.phone = ''
+        company.email = ''
+        company.website = ''
+        company.address = '302/5 Lê Đức Thọ, Phường An Nhơn, TP Hồ Chí Minh, Việt Nam'
+        company.bank_account_number = ''
+        company.bank_name = ''
         company.save()
-        self.stdout.write('Da bao ton Ho so Cong ty Trien Vo Logistics.')
+        self.stdout.write('Da bao ton Ho so Cong ty Green Solutions Supply.')
 
 
         # 2. Khai báo Số Dư Đầu Kỳ Kế Toán 01/09/2026 (COA TT 200/TT 133)
         OpeningBalance.objects.all().delete()
         opening_balances_data = [
-            ('1111', 'Tiền mặt tại quỹ công ty', 'INTERNAL', 'QUY_TM', 'Quỹ Tiền Mặt Triền Võ', Decimal(85000000), True, 'Số dư quỹ tiền mặt đầu tháng 9'),
+            ('1111', 'Tiền mặt tại quỹ công ty', 'INTERNAL', 'QUY_TM', 'Quỹ Tiền Mặt GSS', Decimal(85000000), True, 'Số dư quỹ tiền mặt đầu tháng 9'),
             ('1121', 'Tiền gửi Techcombank - CN Nam Sài Gòn', 'BANK', 'TCB_0001', 'Techcombank CN Nam Sài Gòn (19030000000001)', Decimal(350000000), True, 'Số dư tài khoản ngân hàng chính'),
-            ('141', 'Tạm ứng Điều vận (Võ Triền)', 'DISPATCHER', 'DD001', 'Võ Văn Triền (Điều vận)', Decimal(25000000), True, 'Quỹ điều vận luân chuyển đầu kỳ'),
+            ('141', 'Tạm ứng Điều vận (Võ Triền)', 'DISPATCHER', 'DD001', ' (Điều vận)', Decimal(25000000), True, 'Quỹ điều vận luân chuyển đầu kỳ'),
             ('131', 'Công nợ phải thu: Dệt May Việt Thắng', 'CUSTOMER', 'VIETTHANG', 'CÔNG TY TNHH DỆT MAY XUẤT KHẨU VIỆT THẮNG', Decimal(42000000), True, 'Cước vận chuyển tháng 8 chưa thanh toán'),
             ('131', 'Công nợ phải thu: Thực Phẩm Á Châu', 'CUSTOMER', 'ASIA_FOOD', 'CÔNG TY CỔ PHẦN THỰC PHẨM & ĐỒ UỐNG Á CHÂU', Decimal(28500000), True, 'Cước vận chuyển tháng 8'),
             ('331', 'Công nợ phải trả: Vận Tải Hoàng Nam', 'SUBCONTRACTOR', 'NX_HOANGNAM', 'Công ty TNHH Vận Tải Hoàng Nam', Decimal(18000000), False, 'Cước xe bạn tháng 8 chưa thanh toán'),
@@ -499,7 +499,7 @@ class Command(BaseCommand):
             partner_name="Petrolimex Sài Gòn",
             ref_code="HD-D-2609-881",
             created_by=accountant,
-            notes="Thanh toán hóa đơn dầu Diesel cấp bồn nội bộ bãi xe Triền Võ"
+            notes="Thanh toán hóa đơn dầu Diesel cấp bồn nội bộ bãi xe GSS"
         )
         # Chi thanh toán Thầu phụ Hoàng Nam
         if subcontractors:

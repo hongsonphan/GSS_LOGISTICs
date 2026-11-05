@@ -106,9 +106,9 @@ def get_system_company_info():
         'company_name': (co.company_name if co and co.company_name else 'CÔNG TY TNHH DỊCH VỤ GIAO NHẬN VẬN TẢI TRIỂN VÕ').upper(),
         'address': (co.address if co and co.address else 'Số 44B/1 Trần Quang Khải, Khu phố 9, Phường Tân Định, Thành phố Hồ Chí Minh, Việt Nam'),
         'tax_code': (co.tax_code if co and co.tax_code else '0315001374'),
-        'phone': (co.phone if co and co.phone else '0965 559 561'),
-        'email': (co.email if co and co.email else 'phongkinhdoanh.tvl@trienvo.com'),
-        'representative_name': (co.representative_name if co and co.representative_name else 'Võ Văn Triền'),
+        'phone': (co.phone if co and co.phone else '—'),
+        'email': (co.email if co and co.email else '—'),
+        'representative_name': (co.representative_name if co and co.representative_name else ''),
         'representative_role': (co.representative_role if co and co.representative_role else 'Giám Đốc')
     }
 

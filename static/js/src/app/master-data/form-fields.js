@@ -18,13 +18,13 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tên Pháp Nhân Đầy Đủ <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-cp-name" value="${escapeHtml(d.company_name || '')}" placeholder="VD: CÔNG TY TNHH VẬN TẢI TRIỀN VÕ" class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                    <input type="text" id="mdf-cp-name" value="${escapeHtml(d.company_name || '')}" placeholder="VD: CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH" class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tên Thương Hiệu / Viết Tắt</label>
                     </div>
-                    <input type="text" id="mdf-cp-short-name" value="${escapeHtml(d.short_name || '')}" placeholder="VD: TRIỀN VÕ LOGISTICS" class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-teal-700 w-full">
+                    <input type="text" id="mdf-cp-short-name" value="${escapeHtml(d.short_name || '')}" placeholder="VD: Green Solutions Supply Co., Ltd." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-teal-700 w-full">
                 </div>
             </div>
 
@@ -72,13 +72,13 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Email Liên Hệ</label>
                     </div>
-                    <input type="email" id="mdf-cp-email" value="${escapeHtml(d.email || '')}" placeholder="VD: contact@trienvo.com" class="form-input h-8.5 px-2.5 py-1 text-xs text-blue-700 w-full">
+                    <input type="email" id="mdf-cp-email" value="${escapeHtml(d.email || '')}" placeholder="VD: —" class="form-input h-8.5 px-2.5 py-1 text-xs text-blue-700 w-full">
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Website Công Ty</label>
                     </div>
-                    <input type="text" id="mdf-cp-website" value="${escapeHtml(d.website || '')}" placeholder="VD: https://trienvo.com" class="form-input h-8.5 px-2.5 py-1 text-xs text-teal-700 w-full">
+                    <input type="text" id="mdf-cp-website" value="${escapeHtml(d.website || '')}" placeholder="VD: " class="form-input h-8.5 px-2.5 py-1 text-xs text-teal-700 w-full">
                 </div>
             </div>
 
@@ -517,7 +517,7 @@ function injectMasterDataModalFields(data) {
                         <option value="Hiệp Phước (Nhà Bè)">
                         <option value="SPITC / Phú Hữu">
                         <option value="Sóng Thần / Dĩ An">
-                        <option value="Bãi Triền Võ (TVL)">
+                        <option value="Bãi GSS">
                     </datalist>
                 </div>
                 <div class="md:col-span-6">
@@ -1231,7 +1231,7 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tên Đối Tượng / Quỹ / Tài Khoản <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-ob-name" value="${escapeHtml(d.entity_name || '')}" placeholder="VD: Quỹ tiền mặt Triền Võ, KH Công ty ABC, Tài xế Nguyễn Văn A..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                    <input type="text" id="mdf-ob-name" value="${escapeHtml(d.entity_name || '')}" placeholder="VD: Quỹ tiền mặt GSS, KH Công ty ABC, Tài xế Nguyễn Văn A..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">

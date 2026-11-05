@@ -746,7 +746,7 @@ class TripDetailAPIView(APIView):
                 'notes': exp.notes or '',
                 'company_borne': exp.company_borne,
                 'expense_payer_type': getattr(exp, 'expense_payer_type', 'TVL_COST'),
-                'expense_payer_label': exp.get_expense_payer_type_display() if hasattr(exp, 'get_expense_payer_type_display') else ('Chi phí TVL' if not exp.is_on_behalf_of_customer else ('3PL chi hộ' if getattr(exp, 'reimburse_to_subcontractor', False) else 'TVL chi hộ')),
+                'expense_payer_label': exp.get_expense_payer_type_display() if hasattr(exp, 'get_expense_payer_type_display') else ('Chi phí công ty' if not exp.is_on_behalf_of_customer else ('3PL chi hộ' if getattr(exp, 'reimburse_to_subcontractor', False) else 'Công ty chi hộ')),
                 'reimburse_to_subcontractor': getattr(exp, 'reimburse_to_subcontractor', False),
                 'is_on_behalf_of_customer': exp.is_on_behalf_of_customer,
                 'driver_id': exp.driver_id,
@@ -761,7 +761,7 @@ class TripDetailAPIView(APIView):
             for exp in expenses
         ]
 
-        # Phân rã 8 khoản mục chi phí chuẩn theo Bảng Kê Chi Phí Triền Võ
+        # Phân rã 8 khoản mục chi phí chuẩn theo Bảng Kê Chi Phí GSS
         # Chỉ tính chi phí công ty thực sự chịu (loại trừ khoản chi hộ KH)
         valid_expenses = [e for e in expenses if e.status != ApprovalStatus.REJECTED]
         opex_expenses = [e for e in valid_expenses if not e.is_on_behalf_of_customer]

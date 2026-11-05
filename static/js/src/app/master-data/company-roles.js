@@ -2,13 +2,13 @@ function getSystemCompanyProfile() {
     const comp = (typeof masterDataCache !== 'undefined' && masterDataCache['company']) || window.SYSTEM_COMPANY || {};
     return {
         id: comp.id || 1,
-        company_name: comp.company_name || 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ',
-        short_name: comp.short_name || 'TRIỀN VÕ LOGISTICS',
-        address: comp.headquarters_address || comp.address || '153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh',
-        tax_code: comp.tax_code || '0314567890',
-        phone: comp.hotline || comp.phone || '0965 559 561',
-        email: comp.email || 'phongkinhdoanh.tvl@trienvo.com',
-        representative_name: comp.representative_name || 'Võ Văn Triền',
+        company_name: comp.company_name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH',
+        short_name: comp.short_name || 'Green Solutions Supply Co., Ltd.',
+        address: comp.headquarters_address || comp.address || '302/5 Lê Đức Thọ, Phường An Nhơn, TP Hồ Chí Minh, Việt Nam',
+        tax_code: comp.tax_code || '0316657112',
+        phone: comp.hotline || comp.phone || '',
+        email: comp.email || '—',
+        representative_name: comp.representative_name || '',
         representative_role: comp.representative_role || 'Giám Đốc',
         bank_account_number: comp.bank_account_number || '',
         bank_name: comp.bank_name || '',
@@ -20,7 +20,7 @@ function getSystemCompanyProfile() {
         fleet_yard_name: comp.fleet_yard_name || '',
         fleet_yard_address: comp.fleet_yard_address || '',
         fleet_yard_hotline: comp.fleet_yard_hotline || '',
-        logo_url: comp.logo_url || '/static/images/trienvo_logo.png'
+        logo_url: comp.logo_url || '/static/images/gss_logo.svg'
     };
 }
 window.getSystemCompanyProfile = getSystemCompanyProfile;
@@ -64,14 +64,14 @@ function syncCompanyProfileToPrintForms() {
         el.innerText = co.tax_code;
     });
 
-    // 8. Đồng bộ Logo Công ty Triền Võ (không lấy nhầm logo chung GSS)
-    let compLogo = co.logo_url || '/static/images/trienvo_logo.png';
+    // 8. Đồng bộ Logo Công ty GSS (không lấy nhầm logo chung GSS)
+    let compLogo = co.logo_url || '/static/images/gss_logo.svg';
     if (!compLogo || compLogo.endsWith('/logo.png') || compLogo.includes('static/images/logo.png')) {
-        compLogo = '/static/images/trienvo_logo.png';
+        compLogo = '/static/images/gss_logo.svg';
     }
     document.querySelectorAll('.print-comp-logo').forEach(el => {
         el.src = compLogo;
-        el.onerror = () => { el.src = '/media/trienvo_logo.png'; };
+        el.onerror = () => { el.src = '/media/gss_logo.svg'; };
     });
 }
 window.syncCompanyProfileToPrintForms = syncCompanyProfileToPrintForms;
@@ -97,7 +97,7 @@ async function loadCompanyProfile() {
 
         if (profile.short_name || profile.company_name) {
             const el = document.getElementById('md-stat-company');
-            if (el) el.innerText = profile.short_name || 'Triền Võ';
+            if (el) el.innerText = profile.short_name || 'GSS';
         }
 
         // Tự động đồng bộ lên tất cả các mẫu in
@@ -141,7 +141,7 @@ function renderCompanyProfileView(company) {
                     <div>
                         <div class="flex items-center gap-2 flex-wrap mb-1">
                             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-500/30 text-teal-200 border border-teal-400/30">
-                                ${escapeHtml(company.short_name || 'TRIỀN VÕ LOGISTICS')}
+                                ${escapeHtml(company.short_name || 'Green Solutions Supply Co., Ltd.')}
                             </span>
                             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
                                 <i class="ph-bold ph-check-circle"></i> Đang hoạt động
@@ -151,7 +151,7 @@ function renderCompanyProfileView(company) {
                             </span>
                         </div>
                         <h2 class="text-lg md:text-xl font-black font-heading tracking-tight text-white leading-snug">
-                            ${escapeHtml(company.company_name || 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ')}
+                            ${escapeHtml(company.company_name || 'CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH')}
                         </h2>
                         <p class="text-xs text-teal-200/80 mt-1 flex items-center gap-1.5 flex-wrap">
                             <span><i class="ph-bold ph-map-pin text-teal-300"></i> ${escapeHtml(company.address || '---')}</span>

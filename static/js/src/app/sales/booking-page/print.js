@@ -150,7 +150,7 @@ async function openDirectPrintBooking(bookingId) {
                     <div class="header">
                         <div>
                             <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">${co.company_name}</div>
-                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Đ/c: ${co.address || '—'} • Hotline: ${co.phone || '0965.559.561'}${co.tax_code ? ` • MST: ${co.tax_code}` : ''}</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Đ/c: ${co.address || '—'} • Hotline: ${co.phone || '—'}${co.tax_code ? ` • MST: ${co.tax_code}` : ''}</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">${b.booking_code || ('BK-' + b.id)}</div>
@@ -222,7 +222,7 @@ async function openDirectPrintBooking(bookingId) {
 
                     <div class="footer-note">
                         <span>* Phiếu tiếp nhận vận tải là căn cứ điều phối và đối chiếu giao nhận hàng hóa.</span>
-                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '0965.559.561'}</span>
+                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '—'}</span>
                     </div>
                 </div>
             </body>
