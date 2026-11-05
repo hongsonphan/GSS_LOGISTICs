@@ -4,7 +4,7 @@
 > **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 2026-11-01
 > **Trạng thái:** Production-Ready
 > **Đơn vị:** Green Solutions Smart (GSS) · Dự án GSS-TMS-2026 (repo `GSS_LOGISTICs`)
-> **Lưu ý:** Tài liệu mô tả tính năng của nền tảng hiện có (kế thừa từ BIM Logistics). Hạng mục riêng của GSS chưa lập trình xem BRD, được đánh dấu [KẾ HOẠCH].
+> **Lưu ý:** Tài liệu mô tả tính năng của nền tảng hiện có (kế thừa từ GSS Logistics). Hạng mục riêng của GSS chưa lập trình xem BRD, được đánh dấu [KẾ HOẠCH].
 > **Mục đích:** Tài liệu này ghi nhận **toàn bộ tính năng đã được lập trình và triển khai** trên nền tảng GSS Logistics, được cập nhật liên tục sau mỗi thay đổi. Dùng để tham khảo trước khi phát triển tính năng mới (tránh viết lại những gì đã có).
 
 > [!IMPORTANT]

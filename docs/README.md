@@ -3,7 +3,7 @@
 
 > **Hệ thống:** GSS Logistics Platform  
 > **Đơn vị phát triển:** Green Solutions Smart (GSS)  
-> **Phiên bản nền:** v4.7.19 (kế thừa từ BIM Logistics) · **Dự án:** GSS-TMS-2026 (repo `GSS_LOGISTICs`)  
+> **Phiên bản nền:** v4.7.19 (kế thừa từ GSS Logistics) · **Dự án:** GSS-TMS-2026 (repo `GSS_LOGISTICs`)  
 > **Cập nhật lần cuối:** 01/11/2026  
 > **Tiêu chuẩn tài liệu:** ISO/IEC/IEEE 42010, Arc42 Template & C4 Model  
 > **Mô hình quản trị:** Documentation-as-Code
@@ -47,7 +47,7 @@ flowchart TD
     G3 --> G4
 ```
 
-### Bảng Danh Mục 14 Tài Liệu:
+### Bảng Danh Mục 16 Tài Liệu:
 
 | STT | Tài liệu | Đường dẫn | Tiêu chuẩn & Trọng tâm nghiệp vụ |
 |:---:|---|---|---|
@@ -63,6 +63,8 @@ flowchart TD
 | **10** | **UI/UX Guidelines** | [`UI_UX_GUIDELINES.md`](UI_UX_GUIDELINES.md) | Triết lý Field-First, Design Tokens GSS, Thang đo Typography 7 bậc chuẩn ERP, thư viện component và 2-touch rule. |
 | **11** | **Development Roadmap & ADRs** | [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md) | Lộ trình kỹ thuật TMS nâng cao, 5 Architecture Decision Records (ADRs) và mô hình triển khai On-Premise chuẩn MISA. |
 | **12** | **Release Changelog** | [`CHANGELOG.md`](CHANGELOG.md) | Lịch sử phát hành và thay đổi mã nguồn chi tiết từ v1.0.0 đến v4.7.19 theo chuẩn SemVer & Keep a Changelog. |
+| **15** | **GSS Restructure Plan** | [`GSS_RESTRUCTURE_PLAN.md`](GSS_RESTRUCTURE_PLAN.md) | Quyết định kiến trúc đã chốt của GSS, bảng việc đã/chưa làm, quy tắc phối hợp (đọc §0 trước). |
+| **16** | **GSS Runbook** | [`GSS_RUNBOOK.md`](GSS_RUNBOOK.md) | Chạy local, triển khai khách mới, địa chỉ chính, quy tắc nghiệp vụ đã kiểm thử, giới hạn đã biết. |
 | **14** | **Business Requirements (GSS)** | [`BRD_GREEN_SOLUTIONS_SMART_GSS.md`](BRD_GREEN_SOLUTIONS_SMART_GSS.md) | Đặc tả nghiệp vụ & lộ trình 5 giai đoạn riêng của dự án GSS: Vendor Link, chứng từ Nhận – Giao – Hạ rỗng, Bãi Cont Đắk Nông, QR Code, Dashboard Nhà xe. |
 | **13** | **System User Manual** | [`USER_GUIDE.md`](USER_GUIDE.md) | Cẩm nang hướng dẫn sử dụng phần mềm toàn diện từng màn hình cho Ban Giám Đốc, Điều Vận, Tài Xế và Kế Toán. |
 

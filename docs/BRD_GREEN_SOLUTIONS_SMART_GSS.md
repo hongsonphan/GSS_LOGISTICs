@@ -4,22 +4,28 @@
 > **Mã dự án:** GSS-TMS-2026  
 > **Phiên bản tài liệu:** 1.1.0  
 > **Ngày lập:** 04/11/2026  
-> **Repo:** `GSS_LOGISTICs` (độc lập; tách ra từ nền tảng BIM Logistics, Django 5.2 Modular Monolith)  
+> **Repo:** `GSS_LOGISTICs` (độc lập; tách ra từ nền tảng GSS Logistics, Django 5.2 Modular Monolith)  
 > **Mô hình triển khai:** Single-Codebase, Multi-Instance (1 Mã nguồn chuẩn SaaS – Mỗi Khách hàng 1 Database độc lập, cấu hình theo Loại hình Doanh nghiệp)
 
 ---
 
 ## 0. HIỆN TRẠNG SO VỚI MÃ NGUỒN (cập nhật 05/11/2026)
 
-| Hạng mục | Trạng thái trong code |
+Các giai đoạn 0–5 của BRD đã được lập trình. Khi mã nguồn khác BRD, **ưu tiên** [`GSS_RESTRUCTURE_PLAN.md`](GSS_RESTRUCTURE_PLAN.md) §0 (quyết định đã chốt) và [`GSS_RUNBOOK.md`](GSS_RUNBOOK.md). Các điều chỉnh chính so với BRD:
+
+| Nội dung BRD | Thực tế trong mã |
 |:---|:---|
-| Booking (`customers.BookingOrder`), Điều vận (`DispatchTrip`), Nhà xe (`Subcontractor`), Chứng từ (`documents.TripDocument`), Đội xe, Nhân sự, Đối soát | ✅ Đã có (kế thừa nền tảng) |
-| Cảnh báo hạn DEM/DET (`dem_expiry`) | ⚠️ Mới có trên chuyến xe (`DispatchTrip`); **chưa** ở cấp Booking |
-| `CompanyProfile` | ⚠️ Đã có hồ sơ công ty; **chưa** có `business_model` / `enabled_features` |
-| `BookingVendorAllocation`, Vendor Portal (Magic Link) | ❌ [KẾ HOẠCH] Giai đoạn 2 |
-| Ghi chú điểm đến, cấm đường, đổi số cont hạ rỗng, `DriverNotificationLog`, mẫu POD theo khách hàng | ❌ [KẾ HOẠCH] Giai đoạn 3 |
-| `depot_yard` (Bãi Cont Đắk Nông), Dashboard Nhà xe | ❌ [KẾ HOẠCH] Giai đoạn 4 |
-| `qr_tracking` (`TripPackageSeal`, quét QR) | ❌ [KẾ HOẠCH] Giai đoạn 5 |
+| `TripPackageSeal`, `DepotContainerMovement`, `DriverNotificationLog` | ✅ Có (apps `qr_tracking`, `depot_yard`, `dispatch`); QR chỉ chứa token ký HMAC, không nhúng dữ liệu |
+| Trạng thái tài xế | `DispatchTrip.step_status` (máy trạng thái riêng, chỉ đi tiến), đồng bộ một chiều sang `TripStatus` cũ |
+| Mở rộng `DispatchTrip` hay tạo mới | Mở rộng `DispatchTrip` (1 dòng điều vận = 1 cont); không tạo `ContainerLeg` |
+| Hạn DEM/DET | Nhập mốc bắt đầu + số ngày miễn phí, hạn tự tính (cho phép ghi đè có lý do) |
+| Vendor Link | Token chỉ lưu băm SHA-256; chuyến chỉ sinh khi nhà xe nhập biển số đầu kéo (dòng chưa đủ lưu nháp) |
+| Gửi tin tài xế | Soạn tin + sao chép + mở Zalo; **chưa** có ZNS/SMS |
+| POD theo khách hàng | Model `PodTemplate` + `Customer.pod_template` |
+| Giao diện GSS | Trang độc lập mobile-first `/gss/`, `/vendor/`, `/q/` (`static/css/gss.css`, `static/js/gss/*`) |
+| Ẩn module theo loại hình | Chặn ở API (`FeatureGateMiddleware`), không chỉ ẩn menu |
+
+Chưa làm: xem `GSS_RESTRUCTURE_PLAN.md` mục 0.6.
 
 ---
 
@@ -397,7 +403,7 @@ Dự án được chia thành **5 Giai đoạn (Sprints)** tuần tự, đảm b
 
 ### Giai đoạn 1: Khởi tạo Dự án Mới & Bộ Khung Cấu hình Loại hình Doanh nghiệp (SaaS Core)
 - **Công việc:**
-  1. ✅ *Đã làm:* nhân bản codebase sang repo `GSS_LOGISTICs`, tách tên/cổng/CSDL/máy chủ khỏi BIM Logistics (xem mục 0 của `DEVELOPMENT_PLAN.md`).
+  1. ✅ *Đã làm:* nhân bản codebase sang repo `GSS_LOGISTICs`, tách tên/cổng/CSDL/máy chủ khỏi GSS Logistics (xem mục 0 của `DEVELOPMENT_PLAN.md`).
   2. Nâng cấp `CompanyProfile` với bộ chọn **Loại hình Doanh nghiệp (`GSS_VENDOR_DEPOT_QR`)** và bảng bật/tắt cấu phần `enabled_features`.
   3. Xây dựng cơ chế tự động ẩn/hiện Sidebar, Dashboard và các trường trên Form theo loại hình công ty đã chọn.
 - **Kết quả bàn giao:** Chuyển đổi qua lại giữa mô hình *GSS* và mô hình *Green Solutions Smart (GSS)* chỉ bằng 1 cú nhấp chuột trong phần Cài đặt Công ty.

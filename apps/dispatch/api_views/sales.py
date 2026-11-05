@@ -44,6 +44,15 @@ def _surcharge_kwargs(data, only_present=False):
     return out
 
 
+def _opt_date(value):
+    """'' / None / sai định dạng -> None; 'YYYY-MM-DD' -> date."""
+    import datetime as _dt
+    try:
+        return _dt.date.fromisoformat(str(value).strip()) if value else None
+    except ValueError:
+        return None
+
+
 class BookingActiveAPIView(APIView):
     """API lấy danh sách các Booking đang hoạt động để Điều độ viên chọn kế thừa khi tạo lệnh."""
     permission_classes = [any_module_view('sales', 'dispatch', 'accounting')]
@@ -718,6 +727,12 @@ class SalesAPIView(APIView):
                 loading_time=loading_time_str,
                 free_time_detention=int(data.get('free_time_detention') or 7),
                 free_time_demurrage=int(data.get('free_time_demurrage') or 7),
+                dem_start_date=_opt_date(data.get('dem_start_date')),
+                det_start_date=_opt_date(data.get('det_start_date')),
+                dem_expiry_override=_opt_date(data.get('dem_expiry_override')),
+                det_expiry_override=_opt_date(data.get('det_expiry_override')),
+                destination_notes=str(data.get('destination_notes') or '').strip(),
+                road_restrictions=str(data.get('road_restrictions') or '').strip(),
                 selling_freight_price=selling_freight_price,
                 booking_file=uploaded_bk_file,
                 status=data.get('status', BookingStatus.PENDING_DISPATCH),

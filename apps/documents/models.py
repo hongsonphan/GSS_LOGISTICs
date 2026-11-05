@@ -21,6 +21,11 @@ class TripDocument(TimeStampedModel, SoftDeleteModel):
     document_type = models.CharField(max_length=30, choices=DocumentType.choices, default=DocumentType.EIR_DROPOFF)
     title = models.CharField(max_length=255)
     file_path = models.CharField(max_length=500, blank=True)
+    # GSS: chứng từ theo chặng (tối đa 10 file / chặng / chuyến)
+    workflow_stage = models.CharField(max_length=14, blank=True, default='', db_index=True,
+                                      choices=[('PICKUP', 'Nhận cont/hàng'), ('DELIVERY', 'Giao hàng'), ('EMPTY_RETURN', 'Hạ rỗng')])
+    sequence_no = models.PositiveSmallIntegerField(default=0)
+    uploaded_by_label = models.CharField(max_length=150, blank=True, default='')
     
     # Kết quả OCR AI phân tích
     ocr_raw_text = models.TextField(blank=True, help_text="Dữ liệu OCR thô trích xuất từ tài liệu")

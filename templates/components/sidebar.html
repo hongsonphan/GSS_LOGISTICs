@@ -54,6 +54,15 @@
             </li>
             {% endif %}
 
+            {% if menu.dispatch and gss_on %}
+            <li>
+                <a href="/gss/" class="sidebar-item-main flex items-center">
+                    <i class="ph ph-qr-code text-xl mr-3 text-teal-300"></i>
+                    <span class="flex-1 text-left tracking-wide">Điều hành GSS (Nhà xe · Bãi · QR)</span>
+                </a>
+            </li>
+            {% endif %}
+
             <!-- 4. Xe & Bãi -->
             {% if menu.fleet %}
             <li>

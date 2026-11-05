@@ -3,8 +3,8 @@
 
 > **Hệ thống:** GSS Logistics Platform (TMS & WMS)  
 > **Tổ chức chủ quản:** Green Solutions Smart (GSS)  
-> **Mã dự án / Repo:** GSS-TMS-2026 · `GSS_LOGISTICs` (tách ra từ nền tảng BIM Logistics, độc lập mã nguồn, CSDL và máy chủ)  
-> **Phiên bản nền:** v4.7.19 (kế thừa từ BIM Logistics)  
+> **Mã dự án / Repo:** GSS-TMS-2026 · `GSS_LOGISTICs` (tách ra từ nền tảng GSS Logistics, độc lập mã nguồn, CSDL và máy chủ)  
+> **Phiên bản nền:** v4.7.19 (kế thừa từ GSS Logistics)  
 > **Cập nhật lần cuối:** 01/11/2026  
 > **Tiêu chuẩn kiến trúc:** ISO/IEC/IEEE 42010, Arc42 Template & C4 Model  
 > **Trạng thái:** Đang tái cấu trúc cho GSS (chưa có môi trường Production riêng)
@@ -13,7 +13,7 @@
 
 ## 0. ĐỊNH VỊ DỰ ÁN GSS_LOGISTICs
 
-- **GSS_LOGISTICs** là dự án **độc lập**, khởi đầu từ bản sao của nền tảng BIM Logistics rồi tái cấu trúc cho Green Solutions Smart (GSS). Repo, CSDL, cổng, tên container và máy chủ triển khai đều tách riêng, **không dùng chung** với BIM Logistics.
+- **GSS_LOGISTICs** là dự án **độc lập**, khởi đầu từ bản sao của nền tảng GSS Logistics rồi tái cấu trúc cho Green Solutions Smart (GSS). Repo, CSDL, cổng, tên container và máy chủ triển khai đều tách riêng, **không dùng chung** với GSS Logistics.
 - Đặc tả nghiệp vụ & lộ trình riêng của GSS nằm ở [`BRD_GREEN_SOLUTIONS_SMART_GSS.md`](BRD_GREEN_SOLUTIONS_SMART_GSS.md): điều phối nhà xe (Vendor), kiểm soát chứng từ Nhận – Giao – Hạ rỗng, Bãi Cont Đắk Nông, mã QR cho Cont và hàng lẻ có Seal.
 - Các phần mô tả bên dưới phản ánh **nền tảng hiện có** trong mã nguồn. Hạng mục GSS chưa lập trình được đánh dấu **[KẾ HOẠCH]**.
 

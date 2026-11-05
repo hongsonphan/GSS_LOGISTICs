@@ -1,6 +1,6 @@
 # KẾ HOẠCH PHÁT TRIỂN HỆ THỐNG BÁO CÁO & ĐIỀU VẬN NÂNG CAO (TMS ADVANCED ROADMAP)
 > **Dự án:** GSS Logistics Platform — Nền tảng Quản trị Vận tải & Chuỗi cung ứng (GSS)  
-> **Phiên bản tài liệu:** v4.7.19 (nền kế thừa từ BIM Logistics) · **Dự án:** GSS-TMS-2026 (repo `GSS_LOGISTICs`)  
+> **Phiên bản tài liệu:** v4.7.19 (nền kế thừa từ GSS Logistics) · **Dự án:** GSS-TMS-2026 (repo `GSS_LOGISTICs`)  
 > **Cập nhật lần cuối:** 01/11/2026 | **Tiêu chuẩn:** Arc42 Section 9 & 11 (Architecture Roadmap & ADRs)  
 > **Trạng thái:** Sẵn sàng thực thi (Ready for Execution)
 
@@ -12,14 +12,17 @@ Chi tiết nghiệp vụ nằm ở [`BRD_GREEN_SOLUTIONS_SMART_GSS.md`](BRD_GREE
 
 | Giai đoạn | Nội dung chính | Trạng thái |
 |---|---|---|
-| **0. Tách dự án** | Repo `GSS_LOGISTICs` độc lập; đổi tên container/CSDL/cổng (web 8086, Postgres 5436); gỡ domain & máy chủ BIM cũ; khoá workflow deploy/uptime/ZAP cho tới khi có VPS riêng của GSS | ✅ Hoàn thành |
-| **1. SaaS Core** | `CompanyProfile.business_model` + `enabled_features`, ẩn/hiện Sidebar & Dashboard theo loại hình doanh nghiệp | ⏳ [KẾ HOẠCH] |
-| **2. Booking & Vendor Link** | Hạn lệnh DEM/DET, ghi chú điểm đến, cấm đường tại Booking; `BookingVendorAllocation` và trang Vendor Portal nhập N dòng Xe/Tài/Cont | ⏳ [KẾ HOẠCH] |
-| **3. Điều vận Nhận – Giao – Hạ** | Bắt buộc 1–10 chứng từ/bước; đổi số cont khi hạ rỗng; gửi tin Tài xế; mẫu biên bản POD theo khách hàng | ⏳ [KẾ HOẠCH] |
-| **4. Bãi Cont Đắk Nông & Dashboard Nhà xe** | Gate-in/Gate-out, tồn bãi thời gian thực; ma trận theo dõi Nhà xe | ⏳ [KẾ HOẠCH] |
-| **5. QR Code** | QR lệnh/container, hàng lẻ theo kiện có Seal, trình quét QR bằng camera | ⏳ [KẾ HOẠCH] |
+| **0. Tách dự án** | Repo `GSS_LOGISTICs` độc lập; đổi tên container/CSDL/cổng (web 8086, Postgres 5436); gỡ domain & máy chủ GSS cũ; khoá workflow deploy/uptime/ZAP cho tới khi có VPS riêng của GSS | ✅ Hoàn thành |
+| **1. SaaS Core** | `CompanyProfile.business_model` + `enabled_features` + `warn_days`; ẩn/hiện menu **và chặn ở API** (`core/features.py`) | ✅ Hoàn thành |
+| **2. Booking & Vendor Link** | DEM/DET tự tính, ghi chú điểm đến, cấm đường; `BookingVendorAllocation` + Vendor Link `/vendor/<token>/` | ✅ Hoàn thành |
+| **3. Điều vận Nhận – Giao – Hạ** | `step_status` + chứng từ 1–10 file/chặng; đổi cont hạ rỗng; tin nhắn tài xế; `PodTemplate` theo khách | ✅ Hoàn thành |
+| **4. Bãi Cont Đắk Nông & Dashboard Nhà xe** | App `depot_yard` (Gate-in/out, tồn bãi); ma trận nhà xe | ✅ Hoàn thành |
+| **5. QR Code** | App `qr_tracking` (QR lệnh, kiện hàng lẻ có Seal, trang tài xế `/q/<token>/`) | ✅ Hoàn thành |
+| **Còn lại** | Sửa dòng xe/tài thay nhà xe trên trang Booking; quản trị nhiều bãi + vai trò Thủ bãi; Zalo ZNS/SMS; kiểm thử camera QR trên thiết bị thật, kiểm thử tải; Docker/compose production + VPS riêng | ⏳ Xem `GSS_RESTRUCTURE_PLAN.md` mục 0.6 |
 
-> Các mục 1–8 bên dưới là lộ trình kỹ thuật kế thừa từ nền tảng BIM Logistics (báo cáo quản trị, triển khai On-Premise, ADR). Chỉ giữ lại những mục còn phù hợp với GSS.
+> Chi tiết kiến trúc đã chốt và nơi đặt mã: [`GSS_RESTRUCTURE_PLAN.md`](GSS_RESTRUCTURE_PLAN.md) §0; cách chạy/vận hành: [`GSS_RUNBOOK.md`](GSS_RUNBOOK.md).
+
+> Các mục 1–8 bên dưới là lộ trình kỹ thuật kế thừa từ nền tảng GSS Logistics (báo cáo quản trị, triển khai On-Premise, ADR). Chỉ giữ lại những mục còn phù hợp với GSS.
 
 ---
 

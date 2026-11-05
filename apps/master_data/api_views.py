@@ -294,6 +294,8 @@ class LocationListCreateAPIView(MasterDataBaseAPIView):
                 'contact_person': item.contact_person,
                 'contact_phone': item.contact_phone,
                 'notes': item.notes,
+                'destination_notes': item.destination_notes,
+                'road_restrictions': item.road_restrictions,
                 'is_active': item.is_active,
             })
         return Response({'results': data, 'total': len(data)})
@@ -317,6 +319,8 @@ class LocationListCreateAPIView(MasterDataBaseAPIView):
             contact_person=data.get('contact_person', '').strip(),
             contact_phone=data.get('contact_phone', '').strip(),
             notes=data.get('notes', '').strip(),
+            destination_notes=str(data.get('destination_notes') or '').strip(),
+            road_restrictions=str(data.get('road_restrictions') or '').strip(),
             is_active=bool(data.get('is_active', True)),
         )
         return Response({
@@ -339,6 +343,8 @@ class LocationDetailAPIView(MasterDataBaseAPIView):
         if 'contact_person' in data: location.contact_person = data['contact_person'].strip()
         if 'contact_phone' in data: location.contact_phone = data['contact_phone'].strip()
         if 'notes' in data: location.notes = data['notes'].strip()
+        if 'destination_notes' in data: location.destination_notes = str(data['destination_notes'] or '').strip()
+        if 'road_restrictions' in data: location.road_restrictions = str(data['road_restrictions'] or '').strip()
         if 'is_active' in data: location.is_active = bool(data['is_active'])
         location.save()
 
@@ -1838,6 +1844,19 @@ class SubcontractorDriverDetailAPIView(MasterDataBaseAPIView):
 # ==============================================================================
 # 12. KHAI BÁO THÔNG TIN CÔNG TY & HỆ THỐNG (COMPANY PROFILE & SYSTEM SETTINGS)
 # ==============================================================================
+def _features_payload(company):
+    from core.features import FEATURES, BUSINESS_MODEL_CHOICES, PROFILES, company_features
+    return {
+        'business_model': company.business_model,
+        'business_model_choices': [{'value': v, 'label': l} for v, l in BUSINESS_MODEL_CHOICES],
+        'enabled_features': company.enabled_features or {},
+        'effective_features': company_features(company),
+        'feature_labels': FEATURES,
+        'model_presets': {k: sorted(v) for k, v in PROFILES.items()},
+        'warn_days': company.warn_days,
+    }
+
+
 class CompanyProfileAPIView(MasterDataBaseAPIView):
     """
     API Khai báo & Cập nhật Thông tin Công ty / Tham số Hệ thống Cài đặt.
@@ -1874,6 +1893,7 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
             'logo_url': company.logo_url,
             'notes': company.notes,
             'is_default': company.is_default,
+            **_features_payload(company),
             'is_active': True,
             'updated_at': company.updated_at.strftime('%H:%M %d/%m/%Y') if company.updated_at else '-',
         }
@@ -1956,6 +1976,25 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
                 pass
         if 'logo_url' in data:
             company.logo_url = data['logo_url'].strip()
+        if 'business_model' in data:
+            from core.features import PROFILES
+            if data['business_model'] not in PROFILES:
+                return Response({'success': False, 'message': 'Loại hình doanh nghiệp không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
+            company.business_model = data['business_model']
+        if 'enabled_features' in data:
+            from core.features import clean_overrides
+            try:
+                company.enabled_features = clean_overrides(data['enabled_features'])
+            except ValueError as exc:
+                return Response({'success': False, 'message': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        if 'warn_days' in data:
+            try:
+                warn = int(data['warn_days'])
+                if not 0 <= warn <= 30:
+                    raise ValueError
+                company.warn_days = warn
+            except (ValueError, TypeError):
+                return Response({'success': False, 'message': 'Số ngày cảnh báo phải từ 0 đến 30.'}, status=status.HTTP_400_BAD_REQUEST)
 
         company.save()
 
@@ -1990,6 +2029,7 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
                 'logo_url': company.logo_url,
                 'notes': company.notes,
                 'is_default': company.is_default,
+                **_features_payload(company),
                 'updated_at': company.updated_at.strftime('%H:%M %d/%m/%Y') if company.updated_at else '-',
             }
         })

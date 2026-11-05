@@ -41,6 +41,7 @@ services:
       DB_PORT: 5432
       DJANGO_SETTINGS_MODULE: config.settings
       REDIS_URL: redis://redis:6379/0
+      DEFAULT_BUSINESS_MODEL: ${DEFAULT_BUSINESS_MODEL:-ENTERPRISE_FULL}
       # KHÔNG truyền WEB_CONCURRENCY vào container: giá trị rỗng làm gunicorn crash (int('')).
       # Số worker do tham số --workers ở command bên dưới quyết định (đặt WEB_CONCURRENCY trong .env để ghi đè).
     ports:

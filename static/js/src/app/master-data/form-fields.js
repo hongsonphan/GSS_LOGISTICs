@@ -351,6 +351,16 @@ function injectMasterDataModalFields(data) {
                     <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Giờ làm việc kho, quy định vào cổng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
             </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <label class="block font-bold text-slate-700 text-xs mb-1">Ghi Chú Điểm Đến (cho tài xế)</label>
+                    <textarea id="mdf-destination-notes" rows="3" placeholder="Người nhận hàng, cổng vào, quy định bảo hộ, đăng ký bảo vệ..." class="form-input px-2.5 py-1.5 text-xs text-slate-800 w-full">${escapeHtml(d.destination_notes || '')}</textarea>
+                </div>
+                <div class="md:col-span-6">
+                    <label class="block font-bold text-slate-700 text-xs mb-1">Lưu Ý Cấm Đường / Giờ Cấm Tải</label>
+                    <textarea id="mdf-road-restrictions" rows="3" placeholder="Tuyến cấm container, khung giờ cấm, cầu yếu, đoạn sửa chữa..." class="form-input px-2.5 py-1.5 text-xs text-slate-800 w-full">${escapeHtml(d.road_restrictions || '')}</textarea>
+                </div>
+            </div>
             <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>

@@ -150,6 +150,10 @@
         };
 
         // Ma trận phân quyền hiệu lực (core/access.py): {phân hệ: [thao tác]}; null = tài khoản không có hồ sơ nhân viên
+        // Tính năng đang bật theo Loại hình doanh nghiệp (core/features.py)
+        window.FEATURES = {{ features_json|default:"{}"|safe }};
+        window.hasFeature = function(name) { return window.FEATURES[name] !== false; };
+
         window.BIM_ACCESS = {{ access_json|default:"null"|safe }};
 
         window.hasUserPermission = function(permCodename) {

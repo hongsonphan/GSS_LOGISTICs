@@ -40,3 +40,4 @@ simulate_browser.py
 htmlcov/
 .pytest_cache/
 Claude outputs/
+gss_local_credentials.txt

@@ -1,7 +1,7 @@
 # GSS Logistics (repo GSS_LOGISTICs) – quy tắc làm việc
 
-Dự án GSS-TMS-2026 của Green Solutions Smart, **tách độc lập** khỏi BIM Logistics: repo, CSDL, cổng (web 8086, Postgres 5436), tên container (`gss_logistics_*`) và máy chủ đều riêng. Đặc tả nghiệp vụ: `docs/BRD_GREEN_SOLUTIONS_SMART_GSS.md`.
-Không thêm khoá SSH / secret / domain của máy chủ BIM Logistics vào repo này.
+Dự án GSS-TMS-2026 của Green Solutions Smart, **tách độc lập** khỏi GSS Logistics: repo, CSDL, cổng (web 8086, Postgres 5436), tên container (`gss_logistics_*`) và máy chủ đều riêng. Đặc tả nghiệp vụ: `docs/BRD_GREEN_SOLUTIONS_SMART_GSS.md`.
+Không thêm khoá SSH / secret / domain của máy chủ GSS Logistics vào repo này.
 
 ## Build bắt buộc trước khi commit (CI sẽ đỏ nếu quên)
 
@@ -36,6 +36,14 @@ docker compose -p gss_logistics -f docker-compose.yml -f docker-compose.local.ym
 - Web: http://127.0.0.1:8086 · Postgres: 127.0.0.1:5436 · container `gss_logistics_web|postgres|redis`.
 - Web tự `migrate` khi khởi động. Dừng: `docker compose -p gss_logistics down` (thêm `-v` sẽ XOÁ dữ liệu CSDL).
 - File `docker-compose.local.yml` chỉ dùng trên máy Windows/macOS; VPS Linux dùng `docker-compose.yml` như cũ.
+
+### Cách chạy thứ hai: Django trên máy + Postgres dev (cổng 8088)
+
+`.\scriptsun_local.ps1 -Seed` (xem `docs/GSS_RUNBOOK.md`). Dùng `docker-compose.devdb.yml` → container `gss_local_postgres` (127.0.0.1:5437), **tách riêng** với stack `gss_logistics_*` ở trên. Hai cách độc lập, chọn một; test chạy trên Postgres: `DB_*` trỏ vào 5437 hoặc 5436.
+
+## Tài liệu GSS cần đọc trước khi làm tính năng
+
+`docs/GSS_RESTRUCTURE_PLAN.md` §0 (quyết định kiến trúc, việc đã/chưa làm, quy tắc phối hợp) và `docs/GSS_RUNBOOK.md`. Phần mềm GSS: `/gss/`, `/vendor/<token>/`, `/q/<token>/`.
 
 ## Triển khai
 

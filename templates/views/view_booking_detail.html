@@ -341,6 +341,37 @@
                     </div>
                 </div>
 
+                <!-- CARD GSS: Hạn lệnh DEM/DET + ghi chú điểm đến / cấm đường -->
+                <div id="fullpage-demdet-card" class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                    <div class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="ph-bold ph-hourglass-high text-amber-600"></i> Hạn lệnh DEM / DET &amp; Lưu ý cho tài xế</div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <label class="block text-xs font-bold text-slate-700">Bắt đầu tính DEM
+                            <input type="date" id="fullpage-booking-dem-start" class="mt-1 w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                        </label>
+                        <label class="block text-xs font-bold text-slate-700">Bắt đầu tính DET
+                            <input type="date" id="fullpage-booking-det-start" class="mt-1 w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                        </label>
+                        <label class="block text-xs font-bold text-slate-700">Ghi đè hạn DEM (nếu khác tự tính)
+                            <input type="date" id="fullpage-booking-dem-override" class="mt-1 w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                        </label>
+                        <label class="block text-xs font-bold text-slate-700">Ghi đè hạn DET (nếu khác tự tính)
+                            <input type="date" id="fullpage-booking-det-override" class="mt-1 w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                        </label>
+                    </div>
+                    <div id="fullpage-demdet-summary" class="flex flex-wrap gap-2 text-xs font-bold"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <label class="block text-xs font-bold text-slate-700">Ghi chú điểm đến (liên hệ, cổng vào, quy định...)
+                            <textarea id="fullpage-booking-dest-notes" rows="3" class="mt-1 w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium" placeholder="Để trống = lấy từ Danh mục địa điểm"></textarea>
+                        </label>
+                        <label class="block text-xs font-bold text-slate-700">Lưu ý cấm đường / giờ cấm tải
+                            <textarea id="fullpage-booking-road-restrictions" rows="3" class="mt-1 w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium" placeholder="Để trống = lấy từ Danh mục địa điểm"></textarea>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- CARD GSS: Chia cont cho nhà xe (chỉ hiện khi booking đã lưu) -->
+                <div id="fullpage-vendor-allocations" class="hidden"></div>
+
                 <!-- CARD 4: DROPZONE ĐÍNH KÈM FILE BOOKING -->
                 <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-2 flex-wrap gap-2">

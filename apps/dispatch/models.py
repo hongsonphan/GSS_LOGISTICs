@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
@@ -269,6 +270,29 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     unloading_started_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm bắt đầu đóng/trút hàng tại dock kho")
 
     status = models.CharField(max_length=25, choices=TripStatus.choices, default=TripStatus.DRAFT, db_index=True)
+    # GSS: dòng điều vận do nhà xe nhập qua Vendor Link (xem apps/dispatch/vendor_service.py)
+    vendor_allocation = models.ForeignKey(
+        'dispatch.BookingVendorAllocation', on_delete=models.SET_NULL, null=True, blank=True, related_name='trips',
+        help_text="Phiếu chia cont cho nhà xe sinh ra dòng này")
+    vendor_line_no = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Số thứ tự dòng trong phiếu chia (1..N)")
+    vendor_note = models.CharField(max_length=255, blank=True, default='', help_text="Ghi chú của nhà xe")
+    # GSS: trạng thái tài xế theo 3 chặng Nhận – Giao – Hạ rỗng (xem apps/dispatch/gss_workflow.py)
+    step_status = models.CharField(max_length=24, choices=[
+        ('READY', 'Sẵn sàng'), ('ARRIVED_AT_PICKUP', 'Đã đến nơi nhận'), ('LOADED_ON_VEHICLE', 'Đã lên xe'),
+        ('ARRIVED_AT_DELIVERY', 'Đã đến nơi giao'), ('UNLOADED', 'Đã hạ xe / giao xong'),
+        ('RETURNING_EMPTY', 'Đang đi hạ rỗng'), ('EMPTY_RETURNED', 'Đã hạ rỗng'), ('CANCELLED', 'Đã hủy'),
+    ], default='READY', db_index=True)
+    arrived_pickup_at = models.DateTimeField(null=True, blank=True)
+    loaded_at = models.DateTimeField(null=True, blank=True)
+    arrived_delivery_at = models.DateTimeField(null=True, blank=True)
+    unloaded_at = models.DateTimeField(null=True, blank=True)
+    empty_returning_at = models.DateTimeField(null=True, blank=True)
+    empty_returned_at = models.DateTimeField(null=True, blank=True)
+    return_container_number = models.CharField(max_length=30, blank=True, default='', db_index=True, help_text="Số cont thực tế hạ rỗng (khác số lúc nhận/giao khi đổi vỏ)")
+    is_container_swapped = models.BooleanField(default=False)
+    container_swap_reason = models.CharField(max_length=255, blank=True, default='')
+    qr_version = models.PositiveSmallIntegerField(default=1, help_text="Tăng lên để vô hiệu hóa mã QR đã phát")
+    trailer_plate_text = models.CharField(max_length=20, blank=True, default='', help_text="Biển số rơ-moóc nhà xe khai (khi chưa có trong danh mục)")
     special_notes = models.TextField(blank=True, help_text="Lưu ý của điều độ, phí cty chịu...")
 
     # Bộ đệm tài chính (Cached Denormalization via Signals)
@@ -371,6 +395,11 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['vendor_allocation', 'vendor_line_no'], name='uniq_trip_vendor_line',
+                condition=models.Q(vendor_allocation__isnull=False, is_deleted=False)),
+        ]
         indexes = [
             models.Index(fields=['trip_code', 'status']),
             models.Index(fields=['container_number']),
@@ -603,3 +632,62 @@ def sync_trip_containers(trip):
         seq = row.pop('seq')
         TripContainer.objects.update_or_create(trip=trip, seq=seq, defaults=row)
     TripContainer.objects.filter(trip=trip).exclude(seq__in=[1, 2][:len(rows)]).delete()
+
+
+class AllocationStatus(models.TextChoices):
+    PENDING = 'PENDING', 'Chờ nhà xe nhập'
+    PARTIAL = 'PARTIAL', 'Nhà xe nhập một phần'
+    SUBMITTED = 'SUBMITTED', 'Nhà xe đã nhập đủ'
+    LOCKED = 'LOCKED', 'Đã khóa'
+    REVOKED = 'REVOKED', 'Đã thu hồi'
+
+
+class BookingVendorAllocation(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """Phiếu chia N container của một Booking cho một nhà xe (thầu phụ).
+
+    Nhà xe truy cập bằng link không mật khẩu /vendor/<token>/. Chỉ lưu băm SHA-256 của token;
+    token gốc chỉ hiện một lần lúc tạo / tạo lại link.
+    """
+    booking = models.ForeignKey('customers.BookingOrder', on_delete=models.PROTECT, related_name='vendor_allocations')
+    subcontractor = models.ForeignKey('master_data.Subcontractor', on_delete=models.PROTECT, related_name='allocations')
+    allocated_containers = models.PositiveSmallIntegerField(help_text="Số cont giao cho nhà xe")
+    token_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    status = models.CharField(max_length=12, choices=AllocationStatus.choices, default=AllocationStatus.PENDING, db_index=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    locked_at = models.DateTimeField(null=True, blank=True)
+    draft_rows = models.JSONField(default=dict, blank=True, help_text="Dòng nhà xe đã nhập nhưng chưa đủ biển số để tạo chuyến: {số dòng: {...}}")
+    last_opened_at = models.DateTimeField(null=True, blank=True)
+    last_submitted_at = models.DateTimeField(null=True, blank=True)
+    note = models.CharField(max_length=255, blank=True, default='')
+
+    class Meta:
+        ordering = ['booking_id', 'id']
+        verbose_name = 'Phiếu chia cont cho nhà xe'
+        verbose_name_plural = 'Phiếu chia cont cho nhà xe'
+
+    def __str__(self):
+        return f"{self.booking.booking_code} -> {self.subcontractor.name}: {self.allocated_containers} cont"
+
+
+
+class DriverNotificationLog(CompanyOwnedModel, TimeStampedModel):
+    """Lịch sử soạn/gửi tin điều lệnh cho tài xế (Zalo, SMS, link cổng tài xế)."""
+    CHANNELS = [('ZALO', 'Zalo'), ('SMS', 'SMS'), ('PORTAL_LINK', 'Link cổng tài xế'), ('COPY', 'Sao chép')]
+    trip = models.ForeignKey(DispatchTrip, on_delete=models.CASCADE, related_name='driver_messages')
+    driver_name = models.CharField(max_length=100, blank=True)
+    driver_phone = models.CharField(max_length=20, blank=True)
+    channel = models.CharField(max_length=12, choices=CHANNELS, default='COPY')
+    message_content = models.TextField()
+    sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    sent_at = models.DateTimeField(default=timezone.now)
+    opened_at = models.DateTimeField(null=True, blank=True, help_text="Chỉ có ý nghĩa khi tài xế mở link cổng tài xế/QR")
+
+    class Meta:
+        ordering = ['-sent_at']
+
+    @property
+    def is_read(self):
+        return self.opened_at is not None
+
+
+DriverNotificationLog.tenant_path = 'trip__company'

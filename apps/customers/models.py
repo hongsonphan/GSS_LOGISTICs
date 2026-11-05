@@ -42,6 +42,8 @@ class Customer(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     credit_limit = models.DecimalField(max_digits=14, decimal_places=0, default=0, verbose_name="Hạn mức nợ tối đa (VNĐ)")
 
     notes = models.TextField(blank=True)
+    pod_template = models.ForeignKey('customers.PodTemplate', on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='customers', help_text="Mẫu biên bản giao hàng riêng; trống = dùng mẫu mặc định")
     partner = models.ForeignKey('master_data.Partner', on_delete=models.SET_NULL, null=True, blank=True,
                                 related_name='customer_profiles', help_text='Đối tác hợp nhất (tự đồng bộ)')
 
@@ -51,6 +53,23 @@ class Customer(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         display_name = f"[{self.short_name}] {self.name}" if self.short_name else self.name
         return f"{display_name} ({self.code})"
+
+class PodTemplate(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """Mẫu biên bản giao hàng (POD). Thân mẫu là HTML với biến dạng {{ ten_bien }}; giá trị luôn được escape khi in."""
+    code = models.CharField(max_length=40, unique=True)
+    name = models.CharField(max_length=150)
+    header_html = models.TextField(blank=True, help_text="Đầu biên bản (logo, tên công ty...)")
+    body_html = models.TextField(help_text="Thân biên bản, dùng các biến như {{ container_number }}")
+    terms_html = models.TextField(blank=True, help_text="Điều khoản giao nhận")
+    is_default = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-is_default', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
 
 class RouteTariff(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Biểu cước vận tải theo tuyến của khách hàng."""
@@ -328,6 +347,13 @@ class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     loading_time = models.CharField(max_length=20, default='08:00', blank=True, help_text="Giờ hẹn đóng hàng")
     free_time_detention = models.IntegerField(default=7, help_text="Số ngày miễn phí lưu vỏ (DET)")
     free_time_demurrage = models.IntegerField(default=7, help_text="Số ngày miễn phí lưu bãi (DEM)")
+    # Mốc bắt đầu tính DEM/DET; hạn lệnh tự tính (xem apps/customers/dem_det.py), cho phép ghi đè
+    dem_start_date = models.DateField(null=True, blank=True, help_text="Ngày bắt đầu tính DEM (tàu cập / dỡ khỏi tàu)")
+    det_start_date = models.DateField(null=True, blank=True, help_text="Ngày bắt đầu tính DET (ngày lấy cont rỗng/ra cảng)")
+    dem_expiry_override = models.DateField(null=True, blank=True, help_text="Hạn DEM nhập tay (ghi đè giá trị tự tính)")
+    det_expiry_override = models.DateField(null=True, blank=True, help_text="Hạn DET nhập tay (ghi đè giá trị tự tính)")
+    destination_notes = models.TextField(blank=True, help_text="Ghi chú điểm đến cho tài xế (liên hệ, cổng vào, quy định...)")
+    road_restrictions = models.TextField(blank=True, help_text="Lưu ý cấm đường / giờ cấm tải trên tuyến")
 
     # Thương mại
     selling_freight_price = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Đơn giá cước thỏa thuận với khách (VNĐ)")
@@ -347,6 +373,16 @@ class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         related_name='created_bookings',
         help_text="Nhân viên tiếp nhận và lập đơn booking"
     )
+
+    @property
+    def dem_expiry(self):
+        from apps.customers.dem_det import compute_expiry
+        return compute_expiry(self.dem_start_date, self.free_time_demurrage, self.dem_expiry_override)
+
+    @property
+    def det_expiry(self):
+        from apps.customers.dem_det import compute_expiry
+        return compute_expiry(self.det_start_date, self.free_time_detention, self.det_expiry_override)
 
     @property
     def remaining_containers(self):
