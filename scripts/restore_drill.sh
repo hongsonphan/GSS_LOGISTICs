@@ -8,9 +8,9 @@
 # =============================================================================
 set -uo pipefail
 BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/backups}"
-DB_CONTAINER="${DB_CONTAINER:-bim_logistics_postgres}"
-DB_USER="${DB_USER:-bim_logistics_user}"
-DB_NAME="${DB_NAME:-bim_logistics_db}"
+DB_CONTAINER="${DB_CONTAINER:-gss_logistics_postgres}"
+DB_USER="${DB_USER:-gss_logistics_user}"
+DB_NAME="${DB_NAME:-gss_logistics_db}"
 DRILL_DB="bim_restore_drill"
 DOCKER="docker"; docker ps >/dev/null 2>&1 || DOCKER="sudo docker"
 PSQL="$DOCKER exec -i $DB_CONTAINER psql -v ON_ERROR_STOP=1 -q -U $DB_USER"

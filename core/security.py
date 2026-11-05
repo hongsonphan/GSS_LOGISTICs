@@ -4,7 +4,7 @@ from django.conf import settings
 from hashids import Hashids
 
 # Salt bí mật từ settings hoặc biến môi trường
-DEFAULT_SALT = getattr(settings, 'HASHIDS_SALT', 'BIM_LOGISTICS_SECURE_SALT_2026')
+DEFAULT_SALT = getattr(settings, 'HASHIDS_SALT', 'GSS_LOGISTICS_SECURE_SALT_2026')
 ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
 MIN_LENGTH = 8
 

@@ -36,7 +36,7 @@ if allowed_hosts_raw:
 elif DEBUG:
     ALLOWED_HOSTS = ['*']
 else:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'logistics.bim.info.vn', 'bim.info.vn', '149.118.60.194', 'testserver', 'web']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'gss-logistics.example.com', 'testserver', 'web']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -115,8 +115,8 @@ if DB_HOST or 'postgresql' in DB_ENGINE:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'bim_logistics_db'),
-            'USER': os.environ.get('DB_USER', 'bim_logistics_user'),
+            'NAME': os.environ.get('DB_NAME', 'gss_logistics_db'),
+            'USER': os.environ.get('DB_USER', 'gss_logistics_user'),
             'PASSWORD': os.environ.get('DB_PASSWORD', ''),
             'HOST': DB_HOST or '127.0.0.1',
             'PORT': os.environ.get('DB_PORT', '5432'),
@@ -196,10 +196,9 @@ if cors_env:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_env.split(',') if o.strip()]
 else:
     CORS_ALLOWED_ORIGINS = [
-        'https://logistics.bim.info.vn',
-        'https://bim.info.vn',
-        'http://localhost:8085',
-        'http://127.0.0.1:8085',
+        'https://gss-logistics.example.com',
+        'http://localhost:8086',
+        'http://127.0.0.1:8086',
         'http://localhost:8000',
         'http://127.0.0.1:8000',
     ]
@@ -211,16 +210,15 @@ if csrf_env:
     CSRF_TRUSTED_ORIGINS = [o.strip() for o in csrf_env.split(',') if o.strip()]
 else:
     CSRF_TRUSTED_ORIGINS = [
-        'https://logistics.bim.info.vn',
-        'https://bim.info.vn',
-        'http://localhost:8085',
-        'http://127.0.0.1:8085',
+        'https://gss-logistics.example.com',
+        'http://localhost:8086',
+        'http://127.0.0.1:8086',
         'http://localhost:8000',
         'http://127.0.0.1:8000',
     ]
 
 # Luôn tin cậy domain production chính thức (trước đây được thêm cứng ở cuối file)
-for _origin in ('https://logistics.bim.info.vn', 'https://bim.info.vn'):
+for _origin in ('https://gss-logistics.example.com',):
     if _origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(_origin)
 
@@ -335,7 +333,7 @@ MEDIA_USE_X_ACCEL = _env_bool('MEDIA_USE_X_ACCEL', False)
 
 # Salt mã hoá HashID trong URL. Giữ giá trị cũ làm mặc định để không làm hỏng các link đã gửi;
 # đặt HASHIDS_SALT mới trong .env khi chấp nhận vô hiệu hoá link cũ.
-HASHIDS_SALT = os.environ.get('HASHIDS_SALT') or 'BIM_LOGISTICS_SECURE_SALT_2026'
+HASHIDS_SALT = os.environ.get('HASHIDS_SALT') or 'GSS_LOGISTICS_SECURE_SALT_2026'
 
 # Khoá đăng nhập tạm thời sau nhiều lần sai mật khẩu
 LOGIN_MAX_FAILURES = int(os.environ.get('LOGIN_MAX_FAILURES', '5'))

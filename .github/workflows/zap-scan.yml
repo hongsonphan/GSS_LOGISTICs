@@ -2,9 +2,8 @@
 # Kết quả: issue "ZAP: kết quả quét bảo mật" trên GitHub (tự cập nhật) + báo cáo HTML trong Artifacts của lần chạy.
 name: Security scan (ZAP)
 
+# Lịch tự chạy đang TẮT cho tới khi GSS có domain riêng (đặt biến SITE_URL rồi thêm lại schedule).
 on:
-  schedule:
-    - cron: "41 19 * * 6"   # 02:41 sáng Chủ nhật giờ Việt Nam
   workflow_dispatch:
 
 permissions:
@@ -20,7 +19,7 @@ jobs:
       - name: ZAP baseline — trang công khai
         uses: zaproxy/action-baseline@v0.14.0
         with:
-          target: "https://logistics.bim.info.vn/login/"
+          target: "${{ vars.SITE_URL }}/login/"
           rules_file_name: ".zap/rules.tsv"
           cmd_options: "-a -j"
           issue_title: "ZAP: kết quả quét bảo mật"

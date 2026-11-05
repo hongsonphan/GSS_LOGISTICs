@@ -5,7 +5,7 @@
 # ==============================================================================
 set -e
 
-REPO_DIR="/home/ubuntu/BIM_LOGISTICS"
+REPO_DIR="/home/ubuntu/GSS_LOGISTICS"
 cd "$REPO_DIR"
 
 # Khac phuc dubious ownership
@@ -36,7 +36,7 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
 fi
 
 echo "=== [4/4] KIEM TRA HE THONG WEBAPP ==="
-curl -s -I http://127.0.0.1:8085/ | head -n 5 || true
+curl -s -I http://127.0.0.1:8086/ | head -n 5 || true
 
 echo "=============================================================================="
 echo "✓ HOAN TAT CAP NHAT VA DONG BO HE THONG 100%!"

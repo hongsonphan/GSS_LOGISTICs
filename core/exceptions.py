@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def custom_exception_handler(exc, context):
     """
-    Custom Exception Handler cho toàn bộ REST API của Bim_Logistics.
+    Custom Exception Handler cho toàn bộ REST API của GSS_Logistics.
     Tuân thủ Tiêu chuẩn 6 (SECURITY_AUDIT.md):
     - Ẩn traceback hệ thống đối với người dùng/mobile client.
     - Chuẩn hóa cấu trúc phản hồi lỗi dạng JSON:

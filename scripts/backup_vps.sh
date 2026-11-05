@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 # =============================================================================
-# SAO LƯU TỰ ĐỘNG BIM LOGISTICS (chạy trên VPS)
+# SAO LƯU TỰ ĐỘNG GSS LOGISTICS (chạy trên VPS)
 # - CSDL PostgreSQL (pg_dump nén) + thư mục media/ (chứng từ, hợp đồng, ảnh)
 # - Giữ KEEP_DAYS ngày gần nhất, tự xoá bản cũ hơn
 # Cài lịch chạy 2h sáng mỗi ngày:
-#   crontab -e  ->  0 2 * * * /home/ubuntu/BIM_LOGISTICS/scripts/backup_vps.sh >> /home/ubuntu/backups/backup.log 2>&1
+#   crontab -e  ->  0 2 * * * /home/ubuntu/GSS_LOGISTICS/scripts/backup_vps.sh >> /home/ubuntu/backups/backup.log 2>&1
 # Khôi phục CSDL:
-#   gunzip -c db_YYYYmmdd_HHMM.sql.gz | docker exec -i bim_logistics_postgres psql -U bim_logistics_user -d bim_logistics_db
+#   gunzip -c db_YYYYmmdd_HHMM.sql.gz | docker exec -i gss_logistics_postgres psql -U gss_logistics_user -d gss_logistics_db
 # =============================================================================
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/home/ubuntu/BIM_LOGISTICS}"
+APP_DIR="${APP_DIR:-/home/ubuntu/GSS_LOGISTICS}"
 BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/backups}"
 KEEP_DAYS="${KEEP_DAYS:-14}"
-DB_CONTAINER="${DB_CONTAINER:-bim_logistics_postgres}"
-DB_USER="${DB_USER:-bim_logistics_user}"
-DB_NAME="${DB_NAME:-bim_logistics_db}"
+DB_CONTAINER="${DB_CONTAINER:-gss_logistics_postgres}"
+DB_USER="${DB_USER:-gss_logistics_user}"
+DB_NAME="${DB_NAME:-gss_logistics_db}"
 STAMP="$(date +%Y%m%d_%H%M)"
 
 mkdir -p "$BACKUP_DIR"

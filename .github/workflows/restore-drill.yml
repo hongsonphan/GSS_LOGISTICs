@@ -2,9 +2,8 @@
 # Lỗi -> workflow đỏ -> GitHub gửi email cho chủ repo.
 name: Restore drill
 
+# Lịch tự chạy đang TẮT cho tới khi dự án GSS có VPS riêng.
 on:
-  schedule:
-    - cron: "17 20 * * 0"   # 03:17 sáng thứ Hai giờ Việt Nam
   workflow_dispatch:
 
 concurrency:
@@ -24,4 +23,4 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          ssh -i ~/.ssh/deploy_key "${USER:-ubuntu}@$HOST" 'bash /home/ubuntu/BIM_LOGISTICS/scripts/restore_drill.sh'
+          ssh -i ~/.ssh/deploy_key "${USER:-ubuntu}@$HOST" 'bash /home/ubuntu/GSS_LOGISTICS/scripts/restore_drill.sh'

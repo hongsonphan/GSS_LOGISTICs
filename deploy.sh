@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# BIM LOGISTICS — AUTOMATED PRODUCTION DEPLOYMENT & HEALTH CHECK SCRIPT
+# GSS LOGISTICS — AUTOMATED PRODUCTION DEPLOYMENT & HEALTH CHECK SCRIPT
 # Hệ sinh thái BIM Ecosystem - Triền Võ Logistics
 # ==============================================================================
 set -e
@@ -30,5 +30,5 @@ echo "=== [6/6] ĐỒNG BỘ TIẾN ĐỘ & SẴN SÀNG KHỞI CHẠY GUNICORN =
 python manage.py resync_timelines
 
 echo "=============================================================================="
-echo "✓ HỆ THỐNG BIM LOGISTICS ĐÃ SẴN SÀNG VẬN HÀNH 100% CHUẨN PRODUCTION!"
+echo "✓ HỆ THỐNG GSS LOGISTICS ĐÃ SẴN SÀNG VẬN HÀNH 100% CHUẨN PRODUCTION!"
 echo "=============================================================================="

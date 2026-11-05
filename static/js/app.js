@@ -22261,7 +22261,7 @@ function exportAccountingToExcel() {
     });
 
     const subtabId = activeSubtab.id.replace('subtab-', '');
-    const filename = `BIM_Logistics_KeToan_${subtabId}_${new Date().toISOString().slice(0, 10)}.csv`;
+    const filename = `GSS_Logistics_KeToan_${subtabId}_${new Date().toISOString().slice(0, 10)}.csv`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -36354,7 +36354,7 @@ function exportReportToExcel() {
     });
 
     const subtabId = activeSubtab.id.replace('subtab-', '');
-    const filename = `BIM_Logistics_Bao_Cao_${subtabId}_${currentReportPeriod}_${new Date().toISOString().slice(0, 10)}.csv`;
+    const filename = `GSS_Logistics_Bao_Cao_${subtabId}_${currentReportPeriod}_${new Date().toISOString().slice(0, 10)}.csv`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

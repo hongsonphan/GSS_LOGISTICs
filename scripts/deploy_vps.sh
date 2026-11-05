@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # =============================================================================
-# TRIỂN KHAI BIM LOGISTICS TRÊN VPS (chạy trong thư mục repo, sau khi đã git pull bản mới)
+# TRIỂN KHAI GSS LOGISTICS TRÊN VPS (chạy trong thư mục repo, sau khi đã git pull bản mới)
 #   bash scripts/deploy_vps.sh
 # Các bước: kiểm tra .env -> sao lưu CSDL + media -> chạy thử trên bản sao CSDL -> cập nhật Nginx (media có kiểm quyền, gzip)
 #           -> build lại image -> khởi động (migrate + collectstatic) -> kiểm tra /healthz/
-# Nếu web không lên được: tự quay về commit cũ (ghi trong ../BIM_LOGISTICS_rollback_commit.txt).
+# Nếu web không lên được: tự quay về commit cũ (ghi trong ../GSS_LOGISTICS_rollback_commit.txt).
 # =============================================================================
 set -euo pipefail
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$APP_DIR"
-ROLLBACK_FILE="$(dirname "$APP_DIR")/BIM_LOGISTICS_rollback_commit.txt"
+ROLLBACK_FILE="$(dirname "$APP_DIR")/GSS_LOGISTICS_rollback_commit.txt"
 SUDO=""; [ "$(id -u)" -ne 0 ] && SUDO="sudo"
 if docker compose version >/dev/null 2>&1; then DC="docker compose"; elif $SUDO docker compose version >/dev/null 2>&1; then DC="$SUDO docker compose"; else DC="docker-compose"; fi
 step() { echo; echo "=== $* ==="; }
@@ -32,7 +32,7 @@ fi
 grep -q '^DEBUG=' .env || printf '\nDEBUG=False\n' >> .env
 grep -q '^FRONTEND_SPLIT_SCRIPTS=' .env || printf 'FRONTEND_SPLIT_SCRIPTS=false\n' >> .env
 grep -q '^SECURE_SSL_REDIRECT=' .env || printf 'SECURE_SSL_REDIRECT=True\n' >> .env
-grep -q '^SITE_URL=' .env || printf 'SITE_URL=https://logistics.bim.info.vn\n' >> .env  # link trong email đặt lại mật khẩu
+grep -q '^SITE_URL=' .env || printf 'SITE_URL=https://gss-logistics.example.com\n' >> .env  # link trong email đặt lại mật khẩu
 
 step "2/7 Sao lưu CSDL và media trước khi cập nhật"
 bash scripts/backup_vps.sh
@@ -42,24 +42,24 @@ $DC build web
 # Chạy thử dùng --no-deps nên phải bật sẵn Redis (bộ nhớ đệm REDIS_URL), nếu không signal danh mục sẽ lỗi kết nối
 $DC up -d redis
 PG="$DC exec -T db"
-$PG dropdb -U bim_logistics_user --if-exists bim_preflight
-$PG createdb -U bim_logistics_user bim_preflight
-$PG sh -c 'pg_dump -U bim_logistics_user -d bim_logistics_db --no-owner | psql -q -U bim_logistics_user -d bim_preflight' >/dev/null
+$PG dropdb -U gss_logistics_user --if-exists gss_preflight
+$PG createdb -U gss_logistics_user gss_preflight
+$PG sh -c 'pg_dump -U gss_logistics_user -d gss_logistics_db --no-owner | psql -q -U gss_logistics_user -d gss_preflight' >/dev/null
 # media gắn CHỈ ĐỌC trong lần chạy thử: dù có lỗi mã nào cũng không thể xóa/ghi file thật
 mkdir -p media
 MEDIA_BEFORE="$(find media -type f | wc -l)"
-if $DC run --rm --no-deps -T -v "$APP_DIR/media:/app/media:ro" -e DB_NAME=bim_preflight web sh -c \
+if $DC run --rm --no-deps -T -v "$APP_DIR/media:/app/media:ro" -e DB_NAME=gss_preflight web sh -c \
     "python manage.py migrate --noinput && python manage.py assign_default_company && python manage.py sync_trip_data && python manage.py rebuild_ledger && python manage.py migrate_legacy_access && python manage.py check"; then
     echo "Chạy thử trên bản sao CSDL: ĐẠT"
-    $PG dropdb -U bim_logistics_user bim_preflight
+    $PG dropdb -U gss_logistics_user gss_preflight
 else
-    echo "CHẠY THỬ THẤT BẠI -> DỪNG, hệ thống đang chạy KHÔNG bị thay đổi (CSDL bản sao: bim_preflight để kiểm tra)"
+    echo "CHẠY THỬ THẤT BẠI -> DỪNG, hệ thống đang chạy KHÔNG bị thay đổi (CSDL bản sao: gss_preflight để kiểm tra)"
     [ -f "$ROLLBACK_FILE" ] && git checkout -B master "$(cat "$ROLLBACK_FILE")" || true
     exit 1
 fi
 
 step "3/7 Cập nhật Nginx: /media/ phải qua Django kiểm quyền, bật gzip"
-NGINX_FILE="$($SUDO grep -rl 'server_name logistics.bim.info.vn' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1 || true)"
+NGINX_FILE="$($SUDO grep -rl 'server_name gss-logistics.example.com' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1 || true)"
 if [ -n "$NGINX_FILE" ]; then
     NGINX_REAL="$($SUDO readlink -f "$NGINX_FILE")"
     $SUDO cp "$NGINX_REAL" "$NGINX_REAL.bak.$(date +%Y%m%d%H%M)"
@@ -89,7 +89,7 @@ PY
         grep -q '^MEDIA_USE_X_ACCEL=' .env || printf 'MEDIA_USE_X_ACCEL=false\n' >> .env
     fi
 else
-    echo "Không tìm thấy file Nginx của logistics.bim.info.vn -> bỏ qua (xem mẫu scripts/nginx_bim_logistics.conf)"
+    echo "Không tìm thấy file Nginx của gss-logistics.example.com -> bỏ qua (xem mẫu scripts/nginx_gss_logistics.conf)"
 fi
 
 step "4/7 Quyền thư mục cho container chạy bằng user thường (UID 1000)"
@@ -110,12 +110,12 @@ fi
 step "6/7 Kiểm tra hệ thống"
 ok=""
 for i in $(seq 1 30); do
-    if curl -fsS -H "Host: logistics.bim.info.vn" -H "X-Forwarded-Proto: https" http://127.0.0.1:8085/healthz/ >/dev/null 2>&1; then ok=1; break; fi
+    if curl -fsS -H "Host: gss-logistics.example.com" -H "X-Forwarded-Proto: https" http://127.0.0.1:8086/healthz/ >/dev/null 2>&1; then ok=1; break; fi
     sleep 4
 done
 # Nginx dạng container gọi qua cầu nối docker0 (172.17.0.1): kiểm tra cả đường này
 if [ -n "$ok" ] && ip -4 addr show docker0 >/dev/null 2>&1; then
-    curl -fsS -m 10 -H "Host: logistics.bim.info.vn" -H "X-Forwarded-Proto: https" http://172.17.0.1:8085/healthz/ >/dev/null 2>&1 || { echo "Không gọi được qua 172.17.0.1:8085 (đường Nginx dùng)"; ok=""; }
+    curl -fsS -m 10 -H "Host: gss-logistics.example.com" -H "X-Forwarded-Proto: https" http://172.17.0.1:8086/healthz/ >/dev/null 2>&1 || { echo "Không gọi được qua 172.17.0.1:8086 (đường Nginx dùng)"; ok=""; }
 fi
 if [ -z "$ok" ]; then
     echo "WEB KHÔNG LÊN -> quay về bản cũ"; $DC logs --tail 80 web || true
