@@ -25,6 +25,18 @@ python scripts/build_css.py --check
 - Thêm/sửa model thì chạy `python manage.py makemigrations` và commit migration.
 - Chạy test: `DEBUG=True SECRET_KEY=x python manage.py test apps.billing apps.dispatch`.
 
+## Chạy local bằng Docker (PostgreSQL + Redis + web)
+
+Cần file `.env` ở thư mục gốc (không commit): `DB_PASSWORD` bắt buộc, `DB_NAME=gss_logistics_db`, `DB_USER=gss_logistics_user`. Mẫu: `.env.example`.
+
+```bash
+docker compose -p gss_logistics -f docker-compose.yml -f docker-compose.local.yml up -d --build
+```
+
+- Web: http://127.0.0.1:8086 · Postgres: 127.0.0.1:5436 · container `gss_logistics_web|postgres|redis`.
+- Web tự `migrate` khi khởi động. Dừng: `docker compose -p gss_logistics down` (thêm `-v` sẽ XOÁ dữ liệu CSDL).
+- File `docker-compose.local.yml` chỉ dùng trên máy Windows/macOS; VPS Linux dùng `docker-compose.yml` như cũ.
+
 ## Triển khai
 
 - Workflow `Deploy VPS` **chỉ chạy tay** (tab Actions) và cần khai báo VPS riêng của GSS: secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` và biến `SITE_URL`. Thư mục trên VPS: `/home/ubuntu/GSS_LOGISTICS`.
