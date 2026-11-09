@@ -274,6 +274,8 @@ class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     # Đơn hàng theo B/L (đặc tả GSS 08/11/2026 §5.3): MBL, HBL hoặc cả hai; HBL ưu tiên khi đặt tên file
     mbl_number = models.CharField(max_length=40, blank=True, default='', db_index=True, help_text="Số Master B/L")
     hbl_number = models.CharField(max_length=40, blank=True, default='', db_index=True, help_text="Số House B/L")
+    bill_of_lading = models.ForeignKey('gss.BillOfLading', on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='bookings', help_text='Vận đơn chính của đơn (HBL nếu có, không thì MBL)')
     cargo_mode = models.CharField(max_length=3, default='FCL', choices=[('FCL', 'FCL – nguyên cont'), ('LCL', 'LCL – hàng lẻ')])
     port_of_loading = models.CharField(max_length=100, blank=True, default='', help_text="Cảng xếp")
     port_of_discharge = models.CharField(max_length=100, blank=True, default='', help_text="Cảng dỡ")

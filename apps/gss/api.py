@@ -920,3 +920,42 @@ class LookupAPI(Base):
                                   for t in trips[:300]]})
         del BookingContainer
         return ok(out)
+
+
+# ================================================================== Chặng & lượt xe (Leg / TruckRun)
+class TripLegsAPI(Base):
+    """GET: các chặng của chuyến (tự sinh nếu chưa có). POST action=assign (gán chặng vào lượt xe mới/có sẵn)
+    hoặc action=rebuild (dựng lại theo mẫu tuyến template_id)."""
+    permission_classes = [IsDispatcher]
+
+    def _payload(self, t):
+        from apps.gss import legs as lg
+        rows = lg.ensure_legs(t)
+        return {'trip_code': t.trip_code, 'teu': lg.teu_of(t), 'legs': [lg.serialize_leg(x) for x in rows]}
+
+    def get(self, request, code):
+        return ok(self._payload(trip_or_404(code)))
+
+    def post(self, request, code):
+        from apps.gss import legs as lg
+        from apps.gss.models import Leg, RouteTemplate, TruckRun
+        t = trip_or_404(code)
+        action = request.data.get('action') or 'assign'
+        if action == 'rebuild':
+            tpl = RouteTemplate.objects.filter(pk=request.data.get('template_id'), is_deleted=False).first()
+            lg.ensure_legs(t, tpl, rebuild=True)
+            return ok(self._payload(t), 'Đã dựng lại chặng.')
+        ids = request.data.get('leg_ids') or []
+        legs = list(Leg.objects.filter(trip=t, pk__in=ids)) if ids else lg.ensure_legs(t)
+        run = None
+        if request.data.get('truck_run_id'):
+            run = TruckRun.objects.filter(pk=request.data.get('truck_run_id'), is_deleted=False).first()
+            if run is None:
+                raise Http404
+        fields = {k: request.data.get(k) for k in ('tractor_plate', 'trailer_plate', 'driver_name', 'driver_phone')}
+        if request.data.get('capacity_teu'):
+            fields['capacity_teu'] = int(request.data.get('capacity_teu'))
+        if t.subcontractor_id:
+            fields['subcontractor_id'] = t.subcontractor_id
+        run = lg.assign_legs(legs, run=run, **fields)
+        return ok(self._payload(t), f'Đã gán vào lượt xe {run.code}.')

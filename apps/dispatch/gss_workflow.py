@@ -142,6 +142,9 @@ def advance(trip, target, *, user=None, actor_label='', reason='', fields=None, 
         description=reason, event_time=now,
         metadata={'from': cur, 'to': target, 'by': label, 'backward': backward, 'overridden': overridden,
                   'swapped': trip.is_container_swapped, 'return_container_number': trip.return_container_number})
+    if target in ('UNLOADED', 'EMPTY_RETURNED'):
+        from apps.gss.legs import on_step  # trạng thái chặng (Leg) theo bước hành trình
+        on_step(trip, target)
     if target == 'EMPTY_RETURNED':
         from apps.gss.pricing import on_trip_completed  # tự áp biểu giá khi hoàn tất (lỗi chỉ ghi log)
         on_trip_completed(trip)

@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/gss/trips/<str:code>/charges/', api.TripChargesAPI.as_view()),
     path('api/gss/trips/<str:code>/apply-rates/', api.TripApplyRatesAPI.as_view()),
     path('api/gss/trips/<str:code>/street-turn/', api.TripStreetTurnAPI.as_view()),
+    path('api/gss/trips/<str:code>/legs/', api.TripLegsAPI.as_view()),
     path('api/gss/trips/<str:code>/claims/', api.TripClaimsAPI.as_view()),
     path('api/gss/job-lines/<int:pk>/', api.JobLineDetailAPI.as_view()),
     # Kế toán: chi hộ, hoá đơn, bảng kê

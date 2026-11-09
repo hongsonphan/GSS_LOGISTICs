@@ -1,10 +1,12 @@
 """Mô hình nghiệp vụ GSS bổ sung (đặc tả 08/11/2026 §4) dựng trên lõi đã có.
 
 Ánh xạ khái niệm đặc tả → mã hiện có (quyết định §0.1 kế hoạch: mở rộng DispatchTrip, không dựng lại DB):
-- BillOfLading / Shipment  → `customers.BookingOrder` (thêm MBL/HBL, cảng, tàu, ETA, ngày dỡ, hạn D/O) + `CustomsDeclarationRef`.
+- BillOfLading → `BillOfLading` (MBL ◄ HBL, unique theo hãng phát hành + số); Shipment → `customers.BookingOrder`
+  (trỏ tới B/L; cảng, tàu, ETA, ngày dỡ, hạn D/O) + `CustomsDeclarationRef`.
+- Leg / TruckRun / RouteTemplate → các model cùng tên ở app này (TruckRun chở tối đa `capacity_teu`, mặc định 2 TEU).
 - Equipment (danh sách cont của B/L) → `BookingContainer` (mỗi dòng gắn tối đa 1 chuyến).
 - TransportJob → `dispatch.DispatchTrip`; VendorAllocation → `dispatch.BookingVendorAllocation`.
-- FreeTimeRule, ChargeCode / RateCard / RateLine, JobCharge (bán/mua), CostClaim (chi hộ), EInvoice, Statement / StatementLine,
+- FreeTimeRule, ChargeCode / RateCard / RateLine, JobCharge (mọi dòng bán/mua; proxy JobCost = phía mua), CostClaim (chi hộ), EInvoice, Statement / StatementLine,
   DeliveryNote: mới, ở app này.
 Tiền: Decimal(18,2) + mã tiền tệ. Không xoá cứng chứng từ tài chính (SoftDeleteModel); bảng kê đã chốt thì khoá.
 """
@@ -14,12 +16,36 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
-from core.models import CompanyOwnedModel, SoftDeleteModel, TimeStampedModel
+from core.models import (AllObjectsManager, CompanyOwnedModel, PublicIdModel, SoftDeleteManager, SoftDeleteModel,
+                         TimeStampedModel)
 
 MONEY = dict(max_digits=18, decimal_places=2, default=Decimal('0'))
 
 
 # ------------------------------------------------------------------ B/L, tờ khai, danh sách cont
+class BillOfLading(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """Vận đơn. MBL do hãng tàu phát hành; HBL do forwarder phát hành và trỏ lên MBL (master)."""
+    KINDS = [('MBL', 'Master B/L'), ('HBL', 'House B/L')]
+    kind = models.CharField(max_length=3, choices=KINDS, default='MBL')
+    number = models.CharField(max_length=40, db_index=True)
+    issuer = models.ForeignKey('master_data.Party', on_delete=models.PROTECT, null=True, blank=True, related_name='+',
+                               help_text='Hãng tàu (MBL) hoặc forwarder (HBL) phát hành')
+    issuer_name = models.CharField(max_length=100, blank=True, default='', help_text='Tên/mã hãng khi chưa có trong danh mục')
+    master = models.ForeignKey('self', on_delete=models.PROTECT, null=True, blank=True, related_name='houses')
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['company', 'issuer', 'kind', 'number'], condition=Q(issuer__isnull=False),
+                                    name='uniq_bl_issuer_number'),
+            models.UniqueConstraint(fields=['company', 'issuer_name', 'kind', 'number'], condition=Q(issuer__isnull=True),
+                                    name='uniq_bl_issuer_name_number'),
+        ]
+
+    def __str__(self):
+        return f'{self.kind} {self.number}'
+
+
 class CustomsDeclarationRef(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Số tờ khai hải quan của B/L (chỉ ghi nhận, không kết nối VNACCS). Một B/L có thể nhiều tờ khai."""
     CHANNELS = [('', 'Chưa phân luồng'), ('GREEN', 'Luồng xanh'), ('YELLOW', 'Luồng vàng'), ('RED', 'Luồng đỏ')]
@@ -181,6 +207,29 @@ class JobCharge(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         return self.charge_code.kind == 'REIMBURSABLE'
 
 
+class _BuyManager(SoftDeleteManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(side='BUY')
+
+
+class _BuyAllManager(AllObjectsManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(side='BUY')
+
+
+class JobCost(JobCharge):
+    """Phía mua (trả nhà xe) của dòng giá chuyến – proxy của JobCharge với side='BUY'."""
+    objects = _BuyManager()
+    all_objects = _BuyAllManager()
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.side = 'BUY'
+        super().save(*args, **kwargs)
+
+
 # ------------------------------------------------------------------ chi hộ, hoá đơn
 class EInvoice(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Hoá đơn điện tử (nâng/hạ, chi hộ). Một hoá đơn chỉ gắn một chuyến (chống khai trùng); XML là nguồn sự thật."""
@@ -304,3 +353,74 @@ class DeliveryNote(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['-created_at']
+
+
+# ------------------------------------------------------------------ hành trình nhiều chặng (đặc tả §4: Leg, TruckRun, RouteTemplate)
+LEG_KINDS = [
+    ('PICKUP', 'Lấy cont / hàng'), ('DELIVERY', 'Giao hàng'), ('EMPTY_RETURN', 'Hạ rỗng'),
+    ('EMPTY_PICKUP', 'Lấy rỗng'), ('TRANSFER', 'Chuyển bãi / trung chuyển'),
+]
+
+
+class RouteTemplate(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """Mẫu tuyến: danh sách chặng chuẩn (vd. Cảng -> Kho khách -> Depot hạ rỗng) để sinh chặng cho chuyến."""
+    code = models.CharField(max_length=30)
+    name = models.CharField(max_length=150)
+    steps = models.JSONField(default=list, blank=True,
+                             help_text='[{"kind": "PICKUP", "location_id": 1, "label": "Cảng Cát Lái"}, ...]')
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['code']
+        constraints = [models.UniqueConstraint(fields=['company', 'code'], name='uniq_route_template_code')]
+
+    def __str__(self):
+        return f'{self.code} - {self.name}'
+
+
+class TruckRun(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """Một lượt xe (đầu kéo + rơ-moóc + tài xế) chạy một hoặc nhiều chặng; tổng TEU không vượt sức chở rơ-moóc."""
+    STATUSES = [('PLANNED', 'Kế hoạch'), ('RUNNING', 'Đang chạy'), ('DONE', 'Hoàn tất'), ('CANCELLED', 'Huỷ')]
+    code = models.CharField(max_length=30, unique=True)
+    subcontractor = models.ForeignKey('master_data.Party', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
+    vehicle = models.ForeignKey('fleet.Vehicle', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
+    tractor_plate = models.CharField(max_length=20, blank=True, default='')
+    trailer_plate = models.CharField(max_length=20, blank=True, default='')
+    driver = models.ForeignKey('master_data.SubcontractorDriver', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    driver_name = models.CharField(max_length=100, blank=True, default='')
+    driver_phone = models.CharField(max_length=20, blank=True, default='')
+    capacity_teu = models.PositiveSmallIntegerField(default=2, help_text='Sức chở của rơ-moóc (TEU)')
+    status = models.CharField(max_length=10, choices=STATUSES, default='PLANNED')
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.code
+
+
+class Leg(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """Một chặng của chuyến (TransportJob): đi từ A tới B với một mục đích (lấy, giao, hạ rỗng...)."""
+    STATUSES = [('PLANNED', 'Kế hoạch'), ('DONE', 'Đã chạy'), ('SKIPPED', 'Bỏ qua')]
+    trip = models.ForeignKey('dispatch.DispatchTrip', on_delete=models.CASCADE, related_name='legs')
+    seq = models.PositiveSmallIntegerField()
+    kind = models.CharField(max_length=14, choices=LEG_KINDS)
+    from_loc = models.ForeignKey('master_data.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    to_loc = models.ForeignKey('master_data.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    from_text = models.CharField(max_length=150, blank=True, default='')
+    to_text = models.CharField(max_length=150, blank=True, default='')
+    truck_run = models.ForeignKey(TruckRun, on_delete=models.SET_NULL, null=True, blank=True, related_name='legs')
+    status = models.CharField(max_length=8, choices=STATUSES, default='PLANNED')
+    planned_at = models.DateTimeField(null=True, blank=True)
+    done_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['trip_id', 'seq']
+        constraints = [models.UniqueConstraint(fields=['trip', 'seq'], condition=Q(is_deleted=False),
+                                               name='uniq_leg_seq_per_trip')]
+
+    def __str__(self):
+        return f'{self.trip_id}#{self.seq} {self.kind}'
+
