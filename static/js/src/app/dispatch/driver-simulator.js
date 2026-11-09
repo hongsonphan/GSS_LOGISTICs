@@ -6,7 +6,7 @@ function renderDriverMobileApp(trip) {
 
     // 1. Header Simulator
     const appTripCode = document.getElementById('app-trip-code');
-    if (appTripCode) appTripCode.innerText = trip.id || 'TVL-XXX';
+    if (appTripCode) appTripCode.innerText = trip.id || 'GSS-XXX';
 
     const appDriver = document.getElementById('app-driver-name');
     if (appDriver) appDriver.innerText = `Tài xế: ${trip.driver || 'Chưa gán'}`;
@@ -725,7 +725,7 @@ function openSimTripDetailsModal() {
         if (el) el.innerText = (val !== undefined && val !== null && val !== '') ? val : '-';
     };
 
-    setT('sim-modal-trip-code', `Lệnh: ${t.id || 'TVL-XXX'}`);
+    setT('sim-modal-trip-code', `Lệnh: ${t.id || 'GSS-XXX'}`);
     setT('sim-modal-cont-type', t.container_type || '40HC');
     setT('sim-modal-cont-no', t.container || 'Chưa gán');
     setT('sim-modal-seal-no', t.seal || '-');
@@ -801,6 +801,6 @@ function openSimContactModal(type) {
         alert(`LIÊN HỆ GIAO NHẬN HÀNG:\n\n• Người nhận / Khách hàng: ${cName}\n• Hotline: 0908.123.456\n• Điểm đến: ${currentActiveTripData?.warehouse_location || currentActiveTripData?.warehouse || 'Kho nhận hàng'}`);
     } else {
         const dispName = currentActiveTripData?.dispatcher || 'Điều độ trực';
-        alert(`HOTLINE ĐIỀU ĐỘ PHỤ TRÁCH:\n\n• Điều độ: ${dispName} (0908.123.456 - Trực 24/7)\n• Mã chuyến xe: ${currentActiveTripCode || 'TVL-XXX'}`);
+        alert(`HOTLINE ĐIỀU ĐỘ PHỤ TRÁCH:\n\n• Điều độ: ${dispName} (0908.123.456 - Trực 24/7)\n• Mã chuyến xe: ${currentActiveTripCode || 'GSS-XXX'}`);
     }
 }

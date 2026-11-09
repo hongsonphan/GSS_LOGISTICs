@@ -281,7 +281,7 @@ function renderCompanyProfileView(company) {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div>
                             <span class="block text-slate-400 font-medium text-[11px]">Tên bãi đỗ xe:</span>
-                            <strong class="text-slate-800 text-xs">${escapeHtml(company.fleet_yard_name || 'Bãi Đỗ Xe & Trạm Điều Phối TVL')}</strong>
+                            <strong class="text-slate-800 text-xs">${escapeHtml(company.fleet_yard_name || 'Bãi Đỗ Xe & Trạm Điều Phối')}</strong>
                         </div>
                         <div>
                             <span class="block text-slate-400 font-medium text-[11px]">Hotline điều phối trực bãi:</span>

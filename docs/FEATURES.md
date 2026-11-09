@@ -245,22 +245,22 @@ Cho phép người dùng tự do phân tích dữ liệu đa chiều theo nhu c�
 **View:** `view_dispatch.html`, `view_create_trip.html` | **API:** `GET/POST /api/trips/`
 
 ### 5.1 Tạo Lệnh điều động (DispatchTrip)
-- **Mã chuyến tự động:** `TVL-MMDD-XXX` (hoặc `DV.YYMM.XXX`)
+- **Mã chuyến tự động:** `GSS-MMDD-XXX` (hoặc `DV.YYMM.XXX`)
 - **Kế thừa từ Booking:** Tự động điền thông tin tuyến đường, container type, cutoff từ BookingOrder
 - **3 loại hàng:** Hàng Nhập | Hàng Xuất | Nội địa
 - **Tách Biệt 2 Trường Độc Lập — Tài Xế & "Đầu kéo/ Xe tải":**
   * Không gán cố định 1-1, cho phép 1 tài xế lái nhiều xe (khi xe bảo dưỡng) và nhiều tài xế thay phiên lái 1 xe (ca ngày/đêm).
   * **Chế độ Xe Nhà (GSS):**
-    - Ô 1: `Tài xế nhận lệnh (Toàn trình) *` — Chỉ load tài xế nội bộ TVL (`Employee` có `role=DRIVER`).
-    - Ô 2: `Đầu kéo/ Xe tải TVL *` — Chỉ load xe nội bộ TVL (`ownership_type=OWNED`). Dropdown hiển thị kèm loại xe: `51C-123.45 (Đầu kéo Container)`, `50E-112.34 (Xe tải 10 Tấn)`...
+    - Ô 1: `Tài xế nhận lệnh (Toàn trình) *` — Chỉ load tài xế nội bộ công ty (`Employee` có `role=DRIVER`).
+    - Ô 2: `Đầu kéo/ Xe tải công ty *` — Chỉ load xe nội bộ công ty (`ownership_type=OWNED`). Dropdown hiển thị kèm loại xe: `51C-123.45 (Đầu kéo Container)`, `50E-112.34 (Xe tải 10 Tấn)`...
     - Cơ chế gợi ý thông minh 2 chiều: chọn tài gợi ý xe, chọn xe gợi ý tài (không ép buộc).
   * **Chế độ Xe Bạn / 3PL:**
     - Ô 1: `Nhà Xe / Đối Tác 3PL *` — Chỉ lọc đối tác `CARRIER`.
     - Ô 2: `Đầu kéo/ Xe tải 3PL *` — Chỉ load xe thuộc đúng Nhà xe 3PL đó (`subcontractor == sub`).
     - Ô 3: `Bác Tài 3PL *` — Chỉ load tài xế thuộc đúng Nhà xe 3PL đó (`subcontractor == sub`).
   * **Chế độ Cắt Kéo (Drop & Hook):**
-    - Chặng 1: `Tài xế Lấy Cont *` + `Đầu kéo/ Xe tải Lấy Cont *` (chỉ load nội bộ TVL).
-    - Chặng 2: `Tài xế Hạ Cont *` + `Đầu kéo/ Xe tải Hạ Cont *` (chỉ load nội bộ TVL).
+    - Chặng 1: `Tài xế Lấy Cont *` + `Đầu kéo/ Xe tải Lấy Cont *` (chỉ load nội bộ công ty).
+    - Chặng 2: `Tài xế Hạ Cont *` + `Đầu kéo/ Xe tải Hạ Cont *` (chỉ load nội bộ công ty).
 - **Thông tin Container:** Số cont, Số seal, Số B/L hoặc Booking, Hãng tàu, Tàu/Chuyến, Cảng đích, VGM, Bay Location
 - **Thông tin hiện trường:** Số phiếu EIR, Số Invoice, Cửa Dock bốc hàng, Ghi chú
 - **Lịch kho:** Ngày hẹn đóng, Giờ hẹn, ETA kho, 5 mốc thời gian thực tế
@@ -342,12 +342,12 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 | Bốc xếp | LABOR_STEVEDORING |
 | Vé cầu đường BOT | TOLL_FEE |
 | Chi phí khác | OTHER |
-| *(Chi hộ KH — riêng biệt)* | is_on_behalf_of_customer / TVL_OBH / SUB_OBH |
+| *(Chi hộ KH — riêng biệt)* | is_on_behalf_of_customer / COMPANY_OBH / SUB_OBH |
 
 **Cụm 3 Nút Phân Loại Trách Nhiệm Chi Phí (Touch Target >= 48px):**
-- **[ 🏢 Chi phí công ty ] (TVL_COST - Mặc định):** Chi phí do GSS chịu -> tính vào cached_expense chuyến xe.
-- **[ ↗ Công ty chi hộ ] (TVL_OBH):** GSS ứng tiền trước chi hộ cho Khách hàng -> thu lại qua Debit Note -> không tính vào chi phí TVL.
-- **[ 🔄 3PL chi hộ ] (SUB_OBH):** Tài xế/chủ xe 3PL tự chi tiền trước cho Khách hàng -> GSS hoàn tiền lại cho 3PL trong Bảng Kê Quyết Toán Thầu Phụ (sub_reimbursable_expenses) -> đồng thời thu lại từ Khách qua Debit Note -> không tính vào chi phí TVL.
+- **[ 🏢 Chi phí công ty ] (COMPANY_COST - Mặc định):** Chi phí do GSS chịu -> tính vào cached_expense chuyến xe.
+- **[ ↗ Công ty chi hộ ] (COMPANY_OBH):** GSS ứng tiền trước chi hộ cho Khách hàng -> thu lại qua Debit Note -> không tính vào chi phí công ty.
+- **[ 🔄 3PL chi hộ ] (SUB_OBH):** Tài xế/chủ xe 3PL tự chi tiền trước cho Khách hàng -> GSS hoàn tiền lại cho 3PL trong Bảng Kê Quyết Toán Thầu Phụ (sub_reimbursable_expenses) -> đồng thời thu lại từ Khách qua Debit Note -> không tính vào chi phí công ty.
 
 **Thông tin mỗi khoản chi:**
 - Đơn vị phát hành, Số hóa đơn, Mã tra cứu HĐĐT, Link tra cứu
@@ -625,7 +625,7 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 | Cột | Sắp xếp | Nội dung |
 |---|---|---|
 | STT | Không | Số thứ tự cố định |
-| Mã Chuyến | ✅ | Mã `TVL-MMDD-XXX` |
+| Mã Chuyến | ✅ | Mã `GSS-MMDD-XXX` |
 | Lịch Đóng | ✅ | Ngày & giờ hẹn đóng/khởi hành |
 | Khách hàng & Kho | ✅ | Tên KH + Kho giao hàng |
 | Booking / Cont / Seal | ✅ | Số B/L, Số container, Số seal |

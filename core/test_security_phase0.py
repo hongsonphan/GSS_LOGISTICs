@@ -66,12 +66,6 @@ class Phase0SecurityTestCase(TestCase):
         for path in ["/media/../manage.py", "/media/..%2Fmanage.py", "/media/trip_docs/../../manage.py"]:
             self.assertEqual(c.get(path).status_code, 404, path)
 
-    def test_driver_portal_grants_media_of_own_trip_only(self):
-        c = Client()
-        self.assertEqual(c.get(f"/driver/{self.trip_a.driver_token}/").status_code, 200)
-        self.assertEqual(c.get("/media/trip_docs/pod_a.jpg").status_code, 200)
-        self.assertEqual(c.get("/media/trip_docs/pod_b.jpg").status_code, 404)
-
     def test_tracking_page_grants_pod_media(self):
         c = Client()
         self.assertEqual(c.get(f"/tracking/{self.trip_a.tracking_hashid}/").status_code, 200)

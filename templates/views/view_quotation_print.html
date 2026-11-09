@@ -1,4 +1,4 @@
-<!-- VIEW XEM CHI TIẾT & IN BÁO GIÁ CƯỚC VẬN CHUYỂN TOÀN MÀN HÌNH (CHUẨN DOANH NGHIỆP TVL - A4 WYSIWYG) -->
+<!-- VIEW XEM CHI TIẾT & IN BÁO GIÁ CƯỚC VẬN CHUYỂN TOÀN MÀN HÌNH (CHUẨN DOANH NGHIỆP - A4 WYSIWYG) -->
 <div id="view-quotation-print" class="view hidden-view h-full min-h-0 overflow-y-auto bg-slate-100 py-6 sm:py-8 space-y-4">
     <div class="max-w-5xl mx-auto px-2 sm:px-4 space-y-4">
         
@@ -23,7 +23,7 @@
                     <span class="text-xs text-slate-600 font-bold hidden sm:inline">Kiểu mẫu in:</span>
                     <select id="quote-print-template-selector" onchange="switchQuotationPrintTemplate(this.value)" 
                         class="bg-white text-teal-800 text-xs font-bold rounded-lg px-2.5 py-1 border border-slate-200 focus:border-teal-600 focus:outline-none cursor-pointer">
-                        <option value="STANDARD">Mẫu 1: Tiêu Chuẩn TVL (Quốc Hiệu & Đa Tuyến)</option>
+                        <option value="STANDARD">Mẫu 1: Tiêu Chuẩn (Quốc Hiệu & Đa Tuyến)</option>
                         <option value="TABLE_MATRIX">Mẫu 2: Bảng Cước & Khung Đối Tác (To/From)</option>
                         <option value="PROJECT_DETAIL">Mẫu 3: Chi Tiết Dịch Vụ Dự Án (ETA/ETD)</option>
                     </select>
@@ -48,12 +48,12 @@
             <div id="quotation-printable-area" class="w-[210mm] max-w-full min-h-[297mm] bg-white p-[12mm] border border-slate-300 shadow-xl rounded-sm text-slate-900 font-sans leading-relaxed text-xs">
                 
                 <!-- ========================================================================= -->
-                <!-- MẪU 1: TIÊU CHUẨN DOANH NGHIỆP (QUỐC HIỆU & ĐIỀU KHOẢN TVL) -->
+                <!-- MẪU 1: TIÊU CHUẨN DOANH NGHIỆP (QUỐC HIỆU & ĐIỀU KHOẢN) -->
                 <!-- ========================================================================= -->
                 <div id="quote-tpl-standard" class="quote-print-template space-y-3">
-                    <!-- 1. Header: Logo TVL + Quốc Hiệu Tiêu Ngữ -->
+                    <!-- 1. Header: Logo + Quốc Hiệu Tiêu Ngữ -->
                     <div class="flex justify-between items-start gap-4 pb-3 border-b border-slate-300">
-                        <!-- Logo TVL & Brand -->
+                        <!-- Logo & Brand -->
                         <div class="flex items-center gap-3.5">
                             <img src="/static/images/gss_logo.svg" alt="Green Solutions Supply" class="h-12 w-auto object-contain shrink-0 print-comp-logo" onerror="this.src='/media/gss_logo.svg'">
                             <div class="space-y-0.5 text-left">
@@ -319,7 +319,7 @@
                             </div>
                             <div class="text-right">
                                 <span class="inline-block bg-slate-900 text-white text-[10px] font-bold px-2.5 py-0.5 uppercase tracking-wider">PROJECT LOGISTICS</span>
-                                <p class="text-[10px] text-slate-600 pt-1" id="print-q3-code">REF: TVL-PRJ-001</p>
+                                <p class="text-[10px] text-slate-600 pt-1" id="print-q3-code">REF: BG-PRJ-001</p>
                             </div>
                         </div>
                         <div class="text-center pt-2">

@@ -186,7 +186,7 @@ function renderOpeningBalanceView() {
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
                             Mã Đối Tượng
                         </label>
-                        <input type="text" id="ob-input-code" placeholder="VD: TVL, KH_SAMSUNG, TX001..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-mono font-bold focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
+                        <input type="text" id="ob-input-code" placeholder="VD: GSS, KH_SAMSUNG, TX001..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-mono font-bold focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
                     </div>
 
                     <!-- 4. Tên đối tượng / Tên khoản mục -->

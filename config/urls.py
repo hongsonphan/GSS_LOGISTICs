@@ -12,7 +12,7 @@ from apps.dispatch.api_views import gss_booking as gss_booking_api
 from apps.dispatch.api_views import gss_ops as gss_ops_api
 from apps.depot_yard import api as depot_api
 from apps.qr_tracking import api as qr_api
-from apps.dispatch.views import index_view, login_view, logout_view, driver_portal_view, public_tracking_view, help_view, news_detail_page_view
+from apps.dispatch.views import index_view, login_view, logout_view, public_tracking_view, help_view, news_detail_page_view
 from apps.dispatch.api_views import (
     DashboardBGDAPIView,
     DashboardPivotChartAPIView,
@@ -155,8 +155,6 @@ urlpatterns = [
     # Mobile Portal dành riêng cho Tài xế xe đầu kéo (Capability Token HashID)
     path('vendor/<str:token>/', vendor_portal_view, name='vendor-portal'),
     path('q/<str:token>/', qr_trip_page_view, name='qr-trip-page'),
-    path('driver/<str:trip_hash>/', driver_portal_view, name='driver-portal'),
-    path('driver/<str:trip_hash>', driver_portal_view, name='driver-portal-noslash'),
 
     # Cổng Tra Cứu Vận Đơn Công Khai Cho Khách Hàng (Public Tracking Portal)
     path('tracking/<str:trip_hash>/', public_tracking_view, name='public-tracking'),

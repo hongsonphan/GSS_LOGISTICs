@@ -45,10 +45,10 @@ function selectExpensePayer(payerType) {
     const input = document.getElementById('expense-payer-type-input');
     const chk = document.getElementById('expense-on-behalf-checkbox');
     if (input) input.value = payerType;
-    if (chk) chk.checked = (payerType !== 'TVL_COST');
+    if (chk) chk.checked = (payerType !== 'COMPANY_COST');
 
-    const btnCost = document.getElementById('btn-payer-tvl-cost');
-    const btnTvlObh = document.getElementById('btn-payer-tvl-obh');
+    const btnCost = document.getElementById('btn-payer-company-cost');
+    const btnCompanyObh = document.getElementById('btn-payer-company-obh');
     const btnSubObh = document.getElementById('btn-payer-sub-obh');
     const badge = document.getElementById('expense-payer-badge');
     const guide = document.getElementById('expense-payer-guide');
@@ -58,18 +58,18 @@ function selectExpensePayer(payerType) {
         btn.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn";
     };
     reset(btnCost);
-    reset(btnTvlObh);
+    reset(btnCompanyObh);
     reset(btnSubObh);
 
-    if (payerType === 'TVL_COST') {
+    if (payerType === 'COMPANY_COST') {
         if (btnCost) btnCost.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
             badge.innerText = "🏢 Chi phí của GSS";
         }
         if (guide) guide.innerHTML = "🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.";
-    } else if (payerType === 'TVL_OBH') {
-        if (btnTvlObh) btnTvlObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
+    } else if (payerType === 'COMPANY_OBH') {
+        if (btnCompanyObh) btnCompanyObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
             badge.innerText = "↗ GSS chi hộ Khách hàng";
@@ -89,10 +89,10 @@ function selectEditExpensePayer(payerType) {
     const input = document.getElementById('edit-expense-payer-type-input');
     const chk = document.getElementById('edit-expense-on-behalf-checkbox');
     if (input) input.value = payerType;
-    if (chk) chk.checked = (payerType !== 'TVL_COST');
+    if (chk) chk.checked = (payerType !== 'COMPANY_COST');
 
-    const btnCost = document.getElementById('btn-edit-payer-tvl-cost');
-    const btnTvlObh = document.getElementById('btn-edit-payer-tvl-obh');
+    const btnCost = document.getElementById('btn-edit-payer-company-cost');
+    const btnCompanyObh = document.getElementById('btn-edit-payer-company-obh');
     const btnSubObh = document.getElementById('btn-edit-payer-sub-obh');
     const badge = document.getElementById('edit-expense-payer-badge');
     const guide = document.getElementById('edit-expense-payer-guide');
@@ -102,18 +102,18 @@ function selectEditExpensePayer(payerType) {
         btn.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn";
     };
     reset(btnCost);
-    reset(btnTvlObh);
+    reset(btnCompanyObh);
     reset(btnSubObh);
 
-    if (payerType === 'TVL_COST') {
+    if (payerType === 'COMPANY_COST') {
         if (btnCost) btnCost.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
             badge.innerText = "🏢 Chi phí của GSS";
         }
         if (guide) guide.innerHTML = "🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.";
-    } else if (payerType === 'TVL_OBH') {
-        if (btnTvlObh) btnTvlObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
+    } else if (payerType === 'COMPANY_OBH') {
+        if (btnCompanyObh) btnCompanyObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
             badge.innerText = "↗ GSS chi hộ Khách hàng";
@@ -134,7 +134,7 @@ function closeModalAddExpense() {
     if (modal) modal.classList.add('hidden-view');
     const form = document.getElementById('form-add-expense');
     if (form) form.reset();
-    selectExpensePayer('TVL_COST');
+    selectExpensePayer('COMPANY_COST');
 }
 
 async function submitAddExpense(e) {
@@ -173,8 +173,8 @@ async function submitAddExpense(e) {
     const invoice_issuer = document.getElementById('expense-inv-issuer').value.trim();
     const invoice_lookup_url = document.getElementById('expense-inv-lookup-url').value.trim();
     const notes = document.getElementById('expense-notes-input').value.trim();
-    const expense_payer_type = document.getElementById('expense-payer-type-input')?.value || 'TVL_COST';
-    const is_on_behalf_of_customer = (expense_payer_type !== 'TVL_COST');
+    const expense_payer_type = document.getElementById('expense-payer-type-input')?.value || 'COMPANY_COST';
+    const is_on_behalf_of_customer = (expense_payer_type !== 'COMPANY_COST');
 
     const payload = {
         category,
@@ -241,7 +241,7 @@ function openModalEditExpense(exp) {
     document.getElementById('edit-expense-notes-input').value = exp.notes || '';
 
     // Đồng bộ cụm 3 nút phân loại chi phí
-    const payerType = exp.expense_payer_type || (exp.is_on_behalf_of_customer ? (exp.reimburse_to_subcontractor ? 'SUB_OBH' : 'TVL_OBH') : 'TVL_COST');
+    const payerType = exp.expense_payer_type || (exp.is_on_behalf_of_customer ? (exp.reimburse_to_subcontractor ? 'SUB_OBH' : 'COMPANY_OBH') : 'COMPANY_COST');
     selectEditExpensePayer(payerType);
 
     initAllNumberInputs();
@@ -253,7 +253,7 @@ function closeModalEditExpense() {
     if (modal) modal.classList.add('hidden-view');
     const form = document.getElementById('form-edit-expense');
     if (form) form.reset();
-    selectEditExpensePayer('TVL_COST');
+    selectEditExpensePayer('COMPANY_COST');
 }
 
 function editExpensePrompt(expenseId) {
@@ -307,8 +307,8 @@ async function submitEditExpense(e) {
     const invoice_issuer = document.getElementById('edit-expense-inv-issuer').value.trim();
     const invoice_lookup_url = document.getElementById('edit-expense-inv-lookup-url').value.trim();
     const notes = document.getElementById('edit-expense-notes-input').value.trim();
-    const expense_payer_type = document.getElementById('edit-expense-payer-type-input')?.value || 'TVL_COST';
-    const is_on_behalf_of_customer = (expense_payer_type !== 'TVL_COST');
+    const expense_payer_type = document.getElementById('edit-expense-payer-type-input')?.value || 'COMPANY_COST';
+    const is_on_behalf_of_customer = (expense_payer_type !== 'COMPANY_COST');
 
     const payload = {
         category,

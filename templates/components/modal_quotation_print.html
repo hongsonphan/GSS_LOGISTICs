@@ -1,4 +1,4 @@
-<!-- MODAL XEM CHI TIẾT & IN BÁO GIÁ CƯỚC VẬN CHUYỂN (CHUẨN DOANH NGHIỆP TVL - A4 WYSIWYG) -->
+<!-- MODAL XEM CHI TIẾT & IN BÁO GIÁ CƯỚC VẬN CHUYỂN (CHUẨN DOANH NGHIỆP - A4 WYSIWYG) -->
 <div id="modal-quotation-print" class="fixed inset-0 z-[9999] hidden flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-xs overflow-y-auto animate-fade-in">
     <div class="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[98vh]">
         
@@ -24,7 +24,7 @@
                     <span class="text-[11px] text-slate-300 font-bold hidden sm:inline">Kiểu mẫu:</span>
                     <select id="quote-print-template-selector" onchange="switchQuotationPrintTemplate(this.value)" 
                         class="bg-slate-900 text-teal-300 text-xs font-bold rounded-lg px-2 py-1 border border-slate-700 focus:border-teal-500 focus:outline-none cursor-pointer">
-                        <option value="STANDARD">Mẫu 1: Tiêu Chuẩn TVL (Quốc Hiệu & Đa Tuyến)</option>
+                        <option value="STANDARD">Mẫu 1: Tiêu Chuẩn (Quốc Hiệu & Đa Tuyến)</option>
                         <option value="TABLE_MATRIX">Mẫu 2: Bảng Cước & Khung Đối Tác (To/From)</option>
                         <option value="PROJECT_DETAIL">Mẫu 3: Chi Tiết Dịch Vụ Dự Án (ETA/ETD)</option>
                     </select>
@@ -52,12 +52,12 @@
             <div id="quotation-printable-area" class="w-full max-w-[840px] bg-white p-6 sm:p-12 border border-slate-300 shadow-xl rounded-sm text-slate-900 font-sans leading-relaxed text-xs">
                 
                 <!-- ========================================================================= -->
-                <!-- MẪU 1: TIÊU CHUẨN DOANH NGHIỆP (QUỐC HIỆU & ĐIỀU KHOẢN TVL) -->
+                <!-- MẪU 1: TIÊU CHUẨN DOANH NGHIỆP (QUỐC HIỆU & ĐIỀU KHOẢN) -->
                 <!-- ========================================================================= -->
                 <div id="quote-tpl-standard" class="quote-print-template space-y-3">
-                    <!-- 1. Header: Logo TVL + Quốc Hiệu Tiêu Ngữ -->
+                    <!-- 1. Header: Logo + Quốc Hiệu Tiêu Ngữ -->
                     <div class="flex justify-between items-start gap-4 pb-3 border-b border-slate-300">
-                        <!-- Logo TVL & Brand -->
+                        <!-- Logo & Brand -->
                         <div class="flex items-center gap-3.5">
                             <img src="/static/images/gss_logo.svg" alt="Green Solutions Supply" class="h-12 w-auto object-contain shrink-0 print-comp-logo" onerror="this.src='/media/gss_logo.svg'">
                             <div class="space-y-0.5 text-left">
@@ -280,7 +280,7 @@
                         <div class="p-2.5 border border-slate-900 whitespace-pre-line leading-relaxed text-slate-800 font-sans text-xs" id="print-q2-notes">
 1. Đơn giá chưa bao gồm thuế VAT (8% / 10%) và chưa bao gồm chi phí nâng hạ, bốc xếp tại hai đầu kho.
 2. Xe vận tải đúng tải trọng, tuân thủ nghiêm ngặt Luật Giao thông đường bộ.
-3. Phía TVL chịu toàn bộ chi phí nhiên liệu, lương lái xe, sửa chữa xe và vé BOT.
+3. Phía nhà vận tải chịu toàn bộ chi phí nhiên liệu, lương lái xe, sửa chữa xe và vé BOT.
 4. Thời gian lưu xe: Miễn phí 12 giờ đầu; Phí neo tính sau 12h: Xe đầu kéo 1.500.000 VNĐ/đêm, Rơ-moóc 1.000.000 VNĐ/đêm.
 5. Báo giá có hiệu lực trong vòng 30 ngày kể từ ngày ban hành.
                         </div>

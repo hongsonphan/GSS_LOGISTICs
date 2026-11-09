@@ -652,6 +652,7 @@ class TripListCreateAPIView(APIView):
             'id': trip.trip_code,
             'hashid': trip.hashid,
             'driver_hashid': trip.driver_hashid,
+            'driver_link': _driver_link(trip),
             'driver_name': trip.assigned_driver_name,
             'driver_phone': trip.assigned_driver_phone,
             'subcontractor_id': trip.subcontractor_id,
@@ -745,7 +746,7 @@ class TripDetailAPIView(APIView):
                 'receipt_image_path': exp.receipt_image_path or '',
                 'notes': exp.notes or '',
                 'company_borne': exp.company_borne,
-                'expense_payer_type': getattr(exp, 'expense_payer_type', 'TVL_COST'),
+                'expense_payer_type': getattr(exp, 'expense_payer_type', 'COMPANY_COST'),
                 'expense_payer_label': exp.get_expense_payer_type_display() if hasattr(exp, 'get_expense_payer_type_display') else ('Chi phí công ty' if not exp.is_on_behalf_of_customer else ('3PL chi hộ' if getattr(exp, 'reimburse_to_subcontractor', False) else 'Công ty chi hộ')),
                 'reimburse_to_subcontractor': getattr(exp, 'reimburse_to_subcontractor', False),
                 'is_on_behalf_of_customer': exp.is_on_behalf_of_customer,
@@ -855,6 +856,7 @@ class TripDetailAPIView(APIView):
             'id': trip.trip_code,
             'hashid': trip.hashid,
             'driver_hashid': trip.driver_hashid,
+            'driver_link': _driver_link(trip),
             'tracking_hashid': trip.tracking_hashid,
             'customer': customer_name,
             'type': normalize_shipment_type(trip.shipment_type)[0],
@@ -1325,3 +1327,9 @@ class TripDetailAPIView(APIView):
             'message': f'Đã hủy và xóa lệnh điều động {trip.trip_code} thành công!',
             'trip_code': trip.trip_code
         })
+
+
+def _driver_link(trip):
+    """Đường dẫn trang lệnh của tài xế (QR lệnh GSS, /q/<token>/) — tương đối với gốc trang."""
+    from apps.dispatch.gss_messages import trip_token
+    return f'/q/{trip_token(trip)}/'

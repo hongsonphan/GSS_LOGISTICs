@@ -217,9 +217,9 @@ function renderCostSheetTable(trip) {
                             <td class="py-1.5 px-2.5 text-slate-700 text-[11.5px] font-medium border-r border-slate-200/70">
                                 <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
                                     <span>${subExp.invoice_issuer || subExp.notes || '<span class="text-slate-400">-</span>'}</span>
-                                    ${(subExp.expense_payer_type === 'TVL_OBH' || (subExp.is_on_behalf_of_customer && !subExp.reimburse_to_subcontractor)) ? `
+                                    ${(subExp.expense_payer_type === 'COMPANY_OBH' || (subExp.is_on_behalf_of_customer && !subExp.reimburse_to_subcontractor)) ? `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-300 whitespace-nowrap">
-                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>TVL CHI HỘ
+                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>CÔNG TY CHI HỘ
                                         </span>
                                     ` : ((subExp.expense_payer_type === 'SUB_OBH' || subExp.reimburse_to_subcontractor) ? `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap">
@@ -227,7 +227,7 @@ function renderCostSheetTable(trip) {
                                         </span>
                                     ` : `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 whitespace-nowrap">
-                                            🏢 TVL
+                                            🏢 Công ty
                                         </span>
                                     `)}
                                 </div>
@@ -295,9 +295,9 @@ function renderCostSheetTable(trip) {
                             <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
                                 <span>${issuerText || '<span class="text-slate-400">-</span>'}</span>
                                 ${singleExp ? (
-                                    (singleExp.expense_payer_type === 'TVL_OBH' || (singleExp.is_on_behalf_of_customer && !singleExp.reimburse_to_subcontractor)) ? `
+                                    (singleExp.expense_payer_type === 'COMPANY_OBH' || (singleExp.is_on_behalf_of_customer && !singleExp.reimburse_to_subcontractor)) ? `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-300 whitespace-nowrap">
-                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>TVL CHI HỘ
+                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>CÔNG TY CHI HỘ
                                         </span>
                                     ` : ((singleExp.expense_payer_type === 'SUB_OBH' || singleExp.reimburse_to_subcontractor) ? `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap">
@@ -305,7 +305,7 @@ function renderCostSheetTable(trip) {
                                         </span>
                                     ` : `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 whitespace-nowrap">
-                                            🏢 TVL
+                                            🏢 Công ty
                                         </span>
                                     `)
                                 ) : ''}
@@ -386,9 +386,8 @@ function renderCostSheetTable(trip) {
 // Xây dựng nội dung tin nhắn Lệnh điều xe gửi Zalo chuẩn hóa
 function buildDriverZaloMessage(trip) {
     if (!trip) return '';
-    const driverToken = trip.driver_hashid || trip.hashid || trip.id || trip.trip_code;
-    const portalUrl = `${window.location.origin}/driver/${driverToken}/`;
-    const tripCode = trip.id || trip.trip_code || trip.code || 'TVL-XXX';
+    const portalUrl = `${window.location.origin}${trip.driver_link || ''}`;
+    const tripCode = trip.id || trip.trip_code || trip.code || '-';
     const vehicle = trip.vehicle || trip.truck || '-';
     const trailer = trip.trailer || '-';
     const cont = trip.container || trip.container_number || 'CHƯA CÓ CONT';
@@ -421,7 +420,7 @@ window.copyDriverPortalLink = function() {
         return;
     }
     const message = buildDriverZaloMessage(trip);
-    const portalUrl = `${window.location.origin}/driver/${trip.driver_hashid || trip.hashid || trip.id}/`;
+    const portalUrl = `${window.location.origin}${trip.driver_link || ''}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).then(() => {

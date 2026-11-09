@@ -32,7 +32,7 @@ class DriverTokenRevocationTestCase(TestCase):
 
         # Tạo chuyến xe gán ban đầu cho Tài Xế A
         self.trip = DispatchTrip.objects.create(
-            trip_code="TVL-TEST-TOKEN-01",
+            trip_code="GSS-TEST-TOKEN-01",
             customer=self.customer,
             driver=self.driver_a,
             vehicle=self.vehicle,
@@ -49,11 +49,6 @@ class DriverTokenRevocationTestCase(TestCase):
         token_a = self.trip.driver_token
         self.assertTrue(bool(token_a))
         self.assertEqual(self.trip.driver_hashid, token_a)
-
-        # 2. Tài xế A mở link Driver Portal -> 200 OK
-        res_a = self.client.get(f'/driver/{token_a}/')
-        self.assertEqual(res_a.status_code, 200)
-        self.assertContains(res_a, "TVL-TEST-TOKEN-01")
 
         from django.contrib.auth.models import User
         self.user = User.objects.create_superuser(username="admin_disp", password="password123")
@@ -79,16 +74,6 @@ class DriverTokenRevocationTestCase(TestCase):
         self.assertTrue(bool(token_b))
         self.assertNotEqual(token_a, token_b)
         self.assertEqual(self.trip.driver_hashid, token_b)
-
-        # 5. Tài xế B mở link mới -> 200 OK
-        res_b = self.client.get(f'/driver/{token_b}/')
-        self.assertEqual(res_b.status_code, 200)
-        self.assertContains(res_b, "TVL-TEST-TOKEN-01")
-
-        # 6. Tài xế A mở lại link cũ -> 403 Forbidden (Trang cảnh báo link đã thu hồi)
-        res_a_old = self.client.get(f'/driver/{token_a}/')
-        self.assertEqual(res_a_old.status_code, 403)
-        self.assertTemplateUsed(res_a_old, 'driver_portal_revoked.html')
 
         # 7. Tài xế A cố gọi API báo mốc với token cũ -> Bị từ chối xác thực (401/403/404)
         api_milestone_old = self.client.post(
@@ -122,7 +107,7 @@ class DriverPortalMistakeCorrectionTestCase(TestCase):
             insurance_expiry=timezone.now().date()
         )
         self.trip = DispatchTrip.objects.create(
-            trip_code="TVL-TEST-CORRECT-01",
+            trip_code="GSS-TEST-CORRECT-01",
             customer=self.customer,
             driver=self.driver,
             vehicle=self.vehicle,
@@ -135,17 +120,6 @@ class DriverPortalMistakeCorrectionTestCase(TestCase):
             dispatched_at=timezone.now()
         )
         self.token = self.trip.driver_token
-
-    def test_driver_portal_view_renders_correctly(self):
-        res = self.client.get(f'/driver/{self.token}/')
-        self.assertEqual(res.status_code, 200)
-        self.assertContains(res, "TVL-TEST-CORRECT-01")
-        self.assertContains(res, "Trần Văn Tài")
-        self.assertContains(res, "50E-999.99")
-        self.assertContains(res, "Chi Phí Đã Kê")
-        self.assertContains(res, "Chứng Từ & Hình Ảnh Đã Nộp")
-        self.assertContains(res, "Sửa Khoản Chi Phí")
-        self.assertContains(res, "Sửa Thông Tin Chứng Từ")
 
     def test_driver_expense_correction_lifecycle(self):
         # 1. Kê khai chi phí ban đầu (vd: 220.000đ vé BOT)
@@ -517,13 +491,6 @@ class Subcontractor3PLDispatchTestCase(TestCase):
         self.assertEqual(float(trip.subcontractor_cost), 3500000.0)
         self.assertEqual(float(trip.subcontractor_advance), 500000.0)
 
-        # 3. Kiểm tra Cổng Tài Xế (Driver Portal)
-        res_portal = self.client.get(f'/driver/{trip.driver_token}/')
-        self.assertEqual(res_portal.status_code, 200)
-        self.assertContains(res_portal, "Nguyễn Văn A")
-        self.assertContains(res_portal, "0901111001")
-        self.assertContains(res_portal, "Công ty Vận tải An Phú")
-
         # 4. Kiểm tra API Chi tiết chuyến xe (Trip Detail)
         res_detail = self.client.get(f'/api/trips/{trip.trip_code}/')
         self.assertEqual(res_detail.status_code, 200)
@@ -844,7 +811,7 @@ class EndToEndLogisticsWorkflowSimulationTestCase(TestCase):
         # BƯỚC 4: LẬP PHIẾU ĐIỀU ĐỘ / PHÁT LỆNH ĐIỀU XE (DISPATCH TRIP)
         # =========================================================================
         trip1 = DispatchTrip.objects.create(
-            trip_code='TVL-E2E-SIM-001',
+            trip_code='GSS-E2E-SIM-001',
             customer=self.customer,
             booking_order=booking,
             vehicle=self.vehicle,
@@ -945,13 +912,13 @@ class EndToEndLogisticsWorkflowSimulationTestCase(TestCase):
         )
         self.assertEqual(advance.amount, 1000000)
 
-        # Khoản 1: Vé cầu đường (TVL chịu)
+        # Khoản 1: Vé cầu đường (công ty chịu)
         exp1 = TripExpense.objects.create(
             trip=trip1,
             driver=self.driver,
             vehicle=self.vehicle,
             category=ExpenseCategory.TOLL_FEE,
-            expense_payer_type='TVL_COST',
+            expense_payer_type='COMPANY_COST',
             is_on_behalf_of_customer=False,
             amount=280000,
             status=ApprovalStatus.APPROVED,
@@ -959,13 +926,13 @@ class EndToEndLogisticsWorkflowSimulationTestCase(TestCase):
             notes='Vé BOT Cầu Bình Triệu & Sóng Thần'
         )
 
-        # Khoản 2: Phí nâng hạ cont (TVL chi hộ khách hàng -> thu lại từ khách)
+        # Khoản 2: Phí nâng hạ cont (công ty chi hộ khách hàng -> thu lại từ khách)
         exp2 = TripExpense.objects.create(
             trip=trip1,
             driver=self.driver,
             vehicle=self.vehicle,
             category=ExpenseCategory.LIFT_ON,
-            expense_payer_type='TVL_BEHALF',
+            expense_payer_type='COMPANY_OBH',
             is_on_behalf_of_customer=True,
             amount=520000,
             status=ApprovalStatus.APPROVED,
@@ -973,13 +940,13 @@ class EndToEndLogisticsWorkflowSimulationTestCase(TestCase):
             notes='Phí nâng cont rỗng tại Cát Lái (Hãng tàu COSCO)'
         )
 
-        # Khoản 3: Bồi dưỡng kho (TVL chịu)
+        # Khoản 3: Bồi dưỡng kho (công ty chịu)
         exp3 = TripExpense.objects.create(
             trip=trip1,
             driver=self.driver,
             vehicle=self.vehicle,
             category=ExpenseCategory.LABOR_STEVEDORING,
-            expense_payer_type='TVL_COST',
+            expense_payer_type='COMPANY_COST',
             is_on_behalf_of_customer=False,
             amount=150000,
             status=ApprovalStatus.APPROVED,
@@ -1003,11 +970,11 @@ class EndToEndLogisticsWorkflowSimulationTestCase(TestCase):
         freight_rev = tariff.freight_price # 4,500,000 đ
         customer_behalf = 520000 # Thu lại từ khách
         total_customer_receivable = freight_rev + customer_behalf # 5,020,000 đ
-        tvl_cost = 280000 + 150000 # 430,000 đ
+        company_cost = 280000 + 150000 # 430,000 đ
         driver_wage = tariff.driver_trip_pay # 550,000 đ
         
         # Lợi nhuận ròng / Lãi gộp chuyến xe
-        gross_profit = freight_rev - tvl_cost - driver_wage
+        gross_profit = freight_rev - company_cost - driver_wage
         self.assertEqual(gross_profit, 4500000 - 430000 - 550000) # 3,520,000 đ
 
         # Đối soát tạm ứng tài xế:
@@ -1025,7 +992,7 @@ class EndToEndLogisticsWorkflowSimulationTestCase(TestCase):
 
         # 2. Tạo tiếp Phiếu điều độ Cont 2 cho Booking Order
         trip2 = DispatchTrip.objects.create(
-            trip_code='TVL-E2E-SIM-002',
+            trip_code='GSS-E2E-SIM-002',
             customer=self.customer,
             booking_order=booking,
             vehicle=self.vehicle,
@@ -1051,7 +1018,7 @@ class EndToEndLogisticsWorkflowSimulationTestCase(TestCase):
             driver=self.driver,
             vehicle=self.vehicle,
             category=ExpenseCategory.TOLL_FEE,
-            expense_payer_type='TVL_COST',
+            expense_payer_type='COMPANY_COST',
             amount=100000,
             status=ApprovalStatus.PENDING,
             notes='Chi phí nháp'

@@ -1012,7 +1012,7 @@ class DashboardBGDAPIView(APIView):
                 return default
             emp = getattr(u, 'employee', None)
             raw = (emp.full_name if (emp and emp.full_name) else (u.get_full_name() or u.username)).strip()
-            # Loại bỏ chức danh trong ngoặc đơn (ví dụ: "Võ Triền (Giám Đốc)" -> "Võ Triền")
+            # Loại bỏ chức danh trong ngoặc đơn (ví dụ: "Nguyễn Văn A (Giám Đốc)" -> "Nguyễn Văn A")
             clean = re.sub(r'\s*\([^)]*\)', '', raw).strip()
             return clean or raw or default
 

@@ -5,8 +5,8 @@ Quy tắc:
 - Người dùng nội bộ đã đăng nhập: được xem, trừ chữ ký mẫu nhân viên (personnel/signatures/) chỉ dành cho
   Ban Giám đốc, Hành chính - Kế toán, nhóm Quản lý nhân sự và chính nhân viên sở hữu.
 - Tài xế / khách hàng không đăng nhập: chỉ được xem file thuộc đúng chuyến mà họ vừa mở bằng link
-  capability (/driver/<token>/ hoặc /tracking/<hash>/). Quyền này được ghi trong cookie ký số
-  `bim_media_scope` do driver_portal_view / public_tracking_view cấp, hết hạn sau 7 ngày.
+  capability (trang QR lệnh của tài xế hoặc /tracking/<token>/). Quyền này được ghi trong cookie ký số
+  `bim_media_scope` do trang đó cấp, hết hạn sau 7 ngày.
 - File không tồn tại: trả 404. Không còn tự sinh file PDF/ảnh giả.
 - Production sau Nginx: đặt MEDIA_USE_X_ACCEL=True để Nginx gửi file qua location /protected-media/ (internal).
 """

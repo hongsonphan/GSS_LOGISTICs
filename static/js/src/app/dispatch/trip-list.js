@@ -589,7 +589,7 @@ function renderDispatchTable(trips) {
                     <span class="font-mono font-bold text-slate-800">${escapeHtml(trip.customs_info.declaration_number)}</span>
                 ` : '<span class="text-slate-400 font-normal italic">-</span>'}
             </td>
-            <td data-col-key="cont_location_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-bold text-xs ${trip.cont_location_type === 'BÃI TVL' ? 'text-purple-700' : 'text-slate-600'}" style="display:none">
+            <td data-col-key="cont_location_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-bold text-xs ${trip.cont_location_type === 'BÃI CÔNG TY' ? 'text-purple-700' : 'text-slate-600'}" style="display:none">
                 ${escapeHtml(trip.cont_location_type || '-')}
             </td>
             <td data-col-key="cargo_notes" class="px-3 py-2 border-r border-slate-200/70 text-xs text-slate-600 truncate max-w-[200px]" style="display:none" title="${escapeHtml(trip.cargo_notes || '-')}">

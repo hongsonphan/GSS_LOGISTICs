@@ -387,7 +387,7 @@ class SalesAPIView(APIView):
 
             trip_codes_list = []
             for t in trips_list:
-                t_code = getattr(t, 'trip_id', None) or f"TVL-{t.id}"
+                t_code = getattr(t, 'trip_id', None) or f"GSS-{t.id}"
                 if t_code:
                     trip_codes_list.append(str(t_code))
             trip_codes_str = ' '.join(set(trip_codes_list))

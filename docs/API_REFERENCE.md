@@ -118,7 +118,7 @@
   },
   "trips_pnl": [
     {
-      "trip_code": "TVL-0916-007",
+      "trip_code": "GSS-0916-007",
       "customer": "TAKIGAWA VSIP 3 → VSIP 2",
       "route": "CÁT LÁI → KHO WCA → HẠ BÃI",
       "driver": "BỤI 94",
@@ -155,7 +155,7 @@
   },
   "trips": [
     {
-      "id": "TVL-0917-001",
+      "id": "GSS-0917-001",
       "customer": "TAKIGAWA VSIP 3 → VSIP 2",
       "type": "Hàng Nhập",
       "type_raw": "IMPORT",
@@ -232,8 +232,8 @@
 ```json
 {
   "success": true,
-  "message": "Tạo lệnh điều động TVL-0917-017 thành công!",
-  "trip_code": "TVL-0917-017"
+  "message": "Tạo lệnh điều động GSS-0917-017 thành công!",
+  "trip_code": "GSS-0917-017"
 }
 ```
 
@@ -246,7 +246,7 @@
 **Response:**
 ```json
 {
-  "id": "TVL-0916-007",
+  "id": "GSS-0916-007",
   "customer": "TAKIGAWA VSIP 3 → VSIP 2",
   "type": "Hàng Nhập",
   "pickup": "CÁT LÁI",
@@ -415,7 +415,7 @@
 ```json
 {
   "success": true,
-  "message": "Kế toán đã chốt sổ chi phí cho chuyến xe TVL-0916-007 thành công!",
+  "message": "Kế toán đã chốt sổ chi phí cho chuyến xe GSS-0916-007 thành công!",
   "settled_at": "15:30 16/09/2026",
   "settled_by": "Kế toán Trưởng",
   "cached_expense": 1548000,
@@ -488,7 +488,7 @@
 ```json
 [
   {
-    "code": "TVL-DRV-001",
+    "code": "GSS-DRV-001",
     "name": "Nguyễn Văn Bụi (BỤI 94)",
     "trips": 25,
     "base_salary": 6000000,

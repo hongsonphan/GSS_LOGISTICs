@@ -239,7 +239,7 @@ async function submitNewTrip(sourceEl = null) {
             // Chặng 2 (Tài xế hạ cont & Xe hạ cont) cho phép bỏ trống để phân công gán sau khi hạ cont
         } else {
             requiredFields.push({ id: 'inp-driver', errId: 'err-driver', label: 'Tài xế nhận lệnh' });
-            requiredFields.push({ id: 'inp-vehicle', errId: 'err-vehicle', label: 'Đầu kéo/ Xe tải TVL' });
+            requiredFields.push({ id: 'inp-vehicle', errId: 'err-vehicle', label: 'Đầu kéo/ Xe tải công ty' });
         }
     }
 

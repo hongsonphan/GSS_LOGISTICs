@@ -42,7 +42,7 @@ def _actor():
         return user, user.get_username(), ip
     if request.path.startswith(("/api/vendor/", "/vendor/")):
         return None, "nhà xe qua link", ip
-    if request.headers.get("X-Trip-Hash") or request.path.startswith("/driver/") or "/api/trips/" in request.path:
+    if request.headers.get("X-Trip-Hash") or "/api/trips/" in request.path:
         return None, "tài xế qua link", ip
     return None, "khách (chưa đăng nhập)", ip
 

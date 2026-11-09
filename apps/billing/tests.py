@@ -557,7 +557,7 @@ class DriverBatchSettlementTests(TestCase):
                 self.trip1.refresh_from_db()
                 self.trip1.save()
                 TripExpense.objects.create(trip=self.trip1, driver=self.driver_emp, category=ExpenseCategory.LIFT_ON, amount=500000,
-                                           status=ApprovalStatus.APPROVED, is_on_behalf_of_customer=True, expense_payer_type='TVL_OBH')
+                                           status=ApprovalStatus.APPROVED, is_on_behalf_of_customer=True, expense_payer_type='COMPANY_OBH')
             with self.captureOnCommitCallbacks(execute=True):
                 res = self.client.post(base, {'party_type': 'CUSTOMER', 'trip_ids': [self.trip1.id],
                                               'adjustments': {str(self.trip1.id): 300000}, 'adjustment_notes': {str(self.trip1.id): 'phụ phí dầu'}}, format='json')
@@ -882,32 +882,32 @@ class DriverBatchSettlementTests(TestCase):
 
 
     def test_expense_payer_type_three_buttons(self):
-        """Kiểm tra 3 nút chi phí: TVL_COST | TVL_OBH | SUB_OBH và tác động lên cached_expense."""
+        """Kiểm tra 3 nút chi phí: COMPANY_COST | COMPANY_OBH | SUB_OBH và tác động lên cached_expense."""
         from apps.billing.models import ExpensePayerType, ReimbursementStatus
 
-        # 1. Chi phí công ty: TVL chịu -> TÍNH vào chi phí vận hành chuyến đi
+        # 1. Chi phí công ty: công ty chịu -> TÍNH vào chi phí vận hành chuyến đi
         exp_cost = TripExpense.objects.create(
             trip=self.trip1,
             category=ExpenseCategory.TOLL_FEE,
             amount=200000,
-            expense_payer_type=ExpensePayerType.TVL_COST
+            expense_payer_type=ExpensePayerType.COMPANY_COST
         )
         self.assertFalse(exp_cost.is_on_behalf_of_customer)
         self.assertFalse(exp_cost.reimburse_to_subcontractor)
         self.assertEqual(exp_cost.reimbursement_status, ReimbursementStatus.NOT_APPLICABLE)
 
-        # 2. Công ty chi hộ: TVL ứng trước thu lại từ khách -> KHÔNG tính vào chi phí vận hành
-        exp_tvl_obh = TripExpense.objects.create(
+        # 2. Công ty chi hộ: công ty ứng trước thu lại từ khách -> KHÔNG tính vào chi phí vận hành
+        exp_company_obh = TripExpense.objects.create(
             trip=self.trip1,
             category=ExpenseCategory.LIFT_ON,
             amount=450000,
-            expense_payer_type=ExpensePayerType.TVL_OBH
+            expense_payer_type=ExpensePayerType.COMPANY_OBH
         )
-        self.assertTrue(exp_tvl_obh.is_on_behalf_of_customer)
-        self.assertFalse(exp_tvl_obh.reimburse_to_subcontractor)
-        self.assertEqual(exp_tvl_obh.reimbursement_status, ReimbursementStatus.PENDING)
+        self.assertTrue(exp_company_obh.is_on_behalf_of_customer)
+        self.assertFalse(exp_company_obh.reimburse_to_subcontractor)
+        self.assertEqual(exp_company_obh.reimbursement_status, ReimbursementStatus.PENDING)
 
-        # 3. 3PL chi hộ: 3PL bỏ tiền túi -> TVL hoàn tiền 3PL + thu lại từ KH -> KHÔNG tính vào chi phí TVL
+        # 3. 3PL chi hộ: 3PL bỏ tiền túi -> công ty hoàn tiền 3PL + thu lại từ KH -> KHÔNG tính vào chi phí công ty
         exp_sub_obh = TripExpense.objects.create(
             trip=self.trip1,
             category=ExpenseCategory.CONTAINER_DEPOSIT,
@@ -1163,7 +1163,7 @@ class CustomerMonthlyStatementTests(TestCase):
         self.vehicle = Vehicle.objects.create(license_plate='51C-60193', vehicle_type='TRACTOR')
         from apps.dispatch.models import ShipmentType
         self.trip = DispatchTrip.objects.create(
-            trip_code='TVL-ST-2022-001',
+            trip_code='GSS-ST-2022-001',
             customer=self.customer,
             vehicle=self.vehicle,
             container_number='CULU6019376',

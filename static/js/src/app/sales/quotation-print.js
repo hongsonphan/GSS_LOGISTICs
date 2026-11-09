@@ -102,7 +102,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     const fuelByAmount = q.fuel_adjust_type === 'AMOUNT';
     const formulaText = surcharge.fuelRule;
 
-    // 1. Điền dữ liệu MẪU 1: STANDARD (TVL Tiêu Chuẩn)
+    // 1. Điền dữ liệu MẪU 1: STANDARD (Tiêu Chuẩn)
     const p1DatePlace = document.getElementById('print-q1-date-place');
     if (p1DatePlace) p1DatePlace.innerText = datePlaceStr;
 
@@ -249,7 +249,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
 
     // 3. Điền dữ liệu MẪU 3: PROJECT_DETAIL
     const p3Code = document.getElementById('print-q3-code');
-    if (p3Code) p3Code.innerText = `REF: ${q.quotation_code || q.code || ('TVL-BG-' + q.id)}`;
+    if (p3Code) p3Code.innerText = `REF: ${q.quotation_code || q.code || ('BG-' + q.id)}`;
 
     const p3Cust = document.getElementById('print-q3-client-name') || document.getElementById('print-q3-customer');
     if (p3Cust) p3Cust.innerText = q.customer_name || q.customer || '';

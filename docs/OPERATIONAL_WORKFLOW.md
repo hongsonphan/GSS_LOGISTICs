@@ -150,8 +150,8 @@ stateDiagram-v2
 | **8** | **Chi Phí Khác** | `OTHER` | Vá lốp khẩn cấp, rửa vỏ cont bẩn, bảo quản nhiệt độ cont lạnh. |
 
 ### 5.2 Ba Dòng Phân Loại Chi Trả (`expense_payer_type`)
-1. **`TVL_COST` (Chi Phí Nội Bộ GSS):** Chi phí phục vụ vận hành do GSS chịu. Được trừ vào doanh thu để tính Lợi nhuận gộp P&L của chuyến xe.
-2. **`TVL_OBH` (GSS Chi Hộ Khách Hàng — On Behalf of Customer):** Tiền GSS ứng trước cho chủ hàng. Gom vào **Bảng Kê Chi Hộ (Debit Note)** để thu lại 100%, không tính vào P&L chuyến xe.
+1. **`COMPANY_COST` (Chi Phí Nội Bộ GSS):** Chi phí phục vụ vận hành do GSS chịu. Được trừ vào doanh thu để tính Lợi nhuận gộp P&L của chuyến xe.
+2. **`COMPANY_OBH` (GSS Chi Hộ Khách Hàng — On Behalf of Customer):** Tiền GSS ứng trước cho chủ hàng. Gom vào **Bảng Kê Chi Hộ (Debit Note)** để thu lại 100%, không tính vào P&L chuyến xe.
 3. **`SUB_OBH` (Chi Hộ Xe Bạn / Thầu Phụ 3PL):** Tiền tài xế nộp hộ cho xe thuê ngoài 3PL. Được cấn trừ khi lập Bảng Kê Quyết Toán Công Nợ Thầu Phụ (`SubcontractorSettlement`).
 
 ---
@@ -173,7 +173,7 @@ Hệ thống hạch toán dòng tiền minh bạch theo chuẩn kế toán Việ
 ## 7. NGUYÊN TẮC ZERO VARIANCE FINANCIAL AUDIT
 
 1. **Công thức P&L Bất Biến:**
-   $$\text{Lợi Nhuận Gộp Chuyến (Profit)} = \text{Doanh Thu Cước (Revenue)} - \sum \text{Chi Phí Hợp Lệ (TVL\_COST)}$$
+   $$\text{Lợi Nhuận Gộp Chuyến (Profit)} = \text{Doanh Thu Cước (Revenue)} - \sum \text{Chi Phí Hợp Lệ (COMPANY\_COST)}$$
    $$\text{Tỷ Suất Lợi Nhuận (Margin \%)} = \frac{\text{Lợi Nhuận Gộp}}{\text{Doanh Thu Cước}} \times 100\%$$
 2. **Cập Nhật Tự Động Qua Signals:**
    Mỗi khi bản ghi `TripExpense` được phê duyệt hoặc chốt sổ, hàm `update_financials()` trên `DispatchTrip` tự động kích hoạt tính toán lại và lưu vào các trường cache (`cached_revenue`, `cached_expense`, `cached_profit`, `cached_margin_percent`), triệt tiêu hoàn toàn sai lệch số liệu giữa bảng kê và báo cáo tổng hợp.

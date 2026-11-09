@@ -22,8 +22,8 @@ class ExpenseCategory(models.TextChoices):
     REPAIR_TIRE = 'REPAIR_TIRE', 'Vá vỏ / Sửa chữa gấp (Cũ)'
 
 class ExpensePayerType(models.TextChoices):
-    TVL_COST = 'TVL_COST', 'Chi phí công ty'
-    TVL_OBH = 'TVL_OBH', 'Công ty chi hộ'
+    COMPANY_COST = 'COMPANY_COST', 'Chi phí công ty'
+    COMPANY_OBH = 'COMPANY_OBH', 'Công ty chi hộ'
     SUB_OBH = 'SUB_OBH', '3PL chi hộ'
 
 class ApprovalStatus(models.TextChoices):
@@ -121,7 +121,7 @@ class TripExpense(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     expense_payer_type = models.CharField(
         max_length=20,
         choices=ExpensePayerType.choices,
-        default='TVL_COST',
+        default='COMPANY_COST',
         db_index=True,
         help_text="Phân loại dòng chi phí: Chi phí công ty, Công ty chi hộ Khách, hoặc 3PL chi hộ Khách"
     )
@@ -205,15 +205,15 @@ class TripExpense(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     def save(self, *args, **kwargs):
         self.clean()
         # Tương thích ngược: Nếu truyền is_on_behalf_of_customer=True trực tiếp mà chưa đổi expense_payer_type
-        if self.is_on_behalf_of_customer and self.expense_payer_type == ExpensePayerType.TVL_COST:
-            self.expense_payer_type = ExpensePayerType.SUB_OBH if self.reimburse_to_subcontractor else ExpensePayerType.TVL_OBH
+        if self.is_on_behalf_of_customer and self.expense_payer_type == ExpensePayerType.COMPANY_COST:
+            self.expense_payer_type = ExpensePayerType.SUB_OBH if self.reimburse_to_subcontractor else ExpensePayerType.COMPANY_OBH
 
         # Đồng bộ trạng thái theo 3 nút: Chi phí công ty | Công ty chi hộ | 3PL chi hộ
-        if self.expense_payer_type == ExpensePayerType.TVL_COST:
+        if self.expense_payer_type == ExpensePayerType.COMPANY_COST:
             self.is_on_behalf_of_customer = False
             self.reimburse_to_subcontractor = False
             self.reimbursement_status = ReimbursementStatus.NOT_APPLICABLE
-        elif self.expense_payer_type == ExpensePayerType.TVL_OBH:
+        elif self.expense_payer_type == ExpensePayerType.COMPANY_OBH:
             self.is_on_behalf_of_customer = True
             self.reimburse_to_subcontractor = False
             if self.reimbursement_status == ReimbursementStatus.NOT_APPLICABLE:

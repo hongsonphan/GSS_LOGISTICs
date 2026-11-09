@@ -322,8 +322,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         }
 
         // Link Zalo và Màn hình Tài xế Mobile
-        const driverToken = trip.driver_hashid || trip.hashid || trip.trip_code;
-        const driverPortalUrl = `${window.location.origin}/driver/${driverToken}/`;
+        const driverPortalUrl = `${window.location.origin}${trip.driver_link || ''}`;
         const driverPortalBtn = document.getElementById('driver-portal-btn');
         if (driverPortalBtn) {
             driverPortalBtn.href = driverPortalUrl;

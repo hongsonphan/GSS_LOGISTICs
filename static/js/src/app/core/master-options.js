@@ -122,9 +122,9 @@ function populateMasterDataDropdowns() {
     fillSelect('inp-dropoff', locations?.dropoff_options, '-- Chọn Nơi Hạ Cont --', 'name', 'label');
     fillSelect('inp-driver', drivers, '-- Chọn tài xế điều động --', 'nickname', 'label');
 
-    // Xe nhà nội bộ TVL (chỉ lọc ownership_code === 'OWNED')
+    // Xe nhà nội bộ (chỉ lọc ownership_code === 'OWNED')
     const ownedVehicles = (vehicles || []).filter(v => v.ownership_code === 'OWNED');
-    fillSelect('inp-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải TVL --', 'plate', 'label');
+    fillSelect('inp-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải công ty --', 'plate', 'label');
     fillSelect('inp-trailer', trailers, '-- Chọn Rơ-Moóc --', 'plate', 'label');
 
     // Chế độ Cắt Kéo (Drop & Hook)
@@ -136,7 +136,7 @@ function populateMasterDataDropdowns() {
     // Đổ danh sách cho Modal Sửa Lệnh Điều Vận (modal-edit-trip)
     fillSelect('edit-inp-customer', customers, '-- Chọn Khách Hàng --', 'id', 'label');
     fillSelect('edit-inp-driver', drivers, '-- Chọn tài xế điều động --', 'id', 'label');
-    fillSelect('edit-inp-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải TVL --', 'id', 'label');
+    fillSelect('edit-inp-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải công ty --', 'id', 'label');
     fillSelect('edit-inp-trailer', trailers, '-- Chọn Rơ-Moóc --', 'id', 'label');
     fillSelect('edit-inp-dropoff-driver', drivers, '-- Bỏ trống (Chưa gán) --', 'id', 'label');
     fillSelect('edit-inp-dropoff-vehicle', ownedVehicles, '-- Chọn Đầu kéo Chặng 2 --', 'id', 'label');

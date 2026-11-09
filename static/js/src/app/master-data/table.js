@@ -520,7 +520,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">
                     ${item.ownership_type === 'SUBCONTRACTOR' 
                         ? `<span class="text-xs font-bold text-slate-600 uppercase" title="Xe bạn / 3PL: ${escapeHtml(item.subcontractor_name || '')}">${item.subcontractor_name && item.subcontractor_name !== '-' ? escapeHtml(item.subcontractor_name) : 'Xe Bạn (3PL)'}</span>`
-                        : `<span class="text-teal-900 font-bold">${item.ownership_type_label || 'Xe Nhà (TVL)'}</span>`}
+                        : `<span class="text-teal-900 font-bold">${item.ownership_type_label || 'Xe nhà (công ty)'}</span>`}
                 </td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
                 <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${(() => {

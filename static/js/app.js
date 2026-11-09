@@ -3290,9 +3290,9 @@ function populateMasterDataDropdowns() {
     fillSelect('inp-dropoff', locations?.dropoff_options, '-- Chọn Nơi Hạ Cont --', 'name', 'label');
     fillSelect('inp-driver', drivers, '-- Chọn tài xế điều động --', 'nickname', 'label');
 
-    // Xe nhà nội bộ TVL (chỉ lọc ownership_code === 'OWNED')
+    // Xe nhà nội bộ (chỉ lọc ownership_code === 'OWNED')
     const ownedVehicles = (vehicles || []).filter(v => v.ownership_code === 'OWNED');
-    fillSelect('inp-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải TVL --', 'plate', 'label');
+    fillSelect('inp-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải công ty --', 'plate', 'label');
     fillSelect('inp-trailer', trailers, '-- Chọn Rơ-Moóc --', 'plate', 'label');
 
     // Chế độ Cắt Kéo (Drop & Hook)
@@ -3304,7 +3304,7 @@ function populateMasterDataDropdowns() {
     // Đổ danh sách cho Modal Sửa Lệnh Điều Vận (modal-edit-trip)
     fillSelect('edit-inp-customer', customers, '-- Chọn Khách Hàng --', 'id', 'label');
     fillSelect('edit-inp-driver', drivers, '-- Chọn tài xế điều động --', 'id', 'label');
-    fillSelect('edit-inp-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải TVL --', 'id', 'label');
+    fillSelect('edit-inp-vehicle', ownedVehicles, '-- Chọn Đầu kéo/ Xe tải công ty --', 'id', 'label');
     fillSelect('edit-inp-trailer', trailers, '-- Chọn Rơ-Moóc --', 'id', 'label');
     fillSelect('edit-inp-dropoff-driver', drivers, '-- Bỏ trống (Chưa gán) --', 'id', 'label');
     fillSelect('edit-inp-dropoff-vehicle', ownedVehicles, '-- Chọn Đầu kéo Chặng 2 --', 'id', 'label');
@@ -8329,7 +8329,7 @@ function renderDispatchTable(trips) {
                     <span class="font-mono font-bold text-slate-800">${escapeHtml(trip.customs_info.declaration_number)}</span>
                 ` : '<span class="text-slate-400 font-normal italic">-</span>'}
             </td>
-            <td data-col-key="cont_location_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-bold text-xs ${trip.cont_location_type === 'BÃI TVL' ? 'text-purple-700' : 'text-slate-600'}" style="display:none">
+            <td data-col-key="cont_location_type" class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap font-bold text-xs ${trip.cont_location_type === 'BÃI CÔNG TY' ? 'text-purple-700' : 'text-slate-600'}" style="display:none">
                 ${escapeHtml(trip.cont_location_type || '-')}
             </td>
             <td data-col-key="cargo_notes" class="px-3 py-2 border-r border-slate-200/70 text-xs text-slate-600 truncate max-w-[200px]" style="display:none" title="${escapeHtml(trip.cargo_notes || '-')}">
@@ -8820,8 +8820,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         }
 
         // Link Zalo và Màn hình Tài xế Mobile
-        const driverToken = trip.driver_hashid || trip.hashid || trip.trip_code;
-        const driverPortalUrl = `${window.location.origin}/driver/${driverToken}/`;
+        const driverPortalUrl = `${window.location.origin}${trip.driver_link || ''}`;
         const driverPortalBtn = document.getElementById('driver-portal-btn');
         if (driverPortalBtn) {
             driverPortalBtn.href = driverPortalUrl;
@@ -9344,9 +9343,9 @@ function renderCostSheetTable(trip) {
                             <td class="py-1.5 px-2.5 text-slate-700 text-[11.5px] font-medium border-r border-slate-200/70">
                                 <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
                                     <span>${subExp.invoice_issuer || subExp.notes || '<span class="text-slate-400">-</span>'}</span>
-                                    ${(subExp.expense_payer_type === 'TVL_OBH' || (subExp.is_on_behalf_of_customer && !subExp.reimburse_to_subcontractor)) ? `
+                                    ${(subExp.expense_payer_type === 'COMPANY_OBH' || (subExp.is_on_behalf_of_customer && !subExp.reimburse_to_subcontractor)) ? `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-300 whitespace-nowrap">
-                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>TVL CHI HỘ
+                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>CÔNG TY CHI HỘ
                                         </span>
                                     ` : ((subExp.expense_payer_type === 'SUB_OBH' || subExp.reimburse_to_subcontractor) ? `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap">
@@ -9354,7 +9353,7 @@ function renderCostSheetTable(trip) {
                                         </span>
                                     ` : `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 whitespace-nowrap">
-                                            🏢 TVL
+                                            🏢 Công ty
                                         </span>
                                     `)}
                                 </div>
@@ -9422,9 +9421,9 @@ function renderCostSheetTable(trip) {
                             <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
                                 <span>${issuerText || '<span class="text-slate-400">-</span>'}</span>
                                 ${singleExp ? (
-                                    (singleExp.expense_payer_type === 'TVL_OBH' || (singleExp.is_on_behalf_of_customer && !singleExp.reimburse_to_subcontractor)) ? `
+                                    (singleExp.expense_payer_type === 'COMPANY_OBH' || (singleExp.is_on_behalf_of_customer && !singleExp.reimburse_to_subcontractor)) ? `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-300 whitespace-nowrap">
-                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>TVL CHI HỘ
+                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>CÔNG TY CHI HỘ
                                         </span>
                                     ` : ((singleExp.expense_payer_type === 'SUB_OBH' || singleExp.reimburse_to_subcontractor) ? `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap">
@@ -9432,7 +9431,7 @@ function renderCostSheetTable(trip) {
                                         </span>
                                     ` : `
                                         <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 whitespace-nowrap">
-                                            🏢 TVL
+                                            🏢 Công ty
                                         </span>
                                     `)
                                 ) : ''}
@@ -9513,9 +9512,8 @@ function renderCostSheetTable(trip) {
 // Xây dựng nội dung tin nhắn Lệnh điều xe gửi Zalo chuẩn hóa
 function buildDriverZaloMessage(trip) {
     if (!trip) return '';
-    const driverToken = trip.driver_hashid || trip.hashid || trip.id || trip.trip_code;
-    const portalUrl = `${window.location.origin}/driver/${driverToken}/`;
-    const tripCode = trip.id || trip.trip_code || trip.code || 'TVL-XXX';
+    const portalUrl = `${window.location.origin}${trip.driver_link || ''}`;
+    const tripCode = trip.id || trip.trip_code || trip.code || '-';
     const vehicle = trip.vehicle || trip.truck || '-';
     const trailer = trip.trailer || '-';
     const cont = trip.container || trip.container_number || 'CHƯA CÓ CONT';
@@ -9548,7 +9546,7 @@ window.copyDriverPortalLink = function() {
         return;
     }
     const message = buildDriverZaloMessage(trip);
-    const portalUrl = `${window.location.origin}/driver/${trip.driver_hashid || trip.hashid || trip.id}/`;
+    const portalUrl = `${window.location.origin}${trip.driver_link || ''}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).then(() => {
@@ -9919,8 +9917,8 @@ async function openModalEditTrip(tripCode = null) {
     const modalTripCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
     const code = tripCode 
         || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null)
-        || (detailId && detailId !== 'TVL-XXX' ? detailId : null)
-        || (modalTripCode && modalTripCode !== 'TVL-XXX' ? modalTripCode : null);
+        || (detailId && detailId !== 'GSS-XXX' ? detailId : null)
+        || (modalTripCode && modalTripCode !== 'GSS-XXX' ? modalTripCode : null);
     if (!code) {
         showToast('warning', 'Vui lòng chọn chuyến xe cần hiệu chỉnh!');
         return;
@@ -10125,7 +10123,7 @@ async function openModalEditTrip(tripCode = null) {
     setVal('edit-inp-invoice', trip.commercial_invoice);
     setVal('edit-inp-free-det', trip.det_free_days || 3);
     const locTypeSel = document.getElementById('edit-inp-location-type');
-    if (locTypeSel) locTypeSel.value = trip.cont_location_type || 'BÃI TVL';
+    if (locTypeSel) locTypeSel.value = trip.cont_location_type || 'BÃI CÔNG TY';
     setVal('edit-inp-notes', trip.cargo_notes);
 
     // Mở modal
@@ -10154,7 +10152,7 @@ window.onEditDropoffDriverChange = onEditDropoffDriverChange;
 async function submitEditTripForm() {
     const modalCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
     const trip = window.currentTripDetail;
-    const tripCode = (trip && (trip.id || trip.trip_code)) || (modalCode && modalCode !== 'TVL-XXX' ? modalCode : null);
+    const tripCode = (trip && (trip.id || trip.trip_code)) || (modalCode && modalCode !== 'GSS-XXX' ? modalCode : null);
 
     if (!tripCode) {
         showToast('warning', 'Không tìm thấy thông tin chuyến xe để cập nhật');
@@ -10208,7 +10206,7 @@ async function submitEditTripForm() {
         dropoff_vehicle_id: document.getElementById('edit-inp-dropoff-vehicle')?.value || null,
         commercial_invoice: document.getElementById('edit-inp-invoice')?.value?.trim() || '',
         free_det_days: document.getElementById('edit-inp-free-det')?.value || 3,
-        cont_location_type: document.getElementById('edit-inp-location-type')?.value || 'BÃI TVL',
+        cont_location_type: document.getElementById('edit-inp-location-type')?.value || 'BÃI CÔNG TY',
         cargo_notes: document.getElementById('edit-inp-notes')?.value?.trim() || ''
     };
 
@@ -10248,8 +10246,8 @@ async function deleteOrCancelTrip(tripCode = null) {
     const modalTripCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
     const code = tripCode 
         || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null)
-        || (detailId && detailId !== 'TVL-XXX' ? detailId : null)
-        || (modalTripCode && modalTripCode !== 'TVL-XXX' ? modalTripCode : null);
+        || (detailId && detailId !== 'GSS-XXX' ? detailId : null)
+        || (modalTripCode && modalTripCode !== 'GSS-XXX' ? modalTripCode : null);
     if (!code) {
         showToast('warning', 'Không xác định được mã phiếu điều độ cần xóa!');
         return;
@@ -10347,10 +10345,10 @@ function selectExpensePayer(payerType) {
     const input = document.getElementById('expense-payer-type-input');
     const chk = document.getElementById('expense-on-behalf-checkbox');
     if (input) input.value = payerType;
-    if (chk) chk.checked = (payerType !== 'TVL_COST');
+    if (chk) chk.checked = (payerType !== 'COMPANY_COST');
 
-    const btnCost = document.getElementById('btn-payer-tvl-cost');
-    const btnTvlObh = document.getElementById('btn-payer-tvl-obh');
+    const btnCost = document.getElementById('btn-payer-company-cost');
+    const btnCompanyObh = document.getElementById('btn-payer-company-obh');
     const btnSubObh = document.getElementById('btn-payer-sub-obh');
     const badge = document.getElementById('expense-payer-badge');
     const guide = document.getElementById('expense-payer-guide');
@@ -10360,18 +10358,18 @@ function selectExpensePayer(payerType) {
         btn.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn";
     };
     reset(btnCost);
-    reset(btnTvlObh);
+    reset(btnCompanyObh);
     reset(btnSubObh);
 
-    if (payerType === 'TVL_COST') {
+    if (payerType === 'COMPANY_COST') {
         if (btnCost) btnCost.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
             badge.innerText = "🏢 Chi phí của GSS";
         }
         if (guide) guide.innerHTML = "🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.";
-    } else if (payerType === 'TVL_OBH') {
-        if (btnTvlObh) btnTvlObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
+    } else if (payerType === 'COMPANY_OBH') {
+        if (btnCompanyObh) btnCompanyObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
             badge.innerText = "↗ GSS chi hộ Khách hàng";
@@ -10391,10 +10389,10 @@ function selectEditExpensePayer(payerType) {
     const input = document.getElementById('edit-expense-payer-type-input');
     const chk = document.getElementById('edit-expense-on-behalf-checkbox');
     if (input) input.value = payerType;
-    if (chk) chk.checked = (payerType !== 'TVL_COST');
+    if (chk) chk.checked = (payerType !== 'COMPANY_COST');
 
-    const btnCost = document.getElementById('btn-edit-payer-tvl-cost');
-    const btnTvlObh = document.getElementById('btn-edit-payer-tvl-obh');
+    const btnCost = document.getElementById('btn-edit-payer-company-cost');
+    const btnCompanyObh = document.getElementById('btn-edit-payer-company-obh');
     const btnSubObh = document.getElementById('btn-edit-payer-sub-obh');
     const badge = document.getElementById('edit-expense-payer-badge');
     const guide = document.getElementById('edit-expense-payer-guide');
@@ -10404,18 +10402,18 @@ function selectEditExpensePayer(payerType) {
         btn.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn";
     };
     reset(btnCost);
-    reset(btnTvlObh);
+    reset(btnCompanyObh);
     reset(btnSubObh);
 
-    if (payerType === 'TVL_COST') {
+    if (payerType === 'COMPANY_COST') {
         if (btnCost) btnCost.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
             badge.innerText = "🏢 Chi phí của GSS";
         }
         if (guide) guide.innerHTML = "🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.";
-    } else if (payerType === 'TVL_OBH') {
-        if (btnTvlObh) btnTvlObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
+    } else if (payerType === 'COMPANY_OBH') {
+        if (btnCompanyObh) btnCompanyObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
             badge.innerText = "↗ GSS chi hộ Khách hàng";
@@ -10436,7 +10434,7 @@ function closeModalAddExpense() {
     if (modal) modal.classList.add('hidden-view');
     const form = document.getElementById('form-add-expense');
     if (form) form.reset();
-    selectExpensePayer('TVL_COST');
+    selectExpensePayer('COMPANY_COST');
 }
 
 async function submitAddExpense(e) {
@@ -10475,8 +10473,8 @@ async function submitAddExpense(e) {
     const invoice_issuer = document.getElementById('expense-inv-issuer').value.trim();
     const invoice_lookup_url = document.getElementById('expense-inv-lookup-url').value.trim();
     const notes = document.getElementById('expense-notes-input').value.trim();
-    const expense_payer_type = document.getElementById('expense-payer-type-input')?.value || 'TVL_COST';
-    const is_on_behalf_of_customer = (expense_payer_type !== 'TVL_COST');
+    const expense_payer_type = document.getElementById('expense-payer-type-input')?.value || 'COMPANY_COST';
+    const is_on_behalf_of_customer = (expense_payer_type !== 'COMPANY_COST');
 
     const payload = {
         category,
@@ -10543,7 +10541,7 @@ function openModalEditExpense(exp) {
     document.getElementById('edit-expense-notes-input').value = exp.notes || '';
 
     // Đồng bộ cụm 3 nút phân loại chi phí
-    const payerType = exp.expense_payer_type || (exp.is_on_behalf_of_customer ? (exp.reimburse_to_subcontractor ? 'SUB_OBH' : 'TVL_OBH') : 'TVL_COST');
+    const payerType = exp.expense_payer_type || (exp.is_on_behalf_of_customer ? (exp.reimburse_to_subcontractor ? 'SUB_OBH' : 'COMPANY_OBH') : 'COMPANY_COST');
     selectEditExpensePayer(payerType);
 
     initAllNumberInputs();
@@ -10555,7 +10553,7 @@ function closeModalEditExpense() {
     if (modal) modal.classList.add('hidden-view');
     const form = document.getElementById('form-edit-expense');
     if (form) form.reset();
-    selectEditExpensePayer('TVL_COST');
+    selectEditExpensePayer('COMPANY_COST');
 }
 
 function editExpensePrompt(expenseId) {
@@ -10609,8 +10607,8 @@ async function submitEditExpense(e) {
     const invoice_issuer = document.getElementById('edit-expense-inv-issuer').value.trim();
     const invoice_lookup_url = document.getElementById('edit-expense-inv-lookup-url').value.trim();
     const notes = document.getElementById('edit-expense-notes-input').value.trim();
-    const expense_payer_type = document.getElementById('edit-expense-payer-type-input')?.value || 'TVL_COST';
-    const is_on_behalf_of_customer = (expense_payer_type !== 'TVL_COST');
+    const expense_payer_type = document.getElementById('edit-expense-payer-type-input')?.value || 'COMPANY_COST';
+    const is_on_behalf_of_customer = (expense_payer_type !== 'COMPANY_COST');
 
     const payload = {
         category,
@@ -10742,7 +10740,7 @@ function renderDriverMobileApp(trip) {
 
     // 1. Header Simulator
     const appTripCode = document.getElementById('app-trip-code');
-    if (appTripCode) appTripCode.innerText = trip.id || 'TVL-XXX';
+    if (appTripCode) appTripCode.innerText = trip.id || 'GSS-XXX';
 
     const appDriver = document.getElementById('app-driver-name');
     if (appDriver) appDriver.innerText = `Tài xế: ${trip.driver || 'Chưa gán'}`;
@@ -11461,7 +11459,7 @@ function openSimTripDetailsModal() {
         if (el) el.innerText = (val !== undefined && val !== null && val !== '') ? val : '-';
     };
 
-    setT('sim-modal-trip-code', `Lệnh: ${t.id || 'TVL-XXX'}`);
+    setT('sim-modal-trip-code', `Lệnh: ${t.id || 'GSS-XXX'}`);
     setT('sim-modal-cont-type', t.container_type || '40HC');
     setT('sim-modal-cont-no', t.container || 'Chưa gán');
     setT('sim-modal-seal-no', t.seal || '-');
@@ -11537,7 +11535,7 @@ function openSimContactModal(type) {
         alert(`LIÊN HỆ GIAO NHẬN HÀNG:\n\n• Người nhận / Khách hàng: ${cName}\n• Hotline: 0908.123.456\n• Điểm đến: ${currentActiveTripData?.warehouse_location || currentActiveTripData?.warehouse || 'Kho nhận hàng'}`);
     } else {
         const dispName = currentActiveTripData?.dispatcher || 'Điều độ trực';
-        alert(`HOTLINE ĐIỀU ĐỘ PHỤ TRÁCH:\n\n• Điều độ: ${dispName} (0908.123.456 - Trực 24/7)\n• Mã chuyến xe: ${currentActiveTripCode || 'TVL-XXX'}`);
+        alert(`HOTLINE ĐIỀU ĐỘ PHỤ TRÁCH:\n\n• Điều độ: ${dispName} (0908.123.456 - Trực 24/7)\n• Mã chuyến xe: ${currentActiveTripCode || 'GSS-XXX'}`);
     }
 }
 
@@ -12480,7 +12478,7 @@ async function submitNewTrip(sourceEl = null) {
             // Chặng 2 (Tài xế hạ cont & Xe hạ cont) cho phép bỏ trống để phân công gán sau khi hạ cont
         } else {
             requiredFields.push({ id: 'inp-driver', errId: 'err-driver', label: 'Tài xế nhận lệnh' });
-            requiredFields.push({ id: 'inp-vehicle', errId: 'err-vehicle', label: 'Đầu kéo/ Xe tải TVL' });
+            requiredFields.push({ id: 'inp-vehicle', errId: 'err-vehicle', label: 'Đầu kéo/ Xe tải công ty' });
         }
     }
 
@@ -15712,7 +15710,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     const fuelByAmount = q.fuel_adjust_type === 'AMOUNT';
     const formulaText = surcharge.fuelRule;
 
-    // 1. Điền dữ liệu MẪU 1: STANDARD (TVL Tiêu Chuẩn)
+    // 1. Điền dữ liệu MẪU 1: STANDARD (Tiêu Chuẩn)
     const p1DatePlace = document.getElementById('print-q1-date-place');
     if (p1DatePlace) p1DatePlace.innerText = datePlaceStr;
 
@@ -15859,7 +15857,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
 
     // 3. Điền dữ liệu MẪU 3: PROJECT_DETAIL
     const p3Code = document.getElementById('print-q3-code');
-    if (p3Code) p3Code.innerText = `REF: ${q.quotation_code || q.code || ('TVL-BG-' + q.id)}`;
+    if (p3Code) p3Code.innerText = `REF: ${q.quotation_code || q.code || ('BG-' + q.id)}`;
 
     const p3Cust = document.getElementById('print-q3-client-name') || document.getElementById('print-q3-customer');
     if (p3Cust) p3Cust.innerText = q.customer_name || q.customer || '';
@@ -28332,7 +28330,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">
                     ${item.ownership_type === 'SUBCONTRACTOR' 
                         ? `<span class="text-xs font-bold text-slate-600 uppercase" title="Xe bạn / 3PL: ${escapeHtml(item.subcontractor_name || '')}">${item.subcontractor_name && item.subcontractor_name !== '-' ? escapeHtml(item.subcontractor_name) : 'Xe Bạn (3PL)'}</span>`
-                        : `<span class="text-teal-900 font-bold">${item.ownership_type_label || 'Xe Nhà (TVL)'}</span>`}
+                        : `<span class="text-teal-900 font-bold">${item.ownership_type_label || 'Xe nhà (công ty)'}</span>`}
                 </td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
                 <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${(() => {
@@ -30611,7 +30609,7 @@ function renderCompanyProfileView(company) {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div>
                             <span class="block text-slate-400 font-medium text-[11px]">Tên bãi đỗ xe:</span>
-                            <strong class="text-slate-800 text-xs">${escapeHtml(company.fleet_yard_name || 'Bãi Đỗ Xe & Trạm Điều Phối TVL')}</strong>
+                            <strong class="text-slate-800 text-xs">${escapeHtml(company.fleet_yard_name || 'Bãi Đỗ Xe & Trạm Điều Phối')}</strong>
                         </div>
                         <div>
                             <span class="block text-slate-400 font-medium text-[11px]">Hotline điều phối trực bãi:</span>
@@ -32156,7 +32154,7 @@ function renderOpeningBalanceView() {
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
                             Mã Đối Tượng
                         </label>
-                        <input type="text" id="ob-input-code" placeholder="VD: TVL, KH_SAMSUNG, TX001..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-mono font-bold focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
+                        <input type="text" id="ob-input-code" placeholder="VD: GSS, KH_SAMSUNG, TX001..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-mono font-bold focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
                     </div>
 
                     <!-- 4. Tên đối tượng / Tên khoản mục -->

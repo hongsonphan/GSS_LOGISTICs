@@ -305,8 +305,8 @@ async function openModalEditTrip(tripCode = null) {
     const modalTripCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
     const code = tripCode 
         || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null)
-        || (detailId && detailId !== 'TVL-XXX' ? detailId : null)
-        || (modalTripCode && modalTripCode !== 'TVL-XXX' ? modalTripCode : null);
+        || (detailId && detailId !== 'GSS-XXX' ? detailId : null)
+        || (modalTripCode && modalTripCode !== 'GSS-XXX' ? modalTripCode : null);
     if (!code) {
         showToast('warning', 'Vui lòng chọn chuyến xe cần hiệu chỉnh!');
         return;
@@ -511,7 +511,7 @@ async function openModalEditTrip(tripCode = null) {
     setVal('edit-inp-invoice', trip.commercial_invoice);
     setVal('edit-inp-free-det', trip.det_free_days || 3);
     const locTypeSel = document.getElementById('edit-inp-location-type');
-    if (locTypeSel) locTypeSel.value = trip.cont_location_type || 'BÃI TVL';
+    if (locTypeSel) locTypeSel.value = trip.cont_location_type || 'BÃI CÔNG TY';
     setVal('edit-inp-notes', trip.cargo_notes);
 
     // Mở modal
@@ -540,7 +540,7 @@ window.onEditDropoffDriverChange = onEditDropoffDriverChange;
 async function submitEditTripForm() {
     const modalCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
     const trip = window.currentTripDetail;
-    const tripCode = (trip && (trip.id || trip.trip_code)) || (modalCode && modalCode !== 'TVL-XXX' ? modalCode : null);
+    const tripCode = (trip && (trip.id || trip.trip_code)) || (modalCode && modalCode !== 'GSS-XXX' ? modalCode : null);
 
     if (!tripCode) {
         showToast('warning', 'Không tìm thấy thông tin chuyến xe để cập nhật');
@@ -594,7 +594,7 @@ async function submitEditTripForm() {
         dropoff_vehicle_id: document.getElementById('edit-inp-dropoff-vehicle')?.value || null,
         commercial_invoice: document.getElementById('edit-inp-invoice')?.value?.trim() || '',
         free_det_days: document.getElementById('edit-inp-free-det')?.value || 3,
-        cont_location_type: document.getElementById('edit-inp-location-type')?.value || 'BÃI TVL',
+        cont_location_type: document.getElementById('edit-inp-location-type')?.value || 'BÃI CÔNG TY',
         cargo_notes: document.getElementById('edit-inp-notes')?.value?.trim() || ''
     };
 
@@ -634,8 +634,8 @@ async function deleteOrCancelTrip(tripCode = null) {
     const modalTripCode = document.getElementById('edit-modal-trip-code')?.innerText?.trim();
     const code = tripCode 
         || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null)
-        || (detailId && detailId !== 'TVL-XXX' ? detailId : null)
-        || (modalTripCode && modalTripCode !== 'TVL-XXX' ? modalTripCode : null);
+        || (detailId && detailId !== 'GSS-XXX' ? detailId : null)
+        || (modalTripCode && modalTripCode !== 'GSS-XXX' ? modalTripCode : null);
     if (!code) {
         showToast('warning', 'Không xác định được mã phiếu điều độ cần xóa!');
         return;

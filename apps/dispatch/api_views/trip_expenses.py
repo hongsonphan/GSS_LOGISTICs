@@ -98,7 +98,7 @@ class TripAddExpenseAPIView(APIView):
                     from apps.billing.models import ExpensePayerType
                     payer_choice = item.get('expense_payer_type') or item.get('payer_type')
                     if not payer_choice:
-                        payer_choice = ExpensePayerType.TVL_OBH if item.get('is_on_behalf_of_customer') else ExpensePayerType.TVL_COST
+                        payer_choice = ExpensePayerType.COMPANY_OBH if item.get('is_on_behalf_of_customer') else ExpensePayerType.COMPANY_COST
 
                     exp = TripExpense.objects.create(
                         trip=trip,
@@ -205,7 +205,7 @@ class TripAddExpenseAPIView(APIView):
         from apps.billing.models import ExpensePayerType
         req_payer_type = request.data.get('expense_payer_type') or request.data.get('payer_type')
         if not req_payer_type:
-            req_payer_type = ExpensePayerType.TVL_OBH if request.data.get('is_on_behalf_of_customer') else ExpensePayerType.TVL_COST
+            req_payer_type = ExpensePayerType.COMPANY_OBH if request.data.get('is_on_behalf_of_customer') else ExpensePayerType.COMPANY_COST
 
         expense = TripExpense.objects.create(
             trip=trip,
@@ -328,7 +328,7 @@ class TripExpenseDetailAPIView(APIView):
             expense.expense_payer_type = data.get('expense_payer_type') or data.get('payer_type')
         elif 'is_on_behalf_of_customer' in data:
             from apps.billing.models import ExpensePayerType
-            expense.expense_payer_type = ExpensePayerType.TVL_OBH if data['is_on_behalf_of_customer'] else ExpensePayerType.TVL_COST
+            expense.expense_payer_type = ExpensePayerType.COMPANY_OBH if data['is_on_behalf_of_customer'] else ExpensePayerType.COMPANY_COST
 
         if 'trip_leg' in data:
             from apps.billing.models import TripLegChoice

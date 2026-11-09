@@ -174,7 +174,7 @@ def build_trip_expense(exp):
         credit = dict(key='payable', credit=amount, partner=_partner_of_sub(getattr(trip, 'subcontractor', None)), trip=trip, memo=memo)
     else:
         credit = dict(key='advance', credit=amount, employee=exp.driver, trip=trip, memo=memo)
-    on_behalf = exp.is_on_behalf_of_customer or exp.expense_payer_type in ('TVL_OBH', 'SUB_OBH')
+    on_behalf = exp.is_on_behalf_of_customer or exp.expense_payer_type in ('COMPANY_OBH', 'SUB_OBH')
     if on_behalf:
         debits = [dict(key='other_receivable', debit=amount, partner=customer_partner, trip=trip, memo=f'Chi hộ khách: {memo}')]
     elif not exp.company_borne:

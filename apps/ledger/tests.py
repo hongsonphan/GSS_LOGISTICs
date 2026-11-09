@@ -197,7 +197,7 @@ class PostingTests(LedgerTestBase):
             TripExpense.objects.create(trip=trip, driver=self.driver, category='TOLL_FEE', amount=108_000,
                                        tax_amount=8_000, status='APPROVED')
             TripExpense.objects.create(trip=trip, driver=self.driver, category='LIFT_ON', amount=500_000,
-                                       status='APPROVED', expense_payer_type='TVL_OBH', is_on_behalf_of_customer=True)
+                                       status='APPROVED', expense_payer_type='COMPANY_OBH', is_on_behalf_of_customer=True)
             TripExpense.objects.create(trip=trip, driver=self.driver, category='OTHER', amount=50_000, status='PENDING')
         trip.refresh_from_db()
         self.assertEqual(trip.status, 'COMPLETED')

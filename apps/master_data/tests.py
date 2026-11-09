@@ -312,7 +312,7 @@ class MasterDataAPITestCase(TestCase):
         # 2. PUT update profile
         update_res = self.client.put('/api/master-data/company/', {
             'company_name': 'CÔNG TY TNHH VẬN TẢI & LOGISTICS GSS',
-            'short_name': 'TRIEN VO LOGISTICS CORP',
+            'short_name': 'GSS TEST LOGISTICS CORP',
             'tax_code': '0319999888',
             'phone': '0903.888.999',
             'branch_name': 'Chi Nhánh Hải Phòng',
@@ -328,7 +328,7 @@ class MasterDataAPITestCase(TestCase):
         }, format='json')
         self.assertEqual(update_res.status_code, status.HTTP_200_OK)
         self.assertTrue(update_res.data.get('success'))
-        self.assertEqual(update_res.data['data']['short_name'], 'TRIEN VO LOGISTICS CORP')
+        self.assertEqual(update_res.data['data']['short_name'], 'GSS TEST LOGISTICS CORP')
         self.assertEqual(update_res.data['data']['branch_name'], 'Chi Nhánh Hải Phòng')
         self.assertEqual(update_res.data['data']['fleet_yard_name'], 'Bãi Xe Trung Tâm Sóng Thần')
         self.assertEqual(update_res.data['data']['default_vat_rate'], 10.0)
@@ -337,7 +337,7 @@ class MasterDataAPITestCase(TestCase):
 
         # 3. Verify in DB
         company = CompanyProfile.get_default_company()
-        self.assertEqual(company.short_name, 'TRIEN VO LOGISTICS CORP')
+        self.assertEqual(company.short_name, 'GSS TEST LOGISTICS CORP')
         self.assertEqual(company.tax_code, '0319999888')
         self.assertEqual(company.branch_name, 'Chi Nhánh Hải Phòng')
         self.assertEqual(company.branch_address, 'KCN Đình Vũ, Hải Phòng')

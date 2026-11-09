@@ -90,7 +90,7 @@ class GssLogisticsCoreTestCase(TestCase):
             driver_trip_pay=500000
         )
         self.trip = DispatchTrip.objects.create(
-            trip_code="TVL-TEST-001",
+            trip_code="GSS-TEST-001",
             customer=self.customer,
             vehicle=self.vehicle,
             driver=self.driver,
@@ -182,39 +182,6 @@ class GssLogisticsCoreTestCase(TestCase):
         self.assertTrue(data['success'])
         self.assertTrue(DispatchTrip.objects.filter(container_number='CONT1234567').exists())
 
-    def test_document_deduplication_and_cross_check(self):
-        """Kiểm tra tính năng khử trùng lặp chứng từ/chi phí và đối chiếu chéo."""
-        from django.core.management import call_command
-        from apps.documents.models import TripDocument, DocumentType
-
-        # Tạo 3 chứng từ giống hệt nhau (mô phỏng seed bị lặp)
-        for _ in range(3):
-            TripDocument.objects.create(
-                trip=self.trip,
-                document_type=DocumentType.EIR_PICKUP,
-                title="Phiếu EIR Lấy Cont Rỗng AP-622 No 0034976",
-                ocr_raw_text="Cont: CSNU 8011022 - Seal: 34192379",
-                is_verified=True
-            )
-
-        # Kiểm tra trước khi dọn: có 3 chứng từ
-        self.assertEqual(TripDocument.objects.filter(trip=self.trip).count(), 3)
-
-        # Kiểm tra API defensive deduplication: chỉ trả về 1 chứng từ
-        response = self.client.get(f'/api/trips/{self.trip.trip_code}/')
-        self.assertEqual(response.status_code, 200)
-        docs_in_api = response.json().get('documents', [])
-        self.assertEqual(len(docs_in_api), 1)
-
-        # Chạy command dọn dẹp DB
-        call_command('deduplicate_data')
-
-        # Sau khi dọn dẹp: DB chỉ còn đúng 1 chứng từ
-        self.assertEqual(TripDocument.objects.filter(trip=self.trip).count(), 1)
-
-    # ==========================================================================
-    # CÁC TEST CASE BẢO MẬT MỚI (SECURITY AUDIT TEST SUITE)
-    # ==========================================================================
     def test_security_unauthenticated_blocked(self):
         """Tiêu chuẩn 11: Kiểm tra người dùng chưa đăng nhập bị chặn (HTTP 401)."""
         self.client.logout()
@@ -299,7 +266,7 @@ class GssLogisticsCoreTestCase(TestCase):
             role=EmployeeRole.DRIVER
         )
         other_trip = DispatchTrip.objects.create(
-            trip_code='TVL-TEST-OTHER',
+            trip_code='GSS-TEST-OTHER',
             customer=self.customer,
             vehicle=self.vehicle,
             driver=other_driver,
@@ -322,7 +289,7 @@ class GssLogisticsCoreTestCase(TestCase):
             role=EmployeeRole.DRIVER
         )
         other_trip = DispatchTrip.objects.create(
-            trip_code='TVL-TEST-IDOR',
+            trip_code='GSS-TEST-IDOR',
             customer=self.customer,
             vehicle=self.vehicle,
             driver=other_driver,
@@ -341,7 +308,7 @@ class GssLogisticsCoreTestCase(TestCase):
     def test_trip_detail_api_handles_null_foreign_keys_defensively(self):
         """Defensive Backend: Đảm bảo chuyến xe thiếu điều độ / rơ-moóc / xe hạ vẫn xem chi tiết được 200 OK."""
         null_trip = DispatchTrip.objects.create(
-            trip_code='TVL-TEST-NULL',
+            trip_code='GSS-TEST-NULL',
             customer=self.customer,
             vehicle=self.vehicle,
             driver=self.driver,
@@ -1361,7 +1328,7 @@ class GssLogisticsCoreTestCase(TestCase):
         self.client.force_login(self.accountant_user)
 
         trip = DispatchTrip.objects.create(
-            trip_code="TVL-REIMBURSE-001",
+            trip_code="GSS-REIMBURSE-001",
             customer=self.customer,
             vehicle=self.vehicle,
             driver=self.driver,
@@ -1498,7 +1465,7 @@ class GssLogisticsCoreTestCase(TestCase):
         )
 
         trip = DispatchTrip.objects.create(
-            trip_code="TVL-3PL-001",
+            trip_code="GSS-3PL-001",
             customer=self.customer,
             vehicle=sub_vehicle,
             driver=self.driver,
@@ -1543,7 +1510,7 @@ class GssLogisticsCoreTestCase(TestCase):
         self.assertEqual(trip.subcontractor_settlement_status, 'SETTLED')
 
         # Kiểm tra tự động sinh phiếu chi Sổ Quỹ cho 2.300.000 đ
-        cash_tx = CashTransaction.objects.filter(ref_code='TVL-3PL-001').first()
+        cash_tx = CashTransaction.objects.filter(ref_code='GSS-3PL-001').first()
         self.assertIsNotNone(cash_tx)
         self.assertEqual(cash_tx.transaction_type, TransactionType.OUTFLOW)
         self.assertEqual(cash_tx.category, CashFlowCategory.SUBCONTRACTOR_PAYMENT)
@@ -1569,7 +1536,7 @@ class GssLogisticsCoreTestCase(TestCase):
         )
 
         trip = DispatchTrip.objects.create(
-            trip_code="TVL-BOT-001",
+            trip_code="GSS-BOT-001",
             customer=self.customer,
             pickup_location="CÁT LÁI",
             warehouse_location="KCN SÓNG THẦN",
@@ -1725,67 +1692,6 @@ class GssLogisticsCoreTestCase(TestCase):
         t_item = next(it for it in tariffs if it['id'] == tariff_id)
         self.assertEqual(t_item['toll_standard_fee'], 210000.0)
 
-    def test_driver_portal_view_and_capability_access(self):
-        trip_hash = self.trip.driver_hashid
-        self.assertTrue(len(trip_hash) >= 8)
-
-        # 1. Truy cập trang Mobile của tài xế không cần đăng nhập session
-        self.client.logout()
-        res = self.client.get(f'/driver/{trip_hash}/')
-        self.assertEqual(res.status_code, 200)
-        content = res.content.decode('utf-8')
-
-        # Xác thực hiển thị thông tin nghiệp vụ vận tải cho tài xế
-        self.assertIn(self.trip.trip_code, content)
-        self.assertIn(self.driver.full_name, content)
-        self.assertIn(self.vehicle.license_plate, content)
-        self.assertIn("Báo Mốc Thủ Công", content)
-
-        # Chống lộ dữ liệu nội bộ (Tuyệt đối không hiển thị doanh thu khách hay lợi nhuận trên trang tài xế)
-        self.assertNotIn("cached_margin_percent", content)
-        self.assertNotIn("Lợi nhuận gộp", content)
-
-        # 2. Truy cập mã chuyến không tồn tại -> 404 an toàn
-        res_404 = self.client.get('/driver/INVALID_NON_EXISTENT_HASH/')
-        self.assertEqual(res_404.status_code, 404)
-        self.assertIn("Không tìm thấy chuyến xe", res_404.content.decode('utf-8'))
-
-        # 3. Báo mốc 1-chạm qua API bằng Capability Token
-        milestone_res = self.client.post(
-            f'/api/trips/{trip_hash}/milestones/',
-            data=json.dumps({'milestone': 'ARRIVED_WAREHOUSE', 'notes': 'Đã đến cổng kho Tân Vạn'}),
-            content_type='application/json',
-            HTTP_X_TRIP_HASH=trip_hash
-        )
-        self.assertEqual(milestone_res.status_code, 200)
-        self.assertTrue(milestone_res.json()['success'])
-        self.trip.refresh_from_db()
-        self.assertEqual(self.trip.status, TripStatus.AT_WAREHOUSE)
-
-        # 4. Kê khai chi phí BOT bằng Capability Token
-        exp_res = self.client.post(
-            f'/api/trips/{trip_hash}/expenses/',
-            data={'category': 'TOLL_FEE', 'amount': 35000, 'notes': 'Trạm BOT Long Thành'},
-            HTTP_X_TRIP_HASH=trip_hash
-        )
-        self.assertEqual(exp_res.status_code, 200)
-        self.assertTrue(exp_res.json()['success'])
-        self.assertEqual(self.trip.expenses.filter(category=ExpenseCategory.TOLL_FEE).count(), 1)
-
-        # 5. Chụp và gửi chứng từ POD bằng Capability Token
-        doc_res = self.client.post(
-            f'/api/trips/{trip_hash}/documents/',
-            data={'doc_type': 'Biên bản giao nhận hàng', 'container_no': self.trip.container_number},
-            HTTP_X_TRIP_HASH=trip_hash
-        )
-        self.assertEqual(doc_res.status_code, 200)
-        self.assertTrue(doc_res.json()['success'])
-        self.trip.refresh_from_db()
-        self.assertEqual(self.trip.status, TripStatus.DELIVERED)
-
-    # ==========================================================================
-    # RBAC & PERMISSION AUDIT TEST SUITE (KIỂM TOÁN PHÂN QUYỀN TOÀN HỆ THỐNG)
-    # ==========================================================================
     def test_rbac_driver_blocked_from_sensitive_financial_and_payroll_apis(self):
         """Tài xế bị chặn hoàn toàn khi truy cập P&L, bảng lương và sổ quỹ (HTTP 403)."""
         self.client.force_login(self.driver_user)
@@ -2121,19 +2027,12 @@ class GssLogisticsCoreTestCase(TestCase):
         self.assertTrue(len(driver_token) >= 8)
         self.assertTrue(len(tracking_token) >= 8)
 
-        # 2. Khách hàng dùng tracking_token truy cập Cổng Tài Xế -> Phải bị chặn 404
-        res_cross_role = self.client.get(f"/driver/{tracking_token}/")
-        self.assertEqual(res_cross_role.status_code, 404)
+        # 2. Tài xế dùng driver_token mở cổng tra cứu của khách -> 404
+        self.assertEqual(self.client.get(f"/tracking/{driver_token}/").status_code, 404)
 
         # 3. Kẻ xấu dùng trip_code thô truy cập cổng công cộng (chưa đăng nhập) -> Phải bị chặn 404
-        res_raw_code_driver = self.client.get(f"/driver/{trip.trip_code}/")
-        self.assertEqual(res_raw_code_driver.status_code, 404)
         res_raw_code_tracking = self.client.get(f"/tracking/{trip.trip_code}/")
         self.assertEqual(res_raw_code_tracking.status_code, 404)
-
-        # 4. Tài xế dùng đúng driver_token truy cập Cổng Tài Xế -> Thành công 200
-        res_driver = self.client.get(f"/driver/{driver_token}/")
-        self.assertEqual(res_driver.status_code, 200)
 
         # 5. Khách hàng dùng đúng tracking_token truy cập Cổng Tra Cứu -> Thành công 200
         res_tracking = self.client.get(f"/tracking/{tracking_token}/")

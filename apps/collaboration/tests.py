@@ -27,7 +27,7 @@ class CollaborationTestSuite(TestCase):
         self.director_emp = Employee.objects.create(
             user=self.director_user,
             code='BGD01',
-            full_name='Võ Triền',
+            full_name='Nguyễn Giám Đốc',
             department=Department.MANAGEMENT,
             role=EmployeeRole.DIRECTOR,
             is_department_head=True,
@@ -221,7 +221,7 @@ class CollaborationTestSuite(TestCase):
             'due_date': '2026-10-30',
             'description': 'Rà soát toàn bộ chi phí nâng hạ và vé BOT tuyến VSIP.',
             'checklists': [
-                'Tổng hợp danh sách chuyến TVL',
+                'Tổng hợp danh sách chuyến GSS',
                 'Kiểm tra hóa đơn nâng hạ cont',
                 'Ký duyệt biên bản đối soát'
             ]

@@ -55,7 +55,7 @@
   - [C14. Biểu đồ tùy biến trên Dashboard](#c14-biểu-đồ-tùy-biến-trên-dashboard)
 - **PHẦN D. HỎI ĐÁP & XỬ LÝ SỰ CỐ THƯỜNG GẶP**
   - [D1. Khi tạo lệnh, ô Tài xế hoặc Đầu kéo không có tên cần chọn?](#d1-khi-tạo-lệnh-ô-tài-xế-hoặc-đầu-kéo-không-có-tên-cần-chọn)
-  - [D2. Chọn "Chi phí công ty", "Công ty chi hộ" hay "3PL chi hộ"?](#d2-chọn-chi-phí-tvl-tvl-chi-hộ-hay-3pl-chi-hộ)
+  - [D2. Chọn "Chi phí công ty", "Công ty chi hộ" hay "3PL chi hộ"?](#d2-chọn-chi-phí-công-ty-công-ty-chi-hộ-hay-3pl-chi-hộ)
   - [D3. Vì sao không xóa được khách hàng, xe, khoản mục chi…?](#d3-vì-sao-không-xóa-được-khách-hàng-xe-khoản-mục-chi)
   - [D4. In báo giá, lệnh xe, phiếu thu chi bị lệch, mất màu?](#d4-in-báo-giá-lệnh-xe-phiếu-thu-chi-bị-lệch-mất-màu)
   - [D5. Tài xế mất vé BOT hoặc quên chụp POD?](#d5-tài-xế-mất-vé-bot-hoặc-quên-chụp-pod)
@@ -562,11 +562,11 @@ Năm thẻ phía trên Tab 1 thống kê số tiền, số tuyến, số báo gi
 | Giám Định Vỏ (Phiếu EIR), Ghi chú hư hỏng | Nguyên vẹn · Có hư hỏng từ trước · Bẩn / cần vệ sinh |
 
 4. **Mục 2 – Lộ trình 3 điểm:** **1. Nơi Lấy (Cảng / ICD) \*** ➔ **2. Nơi Đóng/Trả (Kho KH) \*** ➔ **3. Nơi Hạ (Bãi rỗng / Cảng)**.
-5. **Mục 3 – Phân công tài xế:** chọn **`Xe Nhà (TVL)`** hoặc **`Xe Bạn / 3PL`**:
-   - **Xe nhà:** chọn **Tài xế nhận lệnh (Toàn trình) \*** – xe mặc định của tài xế được gợi ý ở ô **Đầu kéo / Xe tải TVL \*** (chỉ hiện xe nội bộ). Tài xế chưa có trong danh sách: bấm **`Thêm tài xế`** ➔ nhập Họ tên và SĐT ➔ **`Lưu & Chọn Ngay`**. Nhập **Ghi chú phí công ty chịu / lưu ý điều độ** nếu cần.
+5. **Mục 3 – Phân công tài xế:** chọn **`Xe nhà (công ty)`** hoặc **`Xe Bạn / 3PL`**:
+   - **Xe nhà:** chọn **Tài xế nhận lệnh (Toàn trình) \*** – xe mặc định của tài xế được gợi ý ở ô **Đầu kéo / Xe tải công ty \*** (chỉ hiện xe nội bộ). Tài xế chưa có trong danh sách: bấm **`Thêm tài xế`** ➔ nhập Họ tên và SĐT ➔ **`Lưu & Chọn Ngay`**. Nhập **Ghi chú phí công ty chịu / lưu ý điều độ** nếu cần.
    - **Xe bạn / 3PL:** xem C3.3.
 6. Bấm **`Xác Nhận & Phát Lệnh Zalo`**. Hệ thống:
-   - tạo mã chuyến (ví dụ `TVL-1028-001`) với trạng thái *Đã phát lệnh*;
+   - tạo mã chuyến (ví dụ `GSS-1028-001`) với trạng thái *Đã phát lệnh*;
    - **sao chép sẵn nội dung lệnh kèm đường link** của tài xế và mở cửa sổ Zalo tới số điện thoại tài xế ➔ bạn chỉ cần bấm **Ctrl+V** rồi gửi.
 
 ### C3.2. Chạy cắt kéo (2 tài xế) & ghép 2 cont 20ft
