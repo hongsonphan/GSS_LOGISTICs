@@ -26,3 +26,7 @@ staticfiles/
 scratch/
 _deploy/
 test_screenshots/
+
+# Worktree / cấu hình Claude Code không thuộc image
+.claude/
+.coverage
