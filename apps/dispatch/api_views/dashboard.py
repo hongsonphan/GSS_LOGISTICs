@@ -1661,7 +1661,7 @@ class DashboardBGDAPIView(APIView):
 
 def _can_list_trips(user):
     from core import access
-    return user.is_superuser or not access.uses_matrix(user) or any(
+    return user.is_superuser or any(
         access.allowed(user, m, 'view') for m in ('dispatch', 'sales', 'accounting', 'customs'))
 
 

@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
+from core.models import PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 from apps.personnel.models import Department, Employee
 
 
@@ -21,7 +21,7 @@ class PostCategory(TimeStampedModel, SoftDeleteModel):
         return self.name
 
 
-class CompanyPost(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+class CompanyPost(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Bài viết / Thông báo bản tin công ty dành cho nhân viên văn phòng & quản lý."""
     title = models.CharField(max_length=255, verbose_name="Tiêu đề thông báo")
     category = models.ForeignKey(
@@ -86,9 +86,8 @@ class CompanyPost(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     @property
     def hashid(self):
-        """Mã HashID bảo mật cho URL (/news/<hashid>/) chống IDOR."""
-        from core.security import get_news_hashid
-        return get_news_hashid(self.id)
+        """Mã công khai (UUIDv7) cho URL."""
+        return str(self.public_id) if self.public_id else ''
 
 
 class PostAttachment(TimeStampedModel, SoftDeleteModel):

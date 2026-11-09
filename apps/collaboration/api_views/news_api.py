@@ -177,8 +177,10 @@ def resolve_post_id(pk_val):
         return None
     if str(pk_val).isdigit():
         return int(pk_val)
-    from core.security import decode_news_hashid
-    return decode_news_hashid(str(pk_val))
+    from core.security import parse_public_id
+    from apps.collaboration.models.news import CompanyPost
+    pid = parse_public_id(str(pk_val))
+    return CompanyPost.all_objects.filter(public_id=pid).values_list('pk', flat=True).first() if pid else None
 
 
 class CompanyPostDetailAPIView(views.APIView):

@@ -57,7 +57,7 @@ _FLEET_DATA_MODULES = ('sales', 'dispatch', 'accounting', 'customs', 'fleet')
 
 def _can_read_any(user, modules):
     from core import access
-    return user.is_superuser or not access.uses_matrix(user) or any(access.allowed(user, m, 'view') for m in modules)
+    return user.is_superuser or any(access.allowed(user, m, 'view') for m in modules)
 
 
 def _scrub_form_options(user, response):

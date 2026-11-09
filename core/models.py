@@ -52,6 +52,22 @@ class AllObjectsManager(models.Manager):
     def get_queryset(self):
         return tenant_scope(SoftDeleteQuerySet(self.model, using=self._db))
 
+class PublicIdModel(models.Model):
+    """Mã công khai UUIDv7 dùng trong URL / API thay cho khoá số."""
+    public_id = models.UUIDField(default=None, unique=True, editable=False, null=True)
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        if self.public_id is None:
+            from core.security import uuid7
+            self.public_id = uuid7()
+            if kwargs.get('update_fields') is not None:
+                kwargs['update_fields'] = list(set(kwargs['update_fields']) | {'public_id'})
+        super().save(*args, **kwargs)
+
+
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)

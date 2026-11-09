@@ -1,132 +1,37 @@
+"""Mã định danh công khai (lộ ra URL / API / tên file), token truy cập và xác thực JWT.
+
+- public_id: UUIDv7 (RFC 9562) — 48 bit thời gian + 74 bit ngẫu nhiên, sắp xếp theo thời gian, không đoán được id kế tiếp.
+  Khoá chính bên trong vẫn là số tự tăng; chỉ public_id được đưa ra ngoài.
+- Token truy cập (link tài xế, link tra cứu của khách, link nhà xe): chuỗi ngẫu nhiên riêng, thu hồi được.
+"""
 import json
 import os
+import secrets
+import time
+import uuid
+
 from django.conf import settings
-from hashids import Hashids
-
-# Salt bí mật từ settings hoặc biến môi trường
-DEFAULT_SALT = getattr(settings, 'HASHIDS_SALT', 'GSS_LOGISTICS_SECURE_SALT_2026')
-ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
-MIN_LENGTH = 8
-
-# Singleton Hashids instances theo domain nghiệp vụ (Phân tách bảo mật đa phân hệ)
-_TRIP_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TRIP", min_length=MIN_LENGTH, alphabet=ALPHABET)
-_DRIVER_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_DRIVER", min_length=MIN_LENGTH, alphabet=ALPHABET)
-_TRACKING_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TRACKING", min_length=MIN_LENGTH, alphabet=ALPHABET)
-_BOOKING_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_BOOKING", min_length=MIN_LENGTH, alphabet=ALPHABET)
-_QUOTATION_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_QUOTATION", min_length=MIN_LENGTH, alphabet=ALPHABET)
-_EXPENSE_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_EXPENSE", min_length=MIN_LENGTH, alphabet=ALPHABET)
-_NEWS_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_NEWS", min_length=MIN_LENGTH, alphabet=ALPHABET)
-_TASK_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TASK", min_length=MIN_LENGTH, alphabet=ALPHABET)
 
 
-def encode_id(number: int, domain: str = 'TRIP') -> str:
-    """Mã hóa số nguyên ID thành chuỗi HashID bảo mật chống IDOR."""
-    if not isinstance(number, int) or number < 0:
-        return ''
-    if domain == 'DRIVER':
-        return _DRIVER_HASHIDS.encode(number)
-    elif domain == 'TRACKING':
-        return _TRACKING_HASHIDS.encode(number)
-    elif domain == 'BOOKING':
-        return _BOOKING_HASHIDS.encode(number)
-    elif domain == 'QUOTATION':
-        return _QUOTATION_HASHIDS.encode(number)
-    elif domain == 'EXPENSE':
-        return _EXPENSE_HASHIDS.encode(number)
-    elif domain == 'NEWS':
-        return _NEWS_HASHIDS.encode(number)
-    elif domain == 'TASK':
-        return _TASK_HASHIDS.encode(number)
-    return _TRIP_HASHIDS.encode(number)
+def uuid7() -> uuid.UUID:
+    ms = time.time_ns() // 1_000_000
+    rand = int.from_bytes(os.urandom(10), 'big')  # 80 bit, dùng 74 bit
+    value = ((ms & ((1 << 48) - 1)) << 80) | (0x7 << 76) | (((rand >> 62) & 0xFFF) << 64) | (0b10 << 62) | (rand & ((1 << 62) - 1))
+    return uuid.UUID(int=value)
 
 
-def decode_id(hashid_str: str, domain: str = 'TRIP') -> int | None:
-    """Giải mã chuỗi HashID về số nguyên ID ban đầu. Trả về None nếu không hợp lệ."""
-    if not hashid_str or not isinstance(hashid_str, str):
+def parse_public_id(value):
+    """Chuỗi -> UUID; None nếu không phải UUID hợp lệ."""
+    if not value or not isinstance(value, (str, uuid.UUID)):
         return None
     try:
-        if domain == 'DRIVER':
-            numbers = _DRIVER_HASHIDS.decode(hashid_str.strip())
-        elif domain == 'TRACKING':
-            numbers = _TRACKING_HASHIDS.decode(hashid_str.strip())
-        elif domain == 'BOOKING':
-            numbers = _BOOKING_HASHIDS.decode(hashid_str.strip())
-        elif domain == 'QUOTATION':
-            numbers = _QUOTATION_HASHIDS.decode(hashid_str.strip())
-        elif domain == 'EXPENSE':
-            numbers = _EXPENSE_HASHIDS.decode(hashid_str.strip())
-        elif domain == 'NEWS':
-            numbers = _NEWS_HASHIDS.decode(hashid_str.strip())
-        elif domain == 'TASK':
-            numbers = _TASK_HASHIDS.decode(hashid_str.strip())
-        else:
-            numbers = _TRIP_HASHIDS.decode(hashid_str.strip())
-
-        if numbers and len(numbers) > 0:
-            return numbers[0]
-    except Exception:
-        pass
-    return None
+        return value if isinstance(value, uuid.UUID) else uuid.UUID(str(value).strip())
+    except (ValueError, AttributeError):
+        return None
 
 
-def get_trip_hashid(trip_id: int) -> str:
-    """Helper mã hóa ID chuyến xe chung (Internal)."""
-    return encode_id(trip_id, domain='TRIP')
-
-
-def decode_trip_hashid(hashid_str: str) -> int | None:
-    """Helper giải mã HashID chuyến xe chung."""
-    return decode_id(hashid_str, domain='TRIP')
-
-
-def get_driver_hashid(trip_id: int) -> str:
-    """Helper mã hóa Capability Token dành riêng cho Cổng Tài Xế Mobile (Driver Portal)."""
-    return encode_id(trip_id, domain='DRIVER')
-
-
-def decode_driver_hashid(hashid_str: str) -> int | None:
-    """Helper giải mã Capability Token Cổng Tài Xế Mobile."""
-    return decode_id(hashid_str, domain='DRIVER')
-
-
-def get_tracking_hashid(trip_id: int) -> str:
-    """Helper mã hóa Capability Token dành riêng cho Khách Hàng Tra Cứu (Customer Tracking)."""
-    return encode_id(trip_id, domain='TRACKING')
-
-
-def decode_tracking_hashid(hashid_str: str) -> int | None:
-    """Helper giải mã Capability Token Khách Hàng Tra Cứu."""
-    return decode_id(hashid_str, domain='TRACKING')
-
-
-def get_quotation_hashid(quote_id: int) -> str:
-    """Helper mã hóa ID Báo Giá thành chuỗi HashID bảo mật cho URL SPA."""
-    return encode_id(quote_id, domain='QUOTATION')
-
-
-def decode_quotation_hashid(hashid_str: str) -> int | None:
-    """Helper giải mã HashID Báo Giá về số nguyên ID ban đầu."""
-    return decode_id(hashid_str, domain='QUOTATION')
-
-
-def get_news_hashid(post_id: int) -> str:
-    """Helper mã hóa ID Bản tin thành chuỗi HashID bảo mật cho URL (/news/<hashid>/)."""
-    return encode_id(post_id, domain='NEWS')
-
-
-def decode_news_hashid(hashid_str: str) -> int | None:
-    """Helper giải mã HashID Bản tin về số nguyên ID ban đầu."""
-    return decode_id(hashid_str, domain='NEWS')
-
-
-def get_task_hashid(task_id: int) -> str:
-    """Helper mã hóa ID Công việc (Task) thành chuỗi HashID bảo mật (/tasks/<hashid>/)."""
-    return encode_id(task_id, domain='TASK')
-
-
-def decode_task_hashid(hashid_str: str) -> int | None:
-    """Helper giải mã HashID Công việc (Task) về số nguyên ID ban đầu."""
-    return decode_id(hashid_str, domain='TASK')
+def new_token(nbytes: int = 16) -> str:
+    return secrets.token_urlsafe(nbytes)
 
 
 from rest_framework_simplejwt.authentication import JWTAuthentication

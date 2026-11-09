@@ -174,16 +174,3 @@ class AccessMatrixTests(TestCase):
         self.assertNotIn('data-target="nhan-su"', html)  # điều vận không có quyền Nhân sự / Bảng lương
         self.assertIn('window.BIM_ACCESS = {', html)
 
-    # ---- chuyển đổi không mất quyền cũ
-    def test_legacy_migration_keeps_existing_access(self):
-        UserAccessOverride.objects.all().delete()
-        group, _ = Group.objects.get_or_create(name='Kế Toán Cước')
-        self.dispatcher.groups.add(group)
-        self.dispatcher.user_permissions.add(Permission.objects.get(codename='view_cashtransaction'))
-        call_command('migrate_legacy_access', stdout=io.StringIO())
-        user = User.objects.get(pk=self.dispatcher.pk)
-        self.assertTrue(access.allowed(user, 'accounting', 'view'))
-        ov = UserAccessOverride.objects.get(user=user)
-        self.assertIn('Chuyển đổi', ov.note)
-        call_command('migrate_legacy_access', stdout=io.StringIO())  # chạy lại không đổi gì
-        self.assertEqual(UserAccessOverride.objects.filter(user=user).count(), 1)

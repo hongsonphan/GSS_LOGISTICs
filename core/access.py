@@ -300,13 +300,11 @@ def effective_grants(user):
         grants = _with_derived({m: list(MODULE_ACTIONS[m]) for m in MODULE_KEYS})
     else:
         employee = getattr(user, 'employee', None)
-        if employee is None:
-            grants = None  # dùng quy tắc cũ
-        else:
+        if True:  # tài khoản không hồ sơ nhân viên: chỉ có quyền của nhóm được gán
             from core.models import UserAccessOverride
             from core.tenant import company_for_user
             company = company_for_user(user)
-            pairs = _to_set(role_grants(company, employee.role))
+            pairs = _to_set(role_grants(company, employee.role)) if employee is not None else set()
             ov = UserAccessOverride.objects.filter(user=user).first()
             if ov:
                 extra_keys = list(ov.groups or [])
@@ -324,15 +322,8 @@ def effective_grants(user):
     return grants
 
 
-def uses_matrix(user):
-    return effective_grants(user) is not None
-
-
 def allowed(user, module, action='view'):
-    grants = effective_grants(user)
-    if grants is None:
-        return False
-    return action in grants.get(module, [])
+    return action in effective_grants(user).get(module, [])
 
 
 METHOD_ACTION = {'GET': 'view', 'HEAD': 'view', 'OPTIONS': 'view', 'POST': 'create', 'PUT': 'edit', 'PATCH': 'edit', 'DELETE': 'delete'}
@@ -377,9 +368,8 @@ def can(user, module, action='view'):
 
 
 def can_view_finance(user):
-    """Số liệu tài chính tổng hợp (quỹ, doanh thu, lãi lỗ): Báo cáo tài chính / Kế toán; tài khoản cũ không hồ sơ thì theo is_staff."""
-    return bool(can(user, 'reports_fin', 'view') or can(user, 'accounting', 'view')
-                or (user is not None and getattr(user, 'is_authenticated', False) and not uses_matrix(user) and user.is_staff))
+    """Số liệu tài chính tổng hợp (quỹ, doanh thu, lãi lỗ): Báo cáo tài chính / Kế toán."""
+    return bool(can(user, 'reports_fin', 'view') or can(user, 'accounting', 'view'))
 
 
 def can_view_trip_finance(user):

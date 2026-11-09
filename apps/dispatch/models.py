@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
+from core.models import PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
 class ShipmentType(models.TextChoices):
     IMPORT = 'IMPORT', 'Hàng Nhập'
@@ -21,7 +21,7 @@ class TripStatus(models.TextChoices):
     COMPLETED = 'COMPLETED', 'Đã hoàn tất chuyến'
     CANCELLED = 'CANCELLED', 'Đã hủy'
 
-class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+class DispatchTrip(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Bảng hạt nhân của toàn bộ hệ thống điều độ vận tải GSS Logistics.
     Quản lý luồng 10 bước, đối soát chứng từ và lợi nhuận chuyến xe.
@@ -266,6 +266,8 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     declined_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm tài xế từ chối chuyến")
     decline_reason = models.CharField(max_length=255, blank=True, default='', help_text="Lý do tài xế từ chối chuyến")
     driver_token = models.CharField(max_length=64, blank=True, default='', db_index=True, help_text="Token bảo mật 1 lần duy nhất cho tài xế hiện tại của chuyến (tự động làm mới khi đổi tài xế)")
+    tracking_token = models.CharField(max_length=64, blank=True, default='', db_index=True,
+                                      help_text="Token link tra cứu của khách hàng")
     revoked_driver_tokens = models.TextField(blank=True, default='', help_text="Danh sách token cũ của các tài xế trước đã bị thu hồi khi đổi tài xế")
     unloading_started_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm bắt đầu đóng/trút hàng tại dock kho")
 
@@ -460,6 +462,9 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         if not self.driver_token:
             import secrets
             self.driver_token = secrets.token_urlsafe(16)
+        if not self.tracking_token:
+            import secrets
+            self.tracking_token = secrets.token_urlsafe(16)
         # Chuẩn hoá mốc giờ: điền cột DateTime còn trống từ cột giờ dạng chữ
         from apps.dispatch.time_utils import fill_missing_datetimes
         filled = fill_missing_datetimes(self)
@@ -492,17 +497,13 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     @property
     def hashid(self):
-        """Mã hóa ID chuyến xe thành chuỗi HashID bảo mật chống IDOR (Tiêu chuẩn 10)."""
-        from core.security import get_trip_hashid
-        return get_trip_hashid(self.id)
+        """Mã công khai của chuyến (UUIDv7) dùng trong URL nội bộ."""
+        return str(self.public_id) if self.public_id else ''
 
     @property
     def driver_hashid(self):
-        """Mã hóa Capability Token riêng cho Cổng Tài Xế Mobile (Driver Portal)."""
-        if self.driver_token:
-            return self.driver_token
-        from core.security import get_driver_hashid
-        return get_driver_hashid(self.id)
+        """Token link tài xế (thu hồi khi đổi tài xế)."""
+        return self.driver_token
 
     @property
     def assigned_driver_name(self):
@@ -535,9 +536,8 @@ class DispatchTrip(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     @property
     def tracking_hashid(self):
-        """Mã hóa Capability Token riêng cho Cổng Tra Cứu Khách Hàng (Customer Tracking)."""
-        from core.security import get_tracking_hashid
-        return get_tracking_hashid(self.id)
+        """Token link tra cứu của khách hàng (khác token tài xế)."""
+        return self.tracking_token
 
     def update_financials(self):
         """Tính toán tự động và cache P&L của chuyến xe."""

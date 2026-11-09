@@ -17,8 +17,7 @@ class DriverQuickCreateAPIView(APIView):
     def post(self, request):
         from core import access
         user = request.user
-        if not (user.is_superuser or access.can(user, 'dispatch', 'create') or access.can(user, 'hr', 'create')
-                or (not access.uses_matrix(user) and user.is_staff)):
+        if not (user.is_superuser or access.can(user, 'dispatch', 'create') or access.can(user, 'hr', 'create')):
             return Response({'success': False, 'message': access.denied_message('dispatch', 'create')},
                             status=status.HTTP_403_FORBIDDEN)
         full_name = request.data.get('full_name', '').strip()

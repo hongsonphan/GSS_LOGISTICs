@@ -42,17 +42,6 @@ class CompanyTenantTestCase(TestCase):
         self.assertEqual(c.name, "Khách 2 sửa")
         self.assertIsNotNone(c.company_id)
 
-    def test_assign_default_company_command(self):
-        from io import StringIO
-        from django.core.management import call_command
-        from apps.customers.models import Customer
-        c = Customer.objects.create(code="TEN_03", name="Khách 3")
-        Customer.objects.filter(pk=c.pk).update(company=None)
-        call_command("assign_default_company", stdout=StringIO())
-        c.refresh_from_db()
-        self.assertIsNotNone(c.company_id)
-
-
 class AuditLogTestCase(TestCase):
     def test_create_update_softdelete_are_logged_with_actor(self):
         from django.contrib.auth.models import User

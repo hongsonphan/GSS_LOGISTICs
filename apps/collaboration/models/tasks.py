@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
+from core.models import PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 from apps.personnel.models import Department, Employee
 
 
@@ -27,7 +27,7 @@ class TaskExtensionStatus(models.TextChoices):
     REJECTED = 'REJECTED', 'Đã từ chối gia hạn'
 
 
-class OfficeTask(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+class OfficeTask(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """
     Công việc văn phòng nội bộ & Quản lý điều hành (Chuẩn Jira / Asana).
     Áp dụng riêng cho Ban Giám Đốc, Quản lý và Nhân viên Văn phòng các phòng ban.
@@ -222,9 +222,8 @@ class OfficeTask(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     @property
     def hashid(self):
-        """Mã HashID bảo mật cho URL (/tasks/<hashid>/) chống IDOR."""
-        from core.security import get_task_hashid
-        return get_task_hashid(self.id)
+        """Mã công khai (UUIDv7) cho URL."""
+        return str(self.public_id) if self.public_id else ''
 
     def recalculate_progress(self):
         """Tự động tính lại % tiến độ dựa trên số lượng checklist đã hoàn thành."""

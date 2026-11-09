@@ -2022,7 +2022,7 @@ class ReportsAPIView(APIView):
             }
 
         from core import access as _access
-        _matrix = _access.uses_matrix(u)
+        _matrix = True
         # Ma trận phân quyền: mỗi báo cáo là một phân hệ riêng (rpt_<tên>) trong core/access.py
         def check_report_perm(perm_codename, allowed_roles=None):
             if is_sup:

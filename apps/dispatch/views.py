@@ -277,7 +277,7 @@ def driver_portal_view(request, trip_hash):
     - Nghiệp vụ: Báo 6 mốc kho SOP, Kê khai chi phí dọc đường, Chụp ảnh POD/EIR, Gọi điều độ 1-chạm.
     - Bảo mật tuyệt đối: Không để lộ doanh thu bán khách hay tỷ suất lợi nhuận nội bộ.
     """
-    from core.security import decode_driver_hashid, decode_trip_hashid
+    from core.security import parse_public_id
     from apps.dispatch.models import DispatchTrip
     from apps.customs.models import CustomsDeclaration
     import urllib.parse
@@ -300,26 +300,11 @@ def driver_portal_view(request, trip_hash):
         if revoked_trip:
             return render(request, 'driver_portal_revoked.html', {'trip': revoked_trip, 'trip_hash': trip_hash}, status=403)
 
-        # 2b. Kiểm tra legacy driver hashid
-        decoded_id = decode_driver_hashid(trip_hash)
-        if decoded_id:
-            old_trip = DispatchTrip.objects.filter(id=decoded_id).select_related(
-                'customer', 'vehicle', 'driver', 'dispatcher'
-            ).first()
-            if old_trip:
-                if old_trip.driver_token and old_trip.driver_token != trip_hash:
-                    # Link cũ đã bị thu hồi do Điều độ phân lại tài xế khác!
-                    return render(request, 'driver_portal_revoked.html', {'trip': old_trip, 'trip_hash': trip_hash}, status=403)
-                elif not old_trip.driver_token:
-                    # Gán token mới cho bản ghi cũ
-                    old_trip.regenerate_driver_token(save=True)
-                    trip = old_trip
-
-    # 3. Hỗ trợ nhân viên nội bộ / Điều độ đã ĐĂNG NHẬP hệ thống mở xem trước qua trip_hashid hoặc trip_code
+    # 3. Nhân viên nội bộ đã đăng nhập mở xem trước qua mã công khai hoặc trip_code
     if not trip and request.user.is_authenticated:
-        decoded_trip_id = decode_trip_hashid(trip_hash)
-        if decoded_trip_id:
-            trip = DispatchTrip.objects.filter(id=decoded_trip_id).select_related(
+        pid = parse_public_id(trip_hash)
+        if pid:
+            trip = DispatchTrip.objects.filter(public_id=pid).select_related(
                 'customer', 'vehicle', 'trailer', 'driver', 'dispatcher',
                 'dropoff_driver', 'dropoff_vehicle', 'dropoff_trailer',
                 'pickup_loc', 'warehouse_loc', 'dropoff_loc'
@@ -466,15 +451,13 @@ def public_tracking_view(request, trip_hash):
       + KHÔNG đưa tracklog nội bộ 10 bước hay lộ trình bãi rỗng vào trang khách hàng.
     - Trải nghiệm Khách hàng: Hiển thị đúng 3 mốc cốt lõi (Vận chuyển -> Đến kho -> Ký nhận POD) kèm ảnh POD.
     """
-    from core.security import decode_tracking_hashid, decode_trip_hashid
     from apps.dispatch.models import DispatchTrip
     from apps.documents.models import DocumentType
 
-    # 1. Giải mã token riêng của Customer Tracking Portal (Hỗ trợ graceful cả hashid cũ)
-    decoded_id = decode_tracking_hashid(trip_hash) or decode_trip_hashid(trip_hash)
+    # 1. Token tra cứu riêng của khách hàng
     trip = None
-    if decoded_id:
-        trip = DispatchTrip.objects.filter(id=decoded_id).select_related(
+    if trip_hash:
+        trip = DispatchTrip.objects.filter(tracking_token=trip_hash).select_related(
             'customer', 'vehicle', 'trailer', 'driver',
             'warehouse_loc'
         ).first()
@@ -530,7 +513,7 @@ def news_detail_page_view(request, post_identifier):
     from django.db.models import F
     from apps.collaboration.models.news import CompanyPost, PostAttachment, PostReadStatus
     from apps.master_data.models import CompanyProfile
-    from core.security import decode_news_hashid, get_news_hashid
+    from core.security import parse_public_id
 
     # 1. Phân giải HashID hoặc ID nguyên bản (Hỗ trợ tương thích ngược)
     post_id = None
@@ -540,7 +523,9 @@ def news_detail_page_view(request, post_identifier):
         post_id = int(post_identifier)
         is_raw_numeric_id = True
     else:
-        post_id = decode_news_hashid(post_identifier)
+        pid = parse_public_id(post_identifier)
+        found = CompanyPost.objects.filter(public_id=pid).values_list('pk', flat=True).first() if pid else None
+        post_id = found
 
     if not post_id:
         return render(request, '404.html', status=404)

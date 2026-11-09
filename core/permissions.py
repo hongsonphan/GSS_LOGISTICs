@@ -5,239 +5,13 @@ from django.conf import settings
 from apps.personnel.models import EmployeeRole, Department
 
 
-class LegacyIsAdminOrDirector(permissions.BasePermission):
-    """
-    Quyền truy cập dành cho Ban Giám Đốc hoặc Quản trị viên hệ thống (Xem P&L, Báo cáo chiến lược).
-    Chỉ Quản trị viên (superuser/staff) hoặc Giám đốc mới có toàn quyền.
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser or (request.user.is_staff and request.user.has_perm('auth.change_user')):
-            return True
-        employee = getattr(request.user, 'employee', None)
-        return bool(
-            (employee and employee.role == EmployeeRole.DIRECTOR) or
-            request.user.groups.filter(name='Ban Giám Đốc').exists()
-        )
-
-
-class LegacyIsDispatcher(permissions.BasePermission):
-    """
-    Quyền truy cập dành cho Điều phối viên & Ban Giám Đốc:
-    - Đọc (SAFE_METHODS: GET, HEAD, OPTIONS): Mọi nhân viên văn phòng (Điều phối, Kế toán, Kinh doanh, Nhân sự, Giám đốc).
-    - Ghi (POST, PUT, PATCH, DELETE): Chỉ Điều phối viên & Ban Giám Đốc.
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser:
-            return True
-        if request.user.has_perm('dispatch.view_dispatchtrip') or request.user.has_perm('dispatch.change_dispatchtrip'):
-            return True
-        employee = getattr(request.user, 'employee', None)
-        if not employee:
-            return bool(request.user.groups.filter(name__in=['Điều Phối Viên', 'Ban Giám Đốc', 'Kế Toán Cước', 'Kinh Doanh (Sales)']).exists())
-        if employee.role == EmployeeRole.DRIVER:
-            return False
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return bool(
-            employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH, EmployeeRole.DIRECTOR] or
-            employee.department == Department.DISPATCH or
-            request.user.groups.filter(name__in=['Điều Phối Viên', 'Ban Giám Đốc']).exists()
-        )
-
-
-class LegacyIsAccountant(permissions.BasePermission):
-    """
-    Quyền truy cập dành cho Kế toán & Ban Giám Đốc (Chốt sổ chi phí, mở sổ, kiểm toán cước, quản lý quỹ).
-    Kiểm tra quyền billing.view_tripexpense hoặc billing.view_cashtransaction.
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser:
-            return True
-        if request.user.has_perm('billing.view_tripexpense') or request.user.has_perm('billing.view_cashtransaction'):
-            return True
-        employee = getattr(request.user, 'employee', None)
-        return bool(
-            (employee and employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR]) or
-            request.user.groups.filter(name__in=['Kế Toán Cước', 'Ban Giám Đốc']).exists()
-        )
-
-
-class LegacyIsSalesOrDirector(permissions.BasePermission):
-    """
-    Quyền truy cập Báo giá (Quotation) & Đơn hàng Booking (Sale CRM):
-    - Đọc (SAFE_METHODS: GET, HEAD, OPTIONS): Kinh doanh, Điều phối, Kế toán, Ban Giám Đốc.
-    - Ghi / Cập nhật / Xóa: Nhân viên Kinh doanh (SALESMAN) & Ban Giám Đốc (DIRECTOR).
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser:
-            return True
-        if request.method in permissions.SAFE_METHODS:
-            if request.user.has_perm('customers.view_bookingorder') or request.user.has_perm('customers.view_quotation'):
-                return True
-        else:
-            if request.user.has_perm('customers.change_quotation') or request.user.has_perm('customers.add_quotation'):
-                return True
-
-        employee = getattr(request.user, 'employee', None)
-        if not employee:
-            return bool(request.user.groups.filter(name__in=['Kinh Doanh (Sales)', 'Ban Giám Đốc']).exists())
-        if request.method in permissions.SAFE_METHODS:
-            return bool(employee.role in [
-                EmployeeRole.SALESMAN,
-                EmployeeRole.DISPATCHER,
-                EmployeeRole.ACCOUNTANT,
-                EmployeeRole.DIRECTOR
-            ])
-        return bool(employee.role in [EmployeeRole.SALESMAN, EmployeeRole.DIRECTOR] or employee.department == Department.SALES)
-
-
-class LegacyIsDispatcherOrAccountant(permissions.BasePermission):
-    """
-    Quyền truy cập nghiệp vụ phối hợp giữa Điều phối và Kế toán (Tạm ứng quỹ, tạm ứng chuyến xe).
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser:
-            return True
-        if request.user.has_perm('billing.view_drivertripadvance') or request.user.has_perm('billing.view_dispatcheradvancefund'):
-            return True
-        employee = getattr(request.user, 'employee', None)
-        return bool(
-            (employee and employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR]) or
-            request.user.groups.filter(name__in=['Điều Phối Viên', 'Kế Toán Cước', 'Ban Giám Đốc']).exists()
-        )
-
-
-class LegacyIsCustomsOrDirector(permissions.BasePermission):
-    """
-    Quyền truy cập dành cho Nhân viên Thủ tục Hải Quan, Điều độ & Ban Giám Đốc.
-    Đăng ký và theo dõi Tờ khai hải quan VNACCS/VCIS.
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser:
-            return True
-        if request.user.has_perm('customs.view_customsdeclaration'):
-            return True
-        employee = getattr(request.user, 'employee', None)
-        return bool(
-            (employee and (
-                employee.role in [EmployeeRole.DIRECTOR, EmployeeRole.DISPATCHER] or
-                employee.department == Department.CUSTOMS
-            )) or
-            request.user.groups.filter(name__in=['Điều Phối Viên', 'Ban Giám Đốc']).exists()
-        )
-
-
-class LegacyCanManageFleet(permissions.BasePermission):
-    """
-    Quyền truy cập Quản lý Đội xe, Rơ-moóc & Bãi xe:
-    Kỹ thuật viên bãi xe (Mechanic), Điều độ (Dispatcher) & Ban Giám Đốc.
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser:
-            return True
-        if request.user.has_perm('fleet.view_vehicle') or request.user.has_perm('fleet.change_vehicle'):
-            return True
-        employee = getattr(request.user, 'employee', None)
-        return bool(
-            (employee and employee.role in [EmployeeRole.MECHANIC, EmployeeRole.DISPATCHER, EmployeeRole.DIRECTOR]) or
-            request.user.groups.filter(name__in=['Điều Phối Viên', 'Ban Giám Đốc']).exists()
-        )
-
-
-class LegacyCanViewFinancialReports(permissions.BasePermission):
-    """
-    Quyền xem Báo cáo Tài chính, Sổ quỹ, P&L, Thu hồi chi hộ, Quyết toán thầu phụ:
-    Chỉ Ban Giám Đốc (DIRECTOR) và Kế toán (ACCOUNTANT) hoặc người có quyền view_financial_report.
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser:
-            return True
-        if request.user.has_perm('reports.view_financial_report'):
-            return True
-        employee = getattr(request.user, 'employee', None)
-        return bool(employee and employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR])
-
-
-class LegacyCanViewOperationalReports(permissions.BasePermission):
-    """
-    Quyền xem Báo cáo Quản trị Vận hành & Thống kê TMS:
-    - Cho phép nếu có quyền reports.view_operational_report, view_financial_report hoặc bất kỳ quyền xem báo cáo cụ thể nào.
-    - Fallback theo vai trò: Ban Giám Đốc, Kế toán, Điều vận.
-    - Nhân viên Kinh doanh hoặc Nhân sự chỉ được xem nếu được cấp quyền báo cáo cụ thể tương ứng.
-    - Từ chối Tài xế (DRIVER) và Thợ máy (MECHANIC).
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser:
-            return True
-        employee = getattr(request.user, 'employee', None)
-        if employee and employee.role in [EmployeeRole.DRIVER, EmployeeRole.MECHANIC]:
-            return False
-
-        # Kiểm tra permission cụ thể
-        if (request.user.has_perm('reports.view_operational_report') or
-            request.user.has_perm('reports.view_financial_report') or
-            any(p.startswith('reports.view_report_') for p in request.user.get_all_permissions())):
-            return True
-
-        # Fallback theo vai trò chuyên môn vận hành / tài chính
-        return bool(
-            (employee and employee.role in [
-                EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH,
-                EmployeeRole.ACCOUNTANT, EmployeeRole.LEAD_ADMIN_ACC, EmployeeRole.STAFF_ADMIN_ACC,
-                EmployeeRole.DIRECTOR
-            ]) or
-            request.user.groups.filter(name__in=['Điều Phối Viên', 'Kế Toán Cước', 'Ban Giám Đốc']).exists()
-        )
-
-
-class LegacyCanManageMasterData(permissions.BasePermission):
-    """
-    Quyền xem & cấu hình Hệ thống Danh Mục (Master Data):
-    - Đọc (SAFE_METHODS: GET, HEAD, OPTIONS): Tất cả nhân viên nội bộ đã đăng nhập.
-    - Ghi / Cập nhật (POST, PUT, PATCH, DELETE): Kế toán (cước/biểu giá), Điều độ hoặc Ban Giám Đốc.
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        if request.user.is_superuser:
-            return True
-        if request.user.has_perm('master_data.change_driversalarytariff') or request.user.has_perm('master_data.change_location'):
-            return True
-        employee = getattr(request.user, 'employee', None)
-        return bool(
-            (employee and employee.role in [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT, EmployeeRole.DISPATCHER]) or
-            request.user.groups.filter(name__in=['Ban Giám Đốc', 'Kế Toán Cước', 'Điều Phối Viên']).exists()
-        )
-
-
 # =============================================================================
 # LỚP QUYỀN THEO MA TRẬN PHÂN QUYỀN (core/access.py)
 # Người dùng có hồ sơ nhân viên: quyết định bởi ma trận Chức danh × Phân hệ × Thao tác + ngoại lệ cá nhân.
-# Tài khoản không có hồ sơ nhân viên: giữ quy tắc cũ (Legacy*) — nhóm/quyền Django.
+# Tài khoản không có hồ sơ nhân viên: chỉ có quyền từ nhóm được gán (UserAccessOverride / nhóm Django tương ứng).
 # =============================================================================
 class ModulePermission(permissions.BasePermission):
     module = None
-    legacy = None
 
     def has_permission(self, request, view):
         user = request.user
@@ -245,26 +19,24 @@ class ModulePermission(permissions.BasePermission):
             return False
         if user.is_superuser:
             return True
-        if not access.uses_matrix(user):
-            return bool(self.legacy and self.legacy().has_permission(request, view))
         if access.request_allowed(request, self.module, view):
             return True
         self.message = access.denied_message(self.module, access.action_for(request, view))
         return False
 
 
-def module_permission(module, legacy=None, name=None):
+def module_permission(module, name=None):
     """Tạo lớp quyền cho một phân hệ: permission_classes = [module_permission('ledger')]."""
-    return type(name or f'Module_{module}_Permission', (ModulePermission,), {'module': module, 'legacy': legacy})
+    return type(name or f'Module_{module}_Permission', (ModulePermission,), {'module': module})
 
 
 def any_module_view(*modules, name='AnyModuleView'):
-    """Cho phép xem khi người dùng có quyền Xem ở ít nhất một trong các phân hệ (tài khoản không dùng ma trận: như cũ, chỉ cần đăng nhập)."""
+    """Cho phép xem khi người dùng có quyền Xem ở ít nhất một trong các phân hệ."""
     def has_permission(self, request, view):
         user = request.user
         if not user or not user.is_authenticated:
             return False
-        if user.is_superuser or not access.uses_matrix(user):
+        if user.is_superuser:
             return True
         if any(access.allowed(user, m, 'view') for m in modules):
             return True
@@ -273,28 +45,24 @@ def any_module_view(*modules, name='AnyModuleView'):
     return type(name, (permissions.BasePermission,), {'has_permission': has_permission})
 
 
-IsAdminOrDirector = module_permission('admin', LegacyIsAdminOrDirector, 'IsAdminOrDirector')
-IsDispatcher = module_permission('dispatch', LegacyIsDispatcher, 'IsDispatcher')
-IsAccountant = module_permission('accounting', LegacyIsAccountant, 'IsAccountant')
-IsSalesOrDirector = module_permission('sales', LegacyIsSalesOrDirector, 'IsSalesOrDirector')
-IsDispatcherOrAccountant = module_permission('advances', LegacyIsDispatcherOrAccountant, 'IsDispatcherOrAccountant')
-IsCustomsOrDirector = module_permission('customs', LegacyIsCustomsOrDirector, 'IsCustomsOrDirector')
-CanManageFleet = module_permission('fleet', LegacyCanManageFleet, 'CanManageFleet')
-CanViewFinancialReports = module_permission('reports_fin', LegacyCanViewFinancialReports, 'CanViewFinancialReports')
-CanViewOperationalReports = module_permission('reports_any', LegacyCanViewOperationalReports, 'CanViewOperationalReports')
+IsAdminOrDirector = module_permission('admin', 'IsAdminOrDirector')
+IsDispatcher = module_permission('dispatch', 'IsDispatcher')
+IsAccountant = module_permission('accounting', 'IsAccountant')
+IsSalesOrDirector = module_permission('sales', 'IsSalesOrDirector')
+IsDispatcherOrAccountant = module_permission('advances', 'IsDispatcherOrAccountant')
+IsCustomsOrDirector = module_permission('customs', 'IsCustomsOrDirector')
+CanManageFleet = module_permission('fleet', 'CanManageFleet')
+CanViewFinancialReports = module_permission('reports_fin', 'CanViewFinancialReports')
+CanViewOperationalReports = module_permission('reports_any', 'CanViewOperationalReports')
 class CanManageMasterData(permissions.BasePermission):
     """Danh mục / Cài đặt theo từng tab: ghi, xoá, nhập, xuất cần quyền đúng tab (view.cfg_module hoặc view.cfg_module_for(request)).
     Đọc danh sách để chọn trong biểu mẫu chỉ cần quyền Danh mục (đọc) hoặc quyền xem của tab."""
-    legacy = LegacyCanManageMasterData
-
     def has_permission(self, request, view):
         user = request.user
         if not user or not user.is_authenticated:
             return False
         if user.is_superuser:
             return True
-        if not access.uses_matrix(user):
-            return bool(self.legacy().has_permission(request, view))
         module = getattr(view, 'cfg_module', None)
         resolver = getattr(view, 'cfg_module_for', None)
         if resolver is not None:
@@ -311,10 +79,10 @@ class CanManageMasterData(permissions.BasePermission):
         if not ok:
             self.message = access.denied_message(module or 'master_data', action)
         return ok
-CanUseLedger = module_permission('ledger', LegacyCanViewFinancialReports, 'CanUseLedger')
-CanViewSettlementVoucherReport = module_permission('rpt_settlement_vouchers', LegacyCanViewFinancialReports, 'CanViewSettlementVoucherReport')
-CanManageHR = module_permission('hr', None, 'CanManageHR')
-CanAdministerAccess = module_permission('admin', LegacyIsAdminOrDirector, 'CanAdministerAccess')
+CanUseLedger = module_permission('ledger', 'CanUseLedger')
+CanViewSettlementVoucherReport = module_permission('rpt_settlement_vouchers', 'CanViewSettlementVoucherReport')
+CanManageHR = module_permission('hr', 'CanManageHR')
+CanAdministerAccess = module_permission('admin', 'CanAdministerAccess')
 
 
 class IsDriver(permissions.BasePermission):
@@ -329,20 +97,11 @@ class IsDriver(permissions.BasePermission):
 
 
 def _trip_for_driver_capability(identifier):
-    """Trả về chuyến xe nếu identifier là Driver Token còn hiệu lực (hoặc HashID tài xế đời cũ của chuyến chưa có token)."""
+    """Trả về chuyến xe nếu identifier là Driver Token còn hiệu lực."""
     if not identifier:
         return None
     from apps.dispatch.models import DispatchTrip
-    trip = DispatchTrip.objects.filter(driver_token=identifier).first()
-    if trip:
-        return trip
-    from core.security import decode_driver_hashid
-    decoded_id = decode_driver_hashid(identifier)
-    if decoded_id:
-        legacy_trip = DispatchTrip.objects.filter(id=decoded_id).first()
-        if legacy_trip and not legacy_trip.driver_token:
-            return legacy_trip
-    return None
+    return DispatchTrip.objects.filter(driver_token=identifier).first()
 
 
 class IsTripDriverOrDispatcher(permissions.BasePermission):
@@ -380,8 +139,6 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
         if request.user and request.user.is_authenticated:
             # Xem chi tiết (SAFE_METHODS): người có quyền Xem ở phân hệ liên quan; tài xế chỉ xem chuyến của chính mình
             if request.method in permissions.SAFE_METHODS:
-                if not access.uses_matrix(request.user):
-                    return True
                 if any(access.allowed(request.user, m, 'view') for m in ('dispatch', 'accounting', 'sales', 'customs', 'fleet')):
                     return True
                 emp = getattr(request.user, 'employee', None)
@@ -405,10 +162,6 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
             if hasattr(obj, 'is_driver_portal_expired') and obj.is_driver_portal_expired():
                 return False
             if hasattr(obj, 'driver_token') and obj.driver_token and obj.driver_token == trip_identifier:
-                return True
-            from core.security import decode_driver_hashid, decode_trip_hashid
-            decoded_id = decode_driver_hashid(trip_identifier) or decode_trip_hashid(trip_identifier)
-            if decoded_id and decoded_id == obj.id and (not getattr(obj, 'driver_token', None) or obj.driver_token == trip_identifier):
                 return True
 
         return False
@@ -520,12 +273,11 @@ PayMasterOnly = restricted_by(_sees_pay_master, 'Biểu giá lương tài xế v
 
 
 class IsDepotStaff(ModulePermission):
-    """Bãi depot: Thủ bãi (phân hệ `depot`) hoặc Điều vận/Vận hành (đã có `depot` trong nhóm); tài khoản cũ không hồ sơ theo quy tắc Điều vận."""
+    """Bãi depot: Thủ bãi (phân hệ `depot`) hoặc Điều vận/Vận hành (đã có `depot` trong nhóm)."""
     module = 'depot'
-    legacy = LegacyIsDispatcher
 
 
-def any_module(*modules, name='AnyModulePermission', legacy=None):
+def any_module(*modules, name='AnyModulePermission'):
     """Cho phép khi người dùng có quyền (theo thao tác của request) ở ít nhất một trong các phân hệ."""
     def has_permission(self, request, view):
         user = request.user
@@ -533,8 +285,6 @@ def any_module(*modules, name='AnyModulePermission', legacy=None):
             return False
         if user.is_superuser:
             return True
-        if not access.uses_matrix(user):
-            return bool((legacy or LegacyIsDispatcher)().has_permission(request, view))
         if any(access.request_allowed(request, m, view) for m in modules):
             return True
         self.message = access.denied_message(modules[0], access.action_for(request, view))
@@ -542,7 +292,7 @@ def any_module(*modules, name='AnyModulePermission', legacy=None):
     return type(name, (permissions.BasePermission,), {'has_permission': has_permission})
 
 
-IsPricing = module_permission('pricing', LegacyIsAccountant, 'IsPricing')
-IsBookingStaff = any_module('sales', 'dispatch', name='IsBookingStaff', legacy=LegacyIsDispatcher)
-IsFinanceStaff = any_module('accounting', name='IsFinanceStaff', legacy=LegacyIsAccountant)
-IsTripFinance = any_module('accounting', 'dispatch', name='IsTripFinance', legacy=LegacyIsDispatcher)
+IsPricing = module_permission('pricing', 'IsPricing')
+IsBookingStaff = any_module('sales', 'dispatch', name='IsBookingStaff')
+IsFinanceStaff = any_module('accounting', name='IsFinanceStaff')
+IsTripFinance = any_module('accounting', 'dispatch', name='IsTripFinance')

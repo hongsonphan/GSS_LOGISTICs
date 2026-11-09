@@ -31,8 +31,6 @@ class EmployeePermission(permissions.BasePermission):
             return True
         if user.is_superuser:
             return True
-        if not access.uses_matrix(user):
-            return bool(user.is_staff)
         if access.request_allowed(request, 'hr', view):
             return True
         self.message = access.denied_message('hr', access.action_for(request, view))
@@ -49,8 +47,6 @@ class HRRecordPermission(permissions.BasePermission):
             return False
         if user.is_superuser:
             return True
-        if not access.uses_matrix(user):
-            return bool(user.is_staff)
         if access.request_allowed(request, self.module, view):
             return True
         self.message = access.denied_message(self.module, access.action_for(request, view))
@@ -65,7 +61,7 @@ _DIRECTORY_FIELDS = ('id', 'code', 'full_name', 'nickname', 'phone_number', 'zal
 def employee_payload(request, data, employee=None):
     """Lọc dữ liệu hồ sơ theo quyền: đủ quyền Xem Nhân sự hoặc xem hồ sơ của chính mình -> đầy đủ."""
     user = request.user
-    if user.is_superuser or access.can(user, 'hr', 'view') or (not access.uses_matrix(user) and user.is_staff):
+    if user.is_superuser or access.can(user, 'hr', 'view'):
         return data
     own = getattr(user, 'employee', None)
     if employee is not None and own is not None and own.pk == employee.pk:

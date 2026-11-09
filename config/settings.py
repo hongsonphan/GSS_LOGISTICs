@@ -336,9 +336,6 @@ CSRF_FAILURE_VIEW = 'core.auth_views.csrf_failure'
 # Media: True khi Nginx có location /protected-media/ (internal) -> Nginx gửi file, Django chỉ kiểm quyền
 MEDIA_USE_X_ACCEL = _env_bool('MEDIA_USE_X_ACCEL', False)
 
-# Salt mã hoá HashID trong URL. Giữ giá trị cũ làm mặc định để không làm hỏng các link đã gửi;
-# đặt HASHIDS_SALT mới trong .env khi chấp nhận vô hiệu hoá link cũ.
-HASHIDS_SALT = os.environ.get('HASHIDS_SALT') or 'GSS_LOGISTICS_SECURE_SALT_2026'
 
 # Khoá đăng nhập tạm thời sau nhiều lần sai mật khẩu
 LOGIN_MAX_FAILURES = int(os.environ.get('LOGIN_MAX_FAILURES', '5'))

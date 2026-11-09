@@ -183,8 +183,8 @@ def normalize_shipment_type(shipment_type):
     return 'Nội Địa', 'DOMESTIC'
 
 def get_trip_by_code_or_hash(trip_identifier, select_related_fields=None):
-    """Truy vấn chuyến xe an toàn bằng cả trip_code gốc, driver_token hoặc HashID bảo mật (Tiêu chuẩn 10)."""
-    from core.security import decode_driver_hashid, decode_trip_hashid
+    """Truy vấn chuyến xe bằng trip_code, driver_token hoặc mã công khai (public_id)."""
+    from core.security import parse_public_id
     qs = DispatchTrip.objects
     if select_related_fields:
         qs = qs.select_related(*select_related_fields)
@@ -202,20 +202,10 @@ def get_trip_by_code_or_hash(trip_identifier, select_related_fields=None):
     if trip_by_code:
         return trip_by_code
 
-    # 3. Decode trip_hashid (Internal web portal)
-    decoded_trip_id = decode_trip_hashid(trip_identifier)
-    if decoded_trip_id:
-        trip = qs.filter(id=decoded_trip_id).first()
-        if trip:
-            return trip
-
-    # 4. Fallback cho legacy driver_hashid (chỉ chấp nhận nếu trip chưa có driver_token riêng biệt)
-    decoded_drv_id = decode_driver_hashid(trip_identifier)
-    if decoded_drv_id:
-        legacy_trip = qs.filter(id=decoded_drv_id).first()
-        if legacy_trip and (not legacy_trip.driver_token or legacy_trip.driver_token == trip_identifier):
-            return legacy_trip
-
+    # 3. Mã công khai (giao diện nội bộ)
+    pid = parse_public_id(trip_identifier)
+    if pid:
+        return qs.filter(public_id=pid).first()
     return None
 
 

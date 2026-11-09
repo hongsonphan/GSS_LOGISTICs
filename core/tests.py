@@ -470,19 +470,16 @@ class GssLogisticsCoreTestCase(TestCase):
         self.assertEqual(data['trailers'][0]['plate'], "51R-888.99")
 
     def test_security_hashids_and_clean_urls(self):
-        """Tiêu chuẩn 10: Kiểm tra mã hóa HashID và Clean Semantic SPA URLs."""
-        from core.security import get_trip_hashid, decode_trip_hashid, encode_id, decode_id
-        
-        # 1. Kiểm tra tính toàn vẹn của mã hóa HashID
-        trip = self.trip
-        self.assertIsNotNone(trip.hashid)
-        self.assertTrue(len(trip.hashid) >= 8)
-        self.assertEqual(get_trip_hashid(trip.id), trip.hashid)
-        self.assertEqual(decode_trip_hashid(trip.hashid), trip.id)
+        """Mã công khai UUIDv7 thay khoá số trong URL và Clean Semantic SPA URLs."""
+        import uuid
+        from core.security import parse_public_id
 
-        # 2. Kiểm tra giải mã chuỗi rác/không hợp lệ trả về None an toàn
-        self.assertIsNone(decode_trip_hashid("INVALID_HASH_XYZ"))
-        self.assertIsNone(decode_trip_hashid(""))
+        trip = self.trip
+        self.assertEqual(uuid.UUID(trip.hashid).version, 7)
+        self.assertEqual(parse_public_id(trip.hashid), trip.public_id)
+        self.assertIsNone(parse_public_id("INVALID_HASH_XYZ"))
+        self.assertIsNone(parse_public_id(""))
+        self.assertEqual(self.client.get(f'/api/trips/{trip.id}/').status_code in (401, 403, 404), True)
 
         # 3. Kiểm tra API xem chi tiết chuyến xe bằng HashID bảo mật
         self.client.force_login(self.dispatcher_user)
@@ -1913,7 +1910,7 @@ class GssLogisticsCoreTestCase(TestCase):
         )
 
         # 1. Truy cập qua HashID công khai
-        res = self.client.get(f'/tracking/{trip.hashid}/')
+        res = self.client.get(f'/tracking/{trip.tracking_hashid}/')
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "TRACK-TEST-001")
         self.assertContains(res, "MSKU-1234567")

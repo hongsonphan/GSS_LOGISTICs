@@ -278,10 +278,12 @@ def resolve_task_id(pk_val):
         return None
     if str(pk_val).isdigit():
         return int(pk_val)
-    from core.security import decode_task_hashid
-    decoded = decode_task_hashid(str(pk_val))
-    if decoded:
-        return decoded
+    from core.security import parse_public_id
+    pid = parse_public_id(str(pk_val))
+    if pid:
+        found = OfficeTask.all_objects.filter(public_id=pid).values_list('pk', flat=True).first()
+        if found:
+            return found
     task = OfficeTask.all_objects.filter(code__iexact=str(pk_val).strip()).first()
     return task.id if task else None
 

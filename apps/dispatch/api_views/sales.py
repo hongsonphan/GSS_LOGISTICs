@@ -884,14 +884,14 @@ class QuotationDetailAPIView(APIView):
     """API Xem chi tiết, Cập nhật và Xóa mềm Báo Giá."""
     permission_classes = [IsSalesOrDirector]
     def get(self, request, pk):
-        from core.security import decode_quotation_hashid
+        from core.security import parse_public_id
         q = None
         if isinstance(pk, int) or (isinstance(pk, str) and pk.isdigit()):
             q = Quotation.objects.filter(pk=int(pk), is_deleted=False).select_related('customer').prefetch_related('items').first()
         elif isinstance(pk, str):
-            decoded_id = decode_quotation_hashid(pk)
-            if decoded_id:
-                q = Quotation.objects.filter(pk=decoded_id, is_deleted=False).select_related('customer').prefetch_related('items').first()
+            pid = parse_public_id(pk)
+            if pid:
+                q = Quotation.objects.filter(public_id=pid, is_deleted=False).select_related('customer').prefetch_related('items').first()
             if not q:
                 q = Quotation.objects.filter(quotation_code=pk, is_deleted=False).select_related('customer').prefetch_related('items').first()
         if not q:

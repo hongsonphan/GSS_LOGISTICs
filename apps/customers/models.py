@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
+from core.models import PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
 class Customer(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     CUSTOMER_GROUP_CHOICES = [
@@ -118,7 +118,7 @@ class RouteTariff(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         km_info = f" (~{self.estimated_km}km)" if self.estimated_km else ""
         return f"{self.customer.name}:{zone_info} {self.pickup_location} -> {self.delivery_location}{km_info} ({self.freight_price:,} đ)"
 
-class Quotation(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+class Quotation(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Báo giá và Phễu bán hàng (CRM / Sales)."""
     quotation_code = models.CharField(max_length=30, unique=True, db_index=True) # BG-0916-01
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='quotations')
@@ -251,9 +251,8 @@ class Quotation(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     @property
     def hashid(self):
-        """Mã hoá id thành hashid an toàn cho định tuyến URL."""
-        from core.security import get_quotation_hashid
-        return get_quotation_hashid(self.id)
+        """Mã công khai (UUIDv7) cho định tuyến URL."""
+        return str(self.public_id) if self.public_id else ''
 
     def __str__(self):
         return f"[{self.quotation_code}] {self.customer.name} - {self.route_description}"
