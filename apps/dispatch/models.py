@@ -47,7 +47,7 @@ class DispatchTrip(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDelet
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='trips',
+        related_name='carrier_trips',
         help_text="Đơn vị 3PL / Nhà xe thầu phụ đảm nhận chuyến"
     )
     subcontractor_driver = models.ForeignKey(

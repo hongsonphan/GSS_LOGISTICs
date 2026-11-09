@@ -31,6 +31,10 @@ User = get_user_model()
 class DriverBatchSettlementTests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        from core.models import get_default_company
+        co = get_default_company()
+        co.accounting_regime = 'TT133'  # số tài khoản trong các test dưới theo TT133
+        co.save(update_fields=['accounting_regime'])
 
         # Tạo Accountant User
         self.accountant_user = User.objects.create_user(

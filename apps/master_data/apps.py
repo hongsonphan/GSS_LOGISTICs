@@ -6,8 +6,6 @@ class MasterDataConfig(AppConfig):
     verbose_name = 'Hệ Thống Danh Mục'
 
     def ready(self):
-        from apps.master_data import partners
-        partners._connect()
         from apps.master_data.signals import connect_master_data_signals
         connect_master_data_signals()
         from apps.master_data.signals import connect_live_sync_signals

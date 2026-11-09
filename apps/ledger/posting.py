@@ -87,10 +87,10 @@ def _partner_by_name(company, partner_type, name):
     from apps.personnel.models import Employee
 
     if partner_type == 'CUSTOMER':
-        c = Customer.objects.filter(name__iexact=name).select_related('partner').first()
+        c = Customer.objects.filter(name__iexact=name).first()
         return _partner_of_customer(c), None
     if partner_type == 'SUBCONTRACTOR':
-        s = Subcontractor.objects.filter(name__iexact=name).select_related('partner').first()
+        s = Subcontractor.objects.filter(name__iexact=name).first()
         return _partner_of_sub(s), None
     if partner_type in ('DRIVER', 'DISPATCHER'):
         return None, Employee.objects.filter(full_name__iexact=name).first()
@@ -228,7 +228,7 @@ def build_settlement(v):
         debit, credit = dict(key='cogs'), dict(key='advance', employee=employee)
     else:
         from apps.master_data.models import Subcontractor
-        sub = Subcontractor.objects.filter(pk=v.party_ref).select_related('partner').first() if str(v.party_ref).isdigit() else None
+        sub = Subcontractor.objects.filter(pk=v.party_ref).first() if str(v.party_ref).isdigit() else None
         partner = _partner_of_sub(sub)
         debit, credit = dict(key='cogs'), dict(key='payable', partner=partner)
     if increase:

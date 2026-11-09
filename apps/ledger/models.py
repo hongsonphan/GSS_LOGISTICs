@@ -76,7 +76,7 @@ class JournalLine(models.Model):
     account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='lines')
     debit = models.DecimalField(max_digits=16, decimal_places=0, default=0)
     credit = models.DecimalField(max_digits=16, decimal_places=0, default=0)
-    partner = models.ForeignKey('master_data.Partner', on_delete=models.SET_NULL, null=True, blank=True, related_name='journal_lines')
+    partner = models.ForeignKey('master_data.Party', on_delete=models.SET_NULL, null=True, blank=True, related_name='journal_lines')
     employee = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='journal_lines')
     trip = models.ForeignKey('dispatch.DispatchTrip', on_delete=models.SET_NULL, null=True, blank=True, related_name='journal_lines')
     memo = models.CharField(max_length=255, blank=True)

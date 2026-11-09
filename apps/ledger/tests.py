@@ -23,6 +23,8 @@ def _balance(company, prefix):
 class LedgerTestBase(TestCase):
     def setUp(self):
         self.company = get_default_company()
+        self.company.accounting_regime = 'TT133'  # các test dưới viết theo hệ thống tài khoản TT133
+        self.company.save(update_fields=['accounting_regime'])
         today = timezone.now().date()
         self.customer = Customer.objects.create(code='KH_LG', name='Khách sổ cái', tax_code='0300000001')
         self.vehicle = Vehicle.objects.create(license_plate='51C-777.77', vehicle_type=VehicleType.TRACTOR,

@@ -1,54 +1,18 @@
 from django.db import models
 from core.models import PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
+from apps.master_data.models import Party, role_managers
 
-class Customer(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
-    CUSTOMER_GROUP_CHOICES = [
-        ('COMMERCIAL_TRADING', 'Thương mại / Xuất nhập khẩu (Trading/XNK)'),
-        ('FDI_ENTERPRISE', 'Doanh nghiệp FDI / Nhà máy sản xuất'),
-        ('FORWARDER_LOGISTICS', 'Đại lý Giao nhận / 3PL Forwarder'),
-        ('DOMESTIC_FACTORY', 'Nhà máy / Doanh nghiệp Nội địa'),
-        ('WALK_IN_RETAIL', 'Khách lẻ / Đơn chuyến vãng lai'),
-    ]
-
-    code = models.CharField(max_length=50, unique=True, db_index=True) # TDA_VICACO, OASIS, WCA_TTI, TAKIGAWA...
-    name = models.CharField(max_length=255)
-    short_name = models.CharField(max_length=100, blank=True, default='', verbose_name="Tên viết tắt / Tên giao dịch")
-    customer_group = models.CharField(
-        max_length=50,
-        choices=CUSTOMER_GROUP_CHOICES,
-        default='COMMERCIAL_TRADING',
-        blank=True,
-        db_index=True,
-        verbose_name="Nhóm khách hàng"
-    )
-    tax_code = models.CharField(max_length=20, blank=True)
-    address = models.CharField(max_length=255)
-    
-    # Email và đầu mối liên hệ
-    company_email = models.EmailField(max_length=150, blank=True, default='', verbose_name="Email Công ty (Nhận HĐĐT / Công nợ)")
-    contact_person = models.CharField(max_length=100, blank=True)
-    contact_title = models.CharField(max_length=100, blank=True, default='', verbose_name="Chức vụ người liên hệ")
-    contact_email = models.EmailField(max_length=150, blank=True, default='', verbose_name="Email Người liên hệ (Vận hành / Booking)")
-    phone = models.CharField(max_length=20, blank=True)
-
-    # Thông tin tài khoản ngân hàng
-    bank_account_number = models.CharField(max_length=50, blank=True, default='', verbose_name="Số tài khoản ngân hàng")
-    bank_name = models.CharField(max_length=150, blank=True, default='', verbose_name="Tên ngân hàng")
-    bank_branch = models.CharField(max_length=150, blank=True, default='', verbose_name="Chi nhánh ngân hàng")
-    bank_account_holder = models.CharField(max_length=150, blank=True, default='', verbose_name="Chủ tài khoản ngân hàng")
-
-    # Chính sách công nợ & Quản trị rủi ro (TMS / CRM)
-    payment_term_days = models.IntegerField(default=30, verbose_name="Kỳ hạn thanh toán (ngày)")
-    credit_limit = models.DecimalField(max_digits=14, decimal_places=0, default=0, verbose_name="Hạn mức nợ tối đa (VNĐ)")
-
-    notes = models.TextField(blank=True)
-    pod_template = models.ForeignKey('customers.PodTemplate', on_delete=models.SET_NULL, null=True, blank=True,
-                                     related_name='customers', help_text="Mẫu biên bản giao hàng riêng; trống = dùng mẫu mặc định")
-    partner = models.ForeignKey('master_data.Partner', on_delete=models.SET_NULL, null=True, blank=True,
-                                related_name='customer_profiles', help_text='Đối tác hợp nhất (tự đồng bộ)')
+class Customer(Party):
+    """Khách hàng (proxy của master_data.Party, vai trò is_customer)."""
+    objects, all_objects = role_managers('is_customer')
 
     class Meta:
+        proxy = True
         ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        self.is_customer = True
+        super().save(*args, **kwargs)
 
     def __str__(self):
         display_name = f"[{self.short_name}] {self.name}" if self.short_name else self.name

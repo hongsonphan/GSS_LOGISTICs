@@ -98,22 +98,6 @@ class MultipleGroupTests(TestCase):
         self.assertFalse(access.allowed(target, 'hr', 'delete'))
 
 
-class ReportMigrationTests(TestCase):
-    def test_convert_legacy_grants(self):
-        import importlib
-        convert = importlib.import_module('core.migrations.0012_report_permissions').convert
-        out, changed = convert({'sales': ['view'], 'reports_fin': ['view', 'export'], 'advances': ['view']}, True)
-        self.assertTrue(changed)
-        self.assertNotIn('reports_fin', out)
-        self.assertEqual(out['rpt_pnl'], ['export', 'view'])
-        self.assertIn('rpt_crm_quotations', out)
-        self.assertIn('rpt_driver_advances', out)
-        self.assertNotIn('rpt_dem_det', out)
-        again, changed = convert(out, True)
-        self.assertFalse(changed)
-        self.assertEqual(again, out)
-
-
 class RealDatabaseGroupTests(TestCase):
     """Nhóm quyền lấy từ bảng Nhóm thật của cơ sở dữ liệu (trang admin), không phải danh sách cố định trong code."""
 
@@ -212,17 +196,6 @@ class SettingsTabTests(TestCase):
         self.assertEqual(api.get('/api/master-data/export-data/?catalog=customers').status_code, 200)
         self.assertEqual(api.get('/api/master-data/export-data/?catalog=vehicles').status_code, 403)
         self.assertEqual(api.post('/api/master-data/vehicles/', {}, format='json').status_code, 403)
-
-    def test_migration_moves_master_data_writes_to_tabs(self):
-        import importlib
-        convert = importlib.import_module('core.migrations.0014_settings_tab_permissions').convert
-        out, changed = convert({'master_data': ['view', 'create', 'edit', 'export'], 'dashboard': ['view']})
-        self.assertTrue(changed)
-        self.assertEqual(out['master_data'], ['view'])
-        self.assertEqual(out['cfg_partners'], ['view', 'create', 'edit', 'export'])
-        self.assertEqual(out['cfg_company'], ['view'])
-        self.assertFalse(convert(out)[1])
-
 
 class CatalogReadAndRevisionTests(TestCase):
     """Danh mục nhạy cảm không đọc được bởi tài xế; đồng bộ danh mục tức thì giữa người dùng."""

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
-from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
+from core.models import (AllObjectsManager, CompanyOwnedModel, PublicIdModel, SoftDeleteManager,
+                         SoftDeleteModel, TimeStampedModel)
 
 class LocationType(models.TextChoices):
     PORT = 'PORT', 'Cảng Biển'
@@ -147,69 +148,158 @@ class DriverAllowanceCatalog(TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         return f"[{self.get_category_display()}] {self.name}: +{self.amount:,.0f} đ"
 
-class ShippingLine(TimeStampedModel, SoftDeleteModel):
-    """
-    Danh mục Hãng Tàu / Hãng Vận Chuyển Biển Quốc Tế & Nội Địa.
-    Chuẩn hóa hãng tàu, đầu mối hỗ trợ cấp vỏ, e-DO và thời hạn DEM/DET mặc định.
-    """
-    code = models.CharField(max_length=30, unique=True, db_index=True) # MAEU, ONE, COSCO, SITC, EVERGREEN, CMA, MSC...
-    name = models.CharField(max_length=150) # Maersk Line, Ocean Network Express...
-    contact_phone = models.CharField(max_length=50, blank=True)
-    contact_email = models.CharField(max_length=100, blank=True)
-    website = models.CharField(max_length=255, blank=True, help_text="Cổng tra cứu cont / lệnh giao hàng điện tử (eDO)")
-    free_dem_days = models.IntegerField(default=7, help_text="Số ngày miễn phí lưu bãi mặc định (DEM)")
-    free_det_days = models.IntegerField(default=5, help_text="Số ngày miễn phí lưu vỏ mặc định (DET)")
-    notes = models.TextField(blank=True, help_text="Ghi chú điều kiện cấp cont / hạ rỗng đặc thù")
-    is_active = models.BooleanField(default=True, db_index=True)
-
-    class Meta:
-        ordering = ['code']
-        verbose_name = 'Hãng Tàu'
-        verbose_name_plural = 'Danh mục Hãng Tàu'
-
-    def __str__(self):
-        return f"{self.code} - {self.name}"
-
 class PartnerType(models.TextChoices):
     CARRIER = 'CARRIER', 'Nhà xe vận tải (3PL)'
     GARAGE = 'GARAGE', 'Gara sửa chữa / Bảo dưỡng'
     SUPPLIER = 'SUPPLIER', 'Nhà cung cấp vật tư / Dịch vụ khác'
 
-class Subcontractor(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+
+class Party(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """Đối tác – MỘT bảng cho mọi vai trò (đặc tả §4: Party có cờ vai trò và mã ngắn).
+
+    Vai trò: khách hàng, nhà xe (vendor), nhà cung cấp/gara, hãng tàu, depot. Một bản ghi có thể có nhiều vai trò.
+    Mã `code` là mã ngắn (vd 3PL001) dùng cả khi đặt tên file chứng từ.
+    Các model `customers.Customer`, `master_data.Subcontractor`, `master_data.ShippingLine` là proxy lọc theo vai trò.
+    Sổ cái gom theo pháp nhân: `canonical` = bản ghi sớm nhất cùng MST trong công ty.
     """
-    Danh mục Nhà Xe Thầu Phụ / Đối Tác Vận Tải 3PL (Xe Bạn), Gara và Nhà Cung Cấp.
-    Quản lý thông tin nhà xe, người điều hành và tài khoản ngân hàng phục vụ đối soát cước.
+    CUSTOMER_GROUP_CHOICES = [
+        ('COMMERCIAL_TRADING', 'Thương mại / Xuất nhập khẩu (Trading/XNK)'),
+        ('FDI_ENTERPRISE', 'Doanh nghiệp FDI / Nhà máy sản xuất'),
+        ('FORWARDER_LOGISTICS', 'Đại lý Giao nhận / 3PL Forwarder'),
+        ('DOMESTIC_FACTORY', 'Nhà máy / Doanh nghiệp Nội địa'),
+        ('WALK_IN_RETAIL', 'Khách lẻ / Đơn chuyến vãng lai'),
+    ]
+
+    code = models.CharField(max_length=50, db_index=True)
+    name = models.CharField(max_length=255)
+    short_name = models.CharField(max_length=100, blank=True, default='', verbose_name="Tên viết tắt / Tên giao dịch")
+    tax_code = models.CharField(max_length=30, blank=True, default='', db_index=True)
+    address = models.CharField(max_length=255, blank=True, default='')
+    phone = models.CharField(max_length=50, blank=True, default='')
+
+    # Vai trò
+    is_customer = models.BooleanField(default=False, db_index=True)
+    is_carrier = models.BooleanField(default=False, db_index=True, help_text='Nhà xe / vendor vận tải')
+    is_supplier = models.BooleanField(default=False, db_index=True, help_text='Gara, nhà cung cấp')
+    is_shipping_line = models.BooleanField(default=False, db_index=True)
+    is_depot = models.BooleanField(default=False, db_index=True)
+    partner_type = models.CharField(max_length=20, choices=PartnerType.choices, default=PartnerType.CARRIER, db_index=True,
+                                    help_text="Với nhà xe / NCC: 3PL, gara hay nhà cung cấp khác")
+
+    # Liên hệ
+    company_email = models.EmailField(max_length=150, blank=True, default='', verbose_name="Email công ty (nhận HĐĐT / công nợ)")
+    contact_person = models.CharField(max_length=100, blank=True, default='')
+    contact_title = models.CharField(max_length=100, blank=True, default='')
+    contact_email = models.CharField(max_length=150, blank=True, default='')
+    contact_phone = models.CharField(max_length=50, blank=True, default='')
+    website = models.CharField(max_length=255, blank=True, default='', help_text="Hãng tàu: cổng tra cứu cont / e-DO")
+
+    # Ngân hàng
+    bank_account_number = models.CharField(max_length=50, blank=True, default='')
+    bank_name = models.CharField(max_length=150, blank=True, default='')
+    bank_branch = models.CharField(max_length=150, blank=True, default='')
+    bank_account_holder = models.CharField(max_length=150, blank=True, default='')
+
+    # Khách hàng
+    customer_group = models.CharField(max_length=50, choices=CUSTOMER_GROUP_CHOICES, default='COMMERCIAL_TRADING', blank=True,
+                                      db_index=True, verbose_name="Nhóm khách hàng")
+    payment_term_days = models.IntegerField(default=30, verbose_name="Kỳ hạn thanh toán (ngày)")
+    credit_limit = models.DecimalField(max_digits=14, decimal_places=0, default=0, verbose_name="Hạn mức nợ tối đa (VNĐ)")
+    pod_template = models.ForeignKey('customers.PodTemplate', on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='customers', help_text="Mẫu phiếu giao hàng riêng; trống = mẫu mặc định")
+    # Nhà xe
+    yard_address = models.CharField(max_length=255, blank=True, default='', help_text="Địa chỉ kho / bãi xe")
+    # Hãng tàu
+    free_dem_days = models.IntegerField(default=7, help_text="Hãng tàu: số ngày miễn phí lưu bãi mặc định (DEM)")
+    free_det_days = models.IntegerField(default=5, help_text="Hãng tàu: số ngày miễn phí lưu vỏ mặc định (DET)")
+
+    notes = models.TextField(blank=True, default='')
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Đối tác'
+        verbose_name_plural = 'Đối tác'
+        constraints = [models.UniqueConstraint(fields=['company', 'code'], name='uniq_party_code_per_company')]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    @property
+    def roles(self):
+        return [r for r in ('customer', 'carrier', 'supplier', 'shipping_line', 'depot') if getattr(self, 'is_' + r)]
+
+    @property
+    def canonical(self):
+        """Pháp nhân dùng cho sổ cái: bản ghi sớm nhất cùng MST trong công ty (không có MST thì là chính nó)."""
+        tax = (self.tax_code or '').strip()
+        if not tax:
+            return self
+        first = Party.all_objects.filter(company_id=self.company_id, tax_code=tax, is_deleted=False).order_by('id').first()
+        return first or self
+
+    # Tên cũ: hồ sơ khách/nhà xe trước đây trỏ tới "Partner" hợp nhất
+    partner = canonical
+
+
+class _RoleManager(SoftDeleteManager):
+    def __init__(self, *roles):
+        super().__init__()
+        self.roles = roles
+
+    def get_queryset(self):
+        q = models.Q()
+        for r in self.roles:
+            q |= models.Q(**{r: True})
+        return super().get_queryset().filter(q)
+
+
+class _RoleAllManager(AllObjectsManager):
+    def __init__(self, *roles):
+        super().__init__()
+        self.roles = roles
+
+    def get_queryset(self):
+        q = models.Q()
+        for r in self.roles:
+            q |= models.Q(**{r: True})
+        return super().get_queryset().filter(q)
+
+
+def role_managers(*roles):
+    return _RoleManager(*roles), _RoleAllManager(*roles)
+
+
+class ShippingLine(Party):
+    """Hãng tàu (proxy của Party, vai trò is_shipping_line)."""
+    objects, all_objects = role_managers('is_shipping_line')
+
+    class Meta:
+        proxy = True
+        ordering = ['code']
+        verbose_name = 'Hãng Tàu'
+        verbose_name_plural = 'Danh mục Hãng Tàu'
+
+    def save(self, *args, **kwargs):
+        self.is_shipping_line = True
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+class Subcontractor(Party):
+    """
+    Nhà xe thầu phụ / đối tác vận tải 3PL, gara và nhà cung cấp (proxy của Party: vai trò is_carrier / is_supplier).
     """
     PREFIX_MAP = {
         PartnerType.CARRIER: '3PL',
         PartnerType.GARAGE: 'GAR',
         PartnerType.SUPPLIER: 'SPL',
     }
-
-    partner_type = models.CharField(
-        max_length=20,
-        choices=PartnerType.choices,
-        default=PartnerType.CARRIER,
-        db_index=True,
-        help_text="Phân loại đối tác: Nhà xe 3PL, Gara sửa chữa, hoặc Nhà cung cấp khác"
-    )
-    code = models.CharField(max_length=50, unique=True, db_index=True) # 3PL001, GAR001, SPL001...
-    short_name = models.CharField(max_length=100, blank=True, help_text="Tên viết tắt của nhà xe để hiển thị ngắn gọn khi điều xe")
-    name = models.CharField(max_length=200) # Công ty TNHH Vận tải Hoàng Nam...
-    tax_code = models.CharField(max_length=30, blank=True)
-    contact_person = models.CharField(max_length=100, blank=True) # Người phụ trách điều xe
-    phone = models.CharField(max_length=50, blank=True)
-    address = models.CharField(max_length=255, blank=True, help_text="Địa chỉ công ty")
-    yard_address = models.CharField(max_length=255, blank=True, help_text="Địa chỉ kho / bãi xe")
-    bank_account_number = models.CharField(max_length=50, blank=True, help_text="Số tài khoản ngân hàng")
-    bank_name = models.CharField(max_length=100, blank=True, help_text="Tên ngân hàng thụ hưởng")
-    bank_account_holder = models.CharField(max_length=150, blank=True, help_text="Tên chủ tài khoản")
-    notes = models.TextField(blank=True, help_text="Ghi chú")
-    is_active = models.BooleanField(default=True, db_index=True)
-    partner = models.ForeignKey('master_data.Partner', on_delete=models.SET_NULL, null=True, blank=True,
-                                related_name='subcontractor_profiles', help_text='Đối tác hợp nhất (tự đồng bộ)')
+    objects, all_objects = role_managers('is_carrier', 'is_supplier')
 
     class Meta:
+        proxy = True
         ordering = ['name']
         verbose_name = 'Nhà Xe Thầu Phụ'
         verbose_name_plural = 'Danh mục Nhà Xe Thầu Phụ'
@@ -251,6 +341,10 @@ class Subcontractor(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
             self.code = self.generate_next_code(self.partner_type)
         if not self.short_name or not str(self.short_name).strip():
             self.short_name = self.code
+        if self.partner_type == PartnerType.CARRIER:
+            self.is_carrier = True
+        else:
+            self.is_supplier = True
         super().save(*args, **kwargs)
 
 class SubcontractorDriver(TimeStampedModel, SoftDeleteModel):
@@ -506,39 +600,6 @@ class OpeningBalance(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
             self.partner_type = 'DRIVER'
 
         super().save(*args, **kwargs)
-
-class Partner(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
-    """Đối tác hợp nhất (một pháp nhân = một đối tác) dùng cho công nợ và sổ cái.
-
-    Một công ty có thể vừa là Khách hàng vừa là Nhà xe/Nhà cung cấp: hai hồ sơ Customer và Subcontractor
-    trỏ chung về một Partner (khớp theo Mã số thuế). Customer/Subcontractor vẫn là nơi người dùng nhập liệu;
-    Partner được đồng bộ tự động khi lưu hai hồ sơ đó.
-    """
-    code = models.CharField(max_length=30, db_index=True)
-    name = models.CharField(max_length=255)
-    short_name = models.CharField(max_length=100, blank=True, default='')
-    tax_code = models.CharField(max_length=30, blank=True, default='', db_index=True)
-    address = models.CharField(max_length=255, blank=True, default='')
-    phone = models.CharField(max_length=50, blank=True, default='')
-    email = models.CharField(max_length=150, blank=True, default='')
-    bank_account_number = models.CharField(max_length=50, blank=True, default='')
-    bank_name = models.CharField(max_length=150, blank=True, default='')
-    bank_account_holder = models.CharField(max_length=150, blank=True, default='')
-    is_customer = models.BooleanField(default=False, db_index=True)
-    is_carrier = models.BooleanField(default=False, db_index=True, help_text='Nhà xe thầu phụ / 3PL')
-    is_supplier = models.BooleanField(default=False, db_index=True, help_text='Gara, nhà cung cấp')
-
-    class Meta:
-        ordering = ['name']
-        verbose_name = 'Đối tác'
-        verbose_name_plural = 'Đối tác (hợp nhất)'
-        constraints = [
-            models.UniqueConstraint(fields=['company', 'code'], name='uniq_partner_code_per_company'),
-        ]
-
-    def __str__(self):
-        return f"{self.code} - {self.name}"
-
 
 # Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
 SubcontractorDriver.tenant_path = 'subcontractor__company'
