@@ -32,17 +32,16 @@ FEATURES = {
     'accounting': 'Kế toán & đối soát',
     'ledger': 'Sổ cái / Báo cáo tài chính',
     'hr': 'Nhân sự',
-    'payroll': 'Lương & BHXH',
     'customs': 'Hải quan',
 }
 
 _GSS_ONLY = {'dem_det_alerts', 'vendor_portal', 'gss_dispatch', 'driver_messages', 'pod_templates', 'depot_yard',
              'qr_tracking', 'lcl_packages'}
-_FLEET_ONLY = {'fleet_internal', 'ledger', 'hr', 'payroll'}
+_FLEET_ONLY = {'fleet_internal', 'ledger', 'hr'}
 
 PROFILES = {
     ENTERPRISE_FULL: set(FEATURES),
-    GSS_VENDOR_DEPOT_QR: {'sales', 'fleet', 'accounting'} | _GSS_ONLY,
+    GSS_VENDOR_DEPOT_QR: {'sales', 'fleet', 'accounting', 'ledger', 'hr'} | _GSS_ONLY,
     INTERNAL_FLEET_PNL: {'sales', 'fleet', 'accounting', 'customs'} | _FLEET_ONLY,
 }
 # INTERNAL_FLEET_PNL không dùng hải quan theo đặc tả (Đội xe, tạm ứng, lương chuyến, P&L)
@@ -53,7 +52,6 @@ GATED_PREFIXES = (
     ('/api/customs/', 'customs'),
     ('/customs/', 'customs'),
     ('/api/ledger/', 'ledger'),
-    ('/api/personnel/payroll/', 'payroll'),
     ('/hr/', 'hr'),
     ('/api/accounting/', 'accounting'),
     ('/accounting/', 'accounting'),

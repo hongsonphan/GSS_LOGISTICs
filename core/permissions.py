@@ -158,25 +158,6 @@ class LegacyCanManageFleet(permissions.BasePermission):
         )
 
 
-class LegacyCanViewPayroll(permissions.BasePermission):
-    """
-    Quyền xem Bảng lương & Tạm ứng nhân sự (Bảo mật tiền lương):
-    Chỉ Kế toán viên (ACCOUNTANT), Quản Lý Nhân Sự và Ban Giám Đốc (DIRECTOR) được phép truy cập.
-    Chặn hoàn toàn Tài xế, Điều độ, Thợ máy xem bảng lương người khác.
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser:
-            return True
-        if request.user.has_perm('personnel.view_employee') and (
-            request.user.groups.filter(name__in=['Kế Toán Cước', 'Quản Lý Nhân Sự', 'Ban Giám Đốc']).exists()
-        ):
-            return True
-        employee = getattr(request.user, 'employee', None)
-        return bool(employee and employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR])
-
-
 class LegacyCanViewFinancialReports(permissions.BasePermission):
     """
     Quyền xem Báo cáo Tài chính, Sổ quỹ, P&L, Thu hồi chi hộ, Quyết toán thầu phụ:
@@ -299,7 +280,6 @@ IsSalesOrDirector = module_permission('sales', LegacyIsSalesOrDirector, 'IsSales
 IsDispatcherOrAccountant = module_permission('advances', LegacyIsDispatcherOrAccountant, 'IsDispatcherOrAccountant')
 IsCustomsOrDirector = module_permission('customs', LegacyIsCustomsOrDirector, 'IsCustomsOrDirector')
 CanManageFleet = module_permission('fleet', LegacyCanManageFleet, 'CanManageFleet')
-CanViewPayroll = module_permission('payroll', LegacyCanViewPayroll, 'CanViewPayroll')
 CanViewFinancialReports = module_permission('reports_fin', LegacyCanViewFinancialReports, 'CanViewFinancialReports')
 CanViewOperationalReports = module_permission('reports_any', LegacyCanViewOperationalReports, 'CanViewOperationalReports')
 class CanManageMasterData(permissions.BasePermission):
@@ -334,7 +314,6 @@ class CanManageMasterData(permissions.BasePermission):
 CanUseLedger = module_permission('ledger', LegacyCanViewFinancialReports, 'CanUseLedger')
 CanViewSettlementVoucherReport = module_permission('rpt_settlement_vouchers', LegacyCanViewFinancialReports, 'CanViewSettlementVoucherReport')
 CanManageHR = module_permission('hr', None, 'CanManageHR')
-CanManagePayroll = module_permission('payroll', LegacyCanViewPayroll, 'CanManagePayroll')
 CanAdministerAccess = module_permission('admin', LegacyIsAdminOrDirector, 'CanAdministerAccess')
 
 
@@ -533,7 +512,7 @@ def _sees_finance_master(user):
 
 
 def _sees_pay_master(user):
-    return access.can_view_finance(user) or access.can(user, 'dispatch', 'view') or access.can(user, 'hr', 'view') or access.can(user, 'payroll', 'view')
+    return access.can_view_finance(user) or access.can(user, 'dispatch', 'view') or access.can(user, 'hr', 'view')
 
 
 FinanceMasterOnly = restricted_by(_sees_finance_master, 'Số dư đầu kỳ chỉ dành cho Kế toán / Ban Giám đốc.')

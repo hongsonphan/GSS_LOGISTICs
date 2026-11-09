@@ -148,9 +148,6 @@ function openCreateEmployeePage(updateHistory = true) {
     if (el('emp-join-date')) el('emp-join-date').value = '';
     if (el('emp-license-number')) el('emp-license-number').value = '';
     if (el('emp-license-expiry')) el('emp-license-expiry').value = '';
-    if (el('emp-base-salary')) el('emp-base-salary').value = '5,000,000';
-    if (el('emp-insurance-salary')) el('emp-insurance-salary').value = '5,000,000';
-    if (el('emp-is-insurance')) el('emp-is-insurance').value = 'true';
     if (el('emp-is-active')) el('emp-is-active').value = 'true';
     if (el('emp-permanent-address')) el('emp-permanent-address').value = '';
     if (el('emp-current-address')) el('emp-current-address').value = '';
@@ -158,19 +155,6 @@ function openCreateEmployeePage(updateHistory = true) {
     handleEmployeeRoleChange();
     loadAvailableUsers(null, null);
 
-    const contractCard = document.getElementById('emp-active-contract-card');
-    const badgeContainer = document.getElementById('emp-contract-badge-container');
-    const infoBox = document.getElementById('emp-contract-info-box');
-    if (badgeContainer) {
-        badgeContainer.innerHTML = `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200">Chưa ký HĐ</span>`;
-    }
-    if (infoBox) {
-        infoBox.innerHTML = `
-            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500 italic">
-                Sau khi lưu hồ sơ cá nhân của nhân sự mới, bạn có thể thực hiện ký Hợp Đồng Lao Động để kích hoạt chính sách tiền lương và bảo hiểm.
-            </div>
-        `;
-    }
 
     if (updateHistory && window.history && window.history.pushState) {
         const path = '/personnel/employees/new';
@@ -249,124 +233,12 @@ async function openEditEmployeePage(id, updateHistory = true) {
     if (el('emp-resign-date')) el('emp-resign-date').value = normalizeDateToISO(emp.resign_date) || '';
     if (el('emp-license-number')) el('emp-license-number').value = emp.license_number || '';
     if (el('emp-license-expiry')) el('emp-license-expiry').value = normalizeDateToISO(emp.license_expiry) || '';
-    if (el('emp-base-salary')) el('emp-base-salary').value = emp.base_salary || 0;
-    if (el('emp-insurance-salary')) el('emp-insurance-salary').value = emp.insurance_salary || 5000000;
-    if (el('emp-is-insurance')) el('emp-is-insurance').value = emp.is_social_insurance_participant ? 'true' : 'false';
     if (el('emp-is-active')) el('emp-is-active').value = emp.is_active ? 'true' : 'false';
     if (el('emp-permanent-address')) el('emp-permanent-address').value = emp.permanent_address || '';
     if (el('emp-current-address')) el('emp-current-address').value = emp.current_address || '';
 
     handleEmployeeRoleChange();
     loadAvailableUsers(emp.id, emp.user);
-
-    // RENDER CARD 4: THÔNG TIN HỢP ĐỒNG LAO ĐỘNG HIỆN HÀNH (GSS STANDARD - MASTER 360°)
-    const contractCard = document.getElementById('emp-active-contract-card');
-    const badgeContainer = document.getElementById('emp-contract-badge-container');
-    const infoBox = document.getElementById('emp-contract-info-box');
-
-    if (contractCard && infoBox) {
-        contractCard.classList.remove('hidden');
-        const c = emp.active_contract;
-        if (c) {
-            if (badgeContainer) {
-                badgeContainer.innerHTML = `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1"><i class="ph-bold ph-check-circle"></i><span>HĐ Hiệu Lực: ${escapeHtml(c.contract_number)}</span></span>`;
-            }
-            
-            const fmt = v => new Intl.NumberFormat('vi-VN').format(Math.round(v || 0)) + ' đ';
-            const taxTypeLabel = c.tax_resident_type === 'CASUAL_10' ? 'Thời vụ / Vãng lai (Khấu trừ 10%)' : (c.tax_resident_type === 'NON_RESIDENT' ? 'Không cư trú (Khấu trừ 20%)' : 'Cư trú (Biểu lũy tiến 5/7 bậc)');
-
-            infoBox.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 text-xs bg-white p-4 rounded-xl border border-slate-200">
-                    <div class="md:col-span-4 space-y-1">
-                        <span class="text-slate-500 font-medium block">Số & Loại Hợp Đồng:</span>
-                        <div class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                            <span class="font-mono text-indigo-900">${escapeHtml(c.contract_number)}</span>
-                            <span class="text-[11px] text-slate-500 font-normal">(${escapeHtml(c.contract_type_label || '')})</span>
-                        </div>
-                        <span class="text-[11px] font-mono text-slate-500 block">Thời hạn: ${c.start_date || '—'} ➔ ${c.end_date || 'Không thời hạn'}</span>
-                    </div>
-
-                    <div class="md:col-span-4 space-y-1">
-                        <span class="text-slate-500 font-medium block">Vị Trí & Phòng Ban HĐ:</span>
-                        <div class="font-bold text-slate-900">${escapeHtml(c.job_title || c.role_label || '')}</div>
-                        <span class="text-[11px] text-slate-500 block">${escapeHtml(c.department_label || '')}</span>
-                    </div>
-
-                    <div class="md:col-span-4 space-y-1">
-                        <span class="text-slate-500 font-medium block">Tỷ Lệ Hưởng Lương & Trợ Cấp:</span>
-                        <div class="font-bold text-indigo-900 font-mono">${c.probation_rate || 100}% lương chính</div>
-                        ${c.appendix_number ? `<span class="text-[11px] text-emerald-700 font-bold block">Đang áp dụng Phụ lục ${escapeHtml(c.appendix_number)} (${c.appendix_effective_date || ''})</span>` : '<span class="text-[11px] text-slate-400 block">Áp dụng HĐLĐ gốc</span>'}
-                    </div>
-
-                    <div class="md:col-span-12 grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-2 border-t border-slate-100">
-                        <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
-                            <span class="text-[10px] text-slate-500 font-bold uppercase block">Lương Căn Bản</span>
-                            <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block">${fmt(c.base_salary)}</span>
-                        </div>
-                        <div class="p-2 rounded-lg bg-teal-50/70 border border-teal-200">
-                            <span class="text-[10px] text-teal-800 font-bold uppercase block">Lương Đóng BHXH</span>
-                            <span class="font-mono font-bold text-teal-900 text-xs mt-0.5 block">${fmt(c.insurance_salary)}</span>
-                        </div>
-                        <div class="p-2 rounded-lg bg-indigo-50/70 border border-indigo-200">
-                            <span class="text-[10px] text-indigo-800 font-bold uppercase block">Phụ Cấp HĐ</span>
-                            <span class="font-mono font-bold text-indigo-900 text-xs mt-0.5 block">${fmt(c.allowance_amount)}</span>
-                        </div>
-                        <div class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200">
-                            <span class="text-[10px] text-emerald-800 font-bold uppercase block">Trợ Cấp Phúc Lợi</span>
-                            <span class="font-mono font-bold text-emerald-900 text-xs mt-0.5 block">${fmt(c.subsidy_amount)}</span>
-                        </div>
-                        <div class="p-2 rounded-lg bg-amber-50/70 border border-amber-300 col-span-2 sm:col-span-1">
-                            <span class="text-[10px] text-amber-900 font-black uppercase block">Tổng Thu Nhập HĐ</span>
-                            <span class="font-mono font-black text-amber-950 text-xs mt-0.5 block">${fmt(c.total_salary)}</span>
-                        </div>
-                    </div>
-
-                    <div class="md:col-span-12 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <span class="text-[11px] font-bold ${c.is_social_insurance_participant ? 'text-teal-700' : 'text-slate-400'}">
-                                ${c.is_social_insurance_participant ? '✓ Trích nộp BHXH (10.5%)' : '✗ Không tham gia BHXH'}
-                            </span>
-                            <span class="text-slate-300">•</span>
-                            <span class="text-[11px] font-bold ${c.is_taxable ? 'text-indigo-700' : 'text-slate-400'}">
-                                ${c.is_taxable ? '✓ Tính thuế: ' + taxTypeLabel : '✗ Miễn tính thuế'}
-                            </span>
-                            <span class="text-slate-300">•</span>
-                            <span class="text-[11px] font-bold ${c.is_union_member ? 'text-amber-700' : 'text-slate-400'}">
-                                ${c.is_union_member ? '✓ Đoàn viên Công đoàn (1%)' : '✗ Không tham gia Công đoàn'}
-                            </span>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <button type="button" onclick="openContractDetailPage(${c.id})" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer">
-                                <i class="ph-bold ph-pencil-simple"></i>
-                                <span>Xem & Sửa HĐ Hiện Hành</span>
-                            </button>
-                            <button type="button" onclick="openCreateContractPage(${emp.id})" class="px-3 py-1.5 border border-indigo-600 text-indigo-700 hover:bg-indigo-50 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
-                                <i class="ph-bold ph-plus-circle"></i>
-                                <span>Ký HĐ Mới</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        } else {
-            if (badgeContainer) {
-                badgeContainer.innerHTML = `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">Chưa Ký HĐLĐ</span>`;
-            }
-            infoBox.innerHTML = `
-                <div class="p-4 rounded-xl bg-amber-50/60 border border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                    <div class="text-amber-900">
-                        <span class="font-bold block text-sm">Nhân viên này chưa có Hợp đồng lao động đang hiệu lực.</span>
-                        <span class="text-slate-600 mt-0.5 block">Cần ký kết HĐLĐ để thiết lập mức lương căn bản, lương BHXH và các phụ cấp làm căn cứ tính lương tự động.</span>
-                    </div>
-                    <button type="button" onclick="openCreateContractPage(${emp.id})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
-                        <i class="ph-bold ph-plus-circle text-base"></i>
-                        <span>Ký HĐ Lao Động Ngay</span>
-                    </button>
-                </div>
-            `;
-        }
-    }
 
     if (updateHistory && window.history && window.history.pushState) {
         const path = `/personnel/employees/${emp.id}`;
@@ -427,8 +299,6 @@ async function submitEmployeeForm(event) {
     const editId = getVal('emp-edit-id');
     const isEdit = Boolean(editId);
 
-    const baseSalaryClean = String(getVal('emp-base-salary') || '0').replace(/\D/g, '');
-    const insSalaryClean = String(getVal('emp-insurance-salary') || '0').replace(/\D/g, '');
 
     const payload = {
         code: getVal('emp-code').toUpperCase(),
@@ -452,9 +322,6 @@ async function submitEmployeeForm(event) {
         join_date: normalizeDateToISO(getVal('emp-join-date')) || null,
         license_number: getVal('emp-license-number'),
         license_expiry: normalizeDateToISO(getVal('emp-license-expiry')) || null,
-        base_salary: parseInt(baseSalaryClean, 10) || 0,
-        insurance_salary: parseInt(insSalaryClean, 10) || 5000000,
-        is_social_insurance_participant: getVal('emp-is-insurance') === 'true',
         is_active: getVal('emp-is-active') === 'true',
         permanent_address: getVal('emp-permanent-address'),
         current_address: getVal('emp-current-address'),
@@ -785,8 +652,8 @@ async function openDirectPrintEmployee(empId) {
                             <td>${emp.license_expiry || '-'}</td>
                         </tr>
                         <tr>
-                            <td class="label">Mức Lương Cơ Bản:</td>
-                            <td style="font-weight: bold; font-size: 14px; color: #0f766e;">${new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0)} đ</td>
+                            <td class="label">Ngày Vào Làm:</td>
+                            <td>${emp.join_date || '-'}</td>
                             <td class="label">Tình Trạng Công Tác:</td>
                             <td><strong>${emp.is_active ? 'ĐANG LÀM VIỆC' : 'TẠM NGƯNG CÔNG TÁC'}</strong></td>
                         </tr>
@@ -830,44 +697,5 @@ async function openDirectPrintEmployee(empId) {
 }
 window.openDirectPrintEmployee = openDirectPrintEmployee;
 
-// 12. Phân Hệ Quản Trị Nhân Sự, Chấm Công & Hybrid Payroll (Window Exports)
-window.loadAttendancePeriodsAndData = typeof loadAttendancePeriodsAndData !== 'undefined' ? loadAttendancePeriodsAndData : undefined;
-window.loadAttendanceData = typeof loadAttendanceData !== 'undefined' ? loadAttendanceData : undefined;
-window.recalcAttendanceRow = typeof recalcAttendanceRow !== 'undefined' ? recalcAttendanceRow : undefined;
-window.saveAttendanceRow = typeof saveAttendanceRow !== 'undefined' ? saveAttendanceRow : undefined;
-window.saveAllAttendanceRows = typeof saveAllAttendanceRows !== 'undefined' ? saveAllAttendanceRows : undefined;
-window.autoGenerateMonthlyAttendance = typeof autoGenerateMonthlyAttendance !== 'undefined' ? autoGenerateMonthlyAttendance : undefined;
-window.onPayrollPeriodChange = typeof onPayrollPeriodChange !== 'undefined' ? onPayrollPeriodChange : undefined;
-window.executePayrollCalculation = typeof executePayrollCalculation !== 'undefined' ? executePayrollCalculation : undefined;
-window.updatePayrollPeriodStatus = typeof updatePayrollPeriodStatus !== 'undefined' ? updatePayrollPeriodStatus : undefined;
-window.exportBankBatchTransfer = typeof exportBankBatchTransfer !== 'undefined' ? exportBankBatchTransfer : undefined;
-window.openPrintPayslipModal = typeof openPrintPayslipModal !== 'undefined' ? openPrintPayslipModal : undefined;
-window.closePrintPayslipModal = typeof closePrintPayslipModal !== 'undefined' ? closePrintPayslipModal : undefined;
-window.openCreatePeriodModal = typeof openCreatePeriodModal !== 'undefined' ? openCreatePeriodModal : undefined;
-window.closeCreatePeriodModal = typeof closeCreatePeriodModal !== 'undefined' ? closeCreatePeriodModal : undefined;
-window.submitCreatePeriod = typeof submitCreatePeriod !== 'undefined' ? submitCreatePeriod : undefined;
-window.savePayrollPolicyConfig = typeof savePayrollPolicyConfig !== 'undefined' ? savePayrollPolicyConfig : undefined;
-window.saveSalaryDeductionRate = typeof saveSalaryDeductionRate !== 'undefined' ? saveSalaryDeductionRate : undefined;
-window.getContractTypePrefix = typeof getContractTypePrefix !== 'undefined' ? getContractTypePrefix : undefined;
-window.suggestContractNumber = typeof suggestContractNumber !== 'undefined' ? suggestContractNumber : undefined;
-window.onContractTypeChange = typeof onContractTypeChange !== 'undefined' ? onContractTypeChange : undefined;
-window.openCreateContractPage = typeof openCreateContractPage !== 'undefined' ? openCreateContractPage : undefined;
-window.openContractDetailPage = typeof openContractDetailPage !== 'undefined' ? openContractDetailPage : undefined;
-window.openCreateContractModal = typeof openCreateContractPage !== 'undefined' ? openCreateContractPage : undefined;
-window.openEditContractModal = typeof openContractDetailPage !== 'undefined' ? openContractDetailPage : undefined;
-window.enableContractEdit = typeof enableContractEdit !== 'undefined' ? enableContractEdit : undefined;
-window.submitContractDetailForm = typeof submitContractDetailForm !== 'undefined' ? submitContractDetailForm : undefined;
-window.confirmDeleteContract = typeof confirmDeleteContract !== 'undefined' ? confirmDeleteContract : undefined;
-window.printCurrentContract = typeof printCurrentContract !== 'undefined' ? printCurrentContract : undefined;
-window.openDirectPrintContract = typeof openDirectPrintContract !== 'undefined' ? openDirectPrintContract : undefined;
-window.backToContracts = typeof backToContracts !== 'undefined' ? backToContracts : undefined;
-window.toggleAddAppendixInline = typeof toggleAddAppendixInline !== 'undefined' ? toggleAddAppendixInline : undefined;
-window.submitInlineAppendix = typeof submitInlineAppendix !== 'undefined' ? submitInlineAppendix : undefined;
-window.openPayrollSlipDetailPage = typeof openPayrollSlipDetailPage !== 'undefined' ? openPayrollSlipDetailPage : undefined;
-window.openEditPayrollSlipModal = typeof openPayrollSlipDetailPage !== 'undefined' ? openPayrollSlipDetailPage : undefined;
-window.enableSlipEdit = typeof enableSlipEdit !== 'undefined' ? enableSlipEdit : undefined;
-window.submitSlipDetailForm = typeof submitSlipDetailForm !== 'undefined' ? submitSlipDetailForm : undefined;
-window.printCurrentPayrollSlip = typeof printCurrentPayrollSlip !== 'undefined' ? printCurrentPayrollSlip : undefined;
-window.backToPayroll = typeof backToPayroll !== 'undefined' ? backToPayroll : undefined;
 window.renderRoleCharts = typeof renderRoleCharts !== 'undefined' ? renderRoleCharts : undefined;
 window.switchRoleDonutOption = typeof switchRoleDonutOption !== 'undefined' ? switchRoleDonutOption : undefined;

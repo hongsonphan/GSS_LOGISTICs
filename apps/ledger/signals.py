@@ -17,10 +17,9 @@ _HANDLERS = []
 def connect():
     from apps.billing.models import CashTransaction, CustomerInvoice, SettlementVoucher, TripExpense
     from apps.dispatch.models import DispatchTrip
-    from apps.personnel.models import PayrollPeriod
 
     for model, source_type in ((CashTransaction, 'cash'), (CustomerInvoice, 'invoice'), (TripExpense, 'trip_expense'),
-                               (DispatchTrip, 'trip'), (PayrollPeriod, 'payroll'),
+                               (DispatchTrip, 'trip'),
                                (SettlementVoucher, 'settlement')):
         handler = partial(_schedule, source_type)
         _HANDLERS.append(handler)  # giữ tham chiếu để receiver không bị thu gom

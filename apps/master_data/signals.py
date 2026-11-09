@@ -54,8 +54,7 @@ TOPIC_MODELS = {
                    'billing.CustomerInvoice', 'billing.SubcontractorSettlement', 'billing.DriverPayrollSettlement', 'billing.DebitNote',
                    'billing.SettlementVoucher', 'billing.SettlementVoucherPayment', 'ledger.JournalEntry'],
     'customs': ['customs.CustomsDeclaration'],
-    'hr': ['personnel.Employee', 'personnel.LaborContract', 'personnel.DailyAttendance', 'personnel.MonthlyAttendanceSummary',
-           'personnel.PayrollPeriod', 'personnel.PayrollSlip'],
+    'hr': ['personnel.Employee'],
     'fleet': ['fleet.Vehicle', 'fleet.Trailer'],
 }
 _TOPICS_CONNECTED = False

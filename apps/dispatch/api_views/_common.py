@@ -32,7 +32,6 @@ from core.permissions import (
     IsSalesOrDirector,
     IsCustomsOrDirector,
     CanManageFleet,
-    CanViewPayroll,
     IsTripDriverOrDispatcher,
 )
 import re

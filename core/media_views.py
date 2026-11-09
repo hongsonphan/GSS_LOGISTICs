@@ -2,9 +2,8 @@
 
 Quy tắc:
 - Đường dẫn được chuẩn hoá bằng safe_join: không thể đọc file ngoài MEDIA_ROOT (chống path traversal).
-- Người dùng nội bộ đã đăng nhập: được xem, trừ hồ sơ nhân sự nhạy cảm (hợp đồng lao động, phụ lục, chữ ký mẫu
-  trong personnel/contracts/ và personnel/signatures/) chỉ dành cho Ban Giám đốc, Hành chính - Kế toán,
-  nhóm Quản lý nhân sự và chính nhân viên sở hữu hồ sơ.
+- Người dùng nội bộ đã đăng nhập: được xem, trừ chữ ký mẫu nhân viên (personnel/signatures/) chỉ dành cho
+  Ban Giám đốc, Hành chính - Kế toán, nhóm Quản lý nhân sự và chính nhân viên sở hữu.
 - Tài xế / khách hàng không đăng nhập: chỉ được xem file thuộc đúng chuyến mà họ vừa mở bằng link
   capability (/driver/<token>/ hoặc /tracking/<hash>/). Quyền này được ghi trong cookie ký số
   `bim_media_scope` do driver_portal_view / public_tracking_view cấp, hết hạn sau 7 ngày.
@@ -51,7 +50,7 @@ def _path_variants(rel_path):
     return {rel, "/" + rel, settings.MEDIA_URL.rstrip("/") + "/" + rel}
 
 
-RESTRICTED_PREFIXES = ("personnel/contracts/", "personnel/signatures/")
+RESTRICTED_PREFIXES = ("personnel/signatures/",)
 HR_ROLES = {"DIRECTOR", "LEAD_ADMIN_ACC", "STAFF_ADMIN_ACC", "ACCOUNTANT"}
 HR_GROUPS = ("Quản Lý Nhân Sự", "Ban Giám Đốc")
 
@@ -67,13 +66,7 @@ def _staff_can_view(user, rel_path):
         return True
     if employee is None:
         return False
-    from apps.personnel.models import ContractAppendix, LaborContract
-
-    if employee.signature_image and employee.signature_image.name == rel:
-        return True
-    if LaborContract.objects.filter(employee=employee, contract_file=rel).exists():
-        return True
-    return ContractAppendix.objects.filter(contract__employee=employee, appendix_file=rel).exists()
+    return bool(employee.signature_image and employee.signature_image.name == rel)
 
 
 def _anonymous_can_view(request, rel_path):

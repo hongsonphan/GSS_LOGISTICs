@@ -2091,17 +2091,11 @@ class DashboardPivotChartAPIView(APIView):
         else: # personnel
             qs = Employee.objects.filter(is_deleted=False)
 
-            if metric == 'base_salary':
-                is_currency = True
-                unit = "VNĐ"
-                metric_name = "Mức lương cơ bản"
-                val_field = 'base_salary'
-            else: # employee_count
-                is_currency = False
-                unit = "nhân sự"
-                metric_name = "Số lượng nhân sự"
-                val_field = 'id'
-                agg = 'count'
+            is_currency = False
+            unit = "nhân sự"
+            metric_name = "Số lượng nhân sự"
+            val_field = 'id'
+            agg = 'count'
 
             agg_func = Count(val_field) if agg == 'count' else (Avg(val_field) if agg == 'avg' else Sum(val_field))
             agg_label = "Trung bình" if agg == 'avg' else ("Tổng" if agg == 'sum' else "Số lượng")

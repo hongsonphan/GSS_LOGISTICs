@@ -3,26 +3,7 @@ from django.db import migrations
 
 
 def purge_test_personnel_forward(apps, schema_editor):
-    from apps.fleet.models import Vehicle
-    from apps.personnel.models import (
-        Employee, LaborContract, ContractAppendix, EmployeeDependent,
-        DailyAttendance, MonthlyAttendanceSummary, PayrollSlip, PayrollPeriod
-    )
-
-    # 1. Unlink current_driver from all vehicles
-    Vehicle.objects.all().update(current_driver=None)
-
-    # 2. Delete any residual operational payroll & attendance records
-    PayrollSlip.objects.all().delete()
-    MonthlyAttendanceSummary.objects.all().delete()
-    DailyAttendance.objects.all().delete()
-    PayrollPeriod.objects.all().delete()
-
-    # 3. Delete all personnel profiles, contracts, appendices, dependents
-    ContractAppendix.objects.all().delete()
-    LaborContract.objects.all().delete()
-    EmployeeDependent.objects.all().delete()
-    Employee.objects.all().delete()
+    """Đã bỏ: chỉ dùng để dọn dữ liệu thử của hệ thống cũ."""
 
 
 def purge_test_personnel_backward(apps, schema_editor):

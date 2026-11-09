@@ -43,7 +43,7 @@ class JournalEntry(CompanyOwnedModel, TimeStampedModel):
     entry_date = models.DateField(db_index=True)
     description = models.CharField(max_length=500, blank=True)
     source_type = models.CharField(max_length=40, blank=True, db_index=True,
-                                   help_text='Loại chứng từ nguồn (cash, trip, trip_expense, payroll, invoice) hoặc trống nếu nhập tay')
+                                   help_text='Loại chứng từ nguồn (cash, trip, trip_expense, invoice) hoặc trống nếu nhập tay')
     source_id = models.CharField(max_length=40, blank=True)
     source_ref = models.CharField(max_length=100, blank=True, help_text='Số chứng từ gốc để hiển thị (PT-..., mã chuyến...)')
     is_auto = models.BooleanField(default=True)

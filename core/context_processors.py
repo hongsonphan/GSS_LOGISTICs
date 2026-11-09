@@ -44,7 +44,7 @@ def _menu(user):
     v = lambda m, a='view': access.allowed(user, m, a)
     return {'menu': {
         'sales': v('sales'), 'dispatch': v('dispatch'), 'fleet': v('fleet'), 'customs': v('customs'), 'depot': v('depot'),
-        'hr': v('hr') or v('payroll'),
+        'hr': v('hr'),
         'accounting': v('accounting') or v('advances') or v('ledger'),
         'reports': v('reports_any'),
         'settings': v('settings') or v('admin'),

@@ -78,7 +78,7 @@ class MasterDataPermissionTests(TestCase):
     def test_shared_config_write_needs_superuser_when_multiple_companies(self):
         kt = APIClient()
         kt.force_authenticate(make_user('kt_sc', EmployeeRole.ACCOUNTANT, '0966000008'))
-        url = '/api/personnel/tax-brackets/'
+        url = '/api/master-data/container-types/'
         self.assertNotEqual(kt.post(url, {}, format='json').status_code, 403)  # một công ty: như cũ
         Company.objects.create(code='B_SC', name='B')
         self.assertEqual(kt.post(url, {}, format='json').status_code, 403)

@@ -17,7 +17,7 @@ from core.tenant import company_for_user
 LEGACY = {
     'dispatch': P.LegacyIsDispatcher, 'accounting': P.LegacyIsAccountant, 'sales': P.LegacyIsSalesOrDirector,
     'advances': P.LegacyIsDispatcherOrAccountant, 'customs': P.LegacyIsCustomsOrDirector, 'fleet': P.LegacyCanManageFleet,
-    'payroll': P.LegacyCanViewPayroll, 'reports_fin': P.LegacyCanViewFinancialReports,
+    'reports_fin': P.LegacyCanViewFinancialReports,
     'ledger': P.LegacyCanViewFinancialReports, 'reports_ops': P.LegacyCanViewOperationalReports,
     'master_data': P.LegacyCanManageMasterData, 'admin': P.LegacyIsAdminOrDirector,
 }

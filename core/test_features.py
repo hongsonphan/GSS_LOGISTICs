@@ -10,14 +10,15 @@ class ResolveFeaturesTests(TestCase):
         flags = features.resolve_features('ENTERPRISE_FULL')
         self.assertTrue(all(flags.values()))
 
-    def test_gss_profile_hides_customs_and_payroll(self):
+    def test_gss_profile_hides_customs_and_internal_fleet(self):
         flags = features.resolve_features('GSS_VENDOR_DEPOT_QR')
         self.assertTrue(flags['vendor_portal'] and flags['depot_yard'] and flags['qr_tracking'])
-        self.assertFalse(flags['customs'] or flags['payroll'] or flags['hr'] or flags['ledger'])
+        self.assertTrue(flags['hr'] and flags['ledger'])
+        self.assertFalse(flags['customs'] or flags['fleet_internal'])
 
     def test_fleet_profile_has_no_gss_modules_or_customs(self):
         flags = features.resolve_features('INTERNAL_FLEET_PNL')
-        self.assertTrue(flags['payroll'] and flags['fleet_internal'])
+        self.assertTrue(flags['hr'] and flags['fleet_internal'])
         self.assertFalse(flags['vendor_portal'] or flags['customs'])
 
     def test_overrides_apply_and_unknown_keys_ignored(self):

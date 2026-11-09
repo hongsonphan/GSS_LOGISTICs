@@ -52,11 +52,6 @@ sales/booking-page/print.js
 fleet/fleet.js
 # 6. Nhân sự
 hr/employees.js
-hr/contracts.js
-hr/attendance.js
-hr/payroll-periods.js
-hr/payroll-slip.js
-hr/payroll-policies.js
 hr/employee-form.js
 hr/employee-import.js
 # 7. Kế toán

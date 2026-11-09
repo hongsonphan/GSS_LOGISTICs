@@ -120,11 +120,8 @@ class AccessMatrixTests(TestCase):
         own = self.get(self.driver, f'/api/personnel/employees/{self.driver.employee.pk}/').json()
         self.assertIn('national_id', own)
 
-    def test_payroll_and_hr_export_need_permission(self):
-        self.assertEqual(self.get(self.dispatcher, '/api/personnel/periods/').status_code, 403)
-        self.assertEqual(self.get(self.dispatcher, '/api/personnel/contracts/').status_code, 403)
+    def test_hr_export_needs_permission(self):
         self.assertEqual(self.get(self.dispatcher, '/api/personnel/employees/export-data/').status_code, 403)
-        self.assertEqual(self.get(self.accountant, '/api/personnel/periods/').status_code, 200)
 
     def test_dashboard_hides_finance_for_non_finance(self):
         data = self.get(self.driver, '/api/dashboard/').json()

@@ -43,7 +43,6 @@ class GssLogisticsCoreTestCase(TestCase):
             phone_number="0909999888",
             department=Department.FLEET,
             role=EmployeeRole.DRIVER,
-            base_salary=5000000
         )
 
         # 2. Tài khoản Điều độ viên
@@ -1798,10 +1797,6 @@ class GssLogisticsCoreTestCase(TestCase):
         res_rep = self.client.get('/api/reports/')
         self.assertEqual(res_rep.status_code, 403)
 
-        # 2. Bảng lương tài xế
-        res_pay = self.client.get('/api/personnel/')
-        self.assertEqual(res_pay.status_code, 403)
-
         # 3. Phân hệ kế toán
         res_acc = self.client.get('/api/accounting/')
         self.assertEqual(res_acc.status_code, 403)
@@ -1840,10 +1835,6 @@ class GssLogisticsCoreTestCase(TestCase):
         self.assertIn('owned_ratio', summary)
         self.assertIn('otp_rate', summary)
 
-        # Điều độ bị chặn xem bảng lương (PersonnelPayrollAPIView)
-        res_pay = self.client.get('/api/personnel/')
-        self.assertEqual(res_pay.status_code, 403)
-
         # Điều độ bị chặn truy cập Sổ quỹ (CashBookAPIView)
         res_cash = self.client.get('/api/accounting/cashbook/')
         self.assertEqual(res_cash.status_code, 403)
@@ -1856,10 +1847,6 @@ class GssLogisticsCoreTestCase(TestCase):
         res_rep = self.client.get('/api/reports/')
         self.assertEqual(res_rep.status_code, 200)
         self.assertTrue(res_rep.json().get('can_view_finance'))
-
-        # 2. Bảng lương nhân sự
-        res_pay = self.client.get('/api/personnel/')
-        self.assertEqual(res_pay.status_code, 200)
 
         # 3. Phân hệ kế toán
         res_acc = self.client.get('/api/accounting/')
@@ -1885,10 +1872,6 @@ class GssLogisticsCoreTestCase(TestCase):
         res_sales = self.client.get('/api/sales/')
         self.assertEqual(res_sales.status_code, 200)
 
-        # Bị chặn xem bảng lương: HTTP 403
-        res_pay = self.client.get('/api/personnel/')
-        self.assertEqual(res_pay.status_code, 403)
-
         # Bị chặn xem sổ quỹ: HTTP 403
         res_cash = self.client.get('/api/accounting/cashbook/')
         self.assertEqual(res_cash.status_code, 403)
@@ -1908,7 +1891,6 @@ class GssLogisticsCoreTestCase(TestCase):
 
         self.assertEqual(self.client.get('/api/dashboard/').status_code, 200)
         self.assertEqual(self.client.get('/api/reports/').status_code, 200)
-        self.assertEqual(self.client.get('/api/personnel/').status_code, 200)
         self.assertEqual(self.client.get('/api/accounting/').status_code, 200)
         self.assertEqual(self.client.get('/api/sales/').status_code, 200)
         self.assertEqual(self.client.get('/api/fleet/').status_code, 200)

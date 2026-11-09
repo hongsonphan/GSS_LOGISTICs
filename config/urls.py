@@ -26,7 +26,6 @@ from apps.dispatch.api_views import (
     TripDriverIncidentAPIView,
     TripAddDocumentAPIView,
     TripDocumentDetailAPIView,
-    PersonnelPayrollAPIView,
     FleetAPIView,
     BookingActiveAPIView,
     BookingPriceLookupAPIView,
@@ -196,9 +195,7 @@ urlpatterns = [
     path('api/trips/<str:trip_code>/documents/<int:doc_id>/', TripDocumentDetailAPIView.as_view(), name='api-trip-document-detail'),
     path('api/trips/<str:trip_code>/incidents/', TripDriverIncidentAPIView.as_view(), name='api-trip-incidents'),
     
-    path('api/personnel/', PersonnelPayrollAPIView.as_view(), name='api-personnel'),
     path('api/personnel/', include('apps.personnel.urls')),
-    path('api/personnel/payroll/', PersonnelPayrollAPIView.as_view(), name='api-personnel-payroll'),
     path('api/fleet/', FleetAPIView.as_view(), name='api-fleet'),
     path('api/customers/', CustomerMasterListCreateAPIView.as_view(), name='api-customers-alias'),
     path('api/bookings/active/', BookingActiveAPIView.as_view(), name='api-bookings-active'),

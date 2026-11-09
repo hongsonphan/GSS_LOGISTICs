@@ -5,7 +5,6 @@ from .trips import TripListCreateAPIView, TripDetailAPIView  # noqa: F401
 from .trip_expenses import TripAddExpenseAPIView, TripExpenseDetailAPIView, TripSettleExpensesAPIView, TripUnsettleExpensesAPIView  # noqa: F401
 from .trip_documents import TripAddDocumentAPIView, TripDocumentDetailAPIView  # noqa: F401
 from .driver import TripDriverMilestoneAPIView, TripDriverIncidentAPIView  # noqa: F401
-from .personnel import PersonnelPayrollAPIView  # noqa: F401
 from .fleet import FleetAPIView  # noqa: F401
 from .sales import BookingActiveAPIView, BookingPriceLookupAPIView, SalesAPIView, QuotationDetailAPIView, QuotationStatusAPIView  # noqa: F401
 from .bookings import BookingOrderDetailAPIView, BookingOrderStatusAPIView, BookingDocumentDeleteAPIView  # noqa: F401

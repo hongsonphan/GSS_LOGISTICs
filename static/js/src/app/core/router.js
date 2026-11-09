@@ -108,7 +108,7 @@ function resetTopbarStandardMode(tabId) {
 // --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN (CLEAN SEMANTIC URL ROUTING) ---
 // Phân hệ cần có quyền Xem (một trong các phân hệ) để mở trang; mở thẳng bằng đường dẫn cũng bị chặn
 const TAB_ACCESS_MODULES = {
-    'dieu-van': ['dispatch'], 'kinh-doanh': ['sales'], 'xe-bai': ['fleet'], 'nhan-su': ['hr', 'payroll'],
+    'dieu-van': ['dispatch'], 'kinh-doanh': ['sales'], 'xe-bai': ['fleet'], 'nhan-su': ['hr'],
     'ke-toan': ['accounting', 'advances', 'ledger'], 'quyet-toan': ['accounting'], 'hai-quan': ['customs'],
     'bao-cao': ['reports_any'], 'cai-dat': ['settings', 'admin']
 };
@@ -398,19 +398,6 @@ function resolveInitialRoute() {
         return;
     }
 
-    // 1.5. Kiểm tra deep-link hợp đồng lao động trang riêng: /personnel/contracts/<id>
-    const contractMatch = pathname.match(/^\/personnel\/contracts\/([a-zA-Z0-9_-]+)/);
-    if (contractMatch && contractMatch[1]) {
-        const contractId = contractMatch[1];
-        switchTab('nhan-su', false);
-        if (contractId === 'new') {
-            if (typeof openCreateContractPage === 'function') openCreateContractPage(null, false);
-        } else {
-            if (typeof openContractDetailPage === 'function') openContractDetailPage(contractId, false);
-        }
-        return;
-    }
-
     // 2. Chuyển đổi tương thích ngược & Deep-link qua Hash (#tasks, #news, #task-123...)
     if (hash) {
         const taskMatch = hash.match(/^task-(\d+)/);
@@ -474,7 +461,7 @@ window.addEventListener('popstate', (event) => {
         return;
     }
     // Trang riêng có xử lý đầy đủ trong resolveInitialRoute (tạo phiếu thu/chi, tờ khai, hồ sơ nhân sự, hợp đồng)
-    if (/^\/(accounting\/vouchers\/new|customs\/declarations\/|personnel\/(employees|contracts)\/)/.test(pathname)) {
+    if (/^\/(accounting\/vouchers\/new|customs\/declarations\/|personnel\/employees\/)/.test(pathname)) {
         resolveInitialRoute();
         return;
     }

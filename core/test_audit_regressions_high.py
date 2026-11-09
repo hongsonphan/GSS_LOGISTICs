@@ -15,7 +15,7 @@ from apps.customers.models import Customer
 from apps.dispatch.models import DispatchTrip
 from apps.documents.models import TripDocument
 from apps.fleet.models import Vehicle
-from apps.personnel.models import Employee, EmployeeDependent, EmployeeRole, PayrollPeriod, PayrollSlip
+from apps.personnel.models import Employee, EmployeeRole
 from core.models import Company, LoginEvent, get_default_company
 
 PW = 'Str0ng-Audit-Pass-2026!'
@@ -50,19 +50,14 @@ class CrossTenantTests(TestCase):
         self.a = get_default_company()
         self.b = Company.objects.create(code='B_AUDIT', name='Công ty B')
         self.emp_a = Employee.objects.create(code='NVA', full_name='NV A', phone_number='0922000001', role=EmployeeRole.DRIVER, company=self.a)
-        EmployeeDependent.objects.create(employee=self.emp_a, full_name='NPT A', relationship='CHILD', start_date=date(2025, 1, 1))
-        period = PayrollPeriod.objects.create(period_code='PA', name='Kỳ A', from_date=date(2026, 10, 1), to_date=date(2026, 10, 31), company=self.a)
-        self.slip_a = PayrollSlip.objects.create(period=period, employee=self.emp_a, slip_code='SA', role='DRIVER', department='FLEET')
         self.user_a = make_user('dieudo_ta', EmployeeRole.DISPATCHER, '0922000002')
         self.boss_b = User.objects.create_user('boss_tb', password=PW, email='b@example.test')
         Employee.objects.create(user=self.boss_b, code='GDB', full_name='GĐ B', phone_number='0922000003', role=EmployeeRole.DIRECTOR, company=self.b)
         self.api = APIClient()
         self.api.force_authenticate(self.boss_b)
 
-    def test_payslip_and_dependents_hidden_from_other_company(self):
-        self.assertEqual(self.api.get(f'/api/personnel/slips/{self.slip_a.pk}/').status_code, 404)
-        self.assertEqual(self.api.put(f'/api/personnel/slips/{self.slip_a.pk}/', {'notes': 'x'}, format='json').status_code, 404)
-        self.assertEqual(self.api.get('/api/personnel/dependents/').json(), [])
+    def test_employee_hidden_from_other_company(self):
+        self.assertEqual(self.api.get(f'/api/personnel/employees/{self.emp_a.pk}/').status_code, 404)
 
     def test_cannot_manage_access_of_other_company_users(self):
         res = self.api.put(f'/api/access/users/{self.user_a.pk}/', {'groups': ['admin']}, format='json')

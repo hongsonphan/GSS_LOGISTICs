@@ -189,52 +189,6 @@ def build_trip_expense(exp):
     return when, f'Chi phí chuyến {trip.trip_code}: {memo}'[:500], f'{trip.trip_code}/CP{exp.pk}', debits + [credit]
 
 
-# Tỷ lệ phân bổ bảo hiểm phía doanh nghiệp (17,5% BHXH, 3% BHYT, 1% BHTN trên tổng 21,5%)
-_EMPLOYER_SPLIT = (('social_ins', Decimal('17.5')), ('health_ins', Decimal('3')), ('unemployment_ins', Decimal('1')))
-
-
-def build_payroll(period):
-    """Bảng lương đã chốt: ghi nhận chi phí lương, các khoản trích theo lương và khấu trừ."""
-    if period.is_deleted or period.status not in ('LOCKED', 'PAID'):
-        return None
-    lines = []
-    for slip in period.slips.filter(is_deleted=False).select_related('employee'):
-        emp = slip.employee
-        expense_key = 'driver_salary' if emp.role == 'DRIVER' else 'admin_salary'
-        name = emp.full_name
-        gross = _d(slip.gross_income)
-        if gross > 0:
-            lines += [dict(key=expense_key, debit=gross, employee=emp, memo=f'Lương {name}'),
-                      dict(key='salary', credit=gross, employee=emp, memo=f'Lương {name}')]
-        for key, amount, label in (
-            ('social_ins', slip.bhxh_employee, 'BHXH NLĐ'), ('health_ins', slip.bhyt_employee, 'BHYT NLĐ'),
-            ('unemployment_ins', slip.bhtn_employee, 'BHTN NLĐ'), ('union', slip.union_fee_employee, 'Đoàn phí'),
-            ('pit', slip.pit_amount, 'Thuế TNCN'), ('advance', slip.advance_deductions, 'Trừ tạm ứng'),
-            ('other_income', slip.other_deductions, 'Khấu trừ khác'),
-        ):
-            amount = _d(amount)
-            if amount > 0:
-                lines += [dict(key='salary', debit=amount, employee=emp, memo=f'{label} {name}'),
-                          dict(key=key, credit=amount, employee=emp, memo=f'{label} {name}')]
-        employer = _d(slip.total_insurance_employer)
-        if employer > 0:
-            total_rate = sum(r for _k, r in _EMPLOYER_SPLIT)
-            allocated = ZERO
-            for i, (key, rate) in enumerate(_EMPLOYER_SPLIT):
-                part = employer - allocated if i == len(_EMPLOYER_SPLIT) - 1 else (employer * rate / total_rate).quantize(Decimal('1'))
-                allocated += part
-                if part > 0:
-                    lines += [dict(key=expense_key, debit=part, employee=emp, memo=f'BH DN đóng {name}'),
-                              dict(key=key, credit=part, employee=emp, memo=f'BH DN đóng {name}')]
-        union_er = _d(slip.union_fee_employer)
-        if union_er > 0:
-            lines += [dict(key=expense_key, debit=union_er, employee=emp, memo=f'KPCĐ {name}'),
-                      dict(key='union', credit=union_er, employee=emp, memo=f'KPCĐ {name}')]
-    if not lines:
-        return None
-    return period.to_date, f'Hạch toán {period.name}'[:500], period.period_code, lines
-
-
 def build_invoice(inv):
     """Hoá đơn cước đã phát hành: ghi nhận thuế GTGT đầu ra (doanh thu đã ghi theo từng chuyến)."""
     if inv.is_deleted or inv.status in ('DRAFT', 'CANCELLED'):
@@ -291,7 +245,6 @@ def build_settlement(v):
 def _sources():
     from apps.billing.models import CashTransaction, CustomerInvoice, SettlementVoucher, TripExpense
     from apps.dispatch.models import DispatchTrip
-    from apps.personnel.models import PayrollPeriod
     from apps.gss.models import Statement
     from apps.gss.statements import build_ledger as build_gss_statement
 
@@ -299,7 +252,6 @@ def _sources():
         'cash': (CashTransaction, build_cash),
         'trip': (DispatchTrip, build_trip),
         'trip_expense': (TripExpense, build_trip_expense),
-        'payroll': (PayrollPeriod, build_payroll),
         'invoice': (CustomerInvoice, build_invoice),
         'settlement': (SettlementVoucher, build_settlement),
         'gss_statement': (Statement, build_gss_statement),

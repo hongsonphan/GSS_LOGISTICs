@@ -1,10 +1,6 @@
 // --- 6. PHÂN HỆ QUẢN TRỊ NHÂN SỰ & HYBRID PAYROLL ---
 let currentHRSubTab = 'directory';
 let rawEmployeesList = [];
-let rawContractsList = [];
-let rawPayrollPeriodsList = [];
-let currentPayrollPeriodDetail = null;
-let currentPayrollSlipsList = [];
 
 async function loadHRData() {
     const activeSubTab = currentHRSubTab || 'directory';
@@ -16,7 +12,7 @@ async function loadHRData() {
 
 function switchHRSubTab(tabKey) {
     currentHRSubTab = tabKey;
-    const tabs = ['directory', 'contracts', 'attendance', 'payroll', 'policies'];
+    const tabs = ['directory'];
     
     tabs.forEach(t => {
         const btn = document.getElementById(`hr-tab-${t}-btn`);
@@ -35,9 +31,6 @@ function switchHRSubTab(tabKey) {
     });
 
     const createEmpBtn = document.getElementById('btn-create-employee');
-    const createContractBtn = document.getElementById('btn-create-contract');
-    const autoAttendanceBtn = document.getElementById('btn-auto-attendance');
-    const createPeriodBtn = document.getElementById('btn-create-period');
 
     if (createEmpBtn) createEmpBtn.classList.toggle('hidden', tabKey !== 'directory');
     const empTemplateBtn = document.getElementById('btn-employee-template');
@@ -46,15 +39,8 @@ function switchHRSubTab(tabKey) {
     if (empTemplateBtn) empTemplateBtn.classList.toggle('hidden', tabKey !== 'directory');
     if (empImportBtn) empImportBtn.classList.toggle('hidden', tabKey !== 'directory');
     if (empExportBtn) empExportBtn.classList.toggle('hidden', tabKey !== 'directory');
-    if (createContractBtn) createContractBtn.classList.toggle('hidden', tabKey !== 'contracts');
-    if (autoAttendanceBtn) autoAttendanceBtn.classList.toggle('hidden', tabKey !== 'attendance');
-    if (createPeriodBtn) createPeriodBtn.classList.toggle('hidden', tabKey !== 'payroll');
 
     if (tabKey === 'directory') loadEmployeesData();
-    else if (tabKey === 'contracts') loadContractsData();
-    else if (tabKey === 'attendance') loadAttendancePeriodsAndData();
-    else if (tabKey === 'payroll') loadPayrollPeriodsData();
-    else if (tabKey === 'policies') loadPayrollPoliciesData();
 }
 
 async function loadEmployeesData() {
@@ -83,14 +69,11 @@ async function loadEmployeesData() {
             setTxt('hr-card-office-line1', s.card_office?.line_1);
             setTxt('hr-card-office-line2', s.card_office?.line_2);
 
-            const warningTotal = s.card_compliance?.total !== undefined ? s.card_compliance.total : ((s.expiring_licenses_count || 0) + (s.expiring_contracts_count || 0));
+            const warningTotal = s.card_compliance?.total !== undefined ? s.card_compliance.total : (s.expiring_licenses_count || 0);
             setTxt('hr-kpi-warning', warningTotal);
             setTxt('hr-card-compliance-line1', s.card_compliance?.line_1);
             setTxt('hr-card-compliance-line2', s.card_compliance?.line_2);
 
-            setTxt('hr-kpi-payroll', s.card_payroll?.total || '-- đ');
-            setTxt('hr-card-payroll-line1', s.card_payroll?.line_1);
-            setTxt('hr-card-payroll-line2', s.card_payroll?.line_2);
         }
 
         if (empRes.ok) {
@@ -104,9 +87,7 @@ async function loadEmployeesData() {
 }
 
 function filterExpiringItems() {
-    switchHRSubTab('contracts');
-    const statusSelect = document.getElementById('contract-filter-status');
-    if (statusSelect) statusSelect.value = 'ACTIVE';
+    switchHRSubTab('directory');
 }
 
 function filterEmployeesTable() {
@@ -147,7 +128,6 @@ function renderEmployeesTable(items) {
     }
 
     tbody.innerHTML = items.map((emp, index) => {
-        const contractInfo = emp.active_contract ? `${emp.active_contract.contract_type_label || 'HĐ'}` : '<span class="text-slate-400">Chưa ký</span>';
         const bankInfo = emp.bank_account ? `<span class="font-mono font-bold">${escapeHtml(emp.bank_account)}</span> (${escapeHtml(emp.bank_name || 'NH')})` : '<span class="text-slate-400">—</span>';
         const legalInfo = emp.national_id ? `<span class="font-mono">${escapeHtml(emp.national_id)}</span>` : '<span class="text-slate-400">—</span>';
 
@@ -184,7 +164,7 @@ function renderEmployeesTable(items) {
                     ` : '<span class="text-slate-400">—</span>'}
                 </td>
                 <td class="py-2.5 px-3.5 text-xs border-r border-slate-200">${bankInfo}</td>
-                <td class="py-2.5 px-3.5 text-xs font-mono font-bold text-right text-slate-900 border-r border-slate-200 tabular-nums">${new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0)} đ</td>
+                <td class="py-2.5 px-3.5 text-xs font-mono text-right text-slate-900 border-r border-slate-200 tabular-nums">${emp.join_date ? escapeHtml(emp.join_date) : '<span class="text-slate-400">—</span>'}</td>
                 <td class="py-2.5 px-3.5 text-center border-r border-slate-200 text-xs font-semibold whitespace-nowrap">
                     ${emp.is_active ? '<span class="text-emerald-700 font-bold">Đang làm</span>' : '<span class="text-slate-400 font-medium">Tạm ngưng</span>'}
                 </td>
@@ -211,12 +191,11 @@ function renderEmployeesTable(items) {
     }).join('');
 
     if (window.BimTableFooter && Array.isArray(items)) {
-        const totalBaseSal = items.reduce((sum, e) => sum + (Number(e.base_salary) || 0), 0);
         window.BimTableFooter.render('employees-table', {
             cells: [
                 { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
                 { html: `<span class="text-teal-800 font-extrabold">${items.length}</span> nhân sự trong danh sách`, colspan: 8, class: 'text-slate-700' },
-                { html: `<span class="text-emerald-700 font-bold tabular-nums font-mono">${new Intl.NumberFormat('vi-VN').format(totalBaseSal)} đ</span>`, align: 'right' },
+                { text: '', align: 'right' },
                 { text: '', align: 'center' },
                 { text: '', align: 'center' }
             ]
