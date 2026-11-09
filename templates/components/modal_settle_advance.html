@@ -1,0 +1,102 @@
+<!-- MODAL ĐỐI SOÁT & QUYẾT TOÁN HOÀN ỨNG CHUYẾN CHO TÀI XẾ -->
+<div id="modal-settle-advance" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden transform transition-all">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-emerald-800 text-white flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-9 h-9 rounded-xl bg-emerald-700/80 flex items-center justify-center text-emerald-200">
+                    <i class="ph-bold ph-calculator text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold font-heading">Đối Soát & Quyết Toán Hoàn Ứng</h3>
+                    <p class="text-xs text-emerald-200 font-medium" id="settle-adv-header-sub">Quyết toán chi phí chuyến xe với tài xế</p>
+                </div>
+            </div>
+            <button onclick="closeSettleAdvanceModal()" class="w-8 h-8 rounded-full bg-emerald-700/50 hover:bg-emerald-700 text-white flex items-center justify-center transition-colors">
+                <i class="ph-bold ph-x text-sm"></i>
+            </button>
+        </div>
+
+        <!-- Form Body -->
+        <form id="form-settle-advance" onsubmit="submitSettleAdvanceForm(event)" class="p-5 md:p-6 space-y-3.5 text-xs font-medium text-slate-700">
+            <input type="hidden" id="settle-adv-id" />
+
+            <!-- Khối Tóm Tắt Thông Tin Chuyến & Tạm Ứng -->
+            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 font-semibold">Mã Phiếu Tạm Ứng:</span>
+                    <span class="font-black text-slate-900 font-mono text-sm" id="settle-adv-code">TUTX-...</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 font-semibold">Chuyến Xe & Xe:</span>
+                    <span class="font-bold text-teal-800" id="settle-adv-trip-info">--</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 font-semibold">Tài Xế Nhận Tiền:</span>
+                    <span class="font-bold text-slate-800" id="settle-adv-driver-name">--</span>
+                </div>
+                <div class="flex items-center justify-between pt-1.5 border-t border-slate-200/80">
+                    <span class="text-slate-700 font-bold uppercase tracking-wider text-[11px]">Số Tiền Đã Tạm Ứng:</span>
+                    <span class="font-black text-teal-800 text-base tabular-nums" id="settle-adv-amount-display">0 đ</span>
+                </div>
+            </div>
+
+            <!-- Nhập / Xác nhận Tổng Chi Phí Thực Tế Đã Chi -->
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-800 text-xs truncate">
+                        Tổng Chi Phí Thực Tế Tài Xế Đã Chi (VNĐ) <span class="text-rose-600">*</span>
+                    </label>
+                    <button type="button" class="text-[11px] text-teal-700 font-bold hover:underline flex items-center gap-0.5 cursor-pointer" onclick="recalculateActualExpensesFromTrip()">
+                        <i class="ph-bold ph-arrows-clockwise text-xs"></i> Nạp từ chứng từ chuyến
+                    </button>
+                </div>
+                <input type="text" id="settle-adv-actual-spent" oninput="calculateSettlementDiff()" required
+                    class="form-input h-8.5 px-2.5 py-1 text-sm font-black text-slate-900 text-right tabular-nums focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 input-number-vn font-mono w-full" />
+                <p class="text-[10.5px] text-slate-500 mt-1">Gồm vé BOT, dầu DO, phí nâng hạ cảng, tiền cược cont, cân xe... có hóa đơn chứng từ.</p>
+            </div>
+
+            <!-- Khối Hiển Thị Kết Quả Chênh Lệch Hoàn Ứng (Tự Động) -->
+            <div id="settle-adv-diff-box" class="p-3.5 rounded-xl border transition-all">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="font-bold text-xs uppercase tracking-wider" id="settle-adv-diff-title">Kết Quả Chênh Lệch Đối Soát:</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-black" id="settle-adv-diff-badge">--</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium" id="settle-adv-diff-desc">Chênh lệch:</span>
+                    <span class="text-xl font-black tabular-nums font-heading" id="settle-adv-diff-amount">0 đ</span>
+                </div>
+            </div>
+
+            <!-- Ghi chú đối soát hoàn ứng -->
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-800 text-xs truncate">Ghi Chú Quyết Toán / Biên Bản Hoàn Ứng</label>
+                </div>
+                <textarea id="settle-adv-notes" rows="2" placeholder="Ghi chú xác nhận thu lại tiền thừa hoặc chuyển khoản chi bù..."
+                    class="form-textarea p-2.5 border border-slate-200 rounded-lg text-xs text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 w-full"></textarea>
+            </div>
+
+            <!-- Footer Buttons (Chuẩn GSS: In Biên Bản, Xác Nhận Quyết Toán, Đóng) -->
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div>
+                    <button type="button" id="btn-print-settle-adv" onclick="printSettlementAdvanceVoucher()"
+                        class="px-3.5 py-1.5 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="In Biên bản đối soát & hoàn ứng chuyến xe khổ A4">
+                        <i class="ph-bold ph-printer text-sm"></i>
+                        <span>In Biên Bản Hoàn Ứng</span>
+                    </button>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button type="button" onclick="closeSettleAdvanceModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
+                        Đóng
+                    </button>
+                    <button type="submit" id="btn-submit-settle-advance" class="px-5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="ph-bold ph-check-circle text-base"></i>
+                        <span>Xác Nhận Quyết Toán Hoàn Ứng</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

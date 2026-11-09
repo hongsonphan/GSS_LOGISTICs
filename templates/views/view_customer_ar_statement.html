@@ -1,0 +1,212 @@
+<!-- VIEW ĐỐI SOÁT CÔNG NỢ CHI TIẾT KHÁCH HÀNG TOÀN MÀN HÌNH (DEDICATED FULL-PAGE AR SOA VIEW) -->
+<div id="view-customer-ar-statement" class="view hidden-view h-full min-h-0 overflow-y-auto bg-slate-100 py-4 sm:py-6 space-y-4 animate-fade-in">
+    <div class="w-full px-3 sm:px-6 space-y-4">
+
+        <!-- 1. THANH ĐIỀU HƯỚNG & CÔNG CỤ TRÊN CÙNG -->
+        <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 no-print">
+            <div class="flex items-center space-x-3">
+                <button type="button" onclick="returnFromCustomerStatementView()" 
+                    class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 font-heading border border-slate-200 shadow-2xs hover:scale-102 active:scale-98">
+                    <i class="ph-bold ph-arrow-left text-sm"></i>
+                    <span>Back</span>
+                </button>
+                <div class="h-5 w-px bg-slate-200"></div>
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-lg font-bold">
+                        <i class="ph-bold ph-file-text"></i>
+                    </span>
+                    <div>
+                        <h3 class="font-bold text-sm sm:text-base font-heading text-slate-900" id="soa-page-title">
+                            Bảng Kê Đối Soát Công Nợ Khách Hàng (SOA)
+                        </h3>
+                        <p class="text-xs text-slate-500 font-medium" id="soa-page-subtitle">Chi tiết vận đơn, cước phí và đối chiếu chứng từ giao nhận</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openCustomerFreightStatementForCurrent()" 
+                    class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-sm transition-all cursor-pointer" title="Lập Bảng Kê Vận Chuyển Tháng (Mẫu 26 cột đối soát cước & nâng hạ)">
+                    <i class="ph-bold ph-file-spreadsheet text-sm"></i>
+                    <span>Bảng Kê Vận Chuyển Tháng</span>
+                </button>
+                <button type="button" onclick="printCurrentCustomerStatement()" 
+                    class="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+                    <i class="ph-bold ph-printer text-sm"></i>
+                    <span>In SOA</span>
+                </button>
+                <button type="button" onclick="exportCustomerStatementExcel()" 
+                    class="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer">
+                    <i class="ph-bold ph-microsoft-excel-logo text-sm text-emerald-600"></i>
+                    <span>Xuất CSV</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. KHUNG THÔNG TIN HỒ SƠ KHÁCH HÀNG & 4 CARD CHỈ SỐ TÀI CHÍNH -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+            <!-- Thông tin khách hàng (5 cols) -->
+            <div class="md:col-span-5 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-heading">ĐƠN VỊ ĐỐI SOÁT CÔNG NỢ</span>
+                        <span id="soa-cust-badge-code" class="px-2 py-0.5 rounded-md font-mono text-[11px] font-black bg-teal-50 text-teal-800 border border-teal-200">-</span>
+                    </div>
+                    <h2 class="text-base sm:text-lg font-black text-slate-900 mt-2 font-heading leading-tight" id="soa-cust-name">-</h2>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-600 pt-3 border-t border-slate-100 mt-3">
+                    <div>
+                        <span class="text-slate-400 text-[11px]">Mã số thuế:</span>
+                        <div class="font-bold text-slate-800 font-mono" id="soa-cust-tax">-</div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[11px]">Số điện thoại:</span>
+                        <div class="font-bold text-slate-800" id="soa-cust-phone">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 Thẻ Tài Chính (7 cols) -->
+            <!-- 6 Thẻ Tài Chính Chuẩn Kế Toán (7 cols) -->
+            <div class="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <!-- Card 1: Tổng Cước Vận Tải -->
+                <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 flex flex-col justify-between">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Cước Vận Tải</span>
+                    <div class="text-base sm:text-lg font-black text-slate-900 mt-1 font-heading tabular-nums" id="soa-stat-freight">0 đ</div>
+                    <span class="text-[10px] text-teal-700 font-semibold mt-0.5">Doanh thu kế hoạch</span>
+                </div>
+
+                <!-- Card 2: Tiền Chi Hộ Khách Hàng -->
+                <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 flex flex-col justify-between">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Tiền Chi Hộ</span>
+                    <div class="text-base sm:text-lg font-black text-amber-700 mt-1 font-heading tabular-nums" id="soa-stat-reim">0 đ</div>
+                    <span class="text-[10px] text-slate-500 mt-0.5">Nâng hạ, cảng, bến bãi</span>
+                </div>
+
+                <!-- Card 3: Đã Quyết Toán Khách (Công Nợ Chính Thức AR) -->
+                <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 flex flex-col justify-between bg-emerald-50/20">
+                    <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-tight">ĐÃ CHỐT NỢ (CÔNG NỢ AR)</span>
+                    <div class="text-base sm:text-lg font-black text-emerald-950 mt-1 font-heading tabular-nums" id="soa-stat-total">0 đ</div>
+                    <span class="text-[10px] text-emerald-700 font-bold mt-0.5">✓ Đã quyết toán với khách</span>
+                </div>
+
+                <!-- Card 4: Chờ Quyết Toán Khách (Chưa Tính Công Nợ) -->
+                <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-400 flex flex-col justify-between">
+                    <span class="text-[10px] font-bold text-amber-800 uppercase tracking-tight">CHỜ CHỐT (CHƯA TÍNH NỢ)</span>
+                    <div class="text-base sm:text-lg font-black text-amber-800 mt-1 font-heading tabular-nums" id="soa-stat-pending">0 đ</div>
+                    <span class="text-[10px] text-amber-700 font-medium mt-0.5">⏳ Chờ hai bên đối soát số</span>
+                </div>
+
+                <!-- Card 5: Đã Thu Hồi (Sổ Quỹ) -->
+                <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 flex flex-col justify-between">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Đã Thu Hồi</span>
+                    <div class="text-base sm:text-lg font-black text-teal-800 mt-1 font-heading tabular-nums" id="soa-stat-collected">0 đ</div>
+                    <span class="text-[10px] text-teal-700 font-bold mt-0.5">Thu cước qua Sổ Quỹ</span>
+                </div>
+
+                <!-- Card 6: Dư Nợ Còn Phải Thu (Thực Tế) -->
+                <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 flex flex-col justify-between bg-indigo-50/20">
+                    <span class="text-[10px] font-bold text-indigo-900 uppercase tracking-tight">DƯ NỢ CÒN PHẢI THU</span>
+                    <div class="text-lg sm:text-xl font-black text-indigo-700 mt-1 font-heading tabular-nums" id="soa-stat-balance">0 đ</div>
+                    <span class="text-[10px] text-indigo-900/80 font-bold mt-0.5">Đã chốt nợ - Đã thu hồi</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. BẢNG CHI TIẾT DANH SÁCH VẬN ĐƠN / CHUYẾN XE (FULL-WIDTH 100%) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden space-y-0">
+            <!-- Header Bảng & Công Cụ Lọc Nhanh -->
+            <div class="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <i class="ph-bold ph-list-numbers text-teal-700 text-lg"></i>
+                    <h4 class="text-sm font-bold text-slate-900 font-heading">
+                        Bảng Kê Chi Tiết Chuyến Xe & 4 Bước Quyết Toán Nghiệp Vụ
+                    </h4>
+                    <span id="soa-trips-count-badge" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-100 text-teal-800 border border-teal-200">
+                        0 Chuyến
+                    </span>
+                </div>
+
+                <div class="flex items-center flex-wrap gap-2">
+                    <!-- Bộ lọc trạng thái đối soát -->
+                    <select id="soa-status-filter" onchange="filterSoaTable()" 
+                        class="h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                        <option value="ALL">📋 Tất cả chuyến xe</option>
+                        <option value="SETTLED">✅ Đã quyết toán với khách (Tính nợ AR)</option>
+                        <option value="PENDING">⏳ Chờ quyết toán khách (Chưa tính nợ)</option>
+                    </select>
+
+                    <div class="relative w-56 sm:w-64">
+                        <input type="text" id="soa-table-search" oninput="filterSoaTable()" placeholder="Tìm mã chuyến, cont, HĐ..." 
+                            class="w-full h-9 pl-8 pr-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                        <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+                    </div>
+
+                    <!-- Nút Chốt Đối Soát Hàng Loạt -->
+                    <button type="button" onclick="batchReconcileCustomerAR(true)" 
+                        class="h-9 px-3.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-xs transition-all cursor-pointer" title="Chốt đối soát chốt số với khách hàng (Lên công nợ AR)">
+                        <i class="ph-bold ph-check-circle text-sm"></i>
+                        <span>Chốt Quyết Toán Khách (Lên Nợ)</span>
+                    </button>
+                    <button type="button" onclick="batchReconcileCustomerAR(false)" title="Mở lại trạng thái chờ đối soát (Rút khỏi công nợ AR)"
+                        class="h-9 px-2.5 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-2xs transition-colors flex items-center gap-1">
+                        <i class="ph-bold ph-arrow-counter-clockwise text-sm"></i>
+                        <span class="hidden sm:inline">Mở Lại</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bảng Dữ Liệu Rộng Rãi Toàn Màn Hình -->
+            <div class="overflow-x-auto w-full">
+                <table class="erp-table whitespace-nowrap text-xs w-full" id="soa-fullpage-table">
+                    <thead>
+                        <tr class="bg-slate-100/90 text-slate-700 font-bold uppercase text-[11px] tracking-wider">
+                            <th class="text-center w-12 py-3">STT</th>
+                            <th class="py-3">Mã Chuyến Xe</th>
+                            <th class="text-center py-3">Ngày Vận Hành</th>
+                            <th class="py-3">Đầu Xe & Tài Xế</th>
+                            <th class="py-3">Container & Seal</th>
+                            <th class="py-3">Tuyến Đường</th>
+                            <th class="text-right py-3">Cước Vận Tải</th>
+                            <th class="text-right py-3">Tiền Chi Hộ</th>
+                            <th class="text-right py-3 font-black text-slate-900 bg-slate-200/50">Tổng Tiền</th>
+                            <th class="text-center py-3">1. Hoàn Thành Chuyến</th>
+                            <th class="text-center py-3">2. Quyết Toán Tài Xế</th>
+                            <th class="text-center py-3">3. Quyết Toán Thầu Phụ</th>
+                            <th class="text-center py-3">4. Quyết Toán Khách Hàng (Tính Nợ)</th>
+                            <th class="text-center py-3">Hóa Đơn VAT / SOA</th>
+                            <th class="text-center py-3">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="soa-fullpage-tbody">
+                        <!-- Rendered by JavaScript -->
+                    </tbody>
+                    <tfoot class="bg-slate-100/95 font-black border-t-2 border-slate-300 text-xs" id="soa-fullpage-tfoot">
+                        <!-- Rendered by JavaScript -->
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Ghi Chú & Điều Khoản Chốt Nợ Đối Soát -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-500">
+                <div class="space-y-0.5">
+                    <p class="font-medium">* Dữ liệu đối soát tự động trích xuất trực tiếp từ các chuyến xe và phiếu thu sổ quỹ của khách hàng.</p>
+                    <p class="italic text-[11px] text-slate-400">Thời hạn khiếu nại đối soát: trong vòng 05 ngày làm việc kể từ ngày nhận bảng kê.</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="openCustomerFreightStatementForCurrent()" 
+                        class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-file-spreadsheet text-sm"></i>
+                        <span>Bảng Kê Vận Chuyển Tháng</span>
+                    </button>
+                    <button type="button" onclick="printCurrentCustomerStatement()" 
+                        class="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-printer text-sm"></i>
+                        <span>In SOA</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

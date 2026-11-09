@@ -1,0 +1,237 @@
+<!-- 3.3 VIEW CHI TIẾT & ĐIỀU CHỈNH PHIẾU LƯƠNG TRONG KỲ (DEDICATED FULL-PAGE VIEW) -->
+<div id="view-payroll-slip-detail" class="view hidden-view h-full flex flex-col bg-slate-50 overflow-hidden relative animate-fade-in">
+    <!-- Main Scrollable Body -->
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/60">
+        <div class="max-w-4xl mx-auto space-y-4">
+            
+            <form id="form-payroll-slip-detail" onsubmit="submitSlipDetailForm(event)" class="space-y-4" novalidate>
+                <input type="hidden" id="slip-detail-id" value="">
+
+                <!-- CARD 1: THÔNG TIN NHÂN SỰ & KỲ LƯƠNG -->
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-teal-800 text-white flex items-center justify-center font-bold font-heading text-sm" id="sd-avatar">
+                                NV
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-900 font-heading" id="sd-emp-name">
+                                    Nguyễn Văn An (TX001)
+                                </h4>
+                                <p class="text-xs text-slate-500" id="sd-emp-sub">
+                                    Tài xế đường dài • Đội Xe & Bãi (FLEET) • STK: 0123456789 (Vietcombank)
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200" id="sd-slip-code">
+                                PL-2026-10-001
+                            </span>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200" id="sd-status-badge">
+                                Chờ Chi Lương
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Highlight Tổng Thực Lĩnh (Net) & Tổng Thu Nhập (Gross) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">1. Tổng Thu Nhập (Gross)</span>
+                            <span class="text-lg font-mono font-black text-slate-900 mt-1 block" id="sd-gross-display">0 đ</span>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-rose-50/60 border border-rose-200">
+                            <span class="text-[11px] font-bold text-rose-700 uppercase tracking-wider block">2. Tổng Khấu Trừ & Thuế</span>
+                            <span class="text-lg font-mono font-black text-rose-700 mt-1 block" id="sd-deductions-display">-0 đ</span>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-300">
+                            <span class="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">3. Lương Thực Lĩnh (Net)</span>
+                            <span class="text-xl font-mono font-black text-emerald-800 mt-1 block font-heading" id="sd-net-display">0 đ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: CẤU PHẦN 1 - LƯƠNG NGÀY CÔNG & CẤU PHẦN 2 - LƯƠNG CHUYẾN XE -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Cấu phần 1: Lương Ngày Công Thời Gian -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                        <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                            <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5 font-heading">
+                                <i class="ph-bold ph-calendar text-teal-700 text-sm"></i>
+                                <span>I. Lương Ngày Công Thời Gian</span>
+                            </h5>
+                            <span class="font-mono font-bold text-teal-900 text-xs" id="sd-time-salary">0 đ</span>
+                        </div>
+                        <div class="space-y-1.5 text-xs text-slate-600">
+                            <div class="flex justify-between">
+                                <span>HĐLĐ áp dụng tính lương:</span>
+                                <span class="font-mono font-bold text-indigo-700" id="sd-contract-number">--</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Mức lương căn bản theo HĐ:</span>
+                                <span class="font-mono font-bold text-slate-800" id="sd-contract-base">0 đ</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Phụ cấp + Trợ cấp HĐ:</span>
+                                <span class="font-mono font-bold text-indigo-900" id="sd-contract-allowances">0 đ</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Công chuẩn tháng / Ngày làm thực tế:</span>
+                                <span class="font-mono font-bold text-slate-800" id="sd-days-ratio">26 / 26 công</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Tỷ lệ hưởng lương (%):</span>
+                                <span class="font-mono font-bold text-slate-800" id="sd-probation-rate">100%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Nghỉ phép năm hưởng lương (P):</span>
+                                <span class="font-mono text-slate-700" id="sd-paid-leave">0 ngày</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Nghỉ Lễ / Tết hưởng lương (L):</span>
+                                <span class="font-mono text-slate-700" id="sd-holiday-leave">0 ngày</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cấu phần 2: Lương Sản Phẩm Chuyến Xe (Tài Xế) -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                        <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                            <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5 font-heading">
+                                <i class="ph-bold ph-truck text-emerald-700 text-sm"></i>
+                                <span>II. Lương Chuyến Xe Tài Xế</span>
+                            </h5>
+                            <span class="font-mono font-bold text-emerald-800 text-xs" id="sd-trip-salary-total">0 đ</span>
+                        </div>
+                        <div class="space-y-1.5 text-xs text-slate-600">
+                            <div class="flex justify-between">
+                                <span>Lương chuyến chính điều phối:</span>
+                                <span class="font-mono font-bold text-slate-800" id="sd-trip-main">0 đ</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Phụ cấp chuyến cắt kéo:</span>
+                                <span class="font-mono text-slate-700" id="sd-trip-dropoff">0 đ</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Phụ cấp neo xe chờ bốc dỡ:</span>
+                                <span class="font-mono text-slate-700" id="sd-trip-detention">0 đ</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Thưởng định mức nhiên liệu:</span>
+                                <span class="font-mono font-bold text-emerald-700" id="sd-trip-fuel">0 đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 3: CẤU PHẦN 3 & 4 - PHỤ CẤP, THƯỞNG KPI & CÁC KHOẢN KHẤU TRỪ / THUẾ -->
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                            <i class="ph-bold ph-sliders-horizontal text-amber-600 text-sm"></i>
+                            <span>III. Điều Chỉnh Phụ Cấp, Thưởng KPI & Khấu Trừ Nghĩa Vụ</span>
+                        </h4>
+                        <span class="text-[11px] text-slate-400 italic">Bấm "Sửa" để thay đổi các trường điều chỉnh</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+                        <!-- Thưởng KPI -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Thưởng KPI / Hiệu Suất (đ)</label>
+                            <input type="text" id="sd-kpi-bonus" placeholder="0"
+                                class="w-full h-10 px-3 text-xs font-mono font-bold text-emerald-800 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-amber-600 transition-all">
+                        </div>
+
+                        <!-- Phụ cấp khác -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Phụ Cấp Khác (đ)</label>
+                            <input type="text" id="sd-other-allowance" placeholder="0"
+                                class="w-full h-10 px-3 text-xs font-mono font-bold text-slate-800 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-amber-600 transition-all">
+                        </div>
+
+                        <!-- Phụ cấp điện thoại -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Phụ Cấp Điện Thoại (đ)</label>
+                            <input type="text" id="sd-phone-allowance" placeholder="0"
+                                class="w-full h-10 px-3 text-xs font-mono border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-amber-600 transition-all">
+                        </div>
+
+                        <!-- Phụ cấp ăn trưa -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Phụ Cấp Ăn Trưa (đ)</label>
+                            <input type="text" id="sd-lunch-allowance" placeholder="0"
+                                class="w-full h-10 px-3 text-xs font-mono border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-amber-600 transition-all">
+                        </div>
+
+                        <!-- Khấu trừ tạm ứng chuyến -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Khấu Trừ Tạm Ứng Chuyến (đ)</label>
+                            <input type="text" id="sd-advance-deductions" placeholder="0"
+                                class="w-full h-10 px-3 text-xs font-mono font-bold text-amber-700 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-amber-600 transition-all">
+                        </div>
+
+                        <!-- Khấu trừ khác (phạt, bồi thường) -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Khấu Trừ Khác (Phạt, bồi hoàn...)</label>
+                            <input type="text" id="sd-other-deductions" placeholder="0"
+                                class="w-full h-10 px-3 text-xs font-mono font-bold text-rose-700 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-amber-600 transition-all">
+                        </div>
+
+                        <!-- Khấu trừ BHXH (chỉ đọc) -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Trích Nộp BHXH (10.5%)</label>
+                            <input type="text" id="sd-insurance-employee" readonly
+                                class="w-full h-10 px-3 text-xs font-mono font-bold text-indigo-800 border border-slate-200 rounded-xl bg-slate-100 cursor-not-allowed">
+                        </div>
+
+                        <!-- Đoàn phí công đoàn (chỉ đọc) -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Đoàn Phí Công Đoàn (1%)</label>
+                            <input type="text" id="sd-union-fee" readonly
+                                class="w-full h-10 px-3 text-xs font-mono font-bold text-amber-800 border border-slate-200 rounded-xl bg-slate-100 cursor-not-allowed">
+                        </div>
+
+                        <!-- Thuế TNCN (chỉ đọc) -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Thuế Thu Nhập Cá Nhân (TNCN)</label>
+                            <input type="text" id="sd-pit-amount" readonly
+                                class="w-full h-10 px-3 text-xs font-mono font-bold text-rose-800 border border-slate-200 rounded-xl bg-slate-100 cursor-not-allowed">
+                            <span class="text-[11px] text-slate-400 mt-0.5 block" id="sd-pit-detail-note">Giảm trừ bản thân 15.5tr + NPT 6.2tr/người</span>
+                        </div>
+
+                        <!-- Ghi chú lý do điều chỉnh -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Ghi Chú Lý Do Điều Chỉnh</label>
+                            <input type="text" id="sd-notes" placeholder="Lý do thưởng phạt, điều chỉnh bổ sung..."
+                                class="w-full h-10 px-3 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-amber-600 transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Actions: Cụm nút chuẩn [Sửa, Lưu, In] như hình 2 -->
+                <div class="pt-3 flex items-center justify-between flex-wrap gap-3">
+                    <button type="button" onclick="backToPayroll()" class="px-5 py-2.5 bg-transparent border border-slate-300 text-slate-700 hover:bg-slate-700 hover:text-white rounded-xl text-xs font-bold font-heading transition-all cursor-pointer flex items-center gap-1.5">
+                        <i class="ph-bold ph-arrow-left"></i>
+                        <span>Quay lại</span>
+                    </button>
+                    <div class="flex items-center space-x-2.5 flex-wrap">
+                        <button type="button" id="btn-slip-edit-bottom" onclick="enableSlipEdit()"
+                            class="hidden px-5 py-2.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                            <i class="ph-bold ph-pencil-simple text-base"></i>
+                            <span>Sửa</span>
+                        </button>
+                        <button type="submit" id="sd-submit-btn" class="px-6 py-2.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center space-x-2 transition-all cursor-pointer">
+                            <i class="ph-bold ph-check-circle text-base"></i>
+                            <span id="sd-submit-btn-text">Lưu</span>
+                        </button>
+                        <button type="button" id="btn-slip-print-bottom" onclick="printCurrentPayrollSlip()"
+                            class="hidden px-4 py-2.5 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="In phiếu lương chi tiết A4">
+                            <i class="ph-bold ph-printer text-base"></i>
+                            <span>In</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

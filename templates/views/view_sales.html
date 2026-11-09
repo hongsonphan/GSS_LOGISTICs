@@ -1,0 +1,821 @@
+<!-- 6. KINH DOANH & SALE / BOOKING -->
+<div id="view-kinh-doanh" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-6">
+
+    <!-- ========================================================================= -->
+    <!-- MÀN HÌNH CHÍNH: CỤM CHỈ SỐ TÌNH TRẠNG KINH DOANH & TĂNG TRƯỞNG THEO TUẦN/THÁNG -->
+    <!-- ========================================================================= -->
+    <!-- BỘ 5 THẺ CHỈ SỐ KINH DOANH & KẾ HOẠCH VẬN CHUYỂN TOÀN CTY -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+            <!-- Thẻ 1: DOANH THU THỰC HIỆN -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-2 border-l-teal-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Thực Hiện</span>
+                    <span id="sales-trend-earned" class="text-xs font-bold text-teal-800 flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-check-circle"></i> Đã Giao Nhận
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-earned">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-earned">
+                    <i class="ph-bold ph-arrows-left-right text-teal-600 text-xs"></i> 0/0 chuyến đã đối soát
+                </p>
+            </div>
+
+            <!-- Thẻ 2: DOANH THU DỰ KIẾN -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-2 border-l-indigo-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Dự Kiến</span>
+                    <span id="sales-trend-revenue" class="text-xs font-bold text-indigo-800 flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-file-text"></i> Hợp Đồng Đã Ký
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-revenue">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-revenue">
+                    <i class="ph-bold ph-check-circle text-indigo-600 text-xs"></i> Tuyến cước đã duyệt ký kết
+                </p>
+            </div>
+
+            <!-- Thẻ 3: TỔNG ĐƠN HÀNG -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-2 border-l-sky-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Đơn Hàng</span>
+                    <span id="sales-trend-bookings" class="text-xs font-bold text-sky-800 flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-truck"></i> Tiếp Nhận
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-sky-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-bookings">0 Đơn hàng</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-bookings">
+                    <i class="ph-bold ph-truck text-sky-600 text-xs"></i> 0 Chờ điều · 0 Đang chạy
+                </p>
+            </div>
+
+            <!-- Thẻ 4: SỐ ĐƠN GẤP -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-2 border-l-rose-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Số Đơn Gấp</span>
+                    <span id="sales-trend-urgent" class="text-xs font-bold text-rose-700 flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-clock-countdown"></i> Cần Xử Lý
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-urgent">0 Đơn</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-urgent">
+                    <i class="ph-bold ph-warning-circle text-rose-600 text-xs"></i> Đóng hàng trong 48h
+                </p>
+            </div>
+
+            <!-- Thẻ 5: TỶ LỆ CHỐT BÁO GIÁ -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-2 border-l-emerald-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tỷ Lệ Chốt Báo Giá</span>
+                    <span id="sales-trend-winrate" class="text-xs font-bold text-emerald-800 flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-handshake"></i> Tỷ Lệ Chốt
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-winrate">0%</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-winrate">
+                    <i class="ph-bold ph-chats-circle text-emerald-600 text-xs"></i> Báo giá đã duyệt ký kết
+                </p>
+            </div>
+        </div>
+
+    <!-- ========================================================================= -->
+    <!-- THANH SUB-TABS PHÂN ĐỊNH VAI TRÒ: NVKD vs SALE ADMIN / CS (1 DÒNG TÍCH HỢP CHUYỂN TAB TRỰC TIẾP & BỘ LỌC) -->
+    <!-- ========================================================================= -->
+    <div class="bg-white px-3 py-2 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2.5 min-h-[56px] box-border">
+        <!-- 2 Nút tab con chính: Cố định chiều cao h-10, border-2 đồng nhất chuẩn Hình 2 -->
+        <div class="flex items-center space-x-2 w-full md:w-auto">
+            <!-- Subtab 1: NVKD / Báo Giá (Mặc định Active theo style viền màu & nền sáng chuẩn Hình 2) -->
+            <button id="tab-btn-quotations" onclick="switchSalesSubTab('quotations')" 
+                class="flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-2xs box-border">
+                <i class="ph-bold ph-handshake text-base text-indigo-600"></i>
+                <span>Báo Giá & Hợp Đồng</span>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-indigo-100 text-indigo-800 border-indigo-200" id="badge-count-quotes">4</span>
+            </button>
+            
+            <!-- Subtab 2: Sale Admin / CS / Booking (Mặc định Inactive nhưng cùng cấu trúc border-2 h-10 không xê dịch) -->
+            <button id="tab-btn-bookings" onclick="switchSalesSubTab('bookings')" 
+                class="flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border">
+                <i class="ph-bold ph-truck text-base text-slate-500"></i>
+                <span>Booking / Đơn Đặt Hàng</span>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200" id="badge-count-bookings">8</span>
+            </button>
+        </div>
+        
+        <!-- Cụm công cụ điều khiển bên phải: Cố định h-10, tích hợp nút Làm Mới, bộ chọn kỳ và nút Tạo mới -->
+        <div class="flex items-center space-x-2 self-end md:self-center h-10">
+            <!-- Nút Làm Mới chung (Nhỏ gọn, tiện lợi) -->
+            <button onclick="loadSalesData()" class="h-10 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer box-border" title="Làm mới toàn bộ số liệu Kinh Doanh">
+                <i class="ph-bold ph-arrows-clockwise text-teal-600 text-sm"></i>
+                <span class="hidden sm:inline">Làm Mới</span>
+            </button>
+
+            <!-- Điều khiển cho Tab 1: Báo Giá & Hợp Đồng -->
+            <div id="sales-quote-top-actions" class="flex items-center space-x-2 h-10">
+                <div class="relative inline-flex items-center h-10 shrink-0">
+                    <i class="ph-bold ph-calendar-check absolute left-2.5 text-teal-600 text-sm pointer-events-none"></i>
+                    <select id="quote-filter-period" onchange="loadSalesData()" 
+                        class="h-10 pl-8 pr-7 bg-white hover:bg-slate-50 border border-slate-200 hover:border-teal-500 text-slate-700 rounded-xl text-xs font-bold font-heading shadow-2xs appearance-none outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all box-border"
+                        title="Chọn kỳ hiển thị Báo giá & Tuyến cước">
+                        <option value="today">Kỳ: Hôm Nay</option>
+                        <option value="10_days">Kỳ: 10 Ngày Qua</option>
+                        <option value="this_month">Kỳ: Tháng Này</option>
+                        <option value="this_quarter">Kỳ: Quý Này</option>
+                        <option value="this_year">Kỳ: Năm Nay</option>
+                        <option value="all" selected>Kỳ: Tất Cả</option>
+                    </select>
+                    <i class="ph ph-caret-down absolute right-2 text-slate-400 text-xs pointer-events-none"></i>
+                </div>
+                <button onclick="openCreateQuotationPage()" class="h-10 px-3.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer box-border" title="Mở trang tạo báo giá toàn màn hình (/sales/quotations/new)">
+                    <i class="ph-bold ph-plus-circle text-sm"></i>
+                    <span>Tạo Báo Giá</span>
+                </button>
+            </div>
+
+            <!-- Điều khiển cho Tab 2: Booking (Mặc định ẩn, bật khi chuyển tab) -->
+            <div id="sales-booking-top-actions" class="hidden flex items-center space-x-2 h-10">
+                <div class="relative inline-flex items-center h-10 shrink-0">
+                    <i class="ph-bold ph-calendar-check absolute left-2.5 text-teal-600 text-sm pointer-events-none"></i>
+                    <select id="booking-filter-period" onchange="loadSalesData()" 
+                        class="h-10 pl-8 pr-7 bg-white hover:bg-slate-50 border border-slate-200 hover:border-teal-500 text-slate-700 rounded-xl text-xs font-bold font-heading shadow-2xs appearance-none outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all box-border"
+                        title="Chọn kỳ hiển thị Đơn hàng / Booking">
+                        <option value="today">Kỳ: Hôm Nay</option>
+                        <option value="10_days">Kỳ: 10 Ngày Qua</option>
+                        <option value="this_month" selected>Kỳ: Tháng Này</option>
+                        <option value="this_quarter">Kỳ: Quý Này</option>
+                        <option value="this_year">Kỳ: Năm Nay</option>
+                        <option value="all">Kỳ: Tất Cả</option>
+                    </select>
+                    <i class="ph ph-caret-down absolute right-2 text-slate-400 text-xs pointer-events-none"></i>
+                </div>
+                <button type="button" onclick="if (typeof openCreateBookingPage === 'function') { openCreateBookingPage(); } else if (window.openCreateBookingPage) { window.openCreateBookingPage(); }" class="h-10 px-3.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer box-border">
+                    <i class="ph-bold ph-plus-circle text-sm"></i>
+                    <span>Tạo Booking</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- NỘI DUNG SUBTAB 1: BÁO GIÁ TUYẾN CƯỚC & PHỄU CRM (DÀNH CHO SALES / NVKD) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-sales-quotations" class="space-y-4">
+
+
+        <!-- DASHBOARD RIÊNG TAB 1: 5 TRẠNG THÁI BÁO GIÁ & HỢP ĐỒNG (CHUẨN PHỄU BÁN HÀNG TỪ TRÁI QUA PHẢI) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+            <!-- Thẻ 1: ĐÃ GỬI BÁO GIÁ -->
+            <div class="bg-white p-3.5 2xl:p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10.5px] 2xl:text-[11px] font-extrabold text-blue-800 bg-blue-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐÃ GỬI BÁO GIÁ</span>
+                        <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0">
+                            <i class="ph-bold ph-paper-plane-tilt"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-sent-main">0 đ</p>
+                    <span id="stat-quote-sent-rev" class="hidden"></span>
+                </div>
+                <!-- 1 TUYẾN | 15 CHUYẾN | 1 BÁO GIÁ: 1 dòng thanh mảnh chuẩn ERP -->
+                <div class="mt-2 py-0.5 px-1.5 bg-slate-50/60 rounded border border-slate-100/90 flex items-center justify-between text-[11px] select-none">
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-blue-700" id="stat-quote-sent-routes">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">TUYẾN</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-slate-700" id="stat-quote-sent-trips">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CHUYẾN</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-slate-700" id="stat-quote-sent-count">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">BÁO GIÁ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 2: ĐANG ĐÀM PHÁN -->
+            <div class="bg-white p-3.5 2xl:p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10.5px] 2xl:text-[11px] font-extrabold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐANG ĐÀM PHÁN</span>
+                        <span class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs shrink-0">
+                            <i class="ph-bold ph-chats-circle"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-negotiating-main">0 đ</p>
+                    <span id="stat-quote-negotiating-rev" class="hidden"></span>
+                </div>
+                <!-- 1 TUYẾN | 15 CHUYẾN | 1 BÁO GIÁ: 1 dòng thanh mảnh chuẩn ERP -->
+                <div class="mt-2 py-0.5 px-1.5 bg-slate-50/60 rounded border border-slate-100/90 flex items-center justify-between text-[11px] select-none">
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-amber-700" id="stat-quote-negotiating-routes">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">TUYẾN</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-slate-700" id="stat-quote-negotiating-trips">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CHUYẾN</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-slate-700" id="stat-quote-negotiating-count">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">BÁO GIÁ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 3: CHỜ KÝ HỢP ĐỒNG -->
+            <div class="bg-white p-3.5 2xl:p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10.5px] 2xl:text-[11px] font-extrabold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CHỜ KÝ HỢP ĐỒNG</span>
+                        <span class="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs shrink-0">
+                            <i class="ph-bold ph-file-dashed"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-pending-main">0 đ</p>
+                    <span id="stat-quote-pending-rev" class="hidden"></span>
+                </div>
+                <!-- 1 TUYẾN | 15 CHUYẾN | 1 BÁO GIÁ: 1 dòng thanh mảnh chuẩn ERP -->
+                <div class="mt-2 py-0.5 px-1.5 bg-slate-50/60 rounded border border-slate-100/90 flex items-center justify-between text-[11px] select-none">
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-indigo-700" id="stat-quote-pending-routes">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">TUYẾN</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-slate-700" id="stat-quote-pending-trips">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CHUYẾN</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-slate-700" id="stat-quote-pending-count">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">BÁO GIÁ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 4: ĐÃ KÝ HỢP ĐỒNG -->
+            <div class="bg-white p-3.5 2xl:p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10.5px] 2xl:text-[11px] font-extrabold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐÃ KÝ HỢP ĐỒNG</span>
+                        <span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs shrink-0">
+                            <i class="ph-bold ph-check-circle"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-signed-main">0 đ</p>
+                    <span id="stat-quote-signed-rev" class="hidden"></span>
+                </div>
+                <!-- 1 TUYẾN | 15 CHUYẾN | 1 BÁO GIÁ: 1 dòng thanh mảnh chuẩn ERP -->
+                <div class="mt-2 py-0.5 px-1.5 bg-slate-50/60 rounded border border-slate-100/90 flex items-center justify-between text-[11px] select-none">
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-emerald-700" id="stat-quote-signed-routes">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">TUYẾN</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-slate-700" id="stat-quote-signed-trips">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CHUYẾN</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-slate-700" id="stat-quote-signed-count">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">BÁO GIÁ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 5: TỪ CHỐI / HUỶ -->
+            <div class="bg-white p-3.5 2xl:p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10.5px] 2xl:text-[11px] font-extrabold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">TỪ CHỐI / HUỶ</span>
+                        <span class="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-xs shrink-0">
+                            <i class="ph-bold ph-x-circle"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-rose-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-rejected-main">0 đ</p>
+                    <span id="stat-quote-rejected-rev" class="hidden"></span>
+                </div>
+                <!-- 1 TUYẾN | 15 CHUYẾN | 1 BÁO GIÁ: 1 dòng thanh mảnh chuẩn ERP -->
+                <div class="mt-2 py-0.5 px-1.5 bg-slate-50/60 rounded border border-slate-100/90 flex items-center justify-between text-[11px] select-none">
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-rose-700" id="stat-quote-rejected-routes">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">TUYẾN</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-slate-700" id="stat-quote-rejected-trips">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CHUYẾN</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-slate-700" id="stat-quote-rejected-count">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">BÁO GIÁ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bảng Danh Sách Báo Giá Tuyến Cước -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <!-- Header thông tin & Bộ lọc đa cột thông minh cho Báo Giá -->
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                        <i class="ph-bold ph-funnel text-indigo-700 text-sm"></i>
+                        <span>Bộ Lọc: <strong>Danh Sách Báo Giá Tuyến Cước</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded-full border border-indigo-200">
+                            Hiển thị: <strong id="quote-filtered-count">0</strong> / <span id="quote-total-count">0</span> báo giá
+                        </span>
+                        <!-- Nút Tùy Chỉnh Cột Báo Giá -->
+                        <button type="button" onclick="openColumnCustomizer('sales-quotations-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-indigo-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                            <i class="ph-bold ph-columns text-indigo-700"></i>
+                            <span>Cột</span>
+                        </button>
+                        <button type="button" onclick="resetQuoteFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
+                            <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Thanh lọc theo từng cột (Column Filters Bar) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-2 pt-1 text-xs">
+                    <!-- 1. Lọc Khách hàng -->
+                    <div>
+                        <select id="filter-quote-customer" onchange="applyQuoteFilters()" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500">
+                            <option value="">-- Tất cả Khách hàng --</option>
+                        </select>
+                    </div>
+
+                    <!-- 2. Lọc Trạng thái hợp đồng -->
+                    <div>
+                        <select id="filter-quote-status" onchange="applyQuoteFilters()" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500">
+                            <option value="">-- Tất cả Trạng thái --</option>
+                            <option value="SENT">Đã gửi báo giá</option>
+                            <option value="NEGOTIATING">Đang đàm phán</option>
+                            <option value="PENDING_APPROVAL">Chờ ký Hợp đồng</option>
+                            <option value="APPROVED">Đã ký Hợp đồng</option>
+                            <option value="REJECTED">Từ chối/ Hủy</option>
+                        </select>
+                    </div>
+
+                    <!-- 3. Ô Sắp Xếp Nhanh (Sort) -->
+                    <div>
+                        <select id="filter-quote-sort" onchange="handleQuoteSortChange(this.value)" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                            <option value="">Sắp xếp: Mới nhất</option>
+                            <option value="code_asc">Mã báo giá (A ➔ Z)</option>
+                            <option value="code_desc">Mã báo giá (Z ➔ A)</option>
+                            <option value="customer_asc">Khách hàng (A ➔ Z)</option>
+                            <option value="created_at_desc">Ngày báo giá (Mới nhất)</option>
+                            <option value="created_at_asc">Ngày báo giá (Cũ nhất)</option>
+                            <option value="revenue_desc">Doanh thu dự kiến (Cao ➔ Thấp)</option>
+                            <option value="price_desc">Đơn giá cước (Cao ➔ Thấp)</option>
+                        </select>
+                    </div>
+
+                    <!-- 4. Ô Tìm kiếm từ khóa đa năng (Search) -->
+                    <div>
+                        <div class="relative">
+                            <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="filter-quote-search" oninput="applyQuoteFilters()" placeholder="Tìm số xe, số chuyến, khách hàng, vendor, mã BG..." 
+                                class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500">
+                            <button type="button" onclick="clearQuoteSearch()" id="btn-clear-quote-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i class="ph-bold ph-x text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng Dữ Liệu Báo Giá Kèm Sắp Xếp Cột -->
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap" id="sales-quotations-table" data-table-title="Bảng Báo Giá Tuyến Cước & Hợp Đồng">
+                    <thead>
+                        <tr>
+                            <!-- 0. STT Cố Định -->
+                            <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
+
+                            <!-- 1. Mã Báo Giá (Có sắp xếp) -->
+                            <th data-col-key="code" data-col-name="Mã Báo Giá" data-col-locked="true" onclick="toggleQuoteSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-28 font-mono" title="Click để sắp xếp theo Mã Báo Giá">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Mã Báo Giá</span>
+                                    <i id="sort-icon-quote-code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 2. Ngày Báo Giá (Có sắp xếp) -->
+                            <th data-col-key="created_at" data-col-name="Ngày Báo Giá" onclick="toggleQuoteSort('created_at')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-28 text-center" title="Click để sắp xếp theo Ngày Báo Giá">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <span>Ngày Báo Giá</span>
+                                    <i id="sort-icon-quote-created_at" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 3. Khách Hàng (Có sắp xếp) -->
+                            <th data-col-key="customer" data-col-name="Khách Hàng" onclick="toggleQuoteSort('customer')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách Hàng">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Khách Hàng</span>
+                                    <i id="sort-icon-quote-customer" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 3. Tuyến Đường Vận Chuyển (Có sắp xếp) -->
+                            <th data-col-key="route" data-col-name="Tuyến Đường Vận Chuyển" onclick="toggleQuoteSort('route')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tuyến Đường">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Tuyến Đường Vận Chuyển</span>
+                                    <i id="sort-icon-quote-route" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 4. Đơn Giá Cước (Có sắp xếp số) -->
+                            <th data-col-key="unit_price" data-col-name="Đơn Giá Cước (VNĐ)" onclick="toggleQuoteSort('unit_price')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Đơn Giá Cước">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Đơn Giá Cước (VNĐ)</span>
+                                    <i id="sort-icon-quote-unit_price" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 5. Sản Lượng Dự Kiến (Có sắp xếp số) -->
+                            <th data-col-key="monthly_trips" data-col-name="Sản Lượng Dự Kiến" onclick="toggleQuoteSort('monthly_trips')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Sản Lượng Chuyến">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <span>Sản Lượng Dự Kiến</span>
+                                    <i id="sort-icon-quote-monthly_trips" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 6. Doanh Thu Kế Hoạch (Có sắp xếp số) -->
+                            <th data-col-key="expected_revenue" data-col-name="Doanh Thu Kế Hoạch" onclick="toggleQuoteSort('expected_revenue')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Doanh Thu Kế Hoạch">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Doanh Thu Kế Hoạch</span>
+                                    <i id="sort-icon-quote-expected_revenue" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 7. Trạng Thái Hợp Đồng (Có sắp xếp) -->
+                            <th data-col-key="status" data-col-name="Trạng Thái Hợp Đồng" onclick="toggleQuoteSort('status')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Trạng Thái">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Trạng Thái Hợp Đồng</span>
+                                    <i id="sort-icon-quote-status" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="sales-tbody">
+                        <!-- Rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- NỘI DUNG SUBTAB 2: QUẢN LÝ ĐƠN ĐẶT HÀNG / BOOKING TỪ KHÁCH (SALE ADMIN / CS) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-sales-bookings" class="space-y-4 hidden">
+
+
+        <!-- DASHBOARD RIÊNG TAB 2: 5 CHỈ SỐ BOOKING / ĐƠN ĐẶT HÀNG (CHUẨN VÒNG ĐỜI TỪ TRÁI QUA PHẢI) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+            <!-- Thẻ 1: CHỜ ĐIỀU XE -->
+            <div class="bg-white p-3.5 2xl:p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10.5px] 2xl:text-[11px] font-extrabold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CHỜ ĐIỀU XE</span>
+                        <span class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs shrink-0">
+                            <i class="ph-bold ph-clock-countdown"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
+                        <span id="sales-stat-pending-dispatch">0</span> <span class="text-xs 2xl:text-sm font-bold text-slate-400 uppercase">Đơn</span>
+                    </p>
+                </div>
+                <!-- 0 CONT | 0 ĐÃ GIAO | 0 CÒN LẠI: 1 dòng thanh mảnh chuẩn ERP -->
+                <div class="mt-2 py-0.5 px-1.5 bg-slate-50/60 rounded border border-slate-100/90 flex items-center justify-between text-[11px] select-none">
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-amber-700" id="sales-stat-pending-total-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CONT</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-emerald-700" id="sales-stat-pending-completed-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">ĐÃ GIAO</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-rose-600" id="sales-stat-pending-uncompleted-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CÒN LẠI</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 2: ĐANG ĐIỀU XE -->
+            <div class="bg-white p-3.5 2xl:p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10.5px] 2xl:text-[11px] font-extrabold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐANG ĐIỀU XE</span>
+                        <span class="w-6 h-6 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-xs shrink-0">
+                            <i class="ph-bold ph-truck"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
+                        <span id="sales-stat-partially-dispatched">0</span> <span class="text-xs 2xl:text-sm font-bold text-slate-400 uppercase">Đơn</span>
+                    </p>
+                </div>
+                <!-- 0 CONT | 0 ĐÃ GIAO | 0 CÒN LẠI: 1 dòng thanh mảnh chuẩn ERP -->
+                <div class="mt-2 py-0.5 px-1.5 bg-slate-50/60 rounded border border-slate-100/90 flex items-center justify-between text-[11px] select-none">
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-teal-700" id="sales-stat-dispatching-total-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CONT</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-emerald-700" id="sales-stat-dispatching-completed-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">ĐÃ GIAO</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-rose-600" id="sales-stat-dispatching-uncompleted-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CÒN LẠI</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 3: CHẠY CẮT KÉO -->
+            <div class="bg-white p-3.5 2xl:p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10.5px] 2xl:text-[11px] font-extrabold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CHẠY CẮT KÉO</span>
+                        <span class="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs shrink-0">
+                            <i class="ph-bold ph-arrows-split"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
+                        <span id="sales-stat-drop-hook-count">0</span> <span class="text-xs 2xl:text-sm font-bold text-slate-400 uppercase">Đơn</span>
+                    </p>
+                </div>
+                <!-- 0 CONT | 0 ĐÃ GIAO | 0 CÒN LẠI: 1 dòng thanh mảnh chuẩn ERP -->
+                <div class="mt-2 py-0.5 px-1.5 bg-slate-50/60 rounded border border-slate-100/90 flex items-center justify-between text-[11px] select-none">
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-indigo-700" id="sales-stat-drop-hook-total-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CONT</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-emerald-700" id="sales-stat-drop-hook-completed-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">ĐÃ GIAO</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-rose-600" id="sales-stat-drop-hook-uncompleted-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CÒN LẠI</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 4: CẢNH BÁO ĐƠN GẤP -->
+            <div class="bg-white p-3.5 2xl:p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10.5px] 2xl:text-[11px] font-extrabold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CẢNH BÁO ĐƠN GẤP</span>
+                        <span class="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-xs shrink-0">
+                            <i class="ph-bold ph-warning-circle"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-rose-700 tabular-nums font-heading tracking-tight mt-1">
+                        <span id="sales-stat-urgent-count">0</span> <span class="text-xs 2xl:text-sm font-bold text-slate-400 uppercase">Đơn</span>
+                    </p>
+                </div>
+                <!-- 0 CONT | 0 ĐÃ GIAO | 0 CÒN LẠI: 1 dòng thanh mảnh chuẩn ERP -->
+                <div class="mt-2 py-0.5 px-1.5 bg-slate-50/60 rounded border border-slate-100/90 flex items-center justify-between text-[11px] select-none">
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-rose-700" id="sales-stat-urgent-total-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CONT</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-emerald-700" id="sales-stat-urgent-completed-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">ĐÃ GIAO</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-rose-600" id="sales-stat-urgent-uncompleted-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CÒN LẠI</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 5: ĐÃ HOÀN TẤT -->
+            <div class="bg-white p-3.5 2xl:p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10.5px] 2xl:text-[11px] font-extrabold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐÃ HOÀN TẤT</span>
+                        <span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs shrink-0">
+                            <i class="ph-bold ph-check-circle"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1">
+                        <span id="sales-stat-completed">0</span> <span class="text-xs 2xl:text-sm font-bold text-slate-400 uppercase">Đơn</span>
+                    </p>
+                </div>
+                <!-- 0 CONT | 0 ĐÃ GIAO | 0 CÒN LẠI: 1 dòng thanh mảnh chuẩn ERP -->
+                <div class="mt-2 py-0.5 px-1.5 bg-slate-50/60 rounded border border-slate-100/90 flex items-center justify-between text-[11px] select-none">
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-emerald-700" id="sales-stat-completed-total-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CONT</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-emerald-700" id="sales-stat-completed-completed-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">ĐÃ GIAO</span>
+                    </div>
+                    <span class="h-2 w-px bg-slate-200 mx-0.5"></span>
+                    <div class="flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <strong class="text-[10px] 2xl:text-[10.5px] font-black font-heading tabular-nums text-rose-600" id="sales-stat-completed-uncompleted-conts">0</strong>
+                        <span class="text-slate-400 uppercase font-bold text-[8px] 2xl:text-[8.5px] tracking-wider">CÒN LẠI</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bảng Quản Lý Booking (Lọc từng cột & Sắp xếp theo ngày) -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <!-- Header thông tin & Bộ lọc đa cột thông minh -->
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                        <i class="ph-bold ph-funnel text-teal-700 text-sm"></i>
+                        <span>Bộ Lọc: <strong>Danh Sách Đơn Đặt Hàng (Booking)</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
+                            Hiển thị: <strong id="booking-filtered-count">0</strong> / <span id="booking-total-count">0</span> đơn hàng
+                        </span>
+                        <!-- Nút Tùy Chỉnh Cột Booking -->
+                        <button type="button" onclick="openColumnCustomizer('sales-bookings-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                            <i class="ph-bold ph-columns text-teal-700"></i>
+                            <span>Cột</span>
+                        </button>
+                        <button type="button" onclick="resetBookingFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
+                            <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Thanh lọc theo từng cột (Column Filters Bar) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 pt-1 text-xs">
+                    <!-- 1. Lọc Khách hàng -->
+                    <div>
+                        <select id="filter-bk-customer" onchange="applyBookingFilters()" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <option value="">-- Tất cả Khách hàng --</option>
+                        </select>
+                    </div>
+
+                    <!-- 2. Lọc Hãng tàu -->
+                    <div>
+                        <select id="filter-bk-shipping-line" onchange="applyBookingFilters()" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <option value="">-- Tất cả Hãng tàu --</option>
+                        </select>
+                    </div>
+
+                    <!-- 3. Lọc Loại Cont -->
+                    <div>
+                        <select id="filter-bk-cont-size" onchange="applyBookingFilters()" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <option value="">-- Tất cả Loại Cont --</option>
+                            <option value="40HC">Cont 40HC</option>
+                            <option value="20GP">Cont 20GP</option>
+                            <option value="45G1">Cont 45 Feet</option>
+                            <option value="40GP">Cont 40GP</option>
+                            <option value="XE_TAI">Xe tải</option>
+                        </select>
+                    </div>
+
+                    <!-- 4. Lọc Trạng thái / Tiến độ -->
+                    <div>
+                        <select id="filter-bk-status" onchange="applyBookingFilters()" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <option value="">-- Tất cả Trạng thái --</option>
+                            <option value="PENDING_DISPATCH">Chờ điều xe</option>
+                            <option value="PARTIALLY_DISPATCHED">Đang điều xe</option>
+                            <option value="COMPLETED">Đã đủ cont</option>
+                            <option value="URGENT">Đơn GẤP (Đóng ≤ 48h)</option>
+                            <option value="DROP_HOOK">Chạy Cắt Kéo</option>
+                        </select>
+                    </div>
+
+                    <!-- 5. Ô Sắp Xếp Nhanh (Sort) -->
+                    <div>
+                        <select id="filter-bk-sort" onchange="handleBookingSortChange(this.value)" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 cursor-pointer">
+                            <option value="">Sắp xếp: Mới nhất</option>
+                            <option value="code_asc">Mã đơn (A ➔ Z)</option>
+                            <option value="code_desc">Mã đơn (Z ➔ A)</option>
+                            <option value="customer_asc">Khách hàng (A ➔ Z)</option>
+                            <option value="loading_date_desc">Lịch đóng (Mới nhất)</option>
+                            <option value="loading_date_asc">Lịch đóng (Cũ nhất)</option>
+                            <option value="progress_desc">Tiến độ (Cao ➔ Thấp)</option>
+                            <option value="price_desc">Cước thỏa thuận (Cao ➔ Thấp)</option>
+                        </select>
+                    </div>
+
+                    <!-- 6. Ô Tìm kiếm từ khóa đa năng (Search) -->
+                    <div>
+                        <div class="relative">
+                            <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="filter-bk-search" oninput="applyBookingFilters()" placeholder="Tìm số xe, số chuyến, khách hàng, vendor, số booking..." 
+                                class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <button type="button" onclick="clearBookingSearch()" id="btn-clear-bk-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i class="ph-bold ph-x text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng dữ liệu có sắp xếp cột -->
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap" id="sales-bookings-table" data-table-title="Danh Sách Đơn Hàng Booking">
+                    <thead>
+                        <tr>
+                            <!-- Cột 0: STT Cố Định -->
+                            <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
+
+                            <!-- Cột 1: Mã Đơn Hàng (Sắp xếp theo mã) -->
+                            <th data-col-key="booking_code" data-col-name="Mã Đơn" data-col-locked="true" onclick="toggleBookingSort('booking_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-32" title="Click để sắp xếp theo Mã Đơn">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Mã Đơn</span>
+                                    <i id="sort-icon-booking_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- Cột 2: Lịch Đóng Hàng (Sort theo timestamp) -->
+                            <th data-col-key="loading_date" data-col-name="Lịch Đóng" onclick="toggleBookingSort('loading_date')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-36" title="Click để sắp xếp theo Ngày Giờ Hẹn Đóng">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Lịch Đóng</span>
+                                    <i id="sort-icon-loading_date" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+                            <th data-col-key="customer_service" data-col-name="Khách Hàng & Dịch Vụ">Khách Hàng & Dịch Vụ</th>
+                            <th data-col-key="booking_bl" data-col-name="Số Booking (B/L) / PO">Số Booking (B/L) / PO</th>
+                            <th data-col-key="cont_cargo" data-col-name="Loại Cont & Hàng Hóa">Loại Cont & Hàng Hóa</th>
+                            <!-- Cột 5: Có sắp xếp theo tiến độ -->
+                            <th data-col-key="progress_percent" data-col-name="Tiến Độ Điều Xe" onclick="toggleBookingSort('progress_percent')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tiến Độ Điều Xe">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Tiến Độ Điều Xe</span>
+                                    <i id="sort-icon-progress_percent" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+                            <th data-col-key="route" data-col-name="Lộ Trình Vận Chuyển">Lộ Trình Vận Chuyển</th>
+                            <!-- Cột 7: Có sắp xếp theo hạn cắt máng -->
+                            <th data-col-key="closing_time" data-col-name="Hạn Cắt Máng (CY)" onclick="toggleBookingSort('closing_time')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Hạn Cắt Máng">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Hạn Cắt Máng (CY)</span>
+                                    <i id="sort-icon-closing_time" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+                            <!-- Cột 8: Có sắp xếp theo giá cước -->
+                            <th data-col-key="price" data-col-name="Cước Thỏa Thuận" onclick="toggleBookingSort('price')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Cước Thỏa Thuận">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Cước Thỏa Thuận</span>
+                                    <i id="sort-icon-price" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+                            <!-- Các Cột Mở Rộng Từ Database Cho Bảng Booking (Mặc Định Ẩn - Tùy Biến Hiện) -->
+                            <th data-col-key="customer_short" data-col-name="Tên Viết Tắt KH" data-col-default-hidden="true" style="display:none">Tên Viết Tắt KH</th>
+                            <th data-col-key="customer_code" data-col-name="Mã Khách Hàng" data-col-default-hidden="true" style="display:none">Mã KH</th>
+                            <th data-col-key="booking_type" data-col-name="Loại Hình Vận Chuyển" data-col-default-hidden="true" style="display:none">Loại Hình</th>
+                            <th data-col-key="container_size" data-col-name="Kích Thước Cont" data-col-default-hidden="true" style="display:none">Loại Cont</th>
+                            <th data-col-key="shipping_line" data-col-name="Hãng Tàu Biển" data-col-default-hidden="true" style="display:none">Hãng Tàu</th>
+                            <th data-col-key="vessel_voyage" data-col-name="Tên Tàu / Chuyến" data-col-default-hidden="true" style="display:none">Tàu / Chuyến</th>
+                            <th data-col-key="pickup_loc" data-col-name="Nơi Lấy Cont" data-col-default-hidden="true" style="display:none">Nơi Lấy Cont</th>
+                            <th data-col-key="delivery_loc" data-col-name="Kho Đóng/ Trả Hàng" data-col-default-hidden="true" style="display:none">Kho Đóng/ Trả Hàng</th>
+                            <th data-col-key="dropoff_loc" data-col-name="Nơi Trả Cont" data-col-default-hidden="true" style="display:none">Nơi Trả Cont</th>
+                            <th data-col-key="si_cutoff" data-col-name="Hạn Nộp SI (SI Cutoff)" data-col-default-hidden="true" style="display:none">Hạn Nộp SI</th>
+                            <th data-col-key="created_at" data-col-name="Ngày Giờ Tạo Đơn" data-col-default-hidden="true" style="display:none">Ngày Tạo Đơn</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="sales-bookings-tbody">
+                        <!-- Rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>

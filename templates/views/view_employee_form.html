@@ -1,0 +1,320 @@
+<!-- 3.1 VIEW KHAI BÁO & CẬP NHẬT HỒ SƠ NHÂN SỰ 360° (DEDICATED FULL-PAGE VIEW) -->
+<div id="view-employee-form" class="view hidden-view h-full flex flex-col bg-slate-50 overflow-hidden relative animate-fade-in">
+    <!-- Main Scrollable Form Body -->
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/60">
+        <div class="max-w-4xl mx-auto space-y-4">
+            
+            <form id="form-employee" onsubmit="submitEmployeeForm(event)" class="space-y-4" novalidate>
+                <input type="hidden" id="emp-edit-id" value="">
+
+                <!-- CARD 1: THÔNG TIN CÁ NHÂN & LIÊN HỆ -->
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                            <i class="ph-bold ph-identification-card text-teal-700 text-sm"></i>
+                            <span>1. Thông Tin Cá Nhân & Liên Hệ</span>
+                        </h4>
+                        <span class="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                            * Bắt buộc nhập
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+                        <!-- Mã NV -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Mã Nhân Viên <span class="text-rose-500">*</span></label>
+                            <input type="text" id="emp-code" required placeholder="VD: TX012, DD002..."
+                                   class="w-full h-10 px-3 text-xs font-mono font-bold uppercase border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Họ và tên -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Họ Và Tên Đầy Đủ <span class="text-rose-500">*</span></label>
+                            <input type="text" id="emp-full-name" required placeholder="VD: Nguyễn Văn An"
+                                   class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Biệt danh hiện trường -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Biệt Danh (Nickname)</label>
+                            <input type="text" id="emp-nickname" placeholder="VD: BỤI 94, LIBRA..."
+                                   class="w-full h-10 px-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Giới tính -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Giới Tính</label>
+                            <select id="emp-gender" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="MALE">Nam</option>
+                                <option value="FEMALE">Nữ</option>
+                                <option value="OTHER">Khác</option>
+                            </select>
+                        </div>
+
+                        <!-- Ngày sinh -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Ngày Sinh</label>
+                            <input type="date" id="emp-dob"
+                                   class="w-full h-10 px-3 text-xs font-mono border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Số điện thoại -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Số Điện Thoại <span class="text-rose-500">*</span></label>
+                            <input type="tel" id="emp-phone" required placeholder="0901234567"
+                                   class="w-full h-10 px-3 text-xs font-mono font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Số Zalo -->
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Số Zalo Liên Lạc</label>
+                            <input type="text" id="emp-zalo" placeholder="0901234567"
+                                   class="w-full h-10 px-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Email -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Email Công Việc / Cá Nhân</label>
+                            <input type="email" id="emp-email" placeholder="example@bimlogistics.vn"
+                                   class="w-full h-10 px-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Chỗ ở hiện nay -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Chỗ Ở Hiện Nay</label>
+                            <input type="text" id="emp-current-address" placeholder="Số nhà, đường, phường/xã, quận/huyện..."
+                                   class="w-full h-10 px-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Địa chỉ thường trú -->
+                        <div class="md:col-span-12">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Địa Chỉ Thường Trú Theo CCCD</label>
+                            <input type="text" id="emp-permanent-address" placeholder="Địa chỉ ghi trên căn cước công dân..."
+                                   class="w-full h-10 px-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: ĐỊNH DANH PHÁP LÝ & TÀI KHOẢN NGÂN HÀNG -->
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                            <i class="ph-bold ph-bank text-teal-700 text-sm"></i>
+                            <span>2. Định Danh Pháp Lý & Tài Khoản Ngân Hàng Chi Lương</span>
+                        </h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+                        <!-- Số CCCD -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Số Căn Cước Công Dân (CCCD)</label>
+                            <input type="text" id="emp-national-id" placeholder="12 chữ số CCCD..."
+                                   class="w-full h-10 px-3 text-xs font-mono font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Ngày cấp -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Ngày Cấp CCCD</label>
+                            <input type="date" id="emp-national-id-date"
+                                   class="w-full h-10 px-3 text-xs font-mono border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Nơi cấp -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Nơi Cấp CCCD</label>
+                            <input type="text" id="emp-national-id-place" placeholder="Cục Cảnh sát QLHC về TTXH"
+                                   class="w-full h-10 px-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Mã số thuế cá nhân -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Mã Số Thuế Cá Nhân (MST)</label>
+                            <input type="text" id="emp-tax-id" placeholder="Mã số thuế 10 số..."
+                                   class="w-full h-10 px-3 text-xs font-mono font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Số sổ BHXH -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Số Sổ Bảo Hiểm Xã Hội (BHXH)</label>
+                            <input type="text" id="emp-insurance-number" placeholder="Mã số BHXH..."
+                                   class="w-full h-10 px-3 text-xs font-mono font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Số tài khoản ngân hàng -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Số Tài Khoản Ngân Hàng</label>
+                            <input type="text" id="emp-bank-account" placeholder="Số TK chuyển lương..."
+                                   class="w-full h-10 px-3 text-xs font-mono font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Tên ngân hàng -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Tên Ngân Hàng</label>
+                            <input type="text" id="emp-bank-name" placeholder="VD: Vietcombank, MBBank..."
+                                   class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Tên chủ tài khoản -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Tên Chủ Tài Khoản (In hoa)</label>
+                            <input type="text" id="emp-bank-beneficiary" placeholder="NGUYEN VAN AN"
+                                   class="w-full h-10 px-3 text-xs font-bold uppercase border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 3: THÔNG TIN CÔNG TÁC & CHUYÊN MÔN NGHỀ NGHIỆP -->
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                            <i class="ph-bold ph-briefcase text-teal-700 text-sm"></i>
+                            <span>3. Thông Tin Chuyên Môn & Trạng Thái Công Tác</span>
+                        </h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+                        <!-- Phòng ban -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Phòng Ban Công Tác <span class="text-rose-500">*</span></label>
+                            <select id="emp-department" required onchange="handleEmployeeDeptChange(this.value)" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="ADMIN_ACC">Phòng Hành Chính & Kế Toán</option>
+                                <option value="DISPATCH" selected>Phòng Điều Vận</option>
+                                <option value="SALES">Phòng Kinh Doanh</option>
+                                <option value="MAINTENANCE">Phòng Bảo Trì Vận Hành</option>
+                                <option value="CUSTOMS">Phòng Dịch Vụ Hải Quan</option>
+                                <option value="MANAGEMENT">Ban Giám Đốc</option>
+                            </select>
+                        </div>
+
+                        <!-- Chức vụ / Vai trò -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Chức Vụ / Vai Trò <span class="text-rose-500">*</span></label>
+                            <select id="emp-role" required onchange="handleEmployeeRoleChange()" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="DRIVER" selected>Tài xế & Giao nhận (DRIVER)</option>
+                                <option value="LEAD_DISPATCH">Chuyên viên Phụ trách (LEAD_DISPATCH)</option>
+                                <option value="DISPATCHER">Nhân viên Điều vận (DISPATCHER)</option>
+                                <option value="DISPATCH_ASST">Nhân viên Hỗ trợ (DISPATCH_ASST)</option>
+                            </select>
+                        </div>
+
+                        <!-- Trạng thái hoạt động -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Trạng Thái Công Tác</label>
+                            <select id="emp-is-active" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="true">Đang làm việc (ACTIVE)</option>
+                                <option value="false">Tạm ngưng / Nghỉ việc (INACTIVE)</option>
+                            </select>
+                        </div>
+
+                        <!-- Ngày vào làm -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Ngày Bắt Đầu Làm Việc</label>
+                            <input type="date" id="emp-join-date"
+                                   class="w-full h-10 px-3 text-xs font-mono border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Ngày thôi việc -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Ngày Thôi Việc (Nếu có)</label>
+                            <input type="date" id="emp-resign-date"
+                                   class="w-full h-10 px-3 text-xs font-mono border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Tài khoản đăng nhập hệ thống (User Account) -->
+                        <div class="md:col-span-12 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <div class="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                                <label class="block font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                                    <i class="ph-bold ph-user-circle text-teal-600 text-base"></i>
+                                    <span>Tài Khoản Đăng Nhập Hệ Thống (User Account)</span>
+                                </label>
+                                <span class="text-[11px] text-slate-500">Liên kết nhân sự với tài khoản hệ thống (VD: ketoan, dieudo, sales...)</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <select id="emp-user-id" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                        <option value="">-- Không liên kết tài khoản --</option>
+                                    </select>
+                                </div>
+                                <div id="emp-user-hint" class="flex items-center text-xs text-slate-500 px-3 py-2 bg-white rounded-xl border border-dashed border-slate-200">
+                                    <span id="emp-user-hint-text">Chọn tài khoản đăng nhập để nhân sự truy cập phân hệ tương ứng.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chuyên môn tài xế (GPLX & Hạn bằng) -->
+                        <div id="emp-driver-fields" class="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-3.5 p-4 bg-teal-50/60 rounded-xl border border-teal-200">
+                            <div>
+                                <label class="block font-bold text-teal-900 text-xs mb-1">Số Giấy Phép Lái Xe (GPLX)</label>
+                                <input type="text" id="emp-license-number" placeholder="Số bằng lái hạng C, FC, FE..."
+                                       class="w-full h-10 px-3 text-xs font-mono font-bold border border-teal-200 rounded-xl bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-teal-900 text-xs mb-1">Ngày Hết Hạn Bằng Lái</label>
+                                <input type="date" id="emp-license-expiry"
+                                       class="w-full h-10 px-3 text-xs font-mono border border-teal-200 rounded-xl bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                            </div>
+                        </div>
+
+                        <!-- Các trường ẩn để tương thích backward backend API -->
+                        <input type="hidden" id="emp-base-salary" value="0">
+                        <input type="hidden" id="emp-insurance-salary" value="0">
+                        <input type="hidden" id="emp-is-insurance" value="true">
+                    </div>
+                </div>
+
+                <!-- CARD 4: HỢP ĐỒNG LAO ĐỘNG & CHẾ ĐỘ LƯƠNG HIỆN HÀNH (MASTER FORM 360° - GSS STANDARD) -->
+                <div class="bg-gradient-to-br from-indigo-50/70 via-white to-slate-50 p-5 sm:p-6 rounded-2xl border border-indigo-200/80 shadow-xs space-y-4" id="emp-active-contract-card">
+                    <div class="flex items-center justify-between pb-3 border-b border-indigo-100 flex-wrap gap-2">
+                        <div class="flex items-center space-x-2">
+                            <i class="ph-bold ph-certificate text-indigo-700 text-base"></i>
+                            <h4 class="text-xs font-bold text-indigo-950 uppercase tracking-wider font-heading">
+                                4. Hợp Đồng Lao Động Hiện Hành & Chế Độ Lương (Tự Động Kéo Từ HĐLĐ)
+                            </h4>
+                        </div>
+                        <div id="emp-contract-badge-container">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200" id="emp-contract-status-badge">
+                                Đang kiểm tra HĐ...
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Khung hiển thị thông tin HĐ hiện hành -->
+                    <div id="emp-contract-info-box" class="space-y-3.5">
+                        <!-- Sẽ render động qua JS khi nạp hồ sơ nhân viên -->
+                    </div>
+                </div>
+
+                <!-- Footer Actions: Cụm 4 nút chuẩn [Sửa, Lưu, In, Xóa] như hình 2 -->
+                <div class="pt-3 flex items-center justify-between flex-wrap gap-3">
+                    <button type="button" onclick="backToPersonnel()" class="px-5 py-2.5 bg-transparent border border-slate-300 text-slate-700 hover:bg-slate-700 hover:text-white rounded-xl text-xs font-bold font-heading transition-all cursor-pointer flex items-center gap-1.5">
+                        <i class="ph-bold ph-arrow-left"></i>
+                        <span>Quay lại</span>
+                    </button>
+                    <div class="flex items-center space-x-2.5 flex-wrap">
+                        <button type="button" id="btn-employee-edit-bottom" onclick="enableEmployeeEdit()"
+                            class="hidden px-5 py-2.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                            <i class="ph-bold ph-pencil-simple text-base"></i>
+                            <span>Sửa</span>
+                        </button>
+                        <button type="submit" id="emp-submit-btn" class="px-6 py-2.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center space-x-2 transition-all cursor-pointer">
+                            <i class="ph-bold ph-check-circle text-base"></i>
+                            <span id="emp-submit-btn-text">Lưu</span>
+                        </button>
+                        <button type="button" id="btn-employee-print-bottom" onclick="printCurrentEmployeeProfile()"
+                            class="hidden px-4 py-2.5 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="In hồ sơ nhân sự">
+                            <i class="ph-bold ph-printer text-base"></i>
+                            <span>In</span>
+                        </button>
+                        <button type="button" id="btn-employee-delete-bottom" onclick="confirmDeleteCurrentEmployee()"
+                            class="hidden px-4 py-2.5 bg-transparent border border-rose-600 text-rose-700 hover:bg-rose-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Xóa nhân sự">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                            <span>Xóa</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,204 @@
+<!-- 5.1 VIEW KHAI BÁO & THEO DÕI TỜ KHAI HẢI QUAN (DEDICATED FULL-PAGE VIEW) -->
+<div id="view-customs-form" class="view hidden-view h-full flex flex-col bg-slate-50 overflow-hidden relative animate-fade-in">
+    <!-- Main Scrollable Form Body (Header đã được chuyển lên Topbar) -->
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/60">
+        <div class="max-w-4xl mx-auto space-y-4">
+            
+            <form id="form-customs-declaration" onsubmit="submitCustomsDeclarationForm(event)" class="space-y-4" novalidate>
+                <input type="hidden" id="customs-edit-id" value="">
+
+                <!-- CARD 1: THÔNG TIN TỜ KHAI & DOANH NGHIỆP -->
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                            <i class="ph-bold ph-file-text text-teal-700 text-sm"></i>
+                            <span>1. Thông Tin Tờ Khai VNACCS & Khách Hàng</span>
+                        </h4>
+                        <span class="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                            * Bắt buộc nhập
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Số Tờ Khai VNACCS <span class="text-rose-500">*</span></label>
+                            <input type="text" id="cust-decl-number" placeholder="VD: 106883921100 (12 số)" maxlength="20" class="w-full h-10 px-3 text-xs uppercase font-mono font-bold tracking-wider border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all" required>
+                        </div>
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Ngày Đăng Ký Tờ Khai <span class="text-rose-500">*</span></label>
+                            <input type="date" id="cust-decl-date" class="w-full h-10 px-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all" required>
+                        </div>
+
+                        <div class="md:col-span-8">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Doanh Nghiệp / Khách Hàng <span class="text-rose-500">*</span></label>
+                            <select id="cust-customer-id" class="w-full h-10 px-3 text-xs font-bold text-slate-800 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all" required>
+                                <option value="">-- Chọn Doanh Nghiệp / Chủ Hàng --</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Chiều Vận Chuyển</label>
+                            <select id="cust-direction" class="w-full h-10 px-3 text-xs font-bold text-teal-800 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="IMPORT">Hàng Nhập Khẩu</option>
+                                <option value="EXPORT">Hàng Xuất Khẩu</option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-5">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Loại Hình VNACCS <span class="text-rose-500">*</span></label>
+                            <select id="cust-decl-type" class="w-full h-10 px-3 text-xs font-bold text-slate-800 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="A11">A11 - Nhập KD Tiêu Dùng</option>
+                                <option value="A12">A12 - Nhập KD Sản Xuất</option>
+                                <option value="B11">B11 - Xuất Kinh Doanh</option>
+                                <option value="E21">E21 - Nhập Nguyên Liệu Gia Công</option>
+                                <option value="E31">E31 - Nhập Sản Xuất Xuất Khẩu</option>
+                                <option value="E62">E62 - Xuất Sản Phẩm Gia Công</option>
+                                <option value="G11">G11 - Tạm Nhập Tái Xuất</option>
+                                <option value="H11">H11 - Hàng Phi Mậu Dịch</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-7">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Chi Cục Hải Quan Mở Tờ Khai</label>
+                            <select id="cust-office-code" onchange="onCustomsOfficeChange(this)" class="w-full h-10 px-3 text-xs font-semibold text-slate-800 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="02CI">02CI - Cửa Khẩu Cảng Cát Lái (KV4 TP.HCM)</option>
+                                <option value="51CB">51CB - Cửa Khẩu Cảng Cái Mép (BR-VT)</option>
+                                <option value="43BA">43BA - Chi Cục Hải Quan Sóng Thần (Bình Dương)</option>
+                                <option value="43BD">43BD - Chi Cục HQ Quản Lý Hàng XNK Ngoài KCN Bình Dương</option>
+                                <option value="47PA">47PA - Chi Cục Hải Quan Long An</option>
+                                <option value="02IK">02IK - Chi Cục HQ Chuyển Phát Nhanh TP.HCM</option>
+                                <option value="01NV">01NV - Chi Cục HQ Sân Bay Nội Bài</option>
+                                <option value="03EE">03EE - Chi Cục HQ Cảng Đình Vũ (Hải Phòng)</option>
+                                <option value="OTHER">Chi Cục Khác...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: PHÂN LUỒNG & ĐỐI SOÁT VẬN TẢI -->
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                            <i class="ph-bold ph-shield-check text-teal-700 text-sm"></i>
+                            <span>2. Phân Luồng & Trạng Thái Thông Quan</span>
+                        </h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Phân Luồng Hải Quan <span class="text-rose-500">*</span></label>
+                            <select id="cust-lane" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="GREEN" class="text-emerald-700 font-bold">Luồng Xanh (1) - Tự Động Thông Quan</option>
+                                <option value="YELLOW" class="text-amber-700 font-bold">Luồng Vàng (2) - Thẩm Định Hồ Sơ</option>
+                                <option value="RED" class="text-rose-700 font-bold">Luồng Đỏ (3) - Kiểm Tra Thực Tế / Soi Chiếu</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Trạng Thái Hồ Sơ</label>
+                            <select id="cust-status" class="w-full h-10 px-3 text-xs font-bold text-slate-800 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="DRAFT">Chờ truyền tờ khai</option>
+                                <option value="SUBMITTED" selected>Đã đăng ký VNACCS</option>
+                                <option value="PROCESSING">Đang thẩm định hồ sơ</option>
+                                <option value="INSPECTION">Kiểm hóa bãi / Cảng</option>
+                                <option value="CLEARED">Đã thông quan</option>
+                                <option value="RELEASED">Đã qua KV giám sát</option>
+                                <option value="CANCELLED">Hủy tờ khai</option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Số Vận Đơn (B/L)</label>
+                            <input type="text" id="cust-bl-number" placeholder="VD: ONE09283719" class="w-full h-10 px-3 text-xs uppercase font-mono font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Số Container</label>
+                            <input type="text" id="cust-container-number" placeholder="VD: TCLU1234567" maxlength="20" class="w-full h-10 px-3 text-xs uppercase font-mono font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Mã Chuyến Xe Liên Kết</label>
+                            <select id="cust-trip-id" class="w-full h-10 px-3 text-xs font-mono font-bold text-teal-800 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="">-- Chưa gán chuyến xe --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 3: TÀI CHÍNH & THUẾ & ĐÍNH KÈM -->
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                            <i class="ph-bold ph-currency-circle-dollar text-teal-700 text-sm"></i>
+                            <span>3. Nghĩa Vụ Thuế & Chi Phí Dịch Vụ</span>
+                        </h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Thuế XNK & VAT Phải Nộp (VNĐ)</label>
+                            <input type="text" id="cust-tax-amount" placeholder="0" class="w-full h-10 px-3 text-xs font-mono font-bold text-right border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Trạng Thái Nộp Thuế</label>
+                            <select id="cust-tax-paid" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="false">Chưa nộp thuế</option>
+                                <option value="true">Đã nộp thuế</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Chi Hộ Kiểm Hóa / Nâng Hạ</label>
+                            <input type="text" id="cust-inspection-fee" placeholder="0" class="w-full h-10 px-3 text-xs font-mono font-medium text-right border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Phí Dịch Vụ Khai Hải Quan</label>
+                            <input type="text" id="cust-service-fee" placeholder="VD: 800,000" class="w-full h-10 px-3 text-xs font-mono font-bold text-right text-teal-700 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Ghi chú & Đính kèm -->
+                        <div class="md:col-span-12">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Ghi Chú Tiến Độ / Thủ Tục</label>
+                            <textarea id="cust-notes" rows="3" placeholder="Nhập lưu ý: Hẹn cán bộ kiểm hóa, biên bản niêm phong chì..." class="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all"></textarea>
+                        </div>
+                        <div class="md:col-span-12">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block font-bold text-slate-700 text-xs">Tệp Đính Kèm Tờ Khai (PDF / Ảnh)</label>
+                                <button type="button" onclick="pasteImageFromClipboard('customs')" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 cursor-pointer" title="Dán ảnh chụp tờ khai từ Clipboard (Ctrl+V)">
+                                    <i class="ph-bold ph-clipboard-text"></i> Dán ảnh (Ctrl+V)
+                                </button>
+                            </div>
+                            <input type="file" id="cust-document-file" accept=".pdf,image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Actions: Cụm 4 nút chuẩn [Xóa, In, Sửa, Lưu] -->
+                <div class="pt-3 flex items-center justify-between flex-wrap gap-3">
+                    <button type="button" onclick="backToCustoms()" class="px-5 py-2.5 bg-transparent border border-slate-300 text-slate-700 hover:bg-slate-700 hover:text-white rounded-xl text-xs font-bold font-heading transition-all cursor-pointer flex items-center gap-1.5">
+                        <i class="ph-bold ph-arrow-left"></i>
+                        <span>Back</span>
+                    </button>
+                    <div class="flex items-center space-x-2.5 flex-wrap">
+                        <button type="button" id="btn-customs-edit-bottom" onclick="enableCustomsEdit()"
+                            class="hidden px-5 py-2.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                            <i class="ph-bold ph-pencil-simple text-base"></i>
+                            <span>Sửa</span>
+                        </button>
+                        <button type="submit" id="cust-submit-btn" class="px-6 py-2.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center space-x-2 transition-all cursor-pointer">
+                            <i class="ph-bold ph-check text-base"></i>
+                            <span id="cust-submit-btn-text">Lưu</span>
+                        </button>
+                        <button type="button" id="btn-customs-print-bottom" onclick="printCurrentCustomsDeclaration()"
+                            class="hidden px-4 py-2.5 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="In tờ khai hải quan">
+                            <i class="ph-bold ph-printer text-base"></i>
+                            <span>In</span>
+                        </button>
+                        <button type="button" id="btn-customs-delete-bottom" onclick="confirmDeleteCurrentCustomsDeclaration()"
+                            class="hidden px-4 py-2.5 bg-transparent border border-rose-600 text-rose-700 hover:bg-rose-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Xóa tờ khai hải quan">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                            <span>Xóa</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

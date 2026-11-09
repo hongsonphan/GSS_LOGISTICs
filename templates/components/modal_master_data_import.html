@@ -1,0 +1,130 @@
+<!-- MODAL NHẬP DANH MỤC BAN ĐẦU TỪ EXCEL (MASTER DATA EXCEL IMPORT MODAL) -->
+<div id="modal-master-data-import" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-teal-800 to-teal-950 text-white px-5 py-3.5 flex items-center justify-between border-b border-teal-700">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-teal-600/50 flex items-center justify-center text-teal-200 border border-teal-400/30">
+                    <i class="ph-bold ph-file-arrow-up text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black font-heading leading-tight tracking-tight">Nhập Danh Mục Từ File Excel</h3>
+                    <p class="text-[11px] text-teal-300 font-medium">Nhập dữ liệu ban đầu chuẩn hóa hệ thống Green Solutions Supply</p>
+                </div>
+            </div>
+            <button onclick="closeMasterDataImportModal()" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer">
+                <i class="ph-bold ph-x text-base"></i>
+            </button>
+        </div>
+
+        <!-- Form Body -->
+        <form id="form-master-data-import" onsubmit="submitMasterDataImport(event)" class="p-4 md:p-5 space-y-4">
+            <!-- 1. Bảng danh mục đích -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Bảng Danh Mục Đích Cần Nhập <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative">
+                    <select id="md-import-catalog-select" onchange="onImportCatalogChange(this.value)"
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs md:text-sm font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-600 focus:bg-white transition-all">
+                        <option value="customers">Khách Hàng</option>
+                        <option value="tariffs">Biểu Cước Khách</option>
+                        <option value="subcontractors">Thầu Phụ & Nhà Cung Cấp</option>
+                        <option value="locations">Cảng & Kho Bãi</option>
+                        <option value="shipping_lines">Hãng Tàu</option>
+                        <option value="vehicles">Đầu Kéo & Xe</option>
+                        <option value="trailers">Rơ-Moóc</option>
+                        <option value="containers">Quy Cách Cont & Xe</option>
+                        <option value="opening_balance">Số Dư Ban Đầu</option>
+                        <option value="expenses">Khoản Mục Chi</option>
+                        <option value="driver_tariffs">Biểu Phí Lương Chuyến</option>
+                        <option value="allowances">Phụ Cấp & Kiểm Hóa</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 2. Hộp Tải Mẫu Nhanh -->
+            <div class="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl flex items-center justify-between gap-3 text-xs">
+                <div class="flex items-center space-x-2 text-teal-900">
+                    <i class="ph-bold ph-info text-base text-teal-700 shrink-0"></i>
+                    <span class="font-medium">Chưa có file mẫu chuẩn của danh mục này?</span>
+                </div>
+                <button type="button" onclick="downloadSelectedImportTemplate()" class="px-2.5 py-1 bg-white hover:bg-teal-600 hover:text-white text-teal-800 border border-teal-300 font-bold rounded-lg text-xs shadow-2xs flex items-center space-x-1 shrink-0 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-download-simple"></i>
+                    <span>Tải Mẫu Excel</span>
+                </button>
+            </div>
+
+            <!-- 3. Khu vực kéo thả / chọn file -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Tệp Dữ Liệu Excel (.xlsx) <span class="text-rose-500">*</span>
+                </label>
+                <div id="md-dropzone" 
+                     class="border-2 border-dashed border-slate-300 hover:border-teal-500 bg-slate-50/60 hover:bg-teal-50/20 rounded-xl p-5 text-center transition-all cursor-pointer flex flex-col items-center justify-center space-y-2 select-none"
+                     onclick="document.getElementById('md-import-file-input').click()">
+                    <input type="file" id="md-import-file-input" accept=".xlsx,.xls" class="hidden" onchange="handleImportFileSelected(this)">
+                    
+                    <div class="w-12 h-12 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center">
+                        <i class="ph-bold ph-microsoft-excel-logo text-2xl"></i>
+                    </div>
+
+                    <div id="md-dropzone-prompt">
+                        <p class="text-xs md:text-sm font-bold text-slate-800">
+                            Nhấn để chọn tệp hoặc kéo thả vào đây
+                        </p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">
+                            Định dạng hỗ trợ: Microsoft Excel (.xlsx, .xls) — Dung lượng tối đa 15MB
+                        </p>
+                    </div>
+
+                    <!-- File info preview (hidden until file is chosen) -->
+                    <div id="md-file-info-preview" class="hidden flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-teal-300 text-xs font-bold text-teal-900 shadow-2xs">
+                        <i class="ph-bold ph-file-xls text-base text-emerald-600"></i>
+                        <span id="md-file-name" class="max-w-[260px] truncate">chua_chon_file.xlsx</span>
+                        <span id="md-file-size" class="text-slate-400 font-normal">(0 KB)</span>
+                        <button type="button" onclick="event.stopPropagation(); clearImportFileInput();" class="text-slate-400 hover:text-rose-600 p-0.5 ml-1">
+                            <i class="ph-bold ph-x text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Tùy chọn xử lý trùng lặp -->
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                <label class="flex items-center space-x-2 cursor-pointer select-none">
+                    <input type="checkbox" id="md-import-upsert-checkbox" checked class="w-4 h-4 text-teal-700 rounded border-slate-300 focus:ring-teal-500">
+                    <span class="text-xs font-bold text-slate-800">Cập nhật dữ liệu nếu đã tồn tại mã (Upsert - Khuyến nghị)</span>
+                </label>
+                <p class="text-[11px] text-slate-500 mt-1 pl-6">
+                    Nếu bỏ chọn, hệ thống sẽ bỏ qua các dòng có mã/biển số đã có trong hệ thống và chỉ thêm mới các dòng chưa có.
+                </p>
+            </div>
+
+            <!-- 5. Kết quả & Tiến trình xử lý (Ẩn mặc định) -->
+            <div id="md-import-status-container" class="hidden">
+                <!-- Đang tải -->
+                <div id="md-import-loading" class="hidden p-4 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 flex items-center justify-center space-x-2 text-xs font-bold">
+                    <i class="ph ph-spinner animate-spin text-lg"></i>
+                    <span>Hệ thống đang đọc và nhập dữ liệu vào cơ sở dữ liệu... Vui lòng chờ</span>
+                </div>
+
+                <!-- Kết quả thành công hoặc có lỗi -->
+                <div id="md-import-result" class="hidden p-3.5 rounded-xl border text-xs">
+                    <!-- Nội dung kết quả inject via JS -->
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
+                <button type="button" onclick="closeMasterDataImportModal()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold font-heading transition-colors cursor-pointer">
+                    Đóng
+                </button>
+                <button type="submit" id="md-import-submit-btn" class="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="ph-bold ph-upload-simple text-sm"></i>
+                    <span>Bắt Đầu Nhập Dữ Liệu</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

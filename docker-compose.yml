@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gss_logistics_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gss_logistics_db
+      POSTGRES_USER: gss_logistics_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Khai bao DB_PASSWORD trong file .env}
+    ports:
+      - "127.0.0.1:5436:5432" # Chỉ mở trên localhost nội bộ máy chủ, không mở ra Internet
+    volumes:
+      - gss_logistics_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gss_logistics_user -d gss_logistics_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: gss_logistics_redis
+    restart: unless-stopped
+    command: redis-server --save "" --appendonly no --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build: .
+    container_name: gss_logistics_web
+    restart: unless-stopped
+    environment:
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: gss_logistics_db
+      DB_USER: gss_logistics_user
+      DB_PASSWORD: ${DB_PASSWORD:?Khai bao DB_PASSWORD trong file .env}
+      DB_HOST: db
+      DB_PORT: 5432
+      DJANGO_SETTINGS_MODULE: config.settings
+      REDIS_URL: redis://redis:6379/0
+      DEFAULT_BUSINESS_MODEL: ${DEFAULT_BUSINESS_MODEL:-ENTERPRISE_FULL}
+      # KHÔNG truyền WEB_CONCURRENCY vào container: giá trị rỗng làm gunicorn crash (int('')).
+      # Số worker do tham số --workers ở command bên dưới quyết định (đặt WEB_CONCURRENCY trong .env để ghi đè).
+    ports:
+      - "127.0.0.1:8086:8000" # Chỉ mở nội bộ máy chủ; truy cập từ ngoài đi qua Nginx (HTTPS)
+      - "172.17.0.1:8086:8000" # Cầu nối docker0: Nginx dạng container (container Nginx của máy chủ) gọi vào đây; không lộ ra Internet
+    volumes:
+      - .:/app
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${WEB_CONCURRENCY:-$(python scripts/compute_gunicorn_workers.py)} --timeout 120"
+
+volumes:
+  gss_logistics_postgres_data:

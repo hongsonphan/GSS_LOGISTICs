@@ -1,0 +1,236 @@
+{% load static media_tags %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tra Cứu Vận Đơn: {{ trip.trip_code }} - GSS Logistics</title>
+  <link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
+  <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=3.0">
+  
+  <!-- Phosphor Icons -->
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/regular/style.css' %}"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/bold/style.css' %}"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/fill/style.css' %}"/>
+
+  <style>
+    @import url("{% static 'vendor/fonts/fonts.css' %}");
+    body { font-family: "Inter", sans-serif; }
+  </style>
+  <!-- Tailwind CSS (build sẵn, đặt cuối <head> để giữ thứ tự ưu tiên như bản CDN cũ) -->
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+  <link rel="stylesheet" href="{% static 'css/contrast.css' %}">
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-12">
+
+  <!-- TOP HEADER BRANDING -->
+  <header class="bg-gradient-to-r from-teal-800 to-teal-900 text-white shadow-md">
+    <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-700/80 border border-teal-500 flex items-center justify-center font-black text-white text-xl shadow-xs">
+          B
+        </div>
+        <div>
+          <div class="text-[11px] uppercase tracking-wider text-teal-300 font-bold">GSS LOGISTICS PLATFORM</div>
+          <h1 class="text-base sm:text-lg font-black text-white tracking-tight">Tra Cứu Vận Đơn & Container</h1>
+        </div>
+      </div>
+      <div class="text-right">
+        <button type="button" onclick="copyTrackingLink()" class="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs">
+          <i class="ph-bold ph-share-network"></i>
+          <span class="hidden sm:inline">Chia Sẻ Link</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-3xl mx-auto px-3.5 py-4 space-y-4">
+
+    <!-- 1. THẺ THÔNG TIN VẬN ĐƠN & CONTAINER -->
+    <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+        <div>
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mã Vận Đơn Chuyến</span>
+          <div class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <span>{{ trip.trip_code }}</span>
+            <button type="button" onclick="copyTripCode('{{ trip.trip_code }}')" class="text-slate-400 hover:text-teal-700 text-sm" title="Sao chép mã">
+              <i class="ph-bold ph-copy"></i>
+            </button>
+          </div>
+          <div class="text-xs text-slate-500 font-medium mt-0.5">Khách hàng: <strong class="text-slate-800">{{ customer_name }}</strong></div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-black shadow-xs
+            {% if trip.status == 'COMPLETED' %}bg-emerald-100 text-emerald-800 border border-emerald-300
+            {% elif trip.status == 'DELIVERED' %}bg-teal-100 text-teal-800 border border-teal-300
+            {% elif trip.status == 'UNLOADING' or trip.status == 'AT_WAREHOUSE' %}bg-amber-100 text-amber-900 border border-amber-300
+            {% elif trip.status == 'IN_TRANSIT' %}bg-sky-100 text-sky-800 border border-sky-300
+            {% elif trip.status == 'CANCELLED' %}bg-rose-100 text-rose-800 border border-rose-300
+            {% else %}bg-slate-100 text-slate-700 border border-slate-300{% endif %}">
+            <i class="ph-bold ph-circle text-[8px] mr-1.5 animate-pulse"></i>
+            {{ trip.get_status_display }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Container & Thông Tin Giao Nhận (Chỉ hiển thị thông tin khách hàng cần biết) -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase font-bold">Số Container</div>
+          <div class="font-black text-slate-900 text-sm mt-0.5">{{ trip.container_number|default:"Đang cập nhật" }}</div>
+          <div class="text-[10px] text-teal-700 font-bold mt-0.5">{{ trip.container_type|default:"40HC" }}</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase font-bold">Số Chì (Seal)</div>
+          <div class="font-bold text-slate-900 text-sm mt-0.5">{{ trip.seal_number|default:"Chưa bấm chì" }}</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">Niêm phong kẹp chì</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase font-bold">Xe Giao Hàng</div>
+          <div class="font-bold text-slate-900 text-sm mt-0.5">{{ trip.vehicle.license_plate|default:"Đang điều xe" }}</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">Đầu kéo container</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase font-bold">Kho Giao Nhận</div>
+          <div class="font-bold text-slate-900 text-xs mt-0.5 truncate" title="{{ destination_warehouse }}">{{ destination_warehouse }}</div>
+          <div class="text-[10px] text-teal-700 font-medium mt-0.5">Điểm đến của lô hàng</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. TIẾN ĐỘ GIAO NHẬN LÔ HÀNG (6 MỐC CHUẨN B2B - AN TÂM THEO DÕI) -->
+    <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <i class="ph-bold ph-clock-countdown text-teal-700 text-lg"></i>
+          <span>Tiến Độ Vận Chuyển & Giao Nhận</span>
+        </h2>
+        <span class="text-xs text-slate-400 font-medium">Thời gian thực</span>
+      </div>
+
+      <div class="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+        {% for m in customer_milestones %}
+        <div class="relative flex items-start gap-3">
+          <div class="absolute -left-6 mt-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shadow-xs
+            {% if m.is_done %}bg-teal-600 text-white ring-4 ring-teal-100
+            {% elif m.is_active %}bg-amber-500 text-white ring-4 ring-amber-100 animate-pulse
+            {% else %}bg-slate-200 text-slate-400{% endif %}">
+            {% if m.is_done %}
+              <i class="ph-bold ph-check text-[10px]"></i>
+            {% elif m.is_active %}
+              <i class="ph-bold ph-spinner-gap animate-spin text-[10px]"></i>
+            {% else %}
+              {{ m.step }}
+            {% endif %}
+          </div>
+          <div class="flex-1">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="pr-2">
+                <h3 class="text-sm sm:text-base font-bold {% if m.is_done %}text-slate-900{% elif m.is_active %}text-amber-800 font-extrabold{% else %}text-slate-400{% endif %}">
+                  {{ m.title }}
+                </h3>
+                <p class="text-xs {% if m.is_done %}text-slate-500{% elif m.is_active %}text-amber-700 font-medium{% else %}text-slate-400{% endif %} mt-0.5">
+                  {{ m.desc }}
+                </p>
+              </div>
+              {% if m.time %}
+              <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold shrink-0 self-start sm:self-center shadow-2xs border
+                {% if m.is_done %}bg-teal-50 text-teal-900 border-teal-200
+                {% elif m.is_active %}bg-amber-50 text-amber-900 border-amber-300 font-black animate-pulse
+                {% else %}bg-slate-100 text-slate-400 border-slate-200{% endif %}">
+                <i class="ph-bold ph-clock text-sm text-teal-600"></i>
+                <span>{{ m.time }}</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- 3. CHỨNG TỪ BÀN GIAO HÀNG & CHỮ KÝ THỦ KHO (E-POD) -->
+    <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 space-y-3.5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <i class="ph-bold ph-signature text-emerald-700 text-lg"></i>
+          <span>Biên Bản Bàn Giao Hàng (E-POD)</span>
+        </h2>
+        <span class="text-xs text-slate-400 font-medium">Có chữ ký xác nhận</span>
+      </div>
+
+      {% if documents %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {% for doc in documents %}
+        <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100/80 transition-colors space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-800 truncate" title="{{ doc.title }}">{{ doc.title }}</span>
+            <span class="text-[10px] font-medium text-slate-500">{{ doc.created_at|date:"H:i d/m" }}</span>
+          </div>
+
+          {% if doc.file_path %}
+          <div class="rounded-lg overflow-hidden border border-slate-200 bg-white">
+            <a href="{{ doc.file_path|media_url }}" target="_blank" title="Bấm xem ảnh gốc kích thước lớn">
+              <img src="{{ doc.file_path|media_url }}" alt="{{ doc.title }}" class="w-full h-36 object-contain hover:scale-105 transition-transform duration-200">
+            </a>
+          </div>
+          {% endif %}
+
+          {% if doc.ocr_raw_text %}
+          <div class="text-[11px] text-slate-600 bg-white p-2 rounded-lg border border-slate-200 font-medium">
+            <i class="ph-bold ph-info text-teal-600 mr-1"></i>
+            {{ doc.ocr_raw_text }}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="py-8 text-center text-slate-400 space-y-2">
+        <i class="ph-bold ph-file-dashed text-4xl text-slate-300"></i>
+        <p class="text-xs font-medium">Biên bản nghiệm thu POD đang chờ tài xế và thủ kho bàn giao ký nhận tại kho.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- FOOTER HỖ TRỢ -->
+    <div class="text-center text-xs text-slate-400 pt-3 space-y-1">
+      <p>© 2026 GSS Logistics Platform. Hệ thống Giám sát Vận tải Container Toàn Diện.</p>
+      <p>Cần hỗ trợ tra cứu? Vui lòng liên hệ đơn vị vận chuyển của bạn.</p>
+    </div>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-full shadow-lg opacity-0 transition-opacity pointer-events-none z-50">
+    Đã sao chép liên kết!
+  </div>
+
+  <script>
+    function copyTrackingLink() {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        showToast("Đã sao chép liên kết tra cứu gửi khách hàng!");
+      }).catch(() => {
+        showToast("Vui lòng copy link trên thanh địa chỉ trình duyệt");
+      });
+    }
+
+    function copyTripCode(code) {
+      navigator.clipboard.writeText(code).then(() => {
+        showToast(`Đã sao chép mã vận đơn: ${code}`);
+      });
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.classList.remove('opacity-0');
+      setTimeout(() => {
+        t.classList.add('opacity-0');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>

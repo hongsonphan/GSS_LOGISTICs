@@ -1,0 +1,393 @@
+<!-- VIEW CHI TIẾT & IN PHIẾU THU / PHIẾU CHI TOÀN MÀN HÌNH (DEDICATED FULL-PAGE VIEW) -->
+<div id="view-cash-voucher-detail" class="view hidden-view h-full min-h-0 overflow-y-auto bg-slate-100 py-6 sm:py-8 space-y-4 animate-fade-in">
+    <div class="max-w-5xl mx-auto px-2 sm:px-4 space-y-4">
+        
+        <!-- Thanh Header Tiêu Đề Toàn Màn Hình (Ẩn khi in ấn qua no-print) -->
+        <div id="fullpage-voucher-top-toolbar" class="m-hide bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 no-print">
+            <div class="flex items-center space-x-3">
+                <button type="button" onclick="backToAccountingCashbook()" 
+                    class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 font-heading border border-slate-200">
+                    <i class="ph-bold ph-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+                <div class="h-4 w-px bg-slate-200"></div>
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-sm sm:text-base font-heading text-slate-900" id="fullpage-voucher-top-title">Chi Tiết Chứng Từ Sổ Quỹ Thu Chi</h3>
+                    <span id="fullpage-voucher-badge-code" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Khung Form Nhập Liệu / Hiệu Chỉnh Thông Tin Phiếu Thu / Chi -->
+        <div id="fullpage-voucher-edit-panel" class="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200 shadow-sm no-print space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-2.5">
+                    <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-lg font-bold">
+                        <i class="ph-bold ph-file-plus" id="fullpage-voucher-form-icon"></i>
+                    </span>
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wider font-heading" id="fullpage-voucher-form-title">
+                            Thông Tin Phiếu Thu / Chi
+                        </h4>
+                        <p class="text-xs text-slate-500 font-medium" id="fullpage-voucher-form-subtitle">Điền đầy đủ thông tin hạch toán nghiệp vụ sổ quỹ</p>
+                    </div>
+                </div>
+                <span id="fullpage-voucher-form-badge" class="m-hide text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">Đang ở chế độ Sửa</span>
+            </div>
+
+            <form id="form-fullpage-voucher" onsubmit="event.preventDefault(); saveFullpageVoucher();" class="space-y-4 text-xs font-semibold text-slate-700">
+                <input type="hidden" id="edit-voucher-id" value="">
+                <input type="hidden" id="edit-voucher-code" value="">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Loại Giao Dịch <span class="text-rose-500">*</span></label>
+                        <select id="edit-voucher-type" onchange="onEditVoucherTypeChange()" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <option value="INFLOW">Phiếu Thu (Tiền vào quỹ)</option>
+                            <option value="OUTFLOW">Phiếu Chi (Tiền ra khỏi quỹ)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Hình Thức Thanh Toán <span class="text-rose-500">*</span></label>
+                        <select id="edit-voucher-method" onchange="onEditVoucherMethodChange()" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <option value="BANK">Tài khoản Ngân Hàng (Chuyển khoản)</option>
+                            <option value="CASH">Quỹ Tiền Mặt (Tại công ty)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Khoản Mục Thu / Chi <span class="text-rose-500">*</span></label>
+                        <select id="edit-voucher-category" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Số Tiền (VNĐ) <span class="text-rose-500">*</span></label>
+                        <input type="text" id="edit-voucher-amount" required placeholder="VD: 5.000.000" oninput="updateLiveVoucherAmount(this.value)"
+                            class="input-number-vn w-full h-10 px-3 bg-white border border-slate-200 rounded-xl font-black text-slate-900 font-mono text-right focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Ngày Hạch Toán <span class="text-rose-500">*</span></label>
+                        <input type="date" id="edit-voucher-date" required onchange="updateLiveVoucherDate(this.value)"
+                            class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 font-mono focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Số Tham Chiếu / Chứng Từ Gốc</label>
+                        <input type="text" id="edit-voucher-ref" placeholder="VD: TVL-2026-001..." oninput="updateLiveVoucherRef(this.value)"
+                            class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl font-semibold uppercase text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Phân Loại Đối Tác</label>
+                        <select id="edit-voucher-partner-type" onchange="updateLiveVoucherPartnerType(this.value)" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <option value="">-- Tự do / Khác --</option>
+                            <option value="CUSTOMER">Khách hàng</option>
+                            <option value="DRIVER">Tài xế</option>
+                            <option value="DISPATCHER">Điều phối viên</option>
+                            <option value="SUBCONTRACTOR">Nhà xe bạn / Thầu phụ</option>
+                            <option value="VENDOR">Nhà cung cấp / Trạm BOT / Gara</option>
+                            <option value="INTERNAL">Nội bộ công ty</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block font-bold text-slate-700 mb-1" id="lbl-edit-voucher-partner-name">Họ Tên Đối Tác Nộp / Nhận Tiền</label>
+                        <input type="text" id="edit-voucher-partner-name" placeholder="VD: Bác tài Nguyễn Văn A..." oninput="updateLiveVoucherPartnerName(this.value)"
+                            class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1" id="lbl-edit-voucher-reason">Lý Do Thu / Chi</label>
+                    <textarea id="edit-voucher-notes" rows="3" placeholder="Ghi chú chi tiết lý do thu chi để in lên phiếu..." oninput="updateLiveVoucherReason(this.value)"
+                        class="w-full p-3 border border-slate-200 rounded-xl font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600"></textarea>
+                </div>
+
+                <!-- Cụm Nút Hành Động Ở Dưới Chân Form: Trái (Quay lại) - Phải (Xóa, In, Lưu/Cập nhật) -->
+                <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                    <!-- Bên trái: Nút Quay lại -->
+                    <button type="button" onclick="backToAccountingCashbook()" 
+                        class="px-4 py-2.5 bg-transparent border border-slate-300 text-slate-700 hover:bg-slate-700 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 font-heading">
+                        <i class="ph-bold ph-arrow-left text-sm"></i>
+                        <span>Back</span>
+                    </button>
+
+                    <!-- Bên phải: Toàn bộ nút hành động nghiệp vụ theo chuẩn (Sửa, Lưu, In, Xóa) -->
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <!-- Nút SỬA (Chỉ hiện khi xem phiếu đã lưu) -->
+                        <button type="button" id="btn-form-edit-voucher" onclick="enableFullpageVoucherEdit()" 
+                            class="hidden px-4 py-2.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Bật chế độ chỉnh sửa thông tin phiếu">
+                            <i class="ph-bold ph-pencil-simple text-sm"></i>
+                            <span>Sửa</span>
+                        </button>
+
+                        <!-- Nút LƯU (Tạo mới: "Lưu Phiếu" | Xem/Sửa: "Lưu") -->
+                        <button type="submit" id="btn-form-submit-voucher" 
+                            class="px-6 py-2.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-2 transition-all cursor-pointer">
+                            <i class="ph-bold ph-check-circle text-base"></i>
+                            <span id="btn-form-submit-voucher-text">Lưu</span>
+                        </button>
+
+                        <!-- Nút IN (Chỉ hiện khi xem phiếu đã lưu) -->
+                        <button type="button" id="btn-form-print-voucher" onclick="printCurrentFormVoucher()" 
+                            class="hidden px-4 py-2.5 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="In phiếu khổ A4">
+                            <i class="ph-bold ph-printer text-base"></i>
+                            <span>In</span>
+                        </button>
+
+                        <!-- Nút XÓA (Chỉ hiện khi xem phiếu đã lưu) -->
+                        <button type="button" id="btn-form-delete-voucher" onclick="confirmDeleteCashVoucher()" 
+                            class="hidden px-4 py-2.5 bg-transparent border border-rose-600 text-rose-700 hover:bg-rose-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Xóa phiếu khỏi sổ quỹ">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                            <span>Xóa</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Khổ giấy A4 hiển thị toàn trang (Chỉ dùng ngầm khi in ấn, ẩn trên giao diện màn hình) -->
+        <div id="fullpage-voucher-printable-container" class="hidden justify-center overflow-x-auto pb-8">
+            <div id="fullpage-cash-voucher-printable-area" class="w-full max-w-[840px] bg-white p-6 sm:p-8 rounded-lg shadow-xl border border-slate-300 text-slate-900 font-sans text-xs space-y-4 voucher-mode-dual">
+                
+                <!-- ==================== LIÊN 1 ==================== -->
+                <div class="voucher-slip voucher-slip-1 pb-3">
+                    <!-- Header Đơn vị & Mẫu số BTC -->
+                    <div class="flex justify-between items-start gap-3 pb-2 border-b border-slate-300">
+                        <div class="flex items-center gap-3">
+                            <img src="/static/images/gss_logo.svg" alt="Green Solutions Supply" class="h-12 w-auto object-contain shrink-0 print-comp-logo" onerror="this.src='/media/gss_logo.svg'">
+                            <div class="space-y-0.5 text-left">
+                                <h4 class="font-black text-xs sm:text-sm uppercase tracking-tight text-slate-900 font-heading print-comp-name">CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH</h4>
+                                <p class="text-[10px] text-slate-600 leading-tight print-comp-address">Đ/c: 302/5 Lê Đức Thọ, Phường An Nhơn, TP Hồ Chí Minh, Việt Nam</p>
+                                <p class="text-[9.5px] text-slate-500 leading-tight print-comp-contact">MST: 0316657112 • Hotline: —</p>
+                            </div>
+                        </div>
+                        <div class="text-right space-y-0.5 shrink-0">
+                            <p class="font-bold text-[11px] text-slate-900 v-template-no">Mẫu số 01 - TT</p>
+                            <p class="text-[9px] text-slate-500 italic max-w-[170px] leading-tight">(Ban hành theo TT số 200/2014/TT-BTC của BTC)</p>
+                            <div class="pt-0.5 text-[10.5px] font-mono text-slate-700 leading-tight">
+                                <p>Số: <strong class="v-code text-slate-900 font-bold">-</strong></p>
+                                <p>Nợ: <span class="v-debit-acc font-semibold">1121</span> | Có: <span class="v-credit-acc font-semibold">1411</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tiêu đề Phiếu & Liên 1 -->
+                    <div class="text-center py-2 space-y-0.5">
+                        <h2 class="text-base sm:text-lg font-black uppercase tracking-wider text-slate-900 font-heading v-title">
+                            PHIẾU THU
+                        </h2>
+                        <div class="flex items-center justify-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full text-[9.5px] font-bold bg-teal-100 text-teal-900 border border-teal-200">Liên 1: Lưu tại cuống / Kế toán</span>
+                            <span class="italic text-[10.5px] text-slate-600 font-medium v-date">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Nội dung chứng từ -->
+                    <div class="space-y-1.5 pt-1 text-slate-800 text-[11px] sm:text-xs">
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px] v-partner-label">Họ tên người nộp tiền:</span>
+                            <span class="font-bold text-slate-900 flex-1 truncate v-partner-name">-</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px]">Địa chỉ / Bộ phận:</span>
+                            <span class="text-slate-700 flex-1 truncate v-department">Đội xe vận tải Green Solutions Supply</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px] v-reason-label">Lý do nộp:</span>
+                            <span class="text-slate-800 flex-1 font-medium v-reason">-</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px]">Số tiền:</span>
+                            <div class="flex-1 flex items-baseline gap-2">
+                                <span class="font-black text-xs sm:text-sm text-slate-950 font-heading font-mono v-amount">0 đ</span>
+                                <span class="text-[10px] text-slate-500 font-medium">(Hình thức: <strong class="v-method">Quỹ Tiền Mặt</strong>)</span>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px]">Viết bằng chữ:</span>
+                            <span class="italic font-bold text-slate-900 flex-1 v-amount-words">-</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px]">Kèm theo:</span>
+                            <span class="text-slate-700 flex-1 truncate v-attachments">01 Bảng kê chứng từ gốc</span>
+                        </div>
+                    </div>
+
+                    <!-- Khung chữ ký 5 bên Liên 1 -->
+                    <div class="grid grid-cols-5 gap-1.5 text-center pt-3 pb-2 text-[10px] sm:text-[10.5px]">
+                        <div class="flex flex-col justify-between h-20">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">Giám Đốc</p>
+                                <p class="text-[9px] text-slate-400 italic">(Ký, họ tên, dấu)</p>
+                            </div>
+                            <div class="h-6"></div>
+                        </div>
+                        <div class="flex flex-col justify-between h-20">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">Kế Toán Trưởng</p>
+                                <p class="text-[9px] text-slate-400 italic">(Ký, họ tên)</p>
+                            </div>
+                            <div class="h-6"></div>
+                        </div>
+                        <div class="flex flex-col justify-between h-20">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900 v-sign-partner-role">Người Nộp Tiền</p>
+                                <p class="text-[9px] text-slate-400 italic">(Ký, họ tên)</p>
+                            </div>
+                            <div class="h-6"></div>
+                        </div>
+                        <div class="flex flex-col justify-between h-20">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">Người Lập Phiếu</p>
+                                <p class="text-[9px] text-slate-400 italic">(Ký, họ tên)</p>
+                            </div>
+                            <p class="font-bold text-slate-800 text-[10px] v-creator-name truncate">Kế toán viên</p>
+                        </div>
+                        <div class="flex flex-col justify-between h-20">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">Thủ Quỹ</p>
+                                <p class="text-[9px] text-slate-400 italic">(Ký, họ tên)</p>
+                            </div>
+                            <div class="h-6"></div>
+                        </div>
+                    </div>
+
+                    <!-- Xác nhận nhận đủ tiền Liên 1 -->
+                    <div class="pt-1.5 border-t border-slate-200 text-[10px] text-slate-600 italic flex justify-between items-center">
+                        <p>+ Đã nhận đủ số tiền: <span class="font-semibold text-slate-800 v-received-words">-</span></p>
+                        <p class="v-sign-date text-slate-500">-</p>
+                    </div>
+                </div>
+
+                <!-- ==================== ĐƯỜNG CẮT PHÂN CÁCH (CUTTING LINE) ==================== -->
+                <div class="voucher-cut-separator relative py-2 text-center no-print-if-single">
+                    <div class="border-t-2 border-dashed border-slate-400 w-full absolute top-1/2 left-0 -translate-y-1/2"></div>
+                    <span class="relative bg-white px-3 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-300 rounded-full inline-flex items-center gap-1 shadow-2xs">
+                        <i class="ph-bold ph-scissors text-teal-600"></i>
+                        <span>Đường cắt phân chia Liên 1 (Lưu kế toán) và Liên 2 (Giao đối tác / Tài xế)</span>
+                        <i class="ph-bold ph-scissors text-teal-600 rotate-180"></i>
+                    </span>
+                </div>
+
+                <!-- ==================== LIÊN 2 ==================== -->
+                <div class="voucher-slip voucher-slip-2 pt-2 pb-2">
+                    <!-- Header Đơn vị & Mẫu số BTC -->
+                    <div class="flex justify-between items-start gap-3 pb-2 border-b border-slate-300">
+                        <div class="flex items-center gap-3">
+                            <img src="/static/images/gss_logo.svg" alt="Green Solutions Supply" class="h-12 w-auto object-contain shrink-0 print-comp-logo" onerror="this.src='/media/gss_logo.svg'">
+                            <div class="space-y-0.5 text-left">
+                                <h4 class="font-black text-xs sm:text-sm uppercase tracking-tight text-slate-900 font-heading print-comp-name">CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH</h4>
+                                <p class="text-[10px] text-slate-600 leading-tight print-comp-address">Đ/c: 302/5 Lê Đức Thọ, Phường An Nhơn, TP Hồ Chí Minh, Việt Nam</p>
+                                <p class="text-[9.5px] text-slate-500 leading-tight print-comp-contact">MST: 0316657112 • Hotline: —</p>
+                            </div>
+                        </div>
+                        <div class="text-right space-y-0.5 shrink-0">
+                            <p class="font-bold text-[11px] text-slate-900 v-template-no">Mẫu số 01 - TT</p>
+                            <p class="text-[9px] text-slate-500 italic max-w-[170px] leading-tight">(Ban hành theo TT số 200/2014/TT-BTC của BTC)</p>
+                            <div class="pt-0.5 text-[10.5px] font-mono text-slate-700 leading-tight">
+                                <p>Số: <strong class="v-code text-slate-900 font-bold">-</strong></p>
+                                <p>Nợ: <span class="v-debit-acc font-semibold">1121</span> | Có: <span class="v-credit-acc font-semibold">1411</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tiêu đề Phiếu & Liên 2 -->
+                    <div class="text-center py-2 space-y-0.5">
+                        <h2 class="text-base sm:text-lg font-black uppercase tracking-wider text-slate-900 font-heading v-title">
+                            PHIẾU THU
+                        </h2>
+                        <div class="flex items-center justify-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-200" id="fullpage-voucher-copy-2-badge">Liên 2: Giao cho người nộp tiền</span>
+                            <span class="italic text-[10.5px] text-slate-600 font-medium v-date">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Nội dung chứng từ Liên 2 -->
+                    <div class="space-y-1.5 pt-1 text-slate-800 text-[11px] sm:text-xs">
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px] v-partner-label">Họ tên người nộp tiền:</span>
+                            <span class="font-bold text-slate-900 flex-1 truncate v-partner-name">-</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px]">Địa chỉ / Bộ phận:</span>
+                            <span class="text-slate-700 flex-1 truncate v-department">Đội xe vận tải Green Solutions Supply</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px] v-reason-label">Lý do nộp:</span>
+                            <span class="text-slate-800 flex-1 font-medium v-reason">-</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px]">Số tiền:</span>
+                            <div class="flex-1 flex items-baseline gap-2">
+                                <span class="font-black text-xs sm:text-sm text-slate-950 font-heading font-mono v-amount">0 đ</span>
+                                <span class="text-[10px] text-slate-500 font-medium">(Hình thức: <strong class="v-method">Quỹ Tiền Mặt</strong>)</span>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px]">Viết bằng chữ:</span>
+                            <span class="italic font-bold text-slate-900 flex-1 v-amount-words">-</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
+                            <span class="font-bold shrink-0 min-w-[155px]">Kèm theo:</span>
+                            <span class="text-slate-700 flex-1 truncate v-attachments">01 Bảng kê chứng từ gốc</span>
+                        </div>
+                    </div>
+
+                    <!-- Khung chữ ký 5 bên Liên 2 -->
+                    <div class="grid grid-cols-5 gap-1.5 text-center pt-3 pb-2 text-[10px] sm:text-[10.5px]">
+                        <div class="flex flex-col justify-between h-20">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">Giám Đốc</p>
+                                <p class="text-[9px] text-slate-400 italic">(Ký, họ tên, dấu)</p>
+                            </div>
+                            <div class="h-6"></div>
+                        </div>
+                        <div class="flex flex-col justify-between h-20">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">Kế Toán Trưởng</p>
+                                <p class="text-[9px] text-slate-400 italic">(Ký, họ tên)</p>
+                            </div>
+                            <div class="h-6"></div>
+                        </div>
+                        <div class="flex flex-col justify-between h-20">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900 v-sign-partner-role">Người Nộp Tiền</p>
+                                <p class="text-[9px] text-slate-400 italic">(Ký, họ tên)</p>
+                            </div>
+                            <div class="h-6"></div>
+                        </div>
+                        <div class="flex flex-col justify-between h-20">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">Người Lập Phiếu</p>
+                                <p class="text-[9px] text-slate-400 italic">(Ký, họ tên)</p>
+                            </div>
+                            <p class="font-bold text-slate-800 text-[10px] v-creator-name truncate">Kế toán viên</p>
+                        </div>
+                        <div class="flex flex-col justify-between h-20">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">Thủ Quỹ</p>
+                                <p class="text-[9px] text-slate-400 italic">(Ký, họ tên)</p>
+                            </div>
+                            <div class="h-6"></div>
+                        </div>
+                    </div>
+
+                    <!-- Xác nhận nhận đủ tiền Liên 2 -->
+                    <div class="pt-1.5 border-t border-slate-200 text-[10px] text-slate-600 italic flex justify-between items-center">
+                        <p>+ Đã nhận đủ số tiền: <span class="font-semibold text-slate-800 v-received-words">-</span></p>
+                        <p class="v-sign-date text-slate-500">-</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>

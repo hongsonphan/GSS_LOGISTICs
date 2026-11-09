@@ -1,0 +1,349 @@
+<!-- 2. PHÒNG ĐIỀU VẬN (DANH SÁCH CHUYẾN XE) -->
+<div id="view-dieu-van" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
+
+
+    <!-- BỘ 5 THẺ VẬN HÀNH ĐIỀU ĐỘ CHUYẾN XE (CHUẨN STYLE PHÂN HỆ KINH DOANH & VÒNG ĐỜI VẬN TẢI) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mb-6">
+        <!-- Thẻ 1: TỔNG KẾ HOẠCH ĐIỀU ĐỘ -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-2 border-l-indigo-600 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Kế Hoạch Điều Độ</span>
+                    <span id="dispatch-badge-plan" class="text-xs font-bold text-indigo-800 bg-indigo-100/70 border border-indigo-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-truck"></i> Kế Hoạch Đội Xe
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-total-trips">0</span> <span class="text-sm font-bold text-slate-500 font-sans">Chuyến</span>
+                </p>
+                <!-- Tương thích ngược -->
+                <span id="stat-total-trips" class="hidden">0</span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium mt-2 flex flex-wrap items-center gap-x-1 gap-y-0.5" id="dispatch-stat-sub-total" title="Kế hoạch chuyến xe & số lượng cont">
+                <i class="ph-bold ph-check-circle text-indigo-600 text-xs shrink-0"></i>
+                <span id="dispatch-plan-line1">-- Chuyến · -- Cont</span> <span class="text-slate-300">·</span> <span id="dispatch-plan-line2">-- Xe Nhà · -- Thầu Phụ</span>
+            </p>
+        </div>
+
+        <!-- Thẻ 2: CHỜ TÀI XẾ NHẬN LỆNH -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Chờ Nhận Lệnh</span>
+                    <span id="dispatch-badge-pending" class="text-xs font-bold text-amber-800 bg-amber-100/70 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-clock-countdown"></i> Chờ Xác Nhận
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-pending-trips">0</span> <span class="text-sm font-bold text-amber-500 font-sans">Chuyến</span>
+                </p>
+            </div>
+            <p class="text-xs text-slate-500 font-medium mt-2 flex flex-wrap items-center gap-x-1 gap-y-0.5" id="dispatch-stat-sub-pending" title="Tình trạng phát lệnh và cảnh báo SLA">
+                <i class="ph-bold ph-clock text-amber-600 text-xs shrink-0"></i>
+                <span id="dispatch-pending-line1">-- Đã phát lệnh</span> <span class="text-slate-300">·</span> <span id="dispatch-pending-line2" class="text-amber-700 font-bold">-- Cảnh báo SLA</span>
+            </p>
+        </div>
+
+        <!-- Thẻ 3: ĐANG TRÊN TUYẾN -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-2 border-l-teal-600 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đang Trên Tuyến</span>
+                    <span id="dispatch-badge-transit" class="text-xs font-bold text-teal-800 bg-teal-100/70 border border-teal-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-navigation-arrow"></i> Đang Chạy
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-transit-trips">0</span> <span class="text-sm font-bold text-teal-600 font-sans">Chuyến</span>
+                </p>
+                <!-- Tương thích ngược -->
+                <span id="stat-transit" class="hidden">0</span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium mt-2 flex flex-wrap items-center gap-x-1 gap-y-0.5" id="dispatch-stat-sub-transit" title="Tiến độ lăn bánh trên đường">
+                <i class="ph-bold ph-truck text-teal-600 text-xs shrink-0"></i>
+                <span id="dispatch-transit-line1">-- Đang chở hàng</span> <span class="text-slate-300">·</span> <span id="dispatch-transit-line2">-- Cắt kéo / Rỗng</span>
+            </p>
+        </div>
+
+        <!-- Thẻ 4: CẢNH BÁO RỦI RO -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-600 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Cảnh Báo Rủi Ro</span>
+                    <span id="dispatch-badge-risk" class="text-xs font-bold text-rose-800 bg-rose-100/70 border border-rose-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-siren"></i> Cần Xử Lý
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-rose-700 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-risk-trips">0</span> <span class="text-sm font-bold text-rose-400 font-sans">Cảnh báo</span>
+                </p>
+                <!-- Tương thích ngược -->
+                <span id="stat-cutoff-warning" class="hidden">0</span>
+                <span id="stat-pending-expenses" class="hidden">0</span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium mt-2 flex flex-wrap items-center gap-x-1 gap-y-0.5" id="dispatch-stat-sub-risk" title="Cảnh báo cắt máng và hạn lưu rỗng/kho">
+                <i class="ph-bold ph-warning-circle text-rose-600 text-xs shrink-0"></i>
+                <span id="dispatch-risk-line1" class="text-rose-700 font-bold">-- Gần cắt máng</span> <span class="text-slate-300">·</span> <span id="dispatch-risk-line2">-- Hạn rỗng/kho</span>
+            </p>
+        </div>
+
+        <!-- Thẻ 5: ĐÃ GIAO & THU POD -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-2 border-l-emerald-600 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đã Giao & Thu POD</span>
+                    <span id="dispatch-badge-delivered" class="text-xs font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-check-circle"></i> Hoàn Thành
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-delivered-trips">0</span> <span class="text-sm font-bold text-emerald-500 font-sans">Chuyến</span>
+                </p>
+            </div>
+            <p class="text-xs text-slate-500 font-medium mt-2 flex flex-wrap items-center gap-x-1 gap-y-0.5" id="dispatch-stat-sub-delivered" title="Tiến độ giao hàng và chứng từ POD">
+                <i class="ph-bold ph-check text-emerald-600 text-xs shrink-0"></i>
+                <span id="dispatch-delivered-line1">-- Đã có POD</span> <span class="text-slate-300">·</span> <span id="dispatch-delivered-line2" class="text-amber-700 font-bold">-- Chờ thu hồi</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="erp-table-container flex-1 overflow-hidden flex flex-col shadow-sm">
+        <!-- Toolbar Bộ Lọc Đa Cột & Sắp Xếp Chuyến Xe (GSS TMS Standard) -->
+        <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+            <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                    <i class="ph-bold ph-funnel text-teal-700 text-sm"></i>
+                    <span>Bộ Lọc & Sắp Xếp: <strong>Theo dõi tiến độ chuyến xe vận hành</strong></span>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Dropdown chọn kỳ điều vận (Chuẩn đẹp SaaS) -->
+                    <div class="relative inline-flex items-center shrink-0">
+                        <i class="ph-bold ph-calendar-check absolute left-2.5 text-teal-600 text-sm pointer-events-none"></i>
+                        <select id="filter-dispatch-period" onchange="loadTripsData()" 
+                            class="pl-8 pr-7 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 hover:border-teal-500 text-slate-700 rounded-xl text-xs font-bold font-heading shadow-2xs appearance-none outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all"
+                            title="Chọn kỳ hiển thị chuyến xe">
+                            <option value="today">Kỳ: Hôm Nay</option>
+                            <option value="10_days">Kỳ: 10 Ngày Qua</option>
+                            <option value="this_month" selected>Kỳ: Tháng Này</option>
+                            <option value="this_quarter">Kỳ: Quý Này</option>
+                            <option value="this_year">Kỳ: Năm Nay</option>
+                            <option value="all">Kỳ: Tất Cả</option>
+                        </select>
+                        <i class="ph ph-caret-down absolute right-2 text-slate-400 text-xs pointer-events-none"></i>
+                    </div>
+
+                    <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
+                        Hiển thị: <strong id="dispatch-filtered-count">0</strong> / <span id="dispatch-total-count">0</span> chuyến xe
+                    </span>
+                    <!-- Nút Ẩn / Hiện Nhanh Chuyến Đã Hoàn Thành -->
+                    <button type="button" id="btn-toggle-hide-completed" onclick="toggleHideCompletedTrips()" 
+                        class="text-xs font-semibold text-slate-700 hover:text-teal-800 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                        title="Bấm để ẩn hoặc hiện nhanh các chuyến xe đã hoàn thành (COMPLETED)">
+                        <i id="icon-toggle-hide-completed" class="ph-bold ph-eye text-slate-500 text-sm"></i>
+                        <span id="text-toggle-hide-completed">Ẩn Đã Hoàn Thành</span>
+                    </button>
+                    <!-- Nút Tùy Chỉnh Cột Bảng Điều Vận -->
+                    <button type="button" onclick="openColumnCustomizer('dispatch-trips-table')" 
+                        class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                        title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                    <button type="button" onclick="resetDispatchFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-1.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1 cursor-pointer">
+                        <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
+                    </button>
+
+                    <!-- Nút Quyết Toán & Tạo Mới (Được chuyển xuống từ header theo yêu cầu) -->
+                    <button type="button" onclick="openBatchSettlementModal()" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap" title="Mở modal quyết toán đợt cho tài xế">
+                        <i class="ph-bold ph-stack text-sm"></i> Quyết Toán Đợt Tài Xế
+                    </button>
+                    <button type="button" onclick="openCreateTripPage()" class="btn-bim-primary px-3.5 py-1.5 text-xs font-heading shadow-xs flex items-center gap-1 whitespace-nowrap" title="Tạo lệnh điều động chuyến xe mới">
+                        <i class="ph ph-plus text-sm"></i> Tạo mới
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thanh lọc theo từng cột (Column Filters Bar) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 pt-1 text-xs">
+                <!-- 1. Lọc Khách hàng -->
+                <div>
+                    <select id="filter-dispatch-customer" onchange="applyDispatchFilters()" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <option value="">-- Tất cả Khách hàng --</option>
+                    </select>
+                </div>
+
+                <!-- 2. Lọc Tài xế / Đầu kéo -->
+                <div>
+                    <select id="filter-dispatch-driver" onchange="applyDispatchFilters()" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <option value="">-- Tất cả Tài xế / Xe --</option>
+                    </select>
+                </div>
+
+                <!-- 3. Lọc Trạng thái vận hành -->
+                <div>
+                    <select id="filter-dispatch-status" onchange="applyDispatchFilters()" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <option value="">-- Tất cả Trạng thái --</option>
+                        <option value="ACTIVE">Đang điều vận (Chưa hoàn thành)</option>
+                        <option value="TRANSIT">Đang vận chuyển (Trên đường)</option>
+                        <option value="DELIVERED">Đã giao hàng / Tại kho</option>
+                        <option value="COMPLETED">Đã hoàn thành</option>
+                        <option value="PENDING">Chờ nhận lệnh / Khởi hành</option>
+                        <option value="DROP_HOOK">Chạy Cắt Kéo (Drop & Hook)</option>
+                        <option value="TWIN_CONT">Ghép 2 Cont 20ft (Kẹp 20)</option>
+                        <option value="DET_WARNING">Cảnh báo Quá hạn Free DET</option>
+                    </select>
+                </div>
+
+                <!-- 4. Lọc Loại hình vận chuyển -->
+                <div>
+                    <select id="filter-dispatch-type" onchange="applyDispatchFilters()" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <option value="">-- Tất cả Loại hình --</option>
+                        <option value="IMPORT">Hàng Nhập FCL</option>
+                        <option value="EXPORT">Hàng Xuất FCL</option>
+                        <option value="DOMESTIC">Nội Địa / Phân Phối</option>
+                    </select>
+                </div>
+
+                <!-- 5. Ô Sắp Xếp Nhanh (Sort) -->
+                <div>
+                    <select id="filter-dispatch-sort" onchange="handleDispatchSortChange(this.value)" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 cursor-pointer">
+                        <option value="">Sắp xếp: Mới nhất</option>
+                        <option value="trip_id_asc">Mã chuyến (A ➔ Z)</option>
+                        <option value="trip_id_desc">Mã chuyến (Z ➔ A)</option>
+                        <option value="vehicle_asc">Biển số xe (A ➔ Z)</option>
+                        <option value="customer_asc">Khách hàng (A ➔ Z)</option>
+                        <option value="subcontractor_asc">Vendor / Nhà xe (A ➔ Z)</option>
+                    </select>
+                </div>
+
+                <!-- 6. Tìm kiếm từ khóa đa năng (Search) -->
+                <div>
+                    <div class="relative">
+                        <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="filter-dispatch-search" oninput="applyDispatchFilters()" placeholder="Tìm số xe, số chuyến, khách hàng, vendor, số cont..." 
+                            class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <button type="button" onclick="clearDispatchSearch()" id="btn-clear-dispatch-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <i class="ph-bold ph-x text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bảng Dữ Liệu Chuyến Xe Kèm Sắp Xếp Cột -->
+        <div class="overflow-x-auto flex-1">
+            <table class="erp-table whitespace-nowrap" id="dispatch-trips-table" data-table-title="Danh Sách Điều Vận Chuyến Xe">
+                <thead>
+                    <tr>
+                        <!-- 0. STT Cố Định -->
+                        <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
+
+                        <!-- 1. Mã Chuyến (Có sắp xếp) -->
+                        <th data-col-key="trip_id" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleDispatchSort('trip_id')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-32" title="Click để sắp xếp theo Mã Chuyến">
+                            <div class="flex items-center gap-1.5">
+                                <span>Mã Chuyến</span>
+                                <i id="sort-icon-dispatch-trip_id" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 2. Lịch Đóng / Ngày Chạy (Sort theo timestamp) -->
+                        <th data-col-key="loading_date" data-col-name="Lịch Đóng" onclick="toggleDispatchSort('loading_date')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-36" title="Click để sắp xếp theo Lịch Đóng / Khởi hành">
+                            <div class="flex items-center gap-1.5">
+                                <span>Lịch Đóng</span>
+                                <i id="sort-icon-dispatch-loading_date" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 2. Khách hàng & Kho (Có sắp xếp) -->
+                        <th data-col-key="customer" data-col-name="Khách hàng & Kho" onclick="toggleDispatchSort('customer')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách hàng">
+                            <div class="flex items-center gap-1.5">
+                                <span>Khách hàng & Kho</span>
+                                <i id="sort-icon-dispatch-customer" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 3. Container / Booking (Có sắp xếp) -->
+                        <th data-col-key="container" data-col-name="Booking / Cont / Seal" onclick="toggleDispatchSort('container')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Số Container">
+                            <div class="flex items-center gap-1.5">
+                                <span>Booking / Cont / Seal</span>
+                                <i id="sort-icon-dispatch-container" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <th data-col-key="invoice_dock" data-col-name="Invoice / Dock">Invoice / Dock</th>
+
+                        <!-- 5. Xe Kéo & Xe Hạ (Có sắp xếp) -->
+                        <th data-col-key="vehicle" data-col-name="Xe Kéo & Xe Hạ" onclick="toggleDispatchSort('vehicle')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Biển Số Xe">
+                            <div class="flex items-center gap-1.5">
+                                <span>Xe Kéo & Xe Hạ</span>
+                                <i id="sort-icon-dispatch-vehicle" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <th data-col-key="notes" data-col-name="Ghi Chú Vận Chuyển">Ghi Chú Vận Chuyển</th>
+
+                        <!-- 7. Tuyến 3 Điểm Chuẩn & Chi phí -->
+                        <th data-col-key="expense" data-col-name="Lộ Trình (Lấy ➔ Kho ➔ Trả)" onclick="toggleDispatchSort('expense')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Lộ trình 3 điểm chuẩn và Chi phí">
+                            <div class="flex items-center gap-1.5">
+                                <span>Lộ Trình (Lấy ➔ Kho ➔ Trả)</span>
+                                <i id="sort-icon-dispatch-expense" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 8. Trạng thái (Có sắp xếp) -->
+                        <th data-col-key="status" data-col-name="Trạng thái" onclick="toggleDispatchSort('status')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-left" title="Click để sắp xếp theo Trạng Thái">
+                            <div class="flex items-center justify-start gap-1.5">
+                                <span>Trạng thái</span>
+                                <i id="sort-icon-dispatch-status" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 9. Thao tác Xóa / Xem Phiếu -->
+                        
+                        <!-- Các Cột Mở Rộng Từ Database (Mặc Định Ẩn - Tùy Biến Hiện) -->
+                        <th data-col-key="customer_short" data-col-name="Tên Viết Tắt KH" data-col-default-hidden="true" style="display:none">Tên Viết Tắt KH</th>
+                        <th data-col-key="customer_code" data-col-name="Mã Khách Hàng" data-col-default-hidden="true" style="display:none">Mã KH</th>
+                        <th data-col-key="shipment_type" data-col-name="Loại Hình Hàng Hóa" data-col-default-hidden="true" style="display:none">Loại Hình</th>
+                        <th data-col-key="container_type" data-col-name="Loại / Quy Cách Cont" data-col-default-hidden="true" style="display:none">Loại Cont</th>
+                        <th data-col-key="container_number" data-col-name="Số Cont Riêng" data-col-default-hidden="true" style="display:none">Số Cont</th>
+                        <th data-col-key="seal_number" data-col-name="Số Seal Riêng" data-col-default-hidden="true" style="display:none">Số Seal</th>
+                        <th data-col-key="booking_number" data-col-name="Số Booking / B/L Riêng" data-col-default-hidden="true" style="display:none">Số Booking / BL</th>
+                        <th data-col-key="shipping_line" data-col-name="Hãng Tàu Biển" data-col-default-hidden="true" style="display:none">Hãng Tàu</th>
+                        <th data-col-key="cutoff_time" data-col-name="Hạn Cắt Máng (Closing)" data-col-default-hidden="true" style="display:none">Hạn Cắt Máng</th>
+                        <th data-col-key="det_expiry" data-col-name="Hạn Miễn Phí Vỏ (DET)" data-col-default-hidden="true" style="display:none">Hạn Free DET</th>
+                        <th data-col-key="dem_expiry" data-col-name="Hạn Miễn Phí Bãi (DEM)" data-col-default-hidden="true" style="display:none">Hạn Free DEM</th>
+                        <th data-col-key="pickup_location" data-col-name="Nơi Lấy Cont" data-col-default-hidden="true" style="display:none">Nơi Lấy Cont</th>
+                        <th data-col-key="warehouse_location" data-col-name="Kho Đóng/ Trả Hàng" data-col-default-hidden="true" style="display:none">Kho Đóng/ Trả Hàng</th>
+                        <th data-col-key="dropoff_location" data-col-name="Nơi Trả Cont" data-col-default-hidden="true" style="display:none">Nơi Trả Cont</th>
+                        <th data-col-key="commercial_invoice" data-col-name="Hóa Đơn Thương Mại" data-col-default-hidden="true" style="display:none">Hóa Đơn TM</th>
+                        <th data-col-key="warehouse_dock" data-col-name="Cửa Dock Kho" data-col-default-hidden="true" style="display:none">Cửa Dock</th>
+                        <th data-col-key="fleet_type" data-col-name="Phân Loại Xe (Nhà/Bạn)" data-col-default-hidden="true" style="display:none">Phân Loại Xe</th>
+                        <th data-col-key="license_plate" data-col-name="Biển Số Đầu Kéo" data-col-default-hidden="true" style="display:none">Biển Số Xe</th>
+                        <th data-col-key="trailer_plate" data-col-name="Biển Số Rơ-Moóc" data-col-default-hidden="true" style="display:none">Số Rơ-moóc</th>
+                        <th data-col-key="driver_name" data-col-name="Tên Tài Xế" data-col-default-hidden="true" style="display:none">Tên Tài Xế</th>
+                        <th data-col-key="driver_phone" data-col-name="SĐT Tài Xế" data-col-default-hidden="true" style="display:none">SĐT Tài Xế</th>
+                        <th data-col-key="dropoff_vehicle" data-col-name="Xe Hạ Cont" data-col-default-hidden="true" style="display:none">Xe Hạ Cont</th>
+                        <th data-col-key="dropoff_driver" data-col-name="Tài Xế Hạ Cont" data-col-default-hidden="true" style="display:none">Tài Xế Hạ</th>
+                        <th data-col-key="subcontractor_name" data-col-name="Đơn Vị Thầu Phụ 3PL" data-col-default-hidden="true" style="display:none">Thầu Phụ 3PL</th>
+                        <th data-col-key="customs_declaration" data-col-name="Tờ Khai & Luồng HQ" data-col-default-hidden="true" style="display:none">Tờ Khai HQ</th>
+                        <th data-col-key="cont_location_type" data-col-name="Vị Trí Vỏ Cont" data-col-default-hidden="true" style="display:none">Vị Trí Vỏ</th>
+                        <th data-col-key="cargo_notes" data-col-name="Ghi Chú Đóng Hàng" data-col-default-hidden="true" style="display:none">Ghi Chú Hàng</th>
+                        <th data-col-key="revenue" data-col-name="Doanh Thu Cước (VNĐ)" data-col-default-hidden="true" style="display:none">Doanh Thu</th>
+                        <th data-col-key="dispatch_cost" data-col-name="Chi Phí Chuyến (VNĐ)" data-col-default-hidden="true" style="display:none">Chi Phí</th>
+                        <th data-col-key="profit" data-col-name="Lợi Nhuận Gộp (VNĐ)" data-col-default-hidden="true" style="display:none">Lợi Nhuận</th>
+                        <th data-col-key="created_at" data-col-name="Ngày Giờ Tạo Lệnh" data-col-default-hidden="true" style="display:none">Ngày Tạo</th>
+                        <th data-col-key="actions" data-col-name="Thao tác" data-col-locked="true" class="w-28 text-center font-bold text-slate-700 select-none">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100" id="trips-tbody">
+                    <!-- Dữ liệu được render bằng API -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

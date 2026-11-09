@@ -1,0 +1,149 @@
+<!-- ======================================================== -->
+<!-- COMPONENT: CHAT BUBBLE & FLOATING TEAM CHAT WINDOW         -->
+<!-- Kế thừa tiêu chuẩn quốc tế từ GSS Ecosystem                -->
+<!-- ======================================================== -->
+<div id="chat-bubble-container" class="fixed bottom-6 right-6 z-50 select-none">
+    <!-- Nút Nổi Chat Bubble -->
+    <button type="button" id="chat-bubble-btn" onclick="toggleChatWindow()" aria-label="Trò chuyện nội bộ" class="btn-keep-solid bg-teal-700 hover:bg-teal-800 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-2xl transition-all hover:scale-105 active:scale-95 relative border-2 border-white">
+        <i class="ph-bold ph-chats-circle text-2xl text-white"></i>
+        <!-- Huy hiệu tin nhắn chưa đọc -->
+        <span id="chat-unread-badge" class="hidden absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-white shadow-md animate-pulse">0</span>
+    </button>
+
+    <!-- Cửa Sổ Chat Nổi (Floating Chat Drawer - Chuẩn GSS Ecosystem) -->
+    <div id="chat-floating-window" style="bottom: 72px; right: 0;" class="hidden absolute right-0 w-[360px] sm:w-[420px] h-[520px] max-h-[calc(100vh-100px)] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-200 origin-bottom-right">
+        
+        <!-- HEADER CỬA SỔ CHAT -->
+        <div class="bg-teal-800 px-4 py-3 flex justify-between items-center text-white shrink-0 shadow-xs">
+            <div class="flex items-center gap-2 min-w-0">
+                <button type="button" id="chat-btn-back-rooms" onclick="showChatRoomsList()" class="hidden p-1 hover:bg-teal-700 rounded-lg transition-colors mr-0.5 shrink-0">
+                    <i class="ph-bold ph-arrow-left text-base"></i>
+                </button>
+                <div class="w-7 h-7 rounded-lg bg-teal-700/80 flex items-center justify-center text-teal-200 shrink-0">
+                    <i class="ph-bold ph-chats text-base"></i>
+                </div>
+                <div class="min-w-0">
+                    <h4 id="chat-header-title" class="font-bold text-xs uppercase tracking-wide truncate max-w-[230px]">Trò Chuyện Nội Bộ</h4>
+                    <p id="chat-header-subtitle" class="text-[10.5px] text-teal-200 truncate">Văn phòng Green Solutions Supply</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+                <button type="button" onclick="toggleChatWindow()" class="p-1 hover:bg-teal-700 rounded-lg text-teal-200 hover:text-white transition-colors" title="Thu nhỏ">
+                    <i class="ph-bold ph-x text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW 1: DANH SÁCH CÁC KÊNH & CUỘC TRÒ CHUYỆN -->
+        <div id="chat-rooms-view" class="flex-1 flex flex-col overflow-hidden bg-slate-50">
+            <!-- Nút tạo chat 1-1 nhanh -->
+            <div class="p-3 bg-white border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Kênh & Trò chuyện</span>
+                <button type="button" onclick="toggleChatDirectoryDropdown()" class="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 border border-teal-200">
+                    <i class="ph-bold ph-user-plus text-xs"></i>
+                    <span>Nhắn tin mới</span>
+                </button>
+            </div>
+
+            <!-- Dropdown chọn nhân viên chat 1-1 (Universal Searchable Combobox) -->
+            <div id="chat-directory-dropdown" class="hidden p-2.5 bg-teal-50/95 border-b border-teal-200 shrink-0 relative z-30 shadow-2xs">
+                <div class="flex items-center justify-between mb-1.5">
+                    <p class="text-[10.5px] font-bold text-teal-800 uppercase flex items-center gap-1">
+                        <i class="ph-bold ph-chats-circle text-teal-700"></i>
+                        <span>Chọn đồng nghiệp để nhắn tin:</span>
+                    </p>
+                    <button type="button" onclick="toggleChatDirectoryDropdown()" class="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer" title="Đóng">
+                        <i class="ph-bold ph-x text-xs"></i>
+                    </button>
+                </div>
+                <select id="chat-select-colleague" onchange="startDirectChat(this.value)" class="w-full bg-white border border-teal-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 outline-none">
+                    <option value="">-- Chọn đồng nghiệp văn phòng --</option>
+                </select>
+            </div>
+
+            <!-- Danh sách các phòng -->
+            <div id="chat-rooms-list" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                <div class="text-center py-8 text-xs text-slate-400">Đang tải danh sách kênh...</div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: MÀN HÌNH TIN NHẮN TRONG PHÒNG -->
+        <div id="chat-messages-view" class="hidden flex-1 flex flex-col overflow-hidden bg-slate-100">
+            <!-- Khu vực cuộn tin nhắn -->
+            <div id="chat-messages-scroll" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar flex flex-col">
+                <div class="text-center py-4 text-xs text-slate-400">Đang tải tin nhắn...</div>
+            </div>
+
+            <!-- Preview tệp & ảnh đính kèm trước khi gửi -->
+            <div id="chat-pending-files-preview" class="hidden px-3 py-2 bg-slate-100 border-t border-slate-200 text-xs text-slate-700 flex items-center justify-between shrink-0 shadow-xs">
+                <div class="flex items-center gap-2 overflow-x-auto max-w-[calc(100%-40px)] custom-scrollbar py-0.5" id="chat-pending-files-content">
+                    <span id="chat-pending-files-text" class="truncate font-semibold text-[11px]"></span>
+                </div>
+                <button type="button" onclick="clearPendingChatFiles()" class="text-rose-600 hover:text-rose-800 p-1 rounded-lg hover:bg-rose-50 cursor-pointer shrink-0" title="Hủy đính kèm">
+                    <i class="ph-bold ph-x text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Form Nhập Tin Nhắn -->
+            <div class="p-2.5 bg-white border-t border-slate-200 shrink-0 relative">
+                <!-- Dropdown Mention @ & # -->
+                <div id="chat-mention-dropdown" class="hidden absolute bottom-full left-2 right-2 mb-2 bg-white border border-slate-200 shadow-2xl rounded-2xl max-h-64 overflow-hidden z-50 text-xs flex flex-col">
+                    <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-2 py-1.5 gap-1 shrink-0">
+                        <div class="flex items-center gap-1">
+                            <button type="button" id="chat-mention-tab-users" onclick="switchChatMentionTab('users')" class="py-1 px-2.5 rounded-lg font-bold text-xs flex items-center gap-1 bg-white text-teal-800 shadow-xs border border-slate-200/80 cursor-pointer transition-all">
+                                <i class="ph-bold ph-at text-teal-600"></i> Thành viên (@)
+                            </button>
+                            <button type="button" id="chat-mention-tab-tasks" onclick="switchChatMentionTab('tasks')" class="py-1 px-2.5 rounded-lg font-bold text-xs flex items-center gap-1 text-slate-600 hover:text-slate-900 cursor-pointer transition-all">
+                                <i class="ph-bold ph-check-square text-indigo-600"></i> Mục việc (#)
+                            </button>
+                        </div>
+                        <button type="button" onclick="closeChatMentionDropdown()" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer">
+                            <i class="ph-bold ph-x text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="p-1.5 border-b border-slate-100 bg-white shrink-0">
+                        <div class="relative flex items-center">
+                            <i class="ph-bold ph-magnifying-glass text-slate-400 absolute left-2 text-xs"></i>
+                            <input type="text" id="chat-mention-search-input" oninput="filterChatMentionList(this.value)" placeholder="Tìm kiếm nhanh..." class="w-full pl-7 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:bg-white transition-all">
+                        </div>
+                    </div>
+                    <div id="chat-mention-items-list" class="flex-1 overflow-y-auto p-1 max-h-44 custom-scrollbar divide-y divide-slate-50">
+                        <!-- Items rendered via JS -->
+                    </div>
+                </div>
+
+                <div class="flex items-end gap-1 relative">
+                    <!-- 1. Nút Đính kèm tệp -->
+                    <label class="cursor-pointer p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0" title="Chọn tệp đính kèm">
+                        <i class="ph-bold ph-paperclip text-lg"></i>
+                        <input type="file" id="chat-file-input" onchange="handleChatFilesSelected(event)" class="hidden" multiple>
+                    </label>
+
+                    <!-- 2. Nút Chụp ảnh màn hình (Screen Capture) -->
+                    <button type="button" onclick="captureScreenForChat()" class="p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0 cursor-pointer" title="Chụp ảnh màn hình (Screen Capture)">
+                        <i class="ph-bold ph-camera text-lg"></i>
+                    </button>
+
+                    <!-- 3. Nút Dán ảnh từ Clipboard (Paste) -->
+                    <button type="button" onclick="pasteImageFromClipboard('chat')" class="p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0 cursor-pointer" title="Dán ảnh chụp màn hình từ Clipboard (Ctrl + V)">
+                        <i class="ph-bold ph-clipboard-text text-lg"></i>
+                    </button>
+
+                    <!-- 4. Nút Gắn thẻ @ Tag tên / # Mục việc -->
+                    <button type="button" id="chat-btn-mention-trigger" onclick="toggleChatMentionMenu(event)" class="p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0 cursor-pointer" title="Gắn thẻ (@ Nhân sự, # Mục việc)">
+                        <i class="ph-bold ph-at text-lg"></i>
+                    </button>
+
+                    <!-- 5. Ô nhập tin nhắn -->
+                    <textarea id="chat-message-input" rows="1" onkeydown="handleChatInputKeydown(event)" oninput="handleChatInputTyping(this)" placeholder="Nhập tin nhắn (Enter để gửi, @tag tên, #việc)..." class="flex-1 bg-slate-100 border border-transparent rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none resize-none max-h-24 leading-relaxed transition-all"></textarea>
+
+                    <!-- 6. Nút Gửi -->
+                    <button type="button" onclick="sendChatMessage()" class="p-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl transition-colors shrink-0 shadow-xs cursor-pointer" title="Gửi tin nhắn">
+                        <i class="ph-bold ph-paper-plane-right text-base text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

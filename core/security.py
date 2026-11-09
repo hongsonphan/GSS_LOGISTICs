@@ -1,0 +1,213 @@
+import json
+import os
+from django.conf import settings
+from hashids import Hashids
+
+# Salt bí mật từ settings hoặc biến môi trường
+DEFAULT_SALT = getattr(settings, 'HASHIDS_SALT', 'GSS_LOGISTICS_SECURE_SALT_2026')
+ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
+MIN_LENGTH = 8
+
+# Singleton Hashids instances theo domain nghiệp vụ (Phân tách bảo mật đa phân hệ)
+_TRIP_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TRIP", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_DRIVER_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_DRIVER", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_TRACKING_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TRACKING", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_BOOKING_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_BOOKING", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_QUOTATION_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_QUOTATION", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_EXPENSE_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_EXPENSE", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_NEWS_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_NEWS", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_TASK_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TASK", min_length=MIN_LENGTH, alphabet=ALPHABET)
+
+
+def encode_id(number: int, domain: str = 'TRIP') -> str:
+    """Mã hóa số nguyên ID thành chuỗi HashID bảo mật chống IDOR."""
+    if not isinstance(number, int) or number < 0:
+        return ''
+    if domain == 'DRIVER':
+        return _DRIVER_HASHIDS.encode(number)
+    elif domain == 'TRACKING':
+        return _TRACKING_HASHIDS.encode(number)
+    elif domain == 'BOOKING':
+        return _BOOKING_HASHIDS.encode(number)
+    elif domain == 'QUOTATION':
+        return _QUOTATION_HASHIDS.encode(number)
+    elif domain == 'EXPENSE':
+        return _EXPENSE_HASHIDS.encode(number)
+    elif domain == 'NEWS':
+        return _NEWS_HASHIDS.encode(number)
+    elif domain == 'TASK':
+        return _TASK_HASHIDS.encode(number)
+    return _TRIP_HASHIDS.encode(number)
+
+
+def decode_id(hashid_str: str, domain: str = 'TRIP') -> int | None:
+    """Giải mã chuỗi HashID về số nguyên ID ban đầu. Trả về None nếu không hợp lệ."""
+    if not hashid_str or not isinstance(hashid_str, str):
+        return None
+    try:
+        if domain == 'DRIVER':
+            numbers = _DRIVER_HASHIDS.decode(hashid_str.strip())
+        elif domain == 'TRACKING':
+            numbers = _TRACKING_HASHIDS.decode(hashid_str.strip())
+        elif domain == 'BOOKING':
+            numbers = _BOOKING_HASHIDS.decode(hashid_str.strip())
+        elif domain == 'QUOTATION':
+            numbers = _QUOTATION_HASHIDS.decode(hashid_str.strip())
+        elif domain == 'EXPENSE':
+            numbers = _EXPENSE_HASHIDS.decode(hashid_str.strip())
+        elif domain == 'NEWS':
+            numbers = _NEWS_HASHIDS.decode(hashid_str.strip())
+        elif domain == 'TASK':
+            numbers = _TASK_HASHIDS.decode(hashid_str.strip())
+        else:
+            numbers = _TRIP_HASHIDS.decode(hashid_str.strip())
+
+        if numbers and len(numbers) > 0:
+            return numbers[0]
+    except Exception:
+        pass
+    return None
+
+
+def get_trip_hashid(trip_id: int) -> str:
+    """Helper mã hóa ID chuyến xe chung (Internal)."""
+    return encode_id(trip_id, domain='TRIP')
+
+
+def decode_trip_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã HashID chuyến xe chung."""
+    return decode_id(hashid_str, domain='TRIP')
+
+
+def get_driver_hashid(trip_id: int) -> str:
+    """Helper mã hóa Capability Token dành riêng cho Cổng Tài Xế Mobile (Driver Portal)."""
+    return encode_id(trip_id, domain='DRIVER')
+
+
+def decode_driver_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã Capability Token Cổng Tài Xế Mobile."""
+    return decode_id(hashid_str, domain='DRIVER')
+
+
+def get_tracking_hashid(trip_id: int) -> str:
+    """Helper mã hóa Capability Token dành riêng cho Khách Hàng Tra Cứu (Customer Tracking)."""
+    return encode_id(trip_id, domain='TRACKING')
+
+
+def decode_tracking_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã Capability Token Khách Hàng Tra Cứu."""
+    return decode_id(hashid_str, domain='TRACKING')
+
+
+def get_quotation_hashid(quote_id: int) -> str:
+    """Helper mã hóa ID Báo Giá thành chuỗi HashID bảo mật cho URL SPA."""
+    return encode_id(quote_id, domain='QUOTATION')
+
+
+def decode_quotation_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã HashID Báo Giá về số nguyên ID ban đầu."""
+    return decode_id(hashid_str, domain='QUOTATION')
+
+
+def get_news_hashid(post_id: int) -> str:
+    """Helper mã hóa ID Bản tin thành chuỗi HashID bảo mật cho URL (/news/<hashid>/)."""
+    return encode_id(post_id, domain='NEWS')
+
+
+def decode_news_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã HashID Bản tin về số nguyên ID ban đầu."""
+    return decode_id(hashid_str, domain='NEWS')
+
+
+def get_task_hashid(task_id: int) -> str:
+    """Helper mã hóa ID Công việc (Task) thành chuỗi HashID bảo mật (/tasks/<hashid>/)."""
+    return encode_id(task_id, domain='TASK')
+
+
+def decode_task_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã HashID Công việc (Task) về số nguyên ID ban đầu."""
+    return decode_id(hashid_str, domain='TASK')
+
+
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+class GracefulJWTAuthentication(JWTAuthentication):
+    """
+    Xác thực JWT thông minh (Graceful Fallback):
+    - Nếu JWT token hợp lệ: Xác thực người dùng bình thường.
+    - Nếu JWT token hết hạn hoặc không hợp lệ:
+      + Nếu request đã được xác thực qua Django Session Cookie (người dùng trên trình duyệt):
+        Bỏ qua lỗi JWT và trả về None để DRF chuyển tiếp sang SessionAuthentication.
+      + Nếu request không có Session: Raise exception như bình thường để bảo vệ API.
+    """
+    def authenticate(self, request):
+        header = self.get_header(request)
+        if header is None:
+            return None
+
+        raw_token = self.get_raw_token(header)
+        if raw_token is None:
+            return None
+
+        try:
+            validated_token = self.get_validated_token(raw_token)
+            return self.get_user(validated_token), validated_token
+        except Exception:
+            # Kiểm tra xem Django session cookie có user đang đăng nhập không
+            django_request = getattr(request, '_request', request)
+            user = getattr(django_request, 'user', None)
+            if user and user.is_authenticated:
+                return None
+            raise
+
+
+def json_for_script(data, **kwargs):
+    """JSON an toàn để nhúng vào <script> trong template: thoát < > & và dấu phân cách dòng Unicode
+    để dữ liệu người dùng (vd. tên hiển thị chứa "</script>") không thoát khỏi thẻ script."""
+    text = json.dumps(data, ensure_ascii=False, **kwargs)
+    for ch, esc in (('<', '\\u003c'), ('>', '\\u003e'), ('&', '\\u0026'), ('\u2028', '\\u2028'), ('\u2029', '\\u2029')):
+        text = text.replace(ch, esc)
+    return text
+
+
+# ----------------------------------------------------------------------------- Thu hồi JWT khi đổi mật khẩu
+def password_fingerprint(user):
+    """Dấu vân tay mã băm mật khẩu hiện tại; đổi/đặt lại mật khẩu thì dấu vân tay đổi và mọi JWT cũ mất hiệu lực."""
+    import hashlib
+    import hmac
+    return hmac.new(settings.SECRET_KEY.encode(), (user.password or '').encode(), hashlib.sha256).hexdigest()[:16]
+
+
+from rest_framework_simplejwt.exceptions import AuthenticationFailed as _JWTAuthFailed  # noqa: E402
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer  # noqa: E402
+
+
+class FingerprintTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['pwf'] = password_fingerprint(user)
+        return token
+
+
+class FingerprintTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        from django.contrib.auth import get_user_model
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken(attrs['refresh'])
+        claim = refresh.payload.get('pwf')
+        user = get_user_model().objects.filter(pk=refresh.payload.get('user_id')).first()
+        if user is None or not user.is_active or (claim and claim != password_fingerprint(user)):
+            raise _JWTAuthFailed('Phiên đã bị thu hồi do đổi mật khẩu. Vui lòng đăng nhập lại.', code='token_revoked')
+        return super().validate(attrs)
+
+
+def _revoked_check(self, validated_token):
+    user = super(GracefulJWTAuthentication, self).get_user(validated_token)
+    claim = validated_token.get('pwf')
+    if claim and claim != password_fingerprint(user):
+        raise _JWTAuthFailed('Token đã bị thu hồi do đổi mật khẩu.', code='token_revoked')
+    return user
+
+
+GracefulJWTAuthentication.get_user = _revoked_check

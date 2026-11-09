@@ -1,0 +1,138 @@
+{% with role=current_employee.role is_admin=request.user.is_superuser %}
+<!-- SIDEBAR NAVIGATION (GSS Enterprise Standard) -->
+<aside class="app-sidebar select-none">
+    <!-- Brand Logo Header (Homepage Link -> Dashboard) -->
+    <div class="app-sidebar-header flex items-center justify-between">
+        <a href="/" onclick="event.preventDefault(); switchTab('dashboard');" class="flex items-center space-x-2.5 cursor-pointer hover:opacity-95 transition-opacity group select-none overflow-hidden flex-1" title="Về trang chủ Dashboard">
+            <img src="/static/images/logo_clean.png" alt="GSS" class="h-10 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-sm">
+            <div class="overflow-hidden flex flex-col justify-center">
+                <span class="text-[11px] font-extrabold text-teal-400 uppercase tracking-wider font-heading leading-tight">GREEN SOLUTIONS SMART</span>
+                <h1 class="text-[16px] font-black text-white uppercase tracking-tight font-heading leading-tight mt-0.5 truncate group-hover:text-teal-200 transition-colors">GSS LOGISTICS</h1>
+            </div>
+        </a>
+        <!-- Nút Ghim Cố Định / Thu Gọn Sidebar (Đồng bộ theo trạng thái Mở / Ẩn) -->
+        <button id="btn-sidebar-header-toggle" type="button" onclick="toggleSidebar()" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all active:scale-95 ml-2 shrink-0 cursor-pointer flex items-center justify-center border border-slate-700/60 shadow-2xs" title="Ghim mở cố định Sidebar">
+            <svg id="icon-sidebar-header-svg" class="w-5 h-5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="3"></rect>
+                <path d="M9 3v18"></path>
+                <!-- Mũi tên hướng vô (trái): khi sidebar đang mở cố định -->
+                <path id="icon-sidebar-header-arrow-in" d="m16 9-3 3 3 3" class="hidden"></path>
+                <!-- Mũi tên hướng ra (phải): khi sidebar đang ở chế độ hide (peek) -->
+                <path id="icon-sidebar-header-arrow-out" d="m13.5 9 3 3-3 3"></path>
+            </svg>
+        </button>
+    </div>
+    
+    <!-- Navigation Items -->
+    <div class="p-3 flex-1 overflow-y-auto space-y-1">
+        <ul class="space-y-1" id="sidebar-menu">
+            <!-- 1. Dashboard Tổng quan -->
+            <li>
+                <a href="/" onclick="event.preventDefault(); switchTab('dashboard');" class="sidebar-item-main active flex items-center" data-target="dashboard">
+                    <i class="ph ph-squares-four text-xl mr-3 text-teal-300"></i>
+                    <span class="flex-1 text-left tracking-wide">Dashboard Tổng quan</span>
+                </a>
+            </li>
+
+            <!-- 2. Sale & Booking -->
+            {% if menu.sales %}
+            <li>
+                <a href="/sales" onclick="event.preventDefault(); switchTab('kinh-doanh');" class="sidebar-item-main flex items-center" data-target="kinh-doanh">
+                    <i class="ph ph-handshake text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Sale & Booking</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- 3. Điều vận -->
+            {% if menu.dispatch %}
+            <li>
+                <a href="/dispatch" onclick="event.preventDefault(); switchTab('dieu-van');" class="sidebar-item-main flex items-center" data-target="dieu-van">
+                    <i class="ph ph-arrows-split text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Điều vận & Vendor</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- 4. Bãi & Phương Tiện -->
+            {% if menu.fleet %}
+            <li>
+                <a href="/fleet" onclick="event.preventDefault(); switchTab('xe-bai');" class="sidebar-item-main flex items-center" data-target="xe-bai">
+                    <i class="ph ph-warehouse text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Bãi & Phương Tiện</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- 5. Hành chính & Nhân sự -->
+            {% if menu.hr %}
+            <li>
+                <a href="/hr" onclick="event.preventDefault(); switchTab('nhan-su');" class="sidebar-item-main flex items-center" data-target="nhan-su">
+                    <i class="ph ph-users text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Hành chính & Nhân sự</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- 6. Tài chính & Kế toán -->
+            {% if menu.accounting %}
+            <li>
+                <a href="/accounting" onclick="event.preventDefault(); switchTab('ke-toan');" class="sidebar-item-main flex items-center" data-target="ke-toan">
+                    <i class="ph ph-calculator text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Tài chính & Kế toán</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- 7. Báo cáo & Thống kê -->
+            {% if menu.reports %}
+            <li>
+                <a href="/reports" onclick="event.preventDefault(); switchTab('bao-cao');" class="sidebar-item-main flex items-center" data-target="bao-cao">
+                    <i class="ph ph-chart-line-up text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide font-medium">Báo cáo</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- 8. Cài đặt Danh Mục -->
+            {% if menu.settings %}
+            <li>
+                <a href="/settings" onclick="event.preventDefault(); switchTab('cai-dat');" class="sidebar-item-main flex items-center" data-target="cai-dat">
+                    <i class="ph ph-gear text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Cài đặt</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- User Profile Footer -->
+    <div class="p-3 border-t border-slate-700/60">
+        <div class="flex items-center space-x-3 px-3 py-2.5 bg-slate-800/60 rounded-xl hover:bg-slate-800 cursor-pointer transition-colors border border-slate-700/40">
+            <div class="w-9 h-9 rounded-full bg-teal-800 flex items-center justify-center text-sm font-bold text-white border border-teal-600 shadow-inner">
+                {% if current_employee and current_employee.nickname %}
+                    {{ current_employee.nickname|slice:":2"|upper }}
+                {% elif current_employee %}
+                    {{ current_employee.full_name|slice:":2"|upper }}
+                {% else %}
+                    AD
+                {% endif %}
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <p class="text-[13.5px] font-bold text-white truncate font-heading">
+                    {{ current_employee.full_name|default:request.user.username }}
+                </p>
+                <p class="text-[11.5px] text-teal-400 truncate">
+                    {% if current_employee %}
+                        {{ current_employee.get_role_display }}
+                    {% elif is_admin %}
+                        Quản trị viên Hệ thống
+                    {% else %}
+                        Nhân viên Nội bộ
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</aside>
+{% endwith %}

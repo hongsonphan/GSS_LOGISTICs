@@ -1,0 +1,234 @@
+<!-- 8. PHÂN HỆ CÀI ĐẶT & HỆ THỐNG DANH MỤC (MASTER DATA & SETTINGS) -->
+<div id="view-cai-dat" class="view hidden-view p-4 md:p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4">
+    <!-- Main Master Data Container -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col">
+        <!-- TẦNG 1: 5 NHÓM CÀI ĐẶT CHÍNH (MASTER DATA GROUPS) -->
+        <div class="bg-slate-100/90 border-b border-slate-200 px-3 md:px-5 pt-2.5 flex items-center justify-between gap-2 overflow-x-auto select-none shrink-0" id="md-group-nav">
+            <div class="flex items-center space-x-1 overflow-x-auto pb-0">
+                <button type="button" onclick="switchMasterDataGroup('initial_setup')" data-md-group="initial_setup" class="md-group-tab active px-3.5 py-2 text-xs md:text-sm font-bold border-b-2 border-teal-700 text-teal-900 bg-white rounded-t-xl flex items-center space-x-2 transition-all whitespace-nowrap cursor-pointer shadow-2xs">
+                    <i class="ph-bold ph-buildings text-base text-teal-700"></i>
+                    <span>Khai Báo Ban Đầu</span>
+                </button>
+                <button type="button" onclick="switchMasterDataGroup('finance_admin')" data-md-group="finance_admin" class="md-group-tab px-3.5 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 rounded-t-xl flex items-center space-x-2 transition-all whitespace-nowrap cursor-pointer">
+                    <i class="ph-bold ph-wallet text-base text-slate-500"></i>
+                    <span>Tài Chính & Quản Trị</span>
+                </button>
+                <button type="button" onclick="switchMasterDataGroup('partners')" data-md-group="partners" class="md-group-tab px-3.5 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 rounded-t-xl flex items-center space-x-2 transition-all whitespace-nowrap cursor-pointer">
+                    <i class="ph-bold ph-handshake text-base text-slate-500"></i>
+                    <span>Khách Hàng & Đối Tác</span>
+                </button>
+                <button type="button" onclick="switchMasterDataGroup('locations_network')" data-md-group="locations_network" class="md-group-tab px-3.5 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 rounded-t-xl flex items-center space-x-2 transition-all whitespace-nowrap cursor-pointer">
+                    <i class="ph-bold ph-map-pin text-base text-slate-500"></i>
+                    <span>Mạng Lưới & Địa Điểm</span>
+                </button>
+                <button type="button" onclick="switchMasterDataGroup('fleet_equipment')" data-md-group="fleet_equipment" class="md-group-tab px-3.5 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 rounded-t-xl flex items-center space-x-2 transition-all whitespace-nowrap cursor-pointer">
+                    <i class="ph-bold ph-truck text-base text-slate-500"></i>
+                    <span>Phương Tiện & Thiết Bị</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TẦNG 2: DANH MỤC CON THUỘC NHÓM & NÚT TÁC VỤ -->
+        <div class="bg-white border-b border-slate-200 px-3 md:px-5 py-2 flex items-center justify-between flex-wrap gap-2 shrink-0">
+            <!-- Danh mục con (Sub-tabs) được nhóm theo nhóm cha -->
+            <div class="flex items-center space-x-1.5 overflow-x-auto pb-0" id="master-data-tabs">
+                <!-- 1. Khai Báo Ban Đầu -->
+                <div class="md-group-container flex items-center space-x-1.5" data-for-group="initial_setup">
+                    <button type="button" onclick="switchMasterDataTab('company')" data-md-tab="company" class="md-tab-btn active px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg bg-teal-50 text-teal-800 border border-teal-300 flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-buildings text-sm"></i>
+                        <span>Thông Tin Công Ty</span>
+                    </button>
+                    <button type="button" data-access="admin" onclick="switchMasterDataTab('roles_permissions')" data-md-tab="roles_permissions" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-shield-check text-sm"></i>
+                        <span>Vai Trò & Phân Quyền</span>
+                    </button>
+                </div>
+
+                <!-- 2. Tài Chính & Quản Trị -->
+                <div class="md-group-container hidden flex items-center space-x-1.5" data-for-group="finance_admin">
+                    <button type="button" onclick="switchMasterDataTab('opening_balance')" data-md-tab="opening_balance" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-wallet text-sm"></i>
+                        <span>Số Dư Ban Đầu</span>
+                    </button>
+                    <button type="button" onclick="switchMasterDataTab('account_settings')" data-md-tab="account_settings" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-book-open-text text-sm"></i>
+                        <span>Cài Đặt Tài Khoản</span>
+                    </button>
+                    <button type="button" onclick="switchMasterDataTab('expenses')" data-md-tab="expenses" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-receipt text-sm"></i>
+                        <span>Khoản Mục Chi</span>
+                    </button>
+                    <button type="button" onclick="switchMasterDataTab('driver_tariffs')" data-md-tab="driver_tariffs" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-money text-sm"></i>
+                        <span>Biểu Phí Lương Chuyến</span>
+                    </button>
+                    <button type="button" onclick="switchMasterDataTab('allowances')" data-md-tab="allowances" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-plus-circle text-sm"></i>
+                        <span>Phụ Cấp & Kiểm Hóa</span>
+                    </button>
+                </div>
+
+                <!-- 3. Khách Hàng & Đối Tác -->
+                <div class="md-group-container hidden flex items-center space-x-1.5" data-for-group="partners">
+                    <button type="button" onclick="switchMasterDataTab('customers')" data-md-tab="customers" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-buildings text-sm"></i>
+                        <span>Khách Hàng</span>
+                    </button>
+                    <button type="button" onclick="switchMasterDataTab('tariffs')" data-md-tab="tariffs" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-path text-sm"></i>
+                        <span>Biểu Cước Khách</span>
+                    </button>
+                    <button type="button" onclick="switchMasterDataTab('subcontractors')" data-md-tab="subcontractors" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-handshake text-sm"></i>
+                        <span>Thầu Phụ & Nhà Cung Cấp</span>
+                    </button>
+                </div>
+
+                <!-- 4. Mạng Lưới & Địa Điểm -->
+                <div class="md-group-container hidden flex items-center space-x-1.5" data-for-group="locations_network">
+                    <button type="button" onclick="switchMasterDataTab('locations')" data-md-tab="locations" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-map-pin text-sm"></i>
+                        <span>Cảng & Kho Bãi</span>
+                    </button>
+                    <button type="button" onclick="switchMasterDataTab('shipping_lines')" data-md-tab="shipping_lines" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-anchor-simple text-sm"></i>
+                        <span>Hãng Tàu</span>
+                    </button>
+                </div>
+
+                <!-- 5. Phương Tiện & Thiết Bị -->
+                <div class="md-group-container hidden flex items-center space-x-1.5" data-for-group="fleet_equipment">
+                    <button type="button" onclick="switchMasterDataTab('vehicles')" data-md-tab="vehicles" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-truck text-sm"></i>
+                        <span>Đầu Kéo & Xe</span>
+                    </button>
+                    <button type="button" onclick="switchMasterDataTab('trailers')" data-md-tab="trailers" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-arrows-horizontal text-sm"></i>
+                        <span>Rơ-Moóc</span>
+                    </button>
+                    <button type="button" onclick="switchMasterDataTab('containers')" data-md-tab="containers" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-package text-sm"></i>
+                        <span>Quy Cách Cont & Xe</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action Buttons: Export Mẫu, Nhập Excel, Xuất Dữ Liệu & Tạo Mới -->
+            <div class="flex items-center space-x-2" id="md-action-buttons-group" data-access-keep>
+                <!-- Nút Tải Mẫu Excel (Export Mẫu) -->
+                <button type="button" onclick="exportMasterDataTemplate()" id="md-export-template-btn" 
+                        class="px-3 py-1.5 bg-white hover:bg-teal-50 text-slate-700 hover:text-teal-800 border border-slate-300 hover:border-teal-400 rounded-lg text-xs md:text-sm font-bold font-heading shadow-2xs flex items-center space-x-1.5 transition-all cursor-pointer" 
+                        title="Tải file Excel mẫu chuẩn hóa để nhập dữ liệu ban đầu">
+                    <i class="ph-bold ph-download-simple text-base text-teal-700"></i>
+                    <span>Tải Mẫu Excel</span>
+                </button>
+
+                <!-- Nút Nhập Danh Mục (Import Excel) -->
+                <button type="button" onclick="openMasterDataImportModal()" id="md-import-btn" 
+                        class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer" 
+                        title="Nhập danh mục từ tệp Excel vào hệ thống">
+                    <i class="ph-bold ph-file-arrow-up text-base"></i>
+                    <span>Nhập Excel</span>
+                </button>
+
+                <!-- Nút Xuất Dữ Liệu Hiện Hành -->
+                <button type="button" onclick="exportMasterDataActualData()" id="md-export-data-btn" 
+                        class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg text-xs font-bold font-heading shadow-2xs flex items-center space-x-1.5 transition-all cursor-pointer" 
+                        title="Xuất dữ liệu danh mục hiện hành ra file Excel">
+                    <i class="ph-bold ph-file-xls text-base text-emerald-600"></i>
+                    <span class="hidden sm:inline">Xuất File</span>
+                </button>
+
+                <!-- Nút Tạo Mới -->
+                <button type="button" onclick="openCreateMasterDataModal()" id="md-create-btn" 
+                        class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer">
+                    <i class="ph-bold ph-plus-circle text-base"></i>
+                    <span id="md-create-btn-label">Tạo mới</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div id="md-filter-toolbar" class="p-2.5 px-3 md:px-4 border-b border-slate-200/80 bg-white flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
+            <div class="relative w-full sm:w-80">
+                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
+                <input type="text" id="md-search-input" onkeyup="filterMasterDataTable()" placeholder="Tìm kiếm nhanh trong bảng..."
+                       class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs md:text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
+            </div>
+
+            <!-- Dynamic Sub-Filter -->
+            <div class="flex items-center space-x-2 w-full sm:w-auto" id="md-secondary-filter-container">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Bộ lọc:</label>
+                <select id="md-secondary-filter" onchange="filterMasterDataTable()"
+                        class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs md:text-sm font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-teal-500">
+                    <option value="ALL">Tất cả</option>
+                </select>
+                <!-- Nút Tùy Chỉnh Cột Danh Mục -->
+                <button type="button" onclick="openColumnCustomizer('md-main-table')" 
+                    class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                    title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                    <i class="ph-bold ph-columns text-teal-700"></i>
+                    <span>Cột</span>
+                </button>
+                <button onclick="reloadActiveMasterDataTab()" title="Làm mới dữ liệu" class="p-1.5 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer">
+                    <i class="ph-bold ph-arrows-clockwise text-base"></i>
+                </button>
+            </div>
+        </div>
+
+
+
+        <!-- Vai trò & Phân quyền: ma trận Chức danh × Phân hệ × Thao tác (master-data/access-matrix.js) -->
+        <div id="md-roles-permissions-view" class="hidden p-3 md:p-4 bg-slate-50" data-m-keep></div>
+
+        <!-- Cài đặt tài khoản kế toán: ánh xạ nghiệp vụ -> tài khoản (master-data/account-settings.js) -->
+        <div id="md-account-settings-view" class="hidden p-3 md:p-4 bg-slate-50" data-m-keep></div>
+
+        <!-- Dynamic Data Table Container (Sticky Header & Scrollable Body) -->
+        <div id="md-table-container" class="overflow-x-auto relative border-b border-slate-200 erp-table-container min-h-[420px] max-h-[calc(100vh-320px)] overflow-y-auto">
+            <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="md-main-table" data-table-title="Hệ Thống Danh Mục Cài Đặt">
+                <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200/90 shadow-2xs" id="md-table-head">
+                    <!-- Populated dynamically based on active tab -->
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium" id="md-table-body">
+                    <tr>
+                        <td colspan="8" class="p-8 text-center text-slate-400">
+                            <i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>
+                            Đang tải danh mục cài đặt...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer Pagination / Record Counter (UI/UX Chuẩn Quốc Tế) -->
+        <div class="p-2.5 px-4 bg-slate-50/90 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-semibold text-slate-600 select-none shrink-0" id="md-pagination-container">
+            <!-- Left: Range info and Rows per page selector -->
+            <div class="flex items-center flex-wrap gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div id="md-pagination-info" class="text-slate-600 font-medium flex items-center space-x-1">
+                    <span>Hiển thị</span>
+                    <span id="md-range-start" class="font-bold text-slate-900">0</span>
+                    <span>-</span>
+                    <span id="md-range-end" class="font-bold text-slate-900">0</span>
+                    <span>trong</span>
+                    <span id="md-count-display" class="font-black text-teal-800">0</span>
+                    <span>bản ghi</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs text-slate-500 font-medium whitespace-nowrap">Số dòng / trang:</span>
+                    <select id="md-page-size" onchange="changeMasterDataPageSize(this.value)" class="bg-white border border-slate-200 text-slate-700 text-xs rounded-lg px-2.5 py-1 font-bold focus:ring-2 focus:ring-teal-500 focus:outline-hidden cursor-pointer shadow-2xs">
+                        <option value="20" selected>20 dòng</option>
+                        <option value="30">30 dòng</option>
+                        <option value="50">50 dòng</option>
+                        <option value="100">100 dòng</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Right: Navigation Controls (First, Prev, Page numbers, Next, Last) -->
+            <div class="flex items-center space-x-1" id="md-pagination-controls">
+                <!-- Injected dynamically via JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>

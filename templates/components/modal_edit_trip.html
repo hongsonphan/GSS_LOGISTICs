@@ -1,0 +1,248 @@
+<!-- MODAL HIỆU CHỈNH LỆNH ĐIỀU ĐỘNG CHUYẾN XE (GSS Logistics Standard) -->
+<div
+  id="modal-edit-trip"
+  class="fixed inset-0 bg-slate-900/60 z-50 hidden-view flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in"
+>
+  <div
+    class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-200"
+  >
+    <!-- Modal Header -->
+    <div
+      class="bg-gradient-to-r from-teal-700 to-teal-800 px-5 py-3 text-white flex justify-between items-center shrink-0"
+    >
+      <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-lg backdrop-blur-xs border border-white/10">
+          <i class="ph-bold ph-note-pencil text-teal-200"></i>
+        </div>
+        <div>
+          <h3 class="font-black font-heading text-base tracking-tight leading-tight flex items-center gap-2">
+            <span>Hiệu Chỉnh Lệnh Điều Động</span>
+            <span id="edit-modal-trip-code" class="text-xs bg-teal-900/80 border border-teal-500/60 px-2 py-0.5 rounded-full font-mono text-teal-200">TVL-XXX</span>
+          </h3>
+          <p class="text-[11px] text-teal-100 font-medium leading-tight">Cập nhật thông tin khách hàng, số cont, lịch đóng hàng, xe và tài xế</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onclick="closeModal('modal-edit-trip')"
+        class="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+      >
+        <i class="ph ph-x text-lg"></i>
+      </button>
+    </div>
+
+    <div class="p-4 flex-1 overflow-y-auto bg-slate-50/40">
+      <form
+        id="form-edit-trip"
+        onsubmit="event.preventDefault(); submitEditTripForm();"
+        class="space-y-3"
+      >
+        <!-- 1. Thông Tin Khách Hàng & Loại Hình Vận Tải -->
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs space-y-2.5">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+            <div class="md:col-span-6">
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-customer">
+                Khách Hàng <span class="text-rose-500">*</span>
+              </label>
+              <select id="edit-inp-customer" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs w-full">
+                <option value="">-- Chọn Khách Hàng --</option>
+              </select>
+            </div>
+            <div class="md:col-span-3">
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-type">
+                Loại Hình <span class="text-rose-500">*</span>
+              </label>
+              <select id="edit-inp-type" class="form-select h-8.5 px-2 py-1 font-bold text-teal-800 text-xs w-full" data-no-auto-add="true">
+                <option value="Nhập">Hàng Nhập (Cảng -> Kho)</option>
+                <option value="Xuất">Hàng Xuất (Kho -> Cảng)</option>
+                <option value="Nội địa">Nội địa / Chuyển kho</option>
+              </select>
+            </div>
+            <div class="md:col-span-3">
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-cont-type">
+                Loại Cont / Xe <span class="text-rose-500">*</span>
+              </label>
+              <select id="edit-inp-cont-type" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-800 text-xs w-full">
+                <option value="40HC">Cont 40HC (High Cube)</option>
+                <option value="40GP">Cont 40GP (General Purpose)</option>
+                <option value="45G1">Cont 45G1 (Cont 45 Feet)</option>
+                <option value="22GP">Cont 22GP (Cont 20 Feet)</option>
+                <option value="2x20DC">Kẹp 2x20ft (Twin 20ft)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Thông tin Container, Chì & Booking -->
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1 font-heading">
+              <i class="ph-bold ph-cube text-teal-600"></i> Thông Tin Vỏ Cont / Chì & Booking
+            </span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-booking">Số Booking / B/L</label>
+              <input id="edit-inp-booking" type="text" placeholder="VD: 235601091589" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase w-full">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-cont">Số Container</label>
+              <input id="edit-inp-cont" type="text" placeholder="VD: MRKU6074874" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-bold text-teal-800 w-full">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-seal">Số Chì (Seal)</label>
+              <input id="edit-inp-seal" type="text" placeholder="VD: MLVN1739611" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase w-full">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-vgm">Trọng Lượng VGM</label>
+              <input id="edit-inp-vgm" type="text" placeholder="VD: 24.5 Tấn" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Lộ Trình 3 Điểm & Lịch Hẹn Đóng Hàng -->
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1 font-heading">
+              <i class="ph-bold ph-map-pin-line text-teal-600"></i> Lộ Trình Vận Tải & Giờ Hẹn Đóng Hàng
+            </span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-pickup">
+                1. Nơi Lấy Cont <span class="text-rose-500">*</span>
+              </label>
+              <input id="edit-inp-pickup" type="text" placeholder="VD: CẢNG CÁT LÁI" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase w-full">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-warehouse">
+                2. Kho Đóng/ Trả Hàng <span class="text-rose-500">*</span>
+              </label>
+              <input id="edit-inp-warehouse" type="text" placeholder="VD: KHO WCA SÓNG THẦN" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-bold text-teal-900 w-full">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-dropoff">
+                3. Nơi Trả Cont <span class="text-rose-500">*</span>
+              </label>
+              <input id="edit-inp-dropoff" type="text" placeholder="VD: BÃI RỖNG GSS" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase w-full">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-loading-date">Ngày Đóng Hàng</label>
+              <input id="edit-inp-loading-date" type="date" class="form-input h-8.5 px-2.5 py-1 text-xs w-full">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-loading-time">Giờ Hẹn Đóng Hàng</label>
+              <input id="edit-inp-loading-time" type="text" placeholder="VD: 08:00, 14:00" class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-teal-800 w-full">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-dock">Dock Kho Khách Hàng</label>
+              <input id="edit-inp-dock" type="text" placeholder="VD: DOCK 05" class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold w-full">
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Phân Bổ Xe & Tài Xế -->
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1 font-heading">
+              <i class="ph-bold ph-steering-wheel text-teal-600"></i> Phân Bổ Bác Tài & Xe Vận Chuyển
+            </span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-driver">Bác Tài (Chặng 1 / Toàn trình)</label>
+              <select id="edit-inp-driver" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-900 text-xs w-full">
+                <option value="">-- Chọn Bác Tài --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-vehicle">Đầu kéo/ Xe tải (Chặng 1 / Toàn trình)</label>
+              <select id="edit-inp-vehicle" class="form-select h-8.5 px-2 py-1 font-mono font-bold text-slate-900 text-xs w-full">
+                <option value="">-- Chọn Đầu kéo/ Xe tải --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-trailer">Rơ-Moóc</label>
+              <select id="edit-inp-trailer" class="form-select h-8.5 px-2 py-1 font-mono text-slate-800 text-xs w-full">
+                <option value="">-- Chọn Rơ-Moóc --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Phân công Chặng 2 cho Chế độ Cắt Kéo (Drop & Hook) -->
+          <div id="edit-section-drop-hook" class="p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2 mt-2">
+            <div class="flex items-center justify-between border-b border-indigo-200/80 pb-1">
+              <span class="text-[11.5px] font-bold uppercase tracking-wider text-indigo-950 flex items-center gap-1 font-heading">
+                <i class="ph-bold ph-arrows-split text-indigo-700"></i> Chặng 2: Tài Xế & Xe Móc Mooc Hạ Bãi (Cắt Kéo)
+              </span>
+              <span class="text-[10px] font-bold text-indigo-800 bg-indigo-100 px-2 py-0.5 rounded-full border border-indigo-200">Gán bổ sung khi hạ cont</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-indigo-950 text-xs mb-1" for="edit-inp-dropoff-driver">Bác Tài Hạ Cont (Chặng 2)</label>
+                <select id="edit-inp-dropoff-driver" onchange="onEditDropoffDriverChange(this.value)" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-900 text-xs w-full">
+                  <option value="">-- Bỏ trống (Chưa gán) --</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-indigo-950 text-xs mb-1" for="edit-inp-dropoff-vehicle">Đầu kéo/ Xe tải Hạ Cont (Chặng 2)</label>
+                <select id="edit-inp-dropoff-vehicle" class="form-select h-8.5 px-2 py-1 font-mono font-bold text-slate-900 text-xs w-full">
+                  <option value="">-- Chọn Đầu kéo Chặng 2 --</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Thông tin Phụ & Ghi Chú Vận Chuyển -->
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+          <input type="hidden" id="edit-inp-location-type" value="NHÀ MÁY" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-invoice">Hóa Đơn Thương Mại (Invoice)</label>
+              <input id="edit-inp-invoice" type="text" placeholder="VD: INV-998811" class="form-input h-8.5 px-2.5 py-1 text-xs w-full rounded-lg font-mono font-bold text-teal-800">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-free-det">Hạn Miễn Phí Vỏ (Free DET - Ngày)</label>
+              <input id="edit-inp-free-det" type="number" min="0" placeholder="VD: 7" class="form-input h-8.5 px-2.5 py-1 text-xs w-full rounded-lg font-bold text-amber-900">
+            </div>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1" for="edit-inp-notes">Ghi Chú Vận Chuyển / Hàng Hóa</label>
+            <textarea id="edit-inp-notes" rows="2" placeholder="Ghi chú đóng hàng, dỡ hàng, cẩu hạ bãi, lưu ý của khách hàng hoặc phí công ty chịu..." class="form-textarea w-full text-xs p-2 rounded-lg border border-slate-300"></textarea>
+          </div>
+        </div>
+
+        <!-- Action Footer Buttons -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-200">
+          <button
+            type="button"
+            onclick="deleteOrCancelTrip()"
+            class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 font-heading"
+          >
+            <i class="ph-bold ph-trash text-sm text-rose-600"></i> Hủy / Xóa Chuyến
+          </button>
+          <div class="flex items-center space-x-2">
+            <button
+              type="button"
+              onclick="closeModal('modal-edit-trip')"
+              class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors font-heading"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              onclick="submitEditTripForm()"
+              id="btn-save-edit-trip"
+              class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 font-heading transition-all"
+            >
+              <i class="ph-bold ph-floppy-disk text-sm"></i> Lưu
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

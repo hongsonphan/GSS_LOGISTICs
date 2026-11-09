@@ -1,0 +1,246 @@
+<!-- MODAL & BẢN IN: BẢNG KÊ VẬN CHUYỂN THÁNG ĐỐI SOÁT VỚI KHÁCH HÀNG (26 CỘT CHUẨN TRIỂN VÕ) -->
+<div id="modal-customer-freight-statement" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-2 sm:p-4 hidden animate-fade-in overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-7xl max-h-[96vh] flex flex-col overflow-hidden my-auto">
+        
+        <!-- 1. TOOLBAR ĐIỀU KHIỂN & LỌC KỲ ĐỐI SOÁT (NO-PRINT) -->
+        <div class="p-3.5 sm:p-4 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3 shrink-0 no-print border-b border-slate-800">
+            <div class="flex items-center gap-2.5">
+                <span class="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center text-lg font-bold">
+                    <i class="ph-bold ph-file-spreadsheet"></i>
+                </span>
+                <div>
+                    <h3 class="font-bold text-sm sm:text-base font-heading text-white flex items-center gap-2">
+                        <span>Bảng Kê Vận Chuyển Tháng</span>
+                        <span class="text-[11px] font-normal px-2 py-0.5 rounded-md bg-teal-900/60 text-teal-300 border border-teal-700/50">Mẫu 26 Cột Kế Toán</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 font-medium" id="cfs-toolbar-subtitle">Đối soát cước, nâng hạ, cược vỏ cont và xác nhận công nợ khách hàng</p>
+                </div>
+            </div>
+
+            <!-- Bộ lọc kỳ: Tháng, Năm, % VAT, Trạng thái -->
+            <div class="flex items-center flex-wrap gap-2 text-xs">
+                <!-- Chọn Tháng -->
+                <div class="flex items-center gap-1 bg-slate-800 px-2 py-1 rounded-xl border border-slate-700">
+                    <span class="text-slate-400 font-medium">Tháng:</span>
+                    <select id="cfs-filter-month" onchange="reloadCustomerFreightStatement()" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer">
+                        <option value="1" class="text-slate-900">Tháng 01</option>
+                        <option value="2" class="text-slate-900">Tháng 02</option>
+                        <option value="3" class="text-slate-900">Tháng 03</option>
+                        <option value="4" class="text-slate-900">Tháng 04</option>
+                        <option value="5" class="text-slate-900">Tháng 05</option>
+                        <option value="6" class="text-slate-900">Tháng 06</option>
+                        <option value="7" class="text-slate-900">Tháng 07</option>
+                        <option value="8" class="text-slate-900">Tháng 08</option>
+                        <option value="9" class="text-slate-900">Tháng 09</option>
+                        <option value="10" class="text-slate-900">Tháng 10</option>
+                        <option value="11" class="text-slate-900">Tháng 11</option>
+                        <option value="12" class="text-slate-900">Tháng 12</option>
+                    </select>
+                </div>
+
+                <!-- Chọn Năm -->
+                <div class="flex items-center gap-1 bg-slate-800 px-2 py-1 rounded-xl border border-slate-700">
+                    <span class="text-slate-400 font-medium">Năm:</span>
+                    <select id="cfs-filter-year" onchange="reloadCustomerFreightStatement()" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer">
+                        <option value="2026" class="text-slate-900">2026</option>
+                        <option value="2025" class="text-slate-900">2025</option>
+                        <option value="2024" class="text-slate-900">2024</option>
+                        <option value="2023" class="text-slate-900">2023</option>
+                        <option value="2022" class="text-slate-900">2022</option>
+                    </select>
+                </div>
+
+                <!-- Tỷ lệ thuế VAT -->
+                <div class="flex items-center gap-1 bg-slate-800 px-2 py-1 rounded-xl border border-slate-700">
+                    <span class="text-slate-400 font-medium">VAT:</span>
+                    <select id="cfs-filter-vat" onchange="reloadCustomerFreightStatement()" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer">
+                        <option value="10" class="text-slate-900">10%</option>
+                        <option value="8" class="text-slate-900">8% (Ưu đãi)</option>
+                        <option value="0" class="text-slate-900">0% (Không thuế)</option>
+                    </select>
+                </div>
+
+                <!-- Nút Tải Excel -->
+                <button type="button" onclick="exportCustomerFreightStatementExcel()" 
+                    class="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold font-heading flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                    <i class="ph-bold ph-microsoft-excel-logo text-sm"></i>
+                    <span>Tải Excel (.xlsx)</span>
+                </button>
+
+                <!-- Nút In A4 Ngang -->
+                <button type="button" onclick="printCustomerFreightStatement()" 
+                    class="h-8 px-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold font-heading flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                    <i class="ph-bold ph-printer text-sm"></i>
+                    <span>In A4 (Ngang)</span>
+                </button>
+
+                <!-- Nút Đóng -->
+                <button type="button" onclick="closeCustomerFreightStatementModal()" 
+                    class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors">
+                    <i class="ph-bold ph-x text-base"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. KHUNG HIỂN THỊ / XEM TRƯỚC / IN (A4 LANDSCAPE PRINTABLE AREA) -->
+        <div class="flex-1 overflow-auto p-4 sm:p-6 bg-slate-100" id="cfs-scroll-wrapper">
+            <div id="customer-freight-statement-printable" class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200 mx-auto max-w-[1240px] text-slate-900 print:p-0 print:border-none print:shadow-none print:w-full">
+                
+                <!-- HEADER PHÁP NHÂN CÔNG TY TRIỂN VÕ -->
+                <div class="border-b pb-2 mb-3 border-slate-300 flex justify-between items-start text-xs">
+                    <div>
+                        <h4 class="font-bold uppercase text-[12px] text-slate-900 tracking-tight" id="cfs-view-comp-name">CÔNG TY TNHH DỊCH VỤ GIAO NHẬN VẬN TẢI TRIỂN VÕ</h4>
+                        <p class="text-[11px] text-slate-700 mt-0.5" id="cfs-view-comp-address">ĐỊA CHỈ: Số 44B/1 Trần Quang Khải, Khu phố 9, Phường Tân Định, Thành phố Hồ Chí Minh, Việt Nam</p>
+                        <p class="text-[11px] text-slate-800 font-semibold mt-0.5" id="cfs-view-comp-tax">MST: 0315001374</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Mẫu Biểu: BKVC-TVL</span>
+                        <span class="text-[11px] font-mono font-bold text-teal-800" id="cfs-view-period-code">THÁNG 06/2022</span>
+                    </div>
+                </div>
+
+                <!-- TIÊU ĐỀ BẢNG KÊ -->
+                <div class="text-center my-4">
+                    <h2 class="text-base sm:text-xl font-black text-slate-950 uppercase font-heading tracking-wider" id="cfs-view-title">
+                        BẢNG KÊ VẬN CHUYỂN THÁNG 6/2022
+                    </h2>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-800 mt-1 uppercase" id="cfs-view-customer-name">
+                        KHÁCH HÀNG: CÔNG TY …. SONG THANH
+                    </h3>
+                </div>
+
+                <!-- BẢNG DỮ LIỆU ĐỐI SOÁT 26 CỘT -->
+                <div class="overflow-x-auto w-full my-3">
+                    <table class="w-full border-collapse border border-slate-900 text-[10px] leading-tight text-slate-900 whitespace-nowrap cfs-table">
+                        <thead>
+                            <!-- HÀNG TIÊU ĐỀ 1 -->
+                            <tr class="bg-slate-200/90 text-slate-900 font-bold uppercase text-center">
+                                <th rowspan="2" class="border border-slate-900 p-1 w-7">STT</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 w-16">NGÀY</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 max-w-[120px]">TÊN KHÁCH HÀNG</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 max-w-[100px]">KHO</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 max-w-[110px]">NƠI LẤY</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 max-w-[110px]">NƠI HẠ</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 w-8">N/X</th>
+                                <th colspan="2" class="border border-slate-900 p-1">CONT</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 w-20">SỐ CONT</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 w-20">BOOKING/<br>BILL</th>
+                                <th colspan="7" class="border border-slate-900 p-1 bg-amber-100/70">CƯỚC VẬN CHUYỂN</th>
+                                <th colspan="2" class="border border-slate-900 p-1 bg-emerald-100/70">HĐ NÂNG</th>
+                                <th colspan="2" class="border border-slate-900 p-1 bg-emerald-100/70">HĐ HẠ</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 w-16">CƯỢC</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 max-w-[120px]">GHI CHÚ</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 w-16">SỐ XE</th>
+                                <th rowspan="2" class="border border-slate-900 p-1 w-12">ĐÃ TRẢ</th>
+                            </tr>
+                            <!-- HÀNG TIÊU ĐỀ 2 (CÁC CỘT CON) -->
+                            <tr class="bg-slate-200/90 text-slate-900 font-bold uppercase text-center text-[9px]">
+                                <!-- CONT -->
+                                <th class="border border-slate-900 p-1 w-8">20'</th>
+                                <th class="border border-slate-900 p-1 w-8">40'</th>
+                                <!-- CƯỚC VẬN CHUYỂN -->
+                                <th class="border border-slate-900 p-1 w-18 bg-amber-50">ĐƠN GIÁ</th>
+                                <th class="border border-slate-900 p-1 w-14 bg-amber-50">HẠ XA</th>
+                                <th class="border border-slate-900 p-1 w-14 bg-amber-50">NEO</th>
+                                <th class="border border-slate-900 p-1 w-14 bg-amber-50">PHỤ THU</th>
+                                <th class="border border-slate-900 p-1 w-18 bg-amber-100 font-black">CỘNG</th>
+                                <th class="border border-slate-900 p-1 w-14 bg-amber-50" id="cfs-th-vat-rate">VAT 10%</th>
+                                <th class="border border-slate-900 p-1 w-18 bg-amber-100 font-black">THÀNH TIỀN</th>
+                                <!-- HĐ NÂNG -->
+                                <th class="border border-slate-900 p-1 w-14 bg-emerald-50">HĐ</th>
+                                <th class="border border-slate-900 p-1 w-16 bg-emerald-50">TIỀN</th>
+                                <!-- HĐ HẠ -->
+                                <th class="border border-slate-900 p-1 w-14 bg-emerald-50">HĐ</th>
+                                <th class="border border-slate-900 p-1 w-16 bg-emerald-50">TIỀN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cfs-table-tbody" class="divide-y divide-slate-400">
+                            <!-- Dữ liệu render bằng JavaScript -->
+                        </tbody>
+                        <tfoot id="cfs-table-tfoot" class="font-bold bg-amber-50/70 border-t-2 border-slate-900">
+                            <!-- Dòng CỘNG & THÀNH TIỀN render bằng JavaScript -->
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- DÒNG ĐỌC SỐ TIỀN BẰNG CHỮ -->
+                <div class="my-2.5 text-xs font-medium text-slate-800 italic" id="cfs-words-container">
+                    <span>Số tiền bằng chữ: </span>
+                    <strong class="font-bold text-slate-950 not-italic" id="cfs-view-words">Bốn triệu một trăm nghìn đồng chẵn.</strong>
+                </div>
+
+                <!-- KHỐI CHỮ KÝ 2 BÊN ĐỐI SOÁT & XÁC NHẬN -->
+                <div class="grid grid-cols-2 gap-8 mt-8 pt-4 border-t border-slate-300 text-center text-xs">
+                    <!-- Bên Trái: Đại diện Khách Hàng -->
+                    <div class="space-y-1">
+                        <p class="font-bold uppercase text-slate-900" id="cfs-sign-customer-title">ĐẠI DIỆN KHÁCH HÀNG</p>
+                        <p class="text-[10px] text-slate-500 italic">(Ký, ghi rõ họ tên và đóng dấu xác nhận)</p>
+                        <div class="h-20"></div>
+                        <p class="text-slate-400 font-medium">....................................................</p>
+                    </div>
+
+                    <!-- Bên Phải: Đại diện Triển Võ Logistics -->
+                    <div class="space-y-1">
+                        <p class="font-bold uppercase text-slate-900" id="cfs-sign-company-title">CÔNG TY TNHH DỊCH VỤ GIAO NHẬN VẬN TẢI TRIỂN VÕ</p>
+                        <p class="text-[10px] text-slate-500 italic">(Người lập biểu - Kế toán - Giám đốc duyệt)</p>
+                        <div class="h-20"></div>
+                        <p class="font-bold text-slate-900" id="cfs-sign-representative-name"></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+/* CSS TỐI ƯU HÓA IN KHỔ A4 LANDSCAPE (NGANG) BẢNG KÊ VẬN CHUYỂN */
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 6mm 6mm;
+    }
+    body * {
+        visibility: hidden !important;
+    }
+    #modal-customer-freight-statement,
+    #modal-customer-freight-statement * {
+        visibility: visible !important;
+    }
+    #modal-customer-freight-statement {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        display: block !important;
+    }
+    #cfs-scroll-wrapper {
+        overflow: visible !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+    #customer-freight-statement-printable {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    .cfs-table {
+        font-size: 8.5px !important;
+        border-color: #000 !important;
+    }
+    .cfs-table th, .cfs-table td {
+        border-color: #000 !important;
+        padding: 1.5px 2px !important;
+    }
+}
+</style>

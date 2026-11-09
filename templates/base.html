@@ -1,0 +1,190 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=3.0">
+    <title>{% block title %}Hệ thống Quản lý Vận tải - GSS LOGISTICS{% endblock %}</title>
+    
+    
+    <!-- Phosphor Icons (tự host: static/vendor) -->
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/regular/style.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/fill/style.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/bold/style.css' %}"/>
+    
+    <!-- Chart.js (Modern Logistics Analytics & BI Visualization) -->
+    <script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+    
+    <!-- International Enterprise Typography & Custom Styles -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2.9.86">
+    {% block extra_head %}{% endblock %}
+  <!-- Tailwind CSS (build sẵn, đặt cuối <head> để giữ thứ tự ưu tiên như bản CDN cũ) -->
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+  <link rel="stylesheet" href="{% static 'css/contrast.css' %}">
+  {% if gss_on %}<link rel="stylesheet" href="{% static 'css/gss.css' %}">{% endif %}
+</head>
+<body class="flex h-screen bg-slate-100 selection:bg-teal-100 selection:text-teal-900">
+
+    <!-- 1. SIDEBAR COMPONENT & MOBILE BACKDROP -->
+    {% include 'components/sidebar.html' %}
+    <div id="sidebar-mobile-backdrop" onclick="collapseSidebar(false)" class="fixed inset-0 bg-slate-900/50 backdrop-blur-[1px] z-50 hidden lg:hidden transition-opacity"></div>
+
+    <!-- 2. MAIN APP CONTENT AREA -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <!-- TOP NAVIGATION COMPONENT -->
+        {% include 'components/topbar.html' %}
+
+        <!-- VIEWS CONTENT -->
+        <main class="flex-1 overflow-hidden relative" id="main-views">
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+
+    <!-- 3. POPUP MODALS -->
+    {% include 'components/modal_create_trip.html' %}
+    {% include 'components/modal_edit_trip.html' %}
+    {% include 'components/modal_quick_driver.html' %}
+    {% include 'components/modal_ocr.html' %}
+    {% include 'components/modal_quotation.html' %}
+    {% include 'components/modal_booking.html' %}
+    {% include 'components/modal_master_data.html' %}
+    {% include 'components/modal_master_data_import.html' %}
+    {% include 'components/modal_driver_advance.html' %}
+    {% include 'components/modal_settle_advance.html' %}
+    {% include 'components/modal_batch_driver_settlement.html' %}
+    {% include 'components/modal_dispatcher_fund.html' %}
+    {% include 'components/modal_cash_transaction.html' %}
+    {% include 'components/modal_debit_note.html' %}
+    {% include 'components/modal_subcontractor_settle.html' %}
+    {% include 'components/modal_subcontractor_batch_settle.html' %}
+    {% include 'components/modal_customs_declaration.html' %}
+    {% include 'components/modal_column_customizer.html' %}
+    {% include 'components/modal_confirm.html' %}
+    {% include 'components/modal_cash_voucher_print.html' %}
+    {% include 'components/modal_report_print.html' %}
+    {% include 'components/modal_customer_freight_statement.html' %}
+    {% include 'components/modal_profile_settings.html' %}
+
+    <!-- 3.1. CHAT BUBBLE & TEAM MESSAGING (In-App Floating Chat) -->
+    {% include 'components/chat_bubble.html' %}
+
+    <!-- 4. GRACEFUL TOAST NOTIFICATION CONTAINER (GSS Standard) -->
+    <div id="toast-container"></div>
+
+    <!-- 4.1. GSS 24-HOUR TIME PICKER POPOVER (Interactive 24h Time Selection) -->
+    <div id="bim-24h-timepicker-popover" class="fixed z-[9999] hidden bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-3 w-64 backdrop-blur-md select-none transition-all">
+        <!-- Popover Header -->
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                <i class="ph-bold ph-clock text-teal-600 text-sm"></i>
+                <span>Chọn Giờ (24h)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span id="bim-tp-display" class="font-mono font-black text-xs text-teal-900 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-200">17:00</span>
+                <button type="button" onclick="closeBim24hTimePicker()" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition-colors" title="Đóng">
+                    <i class="ph-bold ph-x text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2 Columns Picker (Hours 00-23, Minutes 00-59) -->
+        <div class="grid grid-cols-2 gap-2 text-center">
+            <!-- Hour Column -->
+            <div>
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Giờ (00-23)</div>
+                <div id="bim-tp-hours-list" class="h-44 overflow-y-auto space-y-1 pr-0.5" style="scrollbar-width: thin;"></div>
+            </div>
+
+            <!-- Minute Column -->
+            <div>
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phút (00-59)</div>
+                <div id="bim-tp-minutes-list" class="h-44 overflow-y-auto space-y-1 pr-0.5" style="scrollbar-width: thin;"></div>
+            </div>
+        </div>
+
+        <!-- Presets bar -->
+        <div class="mt-2.5 pt-2 border-t border-slate-100">
+            <div class="text-[9.5px] font-medium text-slate-400 mb-1">Mốc nhanh:</div>
+            <div class="flex flex-wrap gap-1">
+                <button type="button" onclick="setBim24hPickerTime('08', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors">08:00</button>
+                <button type="button" onclick="setBim24hPickerTime('10', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors">10:00</button>
+                <button type="button" onclick="setBim24hPickerTime('12', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors">12:00</button>
+                <button type="button" onclick="setBim24hPickerTime('13', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors">13:00</button>
+                <button type="button" onclick="setBim24hPickerTime('17', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-50 hover:bg-rose-100 text-rose-800 transition-colors">17:00</button>
+                <button type="button" onclick="setBim24hPickerTime('20', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors">20:00</button>
+                <button type="button" onclick="setBim24hPickerTime('23', '59')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-50 hover:bg-rose-100 text-rose-800 transition-colors">23:59</button>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100">
+            <button type="button" onclick="setBim24hPickerNow()" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 transition-colors">Giờ hiện tại</button>
+            <button type="button" onclick="confirmBim24hTimePicker()" class="px-3 py-1 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold shadow-xs transition-colors">
+                Xác nhận
+            </button>
+        </div>
+    </div>
+
+    <!-- 5. MODULAR JAVASCRIPT & CURRENT USER CONTEXT -->
+    <script>
+        window.CURRENT_USER = {
+            id: {{ request.user.id|default:"null" }},
+            username: "{{ request.user.username|default:''|escapejs }}",
+            role: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.role|escapejs }}{% else %}{% endif %}",
+            department: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.department|escapejs }}{% else %}{% endif %}",
+            employee_id: {% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.id }}{% else %}null{% endif %},
+            full_name: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.full_name|escapejs }}{% else %}{{ request.user.username|escapejs }}{% endif %}",
+            nickname: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.nickname|escapejs }}{% else %}{% endif %}",
+            is_staff: {{ request.user.is_staff|yesno:"true,false" }},
+            is_superuser: {{ request.user.is_superuser|yesno:"true,false" }},
+            is_department_head: {% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.is_department_head|yesno:"true,false" }}{% else %}false{% endif %},
+            hierarchy_level: {% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.hierarchy_level }}{% else %}0{% endif %},
+            permissions: [
+                {% if request.user.is_authenticated %}
+                    {% for p in request.user.get_all_permissions %}"{{ p|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}
+                {% endif %}
+            ]
+        };
+
+        // Ma trận phân quyền hiệu lực (core/access.py): {phân hệ: [thao tác]}; null = tài khoản không có hồ sơ nhân viên
+        // Tính năng đang bật theo Loại hình doanh nghiệp (core/features.py)
+        window.FEATURES = {{ features_json|default:"{}"|safe }};
+        window.hasFeature = function(name) { return window.FEATURES[name] !== false; };
+
+        window.BIM_ACCESS = {{ access_json|default:"null"|safe }};
+
+        window.hasUserPermission = function(permCodename) {
+            if (!window.CURRENT_USER) return false;
+            if (window.CURRENT_USER.is_superuser) return true;
+            const perms = window.CURRENT_USER.permissions || [];
+            if (!permCodename) return false;
+            if (permCodename.includes('.')) {
+                return perms.includes(permCodename);
+            }
+            return perms.some(p => p.endsWith('.' + permCodename) || p === permCodename);
+        };
+
+        // Danh bạ nhân sự văn phòng tiền tải (Zero-latency cho Modal Giao việc & Theo dõi chung)
+        window.PRELOADED_OFFICE_USERS = {{ office_users_json|default:"[]"|safe }};
+        // Thông tin công ty gốc tiền tải từ Cài đặt hệ thống (Zero-latency cho Báo cáo & Bản in)
+        window.SYSTEM_COMPANY = {{ company_profile_json|default:"{}"|safe }};
+    </script>
+    {% load app_scripts %}{% app_scripts %}
+    {% if gss_on %}
+    <script>window.GSS = { features: window.FEATURES, superuser: window.CURRENT_USER.is_superuser };</script>
+    <script src="{% static 'js/gss/common.js' %}"></script>
+    <script src="{% static 'js/gss/truck.js' %}"></script>
+    <script src="{% static 'js/gss/console.js' %}"></script>
+    <script src="{% static 'js/gss/booking.js' %}"></script>
+    <script src="{% static 'js/gss/master.js' %}"></script>
+    <script src="{% static 'js/gss/ops.js' %}"></script>
+    <script src="{% static 'js/gss/bl.js' %}"></script>
+    <script src="{% static 'js/gss/finance.js' %}"></script>
+    {% endif %}
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

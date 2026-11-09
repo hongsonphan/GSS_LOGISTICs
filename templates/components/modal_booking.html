@@ -1,0 +1,448 @@
+<!-- MODAL TIẾP NHẬN & HIỆU CHỈNH ĐƠN ĐẶT HÀNG / BOOKING TỪ KHÁCH HÀNG (SALE ADMIN / CS) -->
+<div id="modal-booking" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center hidden-view p-4 animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col border border-slate-100 max-h-[94vh]">
+        
+        <!-- Modal Header -->
+        <div class="bg-gradient-to-r from-teal-700 to-teal-800 px-5 py-3 text-white flex justify-between items-center shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-base backdrop-blur-xs border border-white/10">
+                    <i class="ph-bold ph-boat text-teal-200"></i>
+                </div>
+                <div>
+                    <h3 id="modal-booking-title" class="font-black font-heading text-sm tracking-tight leading-tight">Tiếp Nhận Đơn Đặt Hàng / Booking Mới</h3>
+                    <p class="text-[11px] text-teal-100 font-medium leading-tight">Tiếp nhận đơn vận chuyển, kiểm soát chứng từ và liên thông sang Điều Vận</p>
+                </div>
+            </div>
+            <button onclick="closeModal('modal-booking')" class="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+                <i class="ph ph-x text-base"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body Form -->
+        <form id="form-booking" onsubmit="saveBooking(event); return false;" novalidate class="p-4 overflow-y-auto space-y-3 flex-1 text-xs bg-slate-50/40">
+            <input type="hidden" id="booking-id" value="">
+
+            <!-- CARD 1: DỊCH VỤ & KHÁCH HÀNG & HÃNG TÀU -->
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-3">
+                <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                        <i class="ph-bold ph-identification-card text-teal-700 text-sm"></i>
+                        <span>1. Thông Tin Dịch Vụ, Khách Hàng & Booking Hãng Tàu</span>
+                    </h4>
+                    <span class="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.2 rounded-full border border-teal-200">Booking Order</span>
+                </div>
+
+                <!-- Row 1: 4 Cột Cân Đối (3-3-3-3) -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <!-- Phân loại Dịch Vụ (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Phân Loại Dịch Vụ <span class="text-rose-500">*</span></label>
+                        </div>
+                        <select id="booking-type" onchange="onBookingTypeChange()" 
+                            class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs transition-all">
+                            <option value="EXPORT_FCL">Kéo Cont Xuất Khẩu</option>
+                            <option value="IMPORT_FCL">Kéo Cont Nhập Khẩu</option>
+                            <option value="DOMESTIC">Vận Chuyển Nội Địa</option>
+                        </select>
+                    </div>
+
+                    <!-- Chọn Khách Hàng (col 6) -->
+                    <div class="md:col-span-6">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-customer" class="block font-bold text-slate-700 text-xs truncate">Khách Hàng <span class="text-rose-500">*</span></label>
+                            <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('customers', 'booking-customer')" 
+                                class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 flex items-center gap-0.5">
+                                <i class="ph-bold ph-plus text-[9.5px]"></i> Tạo mới
+                            </button>
+                        </div>
+                        <select id="booking-customer" required onchange="if(typeof lookupBookingPrice==='function')lookupBookingPrice();" 
+                            class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg focus:border-teal-600 font-bold text-slate-900 text-xs transition-all"
+                            data-searchable="true">
+                            <option value="">-- Chọn Khách Hàng --</option>
+                        </select>
+                        <input type="hidden" id="booking-customer-search">
+                    </div>
+
+                    <!-- Số Booking Khách Cung Cấp / Số PO (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-number" class="block font-bold text-slate-700 text-xs truncate">Số Booking / PO <span class="text-rose-500">*</span></label>
+                        </div>
+                        <input type="text" id="booking-number" required placeholder="VD: 276081838, PO-889..." 
+                            class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-bold text-teal-800 text-xs transition-all uppercase">
+                    </div>
+                </div>
+
+                <!-- Row 2: 4 Cột Cân Đối (3-3-3-3) - Khớp thẳng trục với Row 1 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <!-- Hãng Tàu (col 3) -->
+                    <div id="wrapper-shipping-line" class="md:col-span-3 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-shipping-line" class="block font-bold text-slate-700 text-xs truncate">Hãng Tàu</label>
+                            <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('shipping_lines', 'booking-shipping-line')" 
+                                class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
+                                Tạo mới
+                            </button>
+                        </div>
+                        <input type="text" id="booking-shipping-line" list="shipping-lines-datalist" placeholder="MAERSK, ONE, CMA..." 
+                            class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs uppercase">
+                        <datalist id="shipping-lines-datalist"></datalist>
+                    </div>
+
+                    <!-- Tàu / Chuyến (col 3) -->
+                    <div id="wrapper-vessel" class="md:col-span-3 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-vessel" class="block font-bold text-slate-700 text-xs truncate">
+                                Tên Tàu & Chuyến <span class="text-[10px] text-slate-400 font-normal lowercase">(Vessel/Voy)</span>
+                            </label>
+                        </div>
+                        <input type="text" id="booking-vessel" placeholder="VD: CAP SAN LAZARO / 001N" 
+                            class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-medium text-slate-800 text-xs">
+                    </div>
+
+                    <!-- Loại Phương Tiện / Cont (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-container-size" class="block font-bold text-slate-700 text-xs truncate">
+                                Loại Cont / Xe <span class="text-rose-500">*</span>
+                            </label>
+                        </div>
+                        <select id="booking-container-size" onchange="if(typeof lookupBookingPrice==='function')lookupBookingPrice();" 
+                            class="w-full h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs">
+                            <option value="40HC">Cont 40HC (Cao 9ft6)</option>
+                            <option value="20GP">Cont 20GP (Thường)</option>
+                            <option value="45G1">Cont 45 Feet</option>
+                            <option value="40GP">Cont 40GP (Thường)</option>
+                            <option value="XE_TAI_15T">Xe Tải 15 Tấn</option>
+                            <option value="XE_TAI_8T">Xe Tải 8 Tấn</option>
+                            <option value="XE_TAI_5T">Xe Tải 5 Tấn</option>
+                        </select>
+                    </div>
+
+                    <!-- Tổng Số Lượng (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-total-containers" class="block font-bold text-slate-700 text-xs truncate">Số Lượng Cont <span class="text-rose-500">*</span></label>
+                        </div>
+                        <input type="text" inputmode="numeric" id="booking-total-containers" required value="1" placeholder="1" 
+                            class="input-number-vn w-full h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-black text-teal-800 text-xs text-center tabular-nums">
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD 2: HÀNG HÓA & LỘ TRÌNH 3 ĐIỂM -->
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-3">
+                <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                        <i class="ph-bold ph-map-pin text-teal-700 text-sm"></i>
+                        <span>2. Hàng Hóa & Lộ Trình Vận Chuyển 3 Điểm</span>
+                    </h4>
+                </div>
+
+                <!-- Row 1: Hàng hóa (6) + HS Code (6) -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div class="md:col-span-6">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-commodity" class="block font-bold text-slate-700 text-xs truncate">Tên Hàng Hóa Thực Tế</label>
+                        </div>
+                        <input type="text" id="booking-commodity" placeholder="VD: Máy cắt cỏ, Dụng cụ Ryobi, Hạt nhựa, Bao bì..." 
+                            class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-medium text-slate-800 text-xs">
+                    </div>
+                    <div id="wrapper-booking-hs-code" class="md:col-span-6 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-hs-code" class="block font-bold text-slate-700 text-xs truncate">Mã Phân Loại HS Code</label>
+                        </div>
+                        <input type="text" id="booking-hs-code" placeholder="VD: 8433.11, 8414.59..." 
+                            class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-medium text-slate-800 text-xs">
+                    </div>
+                </div>
+
+                <!-- Row 2: 3 Điểm Lộ Trình Đồng Trục (4-4-4) -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div id="wrapper-booking-pickup" class="md:col-span-4 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-pickup" class="block font-bold text-teal-900 text-xs truncate">1. Điểm Lấy Cont <span class="text-rose-500">*</span></label>
+                            <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('locations', 'booking-pickup')" 
+                                class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
+                                Tạo mới
+                            </button>
+                        </div>
+                        <select id="booking-pickup" required onchange="if(typeof lookupBookingPrice==='function')lookupBookingPrice();" 
+                            class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
+                            <option value="">-- Chọn Điểm Lấy --</option>
+                        </select>
+                    </div>
+
+                    <div id="wrapper-booking-delivery" class="md:col-span-4 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-delivery" class="block font-bold text-amber-900 text-xs truncate">2. Kho Đóng / Dỡ <span class="text-rose-500">*</span></label>
+                            <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('locations', 'booking-delivery')" 
+                                class="text-[10px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                                Tạo mới
+                            </button>
+                        </div>
+                        <select id="booking-delivery" required onchange="if(typeof lookupBookingPrice==='function')lookupBookingPrice();" 
+                            class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
+                            <option value="">-- Chọn Kho Khách --</option>
+                        </select>
+                    </div>
+
+                    <div id="wrapper-booking-dropoff" class="md:col-span-4 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-dropoff" class="block font-bold text-emerald-900 text-xs truncate">3. Điểm Hạ / Trả Cont <span class="text-rose-500">*</span></label>
+                            <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('locations', 'booking-dropoff')" 
+                                class="text-[10px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                Tạo mới
+                            </button>
+                        </div>
+                        <select id="booking-dropoff" required 
+                            class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
+                            <option value="">-- Chọn Điểm Hạ --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD 3: KẾ HOẠCH ĐÓNG HÀNG & HẠN CUT-OFF & CƯỚC -->
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-3">
+                <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                        <i class="ph-bold ph-clock-countdown text-teal-700 text-sm"></i>
+                        <span>3. Kế Hoạch Đóng Hàng, Hạn Cut-Off & Cước Vận Chuyển</span>
+                    </h4>
+                </div>
+
+                <!-- Row 1: 4 Cột Cân Đối (3-3-3-3) -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <!-- Ngày Hẹn Đóng (col 3) -->
+                    <div id="wrapper-booking-loading-date" class="md:col-span-3 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-loading-date" class="block font-bold text-slate-700 text-xs truncate">Ngày Hẹn Đóng <span class="text-rose-500">*</span></label>
+                        </div>
+                        <input type="date" id="booking-loading-date" required 
+                            class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs">
+                    </div>
+
+                    <!-- Giờ Hẹn Tại Kho (col 3) -->
+                    <div id="wrapper-booking-loading-time" class="md:col-span-3 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-loading-time" class="block font-bold text-slate-700 text-xs truncate">Giờ Hẹn Tại Kho</label>
+                            <span class="text-[9.5px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">24h</span>
+                        </div>
+                        <div class="relative flex items-center">
+                            <input type="text" inputmode="numeric" maxlength="5" data-time-24h="true" data-time-picker-24h="true" id="booking-loading-time" value="08:00" placeholder="08:00" onclick="openBim24hTimePicker(this, event)"
+                                class="w-full h-8.5 pl-2 pr-7 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs text-center font-mono cursor-pointer">
+                            <button type="button" tabindex="-1" onclick="openBim24hTimePicker(document.getElementById('booking-loading-time'), event)" class="absolute right-2 text-teal-600 hover:text-teal-800 p-0.5" title="Chọn giờ 24h">
+                                <i class="ph-bold ph-clock text-sm"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">
+                            <span class="font-medium text-slate-400">Giờ:</span>
+                            <button type="button" tabindex="-1" onclick="setBookingLoadingTime('08:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">08:00</button>
+                            <button type="button" tabindex="-1" onclick="setBookingLoadingTime('10:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">10:00</button>
+                            <button type="button" tabindex="-1" onclick="setBookingLoadingTime('13:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">13:00</button>
+                            <button type="button" tabindex="-1" onclick="setBookingLoadingTime('18:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">18:00</button>
+                        </div>
+                    </div>
+
+                    <!-- Hạn Cắt Máng CY (col 3) -->
+                    <div id="wrapper-booking-closing" class="md:col-span-3 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-closing" class="block font-bold text-rose-700 text-xs truncate">Hạn Cắt Máng CY</label>
+                            <span class="text-[9.5px] text-rose-700 font-bold bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">24h</span>
+                        </div>
+                        <div class="grid grid-cols-5 gap-1">
+                            <input type="date" id="booking-closing-date" onchange="syncBookingClosingTime()"
+                                class="col-span-3 w-full h-8.5 px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-rose-700 text-xs">
+                            <div class="col-span-2 relative flex items-center">
+                                <input type="text" inputmode="numeric" maxlength="5" data-time-24h="true" data-time-picker-24h="true" id="booking-closing-time-val" value="17:00" placeholder="17:00" onchange="syncBookingClosingTime()" onclick="openBim24hTimePicker(this, event)"
+                                    class="w-full h-8.5 pl-1 pr-6 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-rose-700 text-xs text-center font-mono cursor-pointer">
+                                <button type="button" tabindex="-1" onclick="openBim24hTimePicker(document.getElementById('booking-closing-time-val'), event)" class="absolute right-1 text-rose-500 hover:text-rose-700 p-0.5" title="Chọn giờ 24h">
+                                    <i class="ph-bold ph-clock text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="booking-closing-time">
+                        <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">
+                            <span class="font-medium text-slate-400">Giờ:</span>
+                            <button type="button" tabindex="-1" onclick="setBookingClosingTime('12:00')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">12:00</button>
+                            <button type="button" tabindex="-1" onclick="setBookingClosingTime('17:00')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">17:00</button>
+                            <button type="button" tabindex="-1" onclick="setBookingClosingTime('20:00')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">20:00</button>
+                            <button type="button" tabindex="-1" onclick="setBookingClosingTime('23:59')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">23:59</button>
+                        </div>
+                    </div>
+
+                    <!-- Hạn SI Cut-off (col 3) -->
+                    <div id="wrapper-booking-si" class="md:col-span-3 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-si" class="block font-bold text-slate-700 text-xs truncate">Hạn SI Cut-off</label>
+                            <span class="text-[9.5px] text-slate-600 font-bold bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">24h</span>
+                        </div>
+                        <div class="grid grid-cols-5 gap-1">
+                            <input type="date" id="booking-si-date" onchange="syncBookingSiTime()"
+                                class="col-span-3 w-full h-8.5 px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-medium text-slate-800 text-xs">
+                            <div class="col-span-2 relative flex items-center">
+                                <input type="text" inputmode="numeric" maxlength="5" data-time-24h="true" data-time-picker-24h="true" id="booking-si-time-val" value="12:00" placeholder="12:00" onchange="syncBookingSiTime()" onclick="openBim24hTimePicker(this, event)"
+                                    class="w-full h-8.5 pl-1 pr-6 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-medium text-slate-800 text-xs text-center font-mono cursor-pointer">
+                                <button type="button" tabindex="-1" onclick="openBim24hTimePicker(document.getElementById('booking-si-time-val'), event)" class="absolute right-1 text-slate-500 hover:text-slate-700 p-0.5" title="Chọn giờ 24h">
+                                    <i class="ph-bold ph-clock text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="booking-si-cutoff">
+                        <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">
+                            <span class="font-medium text-slate-400">Giờ:</span>
+                            <button type="button" tabindex="-1" onclick="setBookingSiTime('11:00')" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition-colors">11:00</button>
+                            <button type="button" tabindex="-1" onclick="setBookingSiTime('12:00')" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition-colors">12:00</button>
+                            <button type="button" tabindex="-1" onclick="setBookingSiTime('16:00')" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition-colors">16:00</button>
+                            <button type="button" tabindex="-1" onclick="setBookingSiTime('17:00')" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition-colors">17:00</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: 4 Cột Cân Đối (3-3-3-3) - Khớp thẳng trục với Row 1 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div id="wrapper-booking-det" class="md:col-span-3 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-det" class="block font-bold text-slate-700 text-xs truncate">Free DET (Ngày)</label>
+                        </div>
+                        <input type="text" inputmode="numeric" id="booking-det" value="7" placeholder="VD: 7"
+                            class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-slate-800 text-xs text-center tabular-nums">
+                    </div>
+
+                    <div id="wrapper-booking-dem" class="md:col-span-3 transition-all duration-200">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-dem" class="block font-bold text-slate-700 text-xs truncate">Free DEM (Ngày)</label>
+                        </div>
+                        <input type="text" inputmode="numeric" id="booking-dem" value="7" placeholder="VD: 7"
+                            class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-slate-800 text-xs text-center tabular-nums">
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-price" class="block font-bold text-slate-700 text-xs truncate">Cước Vận Chuyển <span class="text-rose-500">*</span></label>
+                        </div>
+                        <div class="relative">
+                            <input type="text" inputmode="numeric" id="booking-price" required value="" placeholder="VD: 4.000.000" oninput="if(typeof onBookingPriceManualInput==='function')onBookingPriceManualInput();"
+                                class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-mono font-bold text-teal-800 text-xs tabular-nums pr-10">
+                            <span class="absolute right-2 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">VNĐ</span>
+                        </div>
+                        <div id="booking-price-hint" class="text-[11px] font-semibold mt-1 hidden transition-all"></div>
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label id="label-booking-status" class="block font-bold text-slate-700 text-xs truncate">Trạng Thái Đơn <span class="text-rose-500">*</span></label>
+                        </div>
+                        <select id="booking-status" 
+                            class="w-full h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-slate-800 text-xs">
+                            <option value="PENDING_DISPATCH">Chờ điều xe (Chưa gán xe)</option>
+                            <option value="PARTIALLY_DISPATCHED">Đang điều xe</option>
+                            <option value="COMPLETED">Đã điều đủ cont</option>
+                            <option value="CANCELLED">Đã hủy đơn</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 3: Ghi chú (Full width) -->
+                <div>
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label id="label-booking-notes" class="block font-bold text-slate-700 text-xs truncate">Ghi Chú / Yêu Cầu Đặc Biệt</label>
+                    </div>
+                    <input type="text" id="booking-notes" placeholder="VD: Gọi kho trước 1h, kiểm tra seal kỹ, tài xế có bảo hộ..." 
+                        class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white text-slate-800 text-xs font-medium">
+                </div>
+            </div>
+
+            <!-- CARD 4: DROPZONE ĐÍNH KÈM FILE BOOKING -->
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-1.5 flex-wrap gap-2">
+                    <span id="title-booking-file" class="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 font-heading">
+                        <i class="ph-bold ph-file-arrow-up text-teal-700 text-sm"></i> Đính Kèm File Booking / Lệnh Cấp Rỗng
+                    </span>
+                    <span class="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.2 rounded-full border border-teal-200">JPG, PNG, PDF ≤ 10MB</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+                    <div class="md:col-span-5 space-y-1.5">
+                        <label class="cursor-pointer block border border-dashed border-slate-300 hover:border-teal-500 bg-slate-50/60 rounded-lg p-2 text-center transition-colors group">
+                            <i class="ph-bold ph-upload-simple text-sm text-slate-400 group-hover:text-teal-600 mb-0.5 transition-colors"></i>
+                            <div class="text-[10.5px] font-bold text-slate-700">Kéo thả tệp hoặc <span class="text-teal-700 underline">chọn từ máy</span></div>
+                            <input type="file" id="booking-order-file" multiple accept="image/*,.pdf" class="sr-only" onchange="handleSaleBookingFilesSelect(this)">
+                        </label>
+                        <button type="button" onclick="pasteImageFromClipboard('booking')" class="w-full py-1 px-2 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg text-[10.5px] font-bold text-teal-800 flex items-center justify-center gap-1 transition-colors cursor-pointer" title="Dán ảnh chụp màn hình từ Clipboard (Ctrl+V)">
+                            <i class="ph-bold ph-clipboard-text text-xs text-teal-600"></i>
+                            <span>Dán Ảnh (Ctrl+V)</span>
+                        </button>
+                    </div>
+                    <div class="md:col-span-7">
+                        <div id="booking-order-files-summary" class="text-[11px] text-slate-500 italic mb-1">
+                            <i class="ph ph-info text-teal-600"></i> Chưa có tệp nào được đính kèm
+                        </div>
+                        <!-- Danh sách tệp tải lên -->
+                        <div id="booking-order-files-list" class="grid grid-cols-1 gap-1.5 max-h-24 overflow-y-auto">
+                            <!-- Render dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD 5: TIẾN ĐỘ CONTAINER CỦA BOOKING -->
+            <div id="booking-trips-section" class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2">
+                <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <div class="flex items-center space-x-1.5 text-slate-800 font-bold uppercase tracking-wider text-xs font-heading">
+                        <i class="ph-bold ph-truck text-teal-700 text-sm"></i>
+                        <span>4. Tiến Độ Container Thuộc Booking</span>
+                    </div>
+                    <span id="booking-trips-count-badge" class="px-2 py-0.2 rounded-full text-[10.5px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                        0 / 0 Container
+                    </span>
+                </div>
+
+                <!-- Bảng danh sách container của booking -->
+                <div class="overflow-x-auto rounded-lg border border-slate-200 max-h-36 overflow-y-auto">
+                    <table class="w-full text-left erp-table whitespace-nowrap">
+                        <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[10.5px] sticky top-0">
+                            <tr>
+                                <th class="p-2">Mã Chuyến / Cont</th>
+                                <th class="p-2">Chế Độ</th>
+                                <th class="p-2">Lấy</th>
+                                <th class="p-2">Hạ</th>
+                                <th class="p-2">Trạng Thái</th>
+                                <th class="p-2 text-center">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="booking-trips-tbody" class="divide-y divide-slate-100 bg-white">
+                            <tr>
+                                <td colspan="6" class="p-3 text-center text-slate-400 italic text-[11px]">
+                                    Chưa có container nào được phát lệnh điều xe từ Booking này.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal Footer Buttons -->
+            <div class="pt-2 border-t border-slate-200/80 flex items-center justify-end space-x-2">
+                <button type="button" id="btn-edit-booking-modal" onclick="enableEditBookingModal()" 
+                    class="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer hidden">
+                    <i class="ph-bold ph-pencil-simple text-sm"></i>
+                    <span>Sửa</span>
+                </button>
+                <button type="button" onclick="closeModal('modal-booking')" class="px-4 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs transition-all cursor-pointer">
+                    Đóng
+                </button>
+                <button type="button" id="btn-submit-booking" onclick="saveBooking(event)" class="px-5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                    <i class="ph-bold ph-check-circle text-sm"></i>
+                    <span id="btn-save-booking-text">Lưu</span>
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+
+

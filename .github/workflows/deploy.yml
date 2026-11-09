@@ -1,0 +1,58 @@
+# Triển khai GSS Logistics lên VPS. ĐANG KHOÁ: chỉ chạy tay (tab Actions) và cần khai báo VPS riêng của dự án GSS.
+# Muốn bật tự chạy sau CI xanh: thêm lại khối workflow_run bên dưới sau khi đã có VPS GSS riêng.
+# Cần thêm biến (Variables) SITE_URL, vd https://domain-cua-gss.vn
+# Cần khai báo trong GitHub > Settings > Secrets and variables > Actions:
+#   VPS_HOST (IP máy chủ của dự án GSS (KHÔNG dùng máy chủ GSS Logistics cũ)), VPS_USER (vd ubuntu), VPS_SSH_KEY (nội dung khoá riêng SSH)
+# Trên VPS, scripts/deploy_vps.sh tự: sao lưu -> chạy thử trên bản sao CSDL -> cập nhật -> kiểm tra -> quay về nếu lỗi.
+name: Deploy VPS
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Kiểm tra secrets
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+          SITE: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$HOST" ] || [ -z "$KEY" ] || [ -z "$SITE" ]; then echo "Chưa khai báo VPS_HOST / VPS_SSH_KEY / SITE_URL -> bỏ qua triển khai"; exit 1; fi
+
+      - name: Cập nhật VPS
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          USER: ${{ secrets.VPS_USER }}
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key "${USER:-ubuntu}@$HOST" 'bash -s' <<'REMOTE'
+          set -e
+          cd /home/ubuntu/GSS_LOGISTICS
+          git config --global --add safe.directory /home/ubuntu/GSS_LOGISTICS 2>/dev/null || true
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then echo "[VPS] Có thay đổi chưa commit trên VPS -> dừng"; git status --short; exit 3; fi
+          git rev-parse HEAD > /home/ubuntu/GSS_LOGISTICS_rollback_commit.txt
+          git fetch origin master
+          git merge --ff-only origin/master
+          bash scripts/deploy_vps.sh
+          REMOTE
+
+      - name: Kiểm tra production
+        env:
+          SITE: ${{ vars.SITE_URL }}
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' $SITE/login/) && [ "$code" = "200" ] && echo "login -> 200" && exit 0
+            sleep 10
+          done
+          echo "Production không trả 200"; exit 1

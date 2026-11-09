@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Keys & Secrets (CRITICAL SECURITY - DO NOT REMOVE)
+*.key
+*.pem
+*.pub
+ssh-key*
+id_rsa*
+id_ed25519*
+.secrets/
+.env
+.env.*
+!.env.example
+
+# Database
+*.sqlite3
+*.db
+*.dump
+
+# Static & Media
+staticfiles/
+media/
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node / Scratch / Test
+node_modules/
+scratch/
+test_screenshots/
+simulate_browser.py
+.coverage
+htmlcov/
+.pytest_cache/
+Claude outputs/
+gss_local_credentials.txt

@@ -1,0 +1,8 @@
+# Chạy local trên Windows/macOS (Docker Desktop không có cầu nối docker0 172.17.0.1).
+#   docker compose -p gss_logistics -f docker-compose.yml -f docker-compose.local.yml up -d --build
+# Chỉ mở cổng web trên localhost: http://127.0.0.1:8086
+# Trên VPS Linux dùng docker-compose.yml như cũ (không thêm file này).
+services:
+  web:
+    ports: !override
+      - "127.0.0.1:8086:8000"

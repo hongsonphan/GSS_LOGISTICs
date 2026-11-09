@@ -1,0 +1,13 @@
+#!/bin/sh
+# Chặn commit nếu file tự sinh (app.js, tailwind.css) lệch mã nguồn -> tránh CI đỏ.
+# Cài một lần cho mỗi bản clone:  git config core.hooksPath .githooks
+staged=$(git diff --cached --name-only)
+PY=python3; "$PY" -c "" >/dev/null 2>&1 || PY=python
+
+if echo "$staged" | grep -qE '^static/js/(src/|app\.js)'; then
+    "$PY" scripts/build_app_js.py --check || { echo "Chạy: python scripts/build_app_js.py rồi git add static/js/app.js"; exit 1; }
+fi
+if echo "$staged" | grep -qE '^(templates/|static/js/|static/css/|tailwind.*\.js)'; then
+    "$PY" scripts/build_css.py --check || { echo "Chạy: python scripts/build_css.py rồi git add static/css"; exit 1; }
+fi
+exit 0

@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - Không tìm thấy trang | GSS Logistics</title>
+  <link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/bold/style.css' %}"/>
+  <style>
+    @import url("{% static 'vendor/fonts/fonts.css' %}");
+    body { font-family: "Inter", sans-serif; }
+  </style>
+  <!-- Tailwind CSS (build sẵn, đặt cuối <head> để giữ thứ tự ưu tiên như bản CDN cũ) -->
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col justify-between text-slate-800 p-4 selection:bg-teal-100 selection:text-teal-900">
+  <header class="py-4 px-6 max-w-5xl mx-auto w-full flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2.5">
+      <img src="{% static 'images/logo_clean.png' %}" alt="Logo" class="h-9 w-auto">
+      <div>
+        <span class="text-[10px] uppercase tracking-wider text-teal-600 font-black leading-none block">GREEN SOLUTIONS SMART</span>
+        <span class="text-base font-black text-[#0f4c5c] leading-none block">GSS LOGISTICS</span>
+      </div>
+    </a>
+    <span class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-xs">Mã lỗi: 404 Not Found</span>
+  </header>
+
+  <main class="flex-1 flex flex-col items-center justify-center text-center py-10 px-4">
+    <div class="w-24 h-24 bg-amber-50 border border-amber-200 text-amber-600 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+      <i class="ph-bold ph-compass text-5xl"></i>
+    </div>
+    <span class="text-xs font-mono font-black text-amber-700 bg-amber-100 px-3 py-1 rounded-full border border-amber-200 mb-3">HTTP 404</span>
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">Đường dẫn không tồn tại hoặc đã dời đổi</h1>
+    <p class="text-sm text-slate-500 max-w-md mb-8 leading-relaxed">
+      Trang bạn đang truy cập có thể đã được chuyển đổi vị trí, tài nguyên tạm thời không khả dụng hoặc địa chỉ URL chưa chính xác.
+    </p>
+
+    <div class="flex items-center gap-3 flex-wrap justify-center">
+      <button onclick="history.back()" class="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-sm shadow-xs transition-all flex items-center gap-2 cursor-pointer">
+        <i class="ph-bold ph-arrow-left"></i> Quay lại
+      </button>
+      <a href="/" class="px-6 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2">
+        <i class="ph-bold ph-house"></i> Về Bàn Làm Việc
+      </a>
+    </div>
+  </main>
+
+  <footer class="py-4 text-center text-xs text-slate-400 font-medium">
+    &copy; 2026 GSS LOGISTICS &bull; GREEN SOLUTIONS SMART &bull; VẬN TẢI & CHUỖI CUNG ỨNG
+  </footer>
+</body>
+</html>

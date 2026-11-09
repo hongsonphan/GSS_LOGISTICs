@@ -1,0 +1,19 @@
+# Phiên bản cố định (đã kiểm thử). Nâng cấp: sửa số phiên bản, chạy toàn bộ test rồi mới commit.
+Django==5.2.18
+djangorestframework==3.18.3
+djangorestframework-simplejwt==5.5.1
+argon2-cffi==25.1.0
+argon2-cffi-bindings==26.1.0
+drf-spectacular==0.30.0
+django-cors-headers==4.9.0
+python-dotenv==1.2.4
+argon2-cffi==25.1.0
+Pillow==13.0.0; python_version >= "3.11"
+Pillow==12.3.0; python_version < "3.11"  # máy dev cũ; production (Docker 3.12) dùng 13.0.0
+psycopg2-binary==2.9.13
+gunicorn==26.2.0
+hashids==1.3.1
+openpyxl==3.1.5
+whitenoise==6.12.0
+redis==6.4.0
+qrcode==8.2

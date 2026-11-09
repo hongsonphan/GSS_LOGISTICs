@@ -1,0 +1,310 @@
+{% load static %}
+<!doctype html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập - {{ brand_name }}</title>
+  <link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
+  <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=3.0">
+  <meta name="description" content="Đăng nhập hệ thống Quản trị Vận tải & Chuỗi cung ứng GSS Logistics - GREEN SOLUTIONS SMART." />
+  
+  <!-- Phosphor Icons & Font Awesome -->
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/regular/style.css' %}"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/bold/style.css' %}"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/fill/style.css' %}"/>
+  <link href="{% static 'vendor/fontawesome/css/all.min.css' %}" rel="stylesheet" />
+  
+  <style>
+    @import url("{% static 'vendor/fonts/fonts.css' %}");
+
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f1f5f9;
+    }
+
+    /* Focus ring styling */
+    .input-field:focus {
+      border-color: #0f766e;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+    }
+
+    /* Button styling */
+    .login-btn {
+      transition: all 0.2s ease-in-out;
+    }
+    .login-btn:hover {
+      background-color: #115e59;
+    }
+    .login-btn:active {
+      transform: scale(0.99);
+    }
+
+    /* Error shake animation */
+    .shake {
+      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+      40%, 60% { transform: translate3d(3px, 0, 0); }
+    }
+  </style>
+  <!-- Tailwind CSS (build sẵn, đặt cuối <head> để giữ thứ tự ưu tiên như bản CDN cũ) -->
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+  <link rel="stylesheet" href="{% static 'css/contrast.css' %}">
+</head>
+
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4 relative selection:bg-teal-100 selection:text-teal-900">
+
+  <!-- Login Card Container -->
+  <div class="max-w-[440px] w-full bg-white rounded-2xl shadow-xl border border-slate-200/90 relative z-10 overflow-hidden">
+    <div class="px-8 sm:px-10 pt-8 pb-6">
+
+      <!-- Logo & Brand Header -->
+      <div class="flex flex-col items-center mb-6">
+        <a href="/" class="flex items-center gap-2.5 shrink-0 group mb-3">
+          {% if not brand_gss %}<img src="{% static 'images/logo_clean.png' %}" alt="{{ brand_name }}"
+            class="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-sm" />{% endif %}
+          <div class="flex flex-col justify-center items-start">
+            {% if not brand_gss %}<span class="text-[10px] sm:text-[11px] uppercase tracking-wider text-teal-600 font-black leading-none mb-[2px]">
+              GREEN SOLUTIONS SMART
+            </span>{% endif %}
+            <h1 class="text-[18px] sm:text-[20px] font-black tracking-tight text-[#0f4c5c] leading-none">
+              {{ brand_name }}
+            </h1>
+          </div>
+        </a>
+
+        <!-- Page Subtitle -->
+        <h2 class="text-center text-[22px] sm:text-[24px] font-extrabold text-slate-800 tracking-tight leading-tight">
+          Đăng nhập hệ thống
+        </h2>
+        <p class="text-center text-xs text-slate-500 font-medium mt-1">
+          Cổng Quản trị Vận tải, Đội xe & Chứng từ Vận đơn
+        </p>
+      </div>
+
+      <!-- Error Message Box -->
+      {% if error %}
+      <div id="login-error" class="bg-rose-50 border border-rose-200 p-3.5 rounded-xl mb-5 shake shadow-sm">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+            <i class="ph-bold ph-warning-circle text-rose-600 text-lg"></i>
+          </div>
+          <p class="text-[13px] text-rose-700 font-semibold leading-snug">
+            {{ error }}
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Main Login Form -->
+      <form id="login-form" class="space-y-4" method="POST" action="{% url 'login' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url|default:'' }}" />
+
+        <!-- Username Field -->
+        <div>
+          <label for="id_username" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Tài khoản đăng nhập
+          </label>
+          <div class="relative group">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 group-focus-within:text-teal-600 transition-colors pointer-events-none">
+              <i class="ph-bold ph-user text-[18px]"></i>
+            </span>
+            <input
+              id="id_username"
+              name="username"
+              type="text"
+              required
+              autocomplete="username"
+              class="input-field appearance-none rounded-xl block w-full pl-11 pr-4 py-3 border border-slate-300 placeholder-slate-400 text-slate-900 text-sm font-medium focus:outline-none transition-all duration-200 bg-white hover:border-slate-400"
+              placeholder="Username, Mã NV (BGD01, DD001, KT001...)"
+              value="{{ username|default:'' }}"
+            />
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div>
+          <label for="id_password" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Mật khẩu
+          </label>
+          <div class="relative group">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 group-focus-within:text-teal-600 transition-colors pointer-events-none">
+              <i class="ph-bold ph-lock-key text-[18px]"></i>
+            </span>
+            <input
+              id="id_password"
+              name="password"
+              type="password"
+              required
+              autocomplete="current-password"
+              class="input-field appearance-none rounded-xl block w-full pl-11 pr-11 py-3 border border-slate-300 placeholder-slate-400 text-slate-900 text-sm font-medium focus:outline-none transition-all duration-200 bg-white hover:border-slate-400"
+              placeholder="Nhập mật khẩu"
+            />
+            <button
+              id="toggle-password"
+              type="button"
+              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer transition-colors"
+              aria-label="Hiện/ẩn mật khẩu"
+            >
+              <i id="eye-icon" class="ph ph-eye-slash text-[18px]"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Options: Remember Me & Forgot Password -->
+        <div class="flex items-center justify-between text-xs pt-1">
+          <label class="flex items-center space-x-2 cursor-pointer select-none">
+            <input type="checkbox" name="remember_me" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-4 h-4" checked />
+            <span class="text-slate-600 font-medium">Ghi nhớ đăng nhập</span>
+          </label>
+          <a href="/password-reset/"
+            class="font-semibold text-teal-700 hover:text-teal-900 hover:underline">
+            Quên mật khẩu?
+          </a>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2">
+          <button
+            id="login-submit-btn"
+            type="submit"
+            class="login-btn w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-[15px] font-bold text-white bg-teal-700 hover:bg-teal-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-600 cursor-pointer"
+          >
+            <span id="btn-text">Đăng nhập vào Hệ thống</span>
+            <i id="btn-spinner" class="fa-solid fa-spinner fa-spin text-sm hidden"></i>
+            <i id="btn-arrow" class="ph-bold ph-arrow-right text-base"></i>
+          </button>
+        </div>
+      </form>
+
+    </div>
+
+    <!-- Footer Copyright -->
+    <div class="border-t border-slate-100 px-8 sm:px-10 py-4 bg-slate-50/50 rounded-b-[24px]">
+      <p class="text-center text-[10px] text-slate-400 font-medium tracking-wide">
+        {% if brand_gss %}&copy; 2026 {{ brand_name }}{% else %}&copy; 2026 GSS LOGISTICS &bull; GREEN SOLUTIONS SMART &bull; VẬN TẢI & CHUỖI CUNG ỨNG{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <!-- Modal Trợ giúp Cấp lại Mật khẩu -->
+  <div id="forgot-modal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150" onclick="if(event.target===this) closeForgotModal()">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-center space-y-4 animate-in zoom-in-95 duration-150">
+      <div class="w-12 h-12 rounded-full bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center mx-auto text-2xl">
+        <i class="ph-bold ph-key"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-extrabold text-slate-900">Thiết lập lại mật khẩu</h3>
+        <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+          Nhằm bảo mật thông tin vận tải và dữ liệu chứng từ nội bộ, vui lòng liên hệ <strong>Quản trị viên hệ thống</strong> hoặc <strong>Ban Giám Đốc</strong> để được cấp lại mật khẩu xác thực mới.
+        </p>
+      </div>
+      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 text-xs text-slate-700 space-y-1 text-left">
+        <div class="flex items-center gap-2">
+          <i class="ph-bold ph-envelope text-teal-600"></i>
+          <span class="font-semibold">Quản trị viên hệ thống GSS</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <i class="ph-bold ph-shield-check text-teal-600"></i>
+          <span>Xác thực danh tính nội bộ công ty</span>
+        </div>
+      </div>
+      <button type="button" onclick="closeForgotModal()" class="w-full py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs">
+        Đã hiểu
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript Interactions -->
+  <script>
+    function openForgotModal() {
+      document.getElementById('forgot-modal').classList.remove('hidden');
+    }
+    function closeForgotModal() {
+      document.getElementById('forgot-modal').classList.add('hidden');
+    }
+
+    // ===== Lấy Cookie Giá Trị =====
+    function getCsrfCookie() {
+      const match = document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/);
+      return match ? decodeURIComponent(match[2]) : null;
+    }
+
+    function syncCsrfToken() {
+      const token = getCsrfCookie();
+      if (token) {
+        const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (input) input.value = token;
+      }
+    }
+
+    // ===== BFCache (Tránh trang bị cache khi người dùng bấm nút Back trình duyệt) =====
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted || (window.performance && window.performance.getEntriesByType && window.performance.getEntriesByType('navigation')[0] && window.performance.getEntriesByType('navigation')[0].type === 'back_forward')) {
+        window.location.reload();
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      syncCsrfToken();
+
+      // ===== Toggle Password Visibility =====
+      const toggleBtn = document.getElementById('toggle-password');
+      const passwordInput = document.getElementById('id_password');
+      const eyeIcon = document.getElementById('eye-icon');
+
+      if (toggleBtn && passwordInput && eyeIcon) {
+        toggleBtn.addEventListener('click', function () {
+          const isPassword = passwordInput.type === 'password';
+          passwordInput.type = isPassword ? 'text' : 'password';
+
+          eyeIcon.classList.toggle('ph-eye-slash', !isPassword);
+          eyeIcon.classList.toggle('ph-eye', isPassword);
+        });
+      }
+
+      // ===== Loading State on Submit =====
+      const form = document.getElementById('login-form');
+      const submitBtn = document.getElementById('login-submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const btnSpinner = document.getElementById('btn-spinner');
+      const btnArrow = document.getElementById('btn-arrow');
+
+      if (form && submitBtn) {
+        form.addEventListener('submit', function () {
+          syncCsrfToken();
+          submitBtn.disabled = true;
+          submitBtn.classList.add('opacity-80', 'cursor-wait');
+          btnText.textContent = 'Đang xác thực...';
+          btnSpinner.classList.remove('hidden');
+          if (btnArrow) btnArrow.classList.add('hidden');
+        });
+      }
+
+      // ===== Auto-focus =====
+      const usernameInput = document.getElementById('id_username');
+      if (usernameInput && usernameInput.value.trim() === '') {
+        usernameInput.focus();
+      }
+
+      // ===== Auto-dismiss error after 5s =====
+      const errorBox = document.getElementById('login-error');
+      if (errorBox) {
+        setTimeout(() => {
+          errorBox.style.transition = 'opacity 0.4s, transform 0.4s';
+          errorBox.style.opacity = '0';
+          errorBox.style.transform = 'translateY(-8px)';
+          setTimeout(() => errorBox.remove(), 400);
+        }, 5000);
+      }
+    });
+  </script>
+</body>
+
+</html>

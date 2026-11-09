@@ -1,0 +1,25 @@
+# ĐANG TẮT lịch tự chạy (chưa có máy chủ GSS). Khi có domain: đặt biến SITE_URL và thêm lại khối schedule.
+# Giám sát hoạt động: 15 phút/lần kiểm tra trang đăng nhập + /healthz/ (CSDL) + chứng chỉ SSL.
+# Lỗi -> workflow đỏ -> GitHub gửi email cho chủ repo (Settings > Notifications > Actions).
+name: Uptime
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Kiểm tra production
+        run: |
+          URL="${{ vars.SITE_URL }}"; [ -n "$URL" ] || { echo 'Chưa khai báo biến SITE_URL'; exit 1; }; HOSTNAME=${URL#https://}
+          ok() { for i in 1 2 3; do code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 20 "$1") && [ "$code" = "$2" ] && return 0; sleep 20; done; echo "$1 -> $code"; return 1; }
+          fail=0
+          ok "$URL/login/" 200 || fail=1
+          ok "$URL/healthz/" 200 && grep -q '"ok"' /tmp/body || { echo "healthz không ok"; fail=1; }
+          end=$(echo | openssl s_client -servername $HOSTNAME -connect $HOSTNAME:443 2>/dev/null | openssl x509 -noout -enddate | cut -d= -f2)
+          days=$(( ( $(date -d "$end" +%s) - $(date +%s) ) / 86400 ))
+          echo "Chứng chỉ SSL còn $days ngày"
+          [ "$days" -ge 14 ] || { echo "Chứng chỉ SSL sắp hết hạn"; fail=1; }
+          exit $fail

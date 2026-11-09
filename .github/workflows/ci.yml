@@ -1,0 +1,122 @@
+# Kiểm tra tự động mỗi lần push / tạo Pull Request.
+# Merge vào master chỉ khi tất cả bước đều xanh.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: gss_ci
+          POSTGRES_USER: gss_ci
+          POSTGRES_PASSWORD: gss_ci_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U gss_ci -d gss_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DEBUG: "False"
+      SECRET_KEY: ci-only-secret-key-not-for-production
+      DB_ENGINE: django.db.backends.postgresql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      DB_NAME: gss_ci
+      DB_USER: gss_ci
+      DB_PASSWORD: gss_ci_password
+      SECURE_SSL_REDIRECT: "False"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Cài thư viện
+        run: pip install -r requirements.txt pip-audit ruff bandit coverage
+
+      - name: app.js khớp mã nguồn module
+        run: python scripts/build_app_js.py --check
+
+      - name: Tailwind CSS khớp mã nguồn giao diện
+        run: python scripts/build_css.py --check
+
+      - name: Cú pháp JavaScript
+        run: node --check static/js/app.js
+
+      - name: Lỗi Python nghiêm trọng (cú pháp, tên chưa định nghĩa)
+        run: ruff check --select E9,F63,F7,F82 apps core config scripts
+
+      - name: Kiểm tra migration đầy đủ
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Django system check (cấu hình production)
+        run: python manage.py check --deploy --fail-level ERROR
+
+      - name: Chạy toàn bộ test + đo độ phủ (ngưỡng trong .coveragerc)
+        run: |
+          coverage run manage.py test --noinput
+          coverage report > coverage.txt || { tail -30 coverage.txt; exit 1; }
+          tail -30 coverage.txt
+
+      - name: Quét bảo mật mã nguồn (Bandit, chặn mức Medium trở lên)
+        run: bandit -q -r apps core config -x '*/tests*,*/test_*,*/migrations/*' -ll
+
+      - name: Lỗ hổng thư viện đã biết
+        run: pip-audit -r requirements.txt
+
+  semgrep:
+    runs-on: ubuntu-latest
+    # Bộ luật cộng đồng thay đổi theo thời gian: báo cáo, không chặn triển khai
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Semgrep (p/django, p/python)
+        run: |
+          pip install semgrep
+          semgrep scan --config p/django --config p/python --metrics=off --json -o semgrep.json \
+            --exclude 'tests*' --exclude 'test_*' --exclude migrations --exclude static apps core config || true
+          # Mỗi phát hiện thành một annotation (xem được trong tab Actions và qua API check-runs)
+          python3 - <<'PY'
+          import json, sys, collections
+          r = json.load(open('semgrep.json'))['results']
+          g = collections.defaultdict(list)
+          for x in r:
+              g[x['check_id'].split('.')[-1]].append(f"{x['path']}:{x['start']['line']}")
+          # GitHub giới hạn ~10 annotation/bước -> gom theo luật
+          for rule, locs in sorted(g.items(), key=lambda kv: -len(kv[1])):
+              print(f"::warning title=semgrep {rule}::{len(locs)} chỗ: {', '.join(locs[:8])}")
+          print(f'Semgrep: {len(r)} phát hiện, {len(g)} luật')
+          sys.exit(1 if r else 0)
+          PY
+
+  secrets:
+    runs-on: ubuntu-latest
+    # gitleaks gọi API liệt kê commit của PR nên cần quyền đọc pull-requests (mặc định thiếu -> 403)
+    permissions:
+      contents: read
+      pull-requests: read
+    # Lịch sử git cũ còn bí mật đã lộ (đã thay trong mã hiện tại): cảnh báo nhưng không chặn triển khai.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Quét bí mật lọt vào mã nguồn
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

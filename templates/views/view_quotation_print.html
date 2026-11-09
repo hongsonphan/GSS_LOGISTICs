@@ -1,0 +1,415 @@
+<!-- VIEW XEM CHI TIẾT & IN BÁO GIÁ CƯỚC VẬN CHUYỂN TOÀN MÀN HÌNH (CHUẨN DOANH NGHIỆP TVL - A4 WYSIWYG) -->
+<div id="view-quotation-print" class="view hidden-view h-full min-h-0 overflow-y-auto bg-slate-100 py-6 sm:py-8 space-y-4">
+    <div class="max-w-5xl mx-auto px-2 sm:px-4 space-y-4">
+        
+        <!-- Thanh Toolbar Điều Khiển Toàn Màn Hình (Ẩn khi in ấn qua no-print) -->
+        <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 no-print">
+            <div class="flex items-center space-x-3">
+                <button type="button" onclick="closeQuotationPrintModal()" 
+                    class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 font-heading border border-slate-200">
+                    <i class="ph-bold ph-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+                <div class="h-4 w-px bg-slate-200"></div>
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-sm font-heading text-slate-900" id="quote-print-modal-title">In Báo Giá Cước Vận Chuyển</h3>
+                    <span id="quote-print-badge-code" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-teal-50 text-teal-700 border border-teal-200 font-mono">BG-001</span>
+                </div>
+            </div>
+
+            <!-- Controls: Chọn Mẫu In + Nút In Ngay -->
+            <div class="flex items-center gap-2.5 flex-wrap">
+                <div class="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
+                    <span class="text-xs text-slate-600 font-bold hidden sm:inline">Kiểu mẫu in:</span>
+                    <select id="quote-print-template-selector" onchange="switchQuotationPrintTemplate(this.value)" 
+                        class="bg-white text-teal-800 text-xs font-bold rounded-lg px-2.5 py-1 border border-slate-200 focus:border-teal-600 focus:outline-none cursor-pointer">
+                        <option value="STANDARD">Mẫu 1: Tiêu Chuẩn TVL (Quốc Hiệu & Đa Tuyến)</option>
+                        <option value="TABLE_MATRIX">Mẫu 2: Bảng Cước & Khung Đối Tác (To/From)</option>
+                        <option value="PROJECT_DETAIL">Mẫu 3: Chi Tiết Dịch Vụ Dự Án (ETA/ETD)</option>
+                    </select>
+                </div>
+
+                <button type="button" id="btn-edit-quote-from-print" onclick="editQuotationFromPrint()" 
+                    class="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
+                    <i class="ph-bold ph-pencil-simple text-base"></i>
+                    <span>Sửa</span>
+                </button>
+
+                <button type="button" onclick="printQuotationVoucher()" 
+                    class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
+                    <i class="ph-bold ph-printer text-base"></i>
+                    <span>In</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Khổ giấy A4 hiển thị toàn trang -->
+        <div class="flex justify-center overflow-x-auto pb-8">
+            <div id="quotation-printable-area" class="w-[210mm] max-w-full min-h-[297mm] bg-white p-[12mm] border border-slate-300 shadow-xl rounded-sm text-slate-900 font-sans leading-relaxed text-xs">
+                
+                <!-- ========================================================================= -->
+                <!-- MẪU 1: TIÊU CHUẨN DOANH NGHIỆP (QUỐC HIỆU & ĐIỀU KHOẢN TVL) -->
+                <!-- ========================================================================= -->
+                <div id="quote-tpl-standard" class="quote-print-template space-y-3">
+                    <!-- 1. Header: Logo TVL + Quốc Hiệu Tiêu Ngữ -->
+                    <div class="flex justify-between items-start gap-4 pb-3 border-b border-slate-300">
+                        <!-- Logo TVL & Brand -->
+                        <div class="flex items-center gap-3.5">
+                            <img src="/static/images/gss_logo.svg" alt="Green Solutions Supply" class="h-12 w-auto object-contain shrink-0 print-comp-logo" onerror="this.src='/media/gss_logo.svg'">
+                            <div class="space-y-0.5 text-left">
+                                <h4 class="font-black text-xs sm:text-[13px] text-slate-900 uppercase font-heading tracking-tight print-comp-name">CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH</h4>
+                                <p class="text-[10px] text-slate-600 leading-tight print-comp-address">Đ/c: 302/5 Lê Đức Thọ, Phường An Nhơn, TP Hồ Chí Minh, Việt Nam</p>
+                                <p class="text-[9.5px] text-slate-600 leading-tight print-comp-contact">MST: 0316657112 • Hotline: — • Email: —</p>
+                            </div>
+                        </div>
+
+                        <!-- Quốc hiệu Tiêu ngữ -->
+                        <div class="text-center space-y-0.5 shrink-0 min-w-[210px]">
+                            <p class="font-bold text-[10.5px] uppercase tracking-wide text-slate-900">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+                            <p class="font-bold text-[10.5px] text-slate-800">Độc lập - Tự do - Hạnh phúc</p>
+                            <div class="w-20 h-[1px] bg-slate-800 mx-auto my-1"></div>
+                            <p class="text-[10px] italic text-slate-600 pt-0.5" id="print-q1-date-place">
+                                Tp. Hồ Chí Minh, ngày 06 tháng 10 năm 2026
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 2. Tiêu Đề Báo Giá -->
+                    <div class="text-center py-2 space-y-1">
+                        <h2 class="text-lg sm:text-xl font-black uppercase tracking-wider text-slate-950 font-heading">
+                            BÁO GIÁ CƯỚC VẬN CHUYỂN
+                        </h2>
+                        <p class="text-center text-sm font-bold text-slate-800 tracking-wide" id="print-q1-code-sub">Số: BG-1005-01</p>
+                    </div>
+
+                    <!-- 3. Kính Gửi Khách Hàng -->
+                    <div class="space-y-2 text-slate-800 text-xs leading-relaxed pt-1">
+                        <div class="flex items-baseline gap-2">
+                            <span class="font-bold text-slate-900 shrink-0">Kính gửi:</span>
+                            <span class="font-black text-slate-950 uppercase text-xs sm:text-sm tracking-tight" id="print-q1-customer-name">CÔNG TY TNHH MOL LOGISTICS VIỆT NAM</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-xs text-slate-700 border-b border-slate-200 pb-2">
+                            <div><span class="font-bold text-slate-900">Người nhận Báo giá:</span> <span id="print-q1-contact-person" class="font-medium text-slate-800">Phòng Xuất Nhập Khẩu / Logistics</span></div>
+                            <div><span class="font-bold text-slate-900">Điện thoại:</span> <span id="print-q1-contact-phone" class="font-medium font-mono text-slate-800">0987 123 456</span></div>
+                            <div><span class="font-bold text-slate-900">Địa chỉ:</span> <span id="print-q1-customer-address" class="font-medium text-slate-800">Khu Công Nghiệp VSIP 2, Bình Dương</span></div>
+                            <div><span class="font-bold text-slate-900">Mã số thuế:</span> <span id="print-q1-tax-code" class="font-mono text-slate-800">0301234567</span></div>
+                            <div class="col-span-2 pt-0.5"><span class="font-bold text-slate-900">Hiệu lực đến ngày:</span> <span id="print-q1-valid-until" class="font-bold text-slate-900">30/10/2026</span></div>
+                        </div>
+                        <p class="text-xs text-slate-700 leading-relaxed pt-0.5 text-justify">
+                            Lời đầu tiên, <strong><span class="print-comp-name">Công ty TNHH Cung Ứng Giải Pháp Xanh</span> (<span class="print-comp-short-name">Green Solutions Supply Co., Ltd.</span>)</strong> xin gửi lời chào trân trọng và lời chúc phát triển thịnh vượng đến Quý khách hàng. Căn cứ nhu cầu vận chuyển của Quý công ty, chúng tôi xin trân trọng gửi bảng báo giá cước vận tải chi tiết như sau:
+                        </p>
+                    </div>
+
+                    <!-- 4. Bảng Báo Giá Chi Tiết (Hỗ trợ nhiều dòng tuyến đường) -->
+                    <div class="overflow-x-auto pt-1">
+                        <table class="w-full border-collapse border border-slate-300 text-xs text-left">
+                            <thead class="bg-slate-100 font-bold text-slate-900">
+                                <tr>
+                                    <th class="border border-slate-300 p-2 text-center w-10 text-[11px] uppercase">STT</th>
+                                    <th class="border border-slate-300 p-2 text-[11px] uppercase">Lộ Trình / Tuyến Vận Chuyển</th>
+                                    <th class="border border-slate-300 p-2 text-center w-24 text-[11px] uppercase">Quy Cách / Loại Cont</th>
+                                    <th class="border border-slate-300 p-2 text-center w-16 text-[11px] uppercase">Cự Ly</th>
+                                    <th class="border border-slate-300 p-2 text-right w-28 text-[11px] uppercase">Đơn Giá Cước (VNĐ)</th>
+                                    <th class="border border-slate-300 p-2 text-center w-20 text-[11px] uppercase">Sản Lượng DK</th>
+                                    <th class="border border-slate-300 p-2 text-right w-32 text-[11px] uppercase">Thành Tiền / Tháng</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200" id="print-q1-table-body">
+                                <tr>
+                                    <td class="border border-slate-300 p-2 text-center font-bold">1</td>
+                                    <td class="border border-slate-300 p-2 font-bold text-slate-900">CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG</td>
+                                    <td class="border border-slate-300 p-2 text-center">Cont 40HC</td>
+                                    <td class="border border-slate-300 p-2 text-center font-semibold tabular-nums">30 km</td>
+                                    <td class="border border-slate-300 p-2 text-right font-bold text-slate-950 tabular-nums">3.800.000 đ</td>
+                                    <td class="border border-slate-300 p-2 text-center font-semibold tabular-nums">20 chuyến</td>
+                                    <td class="border border-slate-300 p-2 text-right font-black text-slate-950 tabular-nums">76.000.000 đ</td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-slate-50 font-bold">
+                                <tr>
+                                    <td colspan="4" class="border border-slate-300 p-2.5 text-right uppercase text-[11px] text-slate-800">Tổng Doanh Thu Kế Hoạch Dự Kiến (Chưa VAT):</td>
+                                    <td colspan="3" class="border border-slate-300 p-2.5 text-right font-black text-slate-950 tabular-nums text-sm font-sans" id="print-q1-grand-total">76.000.000 VNĐ</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Số tiền bằng chữ -->
+                    <div class="text-xs text-slate-800 italic flex items-baseline gap-1.5 py-1">
+                        <span class="font-bold not-italic text-slate-900">Bằng chữ:</span>
+                        <span class="font-bold text-slate-950" id="print-q1-total-words">Bảy mươi sáu triệu đồng chẵn.</span>
+                    </div>
+
+                    <!-- 5. Khối Quy Chuẩn Điều Chỉnh Theo Giá Xăng Dầu DO 0.05S (Chỉ hiển thị khi có cơ chế xăng dầu) -->
+                    <div id="print-q1-fuel-box" class="p-2.5 border border-slate-300 rounded bg-white space-y-1 text-xs text-slate-900 hidden">
+                        <div class="flex items-center gap-1.5 font-bold text-slate-950 uppercase text-[11px]">
+                            <span>* CƠ CHẾ ĐIỀU CHỈNH CƯỚC THEO BIẾN ĐỘNG GIÁ DẦU DIESEL DO 0.05S:</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 py-1 text-center font-medium border-y border-slate-200">
+                            <div>Giá dầu DO cơ sở (P0): <strong id="print-q1-fuel-p0" class="text-slate-950 font-bold">21.000 đ/lít</strong></div>
+                            <div>Biên độ biến động: <strong id="print-q1-fuel-step" class="text-slate-950 font-bold">±1.000 đ/lít</strong></div>
+                            <div><span id="print-q1-fuel-ratio-label">Tỷ lệ điều chỉnh:</span> <strong id="print-q1-fuel-ratio" class="text-slate-950 font-bold">±3.5% cước</strong></div>
+                        </div>
+                        <p class="text-[11px] text-slate-700 leading-tight italic" id="print-q1-fuel-formula">
+                            Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng 3.5%.
+                        </p>
+                        <p class="text-[11px] text-slate-800 leading-tight"><strong>Ví dụ:</strong> <span id="print-q1-fuel-example"></span></p>
+                    </div>
+
+                    <!-- 5b. Khối Phụ Phí Hạ Xa (chỉ hiển thị khi báo giá có hạ xa) -->
+                    <div id="print-q1-fardrop-box" class="p-2.5 border border-slate-300 rounded bg-white space-y-1 text-xs text-slate-900 hidden">
+                        <div class="font-bold text-slate-950 uppercase text-[11px]">* PHỤ PHÍ HẠ XA (HẠ VỎ XA HƠN VỊ TRÍ HẠ BAN ĐẦU):</div>
+                        <p class="text-[11px] text-slate-700 leading-tight italic" id="print-q1-fardrop-desc"></p>
+                        <p class="text-[11px] text-slate-800 leading-tight"><strong>Ví dụ:</strong> <span id="print-q1-fardrop-example"></span></p>
+                    </div>
+
+                    <!-- 6. Ghi Chú & Điều Khoản (Notes) -->
+                    <div class="space-y-1.5 pt-1 text-xs text-slate-800">
+                        <h5 class="font-bold uppercase text-slate-900 tracking-wider text-[11px] flex items-center gap-1">
+                            <span>* ĐIỀU KHOẢN & QUY ĐỊNH DỊCH VỤ VẬN TẢI:</span>
+                        </h5>
+                        <div class="bg-slate-50/70 p-3 border border-slate-300 rounded space-y-0.5 whitespace-pre-line leading-relaxed text-slate-700 font-sans text-xs" id="print-q1-notes-content">
+1. Đơn giá trên chưa bao gồm thuế giá trị gia tăng (VAT 8% / 10%). Đã bao gồm chi phí nhiên liệu, lương lái xe và phí cầu đường BOT.
+2. Chưa bao gồm phí nâng hạ cont tại cảng/ICD và phí bốc xếp hàng hóa tại kho của Quý khách hàng.
+3. Thời gian lưu xe (Free-time): Miễn phí 12 giờ đầu kể từ khi xe đến kho; Phí neo tính sau 12h: Xe đầu kéo 1.500.000 VNĐ/đêm, Rơ-moóc 1.000.000 VNĐ/đêm.
+4. Green Solutions Supply cam kết điều xe đúng chủng loại, đảm bảo tải trọng quy định, bảo toàn nguyên vẹn seal chì và phẩm chất hàng hóa.
+5. Báo giá có hiệu lực trong vòng 30 ngày kể từ ngày ban hành.
+                        </div>
+                    </div>
+
+                    <!-- 7. Lời Kết & Thông Tin Hotline -->
+                    <div class="text-[11px] space-y-0.5 text-slate-600 pt-1">
+                        <p>Rất mong nhận được sự quan tâm và cơ hội hợp tác lâu dài cùng Quý Khách Hàng.</p>
+                        <p class="font-medium text-slate-800">Hotline: <strong class="text-teal-800 font-bold print-comp-phone">—</strong> – Phòng Kinh Doanh & Điều Vận • Email: <strong class="text-teal-800 font-semibold print-comp-email">—</strong></p>
+                    </div>
+
+                    <!-- 8. Chữ Ký Xác Nhận 2 Bên -->
+                    <div class="grid grid-cols-2 gap-8 pt-6 pb-2 text-center text-xs">
+                        <div class="space-y-1 flex flex-col justify-between">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">ĐẠI DIỆN KHÁCH HÀNG</p>
+                                <p class="italic text-[10.5px] text-slate-500">(Ký, ghi rõ họ tên & đóng dấu)</p>
+                            </div>
+                            <div class="h-20"></div>
+                            <p class="font-bold text-slate-900 uppercase" id="print-q1-sign-customer">Đại diện khách hàng</p>
+                        </div>
+                        <div class="space-y-1 flex flex-col justify-between">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900 print-comp-name">CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH</p>
+                                <p class="italic text-[10.5px] text-slate-500">(Ký, ghi rõ họ tên & đóng dấu)</p>
+                            </div>
+                            <div class="h-20"></div>
+                            <p class="font-bold text-slate-900 uppercase">GIÁM ĐỐC / TRƯỞNG PHÒNG KINH DOANH</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- MẪU 2: BẢNG CƯỚC & KHUNG ĐỐI TÁC TO/FROM MATRIX -->
+                <!-- ========================================================================= -->
+                <div id="quote-tpl-matrix" class="quote-print-template space-y-3.5 hidden">
+                    <!-- Header Logo & Công Ty -->
+                    <div class="flex items-center justify-between pb-2 border-b-2 border-slate-900">
+                        <div class="flex items-center gap-3">
+                            <img src="/static/images/gss_logo.svg" alt="Green Solutions Supply" class="h-14 w-auto object-contain shrink-0 print-comp-logo" onerror="this.src='/media/gss_logo.svg'">
+                            <div>
+                                <h3 class="font-black text-xs sm:text-sm uppercase text-slate-900 font-heading print-comp-name">CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH</h3>
+                                <p class="text-[10px] text-slate-600 print-comp-address">Đ/c: 302/5 Lê Đức Thọ, Phường An Nhơn, TP Hồ Chí Minh, Việt Nam</p>
+                                <p class="text-[10px] text-slate-600 print-comp-contact">MST: 0316657112 • Hotline: — • Email: —</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bảng Khung To / From (2 Cột Rõ Ràng) -->
+                    <div class="grid grid-cols-2 border border-slate-900 text-xs">
+                        <div class="p-2.5 border-r border-slate-900 space-y-1">
+                            <div class="flex"><span class="font-bold w-14">To:</span> <span class="font-bold text-slate-900 uppercase" id="print-q2-to-name">CÔNG TY TNHH ABC</span></div>
+                            <div class="flex"><span class="font-bold w-14">Attn:</span> <span id="print-q2-to-attn">Nguyễn Văn A</span></div>
+                            <div class="flex"><span class="font-bold w-14">Email:</span> <span id="print-q2-to-email">nguyenvana@abc.com</span></div>
+                            <div class="flex"><span class="font-bold w-14">Tel:</span> <span id="print-q2-to-tel">0987123456</span></div>
+                        </div>
+                        <div class="p-2.5 space-y-1">
+                            <div class="flex"><span class="font-bold w-14">From:</span> <span class="font-bold text-slate-900 uppercase print-comp-name">Green Solutions Supply Co., Ltd.</span></div>
+                            <div class="flex"><span class="font-bold w-14">Date:</span> <span id="print-q2-date">06/10/2026</span></div>
+                            <div class="flex"><span class="font-bold w-14">Subject:</span> <span class="font-bold text-teal-800">BÁO GIÁ CƯỚC VẬN CHUYỂN NỘI ĐỊA</span></div>
+                            <div class="flex"><span class="font-bold w-14">Cargo:</span> <span id="print-q2-cargo">Container & Hàng tổng hợp</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Lời Chào -->
+                    <p class="text-xs text-slate-700 italic">
+                        Chúng tôi xin gửi tới Quý công ty bảng báo giá cước vận chuyển đường bộ áp dụng như sau:
+                    </p>
+
+                    <!-- Table Tuyến Đường -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-slate-900 text-xs text-left">
+                            <thead class="bg-slate-200 font-bold text-slate-900 border-b border-slate-900">
+                                <tr>
+                                    <th class="border border-slate-900 p-2 text-center w-10">STT</th>
+                                    <th class="border border-slate-900 p-2">Tuyến Vận Chuyển (From ➔ To)</th>
+                                    <th class="border border-slate-900 p-2 text-center w-24">Loại Phương Tiện</th>
+                                    <th class="border border-slate-900 p-2 text-center w-16">Km</th>
+                                    <th class="border border-slate-900 p-2 text-right w-28">Đơn Giá (VNĐ)</th>
+                                    <th class="border border-slate-900 p-2 text-center w-20">Sản Lượng</th>
+                                    <th class="border border-slate-900 p-2 text-right w-32">Thành Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody id="print-q2-tbody">
+                                <!-- Render JS -->
+                            </tbody>
+                            <tfoot class="bg-slate-100 font-bold border-t border-slate-900">
+                                <tr>
+                                    <td colspan="6" class="border border-slate-900 p-2 text-right uppercase">Tổng Cộng Dự Kiến:</td>
+                                    <td class="border border-slate-900 p-2 text-right font-black tabular-nums text-slate-950 font-sans" id="print-q2-grand-total">0 VNĐ</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Khối Cơ chế xăng dầu Mẫu 2 -->
+                    <div id="print-q2-fuel-box" class="p-2 border border-slate-400 space-y-1 text-xs hidden">
+                        <p class="font-bold uppercase text-slate-950">* PHỤ PHÍ NHIÊN LIỆU (FUEL SURCHARGE):</p>
+                        <p class="text-[11px] text-slate-800" id="print-q2-fuel-desc">Mỗi khi giá dầu thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước điều chỉnh tương ứng 3.5%.</p>
+                    </div>
+
+                    <!-- Khối Phụ phí hạ xa Mẫu 2 -->
+                    <div id="print-q2-fardrop-box" class="p-2 border border-slate-400 space-y-1 text-xs hidden">
+                        <p class="font-bold uppercase text-slate-950">* PHỤ PHÍ HẠ XA:</p>
+                        <p class="text-[11px] text-slate-800" id="print-q2-fardrop-desc"></p>
+                    </div>
+
+                    <!-- Ghi chú Mẫu 2 -->
+                    <div class="space-y-1 text-xs text-slate-800">
+                        <p class="font-bold uppercase">* GHI CHÚ & QUY ĐỊNH:</p>
+                        <div class="p-2.5 border border-slate-400 whitespace-pre-line leading-relaxed text-slate-800 font-sans text-xs" id="print-q2-notes">
+- Đơn giá chưa gồm VAT 8%. Đã gồm xăng dầu, cầu đường, tài xế.
+- Báo giá có giá trị 30 ngày.
+                        </div>
+                    </div>
+
+                    <!-- Chữ Ký Mẫu 2 -->
+                    <div class="grid grid-cols-2 gap-8 pt-4 pb-2 text-center text-xs">
+                        <div class="space-y-1 flex flex-col justify-between">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">XÁC NHẬN CỦA KHÁCH HÀNG</p>
+                                <p class="italic text-[10.5px] text-slate-500">(Ký & ghi rõ họ tên)</p>
+                            </div>
+                            <div class="h-16"></div>
+                            <p class="font-bold text-slate-900 uppercase" id="print-q2-sign-cust">Đại diện khách hàng</p>
+                        </div>
+                        <div>
+                            <p class="font-bold uppercase print-comp-name">Green Solutions Supply Co., Ltd.</p>
+                            <div class="h-16"></div>
+                            <p class="font-bold">ĐẠI DIỆN KINH DOANH</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- MẪU 3: CHI TIẾT DỊCH VỤ DỰ ÁN & LỊCH TRÌNH VẬN TẢI -->
+                <!-- ========================================================================= -->
+                <div id="quote-tpl-project" class="quote-print-template space-y-3.5 hidden">
+                    <!-- Header Dự Án -->
+                    <div class="border-b-2 border-slate-900 pb-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h2 class="text-base font-black uppercase text-slate-950 tracking-tight font-heading print-comp-name">CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH</h2>
+                                <p class="text-[10.5px] text-slate-600 print-comp-address">Địa chỉ: 302/5 Lê Đức Thọ, Phường An Nhơn, TP Hồ Chí Minh, Việt Nam</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-block bg-slate-900 text-white text-[10px] font-bold px-2.5 py-0.5 uppercase tracking-wider">PROJECT LOGISTICS</span>
+                                <p class="text-[10px] text-slate-600 pt-1" id="print-q3-code">REF: TVL-PRJ-001</p>
+                            </div>
+                        </div>
+                        <div class="text-center pt-2">
+                            <h3 class="text-base sm:text-lg font-black uppercase tracking-wider text-slate-900 font-heading">BẢNG BÁO GIÁ DỊCH VỤ VẬN TẢI DỰ ÁN</h3>
+                            <p class="text-xs italic text-slate-600" id="print-q3-subject">Dự án vận chuyển nguyên chuyến / Đa phương thức</p>
+                        </div>
+                    </div>
+
+                    <!-- Thông Tin Dự Án & Đối Tác -->
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-2.5 border border-slate-300 text-xs">
+                        <div>
+                            <p><span class="font-bold">Chủ Đầu Tư / Khách Hàng:</span> <strong class="text-slate-900 uppercase" id="print-q3-client-name">CÔNG TY CP ABC</strong></p>
+                            <p><span class="font-bold">Người Phụ Trách:</span> <span id="print-q3-client-contact">Mr. Trần B</span></p>
+                            <p><span class="font-bold">Hotline / Email:</span> <span id="print-q3-client-phone">0909123456</span></p>
+                        </div>
+                        <div>
+                            <p><span class="font-bold">Loại Hình Hàng Hóa:</span> <span id="print-q3-cargo-desc">Hàng máy móc thiết bị / Container</span></p>
+                            <p><span class="font-bold">Thời Gian Áp Dụng:</span> <span id="print-q3-validity">Áp dụng đến 31/12/2026</span></p>
+                            <p><span class="font-bold">Đơn Vị Thực Hiện:</span> <strong class="text-teal-900 print-comp-name">Green Solutions Supply</strong></p>
+                        </div>
+                    </div>
+
+                    <!-- Bảng Phí Tuyến Đường Dự Án -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-slate-900 text-xs text-left">
+                            <thead class="bg-slate-800 text-white font-bold">
+                                <tr>
+                                    <th class="p-2 text-center w-10">#</th>
+                                    <th class="p-2">Chi Tiết Hạng Mục Tuyến / Lịch Trình Vận Chuyển</th>
+                                    <th class="p-2 text-center w-24">Phương Tiện</th>
+                                    <th class="p-2 text-center w-16">Cự Ly</th>
+                                    <th class="p-2 text-right w-28">Đơn Giá (VNĐ)</th>
+                                    <th class="p-2 text-center w-20">Sản Lượng</th>
+                                    <th class="p-2 text-right w-32">Thành Tiền (VNĐ)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="print-q3-tbody" class="divide-y divide-slate-300">
+                                <!-- Render JS -->
+                            </tbody>
+                            <tfoot class="bg-slate-100 font-bold border-t-2 border-slate-900">
+                                <tr>
+                                    <td colspan="6" class="p-2 text-right uppercase">Tổng Giá Trị Dịch Vụ Dự Kiến (Chưa VAT):</td>
+                                    <td class="p-2 text-right font-black tabular-nums text-sm text-slate-950 font-sans" id="print-q3-grand-total">0 VNĐ</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Bằng chữ Mẫu 3 -->
+                    <div class="text-xs text-slate-900 italic py-0.5 flex items-baseline gap-1.5">
+                        <span class="font-bold not-italic">Viết bằng chữ:</span>
+                        <span class="font-bold text-slate-950" id="print-q3-words">Bảy mươi sáu triệu đồng chẵn.</span>
+                    </div>
+
+                    <!-- Khối Cơ chế xăng dầu Mẫu 3 -->
+                    <div id="print-q3-fuel-box" class="p-2 border border-slate-400 space-y-1 text-xs hidden">
+                        <p class="font-bold uppercase text-slate-950">* CƠ CHẾ ĐIỀU CHỈNH THEO GIÁ XĂNG DẦU:</p>
+                        <p class="text-[11px] text-slate-800" id="print-q3-fuel-desc">Mỗi khi giá dầu thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước điều chỉnh tương ứng 3.5%.</p>
+                    </div>
+
+                    <!-- Khối Phụ phí hạ xa Mẫu 3 -->
+                    <div id="print-q3-fardrop-box" class="p-2 border border-slate-400 space-y-1 text-xs hidden">
+                        <p class="font-bold uppercase text-slate-950">* PHỤ PHÍ HẠ XA:</p>
+                        <p class="text-[11px] text-slate-800" id="print-q3-fardrop-desc"></p>
+                    </div>
+
+                    <!-- Ghi chú Mẫu 3 -->
+                    <div class="space-y-1 text-xs text-slate-800">
+                        <p class="font-bold uppercase">* ĐIỀU KHOẢN KÈM THEO:</p>
+                        <div class="p-2.5 border border-slate-400 whitespace-pre-line leading-relaxed text-slate-800 font-sans text-xs" id="print-q3-notes">
+1. Trên đây là báo giá dịch vụ vận chuyển cho đơn hàng của Quý công ty, rất mong được hợp tác.
+2. Đơn giá chưa bao gồm thuế VAT và các chi phí phát sinh ngoài thỏa thuận.
+3. Báo giá có hiệu lực trong vòng 30 ngày kể từ ngày ban hành.
+                        </div>
+                    </div>
+
+                    <!-- Ký tên Mẫu 3 -->
+                    <div class="pt-3 text-right text-xs">
+                        <p class="italic text-slate-600 mb-1" id="print-q3-sign-date">Tp. Hồ Chí Minh, ngày 06 tháng 10 năm 2026</p>
+                        <div class="inline-block text-center min-w-[220px]">
+                            <p class="font-bold uppercase text-slate-900 print-comp-name">CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH</p>
+                            <p class="italic text-[10.5px] text-slate-500">(Ký & đóng dấu)</p>
+                            <div class="h-16"></div>
+                            <p class="font-bold text-slate-900 uppercase">GIÁM ĐỐC / TRƯỞNG PHÒNG KINH DOANH</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
