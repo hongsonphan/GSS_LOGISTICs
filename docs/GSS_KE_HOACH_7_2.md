@@ -1,6 +1,6 @@
 # Kế hoạch thực hiện §7.2 – Copy, gọt và chốt mô hình (GĐ0)
 
-Ngày lập 09/11/2026. Đây là **kế hoạch chờ duyệt**: chưa có bước nào được thực hiện. Tài liệu căn cứ vào §4 (mô hình dữ liệu), §7.1 (bảng phân loại) và §7.2–7.3 (quy trình) của đặc tả "GSS — Đặc tả tính năng & kế hoạch chuyển đổi từ BIM Logistics".
+Ngày lập 09/11/2026. Kế hoạch đã duyệt và thực hiện ngày 09/11/2026 – xem mục 7. Tài liệu căn cứ vào §4 (mô hình dữ liệu), §7.1 (bảng phân loại) và §7.2–7.3 (quy trình) của đặc tả "GSS — Đặc tả tính năng & kế hoạch chuyển đổi từ BIM Logistics".
 
 ## 1. Hiện trạng (kiểm kê ngày 09/11/2026)
 
@@ -128,3 +128,26 @@ Tổng ước lượng: khoảng **9–11 ngày làm việc**. Có thể chạy 
 4. **Xoá CSDL local 8086:** đồng ý dựng lại từ đầu (chỉ mất dữ liệu minh hoạ)?
 5. **Frontend:** giữ Vanilla JS hay chuyển TypeScript (điểm chờ xác nhận số 7)? Đề xuất: **giữ Vanilla JS** trong GĐ0. TypeScript có thể làm sau và không ảnh hưởng §7.2.
 6. **Bãi Đắk Nông** là bãi của GSS hay bãi thuê? Câu này quyết định depot là một vai trò của Party hay là đơn vị nội bộ.
+
+## 7. Kết quả thực hiện (09/11/2026)
+
+Anh duyệt theo đề xuất mặc định. Hai câu chưa có đề xuất được chọn như sau: GSS **giữ xe riêng** của công ty; bãi Đắk Nông
+mô hình bằng vai trò `is_depot` của Party + danh mục bãi, nên bãi của GSS hay bãi thuê đều dùng được, không phải đổi mô hình.
+
+| Bước | Trạng thái | Commit |
+| :-- | :-- | :-- |
+| 1. Repo mới `E:\GSS_TMS`, gitleaks trước commit đầu | Xong. Chưa tạo repo GitHub, chưa push | `ce99e78` |
+| 2.1 Bỏ nhân sự/lương | Xong (giữ danh bạ nhân viên) | `0abab1b` |
+| 2.2 Bỏ lớp chuyển tiếp: Legacy*, `migrate_legacy_access`, `assign_default_company`, hashids | Xong | `42211b3` |
+| 2.3 Mô hình chuyến TVL | Một phần: bỏ cổng tài xế `/driver/`, lệnh dữ liệu cũ, mọi chuỗi TVL. Tạm ứng / quỹ / quyết toán tài xế khoá theo cờ `fleet_internal` (gói GSS tắt) | `e44338c` |
+| 3. Mô hình §4 | Party một bảng; BillOfLading MBL ◄ HBL; Leg / TruckRun / RouteTemplate; JobCost; public_id UUIDv7 | `0aa0b43`, `455374d` |
+| 4. Xoá migration, sinh `0001_initial` | Xong (166 → bộ khởi tạo sạch) | `0aa0b43` |
+| 5. Row-Level Security | Xong cho mọi bảng có `company_id`; vai trò `gss_rls` | `3f7a15c` |
+| 6. Đổi tên, CI, tài liệu | CI thêm gitleaks, ngưỡng độ phủ tạm 65%; CLAUDE.md, ERD, PLATFORM_PATCHES.md | (commit tài liệu) |
+
+Chưa làm trong GĐ0 (lý do):
+- Gỡ hẳn tạm ứng tài xế / quỹ điều vận khỏi dashboard, báo cáo và quyết toán kiểu cũ: dính sâu vào ~10 file BIM cũ;
+  đã khoá API theo cờ. Nên làm cùng việc dọn giao diện BIM cũ (màn điều vận, kinh doanh, đội xe kiểu cũ đã được màn GSS thay).
+- Đổi tên `DispatchTrip` → `TransportJob`, bỏ máy trạng thái 11 bước cũ: báo cáo và sổ cái cũ còn đọc `status`; giữ đồng bộ từ `step_status`.
+- Viết lại `DEFAULT_MATRIX` cho 7 vai trò theo §3: cần anh chốt danh sách vai trò.
+- `StoredFile` / `DocumentLink` tách bảng, `CargoItem` / `Stop` / `DeliveryDrop` (GĐ4).

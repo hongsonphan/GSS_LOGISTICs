@@ -26,8 +26,8 @@ python manage.py collectstatic --noinput
 echo "=== [5/6] CHẠY BỘ KIỂM THỬ HỒI QUY (REGRESSION SUITE) ==="
 python manage.py test --keepdb
 
-echo "=== [6/6] ĐỒNG BỘ TIẾN ĐỘ & SẴN SÀNG KHỞI CHẠY GUNICORN ==="
-python manage.py resync_timelines
+echo "=== [6/6] DỰNG LẠI SỔ CÁI TỪ CHỨNG TỪ ==="
+python manage.py rebuild_ledger
 
 echo "=============================================================================="
 echo "✓ HỆ THỐNG GSS LOGISTICS ĐÃ SẴN SÀNG VẬN HÀNH 100% CHUẨN PRODUCTION!"

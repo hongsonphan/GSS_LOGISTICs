@@ -1,5 +1,7 @@
 # GSS LOGISTICS – PHÂN TÍCH HIỆU CHỈNH & KẾ HOẠCH TÁI CẤU TRÚC
 
+> **09/11/2026 – GĐ0 (§7.2) đã thực hiện ở repo mới `E:\GSS_TMS`.** Một số điều dưới đây đã đổi: Party một bảng, migration sinh lại, RLS, bỏ hashids/Legacy*/lương. Đọc `docs/GSS_KE_HOACH_7_2.md` mục 7 và `docs/GSS_ERD.md` trước.
+
 ## 0. HANDOFF – ĐỌC PHẦN NÀY TRƯỚC (cập nhật 05/11/2026, sau đợt viết lại giao diện GSS)
 
 > Dành cho các session/agent khác cùng làm dự án GSS. Phần này **thay thế** mọi chỗ mâu thuẫn trong §1–§5 bên dưới (đó là phân tích ban đầu, giữ để tham khảo lý do).

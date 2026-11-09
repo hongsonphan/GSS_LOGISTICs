@@ -49,7 +49,7 @@ $PG sh -c 'pg_dump -U gss_logistics_user -d gss_logistics_db --no-owner | psql -
 mkdir -p media
 MEDIA_BEFORE="$(find media -type f | wc -l)"
 if $DC run --rm --no-deps -T -v "$APP_DIR/media:/app/media:ro" -e DB_NAME=gss_preflight web sh -c \
-    "python manage.py migrate --noinput && python manage.py assign_default_company && python manage.py sync_trip_data && python manage.py rebuild_ledger && python manage.py migrate_legacy_access && python manage.py check"; then
+    "python manage.py migrate --noinput && python manage.py rebuild_ledger && python manage.py check"; then
     echo "Chạy thử trên bản sao CSDL: ĐẠT"
     $PG dropdb -U gss_logistics_user gss_preflight
 else
@@ -122,11 +122,7 @@ if [ -z "$ok" ]; then
     if [ -f "$ROLLBACK_FILE" ]; then git checkout -B master "$(cat "$ROLLBACK_FILE")"; $DC build web; $DC up -d web; fi
     exit 1
 fi
-$DC exec -T web python manage.py assign_default_company
-$DC exec -T web python manage.py sync_trip_data
 $DC exec -T web python manage.py rebuild_ledger
-# Chuyển sang ma trận phân quyền không làm ai mất quyền cũ (chỉ chạy cho tài khoản chưa có bản ghi ngoại lệ)
-$DC exec -T web python manage.py migrate_legacy_access
 
 step "7/7 Lịch sao lưu hằng ngày (2h sáng)"
 CRON_LINE="0 2 * * * $APP_DIR/scripts/backup_vps.sh >> /home/ubuntu/backups/backup.log 2>&1"
