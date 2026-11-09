@@ -8,7 +8,7 @@ omit =
     config/wsgi.py
 
 [report]
-# GĐ0 (đặc tả §7.2): tạm hạ ngưỡng sau khi gọt mã, nâng dần về 72%
-fail_under = 65
+# Ngưỡng nghiệm thu: không được giảm dưới mức này (sau GĐ0 đo được 80%)
+fail_under = 72
 skip_covered = True
 sort = Cover

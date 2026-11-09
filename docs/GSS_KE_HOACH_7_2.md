@@ -143,7 +143,7 @@ mô hình bằng vai trò `is_depot` của Party + danh mục bãi, nên bãi c�
 | 3. Mô hình §4 | Party một bảng; BillOfLading MBL ◄ HBL; Leg / TruckRun / RouteTemplate; JobCost; public_id UUIDv7 | `0aa0b43`, `455374d` |
 | 4. Xoá migration, sinh `0001_initial` | Xong (166 → bộ khởi tạo sạch) | `0aa0b43` |
 | 5. Row-Level Security | Xong cho mọi bảng có `company_id`; vai trò `gss_rls` | `3f7a15c` |
-| 6. Đổi tên, CI, tài liệu | CI thêm gitleaks, ngưỡng độ phủ tạm 65%; CLAUDE.md, ERD, PLATFORM_PATCHES.md | (commit tài liệu) |
+| 6. Đổi tên, CI, tài liệu | CI thêm gitleaks; độ phủ test đo được 80% nên giữ ngưỡng 72% (không cần hạ tạm); CLAUDE.md, ERD, PLATFORM_PATCHES.md | (commit tài liệu) |
 
 Chưa làm trong GĐ0 (lý do):
 - Gỡ hẳn tạm ứng tài xế / quỹ điều vận khỏi dashboard, báo cáo và quyết toán kiểu cũ: dính sâu vào ~10 file BIM cũ;
