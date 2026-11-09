@@ -1,6 +1,6 @@
-# GSS TMS (repo mới, thư mục E:\GSS_TMS) – quy tắc làm việc
+# GSS TMS (thư mục E:\Bim_Logisstic_GSS) – quy tắc làm việc
 
-Phần mềm điều hành vận tải container của Green Solutions Smart. Repo khởi tạo ngày 09/11/2026 từ GSS_LOGISTICs (không mang lịch sử git cũ) theo đặc tả §7.2.
+Phần mềm điều hành vận tải container của Green Solutions Smart. Mã nguồn đã được làm lại sạch ngày 09/11/2026 theo đặc tả §7.2: lịch sử git mới, không mang lịch sử cũ (bản sao lưu lịch sử cũ: `E:\Backup\gss_old_2026-11-09\`). Chỉ có MỘT thư mục dự án này.
 Đặc tả nghiệp vụ: `docs/BRD_GREEN_SOLUTIONS_SMART_GSS.md`; kế hoạch GĐ0: `docs/GSS_KE_HOACH_7_2.md`; sơ đồ dữ liệu: `docs/GSS_ERD.md`.
 Không đưa khoá SSH / secret / domain máy chủ vào repo. Bản vá thuộc lớp nền (bảo mật, phân quyền) ghi vào `PLATFORM_PATCHES.md`.
 
@@ -47,5 +47,5 @@ docker compose -p gss_logistics -f docker-compose.yml -f docker-compose.local.ym
 
 ## Triển khai
 
-- Repo này **chưa có remote GitHub**. Workflow `Deploy VPS`, `Uptime`, `Restore drill`, `ZAP` chỉ chạy tay khi đã có VPS/domain riêng.
+- Repo này **chưa có remote GitHub**. Chỉ push khi người dùng yêu cầu; lúc đó ghi đè (xoá hết) nội dung cũ trên `github.com/hongsonphan/GSS_LOGISTICs`. Workflow `Deploy VPS`, `Uptime`, `Restore drill`, `ZAP` chỉ chạy tay khi đã có VPS/domain riêng.
 - Không push khi CI cục bộ ở trên chưa khớp.

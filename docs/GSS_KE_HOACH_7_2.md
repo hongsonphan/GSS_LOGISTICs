@@ -136,7 +136,7 @@ mô hình bằng vai trò `is_depot` của Party + danh mục bãi, nên bãi c�
 
 | Bước | Trạng thái | Commit |
 | :-- | :-- | :-- |
-| 1. Repo mới `E:\GSS_TMS`, gitleaks trước commit đầu | Xong. Chưa tạo repo GitHub, chưa push | `ce99e78` |
+| 1. Lịch sử git mới ngay trong `E:\Bim_Logisstic_GSS` (lịch sử cũ sao lưu ra `E:\Backup`), gitleaks trước commit đầu | Xong. Chưa push GitHub | `ce99e78` |
 | 2.1 Bỏ nhân sự/lương | Xong (giữ danh bạ nhân viên) | `0abab1b` |
 | 2.2 Bỏ lớp chuyển tiếp: Legacy*, `migrate_legacy_access`, `assign_default_company`, hashids | Xong | `42211b3` |
 | 2.3 Mô hình chuyến TVL | Một phần: bỏ cổng tài xế `/driver/`, lệnh dữ liệu cũ, mọi chuỗi TVL. Tạm ứng / quỹ / quyết toán tài xế khoá theo cờ `fleet_internal` (gói GSS tắt) | `e44338c` |
