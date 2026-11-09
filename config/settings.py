@@ -5,9 +5,12 @@ import datetime
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Khi chạy `manage.py test` không đọc .env của máy: kết quả test không phụ thuộc cấu hình riêng (giống CI)
+_RUNNING_TESTS = len(sys.argv) > 1 and sys.argv[1] == 'test'
 try:
     from dotenv import load_dotenv
-    load_dotenv(BASE_DIR / '.env')
+    if not _RUNNING_TESTS:
+        load_dotenv(BASE_DIR / '.env')
 except ImportError:
     pass
 
