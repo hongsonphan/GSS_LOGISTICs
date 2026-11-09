@@ -80,6 +80,8 @@ class TenantMiddleware:
         request.company = SimpleLazyObject(lambda: company_for_user(getattr(request, "user", None)))
         token = _request.set(request)
         try:
-            return self.get_response(request)
+            from core.rls import RlsScope
+            with RlsScope():
+                return self.get_response(request)
         finally:
             _request.reset(token)
