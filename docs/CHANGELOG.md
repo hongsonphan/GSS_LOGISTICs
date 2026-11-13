@@ -3,6 +3,21 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-13 (Cập nhật 17) – Khóa Bất Biến Hành Trình Xe: Cấm Sửa / Xóa / Hủy Gán Container & Chuyến Xe Đang Chạy, Cấm Lùi Bước Nghiệp Vụ
+- **Cấm chuyển trạng thái lùi bước (Backward State Transition):**
+  - Trong máy trạng thái điều vận (`apps/dispatch/gss_workflow.py`), tuyệt đối cấm mọi hành vi chuyển trạng thái lùi về bước trước (`ti < ci`). Hành trình vận chuyển hàng hóa là bất biến và chỉ được phép tiến tuần tự theo thời gian thực.
+  - Chuyến xe chỉ được hủy khi còn ở trạng thái `READY` (chưa xuất phát đến nơi nhận cont).
+- **Khóa bảo vệ toàn diện đối với Container & Chuyến xe đã chạy thực tế (`ARRIVED_AT_PICKUP` trở đi):**
+  - **Khóa gán xe & đổi nhà xe:** Ẩn hoàn toàn nút "Bỏ Gán", thay bằng badge trạng thái `Đang chạy (Đã khóa)`. Dropdown đổi nhà xe chuyển sang dạng nhãn cố định có icon khóa.
+  - **Khóa chọn hàng loạt:** Vô hiệu hóa checkbox (`disabled`) đối với các container đang chạy trên đường, tự động lọc bỏ khi bấm "Chọn tất cả" hoặc khi thực hiện thao tác hàng loạt.
+  - **Cảnh báo xác nhận an toàn khi ở trạng thái `READY`:** Khi container đã phát lệnh điều độ nhưng xe chưa chạy thực tế, hệ thống bật popup xác nhận cảnh báo hủy lệnh điều độ trước khi cho phép bỏ gán hoặc chuyển đổi nhà xe.
+  - **Cấm xóa mềm/hủy chuyến xe:** Chặn mọi thao tác xóa/hủy chuyến xe điều độ tại cả API backend (`TripDetailAPIView.delete`) và giao diện frontend (`trip-actions.js`) khi chuyến xe đã phát sinh hành trình thực tế.
+  - **Cấm xóa container khỏi đơn hàng:** Chặn thao tác xóa container (`remove_container`, `ContainerDetailAPI.patch`, `containers.js`) khi container đã có chuyến xe đang/đã chạy trên đường.
+- **Đồng bộ mã nguồn & Kiểm thử:**
+  - Build đầy đủ và đồng bộ `static/js/app.js` và `static/css/tailwind.css`.
+  - Toàn bộ 55/55 test case backend và QA verify đều vượt qua 100%.
+  - Đã commit và push đồng bộ lên kho GitHub: `https://github.com/hongsonphan/GSS_LOGISTICs`.
+
 ## 2026-11-13 (Cập nhật 16) – Xóa Nút Tạo Lệnh Khỏi Tab Theo Dõi Hành Trình & Nổi Bật Chữ GPX Xanh Bold Kèm Biển Số Cỡ Lớn
 - **Tối ưu luồng nghiệp vụ tạo lệnh:**
   - Loại bỏ hoàn toàn nút **[+ Lập Lệnh Điều Động]** khỏi Tab 3 (**THEO DÕI HÀNH TRÌNH** - #dispatch-trips-view).
