@@ -6,11 +6,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
+<link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
+<link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=3.0">
 <title>Cổng Điều Phối &amp; Theo Dõi Nhà Xe · GSS TMS</title>
+<!-- Phosphor Icons -->
 <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/regular/style.css' %}"/>
 <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/fill/style.css' %}"/>
 <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/bold/style.css' %}"/>
+<!-- International Enterprise Typography & Custom Styles -->
+<link rel="stylesheet" href="{% static 'css/main.css' %}?v=2.9.86">
+<!-- Tailwind CSS & Contrast System -->
 <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+<link rel="stylesheet" href="{% static 'css/contrast.css' %}">
 <style>
   :root {
     --brand: #0f766e;
@@ -35,8 +42,8 @@
   }
   .vendor-sidebar-item {
     color: #cbd5e1;
-    padding: 9px 14px;
-    border-radius: 8px;
+    padding: 10px 14px;
+    border-radius: 12px;
     border-left: 3px solid transparent;
     font-weight: 600;
     transition: all 0.15s ease;
@@ -56,6 +63,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-left: 3px solid transparent;
     color: #cbd5e1;
+    border-radius: 12px;
     transition: all 0.15s ease;
   }
   .vendor-alloc-card:hover {
@@ -70,10 +78,10 @@
     color: #ffffff;
   }
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  .font-heading { font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .font-heading { font-family: 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif; }
   .tabular-nums { font-variant-numeric: tabular-nums; }
   .h-8\.5 { height: 2.125rem; }
   .erp-table th { white-space: nowrap; box-sizing: border-box; }
@@ -199,7 +207,7 @@
   }
 </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen antialiased">
+<body class="bg-slate-100 text-slate-800 min-h-screen antialiased selection:bg-teal-100 selection:text-teal-900">
 
 <!-- BOOTSTRAP LOADER -->
 <div id="portal-boot-screen" class="min-h-screen flex items-center justify-center p-6">
@@ -312,42 +320,38 @@
 
 <!-- KHUNG PORTAL MÁY TÍNH CHÍNH -->
 <div id="vendor-app-shell" class="min-h-screen flex flex-col hidden">
-  <!-- TOPBAR -->
-  <header class="bg-gradient-to-r from-teal-800 via-teal-700 to-slate-800 text-white shadow-md sticky top-0 z-40 h-14 flex items-center">
-    <div class="w-full px-4 lg:px-6 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3 min-w-0">
-        <button type="button" onclick="toggleMobileSidebar()" class="lg:hidden p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer" title="Mở menu">
-          <i class="ph-bold ph-list text-lg"></i>
-        </button>
-        <div class="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-          <i class="ph-bold ph-truck text-xl text-teal-200"></i>
+  <!-- TOPBAR CHUẨN GSS TRẮNG SÁNG VĂN PHÒNG (ĐỒNG BỘ MÀN HÌNH CHÍNH) -->
+  <header class="h-16 bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm flex items-center justify-between px-4 lg:px-6">
+    <div class="flex items-center gap-3 min-w-0">
+      <button type="button" onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-xl text-slate-700 hover:text-teal-700 hover:bg-slate-100 border border-slate-300 shadow-2xs transition-all cursor-pointer" title="Mở menu">
+        <i class="ph-bold ph-list text-lg"></i>
+      </button>
+      <a href="/vendor/" class="hidden sm:flex items-center gap-2.5 shrink-0 group" title="Về trang chủ Cổng Nhà Xe">
+        <img src="{% static 'images/logo_clean.png' %}" alt="GSS" class="h-9 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-sm">
+      </a>
+      <div class="min-w-0 flex flex-col justify-center">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-teal-600 font-heading truncate leading-tight" id="h-company">GSS SMART LOGISTICS</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 shrink-0 font-heading">CỔNG NHÀ XE</span>
         </div>
-        <div class="min-w-0">
-          <div class="flex items-center gap-2">
-            <span class="hidden sm:inline text-[11px] uppercase font-extrabold tracking-wider text-teal-200 truncate" id="h-company">GSS SMART LOGISTICS</span>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/30 text-teal-100 border border-teal-400/30 shrink-0">VENDOR PORTAL</span>
-          </div>
-          <h1 class="text-sm sm:text-base font-black tracking-tight truncate" id="h-subcontractor">Đang kết nối...</h1>
-        </div>
+        <h1 class="text-sm sm:text-base md:text-lg font-black text-slate-900 tracking-tight font-heading truncate mt-0.5 leading-tight" id="h-subcontractor">Đang kết nối...</h1>
       </div>
+    </div>
 
-      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-        <div id="idle-timer-pill" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 border border-white/20 text-[11px] font-mono text-teal-100" title="Tự động đăng xuất khi không thao tác để bảo mật">
-          <i class="ph-bold ph-shield-check text-teal-200"></i>
-          <span id="idle-countdown">Phiên: --:--</span>
-        </div>
-        <div class="hidden md:block">
-          <span id="h-username-badge" class="hidden items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900/30 text-[11px] font-bold text-teal-100"></span>
-        </div>
-        <button type="button" onclick="refreshPortalData(false)" class="h-8 px-2.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-colors" title="Làm mới dữ liệu">
-          <i class="ph-bold ph-arrows-clockwise"></i>
-          <span class="hidden sm:inline">Làm mới</span>
-        </button>
-        <button type="button" id="btn-portal-logout" onclick="logoutVendorPortal()" class="hidden h-8 px-3 rounded-lg bg-rose-600/90 hover:bg-rose-700 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-colors">
-          <i class="ph-bold ph-sign-out"></i>
-          <span class="hidden sm:inline">Đăng xuất</span>
-        </button>
+    <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+      <div id="idle-timer-pill" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs" title="Tự động đăng xuất khi không thao tác để bảo mật">
+        <i class="ph-bold ph-shield-check text-teal-600 text-sm"></i>
+        <span id="idle-countdown" class="font-mono text-teal-800 font-bold">Phiên: --:--</span>
       </div>
+      <span id="h-username-badge" class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-xs font-bold text-teal-800 shadow-2xs font-heading"></span>
+      <button type="button" onclick="refreshPortalData(false)" class="h-9 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-teal-700 text-xs font-bold font-heading inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95" title="Làm mới dữ liệu">
+        <i class="ph-bold ph-arrows-clockwise text-teal-600 text-sm"></i>
+        <span class="hidden sm:inline">Làm mới</span>
+      </button>
+      <button type="button" id="btn-portal-logout" onclick="logoutVendorPortal()" class="hidden h-9 px-3.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 text-xs font-bold font-heading inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95" title="Đăng xuất khỏi Cổng Nhà Xe">
+        <i class="ph-bold ph-sign-out text-sm"></i>
+        <span class="hidden sm:inline">Đăng xuất</span>
+      </button>
     </div>
   </header>
 
@@ -357,40 +361,40 @@
     <div id="sidebar-backdrop" onclick="toggleMobileSidebar(false)" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden"></div>
 
     <!-- SIDEBAR (Đồng bộ Sidebar Contrast Theme chuẩn GSS #253147 / #1a2334) -->
-    <aside id="portal-sidebar" class="vendor-sidebar fixed lg:sticky top-14 left-0 h-[calc(100vh-3.5rem)] w-64 shrink-0 z-30 transform -translate-x-full lg:translate-x-0 transition-transform flex flex-col justify-between overflow-y-auto select-none">
+    <aside id="portal-sidebar" class="vendor-sidebar fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] w-64 shrink-0 z-30 transform -translate-x-full lg:translate-x-0 transition-transform flex flex-col justify-between overflow-y-auto select-none">
       <div class="p-3.5 space-y-5">
         <div class="space-y-1">
-          <div class="px-2.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5 font-heading">Chức Năng Portal</div>
-          <button type="button" id="nav-tab-assign" onclick="switchPortalTab('assign')" class="vendor-sidebar-item active w-full text-xs flex items-center justify-between gap-2 cursor-pointer">
-            <span class="flex items-center gap-2.5"><i class="ph ph-clipboard-text text-lg text-teal-300"></i> <span>Gán Xe &amp; Điều Hành</span></span>
-            <span id="nav-badge-assign" class="text-[11px] font-mono font-bold text-teal-300 tabular-nums"></span>
+          <div class="px-2.5 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2 font-heading">Chức Năng Portal</div>
+          <button type="button" id="nav-tab-assign" onclick="switchPortalTab('assign')" class="vendor-sidebar-item active w-full text-xs flex items-center justify-between gap-2.5 cursor-pointer">
+            <span class="flex items-center gap-2.5"><i class="ph ph-clipboard-text text-xl text-teal-300"></i> <span class="tracking-wide">Gán Xe &amp; Điều Hành</span></span>
+            <span id="nav-badge-assign" class="text-xs font-mono font-bold text-teal-300 tabular-nums"></span>
           </button>
-          <button type="button" id="nav-tab-tracking" onclick="switchPortalTab('tracking')" class="vendor-sidebar-item w-full text-xs flex items-center justify-between gap-2 cursor-pointer">
-            <span class="flex items-center gap-2.5"><i class="ph ph-navigation-arrow text-lg text-slate-400"></i> <span>Theo Dõi Hành Trình</span></span>
-            <span id="nav-badge-tracking" class="text-[11px] font-mono font-bold text-sky-300 tabular-nums"></span>
+          <button type="button" id="nav-tab-tracking" onclick="switchPortalTab('tracking')" class="vendor-sidebar-item w-full text-xs flex items-center justify-between gap-2.5 cursor-pointer">
+            <span class="flex items-center gap-2.5"><i class="ph ph-navigation-arrow text-xl text-slate-400"></i> <span class="tracking-wide">Theo Dõi Hành Trình</span></span>
+            <span id="nav-badge-tracking" class="text-xs font-mono font-bold text-sky-300 tabular-nums"></span>
           </button>
-          <button type="button" id="nav-tab-fleet" onclick="switchPortalTab('fleet')" class="vendor-sidebar-item w-full text-xs flex items-center justify-between gap-2 cursor-pointer">
-            <span class="flex items-center gap-2.5"><i class="ph ph-truck text-lg text-slate-400"></i> <span>Đội Xe &amp; Tài Xế</span></span>
-            <span id="nav-badge-fleet" class="text-[11px] font-mono font-bold text-slate-400 tabular-nums"></span>
+          <button type="button" id="nav-tab-fleet" onclick="switchPortalTab('fleet')" class="vendor-sidebar-item w-full text-xs flex items-center justify-between gap-2.5 cursor-pointer">
+            <span class="flex items-center gap-2.5"><i class="ph ph-truck text-xl text-slate-400"></i> <span class="tracking-wide">Đội Xe &amp; Tài Xế</span></span>
+            <span id="nav-badge-fleet" class="text-xs font-mono font-bold text-slate-400 tabular-nums"></span>
           </button>
         </div>
 
-        <div id="sidebar-allocs-wrap" class="space-y-1.5">
+        <div id="sidebar-allocs-wrap" class="space-y-2">
           <div class="px-2.5 flex items-center justify-between">
-            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-heading">Lệnh Được Giao</span>
-            <span class="text-[10px] font-mono text-slate-400 tabular-nums" id="sidebar-allocs-count"></span>
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 font-heading">Lệnh Được Giao</span>
+            <span class="text-xs font-mono font-bold text-slate-400 tabular-nums" id="sidebar-allocs-count"></span>
           </div>
           <div id="sidebar-allocs-list" class="space-y-1.5 max-h-[42vh] overflow-y-auto pr-0.5"></div>
         </div>
       </div>
 
-      <div class="vendor-sidebar-footer p-3.5 space-y-1.5">
-        <div class="flex items-center gap-1.5 text-[11px] font-bold text-teal-300">
-          <i class="ph-bold ph-shield-check text-sm"></i>
+      <div class="vendor-sidebar-footer p-4 space-y-1.5 bg-[#1a2334] border-t border-slate-700/60">
+        <div class="flex items-center gap-1.5 text-xs font-bold text-teal-300 font-heading">
+          <i class="ph-bold ph-shield-check text-base"></i>
           <span>Phạm vi truy cập bảo mật</span>
         </div>
-        <p class="text-[11px] text-slate-400 leading-relaxed">
-          Chỉ hiển thị phân bổ container, đội xe và trạng thái hành trình của riêng nhà xe. Mọi thông tin khách hàng và cước phí đều được ẩn.
+        <p class="text-xs text-slate-400 leading-relaxed font-medium">
+          Chỉ hiển thị phân bổ container, đội xe và trạng thái hành trình của riêng nhà xe. Mọi thông tin khách hàng và cước phí đều được ẩn an toàn.
         </p>
       </div>
     </aside>
@@ -405,16 +409,16 @@
   </div>
 </div>
 
-<!-- FLOATING BOTTOM SAVE BAR -->
-<div id="sticky-bar" class="fixed left-0 lg:left-64 right-0 bottom-0 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-xl px-5 py-3 z-40 hidden transition-all">
-  <div class="flex items-center justify-between gap-3 flex-wrap">
+<!-- FLOATING BOTTOM SAVE BAR (ĐỒNG BỘ NÚT VÀ PHÔNG CHỮ CHUẨN GSS) -->
+<div id="sticky-bar" class="fixed left-0 lg:left-64 right-0 bottom-0 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-xl px-6 py-3.5 z-40 hidden transition-all">
+  <div class="flex items-center justify-between gap-4 flex-wrap">
     <div class="flex items-center gap-2 text-xs sm:text-sm">
       <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-      <span id="bar-progress" class="font-bold text-slate-700">Đã khai báo 0/0 container</span>
-      <span id="bar-dirty" class="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-300 hidden">· 0 thay đổi chưa lưu</span>
+      <span id="bar-progress" class="font-bold text-slate-800 font-heading">Đã khai báo 0/0 container</span>
+      <span id="bar-dirty" class="text-amber-800 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-300 text-xs hidden">· 0 thay đổi chưa lưu</span>
     </div>
     <div class="flex items-center gap-2">
-      <button type="button" id="btn-save-all" class="btn-keep-solid h-10 px-6 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm shadow-md flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+      <button type="button" id="btn-save-all" class="btn-keep-solid h-11 px-7 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm font-heading shadow-md flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
         <i class="ph-bold ph-floppy-disk text-base"></i>
         <span>Lưu Khai Báo Phương Tiện</span>
       </button>
@@ -425,18 +429,18 @@
 <!-- MODAL THÊM / SỬA XE & TÀI XẾ -->
 <div id="modal-quick-add" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-[60] hidden overflow-y-auto">
   <div class="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
-    <!-- Header -->
-    <div class="px-5 py-3.5 bg-gradient-to-r from-teal-700 to-teal-800 text-white flex items-center justify-between">
-      <div class="flex items-center gap-2.5 text-sm font-bold">
-        <div id="quick-add-icon-wrap" class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-teal-200">
-          <i id="quick-add-icon" class="ph-bold ph-plus-circle text-lg"></i>
+    <!-- Header chuẩn GSS -->
+    <div class="px-6 py-4.5 bg-gradient-to-r from-teal-800 to-teal-950 text-white flex items-center justify-between rounded-t-2xl font-heading">
+      <div class="flex items-center gap-3">
+        <div id="quick-add-icon-wrap" class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center text-teal-200">
+          <i id="quick-add-icon" class="ph-bold ph-plus-circle text-xl"></i>
         </div>
         <div>
-          <h3 id="quick-add-title" class="text-sm font-black text-white leading-tight">Thêm Mới Vào Danh Mục</h3>
-          <p id="quick-add-subtitle" class="text-[11px] text-teal-100 font-normal">Khai báo đầy đủ hồ sơ phương tiện & tài xế</p>
+          <h3 id="quick-add-title" class="text-base font-black text-white leading-tight font-heading">Thêm Mới Vào Danh Mục</h3>
+          <p id="quick-add-subtitle" class="text-xs text-teal-100/90 font-normal mt-0.5">Khai báo đầy đủ hồ sơ phương tiện &amp; tài xế</p>
         </div>
       </div>
-      <button type="button" onclick="closeQuickAddModal()" class="text-teal-200 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer">
+      <button type="button" onclick="closeQuickAddModal()" class="text-teal-200 hover:text-white p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer">
         <i class="ph-bold ph-x text-lg"></i>
       </button>
     </div>
@@ -674,13 +678,13 @@
 <!-- MODAL NHẬP KHAI BÁO TỪ EXCEL -->
 <div id="modal-vendor-excel" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
   <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
-    <div class="px-6 py-4 bg-gradient-to-r from-teal-700 to-emerald-800 text-white flex items-center justify-between">
+    <div class="px-6 py-4.5 bg-gradient-to-r from-teal-800 to-teal-950 text-white flex items-center justify-between rounded-t-2xl font-heading">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
           <i class="ph-bold ph-file-xls text-2xl"></i>
         </div>
         <div>
-          <h3 class="font-black text-base leading-tight">Nhập Khai Báo Xe Từ Excel</h3>
+          <h3 class="font-black text-base leading-tight font-heading">Nhập Khai Báo Xe Từ Excel</h3>
           <p class="text-xs text-teal-100/90 mt-0.5">Đồng bộ danh sách Đầu kéo, Rơ-moóc &amp; Tài xế hàng loạt</p>
         </div>
       </div>
@@ -735,21 +739,21 @@
 <!-- MODAL LỆNH ĐIỀU XE & MÃ QR TÀI XẾ (MỖI CONTAINER GÁN XE TẠO PHIẾU CHUYẾN XE) -->
 <div id="modal-driver-qr-dispatch" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
   <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
-    <!-- Header -->
-    <div class="bg-gradient-to-r from-teal-700 to-slate-800 text-white px-5 py-4 flex items-center justify-between shrink-0">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-teal-600/60 flex items-center justify-center text-lg text-teal-100 border border-teal-400/30">
+    <!-- Header chuẩn GSS -->
+    <div class="bg-gradient-to-r from-teal-800 to-teal-950 text-white px-6 py-4.5 flex items-center justify-between shrink-0 rounded-t-2xl font-heading">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-xl text-teal-200 border border-white/20">
           <i class="ph-bold ph-qr-code"></i>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="font-bold text-sm tracking-wide">LỆNH ĐIỀU XE &amp; MÃ QR TÀI XẾ</span>
-            <span id="mdqr-trip-code" class="px-2 py-0.5 rounded-md bg-teal-500/30 border border-teal-300/40 text-[11px] font-mono font-bold text-teal-100"></span>
+            <span class="font-black text-base tracking-wide font-heading">LỆNH ĐIỀU XE &amp; MÃ QR TÀI XẾ</span>
+            <span id="mdqr-trip-code" class="px-2.5 py-0.5 rounded-full bg-teal-500/30 border border-teal-300/40 text-xs font-mono font-bold text-teal-100"></span>
           </div>
-          <div class="text-[11px] text-teal-100/80 mt-0.5">Tài xế quét mã QR hoặc mở link để bấm 7 mốc hành trình và tải chứng từ lên hệ thống</div>
+          <div class="text-xs text-teal-100/80 mt-0.5">Tài xế quét mã QR hoặc mở link để bấm 7 mốc hành trình và tải chứng từ lên hệ thống</div>
         </div>
       </div>
-      <button type="button" onclick="closeDriverQrModal()" class="text-teal-200 hover:text-white p-1 rounded-lg cursor-pointer">
+      <button type="button" onclick="closeDriverQrModal()" class="text-teal-200 hover:text-white p-1.5 rounded-xl hover:bg-white/10 cursor-pointer">
         <i class="ph-bold ph-x text-lg"></i>
       </button>
     </div>
@@ -864,12 +868,12 @@
 <!-- MODAL XEM / SỬA / LƯU / XÓA / IN / THEO DÕI 7 CHẶNG -->
 <div id="modal-vendor-row-view" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
   <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
-    <div class="bg-gradient-to-r from-teal-700 to-slate-800 text-white px-5 py-3.5 flex items-center justify-between shrink-0">
-      <div class="flex items-center gap-2 font-bold text-sm">
-        <i class="ph-bold ph-eye text-lg text-teal-200"></i>
+    <div class="bg-gradient-to-r from-teal-800 to-teal-950 text-white px-6 py-4.5 flex items-center justify-between shrink-0 rounded-t-2xl font-heading">
+      <div class="flex items-center gap-2.5 font-black text-base font-heading">
+        <i class="ph-bold ph-eye text-xl text-teal-200"></i>
         <span id="row-view-title">Chi Tiết Điều Xe &amp; Hành Trình Container</span>
       </div>
-      <button type="button" onclick="closeRowViewModal()" class="text-teal-200 hover:text-white p-1 rounded-lg cursor-pointer">
+      <button type="button" onclick="closeRowViewModal()" class="text-teal-200 hover:text-white p-1.5 rounded-xl hover:bg-white/10 cursor-pointer">
         <i class="ph-bold ph-x text-lg"></i>
       </button>
     </div>
@@ -1252,9 +1256,9 @@
     pill.classList.remove('hidden');
     el.textContent = `Tự thoát: ${fmtCountdown(remainingIdleSecs)}`;
     if (remainingIdleSecs <= 120) {
-      pill.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/25 border border-amber-300/60 text-[11px] font-mono text-amber-100';
+      pill.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-300 text-xs font-mono font-bold text-amber-800 shadow-2xs animate-pulse';
     } else {
-      pill.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 border border-white/20 text-[11px] font-mono text-teal-100';
+      pill.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-teal-800 shadow-2xs';
     }
   }
 
@@ -1551,34 +1555,82 @@
   function renderKpiStrip() {
     const k = computeKpis();
     return `
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs flex items-center justify-between">
+      <!-- BỘ 4 THẺ CHỈ SỐ VẬN HÀNH (ĐỒNG BỘ CHUẨN DESIGN SYSTEM GSS TMS) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
+        <!-- Thẻ 1: TỔNG CONT ĐƯỢC GIAO -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
-            <div class="text-[11px] font-bold uppercase text-slate-400">Tổng Cont Được Giao</div>
-            <div class="text-2xl font-black text-slate-800 font-mono mt-0.5">${k.total_containers}</div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Tổng Cont Được Giao</span>
+              <span class="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                <i class="ph-bold ph-shipping-container"></i> Phân bổ
+              </span>
+            </div>
+            <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+              ${k.total_containers} <span class="text-sm font-bold text-slate-500 font-sans">Cont</span>
+            </p>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl"><i class="ph-bold ph-shipping-container"></i></div>
+          <p class="text-xs text-slate-500 font-medium mt-2 flex items-center gap-1">
+            <i class="ph-bold ph-check-circle text-indigo-600 text-xs shrink-0"></i>
+            <span>Tổng lượng container phân bổ từ Điều vận GSS</span>
+          </p>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs flex items-center justify-between">
+
+        <!-- Thẻ 2: CHỜ GÁN XE / TÀI -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
-            <div class="text-[11px] font-bold uppercase text-amber-700">Chờ Gán Xe / Tài</div>
-            <div class="text-2xl font-black text-amber-700 font-mono mt-0.5">${k.pending_count}</div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Chờ Gán Xe / Tài</span>
+              <span class="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                <i class="ph-bold ph-clock"></i> Chờ điều xe
+              </span>
+            </div>
+            <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1">
+              ${k.pending_count} <span class="text-sm font-bold text-amber-600 font-sans">Cont</span>
+            </p>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl"><i class="ph-bold ph-clock"></i></div>
+          <p class="text-xs text-slate-500 font-medium mt-2 flex items-center gap-1">
+            <i class="ph-bold ph-clock text-amber-600 text-xs shrink-0"></i>
+            <span>Cần chọn đầu kéo &amp; tài xế nhận lệnh</span>
+          </p>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs flex items-center justify-between">
+
+        <!-- Thẻ 3: ĐANG CHẠY HÀNH TRÌNH -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
-            <div class="text-[11px] font-bold uppercase text-sky-700">Đang Chạy Hành Trình</div>
-            <div class="text-2xl font-black text-sky-700 font-mono mt-0.5">${k.in_transit_count}</div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Đang Chạy Tuyến</span>
+              <span class="text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                <i class="ph-bold ph-navigation-arrow"></i> Trên đường
+              </span>
+            </div>
+            <p class="text-3xl font-black text-teal-700 tabular-nums font-heading tracking-tight mt-1">
+              ${k.in_transit_count} <span class="text-sm font-bold text-teal-600 font-sans">Xe</span>
+            </p>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl"><i class="ph-bold ph-navigation-arrow"></i></div>
+          <p class="text-xs text-slate-500 font-medium mt-2 flex items-center gap-1">
+            <i class="ph-bold ph-navigation-arrow text-teal-600 text-xs shrink-0"></i>
+            <span>Phương tiện đang vận hành theo 7 mốc</span>
+          </p>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs flex items-center justify-between">
+
+        <!-- Thẻ 4: ĐÃ HẠ RỖNG HOÀN TẤT -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
-            <div class="text-[11px] font-bold uppercase text-emerald-700">Đã Hạ Rỗng Hoàn Tất</div>
-            <div class="text-2xl font-black text-emerald-700 font-mono mt-0.5">${k.completed_count}</div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Đã Hạ Rỗng Hoàn Tất</span>
+              <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                <i class="ph-bold ph-check-circle"></i> Hoàn tất
+              </span>
+            </div>
+            <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1">
+              ${k.completed_count} <span class="text-sm font-bold text-emerald-600 font-sans">Cont</span>
+            </p>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl"><i class="ph-bold ph-check-circle"></i></div>
+          <p class="text-xs text-slate-500 font-medium mt-2 flex items-center gap-1">
+            <i class="ph-bold ph-check-circle text-emerald-600 text-xs shrink-0"></i>
+            <span>Đã giao hàng và hạ vỏ rỗng về bãi chỉ định</span>
+          </p>
         </div>
       </div>
     `;
@@ -1654,8 +1706,8 @@
       const stepFraction = row.step_index ? `${row.step_index}/7 · ` : '';
 
       const inputStateCls = !isRowUnlocked
-        ? 'bg-slate-50 text-slate-700 border-slate-200/80 cursor-not-allowed'
-        : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300';
+        ? 'bg-slate-50 text-slate-600 border-slate-200/80 cursor-not-allowed'
+        : 'bg-white text-slate-800 border-slate-300 hover:border-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20';
 
       return `
         <tr id="row-container-${row.line_no}" class="hover:bg-teal-50/30 transition-colors ${isModified ? 'bg-amber-50/40' : ''}">
@@ -1716,13 +1768,13 @@
           <td class="p-2.5 text-right whitespace-nowrap">
             <div class="inline-flex items-center gap-1">
               ${(row.trip_code || row.trip_token) ? `
-                <button type="button" onclick="openDriverQrModal(${row.line_no})" class="h-7 px-2.5 rounded-lg border border-teal-600 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all hover:scale-[1.02]" title="Mở Lệnh Điều Xe & Mã QR Tài Xế / Copy Link Zalo">
+                <button type="button" onclick="openDriverQrModal(${row.line_no})" class="h-7 px-2.5 rounded-lg border border-teal-600 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all active:scale-95" title="Mở Lệnh Điều Xe & Mã QR Tài Xế / Copy Link Zalo">
                   <i class="ph-bold ph-qr-code text-teal-700"></i>
                   <span>Lệnh QR</span>
                 </button>
               ` : ''}
-              <button type="button" onclick="viewRowModal(${row.line_no})" class="h-7 px-2.5 rounded-lg border border-slate-200 bg-white hover:border-teal-600 hover:bg-teal-50 text-slate-700 hover:text-teal-800 font-bold text-xs inline-flex items-center gap-1 cursor-pointer"><i class="ph-bold ph-eye"></i><span>Xem</span></button>
-              <button type="button" onclick="printVendorRow(${row.line_no})" class="h-7 px-2.5 rounded-lg border border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50 text-slate-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer"><i class="ph-bold ph-printer"></i><span>In</span></button>
+              <button type="button" onclick="viewRowModal(${row.line_no})" class="h-7 px-2.5 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors" title="Xem &amp; cập nhật thông tin"><i class="ph-bold ph-eye"></i><span>Xem</span></button>
+              <button type="button" onclick="printVendorRow(${row.line_no})" class="h-7 px-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors" title="In phiếu điều xe"><i class="ph-bold ph-printer"></i><span>In</span></button>
             </div>
           </td>
         </tr>
@@ -1811,18 +1863,18 @@
         </div>
 
         <!-- Thanh Tìm Kiếm, Lọc Trạng Thái & Sắp Xếp (Chuẩn lưới dữ liệu GSS TMS) -->
-        <div id="vendor-cont-filter-bar" class="p-2.5 bg-slate-50/70 rounded-xl border border-slate-200/90 flex items-center justify-between flex-wrap gap-2 text-xs">
-          <div class="flex items-center gap-2 flex-1 min-w-[260px] flex-wrap">
+        <div id="vendor-cont-filter-bar" class="p-3 bg-slate-50/80 rounded-xl border border-slate-200 flex items-center justify-between flex-wrap gap-2.5 text-xs">
+          <div class="flex items-center gap-2.5 flex-1 min-w-[260px] flex-wrap">
             <div class="relative flex-1 min-w-[210px] max-w-sm">
               <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
               <input type="text" id="vendor-assign-search" value="${escapeHtml(assignSearch)}" oninput="onAssignSearchInput(this.value)"
                 placeholder="Tìm số cont, seal, điểm giao, đầu kéo, tài xế..."
-                class="w-full h-8.5 pl-8 pr-7 bg-white border border-slate-200 focus:border-teal-500 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500 transition-all">
-              ${assignSearch ? `<button type="button" onclick="onAssignSearchInput(''); document.getElementById('vendor-assign-search').value='';" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer" title="Xóa tìm kiếm"><i class="ph-bold ph-x text-xs"></i></button>` : ''}
+                class="w-full h-10 pl-9 pr-8 bg-white border border-slate-300 focus:border-teal-600 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all">
+              ${assignSearch ? `<button type="button" onclick="onAssignSearchInput(''); document.getElementById('vendor-assign-search').value='';" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer" title="Xóa tìm kiếm"><i class="ph-bold ph-x text-xs"></i></button>` : ''}
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-slate-500 font-medium hidden sm:inline">Trạng thái:</span>
-              <select onchange="onAssignStatusFilter(this.value)" class="h-8.5 px-2.5 bg-white border border-slate-200 rounded-lg font-bold text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 cursor-pointer">
+              <span class="text-slate-500 font-bold hidden sm:inline">Trạng thái:</span>
+              <select onchange="onAssignStatusFilter(this.value)" class="h-10 px-3 bg-white border border-slate-300 rounded-xl font-bold text-slate-700 text-xs focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 cursor-pointer">
                 <option value="ALL"${assignStatusFilter === 'ALL' ? ' selected' : ''}>Tất cả trạng thái</option>
                 <option value="PENDING"${assignStatusFilter === 'PENDING' ? ' selected' : ''}>Chờ gán xe</option>
                 <option value="READY"${assignStatusFilter === 'READY' ? ' selected' : ''}>Đã Phát lệnh Điều độ</option>
@@ -1831,8 +1883,8 @@
               </select>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-slate-500 font-medium hidden sm:inline">Sắp xếp:</span>
-              <select onchange="onAssignSortSelect(this.value)" class="h-8.5 px-2.5 bg-white border border-slate-200 rounded-lg font-bold text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 cursor-pointer">
+              <span class="text-slate-500 font-bold hidden sm:inline">Sắp xếp:</span>
+              <select onchange="onAssignSortSelect(this.value)" class="h-10 px-3 bg-white border border-slate-300 rounded-xl font-bold text-slate-700 text-xs focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 cursor-pointer">
                 <option value="line_no-asc"${assignSortBy === 'line_no-asc' ? ' selected' : ''}>STT (Mặc định)</option>
                 <option value="pending-asc"${assignSortBy === 'pending-asc' ? ' selected' : ''}>Chờ gán xe lên đầu</option>
                 <option value="container_number-asc"${assignSortBy === 'container_number-asc' ? ' selected' : ''}>Số Cont (A → Z)</option>
@@ -1842,10 +1894,10 @@
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <span id="vendor-assign-filter-count" class="px-2.5 py-1 rounded-lg bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold whitespace-nowrap">
+            <span id="vendor-assign-filter-count" class="px-3 py-1.5 rounded-xl bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold whitespace-nowrap font-heading">
               Hiển thị: ${visCount}/${activeRows.length}
             </span>
-            <button type="button" onclick="resetAssignFilters()" class="h-8.5 px-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-lg font-medium text-xs inline-flex items-center gap-1 transition-colors cursor-pointer" title="Đặt lại bộ lọc và sắp xếp">
+            <button type="button" onclick="resetAssignFilters()" class="h-10 px-3 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer" title="Đặt lại bộ lọc và sắp xếp">
               <i class="ph-bold ph-arrow-counter-clockwise text-xs"></i>
               <span class="hidden sm:inline">Đặt lại</span>
             </button>
@@ -1855,7 +1907,7 @@
         <!-- Lưới dữ liệu Container chuẩn ERP -->
         <div class="overflow-x-auto rounded-xl border border-slate-200 max-h-[640px] overflow-y-auto" id="container-rows-list">
           <table class="w-full text-left erp-table whitespace-nowrap text-xs tabular-nums">
-            <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[11px] sticky top-0 font-heading z-10 border-b border-slate-200 select-none">
+            <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-xs sticky top-0 font-heading z-10 border-b border-slate-300 select-none">
               <tr>
                 <th class="p-2.5 w-11 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('line_no')">
                   <span class="inline-flex items-center gap-1">STT <i class="ph-bold ${assignSortIcon('line_no')} text-[10px]"></i></span>
@@ -1921,9 +1973,9 @@
             ? 'bg-teal-700 border-teal-800 text-white shadow-2xs'
             : 'bg-slate-50 border-slate-200 text-slate-400';
           return `
-            <div class="rounded-lg border px-2 py-1.5 text-center ${boxCls}">
-              <div class="text-[10px] font-bold leading-tight truncate">${stepPos}. ${st.short}</div>
-              <div class="text-[10px] font-mono mt-0.5 truncate ${cur ? 'text-teal-100' : ''}">${ts || (cur ? 'Đang chạy' : '--:--')}</div>
+            <div class="rounded-xl border px-2.5 py-2 text-center transition-all ${boxCls}">
+              <div class="text-[11px] font-bold leading-tight truncate font-heading">${stepPos}. ${st.short}</div>
+              <div class="text-xs font-mono mt-0.5 truncate ${cur ? 'text-teal-100' : ''}">${ts || (cur ? 'Đang chạy' : '--:--')}</div>
             </div>
           `;
         }).join('')}
@@ -2064,26 +2116,26 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-2.5 flex-wrap">
           <div class="relative flex-1 min-w-[220px]">
-            <i class="ph-bold ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+            <i class="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
             <input type="text" value="${escapeHtml(trackingSearch)}" oninput="onTrackingSearchInput(this.value)" placeholder="Tìm biển số, mã chuyến, số cont, tài xế, điểm giao..."
-              class="h-9 w-full pl-9 pr-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white text-xs font-medium focus:border-teal-600 outline-none">
+              class="h-10 w-full pl-10 pr-3.5 rounded-xl border border-slate-300 bg-white focus:bg-white text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all">
           </div>
-          <select onchange="onTrackingSortChange(this.value)" class="h-9 px-3 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-700 focus:border-teal-600 outline-none cursor-pointer">
+          <select onchange="onTrackingSortChange(this.value)" class="h-10 px-3.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-700 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-none cursor-pointer">
             <option value="booking"${trackingSort === 'booking' ? ' selected' : ''}>Sắp xếp: Theo lệnh</option>
             <option value="progress_desc"${trackingSort === 'progress_desc' ? ' selected' : ''}>Tiến độ: Cao ➔ Thấp</option>
             <option value="progress_asc"${trackingSort === 'progress_asc' ? ' selected' : ''}>Tiến độ: Thấp ➔ Cao</option>
             <option value="plate"${trackingSort === 'plate' ? ' selected' : ''}>Biển số: A ➔ Z</option>
           </select>
-          <div class="flex items-center gap-1.5 flex-wrap text-xs font-bold">
+          <div class="flex items-center gap-1.5 flex-wrap text-xs font-bold font-heading">
             ${[
               ['all', `Tất cả (${total})`],
               ['ready', `Sẵn sàng (${nReady})`],
               ['running', `Đang chạy (${nRun})`],
               ['done', `Đã hạ rỗng (${nDone})`],
             ].map(([k, lbl]) => `
-              <button type="button" onclick="setTrackingFilter('${k}')" class="h-9 px-3 rounded-xl border cursor-pointer transition-colors ${trackingFilter === k ? 'bg-teal-700 border-teal-700 text-white' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}">${lbl}</button>
+              <button type="button" onclick="setTrackingFilter('${k}')" class="h-10 px-3.5 rounded-xl border cursor-pointer transition-colors ${trackingFilter === k ? 'bg-teal-700 border-teal-700 text-white shadow-xs' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}">${lbl}</button>
             `).join('')}
           </div>
         </div>
@@ -2177,21 +2229,21 @@
       <!-- THANH CHUYỂN 3 TAB & CÔNG CỤ -->
       <section class="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 space-y-3.5">
         <div class="flex items-center justify-between gap-3 flex-wrap">
-          <!-- 3 TAB SWITCHER -->
-          <div class="inline-flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 gap-1 select-none">
+          <!-- 3 TAB SWITCHER (ĐỒNG BỘ SUBTABS GSS TMS) -->
+          <div class="inline-flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200 gap-1 select-none">
             ${tabs.map(t => {
               const isActive = t.id === fleetSubTab;
               return `
                 <button type="button" onclick="switchFleetSubTab('${t.id}')"
-                  class="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-2 ${
+                  class="px-4 py-2.5 rounded-lg text-xs font-bold font-heading transition-all cursor-pointer inline-flex items-center gap-2 ${
                     isActive
-                      ? 'bg-white text-teal-800 shadow-xs border border-slate-200/80 font-black'
+                      ? 'bg-white text-teal-800 shadow-xs border border-slate-200 font-black'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                   }">
                   <i class="ph-bold ${t.icon} text-base ${isActive ? 'text-teal-700' : 'text-slate-400'}"></i>
                   <span>${t.label}</span>
-                  <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono tabular-nums font-black ${
-                    isActive ? 'bg-teal-100 text-teal-800' : 'bg-slate-200 text-slate-600'
+                  <span class="px-2 py-0.5 rounded-full text-xs font-mono tabular-nums font-bold ${
+                    isActive ? 'bg-teal-50 text-teal-800 border border-teal-200' : 'bg-slate-200 text-slate-600'
                   }">${t.count}</span>
                 </button>
               `;
@@ -2201,14 +2253,14 @@
           <!-- TÌM KIẾM & NÚT THÊM THEO TAB -->
           <div class="flex items-center gap-2.5 flex-wrap flex-1 sm:flex-initial justify-end">
             <div class="relative flex-1 sm:flex-initial">
-              <i class="ph-bold ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+              <i class="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
               <input type="text" value="${escapeHtml(fleetSearch)}" oninput="onFleetSearchInput(this.value)"
                 placeholder="Tìm kiếm trong danh mục ${curTab.label.toLowerCase()}..."
-                class="h-9 w-full sm:w-72 pl-9 pr-8 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white text-xs font-medium focus:border-teal-600 outline-none transition-all">
-              ${fleetSearch ? `<button type="button" onclick="onFleetSearchInput('')" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer" title="Xóa tìm kiếm"><i class="ph-bold ph-x-circle text-sm"></i></button>` : ''}
+                class="h-10 w-full sm:w-72 pl-10 pr-8 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all">
+              ${fleetSearch ? `<button type="button" onclick="onFleetSearchInput('')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer" title="Xóa tìm kiếm"><i class="ph-bold ph-x-circle text-sm"></i></button>` : ''}
             </div>
             <button type="button" onclick="openQuickAddModal('${curTab.addKind}', null)"
-              class="btn-keep-solid h-9 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-sm transition-all whitespace-nowrap">
+              class="btn-keep-solid h-10 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs font-heading inline-flex items-center gap-1.5 cursor-pointer shadow-xs hover:shadow-sm transition-all whitespace-nowrap">
               <i class="ph-bold ph-plus-circle text-base"></i>
               <span>${curTab.addBtn}</span>
             </button>
@@ -2236,7 +2288,7 @@
             <!-- TAB 1: DANH SÁCH XE ĐẦU KÉO -->
             <table class="erp-table whitespace-nowrap w-full text-left">
               <thead>
-                <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-wider">
+                <tr class="bg-slate-100 border-b border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider font-heading sticky top-0 z-10">
                   <th class="p-3 text-center w-12">STT</th>
                   <th class="p-3">Biển Số Xe</th>
                   <th class="p-3">Hãng Xe</th>
@@ -2320,7 +2372,7 @@
             <!-- TAB 2: DANH SÁCH RƠ-MOÓC -->
             <table class="erp-table whitespace-nowrap w-full text-left">
               <thead>
-                <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-wider">
+                <tr class="bg-slate-100 border-b border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider font-heading sticky top-0 z-10">
                   <th class="p-3 text-center w-12">STT</th>
                   <th class="p-3">Biển Số Moóc</th>
                   <th class="p-3">Quy Cách / Loại Moóc</th>
@@ -2411,7 +2463,7 @@
             <!-- TAB 3: DANH SÁCH TÀI XẾ -->
             <table class="erp-table whitespace-nowrap w-full text-left">
               <thead>
-                <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-wider">
+                <tr class="bg-slate-100 border-b border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider font-heading sticky top-0 z-10">
                   <th class="p-3 text-center w-12">STT</th>
                   <th class="p-3">Họ &amp; Tên Tài Xế</th>
                   <th class="p-3">Số Điện Thoại</th>

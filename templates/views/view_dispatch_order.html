@@ -305,9 +305,25 @@
 
                 <!-- THANH CÔNG CỤ TÌM KIẾM, LỌC & GÁN NHANH HÀNG LOẠT -->
                 <div class="p-3.5 bg-slate-50/90 border border-slate-200 rounded-xl flex items-center justify-between flex-wrap gap-3 text-xs">
-                    <!-- Cụm Tìm kiếm & Lọc -->
-                    <div class="flex items-center gap-2.5 flex-wrap flex-1 min-w-[280px]">
-                        <div class="relative flex-1 min-w-[200px] max-w-sm">
+                    <!-- Cụm Gán Nhanh Cho Cont Đã Chọn (Bên Trái - Cạnh cột checkbox thao tác) -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span id="mdo-cont-selected-count" class="text-xs font-bold text-teal-800 bg-teal-50 border border-teal-200 px-3 py-1.5 rounded-xl font-heading">
+                            Đã chọn: 0 cont
+                        </span>
+                        <select id="mdo-bulk-vendor-select" class="h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 min-w-[190px] focus:border-teal-500">
+                            <option value="">-- Chọn Nhà xe phụ trách --</option>
+                        </select>
+                        <button type="button" onclick="mdoAssignBulkContainers()" class="btn-bim-primary px-3.5 py-2 text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 cursor-pointer">
+                            <i class="ph-bold ph-check text-sm"></i> Giao Cho Nhà Xe
+                        </button>
+                        <button type="button" onclick="mdoUnassignBulkContainers()" class="px-3 py-2 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-300 rounded-xl font-bold text-xs shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors font-heading" title="Hủy giao nhà xe cho các cont được tick">
+                            <i class="ph-bold ph-x text-rose-500 text-sm"></i> Hủy Giao
+                        </button>
+                    </div>
+
+                    <!-- Cụm Tìm kiếm & Lọc (Bên Phải) -->
+                    <div class="flex items-center gap-2.5 flex-wrap justify-end">
+                        <div class="relative min-w-[200px] max-w-sm">
                             <i class="ph-bold ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm pointer-events-none"></i>
                             <input type="text" id="mdo-cont-filter-search" oninput="mdoFilterContainers()" placeholder="Tìm số cont, seal, xe, tài xế..." 
                                 class="w-full h-9 pl-9 pr-3.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none">
@@ -327,22 +343,6 @@
                             <option value="EMPTY_RETURNED">9. Đã hạ rỗng (Hoàn tất)</option>
                             <option value="CANCELLED">10. Đã hủy</option>
                         </select>
-                    </div>
-
-                    <!-- Cụm Gán Nhanh Cho Cont Đã Chọn -->
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span id="mdo-cont-selected-count" class="text-xs font-bold text-teal-800 bg-teal-50 border border-teal-200 px-3 py-1.5 rounded-xl font-heading">
-                            Đã chọn: 0 cont
-                        </span>
-                        <select id="mdo-bulk-vendor-select" class="h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 min-w-[190px] focus:border-teal-500">
-                            <option value="">-- Chọn Nhà xe phụ trách --</option>
-                        </select>
-                        <button type="button" onclick="mdoAssignBulkContainers()" class="btn-bim-primary px-3.5 py-2 text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 cursor-pointer">
-                            <i class="ph-bold ph-check text-sm"></i> Giao Cho Nhà Xe
-                        </button>
-                        <button type="button" onclick="mdoUnassignBulkContainers()" class="px-3 py-2 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-300 rounded-xl font-bold text-xs shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors font-heading" title="Bỏ gán nhà xe cho các cont được tick">
-                            <i class="ph-bold ph-x text-rose-500 text-sm"></i> Bỏ Phân Bổ
-                        </button>
                         <span id="mdo-containers-count-badge" class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200">Đã nạp 0 container</span>
                     </div>
                 </div>

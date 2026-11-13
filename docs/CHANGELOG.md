@@ -3,6 +3,32 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-13 (Cập nhật 18) – Tái Cấu Trúc Giao Diện Cổng Nhà Xe (Vendor Portal) Đồng Bộ 100% Design System & Rules Giao Diện Màn Hình Chính
+- **Đồng bộ Topbar chuẩn văn phòng GSS (`h-16 bg-white border-b border-slate-200`):**
+  - Loại bỏ hoàn toàn thanh header gradient xanh tối màu (`h-14 bg-gradient-to-r from-teal-800 ...`) gây cảm giác tách rời ứng dụng.
+  - Áp dụng Topbar trắng sáng hiện đại chuẩn màn hình chính GSS: Logo GSS tinh gọn, tiêu đề thương hiệu `GREEN SOLUTIONS SMART`, nhãn nhận diện `CỔNG NHÀ XE`, tên nhà xe `font-black text-slate-900 font-heading`.
+  - Đồng bộ pill đếm ngược phiên làm việc (`rounded-full bg-slate-50 border border-slate-200 text-xs font-bold text-teal-800`), nút Làm Mới và Đăng Xuất theo chuẩn nút toolbar GSS.
+- **Tái cấu trúc bộ 4 Thẻ Chỉ Số Vận Hành (KPI Strip Cards):**
+  - Đưa từ dạng thẻ nhỏ (p-3.5, 2-cột, text-2xl) sang bộ 4 thẻ KPI chuẩn TMS phân hệ Điều vận (`p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4`).
+  - Viền trái nhận diện ngữ nghĩa: Thẻ 1 (Tổng cont: `border-l-indigo-600`), Thẻ 2 (Chờ gán xe: `border-l-amber-500`), Thẻ 3 (Đang chạy tuyến: `border-l-teal-600`), Thẻ 4 (Đã hạ rỗng: `border-l-emerald-600`).
+  - Cỡ số hiển thị lớn chuẩn `text-3xl font-black tabular-nums font-heading tracking-tight mt-1` kèm dòng phụ có icon và mô tả rõ ràng.
+- **Chuẩn hóa Typography, Khoảng cách (Spacing) & Bảng Dữ Liệu:**
+  - Nạp font chữ doanh nghiệp chuẩn `Plus Jakarta Sans`, `Be Vietnam Pro`, `JetBrains Mono` từ `static/css/main.css` và `static/css/contrast.css`.
+  - Loại bỏ các cỡ chữ nhỏ vụn vặt (`text-[10px]`, `text-[11px]`, `text-[10.5px]`), nâng lên thang chữ tối thiểu 12px/13px chuẩn ERP.
+  - Đồng bộ bảng dữ liệu (`.erp-table`), header cột sticky `bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider py-2.5 px-3 border-b border-slate-300`, hàng hover `hover:bg-teal-50/30`.
+  - Chuẩn hóa các ô input, select và nút thao tác dòng (`Xem | In | Lệnh QR`).
+- **Nâng cấp Giao diện Subtabs Đội Xe & Các Hộp Thoại (Modals):**
+  - Chuyển 3 subtabs (Xe Đầu Kéo, Rơ-moóc, Tài Xế) sang chuẩn khung `bg-slate-100 p-1.5 rounded-xl border border-slate-200` với tab active nền trắng nổi bật.
+  - Đồng bộ header các modal (`Thêm Xe/Tài`, `Nhập Excel`, `Lệnh QR Tài Xế`, `Chi Tiết Chuyến`) sang chuẩn gradient GSS `from-teal-800 to-teal-950` bo góc lớn `rounded-2xl`.
+- **Tối ưu Công thái học Thao tác Chuột (Fitts's Law) trên Thanh Công Cụ Container Lệnh Điều Động:**
+  - Hoán đổi vị trí trực quan giữa hai cụm công cụ trong cả màn hình view toàn trang (iew_dispatch_order.html) và hộp thoại (modal_dispatch_order.html):
+    + **Bên TRÁI (cạnh cột Checkbox chọn Container):** Đặt cụm thao tác hàng loạt gồm [Đã chọn: X cont], dropdown [Chọn Nhà xe phụ trách], nút [✓ Giao Cho Nhà Xe] và nút [✕ Hủy Giao]. Giúp người dùng ngay sau khi tick chọn các container ở góc trái bảng có thể thực hiện gán/hủy xe tức thì tại cự ly chuột gần nhất, giảm tối đa quãng đường di chuyển con trỏ chuột.
+    + **Bên PHẢI:** Chuyển cụm tra cứu gồm ô tìm kiếm [Tìm số cont, seal, xe...], dropdown bộ lọc trạng thái [Tất cả trạng thái (10)] và nhãn đếm [Đã nạp X container] sang lề phải bảng dữ liệu, tạo phân định thị giác rõ ràng giữa nhóm hành động (action group) và nhóm tra cứu (filter group).
+
+- **Kiểm thử & Xác thực hệ thống:**
+  - Build lại `static/css/tailwind.css` và `static/js/app.js` khớp 100% mã nguồn.
+  - Chạy toàn bộ bộ kiểm thử tự động `python scripts/qa.py verify`: 7/7 bước ĐẠT (PASS=7, FAIL=0, test `apps.gss apps.dispatch apps.billing` xanh 100%).
+
 ## 2026-11-13 (Cập nhật 17) – Khóa Bất Biến Hành Trình Xe: Cấm Sửa / Xóa / Hủy Gán Container & Chuyến Xe Đang Chạy, Cấm Lùi Bước Nghiệp Vụ
 - **Cấm chuyển trạng thái lùi bước (Backward State Transition):**
   - Trong máy trạng thái điều vận (`apps/dispatch/gss_workflow.py`), tuyệt đối cấm mọi hành vi chuyển trạng thái lùi về bước trước (`ti < ci`). Hành trình vận chuyển hàng hóa là bất biến và chỉ được phép tiến tuần tự theo thời gian thực.
