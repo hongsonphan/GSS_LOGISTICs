@@ -796,3 +796,63 @@ class VendorContainersMonitoringAPIView(APIView):
             'total_rows': len(rows),
             'data': rows,
         })
+
+
+
+class VendorPortalStepAPIView(VendorPortalAPIView):
+    """POST: Điều độ nhà xe (truy cập qua link token) cập nhật tiến trình chặng giúp tài xế."""
+
+    def post(self, request, token):
+        alloc = self._alloc(request, token)
+        line_no = request.data.get('line_no')
+        target = (request.data.get('to') or '').strip()
+        reason = (request.data.get('reason') or '').strip() or 'Điều độ nhà xe cập nhật tiến trình giúp tài xế'
+        fields = request.data.get('fields') or {}
+
+        if not line_no or not target:
+            return _err('Thiếu số dòng (line_no) hoặc bước đích (to).')
+
+        trip = alloc.trips.select_for_update().filter(is_deleted=False, vendor_line_no=int(line_no)).exclude(step_status='CANCELLED').first()
+        if not trip:
+            return _err(f'Không tìm thấy chuyến xe hợp lệ tại dòng #{line_no}.')
+
+        from apps.dispatch import gss_workflow as wf
+        try:
+            actor = 'Điều độ nhà xe'
+            if getattr(self, '_vendor_pair', None) and self._vendor_pair[0]:
+                actor = f'Điều độ {self._vendor_pair[0].username}'
+            trip = wf.advance(trip, target, user=request.user, actor_label=actor, reason=reason, fields=fields, by_vendor=True)
+        except ValidationError as exc:
+            return _err(_msg(exc), status.HTTP_409_CONFLICT)
+
+        alloc.refresh_from_db()
+        return _portal_response(alloc, request, extra={'message': f'Đã cập nhật sang chặng: {wf.STEP_LABELS.get(trip.step_status, trip.step_status)}.'}, session_pair=getattr(self, '_vendor_pair', None))
+
+
+class VendorWorkspaceStepAPIView(_VendorWorkspaceBase):
+    """POST: Điều độ nhà xe (đăng nhập tài khoản) cập nhật tiến trình chặng giúp tài xế."""
+
+    def post(self, request, alloc_id):
+        alloc = self._vendor_alloc(request, alloc_id)
+        line_no = request.data.get('line_no')
+        target = (request.data.get('to') or '').strip()
+        reason = (request.data.get('reason') or '').strip() or 'Điều độ nhà xe cập nhật tiến trình giúp tài xế'
+        fields = request.data.get('fields') or {}
+
+        if not line_no or not target:
+            return _err('Thiếu số dòng (line_no) hoặc bước đích (to).')
+
+        trip = alloc.trips.select_for_update().filter(is_deleted=False, vendor_line_no=int(line_no)).exclude(step_status='CANCELLED').first()
+        if not trip:
+            return _err(f'Không tìm thấy chuyến xe hợp lệ tại dòng #{line_no}.')
+
+        from apps.dispatch import gss_workflow as wf
+        try:
+            acct, _, _ = self._vendor_pair
+            actor = f'Điều độ {acct.username}' if acct else 'Điều độ nhà xe'
+            trip = wf.advance(trip, target, user=request.user, actor_label=actor, reason=reason, fields=fields, by_vendor=True)
+        except ValidationError as exc:
+            return _err(_msg(exc), status.HTTP_409_CONFLICT)
+
+        alloc.refresh_from_db()
+        return _portal_response(alloc, request, extra={'message': f'Đã cập nhật sang chặng: {wf.STEP_LABELS.get(trip.step_status, trip.step_status)}.'}, session_pair=self._vendor_pair)

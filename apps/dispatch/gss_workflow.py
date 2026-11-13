@@ -69,7 +69,7 @@ def _guards(trip, target):
 
 
 @transaction.atomic
-def advance(trip, target, *, user=None, actor_label='', reason='', fields=None, swap=None, force=False):
+def advance(trip, target, *, user=None, actor_label='', reason='', fields=None, swap=None, force=False, by_vendor=False):
     """Chuyển chuyến sang bước `target`. `user` có khi do nhân viên thao tác; `force` chỉ có hiệu lực với nhân viên.
 
     fields: {'container_number','seal_number'} bổ sung khi nhận cont. swap: {'new_number','reason'} khi hạ rỗng.
@@ -106,10 +106,12 @@ def advance(trip, target, *, user=None, actor_label='', reason='', fields=None, 
             if n < 1:
                 if staff and force:
                     overridden.append(f'bỏ qua chứng từ chặng {STAGE_LABELS[stage]}')
+                elif by_vendor:
+                    overridden.append(f'điều độ nhà xe cập nhật thay tài xế (bổ sung chứng từ chặng {STAGE_LABELS[stage]} sau)')
                 else:
                     raise ValidationError(f'Phải đính kèm ít nhất 1 chứng từ chặng "{STAGE_LABELS[stage]}" (tối đa {MAX_FILES_PER_STAGE} file) trước khi chuyển bước.')
         if target == 'LOADED_ON_VEHICLE' and not (trip.container_number or '').strip():
-            if staff and force:
+            if (staff and force) or by_vendor:
                 overridden.append('thiếu số container')
             else:
                 raise ValidationError('Chưa có số container, hãy nhập số cont khi nhận hàng.')
@@ -137,8 +139,14 @@ def advance(trip, target, *, user=None, actor_label='', reason='', fields=None, 
     trip.status = LEGACY_STATUS[target]
     trip.save()
 
+    try:
+        from apps.dispatch.timeline_service import sync_trip_10_step_timeline
+        sync_trip_10_step_timeline(trip)
+    except Exception:
+        pass
+
     from core.models import TrackingEventLog
-    label = actor_label or (user.get_username() if staff else 'tài xế qua link/QR')
+    label = actor_label or (user.get_username() if staff else ('Điều độ nhà xe' if by_vendor else 'tài xế qua link/QR'))
     TrackingEventLog.objects.create(
         trip=trip, event_type=f'STEP_{target}', title=f'{STEP_LABELS[target]}',
         description=reason, event_time=now,

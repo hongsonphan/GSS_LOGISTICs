@@ -1009,12 +1009,14 @@
         alloc: `/api/vendor/portal/allocations/${activeAllocId}/`,
         excel: `/api/vendor/portal/allocations/${activeAllocId}/excel/`,
         catalog: `/api/vendor/portal/catalog/`,
+        step: `/api/vendor/portal/allocations/${activeAllocId}/step/`,
       };
     }
     return {
       alloc: `/api/vendor/${encodeURIComponent(URL_TOKEN)}/`,
       excel: `/api/vendor/${encodeURIComponent(URL_TOKEN)}/excel/`,
       catalog: `/api/vendor/${encodeURIComponent(URL_TOKEN)}/catalog/`,
+      step: `/api/vendor/${encodeURIComponent(URL_TOKEN)}/step/`,
     };
   }
 
@@ -1958,24 +1960,39 @@
     return html;
   }
 
-  function renderStepBar(stepIndex, milestones = {}) {
+  function renderStepBar(stepIndex, milestones = {}, lineNo = null) {
     const idxNum = Number(stepIndex || 0);
+    const nextIdx = (idxNum >= 1 && idxNum < 7) ? idxNum + 1 : (idxNum === 0 ? 1 : null);
     return `
       <div class="grid grid-cols-7 gap-1.5">
         ${STEPS.map((st, i) => {
           const stepPos = i + 1;
           const done = idxNum > stepPos || (idxNum === 7 && stepPos === 7);
           const cur = idxNum === stepPos && idxNum < 7;
+          const isNext = (stepPos === nextIdx);
           const ts = fmtDateTime(milestones && milestones[st.tsKey]);
           const boxCls = done
             ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
             : cur
             ? 'bg-teal-700 border-teal-800 text-white shadow-2xs'
+            : isNext
+            ? 'bg-white border-2 border-dashed border-teal-500 text-teal-800 hover:bg-teal-50 hover:border-teal-600 cursor-pointer group shadow-2xs'
             : 'bg-slate-50 border-slate-200 text-slate-400';
+
+          const clickAttr = (isNext && lineNo !== null)
+            ? `onclick="vendorAdvanceStep(${lineNo}, '${st.key}', '${escapeHtml(st.full)}')"`
+            : '';
+          const titleAttr = isNext ? 'title="Bấm để cập nhật mốc này giúp tài xế"' : '';
+
           return `
-            <div class="rounded-xl border px-2.5 py-2 text-center transition-all ${boxCls}">
-              <div class="text-[11px] font-bold leading-tight truncate font-heading">${stepPos}. ${st.short}</div>
-              <div class="text-xs font-mono mt-0.5 truncate ${cur ? 'text-teal-100' : ''}">${ts || (cur ? 'Đang chạy' : '--:--')}</div>
+            <div class="rounded-xl border px-2 py-2 text-center transition-all ${boxCls}" ${clickAttr} ${titleAttr}>
+              <div class="text-[11px] font-bold leading-tight truncate font-heading flex items-center justify-center gap-1">
+                <span>${stepPos}. ${st.short}</span>
+                ${isNext ? '<i class="ph-bold ph-plus-circle text-xs text-teal-600 group-hover:scale-110 transition-transform"></i>' : ''}
+              </div>
+              <div class="text-xs font-mono mt-0.5 truncate ${cur ? 'text-teal-100 font-bold' : (isNext ? 'text-teal-600 font-bold text-[10px]' : '')}">
+                ${ts || (cur ? 'Đang chạy' : (isNext ? 'Bấm cập nhật' : '--:--'))}
+              </div>
             </div>
           `;
         }).join('')}
@@ -2718,17 +2735,64 @@
         </div>
       </div>
 
-      ${base.trip_code ? `
-        <div class="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <div class="font-bold text-slate-700">Tiến Trình Hành Trình (7 Chặng)</div>
-          ${renderStepBar(base.step_index, base.milestones)}
+      ${base.trip_code ? (() => {
+        const curIdx = Number(base.step_index || 1);
+        const nextStep = (curIdx >= 1 && curIdx < 7) ? STEPS[curIdx] : null;
+        const nextPos = curIdx + 1;
+        return `
+        <div class="space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div class="flex items-center justify-between">
+            <div class="font-bold text-slate-700 flex items-center gap-1.5 font-heading">
+              <i class="ph-bold ph-path text-teal-700 text-sm"></i>
+              <span>Tiến Trình Hành Trình (7 Chặng)</span>
+            </div>
+            ${nextStep ? `
+              <span class="text-[11px] font-bold text-teal-800 bg-teal-100/70 px-2 py-0.5 rounded-full border border-teal-200 flex items-center gap-1">
+                <i class="ph-bold ph-shield-check text-teal-700"></i> Điều độ hỗ trợ tài xế
+              </span>
+            ` : ''}
+          </div>
+
+          ${renderStepBar(base.step_index, base.milestones, modalLineNo)}
+
+          ${nextStep ? `
+            <div class="mt-2 p-2.5 rounded-xl bg-gradient-to-r from-teal-50 via-teal-50/70 to-emerald-50 border border-teal-300 flex items-center justify-between gap-3 flex-wrap shadow-2xs">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                  <i class="ph-bold ph-steering-wheel text-lg"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-teal-950 font-heading flex items-center gap-1.5">
+                    <span>Tài xế chưa kịp bấm mốc?</span>
+                    <span class="text-[10px] font-bold text-teal-800 bg-teal-100 px-1.5 py-0.2 rounded border border-teal-200">Điều độ hỗ trợ</span>
+                  </div>
+                  <div class="text-[11px] text-teal-800 mt-0.5">
+                    Cập nhật sang chặng kế tiếp: <strong class="text-teal-950">${nextStep.full}</strong>
+                  </div>
+                </div>
+              </div>
+              <button type="button" onclick="vendorAdvanceStep(${modalLineNo}, '${nextStep.key}', '${escapeHtml(nextStep.full)}')"
+                class="btn-keep-solid h-9 px-3.5 rounded-xl bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs cursor-pointer transition-all hover:scale-[1.02]">
+                <i class="ph-bold ph-arrow-circle-right text-base text-teal-200"></i>
+                <span>Cập Nhật Mốc <strong>${nextStep.short} (${nextPos}/7)</strong></span>
+              </button>
+            </div>
+          ` : (curIdx >= 7 ? `
+            <div class="mt-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center gap-2 text-xs font-bold text-emerald-800">
+              <i class="ph-bold ph-check-circle text-base text-emerald-600"></i>
+              <span>Chuyến xe đã hoàn tất toàn bộ 7 chặng hành trình (Đã hạ rỗng).</span>
+            </div>
+          ` : '')}
+
           ${events.length ? `
-            <div class="pt-2 space-y-1 max-h-28 overflow-y-auto">
-              ${events.slice(0, 5).map(ev => `<div class="text-[11px] text-slate-600 flex items-center gap-2"><span class="font-mono text-teal-700 shrink-0">${fmtDateTime(ev.event_time)}</span><span class="font-bold">${escapeHtml(ev.title)}</span>${ev.description ? `<span class="text-slate-500 truncate">- ${escapeHtml(ev.description)}</span>` : ''}</div>`).join('')}
+            <div class="pt-2 space-y-1 max-h-28 overflow-y-auto border-t border-slate-200/80 mt-2">
+              <div class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nhật ký tiến trình:</div>
+              ${events.slice(0, 5).map(ev => `<div class="text-[11px] text-slate-600 flex items-center gap-2"><span class="font-mono text-teal-700 shrink-0 font-bold">${fmtDateTime(ev.event_time)}</span><span class="font-bold">${escapeHtml(ev.title)}</span>${ev.description ? `<span class="text-slate-500 truncate">- ${escapeHtml(ev.description)}</span>` : ''}</div>`).join('')}
             </div>
           ` : ''}
         </div>
-      ` : ''}
+        `;
+      })() : ''}
 
       ${(base.trip_code || base.trip_token) ? `
         <div class="bg-gradient-to-r from-teal-50 to-emerald-50/40 p-3.5 rounded-xl border border-teal-200/80 flex items-center justify-between gap-3 flex-wrap">
@@ -2818,6 +2882,60 @@
       <button type="button" onclick="closeRowViewModal()" class="h-9 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer">Đóng</button>
     `;
   }
+
+  window.vendorAdvanceStep = async function(lineNo, nextStepKey, nextStepLabel) {
+    if (!state || lineNo === null) return;
+    const base = (state.rows || []).find(r => r.line_no === lineNo);
+    if (!base || !base.trip_code) {
+      alert('Chưa có thông tin chuyến xe hợp lệ để cập nhật tiến trình.');
+      return;
+    }
+
+    const curStepIdx = Number(base.step_index || 1);
+    const nextStep = STEPS[curStepIdx];
+    const targetKey = nextStepKey || (nextStep ? nextStep.key : null);
+    const targetLabel = nextStepLabel || (nextStep ? nextStep.full : '');
+
+    if (!targetKey) {
+      alert('Chuyến xe đã ở bước cuối cùng hoặc không xác định được chặng tiếp theo.');
+      return;
+    }
+
+    const contTxt = base.container_number || ('Dòng #' + lineNo);
+    const truckTxt = base.tractor_plate || '--';
+    const driverTxt = base.driver_name || '--';
+
+    const confirmed = confirm(
+      `Xác nhận cập nhật chặng tiếp theo giúp tài xế:\n\n` +
+      `• Chặng mới: [${curStepIdx + 1}/7] ${targetLabel}\n` +
+      `• Container: ${contTxt}\n` +
+      `• Xe & Tài xế: ${truckTxt} · ${driverTxt}\n\n` +
+      `Lưu ý: Thao tác này sẽ ghi nhận Điều độ Nhà xe cập nhật tiến trình thay cho tài xế.`
+    );
+    if (!confirmed) return;
+
+    try {
+      const ep = endpointBase().step;
+      const res = await apiFetch(ep, {
+        method: 'POST',
+        jsonBody: {
+          line_no: lineNo,
+          to: targetKey,
+          reason: 'Điều độ nhà xe cập nhật tiến trình giúp tài xế'
+        }
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        alert(json.message || json.error || 'Không thể cập nhật tiến trình chặng.');
+        return;
+      }
+      state = json.data;
+      await refreshPortalData(false);
+      renderRowModal();
+    } catch (e) {
+      alert('Lỗi kết nối khi cập nhật tiến trình: ' + e.message);
+    }
+  };
 
   window.enableRowModalEdit = function() { modalEditMode = true; renderRowModal(); };
   window.cancelRowModalEdit = function() { delete dirtyRows[modalLineNo]; modalEditMode = false; render(); };

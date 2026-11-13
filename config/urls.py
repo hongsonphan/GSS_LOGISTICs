@@ -40,7 +40,7 @@ from apps.dispatch.api_views import (
     VendorWorkspaceOverviewAPIView, VendorWorkspaceAllocationAPIView, VendorWorkspaceExcelAPIView,
     VendorWorkspaceCatalogAPIView, VendorWorkspaceTrackingAPIView,
     VendorPortalAccountAdminAPIView,
-    VendorContainersMonitoringAPIView,
+    VendorContainersMonitoringAPIView, VendorPortalStepAPIView, VendorWorkspaceStepAPIView,
     BookingOrderStatusAPIView,
     BookingDocumentDeleteAPIView,
     CustomsAPIView,
@@ -227,6 +227,8 @@ urlpatterns = [
     path('api/vendor/portal/allocations/<int:alloc_id>/excel/', VendorWorkspaceExcelAPIView.as_view(), name='api-vendor-workspace-excel'),
     path('api/vendor/portal/catalog/', VendorWorkspaceCatalogAPIView.as_view(), name='api-vendor-workspace-catalog'),
     path('api/vendor/portal/tracking/', VendorWorkspaceTrackingAPIView.as_view(), name='api-vendor-workspace-tracking'),
+    path('api/vendor/portal/allocations/<int:alloc_id>/step/', VendorWorkspaceStepAPIView.as_view(), name='api-vendor-workspace-step'),
+    path('api/vendor/<str:token>/step/', VendorPortalStepAPIView.as_view(), name='api-vendor-portal-step'),
     path('api/vendor/<str:token>/', VendorPortalAPIView.as_view(), name='api-vendor-portal'),
     path('api/dispatch/vendor-containers/', VendorContainersMonitoringAPIView.as_view(), name='api-dispatch-vendor-containers'),
     # GSS: điều vận Nhận–Giao–Hạ, chứng từ, kiện hàng lẻ, tem QR

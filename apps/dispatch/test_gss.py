@@ -117,6 +117,16 @@ class WorkflowTests(GssBase):
         with self.assertRaisesMessage(ValidationError, 'chuyển ngược lại trạng thái của bước trước'):
             wf.advance(t, 'UNLOADED', user=self.staff, force=True, reason='Nhập nhầm bước hạ rỗng')
 
+    def test_vendor_dispatcher_can_advance_step_for_driver(self):
+        t = self.trip()
+        self.assertEqual(t.step_status, 'READY')
+        # Điều độ Vendor cập nhật sang ARRIVED_AT_PICKUP thay tài xế
+        t = wf.advance(t, 'ARRIVED_AT_PICKUP', actor_label='Điều độ nhà xe Hoàng Nam', by_vendor=True)
+        self.assertEqual(t.step_status, 'ARRIVED_AT_PICKUP')
+        # Điều độ Vendor cập nhật sang LOADED_ON_VEHICLE dù tài xế chưa kịp chụp ảnh
+        t = wf.advance(t, 'LOADED_ON_VEHICLE', actor_label='Điều độ nhà xe Hoàng Nam', by_vendor=True)
+        self.assertEqual(t.step_status, 'LOADED_ON_VEHICLE')
+
     def test_container_number_required_to_load(self):
         t = self.trip(cont='')
         t = wf.advance(t, 'ARRIVED_AT_PICKUP')

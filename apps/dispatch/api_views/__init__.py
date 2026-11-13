@@ -27,4 +27,6 @@ from .vendor import (  # noqa: F401
     VendorWorkspaceTrackingAPIView,
     VendorPortalAccountAdminAPIView,
     VendorContainersMonitoringAPIView,
+    VendorPortalStepAPIView,
+    VendorWorkspaceStepAPIView,
 )

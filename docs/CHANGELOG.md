@@ -29,6 +29,18 @@ Nhật ký của hệ thống trước đó không chuyển sang repo này.
   - Build lại `static/css/tailwind.css` và `static/js/app.js` khớp 100% mã nguồn.
   - Chạy toàn bộ bộ kiểm thử tự động `python scripts/qa.py verify`: 7/7 bước ĐẠT (PASS=7, FAIL=0, test `apps.gss apps.dispatch apps.billing` xanh 100%).
 
+## 2026-11-13 (Cập nhật 18) – Cho Phép Điều Độ Nhà Xe Mở Chuyến & Cập Nhật Tiến Trình Chặng Giúp Tài Xế
+- **Tính năng Điều độ hỗ trợ tài xế trong Cổng Vendor (Vendor Portal & Theo dõi hành trình):**
+  - Trong Modal Chi tiết dòng xe / Chuyến xe (`modal-vendor-row-view`), Điều độ của Vendor được cấp quyền mở chuyến và trực tiếp cập nhật trạng thái tiến trình chặng kế tiếp thay cho tài xế (khi tài xế đang lái xe, mất sóng hoặc chưa kịp thao tác trên điện thoại).
+  - Bổ sung **Action Box "Điều Độ Hỗ Trợ Tài Xế"** ngay dưới thanh tiến trình 7 chặng với nút bấm nổi bật: **[Cập Nhật Mốc: [Tên chặng] ([X]/7)]** kèm xác nhận an toàn trước khi chuyển bước.
+  - Trên thanh 7 chặng (`renderStepBar`), chặng kế tiếp có chỉ báo tương tác trực quan (viền nét đứt màu teal, nút "Bấm cập nhật") cho phép Điều độ nhấp chuột trực tiếp để chuyển bước.
+- **Backend APIs & Workflow Transition:**
+  - Bổ sung 2 endpoint chuyên dụng:
+    + `POST /api/vendor/portal/allocations/<alloc_id>/step/` (`VendorWorkspaceStepAPIView`) cho phiên đăng nhập tài khoản nhà xe.
+    + `POST /api/vendor/<token>/step/` (`VendorPortalStepAPIView`) cho liên kết bảo mật token của nhà xe.
+  - Nâng cấp máy trạng thái `apps/dispatch/gss_workflow.py`: Bổ sung cờ `by_vendor=True`, cho phép Điều độ Nhà xe cập nhật chặng tiến tuần tự, tự động ghi nhận nhật ký `TrackingEventLog` với người thao tác `Điều độ nhà xe` và tự động kích hoạt đồng bộ timeline 10 bước `sync_trip_10_step_timeline`.
+  - Bổ sung kiểm thử đơn vị `test_vendor_dispatcher_can_advance_step_for_driver` trong `apps/dispatch/test_gss.py` đảm bảo độ tin cậy và không hồi quy.
+
 ## 2026-11-13 (Cập nhật 17) – Khóa Bất Biến Hành Trình Xe: Cấm Sửa / Xóa / Hủy Gán Container & Chuyến Xe Đang Chạy, Cấm Lùi Bước Nghiệp Vụ
 - **Cấm chuyển trạng thái lùi bước (Backward State Transition):**
   - Trong máy trạng thái điều vận (`apps/dispatch/gss_workflow.py`), tuyệt đối cấm mọi hành vi chuyển trạng thái lùi về bước trước (`ti < ci`). Hành trình vận chuyển hàng hóa là bất biến và chỉ được phép tiến tuần tự theo thời gian thực.
