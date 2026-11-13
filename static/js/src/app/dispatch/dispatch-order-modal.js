@@ -1330,7 +1330,7 @@ function mdoFilterContainers() {
 
         const statusBadge = mdoGetContainerStatusInfo(c).badgeHtml;
 
-        const vgm = c.gross_weight_kg ? (typeof formatNumberVN === 'function' ? formatNumberVN(c.gross_weight_kg) + ' kg' : c.gross_weight_kg + ' kg') : (c.vgm_weight || '--');
+        const vgm = (c.gross_weight_kg !== null && c.gross_weight_kg !== undefined && c.gross_weight_kg !== '') ? formatVgmKg(c.gross_weight_kg) : (c.vgm_weight ? formatVgmKg(c.vgm_weight) : '--');
         const deliveryLoc = c.delivery_address || b.delivery_location || '--';
         const dropoffLoc = b.dropoff_location || '--';
         const demDetStr = c.dem_expiry ? (typeof formatDateVN === 'function' ? formatDateVN(c.dem_expiry) : c.dem_expiry) : (b.loading_date ? (typeof formatDateVN === 'function' ? formatDateVN(b.loading_date) : b.loading_date) : '--');

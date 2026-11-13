@@ -1742,10 +1742,38 @@ window.formatCodeCompact = formatCodeCompact;
 
 function formatNumberVN(val) {
     if (val === null || val === undefined || val === '') return '';
-    const clean = String(val).replace(/\D/g, '');
+    let s = String(val).trim();
+    if (/^\d{1,3}[.,]\d{3}$/.test(s)) {
+        s = s.replace(/[.,]/g, '');
+    } else {
+        s = s.replace(/\.00$/, '').replace(/\.0$/, '');
+    }
+    const num = parseFloat(s.replace(/,/g, ''));
+    if (!isNaN(num) && /^-?\d+(\.\d+)?$/.test(s.replace(/,/g, ''))) {
+        return new Intl.NumberFormat('vi-VN').format(Math.round(num));
+    }
+    const clean = s.replace(/\D/g, '');
     if (!clean) return '';
     return new Intl.NumberFormat('vi-VN').format(parseInt(clean, 10));
 }
+
+function formatVgmKg(val) {
+    if (val === null || val === undefined || val === '') return '--';
+    let s = String(val).trim().replace(/kg/i, '').trim();
+    if (/^\d{1,3}[.,]\d{3}$/.test(s)) {
+        s = s.replace(/[.,]/g, '');
+    } else {
+        s = s.replace(/\.00$/, '').replace(/\.0$/, '');
+    }
+    const num = parseFloat(s.replace(/,/g, ''));
+    if (!isNaN(num) && /^-?\d+(\.\d+)?$/.test(s.replace(/,/g, ''))) {
+        return new Intl.NumberFormat('vi-VN').format(Math.round(num)) + ' kg';
+    }
+    const clean = s.replace(/\D/g, '');
+    if (!clean) return s ? (s + ' kg') : '--';
+    return new Intl.NumberFormat('vi-VN').format(parseInt(clean, 10)) + ' kg';
+}
+window.formatVgmKg = formatVgmKg;
 
 function parseNumberVN(val) {
     if (val === null || val === undefined || val === '') return 0;
@@ -11687,7 +11715,7 @@ function mdoFilterContainers() {
 
         const statusBadge = mdoGetContainerStatusInfo(c).badgeHtml;
 
-        const vgm = c.gross_weight_kg ? (typeof formatNumberVN === 'function' ? formatNumberVN(c.gross_weight_kg) + ' kg' : c.gross_weight_kg + ' kg') : (c.vgm_weight || '--');
+        const vgm = (c.gross_weight_kg !== null && c.gross_weight_kg !== undefined && c.gross_weight_kg !== '') ? formatVgmKg(c.gross_weight_kg) : (c.vgm_weight ? formatVgmKg(c.vgm_weight) : '--');
         const deliveryLoc = c.delivery_address || b.delivery_location || '--';
         const dropoffLoc = b.dropoff_location || '--';
         const demDetStr = c.dem_expiry ? (typeof formatDateVN === 'function' ? formatDateVN(c.dem_expiry) : c.dem_expiry) : (b.loading_date ? (typeof formatDateVN === 'function' ? formatDateVN(b.loading_date) : b.loading_date) : '--');
@@ -22441,7 +22469,7 @@ function renderStagedBookingContainers() {
                 <td class="p-1.5 min-w-[100px]">
                     <input type="number" data-field="gross_weight_kg" 
                         placeholder="VGM (kg)" 
-                        value="${c.gross_weight_kg || ''}" 
+                        value="${c.gross_weight_kg ? String(c.gross_weight_kg).replace(/\.00$/, '').replace(/\.0$/, '') : ''}" 
                         oninput="updateStagedContField(${idx}, 'gross_weight_kg', this.value);"
                         class="cont-vgm-input w-full h-8 px-2 text-right font-mono font-bold text-slate-800 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
                 </td>
@@ -22852,7 +22880,7 @@ function renderSavedBookingContainers() {
                     </td>
                     <td class="p-1 min-w-[95px]">
                         <input type="number" id="inline-edit-vgm-${c.id}" 
-                            value="${c.gross_weight_kg || ''}" 
+                            value="${c.gross_weight_kg ? String(c.gross_weight_kg).replace(/\.00$/, '').replace(/\.0$/, '') : ''}" 
                             placeholder="kg"
                             class="w-full h-8 px-2 text-right font-mono font-bold text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
                     </td>
@@ -22915,7 +22943,7 @@ function renderSavedBookingContainers() {
                 </td>
                 <td class="p-2.5 font-bold text-slate-600">${c.container_type || '40HC'}</td>
                 <td class="p-2.5 font-mono text-slate-700 font-medium">${c.seal_number || '-'}</td>
-                <td class="p-2.5 text-right font-mono font-bold text-slate-800">${c.gross_weight_kg ? formatNumberVN(c.gross_weight_kg) + ' kg' : '-'}</td>
+                <td class="p-2.5 text-right font-mono font-bold text-slate-800">${c.gross_weight_kg ? formatVgmKg(c.gross_weight_kg) : '-'}</td>
                 <td class="p-2.5 text-slate-700 font-medium truncate max-w-[120px]" title="${escapeHtml(deliveryCol)}">${escapeHtml(deliveryCol)}</td>
                 <td class="p-2.5 text-slate-700 font-medium truncate max-w-[120px]" title="${escapeHtml(dropoffCol)}">${escapeHtml(dropoffCol)}</td>
                 <td class="p-2.5 text-[11px]">${demDet}</td>

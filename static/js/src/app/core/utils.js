@@ -117,10 +117,38 @@ window.formatCodeCompact = formatCodeCompact;
 
 function formatNumberVN(val) {
     if (val === null || val === undefined || val === '') return '';
-    const clean = String(val).replace(/\D/g, '');
+    let s = String(val).trim();
+    if (/^\d{1,3}[.,]\d{3}$/.test(s)) {
+        s = s.replace(/[.,]/g, '');
+    } else {
+        s = s.replace(/\.00$/, '').replace(/\.0$/, '');
+    }
+    const num = parseFloat(s.replace(/,/g, ''));
+    if (!isNaN(num) && /^-?\d+(\.\d+)?$/.test(s.replace(/,/g, ''))) {
+        return new Intl.NumberFormat('vi-VN').format(Math.round(num));
+    }
+    const clean = s.replace(/\D/g, '');
     if (!clean) return '';
     return new Intl.NumberFormat('vi-VN').format(parseInt(clean, 10));
 }
+
+function formatVgmKg(val) {
+    if (val === null || val === undefined || val === '') return '--';
+    let s = String(val).trim().replace(/kg/i, '').trim();
+    if (/^\d{1,3}[.,]\d{3}$/.test(s)) {
+        s = s.replace(/[.,]/g, '');
+    } else {
+        s = s.replace(/\.00$/, '').replace(/\.0$/, '');
+    }
+    const num = parseFloat(s.replace(/,/g, ''));
+    if (!isNaN(num) && /^-?\d+(\.\d+)?$/.test(s.replace(/,/g, ''))) {
+        return new Intl.NumberFormat('vi-VN').format(Math.round(num)) + ' kg';
+    }
+    const clean = s.replace(/\D/g, '');
+    if (!clean) return s ? (s + ' kg') : '--';
+    return new Intl.NumberFormat('vi-VN').format(parseInt(clean, 10)) + ' kg';
+}
+window.formatVgmKg = formatVgmKg;
 
 function parseNumberVN(val) {
     if (val === null || val === undefined || val === '') return 0;

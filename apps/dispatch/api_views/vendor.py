@@ -758,7 +758,7 @@ class VendorContainersMonitoringAPIView(APIView):
                 'container_number': c.container_number,
                 'container_type': c.container_type or '40HC',
                 'seal_number': c.seal_number or '--',
-                'gross_weight_kg': c.gross_weight_kg,
+                'gross_weight_kg': int(c.gross_weight_kg) if c.gross_weight_kg is not None else None,
                 'booking_id': b.id,
                 'booking_code': b.booking_code,
                 'booking_number': b.booking_number or '',

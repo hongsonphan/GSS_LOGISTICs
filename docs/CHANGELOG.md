@@ -33,6 +33,12 @@ Nhật ký của hệ thống trước đó không chuyển sang repo này.
   - Bổ sung `id="mdo-modal-containers-table-wrapper"` bị thiếu trong `modal_dispatch_order.html`, khắc phục lỗi bảng không mở rộng chiều cao khi bấm Toàn Màn Hình trong popup.
   - Nâng cấp `toggleMdoContainersTableExpand` và `toggleFullscreenContainersTable` lên lớp phủ `z-[80]` (vượt qua z-index topbar `z-40` và modal cha `z-50`), tự động bung trọn màn hình `max-h-[calc(100vh-210px)]` và khôi phục chính xác `max-h-80` hoặc `max-h-[500px]` / `max-h-[640px]` khi thu gọn.
 
+- **Sửa Lỗi Định Dạng Trọng Lượng VGM (Bỏ 2 Số Thập Phân Kèm Chuẩn Hóa Parse Số Nguyên Kg):**
+  - Khắc phục lỗi hiển thị VGM bị phóng đại 100 lần (ví dụ: `24.500 kg` bị hiển thị thành `2.450.000 kg`):
+    + **Nguyên nhân:** Quá trình import và cập nhật trước đây ép kiểu qua định dạng tiền tệ / 2 số thập phân (`.00`), dẫn đến chuỗi `"24500.00"`. Khi đưa vào hàm `formatNumberVN` dùng regex `\D` xóa mất dấu chấm thập phân `.`, ghép 2 số 0 đuôi vào phần nguyên (`2450000`).
+    + **Xử lý Backend:** Bỏ định dạng 2 số thập phân khi import Excel/text và khi cập nhật container. Chuẩn hóa parse regex thông minh: tự động nhận diện và gỡ dấu phân cách hàng ngàn kiểu Việt Nam (`24.500` hoặc `24,500`), loại bỏ đuôi `.00`/`.0`, lưu và serialize đúng giá trị số nguyên kg nhập vào (`24500`).
+    + **Xử lý Frontend:** Bổ sung hàm chuyên dụng `formatVgmKg(val)` và tối ưu `formatNumberVN(val)`: loại bỏ đuôi `.00`, xử lý đúng số float/decimal, format chuẩn quốc tế `24.500 kg` ở cả màn hình Booking, Lệnh Điều Động và Cổng Nhà Xe.
+
 - **Kiểm thử & Xác thực hệ thống:**
   - Build lại `static/css/tailwind.css` và `static/js/app.js` khớp 100% mã nguồn.
   - Chạy toàn bộ bộ kiểm thử tự động `python scripts/qa.py verify`: 7/7 bước ĐẠT (PASS=7, FAIL=0, test `apps.gss apps.dispatch apps.billing` xanh 100%).

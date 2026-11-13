@@ -220,9 +220,16 @@ def validate_rows(booking, rows):
         w = r.get('gross_weight_kg')
         if w not in (None, ''):
             try:
-                res['gross_weight_kg'] = str(round(float(w), 2))
-                if float(w) < 0 or float(w) > 100000:
+                # Bỏ 2 số thập phân: import gì vào đúng số đó (số nguyên kg)
+                s_w = str(w).strip().replace('kg', '').replace('KG', '').strip()
+                if re.match(r'^\d{1,3}([.,]\d{3})+$', s_w):
+                    s_w = re.sub(r'[.,]', '', s_w)
+                elif re.match(r'^\d+\.0+$', s_w):
+                    s_w = s_w.split('.')[0]
+                val_float = float(s_w.replace(',', '.'))
+                if val_float < 0 or val_float > 100000:
                     raise ValueError
+                res['gross_weight_kg'] = str(int(round(val_float)))
             except (TypeError, ValueError):
                 res['errors'].append('Trọng lượng không hợp lệ (kg).')
         if cn in existing:
@@ -510,7 +517,7 @@ def serialize(c):
     return {
         'id': c.id, 'line_no': c.line_no, 'container_number': c.container_number, 'iso_valid': c.iso_valid,
         'container_type': c.container_type, 'seal_number': c.seal_number,
-        'gross_weight_kg': str(c.gross_weight_kg) if c.gross_weight_kg is not None else '',
+        'gross_weight_kg': (str(c.gross_weight_kg)[:-3] if str(c.gross_weight_kg).endswith('.00') else str(c.gross_weight_kg)) if c.gross_weight_kg is not None else '',
         'delivery_loc_id': c.delivery_loc_id, 'delivery_loc': c.delivery_loc.name if c.delivery_loc_id else '',
         'delivery_address': c.delivery_address,
         'dem_expiry': c.dem_expiry.isoformat() if c.dem_expiry else None, 'det_expiry': c.det_expiry.isoformat() if c.det_expiry else None,

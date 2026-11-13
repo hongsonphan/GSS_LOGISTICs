@@ -738,7 +738,7 @@ function renderStagedBookingContainers() {
                 <td class="p-1.5 min-w-[100px]">
                     <input type="number" data-field="gross_weight_kg" 
                         placeholder="VGM (kg)" 
-                        value="${c.gross_weight_kg || ''}" 
+                        value="${c.gross_weight_kg ? String(c.gross_weight_kg).replace(/\.00$/, '').replace(/\.0$/, '') : ''}" 
                         oninput="updateStagedContField(${idx}, 'gross_weight_kg', this.value);"
                         class="cont-vgm-input w-full h-8 px-2 text-right font-mono font-bold text-slate-800 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
                 </td>
@@ -1149,7 +1149,7 @@ function renderSavedBookingContainers() {
                     </td>
                     <td class="p-1 min-w-[95px]">
                         <input type="number" id="inline-edit-vgm-${c.id}" 
-                            value="${c.gross_weight_kg || ''}" 
+                            value="${c.gross_weight_kg ? String(c.gross_weight_kg).replace(/\.00$/, '').replace(/\.0$/, '') : ''}" 
                             placeholder="kg"
                             class="w-full h-8 px-2 text-right font-mono font-bold text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
                     </td>
@@ -1212,7 +1212,7 @@ function renderSavedBookingContainers() {
                 </td>
                 <td class="p-2.5 font-bold text-slate-600">${c.container_type || '40HC'}</td>
                 <td class="p-2.5 font-mono text-slate-700 font-medium">${c.seal_number || '-'}</td>
-                <td class="p-2.5 text-right font-mono font-bold text-slate-800">${c.gross_weight_kg ? formatNumberVN(c.gross_weight_kg) + ' kg' : '-'}</td>
+                <td class="p-2.5 text-right font-mono font-bold text-slate-800">${c.gross_weight_kg ? formatVgmKg(c.gross_weight_kg) : '-'}</td>
                 <td class="p-2.5 text-slate-700 font-medium truncate max-w-[120px]" title="${escapeHtml(deliveryCol)}">${escapeHtml(deliveryCol)}</td>
                 <td class="p-2.5 text-slate-700 font-medium truncate max-w-[120px]" title="${escapeHtml(dropoffCol)}">${escapeHtml(dropoffCol)}</td>
                 <td class="p-2.5 text-[11px]">${demDet}</td>

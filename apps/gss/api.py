@@ -2,6 +2,8 @@
 biểu giá, dòng giá chuyến, chi hộ + hoá đơn, bảng kê đối soát, phiếu giao hàng theo điểm giao, lệnh điều vận in,
 chứng từ đặt tên chuẩn (zip), street-turn, Trip Card. Mọi lỗi nghiệp vụ trả {'success': False, 'message'} mã 400."""
 import datetime
+import re
+from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db.models import Q
@@ -182,7 +184,18 @@ class ContainerDetailAPI(Base):
             fields.append('seal_number')
         if 'gross_weight_kg' in d:
             w = d.get('gross_weight_kg')
-            c.gross_weight_kg = pr.money(w, 'Trọng lượng') if w not in (None, '') else None
+            if w not in (None, ''):
+                try:
+                    s_w = str(w).strip().replace('kg', '').replace('KG', '').strip()
+                    if re.match(r'^\d{1,3}([.,]\d{3})+$', s_w):
+                        s_w = re.sub(r'[.,]', '', s_w)
+                    elif re.match(r'^\d+\.0+$', s_w):
+                        s_w = s_w.split('.')[0]
+                    c.gross_weight_kg = Decimal(int(round(float(s_w.replace(',', '.')))))
+                except Exception:
+                    return err('Trọng lượng không hợp lệ.')
+            else:
+                c.gross_weight_kg = None
             fields.append('gross_weight_kg')
         if 'delivery_loc_id' in d:
             lid = d.get('delivery_loc_id')
