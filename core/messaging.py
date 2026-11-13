@@ -60,7 +60,8 @@ def send(channel, phone, text, *, params=None):
     if token:
         req.add_header('Authorization', f'Bearer {token}')
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:  # noqa: S310 - URL do quản trị cấu hình, đã kiểm tra https
+        # URL do quan tri cau hinh, da kiem tra https
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:  # nosec B310
             raw = resp.read(4096).decode('utf-8', 'replace')
         try:
             data = json.loads(raw)

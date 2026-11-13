@@ -160,7 +160,7 @@ def parse_xml(data):
     if b'<!DOCTYPE' in data[:2000].upper() or b'<!ENTITY' in data.upper():
         raise ValidationError('File XML chứa khai báo DOCTYPE/ENTITY, không được chấp nhận.')
     try:
-        root = ElementTree.fromstring(data)
+        root = ElementTree.fromstring(data)  # nosec B314
     except ElementTree.ParseError:
         raise ValidationError('File XML không hợp lệ.')
     found = {}

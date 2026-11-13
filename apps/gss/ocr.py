@@ -64,7 +64,7 @@ def extract_invoice_from_image(fileobj):
                 **({'Authorization': f'Bearer {api_key}'} if api_key else {}),
             },
         )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310
             data = json.loads(resp.read().decode('utf-8'))
         fields = _normalize_ocr_fields(data.get('fields') or data)
         return {
@@ -114,7 +114,7 @@ def fetch_einvoice_files(seller_tax_code='', lookup_code='', lookup_url=''):
                 **({'Authorization': f'Bearer {api_key}'} if api_key else {}),
             },
         )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310
             data = json.loads(resp.read().decode('utf-8'))
         return {'configured': True, 'downloaded': bool(data.get('xml') or data.get('pdf')), 'data': data}
     except Exception as exc:
