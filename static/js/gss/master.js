@@ -110,8 +110,60 @@
   }
 
   // ---------------- tài xế & xe của nhà xe ----------------
+  function portalAccountPanel(sub) {
+    var card = el('section', 'card stack'), body = el('div', 'small mut', 'Đang tải...');
+    card.append(el('h2', null, 'Tài khoản Cổng Nhà Xe (Portal bảo mật)'), body);
+    function load() {
+      api('/api/vendor-portal-accounts/' + sub.id + '/').then(function (j) {
+        var d = j.data || {};
+        G.clear(body);
+        var info = el('div', 'small mut', d.has_account
+          ? ('Đã kích hoạt: ' + d.username + ' · Token: ' + (d.confirm_token_preview || 'Chưa đặt') + ' · Tự đăng xuất: ' + d.idle_timeout_minutes + ' phút' + (d.locked ? ' (ĐANG BỊ KHÓA)' : (!d.is_active ? ' (TẠM TẮT)' : '')))
+          : 'Chưa cấp tài khoản đăng nhập riêng cho nhà xe này.');
+        var fg = el('div', 'formgrid');
+        var uIn = el('input', 'in'); uIn.value = d.username || d.suggested_username || ''; uIn.placeholder = 'VD: hoangnam';
+        var pIn = el('input', 'in'); pIn.type = 'password'; pIn.placeholder = d.has_account ? 'Để trống nếu giữ mật khẩu cũ' : 'Nhập mật khẩu (>= 6 ký tự)';
+        var tIn = el('input', 'in'); tIn.type = 'number'; tIn.min = 1; tIn.max = 480; tIn.value = d.idle_timeout_minutes || 15;
+        var actIn = el('input'); actIn.type = 'checkbox'; actIn.checked = d.has_account ? !!d.is_active : true;
+        var w1 = el('div'); w1.append(el('label', 'f req', 'Tên đăng nhập'), uIn);
+        var w2 = el('div'); w2.append(el('label', 'f' + (d.has_account ? '' : ' req'), 'Mật khẩu mới'), pIn);
+        var w3 = el('div'); w3.append(el('label', 'f', 'Tự đăng xuất (phút)'), tIn);
+        var w4 = el('div'); var lblA = el('label', 'f', 'Trạng thái kích hoạt'); var chkRow = el('label', 'row small'); chkRow.append(actIn, el('span', null, 'Cho phép đăng nhập')); w4.append(lblA, chkRow);
+        fg.append(w1, w2, w3, w4);
+        var outToken = el('div', 'small', '');
+        function save(extra) {
+          var payload = Object.assign({ username: uIn.value.trim(), idle_timeout_minutes: Number(tIn.value) || 15, is_active: actIn.checked }, extra || {});
+          if (pIn.value) payload.password = pIn.value;
+          api('/api/vendor-portal-accounts/' + sub.id + '/', { method: 'POST', body: payload }).then(function (r) {
+            G.toast(r.message, 'ok');
+            var issued = r.data && r.data.issued_confirm_token;
+            if (issued) {
+              outToken.className = 'pill ok';
+              outToken.textContent = 'Mã Token xác nhận mới (lưu lại để gửi nhà xe): ' + issued;
+            }
+            pIn.value = '';
+            load();
+          }).catch(function (e) { G.toast(e.message, 'bad'); });
+        }
+        var btns = el('div', 'row');
+        btns.append(ui.btn(d.has_account ? 'Lưu tài khoản' : 'Cấp tài khoản + Sinh Token', 'pri sm', function () { save({ regenerate_token: !d.has_account }); }));
+        if (d.has_account) {
+          btns.append(ui.btn('Cấp lại Token xác nhận', 'sec sm', function () { if (window.confirm('Cấp mới Token xác nhận sẽ vô hiệu hóa Token cũ?')) save({ regenerate_token: true }); }));
+        }
+        if (d.locked) {
+          btns.append(ui.btn('Mở khóa', 'sec sm', function () { save({ unlock: true }); }));
+        }
+        body.append(info, fg, btns);
+        if (outToken.textContent) body.append(outToken);
+      }).catch(function (e) { G.clear(body).append(el('div', 'err', e.message)); });
+    }
+    load();
+    return card;
+  }
+
   function fleetPanel(sub) {
     var wrap = el('div', 'stack');
+    wrap.append(portalAccountPanel(sub));
     wrap.append(listPanel('Tài xế', '/api/master-data/subcontractors/' + sub.id + '/drivers/', function (id) { return '/api/master-data/subcontractor-drivers/' + id + '/'; },
       [['full_name', 'Họ tên'], ['phone', 'SĐT'], ['license_number', 'GPLX']], [['full_name', 'Họ tên', 'req'], ['phone', 'Điện thoại'], ['license_number', 'Số GPLX']]));
     wrap.append(listPanel('Xe đầu kéo của nhà xe', '/api/master-data/subcontractors/' + sub.id + '/vehicles/', function (id) { return '/api/master-data/subcontractors/' + sub.id + '/vehicles/' + id + '/'; },

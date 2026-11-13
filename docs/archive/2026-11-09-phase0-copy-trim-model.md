@@ -1,8 +1,12 @@
-# Kế hoạch thực hiện §7.2 – Copy, gọt và chốt mô hình (GĐ0)
+# GĐ0 – Copy, gọt và chốt mô hình (§7.2): kế hoạch và báo cáo
+
+> Gộp từ `archive/2026-11-09-phase0-copy-trim-model.md` và `archive/2026-11-09-phase0-copy-trim-model.md`. Tài liệu lịch sử, không sửa nữa.
+
+## Phần 1 – Kế hoạch
 
 Ngày lập 09/11/2026. Kế hoạch đã duyệt và thực hiện ngày 09/11/2026 – xem mục 7. Tài liệu căn cứ vào §4 (mô hình dữ liệu), §7.1 (bảng phân loại) và §7.2–7.3 (quy trình) của đặc tả "GSS — Đặc tả tính năng & kế hoạch chuyển đổi từ BIM Logistics".
 
-## 1. Hiện trạng (kiểm kê ngày 09/11/2026)
+### 1. Hiện trạng (kiểm kê ngày 09/11/2026)
 
 | Hạng mục | Số liệu |
 | :-- | :-- |
@@ -18,29 +22,29 @@ Ngày lập 09/11/2026. Kế hoạch đã duyệt và thực hiện ngày 09/11/
 
 **Kết luận:** chưa có dữ liệu thật, nên xoá migration và dựng lại CSDL lúc này gần như không tốn gì. Khi GSS đã chạy thật, cùng việc đó sẽ phải viết script chuyển dữ liệu cho từng bảng.
 
-## 2. Nguyên tắc
+### 2. Nguyên tắc
 
 1. **Giữ hành vi đã nghiệm thu.** Mọi luồng đã chạy (B/L và danh sách cont, phân bổ, cổng nhà xe, QR tài xế, bãi, biểu giá, chi hộ, bảng kê, sổ cái) phải có test trước khi gọt. Sau mỗi bước, bộ test đó vẫn phải xanh.
 2. **Gọt từ lá vào gốc.** Mỗi nhóm một commit, chạy test sau mỗi commit.
 3. **Anh duyệt bảng GIỮ/SỬA/BỎ/THAY (mục 4) trước khi xoá bất cứ thứ gì.**
 4. Repo cũ (BIM_LOGISTICS và nhánh `master` hiện tại) giữ nguyên làm bản tham chiếu. Không force-push đè lịch sử.
 
-## 3. Các bước
+### 3. Các bước
 
-### Bước 1 – Repo mới, sạch bí mật (≈ 0,5 ngày)
+#### Bước 1 – Repo mới, sạch bí mật (≈ 0,5 ngày)
 - Copy cây mã (không có `.git`) sang thư mục mới, đề xuất `E:\GSS_TMS`. Chạy `git init`, commit đầu chưa có lịch sử cũ.
 - Xoá: `.env`, `media/`, bản sao lưu, file Excel/ảnh mẫu, fixture và seed có dữ liệu thật, `.gitcred`, `*.bak`.
 - Tạo mới bí mật: `SECRET_KEY`, mật khẩu DB, salt, khoá email, khoá ký QR.
 - Chạy `gitleaks detect` toàn repo **trước** commit đầu.
 - Repo GitHub: cần anh chọn (xem mục 6, câu 1).
 
-### Bước 2 – Gọt phần TVL / BIM không dùng (≈ 2 ngày, mỗi dòng dưới đây là một commit)
+#### Bước 2 – Gọt phần TVL / BIM không dùng (≈ 2 ngày, mỗi dòng dưới đây là một commit)
 1. Nhân sự/lương: hợp đồng, phụ lục, người phụ thuộc, chấm công, kỳ lương, phiếu lương, thuế TNCN, bảng lương tài xế, phụ cấp, cùng giao diện `hr`.
 2. Lớp chuyển tiếp: `migrate_legacy_access`, nhánh Legacy* trong phân quyền, `assign_default_company`, `hashids`.
 3. Mô hình chuyến TVL: `TripContainer`, `TripTimelineItem`, `sync_trip_data`, máy trạng thái 11 bước cũ, tạm ứng tài xế, quỹ điều vận, quyết toán lương tài xế.
 4. Báo cáo/dashboard theo chuyến kiểu TVL, `seed_sample_data`, cùng mọi chuỗi "Triền Võ"/TVL.
 
-### Bước 3 – Dựng mô hình mới theo §4 (≈ 4–5 ngày)
+#### Bước 3 – Dựng mô hình mới theo §4 (≈ 4–5 ngày)
 | App mới | Lấy từ | Thay đổi chính |
 | :-- | :-- | :-- |
 | `core` | giữ | `Employee` thu gọn còn hồ sơ người dùng nội bộ (không lương). Thêm `public_id` UUIDv7 |
@@ -55,23 +59,23 @@ Ngày lập 09/11/2026. Kế hoạch đã duyệt và thực hiện ngày 09/11/
 
 Logic nghiệp vụ trong `apps/gss/*.py` (containers, vendor_excel, pricing, claims, statements, docs, journey) đã viết theo đúng khái niệm này. Phần việc chủ yếu là đổi tên model và khoá ngoại, không phải viết lại logic.
 
-### Bước 4 – Xoá migration, sinh `0001_initial` (≈ 0,5 ngày)
+#### Bước 4 – Xoá migration, sinh `0001_initial` (≈ 0,5 ngày)
 - Xoá toàn bộ 166 migration, chạy `makemigrations` sinh một `0001_initial` sạch cho từng app.
 - Xoá volume Postgres local, `migrate` từ đầu, chạy lại `seed_gss_demo` (viết lại theo model mới, không dùng dữ liệu thật).
 
-### Bước 5 – Row-Level Security PostgreSQL (≈ 1,5 ngày)
+#### Bước 5 – Row-Level Security PostgreSQL (≈ 1,5 ngày)
 - Mỗi bảng có `company_id`: `ENABLE` và `FORCE ROW LEVEL SECURITY`, policy `company_id = current_setting('app.company_id')::bigint`.
 - Middleware chạy `SET LOCAL app.company_id` đầu mỗi request (trong transaction). Lệnh nền và cron đặt biến này theo từng công ty.
 - Hai vai trò DB: `gss_app` (web, chịu RLS) và `gss_owner` (migrate/backup, `BYPASSRLS`).
 - Giữ `TENANT_ENFORCE` ở tầng ORM làm lớp thứ hai.
 - Test: người dùng công ty A không đọc hoặc ghi được dữ liệu công ty B, kể cả qua raw SQL.
 
-### Bước 6 – Đổi tên, CI, tài liệu (≈ 1 ngày)
+#### Bước 6 – Đổi tên, CI, tài liệu (≈ 1 ngày)
 - Đổi tên project, settings, container Docker, nhãn giao diện (cổng 8086/5436 giữ nguyên).
 - Dựng lại CI: build JS/CSS `--check`, test, gitleaks, ZAP và uptime chạy tay. Tạm hạ ngưỡng coverage rồi nâng dần về 72%.
-- Viết lại `AGENTS.md`, `data-integrity-rules.md`, CLAUDE.md, runbook. Thêm `PLATFORM_PATCHES.md` (§7.3).
+- Viết lại `14-ai-team.md`, `data-integrity-rules.md`, CLAUDE.md, runbook. Thêm `PLATFORM_PATCHES.md` (§7.3).
 
-### Tiêu chí hoàn thành
+#### Tiêu chí hoàn thành
 - Đăng nhập, phân quyền, danh mục đối tác, sổ cái chạy được.
 - Các luồng GSS đã nghiệm thu chạy lại trên 8086 với `DEMO.BL.001`.
 - Test xanh, gitleaks sạch.
@@ -80,7 +84,7 @@ Logic nghiệp vụ trong `apps/gss/*.py` (containers, vendor_excel, pricing, cl
 
 Tổng ước lượng: khoảng **9–11 ngày làm việc**. Có thể chạy song song bước 5 với bước 6 sau khi bước 4 xong.
 
-## 4. Bảng GIỮ/SỬA/BỎ/THAY đề xuất (cần anh duyệt)
+### 4. Bảng GIỮ/SỬA/BỎ/THAY đề xuất (cần anh duyệt)
 
 | Thành phần | Xử lý | Ghi chú |
 | :-- | :-- | :-- |
@@ -99,7 +103,7 @@ Tổng ước lượng: khoảng **9–11 ngày làm việc**. Có thể chạy 
 | Toàn bộ migration | BỎ | sinh lại `0001_initial` |
 | `apps/gss` (logic đã làm theo đặc tả) | GIỮ | tách vào các app mới ở bước 3 |
 
-## 5. Rủi ro và cách giảm
+### 5. Rủi ro và cách giảm
 
 | Rủi ro | Cách giảm |
 | :-- | :-- |
@@ -109,7 +113,7 @@ Tổng ước lượng: khoảng **9–11 ngày làm việc**. Có thể chạy 
 | Party một bảng làm đổi mã ngắn đang dùng trong tên file | giữ nguyên mã ngắn hiện có của nhà xe khi chuyển |
 | Hai repo lệch nhau về bản vá bảo mật | `PLATFORM_PATCHES.md` ở cả hai repo (§7.3) |
 
-## 6. Cần anh quyết trước khi bắt đầu
+### 6. Cần anh quyết trước khi bắt đầu
 
 1. **Repo GitHub:** tạo repo mới (ví dụ `GSS_TMS`), hay đổi `GSS_LOGISTICs` thành lịch sử mới (phải xoá lịch sử cũ trên GitHub)? Đề xuất: **repo mới**, giữ `GSS_LOGISTICs` làm bản lưu.
 2. **Phần BIM cũ còn dùng cho GSS không?** Đặc tả bảo bỏ nhân sự/lương. Nhưng trước đây anh dặn "không phá yêu cầu cũ". Cần chốt từng nhóm:
@@ -129,7 +133,7 @@ Tổng ước lượng: khoảng **9–11 ngày làm việc**. Có thể chạy 
 5. **Frontend:** giữ Vanilla JS hay chuyển TypeScript (điểm chờ xác nhận số 7)? Đề xuất: **giữ Vanilla JS** trong GĐ0. TypeScript có thể làm sau và không ảnh hưởng §7.2.
 6. **Bãi Đắk Nông** là bãi của GSS hay bãi thuê? Câu này quyết định depot là một vai trò của Party hay là đơn vị nội bộ.
 
-## 7. Kết quả thực hiện (09/11/2026)
+### 7. Kết quả thực hiện (09/11/2026)
 
 Anh duyệt theo đề xuất mặc định. Hai câu chưa có đề xuất được chọn như sau: GSS **giữ xe riêng** của công ty; bãi Đắk Nông
 mô hình bằng vai trò `is_depot` của Party + danh mục bãi, nên bãi của GSS hay bãi thuê đều dùng được, không phải đổi mô hình.
@@ -151,3 +155,47 @@ Chưa làm trong GĐ0 (lý do):
 - Đổi tên `DispatchTrip` → `TransportJob`, bỏ máy trạng thái 11 bước cũ: báo cáo và sổ cái cũ còn đọc `status`; giữ đồng bộ từ `step_status`.
 - Viết lại `DEFAULT_MATRIX` cho 7 vai trò theo §3: cần anh chốt danh sách vai trò.
 - `StoredFile` / `DocumentLink` tách bảng, `CargoItem` / `Stop` / `DeliveryDrop` (GĐ4).
+
+---
+
+## Phần 2 – Báo cáo kết quả
+
+Ngày 09/11/2026 · thư mục `E:\Bim_Logisstic_GSS` (lịch sử git mới, nhánh `master`, chưa có remote, **chưa push**) · chạy tại http://127.0.0.1:8086
+
+### 1. Kết quả
+
+- Repo mới không mang lịch sử git cũ. Đã quét gitleaks trước commit đầu (chỉ có một JWT giả trong test). Bí mật mới: `SECRET_KEY`, mật khẩu CSDL.
+- **457 test tự động đạt** trên PostgreSQL sạch; độ phủ test **80%** (ngưỡng CI 72%). Build JS/CSS khớp.
+- Stack Docker 8086 dựng lại từ repo mới với CSDL trống, đã nạp `seed_gss_demo`. Kiểm tra trên trình duyệt:
+  - đăng nhập, dashboard, đơn B/L DEMO.BL.001, trang nhân sự, các API chính đều trả 200;
+  - chặng của chuyến tự sinh; RLS bật trên 50 bảng.
+
+### 2. Đã làm
+
+| Hạng mục | Nội dung |
+| :-- | :-- |
+| Gọt nhân sự/lương | Bỏ hợp đồng, phụ lục, người phụ thuộc, chấm công, kỳ lương, phiếu lương, thuế TNCN, nguồn bút toán lương, quyền `payroll`. Giữ danh bạ nhân viên (tài khoản đăng nhập, GPLX) |
+| Gọt lớp chuyển tiếp | Bỏ quyền Legacy* (mọi tài khoản theo ma trận), `migrate_legacy_access`, `assign_default_company`, thư viện hashids |
+| Gọt mô hình chuyến TVL | Bỏ cổng tài xế `/driver/` (tài xế dùng QR lệnh `/q/`), các lệnh dữ liệu mẫu/đồng bộ cũ, script chứa dữ liệu người/nhà xe TVL. Không còn chuỗi "Triền Võ"/TVL hay mã chuyến TVL nào trong mã |
+| Party một bảng | `master_data.Party` với cờ vai trò khách / nhà xe / NCC / hãng tàu / depot. `Customer`, `Subcontractor`, `ShippingLine` thành proxy nên luồng cũ vẫn chạy. Sổ cái gom theo MST |
+| Mã công khai | `public_id` UUIDv7 cho chuyến, báo giá, bản tin, công việc, đối tác, vận đơn, lượt xe. Link tra cứu của khách dùng token riêng |
+| Mô hình §4 bổ sung | `BillOfLading` (MBL ◄ HBL, tự đồng bộ từ đơn), `Leg` / `TruckRun` (≤ 2 TEU) / `RouteTemplate`, API `/api/gss/trips/<mã>/legs/`, `JobCost` |
+| Migration | Xoá 166 migration cũ, sinh lại bộ khởi tạo sạch |
+| Row-Level Security | Policy trên mọi bảng có `company_id`; trong request đã đăng nhập, kết nối chạy dưới vai trò `gss_rls`, nên SQL viết tay cũng không vượt được sang dữ liệu công ty khác |
+| CI & tài liệu | CI thêm bước gitleaks. Tài liệu mới: `CLAUDE.md`, `docs/06-database.md`, `PLATFORM_PATCHES.md`, `docs/CHANGELOG.md`, và mục 7 trong `docs/archive/2026-11-09-phase0-copy-trim-model.md` |
+
+Commit: `ce99e78` → `0abab1b` → `42211b3` → `e44338c` → `0aa0b43` → `3f7a15c` → `455374d` → `a6eb874` (+ commit báo cáo này).
+
+### 3. Chưa làm (lý do)
+
+1. **Tạm ứng tài xế / quỹ điều vận / quyết toán tài xế**: chưa xoá hẳn vì dính vào dashboard, báo cáo, quyết toán kiểu BIM cũ (khoảng 10 file). API đã khoá theo cờ `fleet_internal` và gói GSS tắt cờ này. Nên xoá cùng đợt dọn giao diện BIM cũ: các màn điều vận, kinh doanh, đội xe cũ đã có màn GSS thay.
+2. **Đổi tên `DispatchTrip` → `TransportJob`, bỏ máy trạng thái 11 bước cũ**: báo cáo và sổ cái cũ còn đọc trạng thái đó. Hiện máy 7 bước GSS tự đồng bộ sang.
+3. **Viết lại ma trận phân quyền cho 7 vai trò (§3)**: cần anh chốt danh sách vai trò.
+4. **`StoredFile` / `DocumentLink` tách bảng; `CargoItem` / `Stop` / `DeliveryDrop`**: thuộc GĐ4.
+5. **Push lên GitHub**: chỉ làm khi anh yêu cầu; khi đó ghi đè, xoá hết nội dung cũ trên `GSS_LOGISTICs`.
+
+### 4. Lưu ý vận hành
+
+- Mã được dựng ở thư mục tạm rồi gộp về `E:\Bim_Logisstic_GSS` (thư mục tạm đã xoá). Mã cũ, lịch sử git cũ, khoá SSH, git credentials, file dump CSDL và media cũ đã chuyển ra `E:\Backup\gss_old_2026-11-09\`. Thay đổi dở của session FrontEnd (`docs/10-ui-ux-guidelines.md`) đã gộp vào. Stack 8086 chạy từ thư mục này với CSDL mới.
+- Đăng nhập thử: `gss_admin`, mật khẩu trong `gss_local_credentials.txt` trong container web.
+- Tắt khẩn cấp RLS: `TENANT_RLS=false` trong `.env`, rồi khởi động lại web.

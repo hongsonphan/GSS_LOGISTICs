@@ -1,0 +1,102 @@
+<!-- MODAL NHẬP DANH SÁCH CONTAINER (TẢI FILE EXCEL HOẶC DÁN VĂN BẢN) -->
+<div id="modal-import-containers" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs hidden animate-fade-in p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-gradient-to-r from-teal-700 to-emerald-800 text-white flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                    <i class="ph-bold ph-file-arrow-up text-lg text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold font-heading">Nhập Danh Sách Container Từ Excel / Dán Text</h3>
+                    <p class="text-[11px] text-teal-100">Hỗ trợ tải tệp Excel danh sách 100 cont hoặc dán văn bản trực tiếp</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeImportContainersModal()" class="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors">
+                <i class="ph-bold ph-x text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 overflow-y-auto space-y-4 text-xs">
+            <!-- Tabs: File Excel (mặc định) / Dán text -->
+            <div class="flex border-b border-slate-200 gap-4">
+                <button type="button" id="tab-btn-excel-containers" onclick="switchImportContTab('excel')" 
+                    class="pb-2 text-xs font-bold font-heading border-b-2 border-teal-600 text-teal-700 flex items-center gap-1.5 cursor-pointer">
+                    <i class="ph-bold ph-file-xls text-sm"></i> Tải File Excel
+                </button>
+                <button type="button" id="tab-btn-paste-containers" onclick="switchImportContTab('paste')" 
+                    class="pb-2 text-xs font-bold font-heading border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer">
+                    <i class="ph-bold ph-clipboard-text text-sm"></i> Dán Văn Bản (Copy / Paste)
+                </button>
+            </div>
+
+            <!-- TAB 1: FILE EXCEL (CÓ TẢI MẪU EXCEL RÕ RÀNG) -->
+            <div id="tab-panel-excel-containers" class="space-y-3">
+                <!-- Banner Tải File Mẫu Chuẩn -->
+                <div class="p-3.5 bg-teal-50/80 border border-teal-200 rounded-2xl flex items-center justify-between flex-wrap gap-2.5">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-teal-700 text-white flex items-center justify-center font-bold shadow-2xs">
+                            <i class="ph-bold ph-file-arrow-down text-base"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800 text-xs">Chưa có tệp danh sách container theo mẫu?</p>
+                            <p class="text-[11px] text-teal-800">Tải tệp mẫu Excel 10 cột chuẩn (màu Teal, font Calibri, 10 dòng mẫu chuẩn) để điền nhanh</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="downloadSampleContainerExcel()" 
+                        class="px-3.5 py-1.5 bg-white hover:bg-teal-700 hover:text-white text-teal-800 border border-teal-300 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="ph-bold ph-download-simple"></i>
+                        <span>Tải Mẫu Excel (.xlsx)</span>
+                    </button>
+                </div>
+
+                <!-- Khu vực chọn file Excel -->
+                <div class="p-5 border-2 border-dashed border-slate-200 hover:border-teal-500 bg-slate-50 rounded-2xl text-center transition-colors">
+                    <i class="ph-bold ph-file-xls text-4xl text-teal-600 mb-2"></i>
+                    <p class="font-bold text-slate-800 mb-1">Chọn file Excel danh sách container (.xlsx, .xls)</p>
+                    <p class="text-[11px] text-slate-500 mb-3">Tự động nhận diện các cột: Số Container, Loại Cont, Số Seal, Trọng lượng VGM...</p>
+                    <input type="file" id="import-containers-file" accept=".xlsx, .xls" class="hidden" onchange="handleContExcelSelected(this)">
+                    <button type="button" onclick="document.getElementById('import-containers-file').click()" 
+                        class="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold font-heading shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5">
+                        <i class="ph-bold ph-folder-open"></i> Chọn File Từ Máy Tính
+                    </button>
+                    <span id="import-cont-filename" class="block font-mono text-teal-800 font-bold mt-2 text-[11px]"></span>
+                </div>
+            </div>
+
+            <!-- TAB 2: DÁN VĂN BẢN TRỰC TIẾP -->
+            <div id="tab-panel-paste-containers" class="hidden space-y-3">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-600 leading-relaxed">
+                    <p class="font-bold text-slate-700 flex items-center gap-1"><i class="ph-bold ph-info text-teal-600"></i> Định dạng mỗi dòng (cách nhau bởi dấu cách hoặc phím Tab):</p>
+                    <code class="block font-mono font-bold text-teal-800 bg-teal-50/70 p-1.5 rounded mt-1 text-[11px]">
+                        SỐ_CONT [LOẠI_CONT] [SỐ_SEAL] [TRỌNG_LƯỢNG_VGM_KG]<br>
+                        VD: TCNU1234567 40HC MLVN98765 24500<br>
+                        VD: MSCU7654321 40HC MLVN98766 26000
+                    </code>
+                </div>
+                <textarea id="import-containers-text" rows="8" placeholder="Dán danh sách số container từ Email, Packing List hoặc Excel vào đây..." 
+                    class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-800 focus:bg-white focus:border-teal-600 outline-hidden transition-all uppercase"></textarea>
+            </div>
+
+            <!-- Kết quả kiểm tra -->
+            <div id="import-containers-preview" class="hidden p-3 bg-teal-50 rounded-xl border border-teal-200 text-teal-900 font-medium"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="closeImportContainersModal()" class="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-200 rounded-xl font-bold transition-all cursor-pointer">
+                    Đóng
+                </button>
+                <button type="button" onclick="downloadSampleContainerExcel()" class="px-3.5 py-2 bg-white hover:bg-teal-50 text-teal-800 border border-teal-300 rounded-xl font-bold text-xs font-heading transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs" title="Tải tệp Excel mẫu">
+                    <i class="ph-bold ph-download-simple text-sm text-teal-600"></i>
+                    <span>Tải Mẫu Excel</span>
+                </button>
+            </div>
+            <button type="button" id="btn-submit-import-containers" onclick="submitImportContainers()" class="px-5 py-2 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white rounded-xl font-bold font-heading shadow-xs transition-all cursor-pointer flex items-center gap-1.5">
+                <i class="ph-bold ph-check"></i> Xác Nhận Nạp Danh Sách Cont
+            </button>
+        </div>
+    </div>
+</div>

@@ -135,9 +135,6 @@ async function loadSubcontractorData() {
             const elInfo = document.getElementById('subcon-stat-settled-info');
             if (elInfo) elInfo.innerText = `Đã quyết toán: ${kp.settled_count} / ${kp.total_trips} chuyến`;
 
-            const badge = document.getElementById('badge-acct-subcontractors');
-            if (badge) badge.innerText = kp.pending_count;
-
             const badgeFiltered = document.getElementById('subcon-filtered-badge');
             if (badgeFiltered) badgeFiltered.innerText = `Hiển thị: ${rawSubcontractorList.length} chuyến xe bạn`;
         }

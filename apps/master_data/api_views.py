@@ -78,6 +78,8 @@ class MasterDataFormOptionsAPIView(APIView):
     Booking và Báo giá: Khách hàng, Địa điểm lấy/đóng/hạ (theo phân nhóm), Tài xế, Loại cont.
     Loại bỏ triệt để việc nhập tự do (free text).
     """
+    throttle_classes = []
+
     def get(self, request):
         # 1. Khách hàng
         customers = [
@@ -2545,6 +2547,7 @@ class MasterDataVersionAPIView(APIView):
     Cho phép Frontend trên toàn bộ máy tính / user tự động kiểm tra và đồng bộ tức thời.
     """
     permission_classes = [IsAuthenticated]
+    throttle_classes = []
 
     def get(self, request):
         from apps.master_data.version import get_master_data_version
@@ -2557,6 +2560,7 @@ class MasterDataVersionAPIView(APIView):
 class LiveSyncVersionsAPIView(APIView):
     """Phiên bản theo chủ đề (điều vận, kinh doanh, kế toán, ...) - client hỏi 5 giây/lần để biết có dữ liệu mới."""
     permission_classes = [IsAuthenticated]
+    throttle_classes = []
 
     def get(self, request):
         from apps.master_data.version import get_topic_versions

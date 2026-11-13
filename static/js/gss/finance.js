@@ -300,7 +300,18 @@
       }
       if (typeof Html5Qrcode === 'undefined') { var s = document.createElement('script'); s.src = '/static/vendor/html5-qrcode/html5-qrcode.min.js'; s.onload = run; document.head.append(s); } else run();
     };
-    qrBox.append(lab, img, qrText);
+    var ocrBtn = ui.btn('Đọc ảnh OCR', 'sec sm', function () {
+      var f = img.files[0]; if (!f) { G.toast('Chọn ảnh hoá đơn trước khi chạy OCR.', 'bad'); return; }
+      var fd = new FormData(); fd.append('file', f);
+      api('/api/gss/invoices/ocr/', { method: 'POST', body: fd }).then(function (j) {
+        var res = j.data || {};
+        if (!res.configured) { G.toast(res.message || 'Dịch vụ OCR chưa cấu hình, vui lòng nhập tay.', 'warn'); return; }
+        var fields = res.fields || {};
+        Object.keys(fields).forEach(function (k) { if (v[k] && fields[k]) v[k].value = fields[k]; });
+        G.toast(res.message || 'Đã đọc thông tin hoá đơn bằng OCR.', 'ok');
+      }).catch(function (e) { G.toast(e.message, 'bad'); });
+    });
+    qrBox.append(lab, img, ocrBtn, qrText);
     var g = el('div', 'formgrid'), v = {};
     [['seller_tax_code', 'MST người bán'], ['series', 'Ký hiệu (vd 1C26TAA)'], ['number', 'Số hoá đơn'], ['issue_date', 'Ngày hoá đơn', 'date'], ['buyer_name', 'Người mua (đứng tên)'],
      ['buyer_tax_code', 'MST người mua'], ['amount_before_vat', 'Tiền trước thuế', 'number'], ['vat_amount', 'Tiền thuế', 'number'], ['total_amount', 'Tổng tiền', 'number']]

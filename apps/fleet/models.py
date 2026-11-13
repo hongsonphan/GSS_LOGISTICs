@@ -97,6 +97,7 @@ class Vehicle(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     )
     last_maintenance_date = models.DateField(null=True, blank=True)
     next_maintenance_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True, default='', help_text="Ghi chú về xe đầu kéo")
 
     class Meta:
         ordering = ['license_plate']

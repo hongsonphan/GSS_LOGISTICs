@@ -15,7 +15,7 @@ from apps.dispatch.models import DispatchTrip, TripStatus
 
 STEPS = ['READY', 'ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED']
 STEP_LABELS = {
-    'READY': 'Sẵn sàng', 'ARRIVED_AT_PICKUP': 'Đã đến nơi nhận', 'LOADED_ON_VEHICLE': 'Đã lên xe (đã nhận cont/hàng)',
+    'READY': 'Đã Phát lệnh Điều độ', 'ARRIVED_AT_PICKUP': 'Đã đến nơi nhận', 'LOADED_ON_VEHICLE': 'Đã lên xe (đã nhận cont/hàng)',
     'ARRIVED_AT_DELIVERY': 'Đã đến nơi giao', 'UNLOADED': 'Đã hạ xe / giao xong', 'RETURNING_EMPTY': 'Đang đi hạ rỗng',
     'EMPTY_RETURNED': 'Đã hạ rỗng', 'CANCELLED': 'Đã hủy',
 }
@@ -145,6 +145,12 @@ def advance(trip, target, *, user=None, actor_label='', reason='', fields=None, 
     if target in ('UNLOADED', 'EMPTY_RETURNED'):
         from apps.gss.legs import on_step  # trạng thái chặng (Leg) theo bước hành trình
         on_step(trip, target)
+        try:
+            from apps.gss.journey import auto_delivery_note_for_trip
+            auto_delivery_note_for_trip(trip)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning('auto_delivery_note_for_trip failed for %s', trip.trip_code, exc_info=True)
     if target == 'EMPTY_RETURNED':
         from apps.gss.pricing import on_trip_completed  # tự áp biểu giá khi hoàn tất (lỗi chỉ ghi log)
         on_trip_completed(trip)

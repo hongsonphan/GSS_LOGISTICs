@@ -1,6 +1,6 @@
 # GSS LOGISTICS – PHÂN TÍCH HIỆU CHỈNH & KẾ HOẠCH TÁI CẤU TRÚC
 
-> **09/11/2026 – GĐ0 (§7.2) đã thực hiện (lịch sử git mới trong chính thư mục này).** Một số điều dưới đây đã đổi: Party một bảng, migration sinh lại, RLS, bỏ hashids/Legacy*/lương. Đọc `docs/GSS_KE_HOACH_7_2.md` mục 7 và `docs/GSS_ERD.md` trước.
+> **09/11/2026 – GĐ0 (§7.2) đã thực hiện (lịch sử git mới trong chính thư mục này).** Một số điều dưới đây đã đổi: Party một bảng, migration sinh lại, RLS, bỏ hashids/Legacy*/lương. Đọc `docs/archive/2026-11-09-phase0-copy-trim-model.md` mục 7 và `docs/06-database.md` trước.
 
 ## 0. HANDOFF – ĐỌC PHẦN NÀY TRƯỚC (cập nhật 05/11/2026, sau đợt viết lại giao diện GSS)
 
@@ -42,7 +42,7 @@ OTP cho thao tác ghi của nhà xe (cần kênh SMS/email); PWA offline đầy 
 - **Đã gộp vào `master` (local)** cùng các commit tách dự án/đổi tên thương hiệu/hồ sơ công ty GSS. Nhánh làm việc cũ: `claude/gss-logistics-restructure-04b156`.
 - **`origin` = GitHub `hongsonphan/GSS_LOGISTICs`** (remote `vps` đã xoá; BIM cũ còn là `old-origin`, không push vào đó). Workflow deploy chỉ chạy tay; chưa có VPS riêng của GSS.
 - Việc push `master` do người dùng thực hiện.
-- File BRD gốc: `docs/BRD_GREEN_SOLUTIONS_SMART_GSS.md` (đã commit, có mục 0 đối chiếu với mã).
+- File BRD gốc: `docs/01-spec-brd.md` (đã commit, có mục 0 đối chiếu với mã).
 
 ### 0.2. Quyết định kiến trúc đã chốt (đừng đảo lại nếu chưa hỏi)
 1. **Mở rộng `DispatchTrip`**, không tạo `ContainerLeg`. 1 `DispatchTrip` = 1 dòng điều vận của 1 cont.
@@ -81,7 +81,7 @@ OTP cho thao tác ghi của nhà xe (cần kênh SMS/email); PWA offline đầy 
 URL/API mới (không còn `/gss/` riêng, GSS nằm trong khung chính `/`):  `/vendor/<token>/`, `/q/<token>/`, `/api/gss/*`, `/api/depot/*`, `/api/qr/*`, `/api/bookings/<id>/vendor-allocations/`, `/api/vendor-allocations/<id>/`, `/api/vendor/<token>/` (khai báo trong `config/urls.py`).
 
 ### 0.4. Chạy & kiểm thử
-- **Chạy local (MỘT cách duy nhất):** Docker `docker compose -p gss_logistics -f docker-compose.yml -f docker-compose.local.yml up -d --build` → `http://127.0.0.1:8086/` (Postgres `127.0.0.1:5436`). **Không dùng SQLite, không chạy `runserver` cổng khác (8088 đã bỏ).** Chi tiết: `docs/GSS_RUNBOOK.md` §1.
+- **Chạy local (MỘT cách duy nhất):** Docker `docker compose -p gss_logistics -f docker-compose.yml -f docker-compose.local.yml up -d --build` → `http://127.0.0.1:8086/` (Postgres `127.0.0.1:5436`). **Không dùng SQLite, không chạy `runserver` cổng khác (8088 đã bỏ).** Chi tiết: `docs/11-runbook.md` §1.
 - **Tài nguyên trên máy này:** chỉ stack `gss_logistics_*` (web 8086, Postgres 5436, Redis). Đừng tạo thêm CSDL/cổng khác cho GSS; stack `bim_logistics_*` (5435) là dự án BIM riêng – đừng đụng.
 - **Test:** `DEBUG=True SECRET_KEY=x python manage.py test core apps` → hiện **427 test đạt** (Postgres sạch). Không chạy test song song trên cùng CSDL test: tạo container Postgres tạm riêng (`docker run --rm -p 127.0.0.1:5438:5432 -e POSTGRES_PASSWORD=x postgres:16-alpine`) để tránh va chạm với session khác.
 - **Bắt buộc trước commit (CLAUDE.md):** `python scripts/build_app_js.py` và `python scripts/build_css.py` (hook `.githooks/pre-commit` tự kiểm). `static/css/gss.css` và `static/js/gss/*` **không** nằm trong pipeline build (viết tay).
@@ -119,7 +119,7 @@ URL/API mới (không còn `/gss/` riêng, GSS nằm trong khung chính `/`):  `
 
 ---
 
-> Nguồn: `BRD_GREEN_SOLUTIONS_SMART_GSS.md` v1.0.0 (04/11/2026) đối chiếu với mã GSS Logistics v4.7.x.
+> Nguồn: `01-spec-brd.md` v1.0.0 (04/11/2026) đối chiếu với mã GSS Logistics v4.7.x.
 > Trạng thái: **GĐ0–5 đã xong trên nhánh local (chưa merge/push). Xem mục 0.**
 >
 > **Quyết định đã chốt (05/11/2026):** mở rộng `DispatchTrip` (phương án B), **không** tạo `ContainerLeg`. Hệ quả:
@@ -272,4 +272,18 @@ Mỗi giai đoạn: migration + test (`python manage.py test`) + `build_app_js.p
 > **GĐ2–GĐ5: xong (05/11/2026).** Máy trạng thái + chứng từ 1–10 file/chặng + đổi vỏ hạ rỗng (`gss_workflow.py`, `gss_attachments.py`), gửi tin tài xế + POD theo khách (`gss_messages.py`, `PodTemplate`),
 > Bãi Đắk Nông (`apps/depot_yard`), Dashboard nhà xe (`gss_dashboard.py`), QR + hàng lẻ có Seal (`apps/qr_tracking`, `core/qr_tokens.py`), Bảng điều hành `/gss/`, trang tài xế `/q/<token>/`.
 > **Điều chỉnh:** giao diện GSS mới (`/gss/`, `/vendor/`, `/q/`) là các trang độc lập mobile-first dùng `static/css/gss.css` + `static/js/gss/*` (không qua SPA/Tailwind cũ) để không phụ thuộc vào SPA 10.000+ dòng; đã thêm liên kết ở sidebar.
-> Chi tiết chạy và giới hạn: xem `docs/GSS_RUNBOOK.md`.
+> Chi tiết chạy và giới hạn: xem `docs/11-runbook.md`.
+
+---
+
+## Phụ lục – Nhật ký quyết định kiến trúc kế thừa (ADR-001…005)
+
+> Chuyển từ lộ trình báo cáo cũ (đã xóa vì là lộ trình BIM, không còn khớp GSS). Các quyết định nền tảng này vẫn đúng.
+
+| Mã ADR | Tiêu đề Quyết định | Bối cảnh & Phương án đánh đổi | Quyết định được chọn | Trạng thái |
+|---|---|---|---|---|
+| **ADR-001** | Modular Monolith vs. Microservices | Đội ngũ tinh gọn, yêu cầu tính toàn vẹn giao dịch ACID cao trong quản lý vận đơn và đối soát tài chính P&L. | **Modular Monolith (Django 5.2)**: Cách ly nghiệp vụ qua bounded apps, chia sẻ database giao dịch, tránh chi phí vận hành mạng phân tán. | ✅ Accepted |
+| **ADR-002** | Vanilla JS SPA vs. Nặng Frontend Framework (React/Next) | Hiện trường mạng 4G/3G chập chờn, máy tính văn phòng cấu hình trung bình, cần tải trang tức thì dưới 1s. | **Vanilla JS ES6+ SPA kết hợp Tailwind CSS**: Đóng gói qua `build_app_js.py`, không cần runtime framework nặng, phản hồi tức thời. | ✅ Accepted |
+| **ADR-003** | Soft-Delete vs. Hard-Delete | Vận đơn, ảnh POD, phiếu EIR và chi phí là chứng cứ pháp lý giải quyết khiếu nại và bảo hiểm hàng hải. | **Bắt buộc 100% Soft-Delete**: Tuyệt đối cấm `.delete()`, kế thừa `SoftDeleteModel` và lưu vết thời gian. | ✅ Accepted |
+| **ADR-004** | Signal Denormalization Caching vs. Real-Time Query Aggregation | Bảng kê chi phí và dashboard BGĐ đòi hỏi hiển thị tức thời mà không quét toàn bảng (Full-table scan). | **Django Signals Caching**: Tự động tính toán P&L lưu vào `cached_revenue`, `cached_expense`, `cached_profit` trên `DispatchTrip`. | ✅ Accepted |
+| **ADR-005** | Hai Cấp Độ Quỹ Tạm Ứng (Two-Tier Advance Funds) | Điều độ cần chủ động cấp tiền gấp cho tài xế đi đường mà không phải đợi duyệt chi từng khoản qua kế toán công ty. | **Quỹ Điều Vận Cấp 1 (`DispatcherAdvanceFund`) & Tạm Ứng Chuyến Cấp 2 (`DriverTripAdvance`)**: Linh hoạt tối đa cho hiện trường. | ✅ Accepted |

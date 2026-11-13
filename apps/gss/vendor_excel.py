@@ -11,8 +11,14 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 
 XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-VENDOR_COLS = ['STT', 'Số cont', 'Loại', 'Nơi giao', 'Seal', 'Biển số đầu kéo', 'Biển số rơ-moóc', 'Tên tài xế', 'SĐT tài xế', 'Ghi chú']
-ALLOC_COLS = ['STT', 'Số cont', 'Loại', 'Seal', 'Nơi giao', 'Nhà xe hiện tại', 'Mã nhà xe (điền)', 'Trạng thái chuyến']
+VENDOR_COLS = [
+    'STT', 'Số Container', 'Loại Cont', 'Nơi Giao Hàng', 'Số Chì (Seal)',
+    'Biển Số Đầu Kéo', 'Biển Số Rơ-moóc', 'Họ Tên Tài Xế', 'SĐT Tài Xế', 'Ghi Chú',
+]
+ALLOC_COLS = [
+    'STT', 'Số Container', 'Loại Cont', 'Số Chì (Seal)',
+    'Nơi Giao Hàng', 'Nhà Xe Hiện Tại', 'Mã Nhà Xe (Điền)', 'Trạng Thái Chuyến',
+]
 PREVIEW_TTL = 30 * 60
 
 
@@ -40,13 +46,38 @@ def _read_meta(wb):
 
 
 def _style(ws):
-    from openpyxl.styles import Font, PatternFill
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    teal_fill = PatternFill(start_color='0F766E', end_color='0F766E', fill_type='solid')
+    header_font = Font(name='Calibri', size=12, bold=True, color='FFFFFF')
+    data_font = Font(name='Calibri', size=12, bold=False, color='0F172A')
+    thin_side = Side(border_style='thin', color='CBD5E1')
+    thin_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+    ws.row_dimensions[1].height = 28
     for c in ws[1]:
-        c.font = Font(bold=True)
-        c.fill = PatternFill('solid', fgColor='E2E8F0')
+        c.font = header_font
+        c.fill = teal_fill
+        c.border = thin_border
+        c.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+    center_headers = {'STT', 'Loại Cont', 'Số Chì (Seal)', 'SĐT Tài Xế'}
+    for r_idx in range(2, ws.max_row + 1):
+        ws.row_dimensions[r_idx].height = 22
+        for col_idx, cell in enumerate(ws[r_idx], start=1):
+            hdr = str(ws.cell(row=1, column=col_idx).value or '').strip()
+            cell.font = data_font
+            cell.border = thin_border
+            cell.alignment = Alignment(
+                horizontal='center' if hdr in center_headers else 'left',
+                vertical='center',
+            )
+
     ws.freeze_panes = 'A2'
     for col in ws.columns:
-        ws.column_dimensions[col[0].column_letter].width = min(36, max(10, max(len(str(c.value or '')) for c in col) + 2))
+        max_len = max((len(str(c.value or '')) for c in col), default=10)
+        hdr = str(col[0].value or '').strip()
+        min_w = 8 if hdr == 'STT' else 15
+        ws.column_dimensions[col[0].column_letter].width = min(40, max(min_w, max_len + 5))
 
 
 def _load(fileobj):

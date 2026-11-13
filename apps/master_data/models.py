@@ -360,9 +360,16 @@ class SubcontractorDriver(TimeStampedModel, SoftDeleteModel):
     )
     full_name = models.CharField(max_length=100, db_index=True, help_text="Họ và tên tài xế")
     phone = models.CharField(max_length=20, db_index=True, help_text="Số điện thoại liên hệ / Zalo nhận lệnh")
-    license_number = models.CharField(max_length=50, blank=True, help_text="Số giấy phép lái xe (GPLX)")
+    citizen_id = models.CharField(max_length=20, blank=True, default='', db_index=True, help_text="Số CCCD / CMND")
+    age = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Tuổi tài xế")
+    date_of_birth = models.DateField(null=True, blank=True, help_text="Ngày tháng năm sinh")
+    license_number = models.CharField(max_length=50, blank=True, default='', help_text="Số giấy phép lái xe (GPLX)")
+    license_class = models.CharField(max_length=20, blank=True, default='FC', help_text="Hạng bằng lái (VD: FC, C, E...)")
+    experience_years = models.PositiveSmallIntegerField(default=0, blank=True, help_text="Số năm kinh nghiệm lái xe")
+    avatar_url = models.CharField(max_length=500, blank=True, default='', help_text="Ảnh chân dung / đại diện")
+    status = models.CharField(max_length=20, default='ACTIVE', help_text="Trạng thái (ACTIVE, LEAVE, OFF...)")
     is_active = models.BooleanField(default=True, db_index=True)
-    notes = models.TextField(blank=True, help_text="Ghi chú về tài xế (kinh nghiệm, xe hay lái...)")
+    notes = models.TextField(blank=True, default='', help_text="Ghi chú về tài xế (kinh nghiệm, xe hay lái...)")
 
     class Meta:
         ordering = ['subcontractor', 'full_name']
@@ -371,6 +378,97 @@ class SubcontractorDriver(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"{self.full_name} ({self.phone}) - {self.subcontractor.name}"
+
+
+class SubcontractorTrailer(TimeStampedModel, SoftDeleteModel):
+    """
+    Danh mục Rơ-moóc thuộc Đơn vị 3PL / Nhà xe Thầu phụ.
+    Lưu riêng theo từng nhà xe để dùng lại khi chọn từ droplist trên Cổng Nhà Xe.
+    """
+    subcontractor = models.ForeignKey(
+        Subcontractor,
+        on_delete=models.CASCADE,
+        related_name='trailers',
+        help_text="Nhà xe / Đơn vị 3PL quản lý"
+    )
+    license_plate = models.CharField(max_length=20, db_index=True, help_text="Biển số rơ-moóc")
+    trailer_type = models.CharField(max_length=100, blank=True, default='', help_text="Loại moóc (VD: Moóc Xương 40ft)")
+    brand = models.CharField(max_length=50, blank=True, default='', help_text="Hãng sản xuất / Thương hiệu moóc")
+    payload_capacity_kg = models.IntegerField(default=32000, blank=True, help_text="Tải trọng cho phép tham gia giao thông (kg)")
+    registration_expiry = models.DateField(null=True, blank=True, help_text="Hạn đăng kiểm định kỳ")
+    next_maintenance_date = models.DateField(null=True, blank=True, help_text="Lịch bảo dưỡng định kỳ tiếp theo")
+    status = models.CharField(max_length=20, default='ACTIVE', help_text="Trạng thái (ACTIVE, MAINTENANCE, IDLE...)")
+    is_active = models.BooleanField(default=True, db_index=True)
+    notes = models.TextField(blank=True, default='', help_text="Ghi chú về rơ-moóc")
+
+    class Meta:
+        ordering = ['subcontractor', 'license_plate']
+        verbose_name = 'Rơ-moóc Thầu phụ'
+        verbose_name_plural = 'Danh mục Rơ-moóc Thầu phụ'
+
+    def __str__(self):
+        return f"{self.license_plate} - {self.subcontractor.name}"
+
+
+class SubcontractorPortalAccount(TimeStampedModel, SoftDeleteModel):
+    """
+    Tài khoản Cổng Nhà Xe (Vendor Portal) tách biệt hoàn toàn với tài khoản nhân viên nội bộ GSS.
+    Xác thực 3 yếu tố: Username + Password + Mã Token xác nhận (hoặc token lệnh của chính nhà xe),
+    kèm cơ chế tự động đăng xuất khi không thao tác (`idle_timeout_minutes`).
+    """
+    subcontractor = models.OneToOneField(
+        Subcontractor,
+        on_delete=models.CASCADE,
+        related_name='portal_account',
+        help_text="Nhà xe sở hữu tài khoản Portal"
+    )
+    username = models.CharField(max_length=80, unique=True, db_index=True, help_text="Tên đăng nhập riêng của nhà xe")
+    password_hash = models.CharField(max_length=255, help_text="Mật khẩu đã băm (PBKDF2)")
+    confirm_token_hash = models.CharField(max_length=64, blank=True, default='', db_index=True, help_text="SHA-256 của mã token xác nhận")
+    confirm_token_preview = models.CharField(max_length=24, blank=True, default='', help_text="Gợi ý 4 ký tự cuối token")
+    idle_timeout_minutes = models.PositiveSmallIntegerField(default=15, help_text="Tự động đăng xuất sau N phút không thao tác")
+    is_active = models.BooleanField(default=True, db_index=True)
+    failed_attempts = models.PositiveSmallIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True)
+    last_login_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True, default='')
+
+    class Meta:
+        ordering = ['username']
+        verbose_name = 'Tài khoản Portal Nhà xe'
+        verbose_name_plural = 'Tài khoản Portal Nhà xe'
+
+    def __str__(self):
+        return f"{self.username} -> {self.subcontractor.name}"
+
+    def set_password(self, raw_password):
+        from django.contrib.auth.hashers import make_password
+        self.password_hash = make_password(str(raw_password))
+
+    def check_password(self, raw_password):
+        from django.contrib.auth.hashers import check_password
+        if not self.password_hash or raw_password is None:
+            return False
+        return check_password(str(raw_password), self.password_hash)
+
+    def set_confirm_token(self, raw_token):
+        import hashlib
+        clean = (raw_token or '').strip()
+        if not clean:
+            self.confirm_token_hash = ''
+            self.confirm_token_preview = ''
+            return
+        self.confirm_token_hash = hashlib.sha256(clean.encode()).hexdigest()
+        self.confirm_token_preview = f"••••{clean[-4:]}" if len(clean) >= 4 else '••••'
+
+    def check_confirm_token(self, raw_token):
+        import hashlib
+        import secrets
+        clean = (raw_token or '').strip()
+        if not clean or not self.confirm_token_hash:
+            return False
+        candidate = hashlib.sha256(clean.encode()).hexdigest()
+        return secrets.compare_digest(candidate, self.confirm_token_hash)
 
 
 class CompanyProfile(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
@@ -603,3 +701,5 @@ class OpeningBalance(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
 # Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
 SubcontractorDriver.tenant_path = 'subcontractor__company'
+SubcontractorTrailer.tenant_path = 'subcontractor__company'
+SubcontractorPortalAccount.tenant_path = 'subcontractor__company'

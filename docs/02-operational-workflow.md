@@ -29,6 +29,24 @@ flowchart TD
 
 ---
 
+## 1.1 KIẾN TRÚC MÃ CHỨNG TỪ 3 CẤP (3-TIER TMS DOCUMENT HIERARCHY)
+
+Để phục vụ quản lý chuỗi cung ứng chặt chẽ từ Sales đến Điều vận nội bộ, Nhà xe thầu phụ (Vendor) và Lái xe hiện trường, hệ thống chuẩn hóa 3 cấp mã phiếu độc lập:
+
+1. **`BK.yyMM.xxx` (Đơn Đặt Chỗ / Booking Khách Hàng):**
+   - Sinh ra khi Phòng Kinh doanh chốt đơn hàng và nhập vào hệ thống.
+   - Thể hiện nhu cầu vận chuyển tổng thể của lô hàng (chưa có phương tiện).
+   - Tại Tab 1 Điều vận, những đơn chưa phân bổ hoặc đang điều dở dang được giữ nguyên mã `BK.yyMM.xxx` kèm huy hiệu `CHỜ ĐIỀU ĐỘ`.
+2. **`LDD.BK.yyMM.xxx` (Lệnh Điều Động Lô Hàng):**
+   - Kích hoạt khi Điều vận hoàn tất phân bổ toàn bộ container cho các Nhà xe và phát lệnh.
+   - Tại Tab 1 Điều vận, mã tự động gắn tiền tố `LDD.` kèm huy hiệu `ĐÃ ĐIỀU ĐỘ`.
+3. **`VC.yyMM.xxx` (Phiếu Vận Chuyển / Vận Đơn Chuyến Xe Lăn Bánh):**
+   - **Chỉ được sinh ra ngay khi Container được gán cụ thể Đầu kéo + Rơ-moóc + Tài xế** (do Nhà xe khai báo trên Cổng Vendor Portal hoặc Điều vận chỉ định).
+   - Nếu container chưa được gán tài xế & đầu kéo, hệ thống hiển thị trạng thái `Chờ Vendor gán xe` và **chưa sinh mã VC**.
+   - Tại Tab 3, hệ thống giám sát hành trình các xe lăn bánh trên tuyến theo từng Phiếu VC.
+
+---
+
 ## 2. MÁY TRẠNG THÁI CHUYẾN XE (TRIP STATE MACHINE)
 
 Vòng đời chuyến xe được kiểm soát bằng máy trạng thái đơn định (Deterministic State Machine) tại `core.workflows`, đảm bảo **không có tình trạng nhảy cóc trạng thái trái quy luật vận tải**:

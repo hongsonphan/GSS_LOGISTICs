@@ -81,7 +81,13 @@
         else trip.append(el('span', 'small t-mut', c.vendor ? 'Chờ nhà xe nhập xe' : 'Chưa phân bổ'));
         var vend = el('td', c.vendor ? 'b' : 't-mut', c.vendor || '—');
         var edit = el('td'); edit.append(ui.btn('Sửa', 'sec sm', function () { editContainer(c, m, function () { paintContainers(card, b, reload); }); }));
-        tr.append(td0, el('td', 'num', String(c.line_no)), el('td', 'mono b', c.container_number), el('td', null, c.container_type), el('td', 'mono', c.seal_number),
+        var contTd = el('td', 'mono b');
+        if (c.is_twin_container && c.container_number_2) {
+          contTd.append(el('div', 'small', c.container_number), el('div', 'small t-mut', '+ ' + c.container_number_2 + ' (Kẹp 20\')'));
+        } else {
+          contTd.textContent = c.container_number;
+        }
+        tr.append(td0, el('td', 'num', String(c.line_no)), contTd, el('td', null, c.container_type), el('td', 'mono', c.seal_number),
           el('td', 'num', fmtKg(c.gross_weight_kg)), el('td', null, c.delivery_loc || c.delivery_address || 'Theo B/L'), vend, trip,
           el('td', 'small', (c.tractor_plate || '') + (c.driver_name ? ' · ' + c.driver_name : '')),
           el('td', 'small', G.fmtDate(c.dem_expiry) + ' / ' + G.fmtDate(c.det_expiry)), edit);

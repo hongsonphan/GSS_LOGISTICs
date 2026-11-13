@@ -20,11 +20,7 @@
   var screens = {}, current = '', pending = null;
   var NEEDS = { depot: 'depot_yard', scan: 'qr_tracking', pod: 'pod_templates', booking: 'sales' };
   var GROUPS = {
-    'dashboard': [['dashboard', 'Tổng quan nhà xe'], ['lookup', 'Tra cứu B/L · cont']],
-    'dieu-van': [['dispatch', 'Điều phối chuyến']],
-    'kinh-doanh': [['booking', 'Đơn hàng B/L & phân bổ'], ['customers', 'Khách hàng'], ['locations', 'Địa điểm & lưu ý'], ['pod', 'Mẫu phiếu giao hàng'], ['freetime', 'Quy tắc DEM/DET']],
-    'xe-bai': [['depot', 'Bãi cont Đắk Nông'], ['subcontractors', 'Phương tiện & tài xế theo nhà xe'], ['scan', 'Quét QR']],
-    'ke-toan': [['statements', 'Bảng kê đối soát'], ['claims', 'Chi hộ & hoá đơn'], ['settlement', 'Đối soát cước nhà xe'], ['pricing', 'Biểu giá'], ['ledger-full', 'Sổ sách kế toán']]
+    'dashboard': [['dashboard', 'Tổng quan nhà xe'], ['lookup', 'Tra cứu B/L · cont']]
   };
   function usable(t) { return !!screens[t] && (!NEEDS[t] || feats[NEEDS[t]] !== false); }
   function groupOf(t) { for (var g in GROUPS) if (GROUPS[g].some(function (x) { return x[0] === t; })) return g; return null; }
@@ -62,6 +58,11 @@
   // ---------------- Theo dõi hành trình xe container (kế thừa bản demo) ----------------
   var FLEET_STEPS = [['READY', 'Sẵn sàng'], ['ARRIVED_AT_PICKUP', 'Đến nơi nhận'], ['LOADED_ON_VEHICLE', 'Đã nhận cont'], ['ARRIVED_AT_DELIVERY', 'Đến nơi giao'],
     ['UNLOADED', 'Giao xong'], ['RETURNING_EMPTY', 'Đi hạ rỗng'], ['EMPTY_RETURNED', 'Hạ rỗng']];
+  var NODE_CONFIG = {
+    1: { key: 'pickup', tag: 'NƠI NHẬN', cls: 'node-pickup', dotCls: 'dot-pickup' },
+    3: { key: 'delivery', tag: 'NƠI GIAO', cls: 'node-delivery', dotCls: 'dot-delivery' },
+    6: { key: 'dropoff', tag: 'NƠI HẠ RỖNG', cls: 'node-dropoff', dotCls: 'dot-dropoff' }
+  };
   var FLEET_COLORS = ['#2563eb', '#d97706', '#7c3aed', '#e11d48', '#0891b2'];
   function pctAt(k) { return Math.round(k / (FLEET_STEPS.length - 1) * 1000) / 10; }
   var fleetState = { q: '', sort: 'vendor', filter: 'all' };
@@ -98,7 +99,13 @@
       G.clear(list);
       var hd = el('div', 'fleet-head'), hw = el('div', 'fleet-who'); hw.append(el('i', 'ph ph-truck'), document.createTextNode(' Khách hàng & số cont')); hd.append(hw);
       var htrack = el('div', 'fleet-wrap');
-      FLEET_STEPS.forEach(function (s, k) { var t = el('span', 'fleet-lbl hd', (k + 1) + '. ' + s[1].toUpperCase()); t.style.left = pctAt(k) + '%'; htrack.append(t); });
+      FLEET_STEPS.forEach(function (s, k) {
+        var cfg = NODE_CONFIG[k];
+        var lblText = cfg ? ('★ ' + cfg.tag) : ((k + 1) + '. ' + s[1].toUpperCase());
+        var t = el('span', 'fleet-lbl hd' + (cfg ? ' hd-' + cfg.key : ''), lblText);
+        t.style.left = pctAt(k) + '%';
+        htrack.append(t);
+      });
       hd.append(htrack); list.append(hd);
       if (!vis.length) { list.append(el('div', 'empty', 'Không có xe nào khớp bộ lọc.')); return; }
       var lastVendor = null, idx = 0;
@@ -122,10 +129,23 @@
         who.append(l1, l2); who.title = (r.customer || '') + ' · Cont ' + conts + ' · Xe ' + (r.tractor_plate || '—') + ' · ' + (r.vendor || '') + ' · ' + (r.driver_name || '') + ' — bấm để xem chi tiết';
         var wrap = el('div', 'fleet-wrap'), places = { 1: r.pickup_location, 3: r.delivery_location, 6: r.dropoff_location };
         FLEET_STEPS.forEach(function (s, k) {
-          if (!places[k]) return; var t = el('span', 'fleet-lbl' + (k <= i ? '' : ' off'), places[k]); t.style.left = pctAt(k) + '%'; t.title = places[k]; wrap.append(t);
+          if (!places[k]) return;
+          var cfg = NODE_CONFIG[k] || { tag: s[1], cls: '', dotCls: '' };
+          var passed = k <= i;
+          var t = el('span', 'fleet-lbl node-dest ' + cfg.cls + (passed ? ' passed' : ' upcoming'), places[k]);
+          t.style.left = pctAt(k) + '%';
+          t.title = (cfg.tag ? (cfg.tag + ': ') : '') + places[k] + (passed ? ' (Đã qua)' : ' (Điểm tiếp theo)');
+          wrap.append(t);
         });
         var line = el('div', 'fleet-line'), fill = el('i'); fill.style.width = pct + '%'; line.append(fill);
-        FLEET_STEPS.forEach(function (s, k) { var d = el('span', 'dot' + (k <= i ? ' on' : '')); d.style.left = pctAt(k) + '%'; d.title = s[1]; line.append(d); });
+        FLEET_STEPS.forEach(function (s, k) {
+          var cfg = NODE_CONFIG[k];
+          var cls = 'dot' + (k <= i ? ' on' : '') + (cfg ? ' ' + cfg.dotCls : '');
+          var d = el('span', cls);
+          d.style.left = pctAt(k) + '%';
+          d.title = (cfg ? ('[' + cfg.tag + '] ') : '') + s[1];
+          line.append(d);
+        });
         var truck = el('span', 'truck'); truck.style.left = pct + '%'; truck.append(GSSTruck.make(r.tractor_plate)); line.append(truck);
         wrap.append(line); row.append(who, wrap); list.append(row);
       });
@@ -257,7 +277,12 @@
     ['Cont', 'Nhà xe', 'Xe / Tài xế', 'Bước hiện tại', 'DEM', 'DET', 'Chứng từ N·G·H'].forEach(function (h) { hr.append(el('th', null, h)); }); t.append(hr);
     j.results.forEach(function (r) {
       var tr = el('tr', 'click'); tr.tabIndex = 0; tr.onclick = function () { openTrip(r.trip_code); }; tr.onkeydown = function (e) { if (e.key === 'Enter') openTrip(r.trip_code); };
-      var c1 = el('td'); c1.append(el('div', 'b mono', r.container_number || '(chưa có số)'), el('div', 'small mut', r.trip_code + (r.line_no ? ' · dòng ' + r.line_no : '')));
+      var c1 = el('td');
+      if (r.container_number_2) {
+        c1.append(el('div', 'b mono small', (r.container_number || '(chưa có số)') + ' / ' + r.container_number_2), el('div', 'small mut', r.trip_code + (r.line_no ? ' · dòng ' + r.line_no : '') + ' · Kẹp 20\''));
+      } else {
+        c1.append(el('div', 'b mono', r.container_number || '(chưa có số)'), el('div', 'small mut', r.trip_code + (r.line_no ? ' · dòng ' + r.line_no : '')));
+      }
       if (r.swap_label) c1.append(el('div', 'small b', r.swap_label));
       var c3 = el('td'); c3.append(el('div', null, r.tractor_plate + (r.trailer_plate ? ' / ' + r.trailer_plate : '')), el('div', 'small mut', (r.driver_name || '—') + (r.driver_phone ? ' · ' + r.driver_phone : '')));
       var c4 = el('td'); c4.append(el('span', 'pill ' + (STEP_CLASS[r.step] || 'p-none'), r.step_label));

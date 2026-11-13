@@ -1,8 +1,8 @@
-# BIM LOGISTICS — UI/UX: BẢN TỔNG HỢP ĐỂ CHUẨN HÓA
+# GSS TMS — UI/UX: NGUYÊN TẮC GIAO DIỆN
 
 > **Mục đích:** Gom toàn bộ nội dung liên quan UI/UX rải trong `docs/` về một chỗ, làm đầu vào để viết lại thành **một bộ chuẩn duy nhất**.
 > **Trạng thái:** các mâu thuẫn giữa tài liệu đã được chốt ở Phần 0; nội dung bên dưới áp dụng các quyết định đó.
-> **Nguồn đã đọc:** `UI_UX_GUIDELINES.md` (chính), `CODING_STANDARDS.md` (IV, VI, VII), `FEATURES.md` (§2, §14.3, §16–19), `USER_GUIDE.md` (A1–A3, C3.4, D4), `AGENTS.md` (II), `DEVELOPMENT_PLAN.md` (Sprint 3), `CHANGELOG.md` (v4.7.13–v4.7.36), cùng ghi chú phản hồi của người dùng (không dùng badge trong bảng).
+> **Nguồn đã đọc:** `10-ui-ux-guidelines.md` (chính), `09-coding-standards.md` (IV, VI, VII), `03-features.md` (§2, §14.3, §16–19), `04-user-guide.md` (A1–A3, C3.4, D4), `14-ai-team.md` (II), `13-architecture-decisions.md` (Sprint 3), `CHANGELOG.md` (v4.7.13–v4.7.36), cùng ghi chú phản hồi của người dùng (không dùng badge trong bảng).
 > Các file `API_REFERENCE`, `DATABASE_SCHEMA`, `SECURITY_AUDIT`, `OPERATIONAL_WORKFLOW`, `PROJECT_OVERVIEW`, `README` không có nội dung UI đáng kể (chỉ trạng thái nghiệp vụ, đã trích ở 3.2).
 
 ---
@@ -113,7 +113,7 @@ Nhãn danh mục/tiêu đề KPI/header bảng: `uppercase tracking-wider`.
 - **Mặc định là chữ thuần.** Loại cont, loại xe, loại hình, trạng thái, nhà xe, nhãn nhóm… hiển thị bằng chữ; cần nhấn thì đổi **màu chữ** và/hoặc thêm **icon nhỏ** (`ph-check-circle`, `ph-clock`), không thêm nền, viền, bo tròn.
 - **Chỉ dùng badge/pill khi:** người dùng yêu cầu rõ, hoặc đó là thông tin chính cần quét nhanh (vd. trạng thái ở header chi tiết chuyến), có ít giá trị rời rạc và không lặp qua hàng chục dòng.
 - Tối đa **1 badge nổi bật mỗi vùng nhìn**; không đặt badge cạnh badge.
-- Số đếm trên tab dùng chữ số trong ngoặc hoặc chữ xám (`Tạm ứng (12)`), không dùng chấm tròn màu.
+- **Không đặt số đếm trên tên thẻ tab** (không `Tạm ứng (12)`, không chấm/huy hiệu tròn). Tab chỉ có icon + chữ. Cần xem số lượng thì đặt ở thẻ KPI hoặc bộ đếm `Hiển thị: X / Y` trong thẻ dữ liệu (chốt 09/11/2026).
 - Tên viết tắt khách hàng: chữ IN HOA thuần, không bọc.
 - Khi sửa/thêm cột bảng, kiểm tra không vô tình thêm pill.
 
@@ -257,7 +257,7 @@ Mọi action đều phải có toast kết quả.
 
 ### 4.9 Subtabs
 
-`bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto`. Tab chọn: nền đậm/nhạt rõ hoặc gạch chân; tab không chọn: chữ xám, hover mượt. Có thể kèm badge đếm số (vd. Tạm Ứng Tài Xế: số chưa hoàn).
+`bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto`. Tab chọn: nền đậm/nhạt rõ hoặc gạch chân; tab không chọn: chữ xám, hover mượt. **Không kèm số đếm/badge** (xem 2.6).
 
 ### 4.10 Thanh lọc & tìm kiếm
 
@@ -310,7 +310,7 @@ Avatar tròn + icon vai trò (Vương miện: Giám đốc · Vô lăng: Điều
 ### 5.7 Dashboard theo vai trò
 
 - Thanh chào cá nhân hóa + **Executive Role Switcher** (chỉ Ban Giám Đốc/Superuser): Ban Giám Đốc, Kế Toán, Điều Vận, Kinh Doanh, Đội Xe, Nhân Sự. Người thường: ẩn, cố định vai trò.
-- 4 thẻ KPI / vai trò (chi tiết nội dung KPI xem `FEATURES.md` §2.2).
+- 4 thẻ KPI / vai trò (chi tiết nội dung KPI xem `03-features.md` §2.2).
 - Hàng 3: Widget **Công việc cần xử lý** (mặc định 62%, có List/Kanban mini TODO–IN_PROGRESS–REVIEW; hiển thị Người giao/Người phụ trách/Người theo dõi) và Widget **Bản tin**; thanh kéo `#dash-widget-resizer` (25–75%, đổi tím Indigo khi hover) lưu `localStorage` (`bim_widget_split_ratio`, chế độ xem `bim_dashboard_task_view_mode`). Hai ô luôn **cao bằng nhau** (`items-stretch`).
 - Biểu đồ đôi (xu hướng + donut), thanh kéo `#dash-chart-resizer` (20–80%, `bim_chart_split_ratio`), gọi `Chart.resize()` sau khi kéo. Mỗi ô có `openChartCustomizer(n)` và nút `[Mặc định]` riêng. Chọn được nguồn dữ liệu (8 nguồn), trục nhóm, chỉ số, phép tính SUM/AVG/COUNT, loại biểu đồ (bar, horizontal_bar, line, doughnut, pie). Ngôn ngữ thuần Việt, không dùng từ "BI".
 - Quy ước màu biểu đồ Ban Giám Đốc: Doanh thu cước = cột Teal · Chi phí = cột Amber · Lợi nhuận gộp = đường Emerald.
@@ -360,7 +360,7 @@ Tương phản ≥4.5:1; không icon đơn độc; focus ring trên mọi phần
 - **Bảng kê chi phí 8 mục** với cụm 3 nút phân loại trách nhiệm chi trả.
 - **Tài chính & Quỹ:** tách Doanh thu | Chi phí (dòng 1); Tiền mặt | Ngân hàng (dòng 2).
 - **Sổ quỹ:** 4 thẻ KPI (Tồn quỹ tiền mặt, Số dư ngân hàng, Tổng tồn quỹ, Dòng tiền thuần); phiếu `PT-YYYY-XXX` / `PC-YYYY-XXX`.
-- **Kế toán — 7 subtab:** Sổ Quỹ Thu-Chi · Tạm Ứng Tài Xế · Quỹ Điều Vận · Khóa Sổ Chuyến Xe · Khoản Chi Hộ · Xe Bạn (3PL) · Vé BOT Tuyến (badge đếm trên 3 tab đầu có số chờ xử lý).
+- **Kế toán — 7 subtab:** Sổ Quỹ Thu-Chi · Tạm Ứng Tài Xế · Quỹ Điều Vận · Khóa Sổ Chuyến Xe · Khoản Chi Hộ · Xe Bạn (3PL) · Vé BOT Tuyến.
 - **Quyết toán gom chuyến:** gom theo Tài xế/Khách hàng/Đầu xe; kỳ; trạng thái sổ (Chờ / Tất cả / Đã quyết toán – khóa); KPI đối soát (chuyến chọn/tổng, tổng đã tạm ứng, thực chi hợp lệ, chênh lệch hoàn/chi bù).
 - **Bảng Điều vận:** 10 cột (STT, Mã chuyến `GSS-MMDD-XXX`, Lịch đóng, Khách hàng & Kho, Booking/Cont/Seal, Invoice/Dock, Xe kéo & Xe hạ, Ghi chú vận chuyển, Nơi lấy → Nơi hạ, Trạng thái); KPI: Tổng chuyến tháng · Đang chạy hôm nay · Chờ duyệt phí · Cảnh báo Cắt Máng; lọc có *Cắt Kéo*, *Ghép 2 Cont 20ft*, *Cảnh báo quá hạn Free DET*. Bỏ cột "Vị trí cont".
 - **Cảnh báo chủ động:** chuông thông báo Topbar (vỏ cont còn hạn <24h, chưa hạ bãi khi cách giờ Cắt Máng <2h).
@@ -418,7 +418,7 @@ Mục tiêu: màn hình **vào nhanh, đọc lâu không mỏi mắt, chỉ nổ
 ### 9.4 Hiệu năng tải (đo từ mã hiện tại)
 
 Hiện trạng đã kiểm tra trong `templates/base.html` và `static/`:
-- `static/js/app.js` ≈ **2,5 MB** một file (`FEATURES.md` ghi ~1 MB là đã cũ).
+- `static/js/app.js` ≈ **2,5 MB** một file (`03-features.md` ghi ~1 MB là đã cũ).
 - 3 file CSS Phosphor (`regular`, `fill`, `bold`) nạp chặn render; thêm `main.css` ≈ 69 KB, `tailwind.css` ≈ 108 KB, `contrast.css`.
 - `chart.umd.min.js` nạp đồng bộ trong `<head>` dù chỉ Dashboard/Báo cáo dùng.
 
@@ -441,7 +441,7 @@ Ngân sách đề xuất: JS ban đầu ≤ 600 KB nén, CSS ≤ 100 KB nén, LC
 
 ---
 
-## 10. QUY TRÌNH KHI SỬA GIAO DIỆN (từ CLAUDE.md, AGENTS.md)
+## 10. QUY TRÌNH KHI SỬA GIAO DIỆN (từ CLAUDE.md, 14-ai-team.md)
 
 - Sửa nguồn trong `static/js/src/app/**` rồi chạy `python scripts/build_app_js.py`; sửa class Tailwind thì `python scripts/build_css.py`; kiểm tra bằng `--check` trước khi commit. `static/js/app.js` và `static/css/tailwind*.css` là file tự sinh, không sửa tay.
 - File JS mới phải khai báo trong `static/js/src/app/manifest.txt`.

@@ -82,7 +82,8 @@ class ContainerListTests(Base):
     def test_paste_validates_each_row_and_two_phase(self):
         bad = 'MSCU1234560\n' + C1 + '\n' + C1 + '\nABC123'
         r = self.api('post', f'/api/gss/bookings/{self.booking.id}/containers/', {'text': bad, 'commit': '0'}).json()['data']
-        self.assertEqual(r['errors'], 3)  # sai số kiểm tra, trùng, sai định dạng
+        self.assertEqual(r['errors'], 2)  # trùng, sai định dạng; sai số kiểm tra là warning (không chặn nhập)
+        self.assertEqual(r['warnings'], 1)
         self.assertFalse(r['committed'])
         self.assertFalse(BookingContainer.objects.exists())
         r = self.api('post', f'/api/gss/bookings/{self.booking.id}/containers/', {'text': bad}).json()['data']
@@ -275,6 +276,260 @@ class VendorPortalTests(Base):
         wb.save(buf)
         r = self.client.post(f'/api/vendor/{self.token}/excel/', {'file': SimpleUploadedFile('x.xlsx', buf.getvalue())})
         self.assertEqual(r.status_code, 409)
+
+    def test_catalog_post_persists_per_vendor_and_isolates(self):
+        from apps.fleet.models import Vehicle
+        from apps.master_data.models import SubcontractorDriver, SubcontractorTrailer
+
+        # 1. Tạo mới đầu kéo, rơ-moóc, tài xế qua POST catalog cho self.sub2
+        r_tr = self.api('post', f'/api/vendor/{self.token}/catalog/', {'kind': 'tractor', 'license_plate': '51C-888.99'})
+        self.assertEqual(r_tr.status_code, 201, r_tr.content)
+        self.assertTrue(Vehicle.objects.filter(subcontractor=self.sub2, license_plate='51C-888.99', is_deleted=False).exists())
+
+        r_tl = self.api('post', f'/api/vendor/{self.token}/catalog/', {'kind': 'trailer', 'license_plate': '51R-777.66'})
+        self.assertEqual(r_tl.status_code, 201, r_tl.content)
+        self.assertTrue(SubcontractorTrailer.objects.filter(subcontractor=self.sub2, license_plate='51R-777.66', is_deleted=False).exists())
+
+        r_dr = self.api('post', f'/api/vendor/{self.token}/catalog/', {'kind': 'driver', 'full_name': 'Nguyễn Văn Mới', 'phone': '0912345678'})
+        self.assertEqual(r_dr.status_code, 201, r_dr.content)
+        self.assertTrue(SubcontractorDriver.objects.filter(subcontractor=self.sub2, full_name='Nguyễn Văn Mới', phone='0912345678', is_deleted=False).exists())
+
+        # 2. Tải lại catalog của self.sub2 phải thấy đủ 3 mục vừa tạo dù chưa gán vào chuyến nào
+        cat2 = self.client.get(f'/api/vendor/{self.token}/catalog/').json()['data']
+        self.assertIn('51C-888.99', cat2['tractors'])
+        self.assertIn('51R-777.66', cat2['trailers'])
+        self.assertTrue(any(d['name'] == 'Nguyễn Văn Mới' and d['phone'] == '0912345678' for d in cat2['drivers']))
+
+        # 3. Nhà xe khác không được thấy danh mục của self.sub2
+        sub3 = Subcontractor.objects.create(name='Nhà xe C', code='VND03', company=self.sub.company)
+        self.client.force_login(self.staff)
+        c34 = self.import_conts(C3, C4)
+        out1 = self.assign([c34[C3].id], sub3)
+        self.client.logout()
+        tok1 = out1['link'].rstrip('/').rsplit('/', 1)[-1]
+        cat1 = self.client.get(f'/api/vendor/{tok1}/catalog/').json()['data']
+        self.assertNotIn('51C-888.99', cat1['tractors'])
+        self.assertNotIn('51R-777.66', cat1['trailers'])
+        self.assertFalse(any(d['phone'] == '0912345678' for d in cat1['drivers']))
+
+        # 4. Dữ liệu sai định dạng bị từ chối với 409
+        bad = self.api('post', f'/api/vendor/{self.token}/catalog/', {'kind': 'driver', 'full_name': 'Thiếu SĐT', 'phone': ''})
+        self.assertEqual(bad.status_code, 409)
+
+    def test_catalog_update_and_delete(self):
+        from apps.fleet.models import Vehicle
+        from apps.master_data.models import SubcontractorDriver, SubcontractorTrailer
+
+        # 1. Thêm mới tài xế có đầy đủ thông tin: ảnh, CCCD, tuổi, bằng lái, số điện thoại, kinh nghiệm
+        r = self.api('post', f'/api/vendor/{self.token}/catalog/', {
+            'kind': 'driver',
+            'full_name': 'Lê Văn Tài',
+            'phone': '0933445566',
+            'citizen_id': '079123456789',
+            'age': 38,
+            'license_class': 'FC',
+            'license_number': 'GPLX999888',
+            'experience_years': 8,
+        })
+        self.assertEqual(r.status_code, 201)
+        drv = SubcontractorDriver.objects.get(phone='0933445566', subcontractor=self.sub2)
+        self.assertEqual(drv.citizen_id, '079123456789')
+        self.assertEqual(drv.age, 38)
+        self.assertEqual(drv.experience_years, 8)
+
+        # 2. Sửa thông tin tài xế qua action update
+        r_up = self.api('post', f'/api/vendor/{self.token}/catalog/', {
+            'action': 'update',
+            'id': drv.id,
+            'kind': 'driver',
+            'full_name': 'Lê Văn Tài (Đã đổi)',
+            'phone': '0933445566',
+            'citizen_id': '079123456789',
+            'age': 39,
+            'license_class': 'FC',
+        })
+        self.assertEqual(r_up.status_code, 200)
+        drv.refresh_from_db()
+        self.assertEqual(drv.full_name, 'Lê Văn Tài (Đã đổi)')
+        self.assertEqual(drv.age, 39)
+
+        # 3. Xóa tài xế khỏi danh mục qua action delete
+        r_del = self.api('post', f'/api/vendor/{self.token}/catalog/', {
+            'action': 'delete',
+            'kind': 'driver',
+            'id': drv.id,
+            'value': '0933445566'
+        })
+        self.assertEqual(r_del.status_code, 200)
+        drv.refresh_from_db()
+        self.assertTrue(drv.is_deleted)
+        self.assertFalse(any(d['phone'] == '0933445566' for d in r_del.json()['data']['drivers']))
+
+    def test_vendor_portal_3factor_auth_lockout_idle_and_isolation(self):
+        from apps.master_data.models import SubcontractorPortalAccount
+
+        # 1. Chưa đăng nhập nhân viên không được cấp tài khoản Portal Nhà xe
+        unauth_admin = self.api('post', f'/api/vendor-portal-accounts/{self.sub2.id}/', {'username': 'v2'})
+        self.assertIn(unauth_admin.status_code, (401, 403))
+
+        # 2. Điều vận GSS cấp tài khoản Portal (user + pw + token xác nhận + idle timeout 5 phút)
+        self.client.force_login(self.staff)
+        prov = self.api('post', f'/api/vendor-portal-accounts/{self.sub2.id}/', {
+            'username': 'vendor_sub2',
+            'password': 'StrongPass#2026',
+            'idle_timeout_minutes': 5,
+            'is_active': True,
+        })
+        self.assertEqual(prov.status_code, 200, prov.content)
+        confirm_token = prov.json()['data']['issued_confirm_token']
+        self.assertTrue(len(confirm_token) >= 20)
+        self.client.logout()
+
+        # 3. Khi đã bật tài khoản Portal, truy cập token cũ hoặc workspace khi chưa login -> 401
+        r_unauth = self.client.get(f'/api/vendor/{self.token}/')
+        self.assertEqual(r_unauth.status_code, 401)
+        self.assertEqual(r_unauth.json()['details']['code'], 'vendor_auth_required')
+        self.assertEqual(self.client.get('/api/vendor/portal/overview/').status_code, 401)
+
+        # 4. Tạo thêm nhà xe sub3 + allocation tok3 để kiểm tra chéo token và cô lập dữ liệu
+        self.client.force_login(self.staff)
+        sub3 = Subcontractor.objects.create(name='Nhà xe Khác', code='VND09', company=self.sub.company)
+        c34 = self.import_conts(C3, C4)
+        out3 = self.assign([c34[C3].id], sub3)
+        tok3 = out3['link'].rstrip('/').rsplit('/', 1)[-1]
+        alloc3 = vs.allocation_by_token(tok3)
+        self.client.logout()
+
+        # Token xác nhận sai hoặc token của nhà xe khác bị từ chối
+        bad_tok = self.api('post', '/api/vendor/auth/login/', {
+            'username': 'vendor_sub2', 'password': 'StrongPass#2026', 'confirm_token': tok3,
+        })
+        self.assertEqual(bad_tok.status_code, 401)
+
+        # 5. Sai thêm 4 lần (tổng 5 lần tính cả sai token ở trên) -> khóa tạm thời (403 vendor_account_locked)
+        for _ in range(3):
+            r_fail = self.api('post', '/api/vendor/auth/login/', {
+                'username': 'vendor_sub2', 'password': 'WrongPassword1', 'confirm_token': confirm_token,
+            })
+            self.assertEqual(r_fail.status_code, 401)
+        r_lock = self.api('post', '/api/vendor/auth/login/', {
+            'username': 'vendor_sub2', 'password': 'WrongPassword1', 'confirm_token': confirm_token,
+        })
+        self.assertEqual(r_lock.status_code, 403)
+        self.assertEqual(r_lock.json()['details']['code'], 'vendor_account_locked')
+
+        # Kể cả đúng mật khẩu vẫn bị chặn trong lúc đang khóa
+        r_still_locked = self.api('post', '/api/vendor/auth/login/', {
+            'username': 'vendor_sub2', 'password': 'StrongPass#2026', 'confirm_token': confirm_token,
+        })
+        self.assertEqual(r_still_locked.status_code, 403)
+
+        # Admin GSS mở khóa
+        self.client.force_login(self.staff)
+        unlock = self.api('post', f'/api/vendor-portal-accounts/{self.sub2.id}/', {'unlock': True})
+        self.assertEqual(unlock.status_code, 200)
+        self.client.logout()
+
+        # 6. Đăng nhập hợp lệ với Username + Password + Token xác nhận (hoặc token phân bổ của chính nhà xe)
+        ok_login = self.api('post', '/api/vendor/auth/login/', {
+            'username': 'vendor_sub2', 'password': 'StrongPass#2026', 'confirm_token': confirm_token,
+        })
+        self.assertEqual(ok_login.status_code, 200, ok_login.content)
+        self.assertTrue(ok_login.json()['data']['authenticated'])
+        self.assertEqual(ok_login.json()['data']['idle_timeout_minutes'], 5)
+
+        # Phiên nhà xe truy cập được lệnh của chính mình, nhưng TUYỆT ĐỐI KHÔNG truy cập được API nội bộ GSS hay nhà xe khác
+        self.assertEqual(self.client.get(f'/api/vendor/{self.token}/').status_code, 200)
+        self.assertEqual(self.client.get('/api/vendor/portal/overview/').status_code, 200)
+        self.assertEqual(self.client.get(f'/api/vendor/{tok3}/').status_code, 403)
+        self.assertEqual(self.client.get(f'/api/vendor/portal/allocations/{alloc3.id}/').status_code, 404)
+        self.assertIn(self.client.get('/api/gss/dashboard/').status_code, (401, 403))
+        self.assertIn(self.client.get(f'/api/vendor-portal-accounts/{self.sub2.id}/').status_code, (401, 403))
+
+        # 7. Passive polling (X-Vendor-Passive-Poll: 1) KHÔNG được phép làm mới last_seen
+        sess = self.client.session
+        old_ts = timezone.now().timestamp() - 120
+        va = dict(sess['_vendor_auth'])
+        va['last_seen'] = old_ts
+        sess['_vendor_auth'] = va
+        sess.save()
+
+        poll_res = self.client.get('/api/vendor/portal/tracking/', HTTP_X_VENDOR_PASSIVE_POLL='1')
+        self.assertEqual(poll_res.status_code, 200)
+        self.assertAlmostEqual(self.client.session['_vendor_auth']['last_seen'], old_ts, delta=1.0)
+
+        # 8. Khi quá thời gian idle (5 phút = 300s) -> tự động đăng xuất với mã vendor_session_idle
+        sess = self.client.session
+        va = dict(sess['_vendor_auth'])
+        va['last_seen'] = timezone.now().timestamp() - 305
+        sess['_vendor_auth'] = va
+        sess.save()
+
+        idle_res = self.client.get('/api/vendor/portal/overview/')
+        self.assertEqual(idle_res.status_code, 401)
+        self.assertEqual(idle_res.json()['details']['code'], 'vendor_session_idle')
+        st_after = self.client.get('/api/vendor/auth/status/').json()
+        self.assertFalse(st_after['authenticated'])
+        self.assertTrue(SubcontractorPortalAccount.objects.filter(subcontractor=self.sub2).exists())
+
+    def test_vendor_portal_tracking_7_stages_and_sanitized_fields(self):
+        # Cấp tài khoản và đăng nhập bằng link token của chính nhà xe
+        self.client.force_login(self.staff)
+        prov = self.api('post', f'/api/vendor-portal-accounts/{self.sub2.id}/', {
+            'username': 'vtrack2',
+            'password': 'TrackPass#2026',
+            'idle_timeout_minutes': 15,
+            'is_active': True,
+        })
+        self.assertEqual(prov.status_code, 200)
+        self.client.logout()
+
+        login_r = self.api('post', '/api/vendor/auth/login/', {
+            'username': 'vtrack2',
+            'password': 'TrackPass#2026',
+            'confirm_token': self.token,
+        })
+        self.assertEqual(login_r.status_code, 200, login_r.content)
+
+        # Gán xe qua Workspace API
+        alloc = vs.allocation_by_token(self.token)
+        put_r = self.api('put', f'/api/vendor/portal/allocations/{alloc.id}/', {
+            'rows': [{
+                'line_no': 1,
+                'tractor_plate': '51C-555.11',
+                'trailer_plate': '51R-555.11',
+                'driver_name': 'Nguyễn Văn Theo Dõi',
+                'driver_phone': '0911222333',
+            }]
+        })
+        self.assertEqual(put_r.status_code, 200, put_r.content)
+        self.assertEqual(put_r.json()['saved'], 1, put_r.content)
+        trip = DispatchTrip.objects.filter(vendor_allocation=alloc, is_deleted=False).first()
+        self.assertIsNotNone(trip)
+        self.run_to(trip, 'LOADED_ON_VEHICLE')
+
+        # Kiểm tra dữ liệu Theo Dõi 7 chặng & ẩn hoàn toàn thông tin giá/khách hàng
+        tr_res = self.client.get(f'/api/vendor/portal/tracking/?alloc_id={alloc.id}')
+        self.assertEqual(tr_res.status_code, 200)
+        rows = tr_res.json()['data']
+        self.assertTrue(len(rows) >= 1)
+        row0 = next(r for r in rows if r['trip_id'] == trip.id)
+        self.assertEqual(row0['step_status'], 'LOADED_ON_VEHICLE')
+        self.assertEqual(row0['step_index'], 3)
+        self.assertEqual(len(row0['milestones']), 7)
+        self.assertIsNotNone(row0['milestones']['created_at'])
+        self.assertIsNotNone(row0['milestones']['arrived_pickup_at'])
+        self.assertIsNotNone(row0['milestones']['loaded_at'])
+        self.assertIsNone(row0['milestones']['arrived_delivery_at'])
+        # Không lộ tên khách hàng hay thông tin tài chính
+        raw_dump = json.dumps(row0, ensure_ascii=False)
+        self.assertNotIn(self.customer.name, raw_dump)
+        for forbidden_key in ('customer', 'customer_name', 'sell_price', 'buy_price', 'total_amount', 'rate_card'):
+            self.assertNotIn(forbidden_key, row0)
+
+        # Đăng xuất thủ công xóa sạch session
+        self.assertEqual(self.client.post('/api/vendor/auth/logout/').status_code, 200)
+        self.assertEqual(self.client.get('/api/vendor/portal/tracking/').status_code, 401)
 
 
 class PricingTests(Base):
@@ -527,3 +782,56 @@ class PermissionTests(Base):
         body = self.client.get(f'/api/qr/t/{msg.trip_token(t)}/').content.decode()
         for word in ('unit_price', 'cached_revenue', 'subcontractor_cost', 'finance'):
             self.assertNotIn(word, body)
+
+
+
+class WorkflowPhasesTests(Base):
+    def test_paired_20ft_and_bl_search_settlement(self):
+        self.booking.mbl_number = 'MBL-PAIR-999'
+        self.booking.hbl_number = 'HBL-PAIR-888'
+        self.booking.container_size = '20DC'
+        self.booking.save(update_fields=['mbl_number', 'hbl_number', 'container_size'])
+        BookingContainer.objects.create(booking=self.booking, line_no=1, container_number=C1, container_type='20DC', seal_number='S1', company=self.booking.company)
+        BookingContainer.objects.create(booking=self.booking, line_no=2, container_number=C2, container_type='20DC', seal_number='S2', company=self.booking.company)
+        c_list = list(self.booking.containers.filter(is_deleted=False).order_by('line_no'))
+        cs.assign(self.booking, [c.id for c in c_list], self.sub, user=self.staff)
+        from apps.dispatch.models import BookingVendorAllocation
+        alloc = BookingVendorAllocation.objects.get(booking=self.booking, subcontractor=self.sub, is_deleted=False)
+        res = vs.submit_rows(alloc, [
+            {'line_no': 1, 'tractor_plate': '51C-20001', 'trailer_plate': '51R-20001', 'driver_name': 'Tai 1', 'driver_phone': '0901111111'},
+            {'line_no': 2, 'tractor_plate': '51C-20001', 'trailer_plate': '51R-20001', 'driver_name': 'Tai 1', 'driver_phone': '0901111111', 'paired_with_line_no': 1},
+        ])
+        self.assertEqual(res['saved'], 2, res)
+        t1 = DispatchTrip.objects.get(booking_order=self.booking, vendor_line_no=1, is_deleted=False)
+        t2 = DispatchTrip.objects.get(booking_order=self.booking, vendor_line_no=2, is_deleted=False)
+        self.assertTrue(t1.is_twin_container)
+        self.assertEqual(t1.container_number_2, C2)
+        self.assertTrue(t2.is_twin_container)
+        self.assertEqual(t2.container_number_2, C1)
+        self.assertEqual(t1.containers.count(), 2)
+
+        from apps.dispatch import gss_search, gss_settlement
+        found_mbl = gss_search.search('MBL-PAIR-999')
+        self.assertEqual(len(found_mbl['bookings']), 1)
+        qs_bl = gss_settlement.queryset(bl='HBL-PAIR-888')
+        self.assertEqual(qs_bl.count(), 2)
+
+    def test_auto_delivery_note_ocr_fallback_and_storage_path(self):
+        from django.utils import timezone
+        from apps.gss import docs as dc, ocr
+        from apps.gss.models import DeliveryNote
+
+        t = self.run_to(self.trip(), 'UNLOADED')
+        self.assertTrue(DeliveryNote.objects.filter(trips=t, is_deleted=False).exists())
+
+        res = ocr.extract_invoice_from_image(png('inv.png'))
+        self.assertFalse(res['configured'])
+        self.assertEqual(res['source'], 'MANUAL')
+
+        r_api = self.client.get('/api/gss/invoices/ocr/')
+        self.assertEqual(r_api.status_code, 200)
+        self.assertFalse(r_api.json()['data']['ocr_configured'])
+
+        rel = dc.storage_rel_path(t, 'PICKUP', 1, timezone.now(), 'img.jpg', key='abcd1234')
+        self.assertTrue(rel.startswith('Storage/'))
+        self.assertIn('/Chung_Tu_Hanh_Trinh/', rel)

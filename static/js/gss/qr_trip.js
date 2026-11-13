@@ -99,7 +99,14 @@
       if (swap && swap.cb.checked) body.swap = { new_number: swap.n.value, reason: swap.r.value };
       G.api(API + 'step/', { method: 'POST', body: body }).then(function (j) {
         G.toast(j.message, 'ok'); return load();
-      }).catch(function (e) { msg.textContent = e.message; btn.disabled = false; });
+      }).catch(function (e) {
+        if (!e.status && !navigator.onLine && G.offlineQueue) {
+          return G.offlineQueue.enqueue(API + 'step/', { method: 'POST', body: body }).then(function () {
+            G.toast('Mất sóng – đã lưu tạm xác nhận bước, sẽ tự đồng bộ khi có mạng.', 'ok');
+          });
+        }
+        msg.textContent = e.message; btn.disabled = false;
+      });
     };
     card.append(msg, btn);
     return card;
@@ -166,7 +173,14 @@
       var fd = stamp(new FormData(), ''); fd.append('place', place);
       G.api(API + 'checkpoint/', { method: 'POST', body: fd })
         .then(function (j) { G.toast(j.message, 'ok'); sel.value = ''; })
-        .catch(function (e) { G.toast(!e.status && !navigator.onLine ? 'Mất sóng – thử lại khi có mạng.' : e.message, 'bad'); })
+        .catch(function (e) {
+          if (!e.status && !navigator.onLine && G.offlineQueue) {
+            return G.offlineQueue.enqueue(API + 'checkpoint/', { method: 'POST', body: fd }).then(function () {
+              G.toast('Mất sóng – đã lưu tạm mốc qua trạm, sẽ tự đồng bộ khi có mạng.', 'ok'); sel.value = '';
+            });
+          }
+          G.toast(!e.status && !navigator.onLine ? 'Mất sóng – thử lại khi có mạng.' : e.message, 'bad');
+        })
         .then(function () { btn.disabled = false; });
     };
     card.append(sel, other, btn);

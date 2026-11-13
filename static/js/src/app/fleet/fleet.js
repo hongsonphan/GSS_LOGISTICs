@@ -8,63 +8,37 @@ let trailerSortColumn = null;
 let trailerSortDirection = 'asc';
 
 function switchFleetSubTab(tab) {
-    currentFleetSubTab = tab === 'trailers' ? 'trailers' : 'vehicles';
+    currentFleetSubTab = tab;
     const btnVehicles = document.getElementById('fleet-tab-btn-vehicles');
     const btnTrailers = document.getElementById('fleet-tab-btn-trailers');
-    const badgeVehicles = document.getElementById('fleet-badge-tractors-count');
-    const badgeTrailers = document.getElementById('fleet-badge-trailers-count');
-    const iconVehicles = btnVehicles ? btnVehicles.querySelector('i') : null;
-    const iconTrailers = btnTrailers ? btnTrailers.querySelector('i') : null;
+    const btnDepot = document.getElementById('fleet-tab-btn-depot');
     const panelVehicles = document.getElementById('fleet-panel-vehicles');
     const panelTrailers = document.getElementById('fleet-panel-trailers');
+    const panelDepot = document.getElementById('fleet-panel-depot');
     const btnCreateLabel = document.getElementById('btn-fleet-create-label');
 
-    if (currentFleetSubTab === 'vehicles') {
-        if (btnVehicles) {
-            btnVehicles.className = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-teal-600 bg-teal-50/70 text-teal-900 shadow-2xs box-border';
-        }
-        if (badgeVehicles) {
-            badgeVehicles.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-teal-100 text-teal-800 border-teal-200';
-        }
-        if (iconVehicles) {
-            iconVehicles.className = 'ph-bold ph-truck text-base text-teal-600';
-        }
-        if (btnTrailers) {
-            btnTrailers.className = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border';
-        }
-        if (badgeTrailers) {
-            badgeTrailers.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200';
-        }
-        if (iconTrailers) {
-            iconTrailers.className = 'ph-bold ph-arrows-horizontal text-base text-slate-500';
-        }
-        if (panelVehicles) panelVehicles.classList.remove('hidden');
-        if (panelTrailers) panelTrailers.classList.add('hidden');
+    const activeClassTeal = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-teal-600 bg-teal-50/70 text-teal-900 shadow-2xs box-border';
+    const activeClassIndigo = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-2xs box-border';
+    const inactiveClass = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border';
+
+    if (btnVehicles) btnVehicles.className = tab === 'vehicles' ? activeClassTeal : inactiveClass;
+    if (btnTrailers) btnTrailers.className = tab === 'trailers' ? activeClassIndigo : inactiveClass;
+    if (btnDepot) btnDepot.className = tab === 'depot' ? activeClassTeal : inactiveClass;
+
+    if (panelVehicles) panelVehicles.classList.toggle('hidden', tab !== 'vehicles');
+    if (panelTrailers) panelTrailers.classList.toggle('hidden', tab !== 'trailers');
+    if (panelDepot) panelDepot.classList.toggle('hidden', tab !== 'depot');
+
+    if (tab === 'vehicles') {
         if (btnCreateLabel) btnCreateLabel.innerText = 'Thêm Đầu Kéo';
         applyFleetFilters();
-    } else {
-        if (btnVehicles) {
-            btnVehicles.className = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border';
-        }
-        if (badgeVehicles) {
-            badgeVehicles.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200';
-        }
-        if (iconVehicles) {
-            iconVehicles.className = 'ph-bold ph-truck text-base text-slate-500';
-        }
-        if (btnTrailers) {
-            btnTrailers.className = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-2xs box-border';
-        }
-        if (badgeTrailers) {
-            badgeTrailers.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-indigo-100 text-indigo-800 border-indigo-200';
-        }
-        if (iconTrailers) {
-            iconTrailers.className = 'ph-bold ph-arrows-horizontal text-base text-indigo-600';
-        }
-        if (panelVehicles) panelVehicles.classList.add('hidden');
-        if (panelTrailers) panelTrailers.classList.remove('hidden');
+    } else if (tab === 'trailers') {
         if (btnCreateLabel) btnCreateLabel.innerText = 'Thêm Rơ-Moóc';
         applyTrailerFilters();
+    } else if (tab === 'depot') {
+        if (btnCreateLabel) btnCreateLabel.innerText = 'Nhập Bãi';
+        loadDepotStats();
+        loadDepotMovements();
     }
 }
 
@@ -632,11 +606,6 @@ async function loadFleetData() {
         setTxt('fleet-card-maint-line1', data.card_maint?.line_1);
         setTxt('fleet-card-maint-line2', data.card_maint?.line_2);
 
-        const badgeTractorsEl = document.getElementById('fleet-badge-tractors-count');
-        if (badgeTractorsEl) badgeTractorsEl.innerText = data.total_tractors || 0;
-        const badgeTrailersEl = document.getElementById('fleet-badge-trailers-count');
-        if (badgeTrailersEl) badgeTrailersEl.innerText = data.total_trailers || 0;
-
         rawFleetVehicles = data.vehicles || [];
         rawFleetTrailers = data.trailers || [];
         populateFleetFilterDropdowns(rawFleetVehicles);
@@ -647,3 +616,163 @@ async function loadFleetData() {
         console.error('Error loading fleet data:', err);
     }
 }
+
+
+// =========================================================================
+// QUẢN LÝ BÃI CONTAINER (DEPOT YARD) - GSS STANDARD
+// =========================================================================
+async function loadDepotStats() {
+    try {
+        const res = await fetchWithAuth('/api/depot/stats/');
+        if (!res.ok) return;
+        const j = await res.json();
+        const d = j.data || j;
+        const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+        setT('depot-stat-total', d.total_in_yard || 0);
+        setT('depot-stat-full', d.full_count || 0);
+        setT('depot-stat-empty', d.empty_count || 0);
+        setT('depot-stat-in-today', `+${d.in_today || 0}`);
+        setT('depot-stat-out-today', `-${d.out_today || 0}`);
+    } catch (e) {
+        console.warn('Lỗi tải thống kê bãi depot:', e);
+    }
+}
+
+let rawDepotMovements = [];
+async function loadDepotMovements() {
+    const tbody = document.getElementById('depot-movements-tbody');
+    if (!tbody) return;
+    const statusVal = document.getElementById('filter-depot-status')?.value || '';
+    const searchVal = (document.getElementById('filter-depot-search')?.value || '').trim();
+
+    let url = '/api/depot/movements/?';
+    if (statusVal) url += `status=${encodeURIComponent(statusVal)}&`;
+    if (searchVal) url += `q=${encodeURIComponent(searchVal)}&`;
+
+    try {
+        const res = await fetchWithAuth(url);
+        if (!res.ok) throw new Error('Không tải được danh sách bãi.');
+        const j = await res.json();
+        rawDepotMovements = j.results || j.data || j || [];
+        renderDepotTable(rawDepotMovements);
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-rose-500 font-bold">${escapeHtml(e.message)}</td></tr>`;
+    }
+}
+
+let depotSearchTimeout = null;
+function debounceDepotSearch() {
+    clearTimeout(depotSearchTimeout);
+    depotSearchTimeout = setTimeout(() => { loadDepotMovements(); }, 300);
+}
+
+function renderDepotTable(items) {
+    const tbody = document.getElementById('depot-movements-tbody');
+    if (!tbody) return;
+    if (!items.length) {
+        tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center text-slate-400 italic">Không có container nào phù hợp bộ lọc.</td></tr>';
+        return;
+    }
+
+    let html = '';
+    items.forEach((m, idx) => {
+        const isIn = m.status === 'IN_YARD';
+        const stBadge = isIn 
+            ? '<span class="text-teal-700 font-bold flex items-center gap-1"><i class="ph-bold ph-arrow-down-left"></i> Đang tồn bãi</span>'
+            : '<span class="text-slate-500 font-medium flex items-center gap-1"><i class="ph-bold ph-arrow-up-right"></i> Đã rời bãi</span>';
+        const cargoBadge = m.cargo_status === 'FULL'
+            ? '<span class="text-indigo-700 font-bold">Hàng (Full)</span>'
+            : '<span class="text-emerald-700 font-bold">Rỗng (Empty)</span>';
+
+        const fmtDate = (iso) => {
+            if (!iso) return '—';
+            try {
+                const d = new Date(iso);
+                return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+            } catch(e) { return iso; }
+        };
+
+        const inTime = fmtDate(m.gate_in_at);
+        const outTime = fmtDate(m.gate_out_at);
+        const days = m.storage_days != null ? `${m.storage_days} ngày` : '—';
+
+        html += `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="p-2.5 font-mono font-black text-slate-800 text-xs">${escapeHtml(m.container_number)}</td>
+                <td class="p-2.5 font-bold text-slate-600">${escapeHtml(m.container_type || '40HC')}</td>
+                <td class="p-2.5">${cargoBadge}</td>
+                <td class="p-2.5 font-mono font-bold text-slate-700">${escapeHtml(m.in_vehicle_plate || '—')}</td>
+                <td class="p-2.5 font-mono text-slate-600">${escapeHtml(m.in_trailer_plate || '—')}</td>
+                <td class="p-2.5 text-slate-700">${escapeHtml(m.in_driver_name || '—')}</td>
+                <td class="p-2.5 font-medium text-slate-600">${inTime}</td>
+                <td class="p-2.5 font-medium text-slate-600">${outTime}</td>
+                <td class="p-2.5 text-center font-bold text-slate-800 font-heading">${days}</td>
+                <td class="p-2.5">${stBadge}</td>
+                <td class="p-2.5 text-center">
+                    ${isIn ? `
+                        <button type="button" onclick="depotGateOutMovement(${m.id}, '${escapeHtml(m.container_number)}')" 
+                            class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded font-bold text-[11px] cursor-pointer">
+                            Gate-Out
+                        </button>
+                    ` : '<span class="text-slate-400 text-[11px]">Hoàn tất</span>'}
+                </td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+async function depotGateOutMovement(id, contNum) {
+    const plate = prompt(`Xác nhận cho cont [${contNum}] rời bãi (Gate-Out).
+Nhập biển số xe kéo cont đi:`);
+    if (!plate) return;
+    try {
+        const res = await fetchWithAuth(`/api/depot/movements/${id}/gate-out/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ out_vehicle_plate: plate.trim() })
+        });
+        const out = await res.json();
+        if (res.ok && out.success) {
+            showToast('success', `Đã xác nhận Gate-Out cont ${contNum}!`);
+            loadDepotStats();
+            loadDepotMovements();
+        } else {
+            showToast('danger', out.message || 'Lỗi khi Gate-Out.');
+        }
+    } catch (e) {
+        showToast('danger', 'Lỗi: ' + e.message);
+    }
+}
+
+function openDepotGateInModal() {
+    const cont = prompt('Nhập Số Container Gate-In vào bãi:');
+    if (!cont) return;
+    const plate = prompt('Nhập Biển số xe kéo cont đến:') || '';
+    const driver = prompt('Nhập Tên tài xế:') || '';
+    
+    fetchWithAuth('/api/depot/movements/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            container_number: cont.trim().toUpperCase(),
+            in_vehicle_plate: plate.trim().toUpperCase(),
+            in_driver_name: driver.trim(),
+            cargo_status: 'EMPTY'
+        })
+    }).then(r => r.json()).then(out => {
+        if (out.success) {
+            showToast('success', `Đã nhập cont ${cont} vào bãi thành công!`);
+            loadDepotStats();
+            loadDepotMovements();
+        } else {
+            showToast('danger', out.message || 'Lỗi khi nhập bãi.');
+        }
+    }).catch(e => showToast('danger', 'Lỗi: ' + e.message));
+}
+
+window.loadDepotStats = loadDepotStats;
+window.loadDepotMovements = loadDepotMovements;
+window.debounceDepotSearch = debounceDepotSearch;
+window.depotGateOutMovement = depotGateOutMovement;
+window.openDepotGateInModal = openDepotGateInModal;

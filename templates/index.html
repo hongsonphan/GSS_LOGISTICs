@@ -17,7 +17,6 @@
     {% include 'views/view_trip_detail.html' %}
 
     <!-- 2.3. Phân hệ Tạo Lệnh Điều Động Chuyến Xe (Dedicated Full-Page View) -->
-    {% include 'views/view_create_trip.html' %}
 
     <!-- 3. Phân hệ Nhân sự & Tiền lương Tạm tính -->
     {% include 'views/view_personnel.html' %}
@@ -70,6 +69,10 @@
 
     <!-- 11. Phân hệ Quản Lý & Giao Việc Văn Phòng (Jira/Asana Standard) -->
     {% include 'views/view_tasks.html' %}
+
+    <!-- 2.2 Trang Lập Lệnh Điều Động Vận Tải & Phân Bổ Vendor (Dedicated Full-Page View) -->
+    {% include 'views/view_dispatch_order.html' %}
+    {% include 'components/modal_import_containers.html' %}
 
     {% if gss_on %}
     <!-- 12. Màn hình GSS: nhà xe · bãi cont · QR (nhúng trong khung BIM) -->

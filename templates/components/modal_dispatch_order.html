@@ -1,0 +1,419 @@
+<!-- MODAL LẬP LỆNH ĐIỀU ĐỘNG VẬN TẢI & PHÂN BỔ VENDOR (GSS TMS STANDARD - MÀN HÌNH LỚN) -->
+<div id="modal-dispatch-order" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-3 hidden animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="modal-dispatch-order-title" onclick="if(event.target === this) closeDispatchOrderModal()">
+    <div id="modal-dispatch-order-dialog" class="bg-white w-full max-w-[97vw] h-[95vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-200">
+        
+        <!-- Header Lệnh Điều Động Vận Tải -->
+        <div class="px-5 py-3.5 bg-gradient-to-r from-teal-800 via-teal-700 to-teal-800 text-white flex items-center justify-between shrink-0 shadow-xs">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-teal-200 shrink-0 border border-white/10">
+                    <i class="ph-bold ph-arrows-split text-2xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h3 id="modal-dispatch-order-title" class="text-base font-black uppercase tracking-wide font-heading">
+                            Lập Lệnh Điều Động & Phân Bổ Container Cho Vendor
+                        </h3>
+                        <span id="mdo-header-order-code" class="px-2 py-0.5 rounded-lg text-xs font-mono font-black bg-teal-950/80 text-teal-200 border border-teal-500/40">
+                            LĐĐ: --
+                        </span>
+                        <span id="mdo-header-status-badge" class="px-2 py-0.5 rounded-lg text-xs font-bold font-heading bg-amber-500/20 text-amber-200 border border-amber-400/30">
+                            Chờ điều phối
+                        </span>
+                    </div>
+                    <p class="text-xs text-teal-100 font-medium opacity-90 mt-0.5">
+                        Kế thừa hồ sơ Booking/BL, phân bổ hạn mức cho nhà xe đối tác, cấp link bảo mật & quản lý container vận tải
+                    </p>
+                </div>
+            </div>
+
+            <!-- Cụm nút thao tác trên Header -->
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="if(mdoCurrentBooking) openBookingDetail(mdoCurrentBooking.id);" 
+                    class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-colors cursor-pointer" 
+                    title="Mở Màn Hình Lớn Booking Chi Tiết (Xem & Chỉnh Sửa Thông Tin Gốc)">
+                    <i class="ph-bold ph-arrow-square-out text-sm"></i>
+                    <span class="hidden sm:inline">Xem B/L Gốc</span>
+                </button>
+                <button type="button" onclick="if(mdoCurrentBooking) printDispatchOrderSlip(mdoCurrentBooking.id);" 
+                    class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-colors cursor-pointer" 
+                    title="In Phiếu Lệnh Điều Vận">
+                    <i class="ph-bold ph-printer text-sm"></i>
+                    <span class="hidden sm:inline">In Lệnh</span>
+                </button>
+                <button type="button" onclick="toggleMdoFullscreen()" id="btn-mdo-toggle-fullscreen" 
+                    class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer" 
+                    title="Phóng to / Thu nhỏ toàn màn hình">
+                    <i class="ph-bold ph-corners-out text-base" id="icon-mdo-fullscreen"></i>
+                </button>
+                <button type="button" onclick="closeDispatchOrderModal()" 
+                    class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer" 
+                    title="Đóng (Esc)">
+                    <i class="ph-bold ph-x text-base"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Body Scrollable -->
+        <div class="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1 text-slate-800 text-xs bg-slate-50/60">
+            
+            <!-- ========================================================================= -->
+            <!-- 1. HỒ SƠ LỆNH ĐIỀU ĐỘNG VẬN TẢI (KẾ THỪA TỪ BOOKING)                     -->
+            <!-- ========================================================================= -->
+            <div class="p-4 bg-white border border-teal-200/90 rounded-2xl shadow-2xs space-y-3.5">
+                <!-- Header Chọn / Xác nhận Booking -->
+                <div class="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-teal-100">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center font-bold">
+                            1
+                        </div>
+                        <label for="mdo-select-booking" class="font-black uppercase tracking-wider text-teal-950 flex items-center gap-1.5 text-xs font-heading">
+                            Hồ Sơ Đơn Hàng & Lệnh Điều Động Vận Tải <span class="text-rose-500">*</span>
+                        </label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="mdo-booking-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-300 font-heading">
+                            Đang chọn: --
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Thanh chọn Booking (Cho phép đổi sang Booking khác khi cần) -->
+                <div>
+                    <select id="mdo-select-booking" onchange="onDispatchOrderBookingChanged(this.value)" 
+                        class="w-full h-10 px-3.5 bg-slate-50 hover:bg-white focus:bg-white border border-teal-300 rounded-xl font-bold text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 transition-all">
+                        <option value="">-- Chọn Booking / Đơn Hàng Cần Lập Lệnh Điều Động --</option>
+                    </select>
+                </div>
+
+                <!-- BỘ THẺ THÔNG TIN ĐẦY ĐỦ CỦA BOOKING NHƯ 1 LỆNH ĐIỀU ĐỘNG CHUẨN ERP -->
+                <div id="mdo-booking-summary" class="hidden space-y-3 pt-1">
+                    <!-- 3 Cards: Thông tin Vận đơn | Lộ trình 3 điểm | Kế hoạch & Hạn lệnh -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        
+                        <!-- CARD A: THÔNG TIN HỒ SƠ & VẬN ĐƠN -->
+                        <div class="p-3.5 bg-gradient-to-br from-slate-50 to-teal-50/30 rounded-xl border border-slate-200/90 space-y-2">
+                            <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/70 text-slate-700 font-bold font-heading text-[11px] uppercase tracking-wider">
+                                <span class="flex items-center gap-1.5 text-teal-800"><i class="ph-bold ph-identification-card text-sm"></i> Đơn Hàng & Vận Đơn</span>
+                                <span id="mdo-sum-type" class="px-2 py-0.5 rounded text-[10px] bg-teal-100 text-teal-800 font-bold">--</span>
+                            </div>
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-start gap-2">
+                                    <span class="text-slate-400 text-[11px] shrink-0">Khách hàng:</span>
+                                    <strong id="mdo-sum-customer" class="text-slate-800 text-right font-bold truncate max-w-[200px]">--</strong>
+                                </div>
+                                <div class="flex justify-between items-center gap-2">
+                                    <span class="text-slate-400 text-[11px] shrink-0">Mã Booking / B/L:</span>
+                                    <strong id="mdo-sum-code-bl" class="text-teal-900 font-mono font-bold">--</strong>
+                                </div>
+                                <div class="flex justify-between items-center gap-2">
+                                    <span class="text-slate-400 text-[11px] shrink-0">Hãng tàu / Chuyến:</span>
+                                    <strong id="mdo-sum-vessel" class="text-slate-700 font-semibold">--</strong>
+                                </div>
+                                <div class="flex justify-between items-center gap-2">
+                                    <span class="text-slate-400 text-[11px] shrink-0">Hàng hóa thực tế:</span>
+                                    <strong id="mdo-sum-cargo" class="text-slate-800 font-bold truncate max-w-[180px]">--</strong>
+                                </div>
+                                <div class="flex justify-between items-center gap-2 pt-1 border-t border-slate-200/60">
+                                    <span class="text-slate-500 font-bold text-[11px]">Quy cách & Cước:</span>
+                                    <div class="text-right">
+                                        <strong id="mdo-sum-containers" class="text-teal-700 font-black text-xs block">-- Cont</strong>
+                                        <span id="mdo-sum-price" class="text-slate-600 text-[11px] font-mono font-bold">-- đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD B: LỘ TRÌNH VẬN TẢI 3 ĐIỂM (CHUẨN TMS) -->
+                        <div class="p-3.5 bg-gradient-to-br from-slate-50 to-amber-50/20 rounded-xl border border-slate-200/90 space-y-2">
+                            <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/70 text-slate-700 font-bold font-heading text-[11px] uppercase tracking-wider">
+                                <span class="flex items-center gap-1.5 text-amber-800"><i class="ph-bold ph-path text-sm"></i> Lộ Trình 3 Điểm Vận Tải</span>
+                                <span class="text-slate-400 text-[10px] font-normal">Chuẩn 3 Mốc</span>
+                            </div>
+                            <div class="space-y-2 pt-0.5">
+                                <div class="flex items-start gap-2">
+                                    <div class="w-5 h-5 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</div>
+                                    <div class="min-w-0 flex-1">
+                                        <span class="text-slate-400 block text-[10px] font-semibold uppercase">Cảng / Depot lấy cont:</span>
+                                        <strong id="mdo-sum-pickup" class="text-slate-800 font-bold text-xs truncate block">--</strong>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2">
+                                    <div class="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</div>
+                                    <div class="min-w-0 flex-1">
+                                        <span class="text-slate-400 block text-[10px] font-semibold uppercase">Kho giao / đóng hàng:</span>
+                                        <strong id="mdo-sum-delivery" class="text-slate-800 font-bold text-xs truncate block">--</strong>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2">
+                                    <div class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">3</div>
+                                    <div class="min-w-0 flex-1">
+                                        <span class="text-slate-400 block text-[10px] font-semibold uppercase">Depot hạ bãi / trả rỗng:</span>
+                                        <strong id="mdo-sum-dropoff" class="text-slate-800 font-bold text-xs truncate block">--</strong>
+                                    </div>
+                                </div>
+                                <!-- Tương thích ngược id cũ -->
+                                <span id="mdo-sum-route" class="hidden"></span>
+                            </div>
+                        </div>
+
+                        <!-- CARD C: KẾ HOẠCH, HẠN LỆNH & LƯU Ý CHO TÀI XẾ -->
+                        <div class="p-3.5 bg-gradient-to-br from-slate-50 to-indigo-50/20 rounded-xl border border-slate-200/90 space-y-2">
+                            <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/70 text-slate-700 font-bold font-heading text-[11px] uppercase tracking-wider">
+                                <span class="flex items-center gap-1.5 text-indigo-800"><i class="ph-bold ph-calendar-check text-sm"></i> Kế Hoạch & Hạn Lệnh</span>
+                                <span class="text-slate-400 text-[10px] font-normal">SLA Vận Tải</span>
+                            </div>
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-center gap-2">
+                                    <span class="text-slate-400 text-[11px] shrink-0">Ngày hẹn đóng hàng:</span>
+                                    <strong id="mdo-sum-loading-date" class="text-slate-800 font-bold font-mono">--</strong>
+                                </div>
+                                <div class="flex justify-between items-center gap-2">
+                                    <span class="text-slate-400 text-[11px] shrink-0">Hạn lệnh giao (D/O):</span>
+                                    <strong id="mdo-sum-do-expiry" class="text-slate-800 font-semibold font-mono">--</strong>
+                                </div>
+                                <div class="flex justify-between items-center gap-2">
+                                    <span class="text-slate-400 text-[11px] shrink-0">Hạn Free DEM:</span>
+                                    <strong id="mdo-sum-dem" class="text-slate-800 font-bold">--</strong>
+                                </div>
+                                <div class="flex justify-between items-center gap-2">
+                                    <span class="text-slate-400 text-[11px] shrink-0">Hạn Free DET:</span>
+                                    <strong id="mdo-sum-det" class="text-slate-800 font-bold">--</strong>
+                                </div>
+                                <div class="pt-1 border-t border-slate-200/60">
+                                    <div class="text-[11px] text-slate-600 line-clamp-2" id="mdo-sum-notes" title="Ghi chú chỉ đường và giờ cấm tải">
+                                        <i class="ph-bold ph-info text-amber-600 text-xs"></i> Không có lưu ý cấm tải.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Thời gian hiệu lực lệnh điều động (Hỗ trợ tài xế quay đầu) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 px-1">
+                        <div>
+                            <label for="mdo-valid-from" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                                <i class="ph-bold ph-calendar text-teal-600"></i> Lệnh Có Hiệu Lực Từ Ngày:
+                            </label>
+                            <input type="date" id="mdo-valid-from" class="w-full h-9 px-3 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label for="mdo-valid-to" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                                <i class="ph-bold ph-calendar-plus text-teal-600"></i> Đến Ngày (Cho phép xe quay đầu):
+                            </label>
+                            <input type="date" id="mdo-valid-to" class="w-full h-9 px-3 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:ring-2 focus:ring-teal-500">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ========================================================================= -->
+            <!-- 2. PHÂN BỔ CONTAINER CHO CÁC NHÀ XE ĐỐI TÁC (VENDOR) ("BẢNG PHÂN BỔ CŨ")-->
+            <!-- ========================================================================= -->
+            <div class="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-2xs space-y-3.5">
+                <div class="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center font-bold">
+                            2
+                        </div>
+                        <div>
+                            <span class="font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 text-xs font-heading">
+                                <i class="ph-bold ph-truck text-amber-600 text-sm"></i>
+                                Phân Bổ Hạn Mức Container Cho Nhà Xe Đối Tác (Vendor)
+                            </span>
+                            <p class="text-[11px] text-slate-500 font-medium">Chia chỉ tiêu số lượng cont cho từng nhà xe, cấp link tra cứu điện tử hoặc nhập từ Excel</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="mdoDownloadExcelTemplate()" 
+                            class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1 shadow-2xs cursor-pointer transition-colors">
+                            <i class="ph-bold ph-file-xls text-emerald-600"></i> Xuất Mẫu Excel
+                        </button>
+                        <button type="button" onclick="document.getElementById('mdo-excel-input').click()" 
+                            class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1 shadow-2xs cursor-pointer transition-colors">
+                            <i class="ph-bold ph-upload-simple text-indigo-600"></i> Nhập Excel
+                        </button>
+                        <input type="file" id="mdo-excel-input" accept=".xlsx,.xls,.csv" onchange="mdoUploadExcel(this.files[0])" class="hidden">
+                    </div>
+                </div>
+
+                <!-- Bảng danh sách dòng phân bổ Quota cho từng Vendor -->
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left erp-table whitespace-nowrap text-xs">
+                        <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[11px] font-heading">
+                            <tr>
+                                <th class="p-2.5 w-10 text-center">#</th>
+                                <th class="p-2.5 min-w-[220px]">Nhà Xe Đối Tác (Vendor)</th>
+                                <th class="p-2.5 w-32 text-center">Số Cont Phân Bổ</th>
+                                <th class="p-2.5 min-w-[220px]">Ghi Chú Cho Nhà Xe</th>
+                                <th class="p-2.5 w-24 text-center">Gửi Email</th>
+                                <th class="p-2.5 w-16 text-center">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mdo-allocations-tbody" class="divide-y divide-slate-100 bg-white">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tiến độ phân bổ & Nút thêm nhà xe -->
+                <div class="flex items-center justify-between pt-1 flex-wrap gap-2">
+                    <button type="button" onclick="mdoAddAllocationRow()" 
+                        class="px-3.5 py-1.5 rounded-xl border border-dashed border-teal-500 hover:border-teal-600 text-teal-700 bg-teal-50/50 hover:bg-teal-50 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors">
+                        <i class="ph-bold ph-plus-circle text-sm"></i> + Thêm Nhà Xe Nhận Cont
+                    </button>
+                    
+                    <div class="flex items-center gap-3 text-xs font-heading bg-slate-50 px-3.5 py-1.5 rounded-xl border border-slate-200">
+                        <span class="text-slate-600">Đã chia: <strong id="mdo-stat-allocated" class="text-teal-700 font-black text-sm">0</strong> cont</span>
+                        <span class="text-slate-300">|</span>
+                        <span class="text-slate-600">Còn lại: <strong id="mdo-stat-remaining" class="text-amber-700 font-black text-sm">0</strong> cont</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================================= -->
+            <!-- 3. DANH SÁCH CONTAINER CỦA B/L & GÁN XE CHI TIẾT (10/100 CONT)             -->
+            <!-- ========================================================================= -->
+            <div id="mdo-modal-containers-section" class="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-2xs space-y-3.5 transition-all">
+                <!-- Header Danh Sách Cont -->
+                <div class="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center font-bold">
+                            3
+                        </div>
+                        <div>
+                            <span class="font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 text-xs font-heading">
+                                <i class="ph-bold ph-package text-teal-700 text-sm"></i>
+                                Danh Sách Container Của B/L & Gán Nhà Xe Chi Tiết
+                            </span>
+                            <p class="text-[11px] text-slate-500 font-medium">Xem tiến độ gán xe, lọc tìm kiếm, gán nhà xe hàng loạt hoặc nhập danh sách cont từ Excel</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="btn-mdo-modal-expand-table" onclick="toggleMdoContainersTableExpand()" 
+                            class="px-3 py-1.5 bg-white hover:bg-teal-50 hover:text-teal-800 text-slate-700 border border-slate-300 hover:border-teal-400 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" 
+                            title="Mở rộng bảng container toàn màn hình để dễ thao tác khi có nhiều cont">
+                            <i id="icon-mdo-modal-expand-table" class="ph-bold ph-corners-out text-sm text-teal-600"></i>
+                            <span id="text-mdo-modal-expand-table">Toàn Màn Hình</span>
+                        </button>
+                        <button type="button" onclick="if(mdoCurrentBooking) openImportContainersModal(mdoCurrentBooking.id);" 
+                            class="px-3 py-1.5 rounded-xl border border-teal-300 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors">
+                            <i class="ph-bold ph-file-arrow-up text-teal-600 text-sm"></i>
+                            <span>+ Nhập Cont (Dán / Excel)</span>
+                        </button>
+                        <button type="button" onclick="if(mdoCurrentBooking) printDispatchOrderSlip(mdoCurrentBooking.id);" 
+                            class="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors">
+                            <i class="ph-bold ph-printer text-slate-500 text-sm"></i>
+                            <span>In Lệnh Tổng</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- THANH CÔNG CỤ TÌM KIẾM, LỌC & GÁN NHANH HÀNG LOẠT -->
+                <div class="p-3 bg-slate-50/90 border border-slate-200 rounded-xl flex items-center justify-between flex-wrap gap-3 text-xs">
+                    <!-- Cụm Tìm kiếm & Lọc -->
+                    <div class="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
+                        <div class="relative flex-1 min-w-[180px] max-w-xs">
+                            <i class="ph-bold ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs pointer-events-none"></i>
+                            <input type="text" id="mdo-cont-filter-search" oninput="mdoFilterContainers()" placeholder="Tìm số cont, seal, xe, tài xế..." 
+                                class="w-full h-8 pl-8 pr-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none">
+                        </div>
+                        <select id="mdo-cont-filter-status" onchange="mdoFilterContainers()" 
+                            class="h-8 px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 focus:ring-2 focus:ring-teal-500 cursor-pointer">
+                            <option value="ALL">Tất cả trạng thái (10)</option>
+                            <option value="UNASSIGNED">1. Chưa phân bổ</option>
+                            <option value="ASSIGNED">2. Đã giao cho Nhà xe</option>
+                            <option value="READY">3. Đã Phát lệnh Điều độ</option>
+                            <option value="IN_TRANSIT">── Đang vận chuyển (Bước 4–8)</option>
+                            <option value="ARRIVED_AT_PICKUP">4. Đã đến nơi nhận</option>
+                            <option value="LOADED_ON_VEHICLE">5. Đã lên xe (Nhận cont/hàng)</option>
+                            <option value="ARRIVED_AT_DELIVERY">6. Đã đến nơi giao</option>
+                            <option value="UNLOADED">7. Đã hạ xe / Giao xong</option>
+                            <option value="RETURNING_EMPTY">8. Đang đi hạ rỗng</option>
+                            <option value="EMPTY_RETURNED">9. Đã hạ rỗng (Hoàn tất)</option>
+                            <option value="CANCELLED">10. Đã hủy</option>
+                        </select>
+                    </div>
+
+                    <!-- Cụm Gán Nhanh Cho Cont Đã Chọn -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span id="mdo-cont-selected-count" class="text-xs font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-lg">
+                            Đã chọn: 0 cont
+                        </span>
+                        <select id="mdo-bulk-vendor-select" class="h-8 px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 min-w-[180px]">
+                            <option value="">-- Chọn Nhà xe phụ trách --</option>
+                        </select>
+                        <button type="button" onclick="mdoAssignBulkContainers()" class="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold text-xs shadow-2xs flex items-center gap-1 cursor-pointer transition-colors">
+                            <i class="ph-bold ph-check"></i> Giao Cho Nhà Xe
+                        </button>
+                        <button type="button" onclick="mdoUnassignBulkContainers()" class="px-2.5 py-1.5 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-300 hover:border-rose-300 rounded-lg font-bold text-xs shadow-2xs flex items-center gap-1 cursor-pointer transition-colors" title="Bỏ gán nhà xe cho các cont được tick">
+                            <i class="ph-bold ph-x text-rose-500"></i> Bỏ Phân Bổ
+                        </button>
+                        <span id="mdo-containers-count-badge" class="text-[11px] font-bold text-slate-500">Đã nạp 0 container</span>
+                    </div>
+                </div>
+
+                <!-- Bảng 12 Cột Container Chuẩn Logistics -->
+                <div class="overflow-x-auto rounded-xl border border-slate-200 max-h-80 overflow-y-auto">
+                    <table class="w-full text-left erp-table whitespace-nowrap text-xs">
+                        <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[11px] font-heading sticky top-0 z-10 shadow-2xs">
+                            <tr>
+                                <th class="p-2.5 w-8 text-center"><input type="checkbox" id="mdo-select-all-conts" onchange="mdoToggleSelectAllConts(this)" class="rounded text-teal-600 cursor-pointer"></th>
+                                <th class="p-2.5 w-10 text-center">STT</th>
+                                <th class="p-2.5 min-w-[130px]">Số Container</th>
+                                <th class="p-2.5 w-20 text-center">Loại Cont</th>
+                                <th class="p-2.5 min-w-[110px]">Số Chì (Seal)</th>
+                                <th class="p-2.5 w-24 text-center">VGM (Kg)</th>
+                                <th class="p-2.5 min-w-[170px]">Nơi Giao Hàng</th>
+                                <th class="p-2.5 min-w-[170px]">Nơi Trả Rỗng</th>
+                                <th class="p-2.5 w-28 text-center">Hạn DEM / DET</th>
+                                <th class="p-2.5 min-w-[170px]">Nhà Xe Phụ Trách</th>
+                                <th class="p-2.5 min-w-[180px]">Đầu Kéo / Tài Xế</th>
+                                <th class="p-2.5 w-28 text-center">Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mdo-containers-tbody" class="divide-y divide-slate-100 bg-white">
+                            <tr><td colspan="12" class="p-6 text-center text-slate-400">Chọn Booking ở trên để xem danh sách container chi tiết</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ========================================================================= -->
+            <!-- 4. KẾT QUẢ PHÁT LỆNH & LINK BẢO MẬT CHO VENDOR                             -->
+            <!-- ========================================================================= -->
+            <div id="mdo-result-box" class="hidden p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2">
+                <div class="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                    <i class="ph-bold ph-check-circle text-emerald-600 text-base"></i>
+                    <span>Lệnh điều động đã được phát hành thành công cho các Nhà xe đối tác!</span>
+                </div>
+                <div id="mdo-links-list" class="space-y-1.5 text-xs text-slate-700 font-mono"></div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-3 shrink-0">
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="closeDispatchOrderModal()" 
+                    class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs cursor-pointer font-heading transition-colors">
+                    Đóng
+                </button>
+                <button type="button" onclick="if(mdoCurrentBooking) printDispatchOrderSlip(mdoCurrentBooking.id);" 
+                    class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs cursor-pointer font-heading flex items-center gap-1.5 transition-colors">
+                    <i class="ph-bold ph-printer text-sm text-slate-500"></i>
+                    <span>In Lệnh Điều Vận Tổng</span>
+                </button>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <button type="button" id="mdo-btn-submit" onclick="submitDispatchOrderAllocation()" 
+                    class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold font-heading text-xs shadow-sm flex items-center gap-2 transition-all cursor-pointer">
+                    <i class="ph-bold ph-paper-plane-tilt text-sm"></i>
+                    <span>Xác Nhận Phát Lệnh & Phân Bổ Cho Vendor</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>

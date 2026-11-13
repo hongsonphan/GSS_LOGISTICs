@@ -10,4 +10,21 @@ from .sales import BookingActiveAPIView, BookingPriceLookupAPIView, SalesAPIView
 from .bookings import BookingOrderDetailAPIView, BookingOrderStatusAPIView, BookingDocumentDeleteAPIView  # noqa: F401
 from .customs import CustomsAPIView  # noqa: F401
 from .accounting import AccountingAPIView  # noqa: F401
-from .vendor import BookingVendorAllocationsAPIView, VendorAllocationDetailAPIView, VendorPortalAPIView, VendorPortalCatalogAPIView, VendorPortalExcelAPIView  # noqa: F401
+from .vendor import (  # noqa: F401
+    BookingVendorAllocationsAPIView,
+    VendorAllocationDetailAPIView,
+    VendorPortalAPIView,
+    VendorPortalCatalogAPIView,
+    VendorPortalExcelAPIView,
+    VendorPortalAuthStatusAPIView,
+    VendorPortalLoginAPIView,
+    VendorPortalLogoutAPIView,
+    VendorPortalHeartbeatAPIView,
+    VendorWorkspaceOverviewAPIView,
+    VendorWorkspaceAllocationAPIView,
+    VendorWorkspaceExcelAPIView,
+    VendorWorkspaceCatalogAPIView,
+    VendorWorkspaceTrackingAPIView,
+    VendorPortalAccountAdminAPIView,
+    VendorContainersMonitoringAPIView,
+)

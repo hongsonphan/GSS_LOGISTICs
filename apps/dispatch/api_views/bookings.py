@@ -118,6 +118,11 @@ class BookingOrderDetailAPIView(APIView):
             'total_containers': b.total_containers,
             'dispatched_containers': b.dispatched_containers,
             'commodity': b.commodity,
+            'mbl_number': b.mbl_number or '',
+            'hbl_number': b.hbl_number or '',
+            'supplier_name': b.supplier_name or '',
+            'port_of_loading': b.port_of_loading or '',
+            'port_of_discharge': b.port_of_discharge or '',
             'hs_code': b.hs_code,
             'pickup_location': b.pickup_location,
             'delivery_location': b.delivery_location,
@@ -205,7 +210,17 @@ class BookingOrderDetailAPIView(APIView):
         if 'total_containers' in data and data['total_containers']:
             b.total_containers = int(data['total_containers'])
         if 'commodity' in data:
-            b.commodity = data['commodity'].strip()
+            b.commodity = data['commodity']
+        if 'mbl_number' in data:
+            b.mbl_number = str(data['mbl_number'] or '').strip().upper()
+        if 'hbl_number' in data:
+            b.hbl_number = str(data['hbl_number'] or '').strip().upper()
+        if 'supplier_name' in data:
+            b.supplier_name = str(data['supplier_name'] or '').strip()
+        if 'port_of_loading' in data:
+            b.port_of_loading = str(data['port_of_loading'] or '').strip().upper()
+        if 'port_of_discharge' in data:
+            b.port_of_discharge = str(data['port_of_discharge'] or '').strip().upper().strip()
         if 'hs_code' in data:
             b.hs_code = data['hs_code'].strip()
         from apps.master_data.models import Location

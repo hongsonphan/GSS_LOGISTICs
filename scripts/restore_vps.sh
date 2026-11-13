@@ -62,4 +62,4 @@ fi
 
 echo "5/5 Bật lại web (tự migrate)"
 $DOCKER start "$WEB_CONTAINER" >/dev/null
-echo "Xong. Nếu cần quay lại: gunzip -c $BACKUP_DIR/pre_restore_${STAMP}.sql.gz | ... (xem docs/GSS_RUNBOOK.md mục 7)."
+echo "Xong. Nếu cần quay lại: gunzip -c $BACKUP_DIR/pre_restore_${STAMP}.sql.gz | ... (xem docs/11-runbook.md mục 7)."

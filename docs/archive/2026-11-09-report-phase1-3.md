@@ -42,4 +42,4 @@ Ghi sổ: cước bán/mua đã áp ghi theo từng chuyến khi hoàn tất (c�
 - Đăng nhập `gss_admin` (mật khẩu trong `gss_local_credentials.txt` trong container web).
 - Sale & Booking → Đơn hàng B/L & phân bổ → mở **DEMO.BL.001**.
 - Tài chính & Kế toán → Bảng kê / Chi hộ & hoá đơn / Biểu giá. Dashboard → Tra cứu B/L · cont.
-- Hướng dẫn thao tác: `docs/GSS_RUNBOOK.md` §8; ánh xạ đặc tả → mã: `docs/GSS_RESTRUCTURE_PLAN.md` §0.0.
+- Hướng dẫn thao tác: `docs/11-runbook.md` §8; ánh xạ đặc tả → mã: `docs/13-architecture-decisions.md` §0.0.

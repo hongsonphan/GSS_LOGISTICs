@@ -316,7 +316,7 @@ class TripListCreateAPIView(APIView):
     def post(self, request):
         data = request.data
 
-        # Tiêu chuẩn 9 (SECURITY_AUDIT.md): Server-side validation tải trọng & quy chuẩn
+        # Tiêu chuẩn 9 (08-security.md): Server-side validation tải trọng & quy chuẩn
         gross_weight = data.get('gross_weight') or data.get('vgm_weight')
         if gross_weight:
             import re

@@ -107,18 +107,6 @@ async function loadAccountingAdvancesData() {
         const data = await res.json();
         accountingAdvancesData = data;
 
-        // Cập nhật badges trên Subtab Bar
-        const badgeAdv = document.getElementById('badge-acct-driver-advances');
-        if (badgeAdv && data.stats) {
-            badgeAdv.innerText = data.stats.pending_advances_count || 0;
-        }
-
-        const badgeFund = document.getElementById('badge-acct-dispatcher-funds');
-        if (badgeFund && data.dispatcher_funds) {
-            const activeCount = data.dispatcher_funds.filter(f => f.status === 'APPROVED').length;
-            badgeFund.innerText = activeCount;
-        }
-
         // Render KPI cards Tạm ứng tài xế
         if (data.stats) {
             const st = data.stats;

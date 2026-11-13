@@ -11,7 +11,7 @@
 
 ## 0. HIỆN TRẠNG SO VỚI MÃ NGUỒN (cập nhật 05/11/2026)
 
-Các giai đoạn 0–5 của BRD đã được lập trình. Khi mã nguồn khác BRD, **ưu tiên** [`GSS_RESTRUCTURE_PLAN.md`](GSS_RESTRUCTURE_PLAN.md) §0 (quyết định đã chốt) và [`GSS_RUNBOOK.md`](GSS_RUNBOOK.md). Các điều chỉnh chính so với BRD:
+Các giai đoạn 0–5 của BRD đã được lập trình. Khi mã nguồn khác BRD, **ưu tiên** [`13-architecture-decisions.md`](13-architecture-decisions.md) §0 (quyết định đã chốt) và [`11-runbook.md`](11-runbook.md). Các điều chỉnh chính so với BRD:
 
 | Nội dung BRD | Thực tế trong mã |
 |:---|:---|
@@ -25,7 +25,7 @@ Các giai đoạn 0–5 của BRD đã được lập trình. Khi mã nguồn kh
 | Giao diện GSS | Trang độc lập mobile-first `/gss/`, `/vendor/`, `/q/` (`static/css/gss.css`, `static/js/gss/*`) |
 | Ẩn module theo loại hình | Chặn ở API (`FeatureGateMiddleware`), không chỉ ẩn menu |
 
-Chưa làm: xem `GSS_RESTRUCTURE_PLAN.md` mục 0.6.
+Chưa làm: xem `13-architecture-decisions.md` mục 0.6.
 
 ---
 
@@ -352,7 +352,7 @@ GSS_LOGISTICs/
 │       └── view_qr_management.html    # [MỚI] Màn hình Quản lý QR & Hàng lẻ có Seal
 │
 ├── docs/                              # Tài liệu Đặc tả Kỹ thuật & Nghiệp vụ (Documentation-as-Code)
-│   └── BRD_GREEN_SOLUTIONS_SMART_GSS.md
+│   └── 01-spec-brd.md
 ├── scripts/
 │   └── build_app_js.py                # Công cụ ghép nối các module JS
 ├── Dockerfile
@@ -403,7 +403,7 @@ Dự án được chia thành **5 Giai đoạn (Sprints)** tuần tự, đảm b
 
 ### Giai đoạn 1: Khởi tạo Dự án Mới & Bộ Khung Cấu hình Loại hình Doanh nghiệp (SaaS Core)
 - **Công việc:**
-  1. ✅ *Đã làm:* nhân bản codebase sang repo `GSS_LOGISTICs`, tách tên/cổng/CSDL/máy chủ khỏi GSS Logistics (xem mục 0 của `DEVELOPMENT_PLAN.md`).
+  1. ✅ *Đã làm:* nhân bản codebase sang repo `GSS_LOGISTICs`, tách tên/cổng/CSDL/máy chủ khỏi GSS Logistics (xem mục 0 của `13-architecture-decisions.md`).
   2. Nâng cấp `CompanyProfile` với bộ chọn **Loại hình Doanh nghiệp (`GSS_VENDOR_DEPOT_QR`)** và bảng bật/tắt cấu phần `enabled_features`.
   3. Xây dựng cơ chế tự động ẩn/hiện Sidebar, Dashboard và các trường trên Form theo loại hình công ty đã chọn.
 - **Kết quả bàn giao:** Chuyển đổi qua lại giữa mô hình *GSS* và mô hình *Green Solutions Smart (GSS)* chỉ bằng 1 cú nhấp chuột trong phần Cài đặt Công ty.

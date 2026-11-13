@@ -3,7 +3,7 @@
     <!-- Main Scrollable Form Body (Header đã được chuyển lên Topbar) -->
 
     <!-- Main Scrollable Form Body -->
-    <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/60">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 bg-slate-100/60">
         <div class="max-w-7xl mx-auto space-y-4">
             
             <form id="form-fullpage-quotation" onsubmit="saveFullpageQuotation(event); return false;" novalidate class="space-y-4">
@@ -202,12 +202,12 @@
                             <thead class="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200 text-xs uppercase tracking-wider">
                                 <tr>
                                     <th class="p-3 text-center w-10">STT</th>
-                                    <th class="p-3 min-w-[280px]">Lộ Trình / Tuyến Đường Vận Chuyển <span class="text-rose-500">*</span></th>
-                                    <th class="p-3 w-36">Loại Cont / Xe</th>
+                                    <th class="p-2.5 min-w-[190px]">Tuyến Đường Vận Chuyển <span class="text-rose-500">*</span></th>
+                                    <th class="p-2.5 w-28">Loại Cont/Xe</th>
                                     <th class="p-3 text-center w-24">Cự Ly (KM)</th>
-                                    <th class="p-3 text-right w-36">Đơn Giá Cước (VNĐ) <span class="text-rose-500">*</span></th>
-                                    <th class="p-3 text-center w-32">Sản Lượng (Chuyến/Tháng)</th>
-                                    <th class="p-3 text-right w-36">Thành Tiền / Tháng</th>
+                                    <th class="p-2.5 text-right w-32">Đơn Giá (VNĐ) <span class="text-rose-500">*</span></th>
+                                    <th class="p-2.5 text-center w-24">SL/Tháng</th>
+                                    <th class="p-2.5 text-right w-32">Thành Tiền</th>
                                     <th class="p-3 text-center w-12">Xóa</th>
                                 </tr>
                             </thead>
@@ -316,7 +316,7 @@
                 </div>
 
                 <!-- Footer Save & Print Bar -->
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between flex-wrap gap-3">
+                <div class="bg-white p-4 sm:pr-20 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between flex-wrap gap-3">
                     <button type="button" onclick="backToQuotations()" 
                         class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-700 hover:text-white font-bold text-xs transition-all cursor-pointer font-heading flex items-center gap-1.5">
                         <i class="ph-bold ph-arrow-left"></i> <span>Back</span>

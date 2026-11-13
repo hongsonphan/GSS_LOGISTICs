@@ -560,3 +560,16 @@ window.toggleSelectAllDriverTrips = toggleSelectAllDriverTrips;
 window.onDriverTripSelectionChange = onDriverTripSelectionChange;
 window.updateDriverBatchSettleButtonState = updateDriverBatchSettleButtonState;
 window.openBatchSettleDriverModal = openBatchSettleDriverModal;
+
+
+function printTripSettlementVoucher(tripCode) {
+    if (typeof openSettlementStatement === 'function') {
+        openSettlementStatement('DRIVER', [tripCode]);
+    } else if (typeof printSettleVoucher === 'function') {
+        printSettleVoucher(tripCode);
+    } else {
+        window.print();
+    }
+}
+
+window.printTripSettlementVoucher = printTripSettlementVoucher;

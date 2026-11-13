@@ -1,4 +1,4 @@
-# SECURITY_AUDIT.md — SECURITY ARCHITECTURE & DATA PRIVACY COMPLIANCE
+# 08-security.md — SECURITY ARCHITECTURE & DATA PRIVACY COMPLIANCE
 ## 20 Tiêu Chuẩn An Ninh Chuỗi Cung Ứng & Tuân Thủ Bảo Vệ Dữ Liệu Cá Nhân
 
 > **Hệ thống:** GSS Logistics Platform (TMS, WMS & Fleet)  
@@ -8,16 +8,7 @@
 
 ---
 
-## I. HƯỚNG DẪN DÀNH CHO AI AGENT (SYSTEM PROMPT & GOVERNANCE)
-
-Bạn là chuyên gia về **Kiểm tra An ninh Ứng dụng Chuỗi cung ứng & Vận tải (Logistics & Fleet Security Specialist)**. Khi rà soát mã nguồn hoặc triển khai tính năng:
-1. **Kiểm tra (Audit):** Định vị mã nguồn liên quan (API điều phối, API tài xế mobile, upload ảnh POD, models vận đơn, bảng lương) và phân loại: `[ĐẠT]`, `[KHÔNG ĐẠT]`, hoặc `[CẦN NÂNG CẤP]`.
-2. **Tái cấu trúc (Refactor):** Khắc phục triệt để lỗ hổng theo nguyên tắc phòng thủ đa lớp (Defense-in-Depth), tối ưu cho cả web điều hành và ứng dụng di động ngoại tuyến.
-3. **Tuân thủ pháp lý dữ liệu:** Mọi dữ liệu nhân sự, khách hàng và chứng từ ký nhận phải được bảo vệ nghiêm ngặt theo quy định pháp luật Việt Nam.
-
----
-
-## II. 20 TIÊU CHUẨN AN NINH CHUỖI CUNG ỨNG (20 SECURITY ESSENTIALS)
+## I. 20 TIÊU CHUẨN AN NINH CHUỖI CUNG ỨNG (20 SECURITY ESSENTIALS)
 
 ### 1. Hash Mật Khẩu Tài Xế & Nhân Viên (Password Hashing)
 - **Chuẩn:** Toàn bộ tài khoản bắt buộc mã hóa qua thuật toán Argon2 hoặc PBKDF2 của Django (Work factor $\ge 600.000$ vòng).
@@ -39,9 +30,11 @@ Bạn là chuyên gia về **Kiểm tra An ninh Ứng dụng Chuỗi cung ứng 
 - **Chuẩn:** Toàn bộ API Key (Google Maps, VietMap, Mapbox, 3PL, SMS OTP) phải lưu trữ trong biến môi trường `.env`.
 - **Hành động:** Tuyệt đối không để lộ API Key trên Frontend/Mobile; mọi tác vụ tính toán lộ trình phải gọi qua Backend proxy.
 
-### 6. Xử Lý Lỗi An Toàn Hiện Trường (Secure Error Handling)
-- **Chuẩn:** Khi mất kết nối hoặc lỗi máy chủ, API phản hồi mã lỗi chuẩn kèm thông báo thân thiện; không trả về traceback Django/SQL.
-- **Hành động:** Triển khai Custom Exception Handler trả về: `{ "success": false, "error_code": "ERR_CODE", "message": "..." }`.
+### 6. Xử Lý Lỗi An Toàn Hiện Trường & Chặn Lộ URLconf (Secure Error Handling & Anti-Information Disclosure)
+- **Chuẩn:** Khi mất kết nối, URL không hợp lệ hoặc lỗi máy chủ, API phản hồi mã lỗi chuẩn kèm thông báo thân thiện; tuyệt đối không trả về traceback Django/SQL hoặc danh sách URLconf patterns nội bộ (Information Disclosure).
+- **Hành động:**
+  - Triển khai `custom_404_view` và `custom_500_view` trong `core/exceptions.py`: Tự động phân biệt API (`application/json`) trả về `{ "success": false, "error_code": "NOT_FOUND", "message": "..." }` và Web Browser render trang `templates/404.html` chuẩn thương hiệu GSS Logistics.
+  - Cấu hình `handler404` / `handler500` và bổ sung route catch-all an toàn `re_path(r'^.*$', custom_404_view, name='catchall-404')` ở cuối `config/urls.py` để ngăn chặn Django bung 70+ URLconf nội bộ kể cả khi môi trường thử nghiệm đang bật `DEBUG = True`.
 
 ### 7. Kiểm Định Định Dạng Chứng Từ Giao Nhận POD (File Upload Validation)
 - **Chuẩn:** Ảnh ký nhận POD, biên bản hư hỏng OS&D chỉ chấp nhận tệp an toàn (`jpg`, `jpeg`, `png`, `pdf`).
@@ -101,7 +94,7 @@ Bạn là chuyên gia về **Kiểm tra An ninh Ứng dụng Chuỗi cung ứng 
 
 ---
 
-## III. BẢO VỆ DỮ LIỆU CÁ NHÂN & TUÂN THỦ PHÁP LÝ (DATA PRIVACY & COMPLIANCE)
+## II. BẢO VỆ DỮ LIỆU CÁ NHÂN & TUÂN THỦ PHÁP LÝ (DATA PRIVACY & COMPLIANCE)
 
 > **Căn cứ pháp lý:** Luật Bảo vệ dữ liệu cá nhân (số 91/2025/QH15) và Nghị định 356/2025/NĐ-CP (có hiệu lực từ 01/01/2026, thay thế Nghị định 13/2023/NĐ-CP).
 
@@ -146,7 +139,7 @@ Bạn là chuyên gia về **Kiểm tra An ninh Ứng dụng Chuỗi cung ứng 
 
 ---
 
-## IV. KIỂM TOÁN AN NINH LIÊN TỤC (CONTINUOUS SECURITY AUDITING)
+## III. KIỂM TOÁN AN NINH LIÊN TỤC (CONTINUOUS SECURITY AUDITING)
 
 Hệ thống tích hợp quy trình CI/CD kiểm toán an ninh tự động:
 - **Bandit & Semgrep:** Rà quét lỗ hổng mã nguồn Python tĩnh (Static Application Security Testing - SAST).

@@ -7,10 +7,12 @@ from core.features import has_feature
 
 
 @never_cache
-def vendor_portal_view(request, token):
+def vendor_portal_view(request, token=''):
     if not has_feature('vendor_portal', request):
         raise Http404
-    response = render(request, 'vendor_portal.html')
+    token = (token or '').strip('/')
+    response = render(request, 'vendor_portal.html', {'initial_token': token})
     response['Referrer-Policy'] = 'no-referrer'  # không rò token qua header Referer
     response['X-Robots-Tag'] = 'noindex, nofollow'
+    response['Cache-Control'] = 'no-store'
     return response

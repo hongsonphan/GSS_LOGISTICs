@@ -244,14 +244,42 @@ async function openDirectPrintBooking(bookingId) {
 window.openDirectPrintBooking = openDirectPrintBooking;
 
 /**
- * Xác nhận xóa booking đang mở trong form chi tiết
+ * Xác nhận xóa booking đang mở trong form chi tiết (Chuẩn BIM Logistics - Soft Delete)
  */
-function confirmDeleteCurrentBooking() {
+async function confirmDeleteCurrentBooking() {
     const id = document.getElementById('fullpage-booking-id')?.value;
     if (!id) {
         showToast('warning', 'Chưa có đơn hàng nào được lưu để xóa!', 'Thông Báo');
         return;
     }
-    deleteBooking(id);
+    let bookingNumber = '';
+    const numInput = document.getElementById('fullpage-booking-number');
+    if (numInput && numInput.value) bookingNumber = ` (${numInput.value})`;
+
+    const confirmed = await showConfirmModal({
+        title: 'Hủy / Xóa Đơn Hàng',
+        message: `Bạn có chắc chắn muốn xóa / hủy đơn hàng${bookingNumber} này không?\n\nDữ liệu lịch sử sẽ được bảo lưu an toàn (Soft-Delete).`,
+        confirmText: 'Xác Nhận Xóa',
+        cancelText: 'Hủy bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!confirmed) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/bookings/${id}/`, {
+            method: 'DELETE'
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi khi xóa đơn hàng');
+
+        showToast('success', data.message || 'Đã xóa / hủy đơn hàng thành công!', 'Thành Công');
+        if (typeof loadSalesData === 'function') loadSalesData();
+        if (typeof loadActiveBookingsForModal === 'function') loadActiveBookingsForModal();
+        if (typeof backToBookings === 'function') backToBookings();
+    } catch (err) {
+        console.error('Error deleting booking:', err);
+        showToast('error', err.message || 'Không thể xóa đơn hàng / booking', 'Lỗi');
+    }
 }
 window.confirmDeleteCurrentBooking = confirmDeleteCurrentBooking;

@@ -3171,6 +3171,8 @@ let masterDataFormOptionsCache = null;
 let quickMasterDataTargetSelectId = null;
 let currentMasterDataVersion = null;
 let isSyncingMasterData = false;
+let lastMasterDataSyncTimestamp = 0;
+const currentTabInstanceId = 'tab_' + Math.random().toString(36).substring(2, 9);
 
 // Kênh giao tiếp tức thì giữa các tab cùng trình duyệt (Cross-tab Realtime Sync)
 const masterDataSyncChannel = (typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined')
@@ -3179,9 +3181,9 @@ const masterDataSyncChannel = (typeof window !== 'undefined' && typeof window.Br
 
 if (masterDataSyncChannel) {
     masterDataSyncChannel.onmessage = (event) => {
-        if (event && event.data && event.data.type === 'MASTER_DATA_UPDATED') {
-            // Nhận tín hiệu từ tab khác vừa thêm/sửa/xóa danh mục -> tự động đồng bộ ngay lập tức
-            checkAndSyncMasterData(true);
+        // Bỏ qua nếu tin nhắn do chính tab này gửi ra (chống lặp ping-pong)
+        if (event && event.data && event.data.type === 'MASTER_DATA_UPDATED' && event.data.senderId !== currentTabInstanceId) {
+            checkAndSyncMasterData(true, true);
         }
     };
 }
@@ -3189,7 +3191,11 @@ if (masterDataSyncChannel) {
 function broadcastMasterDataChanged() {
     if (masterDataSyncChannel) {
         try {
-            masterDataSyncChannel.postMessage({ type: 'MASTER_DATA_UPDATED', timestamp: Date.now() });
+            masterDataSyncChannel.postMessage({ 
+                type: 'MASTER_DATA_UPDATED', 
+                senderId: currentTabInstanceId,
+                timestamp: Date.now() 
+            });
         } catch (e) {
             // Không làm gián đoạn luồng chính
         }
@@ -3217,17 +3223,29 @@ async function loadMasterDataFormOptions(forceReload = false) {
 
 /**
  * Kiểm tra và đồng bộ danh mục tức thời (Realtime Instant Master Data Sync):
- * - Nếu force = true: ép tải lại toàn bộ danh mục mới nhất, điền lại các select và phát tín hiệu cho các tab khác.
+ * - Nếu force = true: ép tải lại toàn bộ danh mục mới nhất, điền lại các select.
  * - Nếu force = false: gọi endpoint version siêu nhẹ (~1ms). Chỉ khi server có dữ liệu mới thì mới tải và cập nhật.
+ * - Có cơ chế cooldown chống bão gọi API lặp vô hạn.
  */
-async function checkAndSyncMasterData(force = false) {
+async function checkAndSyncMasterData(force = false, isFromBroadcast = false) {
+    const now = Date.now();
+    // Cooldown: không gọi liên tiếp quá dày (force: tối thiểu 3s; ngầm: tối thiểu 10s)
+    if (!isFromBroadcast) {
+        const minGap = force ? 3000 : 10000;
+        if (now - lastMasterDataSyncTimestamp < minGap) {
+            return masterDataFormOptionsCache;
+        }
+    }
+
     if (isSyncingMasterData) return masterDataFormOptionsCache;
     isSyncingMasterData = true;
+    lastMasterDataSyncTimestamp = now;
+
     try {
         if (force) {
             await loadMasterDataFormOptions(true);
             populateMasterDataDropdowns();
-            broadcastMasterDataChanged();
+            // LƯU Ý BẢO MẬT: Tuyệt đối KHÔNG gọi broadcastMasterDataChanged() ở đây để tránh lặp vô hạn ping-pong giữa các tab
             return masterDataFormOptionsCache;
         }
 
@@ -3367,12 +3385,12 @@ if (typeof window !== 'undefined') {
         });
     }
 
-    // 2. Định kỳ 5 giây kiểm tra version ngầm siêu nhẹ (~1ms) khi tab đang hoạt động
+    // 2. Định kỳ 60 giây kiểm tra version ngầm siêu nhẹ (~1ms) khi tab đang hoạt động
     setInterval(() => {
         if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
             checkAndSyncMasterData(false);
         }
-    }, 5000);
+    }, 60000);
 }
 
 // Cung cấp hàm toàn cục cho toàn hệ thống
@@ -4507,10 +4525,23 @@ function switchTab(tabId, updateHistory = true) {
     // Ẩn view chi tiết chuyến xe, phiếu thu chi, bảng kê đối soát nếu đang mở
     const detailView = document.getElementById('view-trip-detail');
     if (detailView) detailView.classList.add('hidden-view');
+    const dispatchOrderView = document.getElementById('view-dispatch-order');
+    if (dispatchOrderView) dispatchOrderView.classList.add('hidden-view');
     const voucherDetailView = document.getElementById('view-cash-voucher-detail');
     if (voucherDetailView) voucherDetailView.classList.add('hidden-view');
     const soaDetailView = document.getElementById('view-customer-ar-statement');
     if (soaDetailView) soaDetailView.classList.add('hidden-view');
+
+    // Tự động đóng tất cả các popup modal nổi khi chuyển đổi phân hệ (chỉ dùng class 'hidden' chuẩn modal, không gắn 'hidden-view' để tránh lỗi display:none !important)
+    if (typeof closeDispatchOrderModal === 'function') closeDispatchOrderModal();
+    if (typeof closeImportContainersModal === 'function') closeImportContainersModal();
+    ['modal-dispatch-order', 'modal-import-containers', 'modal-booking', 'modal-quotation', 'modal-cash-transaction', 'modal-driver-advance', 'modal-settle-advance', 'modal-dispatcher-fund'].forEach(id => {
+        const m = document.getElementById(id);
+        if (m) {
+            m.classList.add('hidden');
+            m.classList.remove('hidden-view');
+        }
+    });
 
     // Chuyển đổi hiển thị view. Gói GSS: các mục Dashboard/Điều vận & Vendor/Sale & Booking/Bãi & Phương Tiện hiển thị màn hình GSS (view-gss)
     const gssTab = !!(window.GSSApp && GSSApp.hasTab(tabId));
@@ -4574,13 +4605,16 @@ function switchTab(tabId, updateHistory = true) {
     try {
         if (gssTab) GSSApp.enter(tabId);
         if (tabId === 'dashboard' && !gssTab) loadDashboardData();
-        if (tabId === 'dieu-van' && !gssTab) loadTripsData();
+        if (tabId === 'dieu-van' && !gssTab) {
+            if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+            if (typeof loadTripsData === 'function') loadTripsData();
+        }
         if (tabId === 'nhan-su') loadHRData();
         if (tabId === 'xe-bai' && !gssTab) loadFleetData();
         if (tabId === 'kinh-doanh' && !gssTab) loadSalesData();
         if (tabId === 'ke-toan') {
             switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook');
-            loadAccountingAdvancesData();
+            if (window.hasFeature('fleet_internal')) loadAccountingAdvancesData();
         }
         if (tabId === 'quyet-toan') loadSettlementData();
         if (tabId === 'hai-quan') fetchCustomsDeclarations();
@@ -4619,6 +4653,20 @@ function resolveInitialRoute() {
     // 0. Kiểm tra URL trang chi tiết bản tin: /news/<hashid> (đã được Django render trên base.html)
     const newsDetailMatch = pathname.match(/^\/news\/([a-zA-Z0-9_-]+)/);
     if (newsDetailMatch && newsDetailMatch[1]) {
+        return;
+    }
+
+    // 0.9. Kiểm tra deep-link Lệnh điều động & Phân bổ Vendor trang riêng: /dispatch/orders/<id>
+    const orderMatch = pathname.match(/^\/dispatch\/orders\/([a-zA-Z0-9_-]+)/);
+    if (orderMatch && orderMatch[1]) {
+        const orderId = orderMatch[1];
+        switchTab('dieu-van', false);
+        if (typeof openDispatchOrderPage === 'function') {
+            openDispatchOrderPage(orderId === 'new' ? null : orderId, false);
+        }
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: 'dispatch-order', orderId }, '', window.location.pathname);
+        }
         return;
     }
 
@@ -5300,6 +5348,10 @@ window.addEventListener('popstate', (event) => {
     }
 
     function apply(root) {
+        // Ẩn phần tử thuộc cấu phần đang tắt theo hồ sơ doanh nghiệp (kể cả quản trị viên): data-feature="fleet_internal"
+        (root || document).querySelectorAll('[data-feature]').forEach(el => {
+            if (typeof window.hasFeature === 'function' && !window.hasFeature(el.getAttribute('data-feature'))) el.classList.add('hidden', 'acc-hidden');
+        });
         if (!window.BIM_ACCESS || (window.CURRENT_USER || {}).is_superuser) return;
         (root || document).querySelectorAll('[data-access]').forEach(el => {
             const [m, a] = el.getAttribute('data-access').split(':');
@@ -10297,6 +10349,1785 @@ async function deleteOrCancelTrip(tripCode = null) {
 }
 window.deleteOrCancelTrip = deleteOrCancelTrip;
 
+// ---- src/app/dispatch/dispatch-order-modal.js ----
+// Module Quản lý Trang Lập Lệnh Điều Động & Phân Bổ Vendor (GSS TMS - Dedicated View)
+
+let mdoActiveBookings = [];
+let mdoSubcontractors = [];
+let mdoCurrentBooking = null;
+let mdoCurrentAllocations = [];
+
+async function openDispatchOrderPage(preselectedBookingId = null, updateHistory = true) {
+    // Ẩn tất cả các view khác
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    
+    // Mở trang view Lệnh Điều Động
+    const orderView = document.getElementById('view-dispatch-order');
+    if (orderView) orderView.classList.remove('hidden-view');
+
+    // Ẩn modal cũ nếu còn sót
+    const oldModal = document.getElementById('modal-dispatch-order');
+    if (oldModal) oldModal.classList.add('hidden');
+
+    // Cập nhật URL sạch trên trình duyệt
+    if (updateHistory && window.history && window.history.pushState) {
+        const orderPath = preselectedBookingId ? `/dispatch/orders/${preselectedBookingId}` : '/dispatch/orders/new';
+        if (window.location.pathname !== orderPath) {
+            window.history.pushState({ view: 'dispatch-order', bookingId: preselectedBookingId }, '', orderPath);
+        }
+    }
+
+    // Reset giao diện
+    const resultBox = document.getElementById('mdo-result-box');
+    if (resultBox) resultBox.classList.add('hidden');
+    const tbody = document.getElementById('mdo-allocations-tbody');
+    if (tbody) tbody.innerHTML = '';
+    mdoUpdateStats(0, 0);
+
+    // Mặc định ngày hiệu lực
+    const today = new Date().toISOString().split('T')[0];
+    const next7Days = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+    const fromInp = document.getElementById('mdo-valid-from');
+    const toInp = document.getElementById('mdo-valid-to');
+    if (fromInp) fromInp.value = today;
+    if (toInp) toInp.value = next7Days;
+
+    // Nạp danh sách Nhà xe nếu chưa có
+    try {
+        const subRes = await fetchWithAuth('/api/master-data/subcontractors/');
+        if (subRes.ok) {
+            const subData = await subRes.json();
+            mdoSubcontractors = (subData.results || subData || []).filter(s => s.is_active !== false);
+        }
+    } catch (e) {
+        console.warn('Không tải được danh sách nhà xe:', e);
+    }
+
+    // Nạp danh sách Booking
+    const sel = document.getElementById('mdo-select-booking');
+    if (sel) {
+        sel.innerHTML = '<option value="">-- Đang tải danh sách Booking... --</option>';
+        try {
+            const res = await fetchWithAuth('/api/bookings/active/');
+            if (res.ok) {
+                const data = await res.json();
+                mdoActiveBookings = data.data || data.results || data || [];
+                let html = '<option value="">-- Chọn Booking / Đơn Hàng Cần Lập Lệnh Điều Động --</option>';
+                mdoActiveBookings.forEach(b => {
+                    const rawCode = b.booking_code || b.booking_number || `BK#${b.id}`;
+    const code = rawCode.startsWith("LDD.") ? rawCode : `LDD.${rawCode}`;
+                    const cust = b.customer_name || b.customer || 'Khách hàng';
+                    const conts = b.total_containers || 1;
+                    const route = `${b.pickup_location || 'A'} -> ${b.delivery_location || 'B'}`;
+                    html += `<option value="${b.id}">${code} - ${cust} (${conts} cont, ${route})</option>`;
+                });
+                sel.innerHTML = html;
+
+                if (preselectedBookingId) {
+                    sel.value = String(preselectedBookingId);
+                    await onDispatchOrderBookingChanged(preselectedBookingId);
+                }
+            } else {
+                sel.innerHTML = '<option value="">-- Không có Booking nào đang chờ điều xe --</option>';
+            }
+        } catch (e) {
+            sel.innerHTML = '<option value="">-- Lỗi tải danh sách Booking --</option>';
+        }
+    }
+}
+
+function backToDispatchOrders() {
+    // Ẩn view Lệnh Điều Động
+    const orderView = document.getElementById('view-dispatch-order');
+    if (orderView) orderView.classList.add('hidden-view');
+
+    // Mở lại view Điều Vận
+    const dispatchView = document.getElementById('view-dieu-van');
+    if (dispatchView) dispatchView.classList.remove('hidden-view');
+
+    // Chuyển về tab Lệnh Điều Động và làm mới
+    if (typeof switchDispatchViewTab === 'function') switchDispatchViewTab('orders');
+    if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+
+    if (window.history && window.history.pushState) {
+        window.history.pushState({ tabId: 'dieu-van' }, '', '/dispatch');
+    }
+}
+window.openDispatchOrderPage = openDispatchOrderPage;
+window.backToDispatchOrders = backToDispatchOrders;
+
+// Tương thích ngược gọi openDispatchOrderModal
+function openDispatchOrderModal(preselectedBookingId = null) {
+    return openDispatchOrderPage(preselectedBookingId, true);
+}
+window.openDispatchOrderModal = openDispatchOrderModal;
+
+function closeDispatchOrderModal() {
+    const orderView = document.getElementById('view-dispatch-order');
+    if (orderView && !orderView.classList.contains('hidden-view')) {
+        orderView.classList.add('hidden-view');
+    }
+    const oldModal = document.getElementById('modal-dispatch-order');
+    if (oldModal) oldModal.classList.add('hidden');
+}
+window.closeDispatchOrderModal = closeDispatchOrderModal;
+
+async function onDispatchOrderBookingChanged(bookingId) {
+    const summaryCard = document.getElementById('mdo-booking-summary');
+    const badge = document.getElementById('mdo-booking-badge');
+    const headerCode = document.getElementById('mdo-header-order-code');
+    const headerBadge = document.getElementById('mdo-header-status-badge');
+    const headerCust = document.getElementById('mdo-header-customer');
+    const headerType = document.getElementById('mdo-header-type');
+    const headerBL = document.getElementById('mdo-header-bl');
+    const tbody = document.getElementById('mdo-allocations-tbody');
+    if (tbody) tbody.innerHTML = '';
+
+    if (!bookingId) {
+        if (summaryCard) summaryCard.classList.add('hidden');
+        if (badge) badge.innerText = 'Đang chọn: --';
+        if (headerCode) headerCode.innerText = 'LĐĐ: --';
+        if (headerBadge) {
+            headerBadge.innerText = 'Chờ điều phối';
+            headerBadge.className = 'px-2.5 py-0.5 rounded-lg text-xs font-bold font-heading bg-amber-100 text-amber-800 border border-amber-300';
+        }
+        mdoCurrentBooking = null;
+        mdoUpdateStats(0, 0);
+        return;
+    }
+
+    // Nạp chi tiết Booking từ API để có đầy đủ thông tin chuẩn Lệnh Điều Động
+    let b = mdoActiveBookings.find(x => String(x.id) === String(bookingId)) || null;
+    try {
+        const detailRes = await fetchWithAuth(`/api/bookings/${bookingId}/`);
+        if (detailRes.ok) {
+            const detailJson = await detailRes.json();
+            b = { ...b, ...detailJson };
+        }
+    } catch (err) {
+        console.warn('Không tải được chi tiết booking qua /api/bookings/:', err);
+    }
+
+    if (!b) return;
+    mdoCurrentBooking = b;
+
+    if (summaryCard) summaryCard.classList.remove('hidden');
+    const rawCode = b.booking_code || b.booking_number || `BK#${b.id}`;
+    const code = rawCode.startsWith("LDD.") ? rawCode : `LDD.${rawCode}`;
+    if (badge) badge.innerText = `Đang chọn: ${code}`;
+    if (headerCode) headerCode.innerText = code;
+    if (headerCust) headerCust.innerText = b.customer_name || b.customer || '--';
+    if (headerType) headerType.innerText = b.booking_type_display || (b.booking_type === 'EXPORT_FCL' ? 'Kéo Cont Xuất Khẩu' : (b.booking_type === 'IMPORT_FCL' ? 'Kéo Cont Nhập Khẩu' : 'Vận Chuyển Nội Địa'));
+    if (headerBL) headerBL.innerText = b.booking_number || b.mbl_number || b.booking_code || '--';
+
+    const totalConts = Number(b.total_containers) || 1;
+    const dispatchedConts = Number(b.dispatched_containers) || 0;
+
+    if (headerBadge) {
+        if (dispatchedConts >= totalConts) {
+            headerBadge.innerText = `Đã phân bổ (${dispatchedConts}/${totalConts} cont)`;
+            headerBadge.className = 'px-2.5 py-0.5 rounded-lg text-xs font-bold font-heading bg-emerald-100 text-emerald-800 border border-emerald-300';
+        } else if (dispatchedConts > 0) {
+            headerBadge.innerText = `Đang điều phối (${dispatchedConts}/${totalConts} cont)`;
+            headerBadge.className = 'px-2.5 py-0.5 rounded-lg text-xs font-bold font-heading bg-sky-100 text-sky-800 border border-sky-300';
+        } else {
+            headerBadge.innerText = `Chờ điều phối (0/${totalConts} cont)`;
+            headerBadge.className = 'px-2.5 py-0.5 rounded-lg text-xs font-bold font-heading bg-amber-100 text-amber-800 border border-amber-300';
+        }
+    }
+
+    const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val || '--'; };
+    const setH = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val || '--'; };
+
+    // Điền chi tiết Thẻ A (Hồ sơ đơn hàng & Vận đơn)
+    setT('mdo-sum-customer', b.customer_name || b.customer);
+    setT('mdo-sum-code-bl', `${code} ${b.booking_number ? `(B/L: ${b.booking_number})` : ''}`);
+    setT('mdo-sum-type', b.booking_type_display || (b.booking_type === 'EXPORT_FCL' ? 'Kéo Cont Xuất Khẩu' : (b.booking_type === 'IMPORT_FCL' ? 'Kéo Cont Nhập Khẩu' : 'Vận Chuyển Nội Địa')));
+    setT('mdo-sum-vessel', (b.shipping_line || '--') + (b.vessel_voyage ? ` / ${b.vessel_voyage}` : ''));
+    setT('mdo-sum-cargo', b.commodity || b.actual_cargo_name || 'Hàng tiêu chuẩn');
+    setT('mdo-sum-containers', `${totalConts} Cont (${b.container_size || '40HC'})`);
+    setT('mdo-sum-price', `${typeof formatNumberVN === 'function' ? formatNumberVN(b.selling_freight_price || 0) : (b.selling_freight_price || 0)} đ`);
+
+    // Điền chi tiết Thẻ B (Lộ trình 3 điểm TMS)
+    setT('mdo-sum-pickup', b.pickup_location || 'Cảng Cát Lái');
+    setT('mdo-sum-delivery', b.delivery_location || 'Kho khách hàng');
+    setT('mdo-sum-dropoff', b.dropoff_location || 'Depot hạ rỗng');
+    setT('mdo-sum-route', `${b.pickup_location || 'Điểm 1'} -> ${b.delivery_location || 'Điểm 2'} -> ${b.dropoff_location || 'Điểm 3'}`);
+
+    // Điền chi tiết Thẻ C (Kế hoạch & Hạn lệnh)
+    const loadDateStr = b.loading_date ? (typeof formatDateVN === 'function' ? formatDateVN(b.loading_date) : b.loading_date) : '--';
+    setT('mdo-sum-loading-date', `${loadDateStr} ${b.loading_time || ''}`);
+    const doExpStr = b.do_expiry ? (typeof formatDateVN === 'function' ? formatDateVN(b.do_expiry) : b.do_expiry) : '--';
+    setT('mdo-sum-do-expiry', doExpStr);
+
+    const demDays = b.free_time_demurrage || 7;
+    const detDays = b.free_time_detention || 7;
+    const demExp = b.dem?.expiry ? (typeof formatDateVN === 'function' ? formatDateVN(b.dem.expiry) : b.dem.expiry) : '';
+    const detExp = b.det?.expiry ? (typeof formatDateVN === 'function' ? formatDateVN(b.det.expiry) : b.det.expiry) : '';
+    setT('mdo-sum-dem', `${demDays} ngày ${demExp ? `(Hạn: ${demExp})` : ''}`);
+    setT('mdo-sum-det', `${detDays} ngày ${detExp ? `(Hạn: ${detExp})` : ''}`);
+
+    const notes = [b.destination_notes, b.road_restrictions].filter(Boolean).join(' | ');
+    setH('mdo-sum-notes', notes ? `<i class="ph-bold ph-warning text-amber-600 text-xs"></i> <strong class="text-amber-900">Lưu ý:</strong> ${escapeHtml(notes)}` : '<i class="ph-bold ph-check-circle text-teal-600 text-xs"></i> Đường thông thoáng, không có cấm tải.');
+
+    // Nạp ngày hiệu lực mặc định
+    const validFromInp = document.getElementById('mdo-valid-from');
+    const validToInp = document.getElementById('mdo-valid-to');
+    if (validFromInp && b.loading_date) validFromInp.value = b.loading_date;
+
+    // Nạp danh sách các Nhà xe được phân bổ & hiển thị thẻ Link Cổng Nhà Xe
+    await mdoReloadAllocationsAndCards(b.id);
+
+    // Nạp danh sách container chi tiết của B/L
+    await loadMdoContainers(b.id);
+}
+
+
+
+function mdoAddAllocationRow(subId = null, count = 1, note = '', isExisting = false, vendorLink = '', allocId = null, allocObj = null) {
+    const tbody = document.getElementById('mdo-allocations-tbody');
+    if (!tbody) return;
+
+    const rowIdx = tbody.children.length + 1;
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50 transition-colors'; 
+    if (isExisting) {
+        tr.dataset.existing = '1';
+        if (allocId) tr.dataset.allocId = allocId;
+        tr.dataset.origCount = count;
+    }
+
+    let subOptions = '<option value="">-- Chọn Nhà xe (Vendor) --</option>';
+    mdoSubcontractors.forEach(s => {
+        const sel = subId && String(s.id) === String(subId) ? 'selected' : '';
+        subOptions += `<option value="${s.id}" ${sel}>${escapeHtml(s.short_name || s.name)}</option>`;
+    });
+
+    tr.innerHTML = `
+        <td class="p-2.5 text-center font-bold text-slate-500">${rowIdx}</td>
+        <td class="p-2.5">
+            <select class="mdo-sub-select w-full h-8.5 px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800" ${isExisting ? 'disabled' : ''}>
+                ${subOptions}
+            </select>
+            ${isExisting && allocObj ? `
+                <div class="flex items-center gap-1.5 mt-1.5 flex-wrap text-xs font-bold ${(allocObj.filled >= allocObj.allocated_containers && allocObj.allocated_containers > 0) ? 'text-emerald-700' : ((allocObj.filled > 0) ? 'text-sky-700' : 'text-amber-700')}">
+                    <i class="ph-bold ${(allocObj.filled >= allocObj.allocated_containers && allocObj.allocated_containers > 0) ? 'ph-check-circle' : ((allocObj.filled > 0) ? 'ph-arrows-clockwise' : 'ph-clock')}"></i>
+                    <span>${(allocObj.filled >= allocObj.allocated_containers && allocObj.allocated_containers > 0) ? `Đã khai báo đủ (${allocObj.filled}/${allocObj.allocated_containers} xe)` : ((allocObj.filled > 0) ? `Đang khai báo (${allocObj.filled}/${allocObj.allocated_containers} xe)` : `Chờ Vendor khai báo (0/${allocObj.allocated_containers} xe)`)}</span>
+                </div>
+            ` : ''}
+            ${isExisting && vendorLink ? `
+                <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+                    <a href="${vendorLink}" target="_blank" 
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-50 border border-teal-300 text-teal-800 text-[11px] font-bold hover:bg-teal-100 transition-colors shadow-2xs"
+                        title="Mở Cổng Nhà Xe để xem giao diện khai báo">
+                        <i class="ph-bold ph-arrow-square-out text-teal-700"></i> Cổng Nhà Xe
+                    </a>
+                    <button type="button" onclick="mdoCopyVendorLink('${vendorLink}')" 
+                        class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-[11px] font-bold transition-colors cursor-pointer"
+                        title="Sao chép link gửi Zalo cho nhà xe">
+                        <i class="ph-bold ph-copy text-slate-600"></i> Copy Link
+                    </button>
+                    <button type="button" onclick="printDispatchOrderSlip(mdoCurrentBooking?.id, ${subId})" 
+                        class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-[11px] font-bold transition-colors cursor-pointer"
+                        title="In phiếu lệnh riêng cho nhà xe này (không có cước)">
+                        <i class="ph-bold ph-printer text-teal-600"></i> In Phiếu
+                    </button>
+                </div>
+            ` : ''}
+        </td>
+        <td class="p-2.5 text-center">
+            <input type="number" min="1" value="${count}" oninput="mdoRecalcAllocations()" ${isExisting ? 'disabled' : ''}
+                class="mdo-count-input w-24 h-8.5 px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-center text-teal-800 font-heading ${isExisting ? 'bg-slate-100' : ''}">
+        </td>
+        <td class="p-2.5">
+            <input type="text" placeholder="Lưu ý riêng cho nhà xe này..." value="${escapeHtml(note)}"
+                class="mdo-note-input w-full h-8.5 px-2.5 bg-white border border-slate-300 rounded-lg text-xs">
+        </td>
+        <td class="p-2.5 text-center">
+            <label class="inline-flex items-center cursor-pointer">
+                <input type="checkbox" ${isExisting ? '' : 'checked'} class="mdo-email-chk rounded text-teal-600 focus:ring-teal-500 h-4 w-4">
+            </label>
+        </td>
+        <td class="p-2.5 text-center">
+            <button type="button" onclick="mdoRemoveAllocationRow(this)" 
+                class="text-slate-400 hover:text-rose-600 p-1 rounded transition-colors cursor-pointer" title="${isExisting ? 'Thu hồi phân bổ này' : 'Xóa dòng này'}">
+                <i class="ph-bold ph-trash text-sm"></i>
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(tr);
+    mdoRecalcAllocations();
+}
+
+async function mdoRemoveAllocationRow(btn) {
+    const tr = btn.closest('tr');
+    if (!tr) return;
+    if (tr.dataset.existing === '1' && tr.dataset.allocId) {
+        if (!confirm('Bạn có chắc chắn muốn thu hồi lệnh phân bổ này của Nhà xe?')) return;
+        try {
+            const res = await fetchWithAuth(`/api/vendor-allocations/${tr.dataset.allocId}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'revoke' })
+            });
+            const out = await res.json();
+            if (res.ok && out.success) {
+                showToast('success', 'Đã thu hồi phân bổ thành công!');
+                tr.remove();
+                mdoRecalcAllocations();
+            } else {
+                showToast('danger', out.message || 'Không thể thu hồi phân bổ.');
+            }
+        } catch (e) {
+            showToast('danger', 'Lỗi kết nối khi thu hồi: ' + e.message);
+        }
+    } else {
+        tr.remove();
+        mdoRecalcAllocations();
+    }
+}
+window.mdoRemoveAllocationRow = mdoRemoveAllocationRow;
+
+
+
+function mdoRecalcAllocations() {
+
+    const total = mdoCurrentBooking ? (Number(mdoCurrentBooking.total_containers) || 1) : 0;
+
+    const inputs = document.querySelectorAll('.mdo-count-input');
+
+    let allocated = 0;
+
+    inputs.forEach(inp => {
+
+        allocated += Number(inp.value) || 0;
+
+    });
+
+    const remaining = total - allocated;
+
+    mdoUpdateStats(allocated, remaining);
+
+}
+
+
+
+function mdoUpdateStats(allocated, remaining) {
+
+    const aEl = document.getElementById('mdo-stat-allocated');
+
+    const rEl = document.getElementById('mdo-stat-remaining');
+
+    if (aEl) aEl.innerText = allocated;
+
+    if (rEl) {
+
+        rEl.innerText = remaining;
+
+        rEl.className = remaining < 0 ? 'text-rose-600 font-black' : (remaining === 0 ? 'text-emerald-600 font-black' : 'text-amber-700 font-bold');
+
+    }
+
+}
+
+
+
+async function submitDispatchOrderAllocation() {
+    if (!mdoCurrentBooking) {
+        showToast('warning', 'Vui lòng chọn Booking trước khi phát lệnh.');
+        return;
+    }
+
+    const rows = document.querySelectorAll('#mdo-allocations-tbody tr');
+    if (!rows.length) {
+        showToast('warning', 'Vui lòng thêm ít nhất một Nhà xe để phân bổ container.');
+        return;
+    }
+
+    const newAllocations = [];
+    let hasError = false;
+
+    rows.forEach((tr, i) => {
+        if (tr.dataset.existing === '1') {
+            // Dòng phân bổ đã có trong CSDL
+            return;
+        }
+        const subId = tr.querySelector('.mdo-sub-select')?.value;
+        const count = Number(tr.querySelector('.mdo-count-input')?.value) || 0;
+        const note = tr.querySelector('.mdo-note-input')?.value || '';
+        const sendEmail = !!tr.querySelector('.mdo-email-chk')?.checked;
+
+        if (!subId) {
+            showToast('danger', `Dòng #${i + 1}: Vui lòng chọn Nhà xe.`);
+            hasError = true;
+            return;
+        }
+        if (count < 1) {
+            showToast('danger', `Dòng #${i + 1}: Số container phân bổ phải lớn hơn 0.`);
+            hasError = true;
+            return;
+        }
+
+        newAllocations.push({ subcontractor_id: Number(subId), allocated_containers: count, note, send_email: sendEmail });
+    });
+
+    if (hasError) return;
+
+    const bookingId = mdoCurrentBooking.id;
+
+    // Nếu không có dòng phân bổ mới cần tạo (ví dụ đã chia đủ từ trước)
+    if (newAllocations.length === 0) {
+        showToast('success', 'Lệnh điều động đã được xác nhận phát hành thành công cho các Nhà xe đối tác!', 'Phát Lệnh Thành Công');
+        try {
+            const allocRes = await fetchWithAuth(`/api/bookings/${bookingId}/vendor-allocations/`);
+            if (allocRes.ok) {
+                const allocJson = await allocRes.json();
+                const allocData = allocJson.data || {};
+                const existingAllocs = allocData.allocations || [];
+                mdoCurrentAllocations = existingAllocs;
+                mdoRenderPrintVendorMenu();
+                if (existingAllocs.length > 0) {
+                    const generatedLinks = existingAllocs.map(a => {
+                        const link = a.vendor_link || `${window.location.origin}/vendor/${a.token || ''}/`;
+                        const subName = escapeHtml(a.subcontractor || 'Nhà xe');
+                        return `
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 flex-wrap">
+                                <div>
+                                    <span class="font-bold text-teal-900">${subName}</span> 
+                                    <span class="text-slate-500 font-sans text-xs">(${a.allocated_containers} cont):</span>
+                                    <a href="${link}" target="_blank" class="text-teal-700 underline font-mono text-xs ml-1 hover:text-teal-900">${link}</a>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <a href="${link}" target="_blank" class="px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors">
+                                        <i class="ph-bold ph-arrow-square-out"></i> Mở Cổng Nhà Xe
+                                    </a>
+                                    <button type="button" onclick="mdoCopyVendorLink('${link}')" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                                        <i class="ph-bold ph-copy"></i> Copy Link
+                                    </button>
+                                    <button type="button" onclick="printDispatchOrderSlip(mdoCurrentBooking?.id, ${a.subcontractor_id})" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                                        <i class="ph-bold ph-printer text-teal-600"></i> In Phiếu
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    const resultBox = document.getElementById('mdo-result-box');
+                    const linksList = document.getElementById('mdo-links-list');
+                    if (resultBox && linksList) {
+                        resultBox.classList.remove('hidden');
+                        linksList.innerHTML = generatedLinks.join('');
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn(e);
+        }
+        if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+        return;
+    }
+
+    const btns = [document.getElementById('mdo-btn-submit'), document.getElementById('mdo-btn-submit-top')];
+    btns.forEach(b => { if (b) b.disabled = true; });
+
+    try {
+        const generatedLinks = [];
+        let successCount = 0;
+
+        for (const alloc of newAllocations) {
+            const res = await fetchWithAuth(`/api/bookings/${bookingId}/vendor-allocations/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(alloc)
+            });
+            const out = await res.json();
+            if (res.ok && out.success) {
+                successCount++;
+                const link = out.link || (out.data && out.data.vendor_link) || `${window.location.origin}/vendor/token/`;
+                const subName = escapeHtml(out.data?.subcontractor || 'Nhà xe');
+                const emailMsg = out.email ? (out.email.sent ? ' <span class="text-emerald-600 text-xs">[Đã gửi email]</span>' : ` <span class="text-amber-600 text-xs">[Email: ${out.email.message}]</span>`) : '';
+                generatedLinks.push(`
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 flex-wrap">
+                        <div>
+                            <span class="font-bold text-teal-900">${subName}</span> 
+                            <span class="text-slate-500 font-sans text-xs">(${alloc.allocated_containers} cont):</span>
+                            <a href="${link}" target="_blank" class="text-teal-700 underline font-mono text-xs ml-1 hover:text-teal-900">${link}</a>
+                            ${emailMsg}
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <a href="${link}" target="_blank" class="px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors">
+                                <i class="ph-bold ph-arrow-square-out"></i> Mở Cổng Nhà Xe
+                            </a>
+                            <button type="button" onclick="mdoCopyVendorLink('${link}')" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                                <i class="ph-bold ph-copy"></i> Copy Link
+                            </button>
+                            <button type="button" onclick="printDispatchOrderSlip(mdoCurrentBooking?.id, ${alloc.subcontractor_id})" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                                <i class="ph-bold ph-printer text-teal-600"></i> In Phiếu
+                            </button>
+                        </div>
+                    </div>
+                `);
+            } else {
+                showToast('danger', out.message || 'Lỗi khi chia cont.');
+            }
+        }
+
+        if (successCount > 0) {
+            showToast('success', `Đã phát lệnh điều động thành công cho ${successCount} nhà xe!`, 'Phát Lệnh Thành Công');
+            const resultBox = document.getElementById('mdo-result-box');
+            const linksList = document.getElementById('mdo-links-list');
+            if (resultBox && linksList) {
+                resultBox.classList.remove('hidden');
+                linksList.innerHTML = generatedLinks.join('');
+            }
+            if (typeof loadTripsData === 'function') loadTripsData();
+            if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+            await onDispatchOrderBookingChanged(bookingId);
+        }
+    } catch (e) {
+        showToast('danger', 'Lỗi kết nối khi phát lệnh: ' + e.message);
+    } finally {
+        btns.forEach(b => { if (b) b.disabled = false; });
+    }
+}
+
+
+
+function mdoDownloadExcelTemplate() {
+
+    window.open('/api/vendor-allocations/template/excel/', '_blank');
+
+}
+
+
+
+function mdoUploadExcel(file) {
+
+    if (!file) return;
+
+    showToast('info', `Đang đọc file Excel: ${file.name}...`);
+
+    // Upload Excel xử lý phân bổ
+
+}
+
+
+
+window.openDispatchOrderModal = openDispatchOrderModal;
+
+window.closeDispatchOrderModal = closeDispatchOrderModal;
+
+window.onDispatchOrderBookingChanged = onDispatchOrderBookingChanged;
+
+window.mdoAddAllocationRow = mdoAddAllocationRow;
+
+window.mdoRecalcAllocations = mdoRecalcAllocations;
+
+window.submitDispatchOrderAllocation = submitDispatchOrderAllocation;
+
+window.mdoDownloadExcelTemplate = mdoDownloadExcelTemplate;
+
+window.mdoUploadExcel = mdoUploadExcel;
+
+
+
+
+
+// -------------------------------------------------------------
+
+// Quản lý Tabs & Danh Sách Lệnh Điều Động Theo B/L (GSS TMS)
+
+// -------------------------------------------------------------
+
+var currentDispatchTab = 'orders';
+var currentOrderGroup = 'ALL';
+var allDispatchBookings = [];
+var loadedVcContainers = [];
+var vcSearchTimeout = null;
+
+function switchDispatchViewTab(tab) {
+    currentDispatchTab = tab;
+    const btnOrders = document.getElementById('btn-dispatch-tab-orders');
+    const btnVc = document.getElementById('btn-dispatch-tab-vendor-containers');
+    const btnTrips = document.getElementById('btn-dispatch-tab-trips');
+
+    const ordersView = document.getElementById('dispatch-orders-view');
+    const vcView = document.getElementById('dispatch-vendor-containers-view');
+    const tripsView = document.getElementById('dispatch-trips-view');
+
+    const activeCls = 'flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-2xs box-border';
+    const inactiveCls = 'flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border';
+
+    // Reset buttons & icons
+    if (btnOrders) {
+        btnOrders.className = inactiveCls;
+        const ic = btnOrders.querySelector('i');
+        if (ic) ic.className = 'ph-bold ph-newspaper text-base text-slate-500';
+    }
+    if (btnVc) {
+        btnVc.className = inactiveCls;
+        const ic = btnVc.querySelector('i');
+        if (ic) ic.className = 'ph-bold ph-stack text-base text-slate-500';
+    }
+    if (btnTrips) {
+        btnTrips.className = inactiveCls;
+        const ic = btnTrips.querySelector('i');
+        if (ic) ic.className = 'ph-bold ph-navigation-arrow text-base text-slate-500';
+    }
+
+    // Reset views
+    if (ordersView) { ordersView.classList.add('hidden'); ordersView.classList.remove('flex'); }
+    if (vcView) { vcView.classList.add('hidden'); vcView.classList.remove('flex'); }
+    if (tripsView) { tripsView.classList.add('hidden'); tripsView.classList.remove('flex'); }
+
+    if (tab === 'orders') {
+        if (btnOrders) {
+            btnOrders.className = activeCls;
+            const ic = btnOrders.querySelector('i');
+            if (ic) ic.className = 'ph-bold ph-newspaper text-base text-indigo-600';
+        }
+        if (ordersView) { ordersView.classList.remove('hidden'); ordersView.classList.add('flex'); }
+        loadDispatchOrdersTab();
+    } else if (tab === 'vendor-containers') {
+        if (btnVc) {
+            btnVc.className = activeCls;
+            const ic = btnVc.querySelector('i');
+            if (ic) ic.className = 'ph-bold ph-stack text-base text-indigo-600';
+        }
+        if (vcView) { vcView.classList.remove('hidden'); vcView.classList.add('flex'); }
+        loadVendorContainersTab();
+    } else {
+        if (btnTrips) {
+            btnTrips.className = activeCls;
+            const ic = btnTrips.querySelector('i');
+            if (ic) ic.className = 'ph-bold ph-navigation-arrow text-base text-indigo-600';
+        }
+        if (tripsView) { tripsView.classList.remove('hidden'); tripsView.classList.add('flex'); }
+        if (typeof loadTripsData === 'function') loadTripsData();
+    }
+}
+
+function filterOrderGroup(group) {
+    currentOrderGroup = group || 'ALL';
+    const btnAll = document.getElementById('filter-order-mode-all');
+    const btnPending = document.getElementById('filter-order-mode-pending');
+    const btnDispatched = document.getElementById('filter-order-mode-dispatched');
+
+    const activePill = 'px-2.5 py-1 rounded-md bg-white text-teal-900 shadow-2xs font-bold transition-all cursor-pointer';
+    const inactivePill = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 font-semibold transition-all cursor-pointer';
+
+    if (btnAll) btnAll.className = (group === 'ALL') ? activePill : inactivePill;
+    if (btnPending) btnPending.className = (group === 'PENDING') ? activePill + ' flex items-center gap-1' : inactivePill + ' flex items-center gap-1';
+    if (btnDispatched) btnDispatched.className = (group === 'DISPATCHED') ? activePill + ' flex items-center gap-1' : inactivePill + ' flex items-center gap-1';
+
+    renderDispatchOrdersTable();
+}
+
+function renderDispatchOrdersTable() {
+    const tbody = document.getElementById('dispatch-orders-tbody');
+    if (!tbody) return;
+
+    let filtered = allDispatchBookings || [];
+    if (currentOrderGroup === 'PENDING') {
+        filtered = filtered.filter(b => !Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= (Number(b.total_containers) || 1)) || ((Number(b.dispatched_containers) || 0) >= (Number(b.total_containers) || 1))));
+    } else if (currentOrderGroup === 'DISPATCHED') {
+        filtered = filtered.filter(b => Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= (Number(b.total_containers) || 1)) || ((Number(b.dispatched_containers) || 0) >= (Number(b.total_containers) || 1))));
+    }
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy Lệnh Điều Động / Booking nào phù hợp với bộ lọc hiện tại.</td></tr>`;
+        return;
+    }
+
+    let html = '';
+    filtered.forEach((b, idx) => {
+        const rawCode = b.booking_code || `BK#${b.id}`;
+        const total = Number(b.total_containers) || 1;
+        const dispatched = Number(b.dispatched_containers) || 0;
+        const remaining = total - dispatched;
+        const isDispatched = Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= total) || (dispatched >= total));
+
+        // Chuẩn hóa mã phiếu: Đã điều độ thì LDD.BK..., chưa điều độ thì BK...
+        const codeDisplay = isDispatched 
+            ? (rawCode.startsWith("LDD.") ? rawCode : `LDD.${rawCode}`) 
+            : rawCode;
+
+        const codeBadge = isDispatched 
+            ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">ĐÃ ĐIỀU ĐỘ</span>`
+            : `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold font-mono">CHỜ ĐIỀU ĐỘ</span>`;
+
+        const bl = b.booking_number ? `<span class="text-slate-500 font-mono text-[11px] block">B/L: ${b.booking_number}</span>` : '';
+        const cust = b.customer_name || b.customer || 'Khách hàng';
+        const route = `<div class="truncate max-w-xs" title="${b.pickup_location || ''} -> ${b.delivery_location || ''} -> ${b.dropoff_location || ''}">${b.pickup_location || 'Cảng/Depot'} &rarr; ${b.delivery_location || 'Kho khách'} &rarr; ${b.dropoff_location || 'Depot'}</div>`;
+        const conts = `<strong class="text-teal-700 font-bold">${total}</strong> <span class="text-slate-500 text-[11px]">Cont (${b.container_size || '40HC'})</span>`;
+
+        let allocProgress = '';
+        if (isDispatched) {
+            allocProgress = `<span class="text-emerald-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle"></i> Đã chia ${dispatched}/${total} cont</span>`;
+        } else if (dispatched > 0) {
+            allocProgress = `<span class="text-amber-700 font-bold flex items-center gap-1"><i class="ph-bold ph-arrows-split"></i> Đã chia ${dispatched}/${total} (Còn ${remaining})</span>`;
+        } else {
+            allocProgress = `<span class="text-rose-700 font-bold flex items-center gap-1"><i class="ph-bold ph-clock"></i> Chưa phân bổ (${total} cont)</span>`;
+        }
+
+        const demDet = `<span class="text-slate-600 block text-[11px]">DEM: ${b.free_time_demurrage || 7}d | DET: ${b.free_time_detention || 7}d</span>`;
+
+        let statusText = isDispatched ? 'Đã phát lệnh' : 'Chờ điều phối';
+        let statusColor = isDispatched ? 'text-emerald-700' : 'text-amber-700';
+        let statusIcon = isDispatched ? 'ph-check-circle' : 'ph-clock';
+
+        html += `
+        <tr class="hover:bg-teal-50/40 transition-colors">
+            <td class="p-2.5 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+            <td class="p-2.5">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <strong class="text-teal-950 font-bold font-mono text-xs">${codeDisplay}</strong>
+                    ${codeBadge}
+                </div>
+                ${bl}
+            </td>
+            <td class="p-2.5 font-bold text-slate-800">${cust}</td>
+            <td class="p-2.5 text-slate-700 text-xs">${route}</td>
+            <td class="p-2.5 text-center">${conts}</td>
+            <td class="p-2.5">${allocProgress}</td>
+            <td class="p-2.5 text-center">${demDet}</td>
+            <td class="p-2.5 text-center">
+                <span class="inline-flex items-center gap-1 text-xs font-bold ${statusColor}">
+                    <i class="ph-bold ${statusIcon}"></i>
+                    <span>${statusText}</span>
+                </span>
+            </td>
+            <td class="p-2.5 text-center">
+                <div class="inline-flex items-center gap-1.5 justify-center">
+                    <button type="button" onclick="openDispatchOrderPage(${b.id})" 
+                        class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        title="Xem chi tiết, lập lệnh & điều phối container cho nhà xe">
+                        <i class="ph-bold ph-eye"></i>
+                        <span>Xem</span>
+                    </button>
+                    <button type="button" onclick="printDispatchOrderSlip(${b.id})" 
+                        class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        title="In Phiếu Lệnh Điều Vận">
+                        <i class="ph-bold ph-printer"></i>
+                        <span>In</span>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = html;
+}
+
+async function loadDispatchOrdersTab() {
+    const tbody = document.getElementById('dispatch-orders-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-400">Đang tải danh sách Kế Hoạch Điều Độ...</td></tr>';
+
+    try {
+        const res = await fetchWithAuth('/api/bookings/active/');
+        if (!res.ok) throw new Error('Không thể tải danh sách Lệnh Điều Động');
+        const data = await res.json();
+        allDispatchBookings = data.data || data.results || data || [];
+
+        // Thống kê phân nhóm
+        const totalCount = allDispatchBookings.length;
+        const pendingCount = allDispatchBookings.filter(b => !Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= (Number(b.total_containers) || 1)) || ((Number(b.dispatched_containers) || 0) >= (Number(b.total_containers) || 1)))).length;
+        const dispatchedCount = allDispatchBookings.filter(b => Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= (Number(b.total_containers) || 1)) || ((Number(b.dispatched_containers) || 0) >= (Number(b.total_containers) || 1)))).length;
+
+        const elAll = document.getElementById('count-orders-all');
+        const elPending = document.getElementById('count-orders-pending');
+        const elDispatched = document.getElementById('count-orders-dispatched');
+        const elTabBadge = document.getElementById('tab-orders-badge');
+
+        if (elAll) elAll.innerText = totalCount;
+        if (elPending) elPending.innerText = pendingCount;
+        if (elDispatched) elDispatched.innerText = dispatchedCount;
+        if (elTabBadge) elTabBadge.innerText = totalCount;
+
+        renderDispatchOrdersTable();
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-rose-500 font-bold">Lỗi khi tải Lệnh Điều Động: ${e.message}</td></tr>`;
+    }
+}
+
+// -------------------------------------------------------------
+// TAB 2: VENDOR PHÂN BỔ & GÁN XE (THEO TỪNG CONTAINER)
+// -------------------------------------------------------------
+async function loadVendorContainersTab() {
+    const tbody = document.getElementById('dispatch-vendor-containers-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="10" class="p-6 text-center text-slate-400">Đang tải danh sách Container & Tiến độ Vendor...</td></tr>';
+
+    const vendorSel = document.getElementById('filter-vc-vendor');
+    const statusSel = document.getElementById('filter-vc-status');
+    const searchInp = document.getElementById('filter-vc-search');
+
+    const vId = vendorSel ? vendorSel.value : '';
+    const stVal = statusSel ? statusSel.value : 'ALL';
+    const qVal = searchInp ? searchInp.value.trim() : '';
+
+    let url = '/api/dispatch/vendor-containers/?';
+    if (vId) url += `vendor_id=${encodeURIComponent(vId)}&`;
+    if (stVal && stVal !== 'ALL') url += `status=${encodeURIComponent(stVal)}&`;
+    if (qVal) url += `q=${encodeURIComponent(qVal)}&`;
+
+    try {
+        const res = await fetchWithAuth(url);
+        if (!res.ok) throw new Error('Không thể tải dữ liệu Container');
+        const resData = await res.json();
+        const rows = resData.data || [];
+        const stats = resData.stats || {};
+        loadedVcContainers = rows;
+
+        // Cập nhật thanh KPI Mini
+        const elTotal = document.getElementById('vc-stat-total');
+        const elUnassigned = document.getElementById('vc-stat-unassigned');
+        const elWaiting = document.getElementById('vc-stat-waiting');
+        const elAssigned = document.getElementById('vc-stat-assigned');
+        const elInTransit = document.getElementById('vc-stat-intransit');
+        const elCompleted = document.getElementById('vc-stat-completed');
+        const elTabVcBadge = document.getElementById('tab-vc-badge');
+
+        if (elTotal) elTotal.innerText = stats.total || 0;
+        if (elUnassigned) elUnassigned.innerText = stats.unassigned || 0;
+        if (elWaiting) elWaiting.innerText = stats.waiting_vehicle || 0;
+        if (elAssigned) elAssigned.innerText = stats.assigned || 0;
+        if (elInTransit) elInTransit.innerText = stats.in_transit || 0;
+        if (elCompleted) elCompleted.innerText = stats.completed || 0;
+        if (elTabVcBadge) elTabVcBadge.innerText = stats.total || 0;
+
+        // Cập nhật Dropdown Nhà xe nếu chưa có
+        if (vendorSel && vendorSel.options.length <= 1) {
+            const vendorMap = new Map();
+            rows.forEach(r => {
+                if (r.vendor_id && !vendorMap.has(r.vendor_id)) {
+                    vendorMap.set(r.vendor_id, r.vendor_short || r.vendor_name);
+                }
+            });
+            vendorMap.forEach((vName, vIdVal) => {
+                const opt = document.createElement('option');
+                opt.value = vIdVal;
+                opt.innerText = vName;
+                vendorSel.appendChild(opt);
+            });
+        }
+
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy Container nào phù hợp với bộ lọc.</td></tr>';
+            return;
+        }
+
+        let html = '';
+        rows.forEach((r, idx) => {
+            const contDisplay = `
+                <div>
+                    <strong class="font-mono text-slate-900 font-bold text-xs select-all">${r.container_number}</strong>
+                    <div class="text-[11px] text-slate-500 font-mono mt-0.5">
+                        <span class="font-bold text-teal-800 bg-teal-50 px-1 py-0.2 rounded border border-teal-200">${r.container_type}</span>
+                        ${r.seal_number && r.seal_number !== '--' ? `<span>· Seal: ${r.seal_number}</span>` : ''}
+                        ${r.gross_weight_kg ? `<span>· ${(r.gross_weight_kg / 1000).toFixed(1)}T</span>` : ''}
+                    </div>
+                </div>
+            `;
+
+            const lddDisplay = `
+                <div>
+                    <span class="font-mono text-xs font-bold text-teal-950">${r.dispatch_order_code}</span>
+                    <div class="text-xs text-slate-700 font-semibold truncate max-w-[180px]" title="${r.customer_name}">${r.customer_name}</div>
+                    <div class="text-[11px] text-slate-500 truncate max-w-[180px]" title="${r.pickup_location} -> ${r.delivery_location} -> ${r.dropoff_location}">
+                        ${r.pickup_location} &rarr; ${r.delivery_location}
+                    </div>
+                </div>
+            `;
+
+            let vendorDisplay = '';
+            if (r.vendor_id) {
+                vendorDisplay = `
+                    <div>
+                        <span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-900 border border-teal-200 font-bold text-xs inline-flex items-center gap-1">
+                            <i class="ph-bold ph-buildings"></i> ${r.vendor_short || r.vendor_name}
+                        </span>
+                        <div class="text-[11px] text-slate-400 font-mono mt-0.5">${r.vendor_code ? `Mã: ${r.vendor_code}` : ''}</div>
+                    </div>
+                `;
+            } else {
+                vendorDisplay = `
+                    <span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs inline-flex items-center gap-1">
+                        <i class="ph-bold ph-warning-circle"></i> Chưa phân bổ
+                    </span>
+                `;
+            }
+
+            // Phiếu Vận Chuyển (VC)
+            let vcDisplay = '';
+            if (r.trip_code) {
+                vcDisplay = `
+                    <div class="text-center">
+                        <span class="px-2.5 py-1 rounded-lg bg-teal-100 text-teal-950 font-mono font-bold text-xs border border-teal-300 shadow-2xs inline-block">
+                            ${r.trip_code}
+                        </span>
+                        ${r.step_status_display ? `<div class="text-[10px] text-teal-700 font-semibold mt-0.5">${r.step_status_display}</div>` : ''}
+                    </div>
+                `;
+            } else {
+                vcDisplay = `
+                    <div class="text-center text-amber-700 font-semibold text-xs flex items-center justify-center gap-1">
+                        <i class="ph-bold ph-hourglass-medium text-amber-500"></i>
+                        <span>Chưa gán xe</span>
+                    </div>
+                `;
+            }
+
+            // Phương tiện
+            let vehicleDisplay = '';
+            if (r.tractor_plate && r.tractor_plate !== '--') {
+                vehicleDisplay = `
+                    <div>
+                        <div class="font-bold font-mono text-slate-800 text-xs">${r.tractor_plate}</div>
+                        ${r.trailer_plate && r.trailer_plate !== '--' ? `<div class="text-[11px] font-mono text-slate-500">Moóc: ${r.trailer_plate}</div>` : ''}
+                    </div>
+                `;
+            } else {
+                vehicleDisplay = `<span class="text-slate-400 italic text-[11px]">Chưa điều xe</span>`;
+            }
+
+            // Tài xế
+            let driverDisplay = '';
+            if (r.driver_name && r.driver_name !== '--') {
+                driverDisplay = `
+                    <div>
+                        <div class="font-bold text-slate-800 text-xs">${r.driver_name}</div>
+                        ${r.driver_phone && r.driver_phone !== '--' ? `<a href="tel:${r.driver_phone}" class="text-[11px] font-mono text-teal-700 hover:underline flex items-center gap-1"><i class="ph-bold ph-phone"></i> ${r.driver_phone}</a>` : ''}
+                    </div>
+                `;
+            } else {
+                driverDisplay = `<span class="text-slate-400 italic text-[11px]">Chưa gán tài</span>`;
+            }
+
+            // Tình trạng vận hành
+            let statusBadge = '';
+            if (r.status_code === 'UNASSIGNED') {
+                statusBadge = `
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 inline-flex items-center gap-1.5 shadow-2xs">
+                        <span class="w-2 h-2 rounded-full bg-rose-600"></span> Chưa giao Nhà xe
+                    </span>
+                `;
+            } else if (r.status_code === 'WAITING_VEHICLE') {
+                statusBadge = `
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 inline-flex items-center gap-1.5 shadow-2xs">
+                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Chờ Vendor gán xe
+                    </span>
+                `;
+            } else if (r.status_code === 'ASSIGNED') {
+                statusBadge = `
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-300 inline-flex items-center gap-1.5 shadow-2xs">
+                        <span class="w-2 h-2 rounded-full bg-blue-600"></span> Đã gán xe (Chờ chạy)
+                    </span>
+                `;
+            } else if (r.status_code === 'IN_TRANSIT') {
+                statusBadge = `
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 inline-flex items-center gap-1.5 shadow-2xs">
+                        <span class="w-2 h-2 rounded-full bg-emerald-600 animate-ping"></span> Đang trên tuyến
+                    </span>
+                `;
+            } else if (r.status_code === 'EMPTY_RETURNING') {
+                statusBadge = `
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-900 border border-purple-300 inline-flex items-center gap-1.5 shadow-2xs">
+                        <span class="w-2 h-2 rounded-full bg-purple-600"></span> Đang hạ bãi rỗng
+                    </span>
+                `;
+            } else {
+                statusBadge = `
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300 inline-flex items-center gap-1.5 shadow-2xs">
+                        <i class="ph-bold ph-check-circle text-emerald-600"></i> Đã hoàn thành
+                    </span>
+                `;
+            }
+
+            const freeTime = `
+                <div class="text-center text-[11px] text-slate-600">
+                    <div>DEM: <strong class="text-slate-800">${r.dem_free_days || 7}d</strong></div>
+                    <div>DET: <strong class="text-teal-700">${r.det_free_days || 7}d</strong></div>
+                </div>
+            `;
+
+            // Thao tác
+            let actions = `
+                <div class="inline-flex items-center gap-1 justify-center">
+                    <button type="button" onclick="openDispatchOrderPage(${r.booking_id})"
+                        class="px-2 py-1 bg-white hover:bg-teal-50 text-teal-700 border border-teal-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        title="Xem Lệnh Điều Động / Phân Bổ">
+                        <i class="ph-bold ph-eye"></i> <span>Xem</span>
+                    </button>
+            `;
+            if (r.status_code === 'WAITING_VEHICLE') {
+                actions += `
+                    <button type="button" onclick="remindVendorZalo('${r.vendor_short || r.vendor_name}', '${r.container_number}', '${r.dispatch_order_code}', '${r.portal_token || ''}')"
+                        class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        title="Gửi nhắc nhở Vendor qua Zalo / Copy thông điệp">
+                        <i class="ph-bold ph-chat-teardrop-dots"></i> <span>Nhắc</span>
+                    </button>
+                `;
+            }
+            actions += `</div>`;
+
+            html += `
+                <tr class="hover:bg-teal-50/30 transition-colors">
+                    <td class="p-2.5 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+                    <td class="p-2.5">${contDisplay}</td>
+                    <td class="p-2.5">${lddDisplay}</td>
+                    <td class="p-2.5">${vendorDisplay}</td>
+                    <td class="p-2.5 text-center">${vcDisplay}</td>
+                    <td class="p-2.5">${vehicleDisplay}</td>
+                    <td class="p-2.5">${driverDisplay}</td>
+                    <td class="p-2.5 text-center">${statusBadge}</td>
+                    <td class="p-2.5 text-center">${freeTime}</td>
+                    <td class="p-2.5 text-center">${actions}</td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-rose-500 font-bold">Lỗi khi tải danh sách Container: ${e.message}</td></tr>`;
+    }
+}
+
+function quickFilterVcStatus(st) {
+    const statusSel = document.getElementById('filter-vc-status');
+    if (statusSel) statusSel.value = st;
+    loadVendorContainersTab();
+}
+
+function debounceVendorContainersSearch() {
+    clearTimeout(vcSearchTimeout);
+    const searchInp = document.getElementById('filter-vc-search');
+    const clearBtn = document.getElementById('btn-clear-vc-search');
+    if (clearBtn && searchInp) {
+        if (searchInp.value.trim()) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+    vcSearchTimeout = setTimeout(() => {
+        loadVendorContainersTab();
+    }, 300);
+}
+
+function clearVcSearch() {
+    const searchInp = document.getElementById('filter-vc-search');
+    const clearBtn = document.getElementById('btn-clear-vc-search');
+    if (searchInp) searchInp.value = '';
+    if (clearBtn) clearBtn.classList.add('hidden');
+    loadVendorContainersTab();
+}
+
+function remindVendorZalo(vendorName, contNumber, lddCode, token) {
+    const link = token ? `${window.location.origin}/vendor/${token}/` : `${window.location.origin}/vendor/`;
+    const msg = `[GSS TMS] Kính gửi Quý Nhà Xe ${vendorName},\nLô hàng ${lddCode} có container ${contNumber} hiện đang CHỜ ĐIỀU XE.\nKính nhờ Quý Nhà Xe truy cập Cổng Khai Báo gán Đầu kéo & Tài xế để kịp tiến độ lấy cont:\n👉 ${link}\nXin cảm ơn!`;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(msg.replace(/\\n/g, '\n'));
+        if (typeof showToast === 'function') {
+            showToast('success', `Đã sao chép nội dung nhắc nhở ${vendorName} vào bộ nhớ tạm để gửi Zalo!`);
+        } else {
+            alert(`Đã sao chép nội dung gửi Zalo cho ${vendorName}:\n\n` + msg.replace(/\\n/g, '\n'));
+        }
+    } else {
+        alert(msg.replace(/\\n/g, '\n'));
+    }
+}
+
+window.switchDispatchViewTab = switchDispatchViewTab;
+window.filterOrderGroup = filterOrderGroup;
+window.loadDispatchOrdersTab = loadDispatchOrdersTab;
+window.loadVendorContainersTab = loadVendorContainersTab;
+window.quickFilterVcStatus = quickFilterVcStatus;
+window.debounceVendorContainersSearch = debounceVendorContainersSearch;
+window.clearVcSearch = clearVcSearch;
+window.remindVendorZalo = remindVendorZalo;
+
+
+
+let mdoLoadedContainers = [];
+let mdoSelectedContIds = new Set();
+
+function toggleMdoFullscreen() {
+    const dialog = document.getElementById('modal-dispatch-order-dialog');
+    const icon = document.getElementById('icon-mdo-fullscreen');
+    if (!dialog) return;
+    const isFull = dialog.classList.contains('mdo-fullscreen');
+    if (isFull) {
+        dialog.classList.remove('mdo-fullscreen', 'fixed', 'inset-0', 'w-screen', 'h-screen', 'rounded-none', 'z-[60]');
+        dialog.classList.add('w-full', 'max-w-[97vw]', 'h-[95vh]', 'rounded-2xl');
+        if (icon) icon.className = 'ph-bold ph-corners-out text-base';
+    } else {
+        dialog.classList.remove('w-full', 'max-w-[97vw]', 'h-[95vh]', 'rounded-2xl');
+        dialog.classList.add('mdo-fullscreen', 'fixed', 'inset-0', 'w-screen', 'h-screen', 'rounded-none', 'z-[60]');
+        if (icon) icon.className = 'ph-bold ph-corners-in text-base';
+    }
+}
+window.toggleMdoFullscreen = toggleMdoFullscreen;
+
+async function loadMdoContainers(bookingId) {
+    const tbody = document.getElementById('mdo-containers-tbody');
+    const badge = document.getElementById('mdo-containers-count-badge');
+    const bulkSelect = document.getElementById('mdo-bulk-vendor-select');
+    if (!tbody) return;
+
+    if (bulkSelect) {
+        let optHtml = '<option value="">-- Chọn Nhà xe phụ trách --</option>';
+        mdoSubcontractors.forEach(s => {
+            optHtml += `<option value="${s.id}">${escapeHtml(s.short_name || s.name)}</option>`;
+        });
+        bulkSelect.innerHTML = optHtml;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="12" class="p-4 text-center text-slate-400">Đang tải danh sách container...</td></tr>';
+    mdoSelectedContIds.clear();
+    mdoUpdateSelectedBadge();
+
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${bookingId}/containers/`);
+        if (!res.ok) throw new Error('Không thể tải container');
+        const json = await res.json();
+
+        let conts = [];
+        if (Array.isArray(json)) {
+            conts = json;
+        } else if (json && typeof json === 'object') {
+            const d = json.data !== undefined ? json.data : json;
+            if (Array.isArray(d)) {
+                conts = d;
+            } else if (d && typeof d === 'object') {
+                if (Array.isArray(d.containers)) conts = d.containers;
+                else if (Array.isArray(d.results)) conts = d.results;
+                else if (Array.isArray(d.items)) conts = d.items;
+            }
+        }
+        if (!Array.isArray(conts)) conts = [];
+        mdoLoadedContainers = conts;
+
+        mdoFilterContainers();
+
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-rose-500 font-bold">Lỗi tải container: ${e.message}</td></tr>`;
+    }
+}
+
+function mdoGetContainerStatusInfo(c) {
+    const subName = c.vendor || c.subcontractor_name || (c.subcontractor ? (c.subcontractor.short_name || c.subcontractor.name) : '');
+    const hasVendor = !!(c.vendor || c.vendor_id || c.subcontractor_id || c.allocation_id || subName);
+    const step = (c.step_status || '').toUpperCase();
+    const rawStepLabel = (c.step_label || '').trim();
+    const hasPlate = !!(c.tractor_plate || c.assigned_vehicle_plate);
+
+    const STATUS_STYLE = {
+        ARRIVED_AT_PICKUP:   { icon: 'ph-map-pin',            cls: 'text-sky-700',     label: 'Đã đến nơi nhận' },
+        LOADED_ON_VEHICLE:   { icon: 'ph-package',            cls: 'text-indigo-700',  label: 'Đã lên xe (Nhận cont/hàng)' },
+        ARRIVED_AT_DELIVERY: { icon: 'ph-navigation-arrow',   cls: 'text-violet-700',  label: 'Đã đến nơi giao' },
+        UNLOADED:            { icon: 'ph-check-square',       cls: 'text-cyan-700',    label: 'Đã hạ xe / Giao xong' },
+        RETURNING_EMPTY:     { icon: 'ph-arrow-u-down-left',  cls: 'text-orange-700',  label: 'Đang đi hạ rỗng' },
+    };
+
+    if (!hasVendor && !c.trip_code) {
+        return {
+            code: 'UNASSIGNED',
+            hasVendor: false,
+            label: 'Chưa phân bổ',
+            badgeHtml: '<span class="inline-flex items-center gap-1 text-xs font-medium text-slate-500"><i class="ph-bold ph-clock text-slate-400"></i> Chưa phân bổ</span>'
+        };
+    }
+
+    if (step === 'CANCELLED') {
+        return {
+            code: 'CANCELLED',
+            hasVendor,
+            label: 'Đã hủy',
+            badgeHtml: '<span class="inline-flex items-center gap-1 text-xs font-bold text-rose-700"><i class="ph-bold ph-x-circle"></i> Đã hủy</span>'
+        };
+    }
+
+    if (step === 'EMPTY_RETURNED') {
+        return {
+            code: 'EMPTY_RETURNED',
+            hasVendor,
+            label: 'Đã hạ rỗng (Hoàn tất)',
+            badgeHtml: '<span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700"><i class="ph-bold ph-check-circle"></i> Đã hạ rỗng (Hoàn tất)</span>'
+        };
+    }
+
+    if (STATUS_STYLE[step]) {
+        const stCfg = STATUS_STYLE[step];
+        const lbl = rawStepLabel || stCfg.label;
+        return {
+            code: step,
+            isInTransit: true,
+            hasVendor,
+            label: lbl,
+            badgeHtml: `<span class="inline-flex items-center gap-1 text-xs font-bold ${stCfg.cls}"><i class="ph-bold ${stCfg.icon}"></i> ${escapeHtml(lbl)}</span>`
+        };
+    }
+
+    if (c.trip_code || step === 'READY' || rawStepLabel === 'Sẵn sàng') {
+        const lbl = (rawStepLabel && rawStepLabel !== 'Sẵn sàng') ? rawStepLabel : 'Đã Phát lệnh Điều độ';
+        return {
+            code: 'READY',
+            hasVendor,
+            label: lbl,
+            badgeHtml: `<span class="inline-flex items-center gap-1 text-xs font-bold text-teal-700"><i class="ph-bold ph-file-text"></i> ${escapeHtml(lbl)}</span>`
+        };
+    }
+
+    return {
+        code: 'ASSIGNED',
+        hasVendor,
+        label: 'Đã giao cho Nhà xe',
+        badgeHtml: '<span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700"><i class="ph-bold ph-user-check"></i> Đã giao cho Nhà xe</span>'
+    };
+}
+
+function mdoFilterContainers() {
+    const tbody = document.getElementById('mdo-containers-tbody');
+    const countBadge = document.getElementById('mdo-containers-count-badge');
+    if (!tbody) return;
+
+    const query = (document.getElementById('mdo-cont-filter-search')?.value || '').trim().toLowerCase();
+    const rawFilter = document.getElementById('mdo-cont-filter-status')?.value || 'ALL';
+    const filterMap = { WAITING_VEHICLE: 'ASSIGNED', ASSIGNED_VEHICLE: 'ASSIGNED', DISPATCHED: 'READY' };
+    const statusFilter = filterMap[rawFilter] || rawFilter;
+
+    let filtered = mdoLoadedContainers.filter(c => {
+        const st = mdoGetContainerStatusInfo(c);
+
+        if (statusFilter === 'UNASSIGNED' && st.code !== 'UNASSIGNED') return false;
+        if (statusFilter === 'ASSIGNED' && st.code !== 'ASSIGNED') return false;
+        if (statusFilter === 'READY' && st.code !== 'READY') return false;
+        if (statusFilter === 'IN_TRANSIT' && !st.isInTransit) return false;
+        if (['ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED', 'CANCELLED'].includes(statusFilter)) {
+            if (st.code !== statusFilter) return false;
+        }
+
+        if (!query) return true;
+        const text = [
+            c.container_number,
+            c.seal_number,
+            c.vendor,
+            c.vendor_code,
+            c.subcontractor_name,
+            c.tractor_plate,
+            c.driver_name,
+            c.delivery_address,
+            c.container_type,
+            c.trip_code,
+            st.label
+        ].filter(Boolean).join(' ').toLowerCase();
+        return text.includes(query);
+    });
+
+    if (countBadge) {
+        countBadge.innerText = `Hiển thị: ${filtered.length} / ${mdoLoadedContainers.length} container`;
+    }
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" class="p-6 text-center text-slate-400 font-medium">Không tìm thấy container nào phù hợp bộ lọc.</td></tr>';
+        return;
+    }
+
+    const b = mdoCurrentBooking || {};
+    let html = '';
+
+    filtered.forEach((c, idx) => {
+        const isChecked = mdoSelectedContIds.has(String(c.id));
+        const subName = c.vendor || c.subcontractor_name || (c.subcontractor ? (c.subcontractor.short_name || c.subcontractor.name) : '');
+        const currentSubId = c.vendor_id || c.subcontractor_id || (c.subcontractor ? c.subcontractor.id : '') || (c.allocation ? c.allocation.subcontractor_id : '');
+        const isLocked = ['LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED'].includes(c.step_status);
+
+        let vendorSelectHtml = '';
+        if (isLocked) {
+            vendorSelectHtml = `<div class="font-bold text-teal-800 text-xs">${escapeHtml(subName || 'Chưa phân bổ')}</div>`;
+        } else {
+            let subOptions = '<option value="">-- Chưa phân bổ --</option>';
+            mdoSubcontractors.forEach(s => {
+                const sel = (currentSubId && String(s.id) === String(currentSubId)) || (subName && (s.short_name === subName || s.name === subName)) ? 'selected' : '';
+                subOptions += `<option value="${s.id}" ${sel}>${escapeHtml(s.short_name || s.name)}</option>`;
+            });
+            vendorSelectHtml = `
+                <select onchange="mdoChangeSingleContainerVendor(${c.id}, this.value)" 
+                    class="w-full h-8 px-2 bg-white hover:bg-teal-50/50 border border-slate-300 hover:border-teal-500 focus:border-teal-600 rounded-lg text-xs font-bold text-teal-900 outline-none transition-colors cursor-pointer"
+                    title="Đổi nhà xe trực tiếp cho container này">
+                    ${subOptions}
+                </select>
+            `;
+        }
+
+        let actionBtn = '';
+        if (currentSubId || subName) {
+            if (!isLocked) {
+                actionBtn = `
+                    <button type="button" onclick="mdoUnassignSingleContainer(${c.id})" 
+                        class="px-2 py-1 bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-300 rounded-lg text-xs font-bold transition-colors cursor-pointer" 
+                        title="Bỏ phân bổ nhà xe cho container này">
+                        <i class="ph-bold ph-x text-xs"></i> Bỏ Gán
+                    </button>
+                `;
+            } else {
+                actionBtn = `<span class="text-slate-400 text-xs font-medium">Đang chạy</span>`;
+            }
+        } else {
+            actionBtn = `<span class="text-slate-400 text-xs italic">--</span>`;
+        }
+
+        const driverVehicle = (c.tractor_plate || c.assigned_vehicle_plate || c.driver_name || c.assigned_driver_name)
+            ? `<span class="text-teal-900 font-bold font-mono">${escapeHtml(c.tractor_plate || c.assigned_vehicle_plate || '--')}</span> · <span class="text-slate-700 font-medium">${escapeHtml(c.driver_name || c.assigned_driver_name || '--')}</span>`
+            : '<span class="text-slate-400 italic">Chờ Vendor gán</span>';
+
+        const statusBadge = mdoGetContainerStatusInfo(c).badgeHtml;
+
+        const vgm = c.gross_weight_kg ? (typeof formatNumberVN === 'function' ? formatNumberVN(c.gross_weight_kg) + ' kg' : c.gross_weight_kg + ' kg') : (c.vgm_weight || '--');
+        const deliveryLoc = c.delivery_address || b.delivery_location || '--';
+        const dropoffLoc = b.dropoff_location || '--';
+        const demDetStr = c.dem_expiry ? (typeof formatDateVN === 'function' ? formatDateVN(c.dem_expiry) : c.dem_expiry) : (b.loading_date ? (typeof formatDateVN === 'function' ? formatDateVN(b.loading_date) : b.loading_date) : '--');
+
+        // Cảnh báo số container sai chuẩn ISO 6346
+        const isoWarning = (c.iso_valid === false) ? ' <span class="text-amber-600 text-[10px] font-bold">(Sai ISO)</span>' : '';
+
+        html += `
+        <tr class="hover:bg-teal-50/30 transition-colors ${isChecked ? 'bg-teal-50/50' : ''}">
+            <td class="p-2.5 text-center">
+                <input type="checkbox" class="mdo-cont-cb rounded text-teal-600 cursor-pointer" value="${c.id}" ${isChecked ? 'checked' : ''} onchange="mdoOnContCheckChange(this)">
+            </td>
+            <td class="p-2.5 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+            <td class="p-2.5 font-bold font-mono text-teal-950">
+                ${escapeHtml(c.container_number || '--')}${isoWarning}
+            </td>
+            <td class="p-2.5 text-center font-bold text-slate-700">${escapeHtml(c.container_type || b.container_size || '40HC')}</td>
+            <td class="p-2.5 font-mono text-slate-700">${escapeHtml(c.seal_number || '--')}</td>
+            <td class="p-2.5 text-center text-slate-700 font-mono">${vgm}</td>
+            <td class="p-2.5 text-slate-700 truncate max-w-[160px]" title="${escapeHtml(deliveryLoc)}">${escapeHtml(deliveryLoc)}</td>
+            <td class="p-2.5 text-slate-700 truncate max-w-[160px]" title="${escapeHtml(dropoffLoc)}">${escapeHtml(dropoffLoc)}</td>
+            <td class="p-2.5 text-center font-mono text-slate-700">${demDetStr}</td>
+            <td class="p-2.5 min-w-[160px]">${vendorSelectHtml}</td>
+            <td class="p-2.5 text-xs">${driverVehicle}</td>
+            <td class="p-2.5 text-center">${statusBadge}</td>
+            <td class="p-2.5 text-center">${actionBtn}</td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = html;
+}
+window.mdoFilterContainers = mdoFilterContainers;
+
+function mdoUpdateSelectedBadge() {
+    const el = document.getElementById('mdo-cont-selected-count');
+    if (el) el.innerText = `Đã chọn: ${mdoSelectedContIds.size} cont`;
+}
+
+function mdoToggleSelectAllConts(master) {
+    const cbs = document.querySelectorAll('.mdo-cont-cb');
+    cbs.forEach(cb => {
+        cb.checked = master.checked;
+        if (master.checked) mdoSelectedContIds.add(String(cb.value));
+        else mdoSelectedContIds.delete(String(cb.value));
+    });
+    mdoUpdateSelectedBadge();
+}
+
+function mdoOnContCheckChange(cb) {
+    if (cb.checked) mdoSelectedContIds.add(String(cb.value));
+    else mdoSelectedContIds.delete(String(cb.value));
+    mdoUpdateSelectedBadge();
+
+    const master = document.getElementById('mdo-select-all-conts');
+    if (master) {
+        const cbs = document.querySelectorAll('.mdo-cont-cb');
+        master.checked = cbs.length > 0 && Array.from(cbs).every(c => c.checked);
+    }
+}
+
+async function mdoAssignBulkContainers() {
+    if (!mdoCurrentBooking) {
+        showToast('warning', 'Vui lòng chọn Booking trước!');
+        return;
+    }
+    const vendorId = document.getElementById('mdo-bulk-vendor-select')?.value;
+    if (!vendorId) {
+        showToast('warning', 'Vui lòng chọn Nhà xe (Vendor) cần gán!');
+        return;
+    }
+    const ids = Array.from(mdoSelectedContIds);
+    if (ids.length === 0) {
+        showToast('warning', 'Vui lòng tích chọn ít nhất 1 container!');
+        return;
+    }
+
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${mdoCurrentBooking.id}/containers/assign/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                container_ids: ids,
+                subcontractor_id: vendorId
+            })
+        });
+        const out = await res.json();
+        if (res.ok && out.success) {
+            showToast('success', `Đã giao thành công ${out.assigned_count || ids.length} cont cho Nhà xe!`);
+            await loadMdoContainers(mdoCurrentBooking.id);
+            await onDispatchOrderBookingChanged(mdoCurrentBooking.id);
+            if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+        } else {
+            showToast('danger', out.message || 'Lỗi khi gán container cho Nhà xe.');
+        }
+    } catch (e) {
+        showToast('danger', 'Lỗi kết nối: ' + e.message);
+    }
+}
+
+async function mdoUnassignBulkContainers() {
+    if (!mdoCurrentBooking) {
+        showToast('warning', 'Vui lòng chọn Booking trước!');
+        return;
+    }
+    const ids = Array.from(mdoSelectedContIds);
+    if (ids.length === 0) {
+        showToast('warning', 'Vui lòng tích chọn ít nhất 1 container cần bỏ phân bổ!');
+        return;
+    }
+
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${mdoCurrentBooking.id}/containers/assign/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                container_ids: ids,
+                subcontractor_id: ""
+            })
+        });
+        const out = await res.json();
+        if (res.ok && out.success) {
+            showToast('success', `Đã bỏ phân bổ ${ids.length} cont!`);
+            await loadMdoContainers(mdoCurrentBooking.id);
+            await onDispatchOrderBookingChanged(mdoCurrentBooking.id);
+            if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+        } else {
+            showToast('danger', out.message || 'Lỗi khi bỏ phân bổ container.');
+        }
+    } catch (e) {
+        showToast('danger', 'Lỗi kết nối: ' + e.message);
+    }
+}
+window.mdoUnassignBulkContainers = mdoUnassignBulkContainers;
+
+
+
+window.switchDispatchViewTab = switchDispatchViewTab;
+
+window.loadDispatchOrdersTab = loadDispatchOrdersTab;
+
+window.loadMdoContainers = loadMdoContainers;
+
+window.mdoToggleSelectAllConts = mdoToggleSelectAllConts;
+
+window.mdoOnContCheckChange = mdoOnContCheckChange;
+
+window.mdoAssignBulkContainers = mdoAssignBulkContainers;
+
+
+function openBookingDetail(bookingId) {
+    closeDispatchOrderModal();
+    if (typeof viewBookingDetail === 'function') {
+        viewBookingDetail(bookingId, true);
+    }
+}
+window.openBookingDetail = openBookingDetail;
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('modal-dispatch-order');
+        if (modal && !modal.classList.contains('hidden')) {
+            closeDispatchOrderModal();
+        }
+    }
+});
+
+
+function mdoRenderPrintVendorMenu() {
+    const listEl = document.getElementById('mdo-print-vendor-list');
+    if (!listEl) return;
+    if (!mdoCurrentAllocations || mdoCurrentAllocations.length === 0) {
+        listEl.innerHTML = '<div class="px-3.5 py-2 text-xs text-slate-400 italic">Chưa phân bổ cho nhà xe nào</div>';
+        return;
+    }
+    listEl.innerHTML = mdoCurrentAllocations.map(a => `
+        <button type="button" onclick="printDispatchOrderSlip(mdoCurrentBooking?.id, ${a.subcontractor_id}); mdoTogglePrintVendorDropdown(false);" 
+            class="w-full text-left px-3.5 py-2 hover:bg-teal-50 text-xs font-bold text-slate-700 hover:text-teal-900 flex items-center justify-between transition-colors cursor-pointer">
+            <span class="flex items-center gap-1.5"><i class="ph-bold ph-printer text-teal-600"></i> ${escapeHtml(a.subcontractor || 'Nhà xe')}</span>
+            <span class="text-[11px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">${a.allocated_containers} cont</span>
+        </button>
+    `).join('');
+}
+window.mdoRenderPrintVendorMenu = mdoRenderPrintVendorMenu;
+
+function mdoTogglePrintVendorDropdown(forceState = null) {
+    const menu = document.getElementById('mdo-print-vendor-menu');
+    if (!menu) return;
+    if (forceState !== null) {
+        if (forceState) menu.classList.remove('hidden');
+        else menu.classList.add('hidden');
+    } else {
+        menu.classList.toggle('hidden');
+    }
+}
+window.mdoTogglePrintVendorDropdown = mdoTogglePrintVendorDropdown;
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#mdo-print-vendor-wrapper')) {
+        mdoTogglePrintVendorDropdown(false);
+    }
+});
+
+function mdoCopyVendorLink(link) {
+    if (!link) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(() => {
+            showToast('success', 'Đã sao chép link Cổng Nhà Xe vào clipboard để gửi Zalo/SMS!');
+        }).catch(() => {
+            prompt('Sao chép liên kết Cổng Nhà Xe:', link);
+        });
+    } else {
+        prompt('Sao chép liên kết Cổng Nhà Xe:', link);
+    }
+}
+window.mdoCopyVendorLink = mdoCopyVendorLink;
+
+function printDispatchOrderSlip(bookingId = null, vendorId = null) {
+    const bId = bookingId 
+        || (typeof mdoCurrentBooking !== 'undefined' && mdoCurrentBooking?.id) 
+        || (typeof currentActiveFullpageBooking !== 'undefined' && currentActiveFullpageBooking?.id)
+        || document.getElementById('fullpage-booking-id')?.value
+        || document.getElementById('mdo-booking-select')?.value;
+    if (!bId) {
+        showToast('warning', 'Vui lòng chọn hoặc lưu booking trước khi in lệnh.');
+        return;
+    }
+    let url = `/api/gss/bookings/${bId}/dispatch-order/`;
+    if (vendorId) {
+        url += `?vendor=${encodeURIComponent(vendorId)}`;
+    }
+    window.open(url, '_blank', 'noopener');
+}
+window.printDispatchOrderSlip = printDispatchOrderSlip;
+
+
+async function mdoRevokeCurrentAllocations() {
+    if (!mdoCurrentBooking) return;
+    if (!mdoCurrentAllocations || mdoCurrentAllocations.length === 0) {
+        showToast('info', 'Booking này hiện chưa có phân bổ nào để thu hồi.');
+        return;
+    }
+    if (!confirm('Bạn có chắc chắn muốn thu hồi toàn bộ phân bổ của booking này không? Các link của nhà xe sẽ bị vô hiệu hóa.')) {
+        return;
+    }
+    try {
+        let count = 0;
+        for (const a of mdoCurrentAllocations) {
+            const res = await fetchWithAuth(`/api/vendor-allocations/${a.id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'revoke' })
+            });
+            if (res.ok) count++;
+        }
+        showToast('success', `Đã thu hồi thành công ${count} phân bổ của Nhà xe!`);
+        await onDispatchOrderBookingChanged(mdoCurrentBooking.id);
+        if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+    } catch (e) {
+        showToast('danger', 'Lỗi khi thu hồi phân bổ: ' + e.message);
+    }
+}
+window.mdoRevokeCurrentAllocations = mdoRevokeCurrentAllocations;
+
+function mdoRenderVendorCards(allocations, totalConts = 0) {
+    const container = document.getElementById('mdo-vendor-cards-list');
+    if (!container) return;
+    if (!allocations || allocations.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="ph-bold ph-info text-amber-500 text-base"></i>
+                    <span>Chưa có Nhà xe nào được gán cho Lệnh Điều Động này. Hãy tick chọn container bên dưới và gán cho Nhà xe.</span>
+                </div>
+            </div>
+        `;
+        mdoUpdateStats(0, totalConts);
+        return;
+    }
+
+    let allocatedTotal = 0;
+    const cardsHtml = allocations.map(a => {
+        allocatedTotal += Number(a.allocated_containers) || 0;
+        const subName = escapeHtml(a.subcontractor || 'Nhà xe');
+        const link = a.vendor_link || `${window.location.origin}/vendor/${a.token || ''}/`;
+        const filled = Number(a.filled) || 0;
+        const count = Number(a.allocated_containers) || 0;
+        const isFilledAll = count > 0 && filled >= count;
+        const statusText = isFilledAll 
+            ? `<span class="text-emerald-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle"></i> Đã gán đủ (${filled}/${count} xe)</span>`
+            : (filled > 0 
+                ? `<span class="text-sky-700 font-bold flex items-center gap-1"><i class="ph-bold ph-clock"></i> Đang gán (${filled}/${count} xe)</span>`
+                : `<span class="text-amber-700 font-bold flex items-center gap-1"><i class="ph-bold ph-clock"></i> Chờ Nhà xe gán xe (0/${count})</span>`);
+
+        return `
+            <div class="p-4 rounded-2xl bg-gradient-to-br from-white to-slate-50/70 border border-teal-200 shadow-2xs hover:shadow-sm transition-all space-y-3">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-teal-100/70 border border-teal-300 text-teal-800 flex items-center justify-center font-black shrink-0">
+                            <i class="ph-bold ph-truck text-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-xs font-heading tracking-tight flex items-center gap-1.5">
+                                <span>${subName}</span>
+                                <span class="text-[11px] font-black text-teal-800 bg-teal-100/70 px-2 py-0.5 rounded-md border border-teal-200">
+                                    ${count} Cont
+                                </span>
+                            </h4>
+                            <div class="text-[11px] mt-0.5">${statusText}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cụm nút thao tác Cổng Nhà Xe & In Phiếu -->
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-100 flex-wrap">
+                    <a href="${link}" target="_blank" 
+                        class="btn-keep-solid inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white text-xs font-bold transition-all shadow-2xs"
+                        title="Mở trực tiếp Cổng Nhà Xe trên tab mới">
+                        <i class="ph-bold ph-arrow-square-out text-sm text-teal-200"></i>
+                        <span>Mở Cổng Nhà Xe</span>
+                    </a>
+                    <button type="button" onclick="mdoCopyVendorLink('${link}')" 
+                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+                        title="Sao chép link bảo mật để gửi Zalo / SMS cho nhà xe">
+                        <i class="ph-bold ph-copy text-slate-500"></i>
+                        <span>Copy Link</span>
+                    </button>
+                    <button type="button" onclick="printDispatchOrderSlip(mdoCurrentBooking?.id, ${a.subcontractor_id})" 
+                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+                        title="In phiếu lệnh riêng cho nhà xe này (không hiện cước)">
+                        <i class="ph-bold ph-printer text-teal-700"></i>
+                        <span>In Phiếu</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = cardsHtml;
+    mdoUpdateStats(allocatedTotal, Math.max(0, totalConts - allocatedTotal));
+}
+window.mdoRenderVendorCards = mdoRenderVendorCards;
+
+async function mdoReloadAllocationsAndCards(bookingId) {
+    const totalConts = mdoCurrentBooking ? (Number(mdoCurrentBooking.total_containers) || 1) : 1;
+    try {
+        const allocRes = await fetchWithAuth(`/api/bookings/${bookingId}/vendor-allocations/`);
+        if (allocRes.ok) {
+            const allocJson = await allocRes.json();
+            const allocData = allocJson.data || {};
+            const existingAllocs = allocData.allocations || [];
+            mdoCurrentAllocations = existingAllocs;
+            mdoRenderVendorCards(existingAllocs, totalConts);
+            mdoRenderPrintVendorMenu();
+        } else {
+            mdoRenderVendorCards([], totalConts);
+        }
+    } catch (e) {
+        mdoRenderVendorCards([], totalConts);
+    }
+}
+window.mdoReloadAllocationsAndCards = mdoReloadAllocationsAndCards;
+
+async function mdoChangeSingleContainerVendor(containerId, vendorId) {
+    if (!mdoCurrentBooking) return;
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${mdoCurrentBooking.id}/containers/assign/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                container_ids: [containerId],
+                subcontractor_id: vendorId || null
+            })
+        });
+        const out = await res.json();
+        if (res.ok && out.success) {
+            showToast('success', out.message || 'Đã cập nhật nhà xe cho container.');
+            await loadMdoContainers(mdoCurrentBooking.id);
+            await mdoReloadAllocationsAndCards(mdoCurrentBooking.id);
+            if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+        } else {
+            showToast('danger', out.message || 'Không thể cập nhật nhà xe.');
+            await loadMdoContainers(mdoCurrentBooking.id);
+        }
+    } catch (e) {
+        showToast('danger', 'Lỗi kết nối: ' + e.message);
+    }
+}
+window.mdoChangeSingleContainerVendor = mdoChangeSingleContainerVendor;
+
+function mdoUnassignSingleContainer(containerId) {
+    return mdoChangeSingleContainerVendor(containerId, null);
+}
+window.mdoUnassignSingleContainer = mdoUnassignSingleContainer;
+
+// =========================================================================
+// CHẾ ĐỘ TOÀN MÀN HÌNH (FULLSCREEN) CHO BẢNG CONTAINER ĐIỀU ĐỘNG (CHUẨN BOOKING)
+// =========================================================================
+let isMdoTableFullscreen = false;
+window.isMdoTableFullscreen = isMdoTableFullscreen;
+
+function toggleMdoContainersTableExpand() {
+    const section = document.getElementById('mdo-containers-section') || document.getElementById('mdo-modal-containers-section');
+    const tableWrap = document.getElementById('mdo-containers-table-wrapper') || document.getElementById('mdo-modal-containers-table-wrapper');
+    const text = document.getElementById('text-mdo-expand-table') || document.getElementById('text-mdo-modal-expand-table');
+    const icon = document.getElementById('icon-mdo-expand-table') || document.getElementById('icon-mdo-modal-expand-table');
+    if (!section) return;
+
+    isMdoTableFullscreen = !isMdoTableFullscreen;
+    window.isMdoTableFullscreen = isMdoTableFullscreen;
+
+    if (isMdoTableFullscreen) {
+        section.classList.add('fixed', 'inset-0', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'flex', 'flex-col', 'm-0', 'rounded-none', 'shadow-2xl');
+        section.style.height = '100vh';
+        section.style.maxHeight = '100vh';
+        document.body.classList.add('overflow-hidden');
+        if (icon) icon.className = 'ph-bold ph-corners-in text-sm text-teal-700';
+        if (text) text.innerText = 'Thu Gọn (Esc)';
+        if (tableWrap) {
+            tableWrap.classList.remove('max-h-[500px]', 'max-h-[460px]');
+            tableWrap.classList.add('flex-1', 'overflow-y-auto', 'max-h-[calc(100vh-210px)]');
+        }
+        if (typeof showToast === 'function') {
+            showToast('info', 'Đã mở rộng toàn màn hình. Nhấn phím Esc hoặc nút Thu Gọn để trở lại.');
+        }
+    } else {
+        section.classList.remove('fixed', 'inset-0', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'flex', 'flex-col', 'm-0', 'rounded-none', 'shadow-2xl');
+        section.style.height = '';
+        section.style.maxHeight = '';
+        document.body.classList.remove('overflow-hidden');
+        if (icon) icon.className = 'ph-bold ph-corners-out text-sm text-teal-600';
+        if (text) text.innerText = 'Toàn Màn Hình';
+        if (tableWrap) {
+            tableWrap.classList.remove('flex-1', 'max-h-[calc(100vh-210px)]');
+            tableWrap.classList.add('max-h-[500px]');
+        }
+    }
+}
+window.toggleMdoContainersTableExpand = toggleMdoContainersTableExpand;
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isMdoTableFullscreen) {
+        toggleMdoContainersTableExpand();
+    }
+});
+
 // ---- src/app/dispatch/trip-expenses.js ----
 async function toggleSubcontractorTypePanels(typeVal) {
 
@@ -11560,6 +13391,11 @@ function backToDispatch() {
 }
 
 async function openCreateTripPage(bookingId = null, updateHistory = true) {
+    if (typeof openDispatchOrderModal === 'function') {
+        openDispatchOrderModal(bookingId);
+        return;
+    }
+
     if (typeof checkAndSyncMasterData === 'function') {
         await checkAndSyncMasterData(false);
     } else {
@@ -13364,15 +15200,11 @@ function switchSalesSubTab(tabName) {
             tabQuotesBtn.className = activeQuotesClass;
             const icon = tabQuotesBtn.querySelector('i');
             if (icon) icon.className = 'ph-bold ph-handshake text-base text-indigo-600';
-            const badge = tabQuotesBtn.querySelector('#badge-count-quotes');
-            if (badge) badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-indigo-100 text-indigo-800 border-indigo-200';
         }
         if (tabBookingsBtn) {
             tabBookingsBtn.className = inactiveTabClass;
             const icon = tabBookingsBtn.querySelector('i');
             if (icon) icon.className = 'ph-bold ph-truck text-base text-slate-500';
-            const badge = tabBookingsBtn.querySelector('#badge-count-bookings');
-            if (badge) badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200';
         }
         if (roleHint) {
             roleHint.innerHTML = 'Phân quyền: <strong class="text-indigo-700">Nhân viên Kinh doanh (NVKD)</strong> — Khảo sát tuyến, chào giá, đàm phán hợp đồng';
@@ -13397,15 +15229,11 @@ function switchSalesSubTab(tabName) {
             tabBookingsBtn.className = activeBookingsClass;
             const icon = tabBookingsBtn.querySelector('i');
             if (icon) icon.className = 'ph-bold ph-truck text-base text-teal-600';
-            const badge = tabBookingsBtn.querySelector('#badge-count-bookings');
-            if (badge) badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-teal-100 text-teal-800 border-teal-200';
         }
         if (tabQuotesBtn) {
             tabQuotesBtn.className = inactiveTabClass;
             const icon = tabQuotesBtn.querySelector('i');
             if (icon) icon.className = 'ph-bold ph-handshake text-base text-slate-500';
-            const badge = tabQuotesBtn.querySelector('#badge-count-quotes');
-            if (badge) badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200';
         }
         if (roleHint) {
             roleHint.innerHTML = 'Phân quyền: <strong class="text-teal-700">Sale Admin / CS (Chăm sóc Khách hàng)</strong> — Booking hãng tàu, kiểm soát SI/CY cut-off, chuyển giao điều xe';
@@ -13898,12 +15726,6 @@ async function loadSalesData() {
             const winNoteEl = document.getElementById('sales-note-winrate');
             if (winNoteEl) winNoteEl.innerHTML = `<i class="ph-bold ph-chats-circle text-emerald-600 text-xs"></i> ${ov.win_rate_note}`;
         }
-
-        // Cập nhật badges số lượng trên 2 tab
-        const bQuoteCount = document.getElementById('badge-count-quotes');
-        if (bQuoteCount && data.quotations) bQuoteCount.innerText = new Intl.NumberFormat('vi-VN').format(data.quotations.length);
-        const bBookingCount = document.getElementById('badge-count-bookings');
-        if (bBookingCount && data.bookings) bBookingCount.innerText = new Intl.NumberFormat('vi-VN').format(data.bookings.length);
 
         // Cập nhật stats con cho Báo giá & Booking (Dashboard riêng từng tab 5 thẻ)
         if (data.stats) {
@@ -16144,379 +17966,733 @@ window.saveFullpageQuotation = saveFullpageQuotation;
 
 // ---- src/app/sales/booking-modal.js ----
 // 2. Quản lý multi-files cho Sale / Booking Order
+
 function handleSaleBookingFilesSelect(input) {
+
     if (!input || !input.files || input.files.length === 0) return;
 
+
+
     for (let i = 0; i < input.files.length; i++) {
+
         const file = input.files[i];
+
         if (file.size > 5 * 1024 * 1024) {
+
             showToast('warning', `File "${file.name}" vượt quá 5MB. Vui lòng chọn file nhẹ hơn.`, 'File Quá Dung Lượng');
+
             continue;
+
         }
+
         const isDuplicate = saleBookingFilesList.some(f => f.name === file.name && f.size === file.size);
+
         if (!isDuplicate) {
+
             saleBookingFilesList.push(file);
+
         }
+
     }
+
     input.value = '';
+
     renderSaleBookingFilesList();
+
 }
+
+
 
 function removeSaleBookingNewFile(index) {
+
     if (index >= 0 && index < saleBookingFilesList.length) {
+
         saleBookingFilesList.splice(index, 1);
+
         renderSaleBookingFilesList();
+
     }
+
 }
+
+
 
 async function deleteSaleBookingExistingDoc(docId) {
+
     if (!currentEditingBookingId || !docId) {
+
         saleBookingExistingDocs = saleBookingExistingDocs.filter(d => d.id !== docId);
+
         renderSaleBookingFilesList();
+
         return;
+
     }
+
+
 
     const confirmed = await showConfirmModal({
+
         title: 'Xóa Tài Liệu Booking',
+
         message: 'Bạn có chắc chắn muốn xóa tài liệu này khỏi Booking không?\n\nThao tác sẽ gỡ bỏ tệp đính kèm khỏi hệ thống.',
+
         confirmText: 'Xác Nhận Xóa',
+
         cancelText: 'Huỷ bỏ',
+
         type: 'danger',
+
         icon: 'ph-bold ph-trash text-2xl'
+
     });
+
     if (!confirmed) return;
 
+
+
     try {
+
         const res = await fetchWithAuth(`/api/bookings/${currentEditingBookingId}/documents/${docId}/`, {
+
             method: 'DELETE'
+
         });
+
         const data = await res.json().catch(() => ({}));
+
         if (!res.ok) throw new Error(data.message || data.error || 'Lỗi khi xóa tài liệu');
 
+
+
         saleBookingExistingDocs = saleBookingExistingDocs.filter(d => d.id !== docId);
+
         renderSaleBookingFilesList();
+
         showToast('success', 'Đã xóa tài liệu đính kèm', 'Thành Công');
+
     } catch (err) {
+
         console.error('Lỗi xóa document:', err);
+
         showToast('error', err.message || 'Không thể xóa tài liệu đính kèm', 'Lỗi');
+
     }
+
 }
+
+
 
 function renderSaleBookingFilesList() {
+
     const listArea = document.getElementById('booking-order-files-list');
+
     const summary = document.getElementById('booking-order-files-summary');
+
     if (!listArea) return;
 
+
+
     let itemsHtml = '';
+
     const totalCount = saleBookingExistingDocs.length + saleBookingFilesList.length;
 
+
+
     // Render các file đã lưu trong CSDL
+
     saleBookingExistingDocs.forEach(doc => {
+
         const isPdf = (doc.name || doc.url || '').toLowerCase().endsWith('.pdf');
+
         const docName = doc.name || doc.file_name || 'Tài liệu Booking';
+
         const docUrl = doc.url || doc.file_url || '#';
+
         const hasValidUrl = docUrl && docUrl !== '#';
 
+
+
         itemsHtml += `
+
             <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 hover:bg-teal-100/60 border border-teal-200 shadow-2xs text-xs transition-colors group">
+
                 <a ${hasValidUrl ? `href="${docUrl}" target="_blank" rel="noopener noreferrer"` : ''} 
+
                    class="flex items-center space-x-2 truncate pr-2 flex-1 cursor-pointer no-underline" 
+
                    title="Nhấn để mở / tải file: ${docName}">
+
                     <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-teal-600'} text-base shrink-0 group-hover:scale-110 transition-transform"></i>
+
                     <div class="truncate">
+
                         <p class="font-bold text-teal-900 group-hover:text-teal-700 group-hover:underline truncate font-mono text-[11px]" title="${docName}">${docName}</p>
+
                         <span class="text-[10px] text-teal-700 font-medium">${doc.size_formatted ? `(${doc.size_formatted})` : '(Đã lưu)'} · <span class="text-teal-600 underline">Bấm để mở</span></span>
+
                     </div>
+
                 </a>
+
                 <div class="flex items-center space-x-1 shrink-0">
+
                     ${hasValidUrl ? `
+
                         <a href="${docUrl}" target="_blank" rel="noopener noreferrer" 
+
                             class="p-1.5 rounded-md text-teal-700 hover:text-white hover:bg-teal-600 transition-colors shadow-xs" title="Mở file trong tab mới">
+
                             <i class="ph-bold ph-arrow-square-out text-sm"></i>
+
                         </a>
+
                     ` : ''}
+
                     ${doc.id ? `
+
                         <button type="button" onclick="deleteSaleBookingExistingDoc(${doc.id})" 
+
                             class="p-1.5 rounded-md text-rose-600 hover:text-white hover:bg-rose-600 transition-colors shadow-xs" title="Xóa tài liệu này">
+
                             <i class="ph-bold ph-trash text-sm"></i>
+
                         </button>
+
                     ` : ''}
+
                 </div>
+
             </div>
+
         `;
+
     });
+
+
 
     // Render các file mới chọn chưa lưu
+
     saleBookingFilesList.forEach((file, idx) => {
+
         const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
         const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+
         const sizeKb = (file.size / 1024).toFixed(0);
+
         const sizeStr = file.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
+
         let tempUrl = '';
+
         try {
+
             tempUrl = URL.createObjectURL(file);
+
         } catch (e) {
+
             tempUrl = '';
+
         }
+
+
 
         itemsHtml += `
+
             <div class="flex items-center justify-between p-2 rounded-lg bg-blue-50 hover:bg-blue-100/60 border border-blue-200 shadow-2xs text-xs transition-colors group">
+
                 ${tempUrl ? `
+
                     <a href="${tempUrl}" target="_blank" rel="noopener noreferrer" 
+
                        class="flex items-center space-x-2 truncate pr-2 flex-1 cursor-pointer no-underline" 
+
                        title="Xem trước file: ${file.name}">
+
                         <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-blue-600'} text-base shrink-0 group-hover:scale-110 transition-transform"></i>
+
                         <div class="truncate">
+
                             <p class="font-bold text-slate-800 group-hover:text-blue-700 group-hover:underline truncate font-mono text-[11px]" title="${file.name}">${file.name}</p>
+
                             <span class="text-[10px] text-blue-600 font-medium font-mono">(${sizeStr} - Chờ lưu) · <span class="underline">Xem trước</span></span>
+
                         </div>
+
                     </a>
+
                 ` : `
+
                     <div class="flex items-center space-x-2 truncate pr-2 flex-1">
+
                         <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-blue-600'} text-base shrink-0"></i>
+
                         <div class="truncate">
+
                             <p class="font-bold text-slate-800 truncate font-mono text-[11px]" title="${file.name}">${file.name}</p>
+
                             <span class="text-[10px] text-blue-600 font-medium font-mono">(${sizeStr} - Chờ lưu)</span>
+
                         </div>
+
                     </div>
+
                 `}
+
                 <div class="flex items-center space-x-1 shrink-0">
+
                     ${tempUrl ? `
+
                         <a href="${tempUrl}" target="_blank" rel="noopener noreferrer" 
+
                             class="p-1.5 rounded-md text-blue-700 hover:text-white hover:bg-blue-600 transition-colors shadow-xs" title="Xem trước">
+
                             <i class="ph-bold ph-eye text-sm"></i>
+
                         </a>
+
                     ` : ''}
+
                     <button type="button" onclick="removeSaleBookingNewFile(${idx})" 
+
                         class="p-1.5 rounded-md text-rose-600 hover:text-white hover:bg-rose-600 transition-colors shadow-xs shrink-0" title="Bỏ file này">
+
                         <i class="ph-bold ph-trash text-sm"></i>
+
                     </button>
+
                 </div>
+
             </div>
+
         `;
+
     });
 
+
+
     listArea.innerHTML = itemsHtml;
+
     if (summary) {
+
         if (totalCount > 0) {
+
             summary.innerHTML = `<i class="ph-bold ph-check-circle text-emerald-600"></i> <strong class="text-emerald-800">${totalCount}</strong> tệp đính kèm`;
+
         } else {
+
             summary.innerHTML = `<i class="ph ph-info text-blue-500"></i> Chưa có tệp nào được đính kèm`;
+
         }
+
     }
+
 }
 
+
+
 function clearSaleBookingFileSelection() {
+
     const input = document.getElementById('booking-order-file');
+
     if (input) input.value = '';
+
     saleBookingFilesList = [];
+
     saleBookingExistingDocs = [];
+
     currentEditingBookingId = null;
+
     renderSaleBookingFilesList();
+
 }
+
+
+
 
 
 function onBookingTypeChange() {
+
     applyBookingFormTypeAdapters('');
+
 }
+
 window.onBookingTypeChange = onBookingTypeChange;
 
+
+
 async function openModalBooking(bookingId = null, isReadOnly = false) {
+
     if (!bookingId) {
+
         return openCreateBookingPage(true);
+
     } else {
+
         return viewBookingDetail(bookingId, true);
+
     }
+
 }
+
+
 
 function enableEditBookingModal() {
+
     const form = document.getElementById('form-booking');
+
     if (form) {
+
         form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+
     }
+
     const titleEl = document.getElementById('modal-booking-title');
+
     if (titleEl && !titleEl.innerText.startsWith('Hiệu Chỉnh')) {
+
         titleEl.innerText = titleEl.innerText.replace('Chi Tiết', 'Hiệu Chỉnh');
+
     }
+
     const editModalBtn = document.getElementById('btn-edit-booking-modal');
+
     if (editModalBtn) editModalBtn.classList.add('hidden');
+
     const submitBtn = document.getElementById('btn-submit-booking');
+
     if (submitBtn) submitBtn.style.display = 'inline-flex';
+
     if (typeof onBookingTypeChange === 'function') onBookingTypeChange();
+
 }
+
 window.enableEditBookingModal = enableEditBookingModal;
 
+
+
 async function saveBooking(e) {
+
     if (e && typeof e.preventDefault === 'function') {
+
         e.preventDefault();
+
     }
+
     const id = document.getElementById('booking-id')?.value;
+
     const bookingType = document.getElementById('booking-type')?.value || 'EXPORT_FCL';
+
     const customer = document.getElementById('booking-customer')?.value?.trim();
+
     const bookingNumber = document.getElementById('booking-number')?.value?.trim();
+
     let shippingLine = document.getElementById('booking-shipping-line')?.value?.trim();
+
     let vessel = document.getElementById('booking-vessel')?.value?.trim();
+
     const containerSize = document.getElementById('booking-container-size')?.value || '40HC';
+
     const totalContainers = parseNumberVN(document.getElementById('booking-total-containers')?.value) || 1;
+
     const commodity = document.getElementById('booking-commodity')?.value?.trim();
+
     let hsCode = document.getElementById('booking-hs-code')?.value?.trim();
+
     const pickup = document.getElementById('booking-pickup')?.value?.trim();
+
     const delivery = document.getElementById('booking-delivery')?.value?.trim();
+
     let dropoff = document.getElementById('booking-dropoff')?.value?.trim();
+
     const loadingDate = document.getElementById('booking-loading-date')?.value;
+
     const loadingTime = formatTimeString(document.getElementById('booking-loading-time')?.value?.trim() || '08:00');
+
     syncBookingClosingTime();
+
     syncBookingSiTime();
+
     let closingTime = document.getElementById('booking-closing-time')?.value?.trim();
+
     let siCutoff = document.getElementById('booking-si-cutoff')?.value?.trim();
+
     let det = parseNumberVN(document.getElementById('booking-det')?.value);
+
     let dem = parseNumberVN(document.getElementById('booking-dem')?.value);
+
     const price = parseNumberVN(document.getElementById('booking-price')?.value) || 0;
+
     const statusVal = document.getElementById('booking-status')?.value || 'PENDING_DISPATCH';
+
     const notes = document.getElementById('booking-notes')?.value?.trim();
 
+
+
     // Chuẩn hóa và gán ngầm định theo từng phân loại dịch vụ
+
     if (bookingType === 'DOMESTIC') {
+
         shippingLine = shippingLine || 'NỘI ĐỊA';
+
         vessel = '';
+
         hsCode = '';
+
         dropoff = dropoff || delivery; // Điểm 3 ngầm định theo điểm giao
+
         closingTime = '';
+
         siCutoff = '';
+
         det = 0;
+
         dem = 0;
+
     } else if (bookingType === 'IMPORT_FCL') {
+
         closingTime = '';
+
         siCutoff = '';
+
         if (det === null || det === undefined || isNaN(det)) det = 7;
+
         if (dem === null || dem === undefined || isNaN(dem)) dem = 7;
+
     } else {
+
         if (det === null || det === undefined || isNaN(det)) det = 7;
+
         if (dem === null || dem === undefined || isNaN(dem)) dem = 7;
+
     }
+
+
 
     if (!customer || !bookingNumber || !pickup || !delivery || (bookingType !== 'DOMESTIC' && !dropoff)) {
+
         showToast('warning', 'Vui lòng điền đủ: Khách hàng, Số đơn/booking và Lộ trình vận chuyển', 'Thiếu Thông Tin');
+
         return;
+
     }
 
-    if (!price || price <= 0) {
-        showToast('warning', 'Đơn giá cước vận chuyển là bắt buộc và phải lớn hơn 0! Vui lòng kiểm tra và nhập giá cước bán.', 'Chưa Nhập Giá Cước');
-        const priceInput = document.getElementById('booking-price');
-        if (priceInput) {
-            priceInput.focus();
-            priceInput.classList.add('border-rose-500', 'bg-rose-50');
-            const hintEl = document.getElementById('booking-price-hint');
-            if (hintEl) {
-                hintEl.innerHTML = '<span class="text-rose-600 font-bold flex items-center gap-1"><i class="ph-bold ph-warning text-xs"></i> Bắt buộc nhập đơn giá cước vận chuyển (> 0 đ)!</span>';
-                hintEl.classList.remove('hidden');
-            }
-        }
+
+
+    if (price < 0) {
+
+        showToast('warning', 'Đơn giá cước vận chuyển không được âm!', 'Giá Cước Không Hợp Lệ');
+
         return;
+
     }
+
+
 
     const submitBtn = document.getElementById('btn-submit-booking');
+
     const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+
     if (submitBtn) {
+
         submitBtn.disabled = true;
+
         submitBtn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-base"></i> <span>Đang lưu...</span>';
+
     }
+
+
 
     try {
+
         const saleFileInput = document.getElementById('booking-order-file');
+
         const hasSaleFile = saleFileInput && saleFileInput.files && saleFileInput.files[0];
 
+
+
         const formData = new FormData();
+
         formData.append('action', 'create_booking');
+
         formData.append('booking_type', bookingType);
+
         formData.append('customer', customer);
+
         formData.append('booking_number', bookingNumber);
+
         formData.append('shipping_line', shippingLine);
+
         formData.append('vessel_voyage', vessel);
+
         formData.append('container_size', containerSize);
+
         formData.append('total_containers', totalContainers);
+
         formData.append('commodity', commodity);
+
         formData.append('hs_code', hsCode);
+
         formData.append('pickup_location', pickup);
+
         formData.append('delivery_location', delivery);
+
         formData.append('dropoff_location', dropoff);
+
         formData.append('loading_date', loadingDate || '');
+
         formData.append('loading_time', loadingTime);
+
         formData.append('closing_time', closingTime || '');
+
         formData.append('si_cutoff', siCutoff || '');
+
         formData.append('free_time_detention', det);
+
         formData.append('free_time_demurrage', dem);
+
         formData.append('selling_freight_price', price);
+
         formData.append('status', statusVal);
+
         formData.append('notes', notes || '');
 
+
+
         if (saleBookingFilesList && saleBookingFilesList.length > 0) {
+
             formData.append('booking_file', saleBookingFilesList[0]);
+
             saleBookingFilesList.forEach(file => {
+
                 formData.append('booking_files', file);
+
             });
+
         } else if (hasSaleFile) {
+
             formData.append('booking_file', saleFileInput.files[0]);
+
         }
+
+
 
         let res;
+
         if (id) {
+
             res = await fetchWithAuth(`/api/bookings/${id}/`, {
+
                 method: 'PUT',
+
                 body: formData
+
             });
+
         } else {
+
             res = await fetchWithAuth('/api/sales/', {
+
                 method: 'POST',
+
                 body: formData
+
             });
+
         }
+
+
 
         const data = await res.json().catch(() => ({}));
+
         if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi lưu đơn hàng / booking');
 
+
+
         showToast('success', data.message || 'Tiếp nhận đơn hàng thành công!', 'Thành Công');
+
         closeModal('modal-booking');
+
         clearSaleBookingFileSelection();
+
         loadSalesData();
+
         loadActiveBookingsForModal();
+
     } catch (err) {
+
         console.error('Error saving booking:', err);
+
         showToast('error', err.message || 'Không thể lưu đơn hàng / booking', 'Lỗi');
+
     } finally {
+
         if (submitBtn) {
+
             submitBtn.disabled = false;
+
             submitBtn.innerHTML = originalBtnHtml;
+
         }
+
     }
+
 }
+
+
+
 
 
 async function deleteBooking(bookingId) {
+
     const confirmed = await showConfirmModal({
+
         title: 'Hủy / Xóa Đơn Hàng',
+
         message: 'Bạn có chắc chắn muốn xóa / hủy đơn hàng này không?\n\nDữ liệu lịch sử sẽ được bảo lưu an toàn (Soft-Delete).',
+
         confirmText: 'Xác Nhận Xóa',
+
         cancelText: 'Huỷ bỏ',
+
         type: 'danger',
+
         icon: 'ph-bold ph-trash text-2xl'
+
     });
+
     if (!confirmed) return;
+
     try {
+
         const res = await fetchWithAuth(`/api/bookings/${bookingId}/`, {
+
             method: 'DELETE'
+
         });
+
         const data = await res.json().catch(() => ({}));
+
         if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi xóa đơn hàng');
 
+
+
         showToast('success', data.message || 'Đã xóa đơn hàng / booking', 'Thành Công');
+
         loadSalesData();
+
         loadActiveBookingsForModal();
+
     } catch (err) {
+
         console.error('Error deleting booking:', err);
+
         showToast('error', err.message || 'Lỗi xóa đơn hàng / booking', 'Lỗi');
+
     }
+
 }
+
 
 // ---- src/app/sales/booking-page/files.js ----
 // ==============================================================================
@@ -16933,6 +19109,9 @@ function onFullpageBookingCustomerChange() {
         if (headerCust) headerCust.innerText = custName;
         if (topbarCust) topbarCust.innerText = custName;
     }
+    if (typeof autoLookupBookingPrice === 'function') {
+        autoLookupBookingPrice('fullpage-');
+    }
 }
 
 function onFullpageBookingDateChange() {
@@ -16998,529 +19177,4114 @@ function parseSiCutoffToFullpageInputs(siStr) {
     }
 }
 
+
+async function autoLookupBookingPrice(prefix = 'fullpage-') {
+    const custEl = document.getElementById(prefix + 'booking-customer');
+    const customer = custEl ? custEl.value?.trim() : '';
+    if (!customer) return;
+
+    const pickup = document.getElementById(prefix + 'booking-pickup')?.value?.trim() || '';
+    const delivery = document.getElementById(prefix + 'booking-delivery')?.value?.trim() || '';
+    const containerSize = document.getElementById(prefix + 'booking-container-size')?.value || '40HC';
+    const priceInput = document.getElementById(prefix + 'booking-price');
+    const hintEl = document.getElementById(prefix + 'booking-price-hint');
+
+    try {
+        const params = new URLSearchParams({
+            customer: customer,
+            pickup: pickup,
+            delivery: delivery,
+            container_size: containerSize
+        });
+        const res = await fetchWithAuth(`/api/sales/price-lookup/?${params.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.found && data.price > 0) {
+            if (priceInput) {
+                priceInput.value = formatNumberVN(data.price);
+                priceInput.classList.remove('border-rose-500', 'bg-rose-50');
+            }
+            if (hintEl) {
+                hintEl.className = 'text-[11px] font-bold mt-1 text-teal-700 flex items-center gap-1';
+                hintEl.innerHTML = `<i class="ph-bold ph-check-circle text-xs text-teal-600"></i> ${data.message || ('Áp dụng từ báo giá: ' + formatNumberVN(data.price) + ' đ')}`;
+                hintEl.classList.remove('hidden');
+            }
+        } else {
+            // Nếu chưa có báo giá riêng, nếu ô giá đang rỗng hoặc = 0 thì tự gợi ý mức chuẩn 4.000.000 VNĐ
+            if (priceInput && (!priceInput.value || parseNumberVN(priceInput.value) <= 0)) {
+                priceInput.value = formatNumberVN(4000000);
+            }
+            if (hintEl) {
+                hintEl.className = 'text-[11px] font-medium mt-1 text-slate-500 flex items-center gap-1';
+                hintEl.innerHTML = `<i class="ph-bold ph-info text-xs text-amber-500"></i> Chưa có báo giá riêng. Đã điền đơn giá tiêu chuẩn (bạn có thể chỉnh sửa).`;
+                hintEl.classList.remove('hidden');
+            }
+        }
+    } catch (e) {
+        console.warn('Lỗi tra cứu giá cước tự động:', e);
+    }
+}
+window.autoLookupBookingPrice = autoLookupBookingPrice;
+
 // ---- src/app/sales/booking-page/page.js ----
 async function openCreateBookingPage(updateHistory = true) {
+    if (typeof closeDispatchOrderModal === 'function') closeDispatchOrderModal();
+    const _mdo = document.getElementById('modal-dispatch-order');
+    if (_mdo) _mdo.classList.add('hidden');
+
     try {
+
+
+
         const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+
+
+
         if (currentActiveView && currentActiveView.id !== 'view-booking-detail') {
+
+
+
             previousActiveTab = currentActiveView.id.replace('view-', '');
+
+
+
         }
+
+
+
+
+
+
 
         // Ẩn tất cả view, hiện view-booking-detail ngay lập tức
+
+
+
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+
+
+
         const detailView = document.getElementById('view-booking-detail');
+
+
+
         if (detailView) {
+
+
+
             detailView.classList.remove('hidden-view');
+
+
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+
+
         }
+
+
+
+
+
+
 
         setTopbarFullpageMode({
+
+
+
             backFn: backToBookings,
+
+
+
             prefix: 'Sale & Booking',
+
+
+
             title: 'Tạo Mới Booking',
+
+
+
             subText: '',
+
+
+
             badgesHtml: '',
+
+
+
             actionsHtml: ''
+
+
+
         });
 
+
+
+
+
+
+
         if (updateHistory && window.history && window.history.pushState) {
+
+
+
             const bookingPath = '/sales/bookings/new';
+
+
+
             if (window.location.pathname !== bookingPath) {
+
+
+
                 window.history.pushState({ view: 'booking-create' }, '', bookingPath);
+
+
+
             }
+
+
+
         }
+
+
+
+
+
+
 
         const form = document.getElementById('form-fullpage-booking');
+
+
+
         if (form) {
+
+
+
             form.reset();
+
+
+
             form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+
+
+
         }
+
+
+
+
+
+
 
         const idInput = document.getElementById('fullpage-booking-id');
+
+
+
         const titleCodeEl = document.getElementById('fullpage-booking-title-code');
+
+
+
         const statusBadge = document.getElementById('fullpage-booking-status-badge');
+
+
+
         const typeBadge = document.getElementById('fullpage-booking-type-badge');
+
+
+
         const headerCust = document.getElementById('fullpage-booking-header-customer');
+
+
+
         const headerDate = document.getElementById('fullpage-booking-header-date');
+
+
+
         const saveBtnText = document.getElementById('btn-fullpage-save-booking-bottom-text') || document.getElementById('btn-fullpage-save-booking-text');
+
+
+
         const tripsSection = document.getElementById('fullpage-booking-trips-section');
 
+
+
+
+
+
+
         currentActiveFullpageBooking = null;
+
+
+
         if (idInput) idInput.value = '';
+
+
+
         if (titleCodeEl) titleCodeEl.innerText = 'Tạo Booking';
+
+
+
         if (statusBadge) statusBadge.classList.add('hidden');
+
+
+
         if (typeBadge) {
+
+
+
             typeBadge.classList.remove('hidden');
+
+
+
             typeBadge.innerText = 'Kéo Cont Xuất Khẩu';
+
+
+
         }
+
+
+
         if (headerCust) headerCust.innerText = 'Chưa chọn khách hàng';
+
+
+
         const todayStr = new Date().toISOString().split('T')[0];
+
+
+
         if (headerDate) headerDate.innerText = `Hẹn đóng: ${new Date().toLocaleDateString('vi-VN')}`;
+
+
+
         if (saveBtnText) saveBtnText.innerText = 'Lưu';
+
+
+
         if (tripsSection) tripsSection.classList.add('hidden');
 
+
+
+
+
+
+
         // Ở chế độ Tạo Mới: Ẩn Xóa, In, Sửa; Nút Lưu sáng lên
+
+
+
         const delBtn = document.getElementById('btn-fullpage-delete-booking-bottom');
+
+
+
         if (delBtn) delBtn.classList.add('hidden');
+
+
+
         const printBtn = document.getElementById('btn-fullpage-print-booking-bottom');
+
+
+
         if (printBtn) printBtn.classList.add('hidden');
+
+
+
         const editBtn = document.getElementById('btn-fullpage-edit-booking-bottom');
+
+
+
+        const dispatchBtn = document.getElementById('btn-fullpage-dispatch-order-bottom');
+
+
+
+        if (dispatchBtn) dispatchBtn.classList.add('hidden');
+
+
+
         if (editBtn) editBtn.classList.add('hidden');
+
+
+
         setFullpageSaveButtonState('btn-fullpage-save-booking-bottom', true);
 
+
+
+
+
+
+
         const dateInput = document.getElementById('fullpage-booking-loading-date');
+
+
+
         const timeInput = document.getElementById('fullpage-booking-loading-time');
+
+
+
         const closingDateInput = document.getElementById('fullpage-booking-closing-date');
+
+
+
         const closingTimeValInput = document.getElementById('fullpage-booking-closing-time-val');
+
+
+
         if (dateInput) dateInput.value = todayStr;
+
+
+
         if (timeInput) timeInput.value = '08:00';
+
+
+
         if (closingDateInput) closingDateInput.value = todayStr;
+
+
+
         if (closingTimeValInput) closingTimeValInput.value = '17:00';
+
+
+
         if (typeof syncFullpageBookingClosingTime === 'function') syncFullpageBookingClosingTime();
 
+
+
+
+
+
+
         const siDateInput = document.getElementById('fullpage-booking-si-date');
+
+
+
         const siTimeValInput = document.getElementById('fullpage-booking-si-time-val');
+
+
+
         if (siDateInput) siDateInput.value = todayStr;
+
+
+
         if (siTimeValInput) siTimeValInput.value = '12:00';
+
+
+
         if (typeof syncFullpageBookingSiTime === 'function') syncFullpageBookingSiTime();
 
+
+
+
+
+
+
         const totalInput = document.getElementById('fullpage-booking-total-containers');
+
+
+
         const detInput = document.getElementById('fullpage-booking-det');
+
+
+
         const demInput = document.getElementById('fullpage-booking-dem');
+
+
+
         const priceInput = document.getElementById('fullpage-booking-price');
+
+
+
         if (totalInput) totalInput.value = formatNumberVN(1);
+
+
+
         if (detInput) detInput.value = formatNumberVN(7);
+
+
+
         if (demInput) demInput.value = formatNumberVN(7);
-        if (priceInput) priceInput.value = '';
+
+
+
+        if (priceInput) priceInput.value = formatNumberVN(4000000);
+
+
+
         fillBookingDemDet(null);
+
+
+
         if (typeof renderBookingVendorAllocations === 'function') renderBookingVendorAllocations(null);
 
+
+
+        if (typeof stagedBookingContainers !== 'undefined') {
+
+            stagedBookingContainers = [];
+
+            window.stagedBookingContainers = [];
+
+        }
+
+        const contTbody = document.getElementById('fullpage-booking-containers-tbody');
+
+        if (contTbody) {
+
+            contTbody.innerHTML = `
+
+                <tr>
+
+                    <td colspan="12" class="p-6 text-center text-slate-400 italic">
+
+                        <i class="ph-bold ph-tray text-2xl mb-1 block"></i>
+
+                        Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Cont (Excel / Dán)"</strong> ở trên để nạp danh sách 100 container.
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }
+
+        const contBadge = document.getElementById('fullpage-cont-badge');
+
+        if (contBadge) contBadge.innerText = '0 Container';
+
+        const contProg = document.getElementById('fullpage-cont-progress');
+
+        if (contProg) contProg.innerText = 'Đã phân bổ: 0 · Có xe/tài: 0 · Đang chạy: 0 · Đã giao: 0 · Hoàn tất: 0';
+
+
+
+
+
+
+
         if (typeof clearFullpageBookingFileSelection === 'function') clearFullpageBookingFileSelection();
+
+
+
         if (typeof onFullpageBookingTypeChange === 'function') onFullpageBookingTypeChange();
+
+
+
         if (typeof initAllNumberInputs === 'function') initAllNumberInputs();
 
+
+
+
+
+
+
         try {
+
+
+
             if (typeof checkAndSyncMasterData === 'function') {
+
+
+
                 await checkAndSyncMasterData(false);
+
+
+
             } else if (typeof loadMasterDataFormOptions === 'function') {
+
+
+
                 await loadMasterDataFormOptions();
+
+
+
             }
+
+
+
             if (typeof populateMasterDataDropdowns === 'function') populateMasterDataDropdowns();
+
+
+
         } catch (mErr) {
+
+
+
             console.warn('loadMasterDataFormOptions error:', mErr);
+
+
+
         }
+
+
+
     } catch (err) {
+
+
+
         console.error('Error in openCreateBookingPage:', err);
+
+
+
     }
+
+
+
 }
+
+
+
 window.openCreateBookingPage = openCreateBookingPage;
 
+
+
+
+
+
+
 async function viewBookingDetail(bookingId, updateHistory = true) {
+    // Đảm bảo đóng tất cả modal nổi (đặc biệt là modal Lập Lệnh Điều Động / Phân Bổ)
+    if (typeof closeDispatchOrderModal === 'function') closeDispatchOrderModal();
+    const _mdo = document.getElementById('modal-dispatch-order');
+    if (_mdo) _mdo.classList.add('hidden');
+    const _mbk = document.getElementById('modal-booking');
+    if (_mbk) _mbk.classList.add('hidden-view');
+
     if (!bookingId || bookingId === 'new') {
+
+
+
         return openCreateBookingPage(updateHistory);
+
+
+
     }
-    if (typeof checkAndSyncMasterData === 'function') {
-        await checkAndSyncMasterData(false);
-    } else {
-        await loadMasterDataFormOptions();
-    }
-    populateMasterDataDropdowns();
 
-    const form = document.getElementById('form-fullpage-booking');
-    if (form) form.reset();
 
-    const idInput = document.getElementById('fullpage-booking-id');
-    const titleCodeEl = document.getElementById('fullpage-booking-title-code');
-    const statusBadge = document.getElementById('fullpage-booking-status-badge');
-    const typeBadge = document.getElementById('fullpage-booking-type-badge');
-    const headerCust = document.getElementById('fullpage-booking-header-customer');
-    const headerDate = document.getElementById('fullpage-booking-header-date');
-    const saveBtnText = document.getElementById('btn-fullpage-save-booking-bottom-text') || document.getElementById('btn-fullpage-save-booking-text');
-    const tripsSection = document.getElementById('fullpage-booking-trips-section');
-
-    if (titleCodeEl) titleCodeEl.innerText = 'Đang tải...';
-    if (saveBtnText) saveBtnText.innerText = 'Lưu';
 
     try {
+        if (typeof checkAndSyncMasterData === 'function') {
+            await checkAndSyncMasterData(false);
+        } else if (typeof loadMasterDataFormOptions === 'function') {
+            await loadMasterDataFormOptions();
+        }
+        if (typeof populateMasterDataDropdowns === 'function') {
+            populateMasterDataDropdowns();
+        }
+    } catch (mErr) {
+        console.warn('Lỗi nạp danh mục Master Data, tiếp tục mở booking:', mErr);
+    }
+
+
+
+
+
+
+
+    const form = document.getElementById('form-fullpage-booking');
+
+
+
+    if (form) form.reset();
+
+
+
+
+
+
+
+    const idInput = document.getElementById('fullpage-booking-id');
+
+
+
+    const titleCodeEl = document.getElementById('fullpage-booking-title-code');
+
+
+
+    const statusBadge = document.getElementById('fullpage-booking-status-badge');
+
+
+
+    const typeBadge = document.getElementById('fullpage-booking-type-badge');
+
+
+
+    const headerCust = document.getElementById('fullpage-booking-header-customer');
+
+
+
+    const headerDate = document.getElementById('fullpage-booking-header-date');
+
+
+
+    const saveBtnText = document.getElementById('btn-fullpage-save-booking-bottom-text') || document.getElementById('btn-fullpage-save-booking-text');
+
+
+
+    const tripsSection = document.getElementById('fullpage-booking-trips-section');
+
+
+
+
+
+
+
+    if (titleCodeEl) titleCodeEl.innerText = 'Đang tải...';
+
+
+
+    if (saveBtnText) saveBtnText.innerText = 'Lưu';
+
+
+
+
+
+
+
+    try {
+
+
+
         const res = await fetchWithAuth(`/api/bookings/${bookingId}/`);
-        if (!res.ok) throw new Error('Không thể tải chi tiết đơn hàng / booking');
+
+        if (!res.ok) {
+            if (res.status === 429) {
+                showToast('warning', 'Hệ thống đang tiếp nhận nhiều yêu cầu. Vui lòng chờ 2-3 giây rồi bấm lại.', 'Thao Tác Nhanh');
+                return;
+            }
+            throw new Error(`HTTP ${res.status}: Không thể tải thông tin đơn hàng / booking`);
+        }
+
+
+
         const b = await res.json();
+
+
+
         currentActiveFullpageBooking = b;
 
+
+
+
+
+
+
         if (idInput) idInput.value = b.id;
+
+
+
         if (titleCodeEl) titleCodeEl.innerText = b.booking_code || `BK-${b.id}`;
+
+
+
         if (headerCust) headerCust.innerText = b.customer_name || '...';
+
+
+
         if (headerDate) headerDate.innerText = `Hẹn đóng: ${b.loading_date ? formatDateVN(b.loading_date) : '--/--/----'}`;
 
+
+
+
+
+
+
         if (statusBadge) {
+
+
+
             statusBadge.classList.remove('hidden');
-            statusBadge.innerText = b.status_display || b.status;
+
+
+
+            statusBadge.innerText = b.status_display || b.status_label || b.status;
+
+
+
             statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ' +
+
+
+
                 (b.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+
+
+
                  b.status === 'PARTIALLY_DISPATCHED' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+
+
+
                  b.status === 'CANCELLED' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+
+
+
                  'bg-teal-50 text-teal-800 border-teal-200');
+
+
+
         }
+
+
+
         if (typeBadge) {
+
+
+
             typeBadge.classList.remove('hidden');
+
+
+
             typeBadge.innerText = b.booking_type_display || (b.booking_type === 'DOMESTIC' ? 'Vận Chuyển Nội Địa' : (b.booking_type === 'IMPORT_FCL' ? 'Kéo Cont Nhập Khẩu' : 'Kéo Cont Xuất Khẩu'));
+
+
+
         }
+
+
+
+
+
+
 
         if (updateHistory && window.history && window.history.pushState) {
+
+
+
             const bookingPath = `/sales/bookings/${b.id}`;
+
+
+
             if (window.location.pathname !== bookingPath) {
+
+
+
                 window.history.pushState({ view: 'booking-detail', bookingId: b.id }, '', bookingPath);
+
+
+
             }
+
+
+
         }
+
+
+
+
+
+
 
         const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+
+
+
         if (currentActiveView && currentActiveView.id !== 'view-booking-detail') {
+
+
+
             previousActiveTab = currentActiveView.id.replace('view-', '');
+
+
+
         }
+
+
+
+
+
+
 
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+
+
+
         const detailView = document.getElementById('view-booking-detail');
+
+
+
         if (detailView) detailView.classList.remove('hidden-view');
 
+
+
+
+
+
+
         const bookingTypeLabel = b.booking_type_display || (b.booking_type === 'DOMESTIC' ? 'Vận Chuyển Nội Địa' : (b.booking_type === 'IMPORT_FCL' ? 'Kéo Cont Nhập Khẩu' : 'Kéo Cont Xuất Khẩu'));
+
+
+
         const bookingDateStr = b.loading_date ? formatDateVN(b.loading_date) : '--/--/----';
 
+
+
+
+
+
+
         setTopbarFullpageMode({
+
+
+
             backFn: backToBookings,
+
+
+
             prefix: 'Sale & Booking',
+
+
+
             title: `Booking | ${b.booking_code || ('BK-' + b.id)}`,
+
+
+
             subText: '',
+
+
+
             badgesHtml: '',
+
+
+
             actionsHtml: ''
+
+
+
         });
 
+
+
+
+
+
+
         const typeEl = document.getElementById('fullpage-booking-type');
+
+
+
         if (typeEl) typeEl.value = b.booking_type || 'EXPORT_FCL';
+
+
+
         const custEl = document.getElementById('fullpage-booking-customer');
+
+
+
         if (custEl) setSelectValueCaseInsensitive(custEl, b.customer_name);
+
+
+
         const numEl = document.getElementById('fullpage-booking-number');
+
+
+
         if (numEl) numEl.value = b.booking_number || '';
+
+
+
         const shipEl = document.getElementById('fullpage-booking-shipping-line');
+
+
+
         if (shipEl) shipEl.value = b.shipping_line || '';
+
+
+
         const vesEl = document.getElementById('fullpage-booking-vessel');
+
+
+
         if (vesEl) vesEl.value = b.vessel_voyage || '';
+
+
+
         const sizeEl = document.getElementById('fullpage-booking-container-size');
+
+
+
         if (sizeEl) setSelectValueCaseInsensitive(sizeEl, b.container_size || '40HC');
+
+
+
         const totalEl = document.getElementById('fullpage-booking-total-containers');
+
+
+
         if (totalEl) totalEl.value = formatNumberVN(b.total_containers || 1);
+
+
+
         const comEl = document.getElementById('fullpage-booking-commodity');
+
+
+
         if (comEl) comEl.value = b.commodity || '';
+
+
+
         const hsEl = document.getElementById('fullpage-booking-hs-code');
+
+
+
         if (hsEl) hsEl.value = b.hs_code || '';
 
+
+
+
+
+
+
         const pickEl = document.getElementById('fullpage-booking-pickup');
+
+
+
         if (pickEl) setSelectValueCaseInsensitive(pickEl, b.pickup_location);
+
+
+
         const delEl = document.getElementById('fullpage-booking-delivery');
+
+
+
         if (delEl) setSelectValueCaseInsensitive(delEl, b.delivery_location);
+
+
+
         const dropEl = document.getElementById('fullpage-booking-dropoff');
+
+
+
         if (dropEl) setSelectValueCaseInsensitive(dropEl, b.dropoff_location);
 
+
+
+
+
+
+
         const dateEl = document.getElementById('fullpage-booking-loading-date');
+
+
+
         if (dateEl) dateEl.value = b.loading_date || '';
+
+
+
         const timeEl = document.getElementById('fullpage-booking-loading-time');
+
+
+
         if (timeEl) timeEl.value = formatTimeString(b.loading_time || '08:00');
 
+
+
+
+
+
+
         parseClosingTimeToFullpageInputs(b.closing_time);
+
+
+
         parseSiCutoffToFullpageInputs(b.si_cutoff);
 
+
+
+
+
+
+
         const detEl = document.getElementById('fullpage-booking-det');
+
+
+
         if (detEl) detEl.value = formatNumberVN(b.free_time_detention || 7);
+
+
+
         const demEl = document.getElementById('fullpage-booking-dem');
+
+
+
         if (demEl) demEl.value = formatNumberVN(b.free_time_demurrage || 7);
+
+
+
         const priceEl = document.getElementById('fullpage-booking-price');
+
+
+
         if (priceEl) priceEl.value = b.selling_freight_price ? formatNumberVN(b.selling_freight_price) : '';
+
+
+
         const statusEl = document.getElementById('fullpage-booking-status');
+
+
+
         if (statusEl) statusEl.value = b.status || 'PENDING_DISPATCH';
+
+
+
         const notesEl = document.getElementById('fullpage-booking-notes');
+
+
+
         if (notesEl) notesEl.value = b.notes || '';
+
+
+
+
+
+
+
+        const mblEl = document.getElementById('fullpage-booking-mbl');
+
+
+
+        if (mblEl) mblEl.value = b.mbl_number || '';
+
+
+
+        const hblEl = document.getElementById('fullpage-booking-hbl');
+
+
+
+        if (hblEl) hblEl.value = b.hbl_number || '';
+
+
+
+        const customsEl = document.getElementById('fullpage-booking-customs-decl');
+
+
+
+        if (customsEl) customsEl.value = b.customs_declaration_number || '';
+
+
+
+        const supEl = document.getElementById('fullpage-booking-supplier');
+
+
+
+        if (supEl) supEl.value = b.supplier_name || '';
+
+
+
+        const polEl = document.getElementById('fullpage-booking-port-loading');
+
+
+
+        if (polEl) polEl.value = b.port_of_loading || '';
+
+
+
+        const podEl = document.getElementById('fullpage-booking-port-discharge');
+
+
+
+        if (podEl) podEl.value = b.port_of_discharge || '';
+
+
+
+
+
+
+
+        if (typeof loadBookingContainersList === 'function') {
+
+
+
+            loadBookingContainersList(b.id);
+
+
+
+        }
+
+
+
         fillBookingDemDet(b);
+
+
+
         if (typeof renderBookingVendorAllocations === 'function') renderBookingVendorAllocations(b);
 
+
+
+
+
+
+
         fullpageBookingFilesList = [];
+
+
+
         fullpageBookingExistingDocs = [];
+
+
+
         if (b.documents && b.documents.length > 0) {
+
+
+
             fullpageBookingExistingDocs = b.documents.map(d => ({
+
+
+
                 id: d.id,
+
+
+
                 name: d.file_name || d.name || d.title || 'Tài liệu Booking',
+
+
+
                 url: d.file_url || d.url || (d.file_path ? `/media/${d.file_path}` : '#'),
+
+
+
                 size_formatted: d.file_size_formatted || d.size_formatted || ''
+
+
+
             }));
+
+
+
         } else if (b.booking_file_url) {
+
+
+
             fullpageBookingExistingDocs.push({
+
+
+
                 id: null,
+
+
+
                 name: b.booking_file_name || 'Tài liệu Booking',
+
+
+
                 url: b.booking_file_url,
+
+
+
                 size_formatted: ''
+
+
+
             });
+
+
+
         }
+
+
+
         renderFullpageBookingFilesList();
 
+
+
+
+
+
+
         if (tripsSection) {            tripsSection.classList.remove('hidden');
+
+
+
             const tripsCountBadge = document.getElementById('fullpage-booking-trips-count-badge');
+
+
+
             const tripsTbody = document.getElementById('fullpage-booking-trips-tbody');
 
+
+
+
+
+
+
             if (b.trips && b.trips.length > 0) {
+
+
+
                 if (tripsCountBadge) {
+
+
+
                     tripsCountBadge.innerText = `${b.dispatched_containers || b.trips.length} / ${b.total_containers} Container`;
+
+
+
                 }
+
+
+
                 tripsTbody.innerHTML = b.trips.map(t => {
+
+
+
                     const statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10.5px] font-bold border ${t.status_badge_class || 'bg-slate-100 text-slate-700'}">${t.status_display || t.status}</span>`;
+
+
+
                     const modeBadge = t.is_split_trip 
+
+
+
                         ? `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Cắt Kéo (2 Chặng)</span>`
+
+
+
                         : `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Nguyên Chuyến (FTL)</span>`;
+
+
+
                     return `
+
+
+
                         <tr class="hover:bg-slate-50 transition-colors">
+
+
+
                             <td class="p-2.5">
+
+
+
                                 <p class="font-bold text-slate-900 font-mono text-xs">${t.trip_code}</p>
+
+
+
                                 <p class="text-[11px] font-mono text-indigo-700 font-bold">${t.container_number || '-'}</p>
+
+
+
                             </td>
+
+
+
                             <td class="p-2.5">${modeBadge}</td>
+
+
+
                             <td class="p-2.5">
+
+
+
                                 <p class="font-bold text-slate-900">${t.driver || '-'}</p>
+
+
+
                                 <p class="text-[11px] text-slate-500 font-medium">Xe: ${t.vehicle || '-'}</p>
+
+
+
                             </td>
+
+
+
                             <td class="p-2.5">
+
+
+
                                 ${t.is_split_trip ? `
+
+
+
                                     <p class="font-bold text-amber-900">${t.dropoff_driver || 'Chưa gán'}</p>
+
+
+
                                     <p class="text-[11px] text-slate-500 font-medium">Xe: ${t.dropoff_vehicle || '-'}</p>
+
+
+
                                 ` : `
+
+
+
                                     <span class="text-slate-400 italic text-[11px]">(Tài xế chặng 1)</span>
+
+
+
                                 `}
+
+
+
                             </td>
+
+
+
                             <td class="p-2.5 text-[11px] text-slate-700 leading-tight">
+
+
+
                                 ${t.pickup_location || '-'} ➔ ${t.delivery_location || '-'}
+
+
+
                             </td>
+
+
+
                             <td class="p-2.5">${statusBadge}</td>
+
+
+
                             <td class="p-2.5 text-center">
+
+
+
                                 <button type="button" onclick="viewTripDetail('${t.trip_code}')" 
+
+
+
                                     class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold transition-colors inline-flex items-center gap-1 font-heading" title="Xem chi tiết chuyến xe">
+
+
+
                                     <i class="ph-bold ph-arrow-square-out"></i> Xem
+
+
+
                                 </button>
+
+
+
                             </td>
+
+
+
                         </tr>
+
+
+
                     `;
+
+
+
                 }).join('');
+
+
+
             } else {
+
+
+
                 if (tripsCountBadge) {
+
+
+
                     tripsCountBadge.innerText = `0 / ${b.total_containers} Container`;
+
+
+
                 }
+
+
+
                 tripsTbody.innerHTML = `
+
+
+
                     <tr>
+
+
+
                         <td colspan="7" class="p-4 text-center text-slate-400 italic text-xs">
+
+
+
                             Chưa có container nào được phát lệnh điều xe từ Booking này. Bấm "Điều Xe" bên ngoài để phát lệnh.
+
+
+
                         </td>
+
+
+
                     </tr>
+
+
+
                 `;
+
+
+
             }
+
+
+
         }
+
+
+
+
+
+
 
         // CHẾ ĐỘ XEM BẢN GHI ĐÃ CÓ:
+
+
+
         // 1. Khóa toàn bộ input/select/textarea của form
+
+
+
         if (form) {
+
+
+
             form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+
+
+
             form.querySelectorAll('button:not(#btn-fullpage-edit-booking-bottom):not(#btn-fullpage-delete-booking-bottom):not(#btn-fullpage-print-booking-bottom):not([onclick*="backToBookings"]):not([onclick*="viewTripDetail"])').forEach(el => el.disabled = true);
+
+
+
         }
+
+
+
         // 2. Hiển thị đủ bộ nút Xóa, In, Sửa
+
+
+
         const delBtn = document.getElementById('btn-fullpage-delete-booking-bottom');
+
+
+
         if (delBtn) {
+
+
+
             delBtn.classList.remove('hidden');
+
+
+
             delBtn.disabled = false;
+
+
+
         }
+
+
+
         const printBtn = document.getElementById('btn-fullpage-print-booking-bottom');
+
+
+
         if (printBtn) {
+
+
+
             printBtn.classList.remove('hidden');
+
+
+
             printBtn.disabled = false;
+
+
+
         }
+
+
+
         const editBtn = document.getElementById('btn-fullpage-edit-booking-bottom');
+
+
+
         if (editBtn) {
+
+
+
             editBtn.classList.remove('hidden');
+
+
+
             editBtn.disabled = false;
+
+
+
         }
+
+
+
+        const dispatchBtn = document.getElementById('btn-fullpage-dispatch-order-bottom');
+
+
+
+        if (dispatchBtn) {
+
+
+
+            dispatchBtn.classList.remove('hidden');
+
+
+
+            dispatchBtn.disabled = false;
+
+
+
+        }
+
+
+
         // 3. Nút Lưu mờ đi, chỉ sáng lên khi người dùng bấm Sửa
+
+
+
         setFullpageSaveButtonState('btn-fullpage-save-booking-bottom', false);
 
+
+
+
+
+
+
         onFullpageBookingTypeChange();
+
+
+
         initAllNumberInputs();
+
+
+
     } catch (err) {
+
+
+
         console.error('Lỗi tải chi tiết booking trang riêng:', err);
+
+
+
         showToast('error', 'Không thể tải thông tin đơn hàng / booking', 'Lỗi');
+
+
+
         backToBookings();
+
+
+
     }
+
+
+
 }
+
+
+
+
+
+
 
 function backToBookings() {
+
+
+
     const detailView = document.getElementById('view-booking-detail');
+
+
+
     if (detailView) detailView.classList.add('hidden-view');
 
+
+
+
+
+
+
     if (previousActiveTab && previousActiveTab !== 'booking-detail') {
+
+
+
         switchTab(previousActiveTab, true);
+
+
+
     } else {
+
+
+
         switchTab('kinh-doanh', true);
+
+
+
     }
+
+
+
 }
+
+
+
+
+
+
+
+
+
 
 
 async function saveFullpageBooking(e) {
+
+
+
     if (e && typeof e.preventDefault === 'function') {
+
+
+
         e.preventDefault();
+
+
+
     }
+
+
+
     const id = document.getElementById('fullpage-booking-id')?.value;
+
+
+
     const bookingType = document.getElementById('fullpage-booking-type')?.value || 'EXPORT_FCL';
+
+
+
     const customer = document.getElementById('fullpage-booking-customer')?.value?.trim();
+
+
+
     const bookingNumber = document.getElementById('fullpage-booking-number')?.value?.trim();
+
+
+
     let shippingLine = document.getElementById('fullpage-booking-shipping-line')?.value?.trim();
+
+
+
     let vessel = document.getElementById('fullpage-booking-vessel')?.value?.trim();
+
+
+
     const containerSize = document.getElementById('fullpage-booking-container-size')?.value || '40HC';
+
+
+
     const totalContainers = parseNumberVN(document.getElementById('fullpage-booking-total-containers')?.value) || 1;
+
+
+
     const commodity = document.getElementById('fullpage-booking-commodity')?.value?.trim();
+
+
+
     let hsCode = document.getElementById('fullpage-booking-hs-code')?.value?.trim();
+
+
+
     const pickup = document.getElementById('fullpage-booking-pickup')?.value?.trim();
+
+
+
     const delivery = document.getElementById('fullpage-booking-delivery')?.value?.trim();
+
+
+
     let dropoff = document.getElementById('fullpage-booking-dropoff')?.value?.trim();
+
+
+
     const loadingDate = document.getElementById('fullpage-booking-loading-date')?.value;
+
+
+
     const loadingTime = formatTimeString(document.getElementById('fullpage-booking-loading-time')?.value?.trim() || '08:00');
+
+
+
     syncFullpageBookingClosingTime();
+
+
+
     syncFullpageBookingSiTime();
+
+
+
     let closingTime = document.getElementById('fullpage-booking-closing-time')?.value?.trim();
+
+
+
     let siCutoff = document.getElementById('fullpage-booking-si-cutoff')?.value?.trim();
+
+
+
     let det = parseNumberVN(document.getElementById('fullpage-booking-det')?.value);
+
+
+
     let dem = parseNumberVN(document.getElementById('fullpage-booking-dem')?.value);
+
+
+
     const price = parseNumberVN(document.getElementById('fullpage-booking-price')?.value) || 0;
+
+
+
     const statusVal = document.getElementById('fullpage-booking-status')?.value || 'PENDING_DISPATCH';
+
+
+
     const notes = document.getElementById('fullpage-booking-notes')?.value?.trim();
 
-    // Chuẩn hóa và gán ngầm định theo từng phân loại dịch vụ
-    if (bookingType === 'DOMESTIC') {
-        shippingLine = shippingLine || 'NỘI ĐỊA';
-        vessel = '';
-        hsCode = '';
-        dropoff = dropoff || delivery; // Điểm 3 ngầm định theo điểm giao
-        closingTime = '';
-        siCutoff = '';
-        det = 0;
-        dem = 0;
-    } else if (bookingType === 'IMPORT_FCL') {
-        closingTime = '';
-        siCutoff = '';
-        if (det === null || det === undefined || isNaN(det)) det = 7;
-        if (dem === null || dem === undefined || isNaN(dem)) dem = 7;
-    } else {
-        if (det === null || det === undefined || isNaN(det)) det = 7;
-        if (dem === null || dem === undefined || isNaN(dem)) dem = 7;
+    // Tự động thu thập tất cả container đang gõ trên bảng
+    if (typeof collectContainersFromTable === 'function') {
+        const tableConts = collectContainersFromTable();
+        if (tableConts.length > 0) {
+            window.stagedBookingContainers = tableConts;
+            stagedBookingContainers = tableConts;
+        }
     }
+
+
+
+
+
+
+
+    // Chuẩn hóa và gán ngầm định theo từng phân loại dịch vụ
+
+
+
+    if (bookingType === 'DOMESTIC') {
+
+
+
+        shippingLine = shippingLine || 'NỘI ĐỊA';
+
+
+
+        vessel = '';
+
+
+
+        hsCode = '';
+
+
+
+        dropoff = dropoff || delivery; // Điểm 3 ngầm định theo điểm giao
+
+
+
+        closingTime = '';
+
+
+
+        siCutoff = '';
+
+
+
+        det = 0;
+
+
+
+        dem = 0;
+
+
+
+    } else if (bookingType === 'IMPORT_FCL') {
+
+
+
+        closingTime = '';
+
+
+
+        siCutoff = '';
+
+
+
+        if (det === null || det === undefined || isNaN(det)) det = 7;
+
+
+
+        if (dem === null || dem === undefined || isNaN(dem)) dem = 7;
+
+
+
+    } else {
+
+
+
+        if (det === null || det === undefined || isNaN(det)) det = 7;
+
+
+
+        if (dem === null || dem === undefined || isNaN(dem)) dem = 7;
+
+
+
+    }
+
+
+
+
+
+
 
     if (!customer) {
+
+
+
         showToast('warning', 'Vui lòng chọn Khách Hàng trong danh mục!', 'Thiếu Thông Tin');
+
+
+
         document.getElementById('fullpage-booking-customer')?.focus();
+
+
+
         return;
+
+
+
     }
+
+
+
     if (!bookingNumber) {
+
+
+
         const numLabel = bookingType === 'DOMESTIC' ? 'Số PO / Đơn Hàng' : (bookingType === 'IMPORT_FCL' ? 'Số Vận Đơn (B/L) / D/O' : 'Số Booking');
+
+
+
         showToast('warning', `Vui lòng nhập ${numLabel}!`, 'Thiếu Thông Tin');
+
+
+
         document.getElementById('fullpage-booking-number')?.focus();
+
+
+
         return;
+
+
+
     }
+
+
+
     if (!pickup) {
+
+
+
         const pLabel = bookingType === 'DOMESTIC' ? 'Điểm Bốc Hàng (Điểm 1)' : (bookingType === 'IMPORT_FCL' ? 'Cảng Lấy Cont (Điểm 1)' : 'Depot Cấp Rỗng (Điểm 1)');
+
+
+
         showToast('warning', `Vui lòng chọn ${pLabel}!`, 'Thiếu Thông Tin');
+
+
+
         document.getElementById('fullpage-booking-pickup')?.focus();
+
+
+
         return;
+
+
+
     }
+
+
+
     if (!delivery) {
+
+
+
         const dLabel = bookingType === 'DOMESTIC' ? 'Kho Giao Hàng (Điểm 2)' : (bookingType === 'IMPORT_FCL' ? 'Kho Rút Hàng (Điểm 2)' : 'Kho Đóng Hàng (Điểm 2)');
+
+
+
         showToast('warning', `Vui lòng chọn ${dLabel}!`, 'Thiếu Thông Tin');
+
+
+
         document.getElementById('fullpage-booking-delivery')?.focus();
+
+
+
         return;
+
+
+
     }
+
+
+
     if (bookingType !== 'DOMESTIC' && !dropoff) {
+
+
+
         const drLabel = bookingType === 'IMPORT_FCL' ? 'Depot Trả Rỗng (Điểm 3)' : 'Cảng Hạ CY (Điểm 3)';
+
+
+
         showToast('warning', `Vui lòng chọn ${drLabel}!`, 'Thiếu Thông Tin');
+
+
+
         document.getElementById('fullpage-booking-dropoff')?.focus();
+
+
+
         return;
+
+
+
     }
+
+
+
+
+
+
+
+    if (price <= 0) {
+
+        const priceInput = document.getElementById('fullpage-booking-price');
+
+        if (priceInput) {
+
+            priceInput.focus();
+
+            priceInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-200');
+
+            setTimeout(() => priceInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-200'), 3000);
+
+        }
+
+        showToast('warning', 'Đơn giá cước vận chuyển là bắt buộc và phải lớn hơn 0! Vui lòng nhập giá cước bán.', 'Giá Cước Bắt Buộc');
+
+        return;
+
+    }
+
+
+
+
+
+
 
     const submitBtn = document.getElementById('btn-fullpage-save-booking-bottom') || document.getElementById('btn-fullpage-save-booking');
+
+
+
     const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+
+
+
     if (submitBtn) {
+
+
+
         submitBtn.disabled = true;
+
+
+
         submitBtn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-base"></i> <span>Đang lưu...</span>';
+
+
+
     }
 
+
+
+
+
+
+
     try {
+
+
+
         const formData = new FormData();
+
+
+
         formData.append('action', 'create_booking');
+
+
+
         formData.append('booking_type', bookingType);
+
+
+
         formData.append('customer', customer);
+
+
+
         formData.append('booking_number', bookingNumber);
+
+
+
         formData.append('shipping_line', shippingLine);
+
+
+
         formData.append('vessel_voyage', vessel);
+
+
+
         formData.append('container_size', containerSize);
+
+
+
         formData.append('total_containers', totalContainers);
+
+
+
         formData.append('commodity', commodity);
+
+
+
         formData.append('hs_code', hsCode);
+
+
+
         formData.append('pickup_location', pickup);
+
+
+
         formData.append('delivery_location', delivery);
+
+
+
         formData.append('dropoff_location', dropoff);
+
+
+
         formData.append('loading_date', loadingDate || '');
+
+
+
         formData.append('loading_time', loadingTime);
+
+
+
         formData.append('closing_time', closingTime || '');
+
+
+
         formData.append('si_cutoff', siCutoff || '');
+
+
+
         formData.append('free_time_detention', det);
+
+
+
         formData.append('free_time_demurrage', dem);
+
+
+
         formData.append('selling_freight_price', price);
+
+
+
         formData.append('status', statusVal);
+
+
+
         formData.append('notes', notes || '');
+
+
+
+        formData.append('mbl_number', document.getElementById('fullpage-booking-mbl')?.value?.trim() || '');
+
+
+
+        formData.append('hbl_number', document.getElementById('fullpage-booking-hbl')?.value?.trim() || '');
+
+
+
+        formData.append('customs_declaration_number', document.getElementById('fullpage-booking-customs-decl')?.value?.trim() || '');
+
+
+
+        formData.append('supplier_name', document.getElementById('fullpage-booking-supplier')?.value?.trim() || '');
+
+
+
+        formData.append('port_of_loading', document.getElementById('fullpage-booking-port-loading')?.value?.trim() || '');
+
+
+
+        formData.append('port_of_discharge', document.getElementById('fullpage-booking-port-discharge')?.value?.trim() || '');
+
+
+
         collectBookingDemDet().forEach(([k, v]) => formData.append(k, v));
 
+
+
+
+
+
+
         if (fullpageBookingFilesList && fullpageBookingFilesList.length > 0) {
+
+
+
             formData.append('booking_file', fullpageBookingFilesList[0]);
+
+
+
             fullpageBookingFilesList.forEach(file => {
+
+
+
                 formData.append('booking_files', file);
+
+
+
             });
+
+
+
         }
+
+
+
+
+
+
 
         let res;
+
+
+
         if (id) {
+
+
+
             res = await fetchWithAuth(`/api/bookings/${id}/`, {
+
+
+
                 method: 'PUT',
+
+
+
                 body: formData
+
+
+
             });
+
+
+
         } else {
+
+
+
             res = await fetchWithAuth('/api/sales/', {
+
+
+
                 method: 'POST',
+
+
+
                 body: formData
+
+
+
             });
+
+
+
         }
+
+
+
+
+
+
 
         const data = await res.json().catch(() => ({}));
+
+
+
         if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi lưu đơn hàng / booking');
 
+
+
+
+
+
+
         showToast('success', data.message || 'Lưu đơn hàng / booking thành công!', 'Thành Công');
+
+
+
         clearFullpageBookingFileSelection();
+
+
+
         loadSalesData();
+
+
+
         loadActiveBookingsForModal();
 
+
+
+
+
+
+
         const savedId = id || data.booking_id || data.id;
+
         if (savedId) {
+
+            // Thu thập container một lần nữa để đảm bảo không sót dòng nào
+            if (typeof collectContainersFromTable === 'function') {
+                const freshConts = collectContainersFromTable();
+                if (freshConts.length > 0) {
+                    window.stagedBookingContainers = freshConts;
+                }
+            }
+
+            if (window.stagedBookingContainers && window.stagedBookingContainers.length > 0) {
+
+                try {
+
+                    const rowsPayload = window.stagedBookingContainers.map((c, idx) => ({
+                        source_line: idx + 1,
+                        raw: c.container_number,
+                        container_number: c.container_number,
+                        container_type: c.container_type || '40HC',
+                        seal_number: c.seal_number || '',
+                        gross_weight_kg: c.gross_weight_kg || null,
+                        delivery_address: c.delivery_loc || '',
+                        dropoff_loc: c.dropoff_loc || '',
+                        dem_det: c.dem_det || '',
+                        tractor_plate: c.tractor_plate || '',
+                        driver_name: c.driver_name || ''
+                    }));
+
+                    const cRes = await fetchWithAuth(`/api/gss/bookings/${savedId}/containers/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rows: rowsPayload, skip_invalid: true, commit: 1 })
+                    });
+
+                    const cOut = await cRes.json();
+                    if (cRes.ok && cOut.success !== false) {
+                        window.stagedBookingContainers = [];
+                        if (typeof stagedBookingContainers !== 'undefined') stagedBookingContainers = [];
+                    } else {
+                        console.warn('Lỗi ghi containers:', cOut);
+                    }
+
+                } catch (contErr) {
+
+                    console.error('Lỗi tự động lưu container sau khi tạo booking:', contErr);
+
+                }
+
+            }
+
+            // Nạp lại danh sách container từ server để hiển thị ngay trên bảng
+            if (typeof loadBookingContainersList === 'function') {
+                await loadBookingContainersList(savedId);
+            }
+
             viewBookingDetail(savedId, true);
+
         } else {
+
             backToBookings();
+
         }
+
+
+
     } catch (err) {
+
+
+
         console.error('Error saving fullpage booking:', err);
+
+
+
         showToast('error', err.message || 'Không thể lưu đơn hàng / booking', 'Lỗi');
+
+
+
     } finally {
+
+
+
         if (submitBtn) {
+
+
+
             submitBtn.disabled = false;
+
+
+
             submitBtn.innerHTML = originalBtnHtml;
+
+
+
+        }
+
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+function openDispatchOrderFromCurrentBooking() {
+
+
+
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+
+
+
+    if (!bookingId) {
+
+
+
+        if (typeof showToast === 'function') {
+
+
+
+            showToast('warning', 'Vui lòng lưu thông tin Booking trước khi lập Lệnh Điều Vận', 'Thông Báo');
+
+
+
+        } else {
+
+
+
+            alert('Vui lòng lưu thông tin Booking trước khi lập Lệnh Điều Vận');
+
+
+
+        }
+
+
+
+        return;
+
+
+
+    }
+
+
+
+    if (typeof switchTab === 'function') {
+
+
+
+        switchTab('dieu-van');
+
+
+
+    }
+
+
+
+    setTimeout(() => {
+
+
+
+        if (typeof window.openDispatchOrderModal === 'function') {
+
+
+
+            window.openDispatchOrderModal(bookingId);
+
+
+
+        }
+
+
+
+    }, 200);
+
+
+
+}
+
+function enableFullpageBookingEdit() {
+    const form = document.getElementById('form-fullpage-booking');
+    if (form) {
+        form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+    }
+    const editBtn = document.getElementById('btn-fullpage-edit-booking-bottom');
+    if (editBtn) editBtn.classList.add('hidden');
+    setFullpageSaveButtonState('btn-fullpage-save-booking-bottom', true);
+    if (typeof onFullpageBookingTypeChange === 'function') onFullpageBookingTypeChange();
+    if (typeof showToast === 'function') {
+        showToast('info', 'Đã chuyển sang chế độ Sửa Đơn Hàng / Booking. Bạn có thể thay đổi thông tin và bấm Lưu.', 'Chế Độ Sửa');
+    }
+}
+
+function setFullpageSaveButtonState(btnId, isEnabled) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    if (isEnabled) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        btn.classList.add('bg-teal-700', 'hover:bg-teal-800', 'cursor-pointer');
+    } else {
+        btn.disabled = true;
+        btn.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        btn.classList.remove('hover:bg-teal-800', 'cursor-pointer');
+    }
+}
+
+window.enableFullpageBookingEdit = enableFullpageBookingEdit;
+window.setFullpageSaveButtonState = setFullpageSaveButtonState;
+window.saveFullpageBooking = saveFullpageBooking;
+window.viewBookingDetail = viewBookingDetail;
+window.backToBookings = backToBookings;
+window.openDispatchOrderFromCurrentBooking = openDispatchOrderFromCurrentBooking;
+
+// ---- src/app/sales/booking-page/containers.js ----
+// =========================================================================
+// QUẢN LÝ DANH SÁCH CONTAINER CHO BOOKING / B/L (GSS TMS CONTAINER ENGINE)
+// HỖ TRỢ: NHẬP EXCEL, TẢI MẪU CHUẨN, THÊM DÒNG TRỰC TIẾP & LƯU CSDL
+// =========================================================================
+
+let stagedBookingContainers = [];
+window.stagedBookingContainers = stagedBookingContainers;
+let currentBookingContainers = [];
+let selectedBookingContIds = new Set();
+let bookingCarriersList = [];
+let stagedParsedExcelRows = [];
+let activeTargetBookingId = null;
+window.activeTargetBookingId = null;
+let editingSavedContId = null;
+window.editingSavedContId = null;
+let selectedStagedContIndices = new Set();
+let isContTableFullscreen = false;
+window.isContTableFullscreen = false;
+
+let contTableFilterState = {
+    search: '',
+    vendorStatus: 'ALL',
+    sortKey: 'line_no',
+    sortOrder: 'asc'
+};
+let filteredBookingContainers = [];
+window.contTableFilterState = contTableFilterState;
+window.filteredBookingContainers = filteredBookingContainers;
+
+function handleContSearchInput(val) {
+    contTableFilterState.search = val || '';
+    const clearBtn = document.getElementById('cont-table-search-clear');
+    if (clearBtn) {
+        if (contTableFilterState.search.trim()) {
+            clearBtn.classList.remove('hidden');
+        } else {
+            clearBtn.classList.add('hidden');
+        }
+    }
+    refreshCurrentContainersView();
+}
+window.handleContSearchInput = handleContSearchInput;
+
+function clearContSearchInput() {
+    const inp = document.getElementById('cont-table-search-input');
+    if (inp) inp.value = '';
+    handleContSearchInput('');
+}
+window.clearContSearchInput = clearContSearchInput;
+
+function handleContVendorFilter(val) {
+    contTableFilterState.vendorStatus = val || 'ALL';
+    refreshCurrentContainersView();
+}
+window.handleContVendorFilter = handleContVendorFilter;
+
+function handleContSortSelect(val) {
+    if (!val) return;
+    if (val === 'unassigned-first') {
+        contTableFilterState.sortKey = 'unassigned-first';
+        contTableFilterState.sortOrder = 'asc';
+    } else if (val === 'assigned-first') {
+        contTableFilterState.sortKey = 'assigned-first';
+        contTableFilterState.sortOrder = 'asc';
+    } else {
+        const parts = val.split('-');
+        contTableFilterState.sortKey = parts[0] || 'line_no';
+        contTableFilterState.sortOrder = parts[1] || 'asc';
+    }
+    updateContTableSortIcons();
+    refreshCurrentContainersView();
+}
+window.handleContSortSelect = handleContSortSelect;
+
+function sortContTableBy(key) {
+    if (contTableFilterState.sortKey === key) {
+        contTableFilterState.sortOrder = contTableFilterState.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        contTableFilterState.sortKey = key;
+        contTableFilterState.sortOrder = 'asc';
+    }
+    
+    const sortSelect = document.getElementById('cont-table-sort-select');
+    if (sortSelect) {
+        const optVal = `${contTableFilterState.sortKey}-${contTableFilterState.sortOrder}`;
+        if (sortSelect.querySelector(`option[value="${optVal}"]`)) {
+            sortSelect.value = optVal;
+        } else {
+            sortSelect.value = 'line_no-asc';
+        }
+    }
+    
+    updateContTableSortIcons();
+    refreshCurrentContainersView();
+}
+window.sortContTableBy = sortContTableBy;
+
+function updateContTableSortIcons() {
+    const sortCols = [
+        'line_no', 'container_number', 'container_type', 'seal_number',
+        'gross_weight_kg', 'delivery_address', 'dropoff_loc', 'dem_expiry',
+        'vendor', 'tractor_plate', 'driver_name', 'status'
+    ];
+    
+    sortCols.forEach(col => {
+        const icon = document.getElementById(`sort-icon-${col}`);
+        if (!icon) return;
+        if (contTableFilterState.sortKey === col) {
+            icon.className = contTableFilterState.sortOrder === 'asc'
+                ? 'ph-bold ph-caret-up text-[11px] text-teal-700 font-bold'
+                : 'ph-bold ph-caret-down text-[11px] text-teal-700 font-bold';
+        } else {
+            icon.className = 'ph-bold ph-arrows-down-up text-[10px] text-slate-400';
+        }
+    });
+}
+window.updateContTableSortIcons = updateContTableSortIcons;
+
+function resetContTableFilters() {
+    contTableFilterState.search = '';
+    contTableFilterState.vendorStatus = 'ALL';
+    contTableFilterState.sortKey = 'line_no';
+    contTableFilterState.sortOrder = 'asc';
+    
+    const searchInp = document.getElementById('cont-table-search-input');
+    if (searchInp) searchInp.value = '';
+    const clearBtn = document.getElementById('cont-table-search-clear');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    
+    const vendorSelect = document.getElementById('cont-table-filter-vendor');
+    if (vendorSelect) vendorSelect.value = 'ALL';
+    
+    const sortSelect = document.getElementById('cont-table-sort-select');
+    if (sortSelect) sortSelect.value = 'line_no-asc';
+    
+    updateContTableSortIcons();
+    refreshCurrentContainersView();
+}
+window.resetContTableFilters = resetContTableFilters;
+
+function refreshCurrentContainersView() {
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+    if (bookingId) {
+        renderSavedBookingContainers();
+    } else {
+        renderStagedBookingContainers();
+    }
+}
+window.refreshCurrentContainersView = refreshCurrentContainersView;
+
+function getFilteredAndSortedContainers(conts) {
+    if (!conts || !Array.isArray(conts)) return [];
+    let result = [...conts];
+    
+    // 1. Search text
+    const term = (contTableFilterState.search || '').trim().toLowerCase();
+    if (term) {
+        result = result.filter(c => {
+            const no = (c.container_number || '').toLowerCase();
+            const type = (c.container_type || '').toLowerCase();
+            const seal = (c.seal_number || '').toLowerCase();
+            const vgm = String(c.gross_weight_kg || '').toLowerCase();
+            const deliv = (c.delivery_address || c.delivery_loc || c.delivery_loc_name || '').toLowerCase();
+            const drop = (c.dropoff_loc || c.dropoff_loc_name || '').toLowerCase();
+            const vendor = (c.vendor || c.subcontractor_name || '').toLowerCase();
+            const vendorCode = (c.vendor_code || '').toLowerCase();
+            const truck = (c.tractor_plate || c.truck_plate || '').toLowerCase();
+            const driver = (c.driver_name || '').toLowerCase();
+            const trip = (c.trip_code || '').toLowerCase();
+            const notes = (c.notes || '').toLowerCase();
+            
+            return no.includes(term) ||
+                seal.includes(term) ||
+                type.includes(term) ||
+                vgm.includes(term) ||
+                deliv.includes(term) ||
+                drop.includes(term) ||
+                vendor.includes(term) ||
+                vendorCode.includes(term) ||
+                truck.includes(term) ||
+                driver.includes(term) ||
+                trip.includes(term) ||
+                notes.includes(term);
+        });
+    }
+    
+    // 2. Filter theo 10 trạng thái chuẩn của Container
+    const stFilter = contTableFilterState.vendorStatus;
+    if (stFilter && stFilter !== 'ALL') {
+        const inTransitSteps = ['ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY'];
+        result = result.filter(c => {
+            const st = (c.dispatch_status || c.step_status || '').toUpperCase();
+            const hasVendor = !!(c.vendor || c.subcontractor_name || c.subcontractor_id || c.vendor_id);
+            const hasTrip = !!c.trip_code;
+            if (stFilter === 'UNASSIGNED') return !hasVendor && !hasTrip;
+            if (stFilter === 'ASSIGNED') return hasVendor && !hasTrip && st !== 'CANCELLED';
+            if (stFilter === 'READY') return st === 'READY' || (hasTrip && !inTransitSteps.includes(st) && st !== 'EMPTY_RETURNED' && st !== 'CANCELLED');
+            if (stFilter === 'IN_TRANSIT') return inTransitSteps.includes(st);
+            return st === stFilter;
+        });
+    }
+    
+    // 3. Sorting
+    const key = contTableFilterState.sortKey || 'line_no';
+    const order = contTableFilterState.sortOrder === 'desc' ? -1 : 1;
+    
+    result.sort((a, b) => {
+        if (key === 'unassigned-first') {
+            const aAssigned = !!(a.vendor || a.subcontractor_name || a.subcontractor_id || a.vendor_id);
+            const bAssigned = !!(b.vendor || b.subcontractor_name || b.subcontractor_id || b.vendor_id);
+            if (aAssigned !== bAssigned) return aAssigned ? 1 : -1;
+            return ((a.line_no || 0) - (b.line_no || 0));
+        }
+        if (key === 'assigned-first') {
+            const aAssigned = !!(a.vendor || a.subcontractor_name || a.subcontractor_id || a.vendor_id);
+            const bAssigned = !!(b.vendor || b.subcontractor_name || b.subcontractor_id || b.vendor_id);
+            if (aAssigned !== bAssigned) return aAssigned ? -1 : 1;
+            return ((a.line_no || 0) - (b.line_no || 0));
+        }
+        
+        let valA, valB;
+        if (key === 'line_no') {
+            valA = Number(a.line_no || 0);
+            valB = Number(b.line_no || 0);
+            return (valA - valB) * order;
+        }
+        if (key === 'gross_weight_kg') {
+            valA = Number(a.gross_weight_kg || 0);
+            valB = Number(b.gross_weight_kg || 0);
+            return (valA - valB) * order;
+        }
+        if (key === 'dem_expiry') {
+            valA = String(a.dem_expiry || a.dem_expiry_override || '9999');
+            valB = String(b.dem_expiry || b.dem_expiry_override || '9999');
+            return valA.localeCompare(valB) * order;
+        }
+        if (key === 'vendor') {
+            valA = (a.vendor || a.subcontractor_name || '').toLowerCase();
+            valB = (b.vendor || b.subcontractor_name || '').toLowerCase();
+            if (!valA && valB) return 1;
+            if (valA && !valB) return -1;
+            return valA.localeCompare(valB) * order;
+        }
+        if (key === 'tractor_plate') {
+            valA = (a.tractor_plate || a.truck_plate || '').toLowerCase();
+            valB = (b.tractor_plate || b.truck_plate || '').toLowerCase();
+            return valA.localeCompare(valB) * order;
+        }
+        if (key === 'driver_name') {
+            valA = (a.driver_name || '').toLowerCase();
+            valB = (b.driver_name || '').toLowerCase();
+            return valA.localeCompare(valB) * order;
+        }
+        if (key === 'status') {
+            valA = (a.trip_code || '').toLowerCase();
+            valB = (b.trip_code || '').toLowerCase();
+            return valA.localeCompare(valB) * order;
+        }
+        if (key === 'delivery_address') {
+            valA = (a.delivery_address || a.delivery_loc || a.delivery_loc_name || '').toLowerCase();
+            valB = (b.delivery_address || b.delivery_loc || b.delivery_loc_name || '').toLowerCase();
+            return valA.localeCompare(valB) * order;
+        }
+        if (key === 'dropoff_loc') {
+            valA = (a.dropoff_loc || a.dropoff_loc_name || '').toLowerCase();
+            valB = (b.dropoff_loc || b.dropoff_loc_name || '').toLowerCase();
+            return valA.localeCompare(valB) * order;
+        }
+        
+        valA = String(a[key] || '').toLowerCase();
+        valB = String(b[key] || '').toLowerCase();
+        return valA.localeCompare(valB) * order;
+    });
+    
+    return result;
+}
+window.getFilteredAndSortedContainers = getFilteredAndSortedContainers;
+
+
+function openImportContainersModal(targetBookingId = null) {
+    const modal = document.getElementById('modal-import-containers');
+    if (!modal) return;
+
+    activeTargetBookingId = targetBookingId || document.getElementById('fullpage-booking-id')?.value || null;
+    window.activeTargetBookingId = activeTargetBookingId;
+    const isNew = !activeTargetBookingId;
+
+    // Loại bỏ cả hidden và hidden-view để modal luôn hiển thị tin cậy
+    modal.classList.remove('hidden', 'hidden-view');
+    switchImportContTab('excel');
+
+    const txt = document.getElementById('import-containers-text');
+    if (txt) txt.value = '';
+    const fileInp = document.getElementById('import-containers-file');
+    if (fileInp) fileInp.value = '';
+    const fileLbl = document.getElementById('import-cont-filename');
+    if (fileLbl) fileLbl.innerText = '';
+    const prev = document.getElementById('import-containers-preview');
+    if (prev) {
+        prev.classList.add('hidden');
+        prev.innerHTML = '';
+    }
+    stagedParsedExcelRows = [];
+
+    const subDesc = modal.querySelector('p.text-teal-100');
+    if (subDesc) {
+        subDesc.innerText = isNew 
+            ? 'Chế độ Tạo Mới: Dữ liệu nạp từ Excel sẽ được đưa lên bảng và tự động lưu cùng Đơn hàng'
+            : 'Hỗ trợ tải tệp Excel danh sách 100 cont hoặc dán văn bản trực tiếp';
+    }
+}
+window.openImportContainersModal = openImportContainersModal;
+
+function closeImportContainersModal() {
+    const modal = document.getElementById('modal-import-containers');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('hidden-view');
+    }
+}
+window.closeImportContainersModal = closeImportContainersModal;
+
+function switchImportContTab(tab) {
+    const pPanel = document.getElementById('tab-panel-paste-containers');
+    const ePanel = document.getElementById('tab-panel-excel-containers');
+    const pBtn = document.getElementById('tab-btn-paste-containers');
+    const eBtn = document.getElementById('tab-btn-excel-containers');
+
+    if (tab === 'paste') {
+        if (pPanel) pPanel.classList.remove('hidden');
+        if (ePanel) ePanel.classList.add('hidden');
+        if (pBtn) {
+            pBtn.className = 'pb-2 text-xs font-bold font-heading border-b-2 border-teal-600 text-teal-700 flex items-center gap-1.5 cursor-pointer';
+        }
+        if (eBtn) {
+            eBtn.className = 'pb-2 text-xs font-bold font-heading border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer';
+        }
+    } else {
+        if (pPanel) pPanel.classList.add('hidden');
+        if (ePanel) ePanel.classList.remove('hidden');
+        if (pBtn) {
+            pBtn.className = 'pb-2 text-xs font-bold font-heading border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer';
+        }
+        if (eBtn) {
+            eBtn.className = 'pb-2 text-xs font-bold font-heading border-b-2 border-teal-600 text-teal-700 flex items-center gap-1.5 cursor-pointer';
         }
     }
 }
+window.switchImportContTab = switchImportContTab;
+
+function parseRawContainerTextLines(rawText) {
+    if (!rawText) return [];
+    const lines = rawText.split('\n');
+    const results = [];
+    for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+        const parts = line.split(/[\t,;]+|\s{2,}|\s+/).filter(Boolean);
+        if (parts.length === 0) continue;
+        const contNum = (parts[0] || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        if (!contNum || contNum.length < 4) continue;
+
+        let contType = '40HC';
+        let sealNum = '';
+        let vgm = null;
+        let deliv = '';
+        let drop = '';
+
+        for (let i = 1; i < parts.length; i++) {
+            const p = parts[i].trim().toUpperCase();
+            if (/^(20|40|45)[A-Z0-9]+$/.test(p)) {
+                contType = p;
+            } else if (/^[0-9]+([.,][0-9]+)?$/.test(p) && Number(p.replace(',', '.')) > 500) {
+                vgm = Number(p.replace(',', '.'));
+            } else if (!sealNum && p.length >= 3) {
+                sealNum = p;
+            } else if (!deliv) {
+                deliv = parts[i].trim();
+            } else if (!drop) {
+                drop = parts[i].trim();
+            }
+        }
+
+        results.push({
+            container_number: contNum,
+            container_type: contType,
+            seal_number: sealNum,
+            gross_weight_kg: vgm,
+            delivery_loc: deliv,
+            dropoff_loc: drop,
+            is_inline_input: true
+        });
+    }
+    return results;
+}
+window.parseRawContainerTextLines = parseRawContainerTextLines;
+
+function handleContExcelSelected(input) {
+    const lbl = document.getElementById('import-cont-filename');
+    const prev = document.getElementById('import-containers-preview');
+    stagedParsedExcelRows = [];
+
+    if (!input.files || !input.files[0]) {
+        if (lbl) lbl.innerText = '';
+        if (prev) prev.classList.add('hidden');
+        return;
+    }
+
+    const file = input.files[0];
+    if (lbl) lbl.innerText = `Đã chọn: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+
+    if (typeof XLSX === 'undefined') {
+        if (prev) {
+            prev.classList.remove('hidden');
+            prev.innerHTML = `<span class="text-amber-700 font-bold"><i class="ph-bold ph-check"></i> Đã chọn file Excel. Hệ thống sẽ gửi file lên máy chủ khi bạn xác nhận.</span>`;
+        }
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+            if (!rows || rows.length < 2) {
+                if (prev) {
+                    prev.classList.remove('hidden');
+                    prev.innerHTML = `<span class="text-rose-600 font-bold"><i class="ph-bold ph-warning"></i> File không có đủ dữ liệu (tối thiểu 1 dòng tiêu đề và 1 dòng dữ liệu).</span>`;
+                }
+                return;
+            }
+
+            // Tìm hàng tiêu đề để nhận dạng cột thông minh
+            let headerIdx = -1;
+            let colCont = -1, colType = -1, colSeal = -1, colVGM = -1, colDeliv = -1, colDrop = -1, colDem = -1, colTruck = -1, colDriver = -1, colNotes = -1;
+
+            for (let r = 0; r < Math.min(rows.length, 5); r++) {
+                const row = rows[r].map(c => String(c).toLowerCase().trim());
+                let foundCont = false;
+                for (let c = 0; c < row.length; c++) {
+                    const val = row[c];
+                    if (val.includes('container') || val.includes('số cont') || val.includes('so cont') || val === 'cont') {
+                        colCont = c;
+                        foundCont = true;
+                    } else if (val.includes('loại') || val.includes('loai') || val.includes('size') || val.includes('type')) {
+                        colType = c;
+                    } else if (val.includes('seal') || val.includes('chì') || val.includes('chi') || val.includes('niêm')) {
+                        colSeal = c;
+                    } else if (val.includes('vgm') || val.includes('trọng lượng') || val.includes('trong luong') || val.includes('weight') || val.includes('kg')) {
+                        colVGM = c;
+                    } else if (val.includes('giao') || val.includes('đóng') || val.includes('rút') || val.includes('kho')) {
+                        colDeliv = c;
+                    } else if (val.includes('trả') || val.includes('tra') || val.includes('rỗng') || val.includes('rong') || val.includes('depot')) {
+                        colDrop = c;
+                    } else if (val.includes('dem') || val.includes('det') || val.includes('hạn') || val.includes('han')) {
+                        colDem = c;
+                    } else if (val.includes('đầu kéo') || val.includes('dau keo') || val.includes('biển số') || val.includes('bien so') || val.includes('số xe') || val.includes('so xe') || val.includes('truck') || val.includes('plate')) {
+                        colTruck = c;
+                    } else if (val.includes('tài xế') || val.includes('tai xe') || val.includes('lái xe') || val.includes('lai xe') || val.includes('driver') || val === 'tài' || val === 'tai') {
+                        colDriver = c;
+                    } else if (val.includes('ghi chú') || val.includes('ghi chu') || val.includes('note')) {
+                        colNotes = c;
+                    }
+                }
+                if (foundCont || colCont !== -1) {
+                    headerIdx = r;
+                    break;
+                }
+            }
+
+            // Nếu không tìm thấy cột bằng header: nếu cột 0 là STT 1,2,3 thì cont là 1, ngược lại là 0
+            const startRow = headerIdx !== -1 ? headerIdx + 1 : 0;
+            if (colCont === -1) {
+                if (startRow < rows.length && String(rows[startRow][0] || '').trim().match(/^\d+$/)) {
+                    colCont = 1; colType = 2; colSeal = 3; colVGM = 4; colDeliv = 5; colDrop = 6; colDem = 7; colTruck = 8; colDriver = 9;
+                } else {
+                    colCont = 0; colType = 1; colSeal = 2; colVGM = 3; colDeliv = 4; colDrop = 5; colDem = 6; colTruck = 7; colDriver = 8;
+                }
+            }
+
+            const parsed = [];
+            for (let r = startRow; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row || !row.length) continue;
+
+                let contVal = colCont !== -1 ? String(row[colCont] || '') : String(row[0] || row[1] || '');
+                contVal = contVal.replace(/[^A-Za-z0-9]/g, '').toUpperCase().trim();
+                if (!contVal || contVal.length < 4) continue;
+
+                let typeVal = colType !== -1 ? String(row[colType] || '').trim().toUpperCase() : '40HC';
+                if (!typeVal || !/^\d{2}[A-Z0-9]+$/.test(typeVal)) typeVal = '40HC';
+
+                let sealVal = colSeal !== -1 ? String(row[colSeal] || '').trim().toUpperCase() : '';
+                let vgmVal = null;
+                if (colVGM !== -1) {
+                    const rawV = Number(String(row[colVGM] || '').replace(/[^0-9.]/g, ''));
+                    if (rawV > 0) vgmVal = rawV;
+                }
+
+                let delivVal = colDeliv !== -1 ? String(row[colDeliv] || '').trim() : '';
+                let dropVal = colDrop !== -1 ? String(row[colDrop] || '').trim() : '';
+                let rawDem = colDem !== -1 ? row[colDem] : '';
+                let demVal = '';
+                if (rawDem instanceof Date) {
+                    const dd = rawDem.getDate().toString().padStart(2, '0');
+                    const mm = (rawDem.getMonth() + 1).toString().padStart(2, '0');
+                    const yyyy = rawDem.getFullYear();
+                    demVal = `${dd}/${mm}/${yyyy}`;
+                } else if (rawDem) {
+                    demVal = String(rawDem).trim();
+                }
+                let truckVal = colTruck !== -1 ? String(row[colTruck] || '').trim().toUpperCase() : '';
+                let driverVal = colDriver !== -1 ? String(row[colDriver] || '').trim() : '';
+
+                parsed.push({
+                    container_number: contVal,
+                    container_type: typeVal,
+                    seal_number: sealVal,
+                    gross_weight_kg: vgmVal,
+                    delivery_loc: delivVal,
+                    dropoff_loc: dropVal,
+                    dem_det: demVal,
+                    tractor_plate: truckVal,
+                    driver_name: driverVal,
+                    vendor_id: '',
+                    is_inline_input: true
+                });
+            }
+
+            stagedParsedExcelRows = parsed;
+
+            if (prev) {
+                prev.classList.remove('hidden');
+                if (parsed.length > 0) {
+                    prev.innerHTML = `<span class="text-emerald-700 font-bold"><i class="ph-bold ph-check-circle"></i> Đã nhận diện thành công <strong>${parsed.length} container</strong> từ tệp Excel! Bấm <em>"Xác Nhận Nạp Danh Sách Cont"</em> để đưa vào bảng.</span>`;
+                } else {
+                    prev.innerHTML = `<span class="text-amber-700 font-bold"><i class="ph-bold ph-warning"></i> Không tìm thấy số container hợp lệ trong file Excel. Vui lòng kiểm tra lại cột số container.</span>`;
+                }
+            }
+
+        } catch (err) {
+            console.error('Lỗi đọc file Excel SheetJS:', err);
+            if (prev) {
+                prev.classList.remove('hidden');
+                prev.innerHTML = `<span class="text-rose-600 font-bold"><i class="ph-bold ph-warning"></i> Lỗi khi đọc file Excel: ${err.message}</span>`;
+            }
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+window.handleContExcelSelected = handleContExcelSelected;
+
+function collectContainersFromTable() {
+    const tbody = document.getElementById('fullpage-booking-containers-tbody');
+    if (!tbody) return stagedBookingContainers || [];
+
+    const rows = tbody.querySelectorAll('tr');
+    const conts = [];
+
+    rows.forEach((tr, idx) => {
+        const contInp = tr.querySelector('input[data-field="container_number"]') || tr.querySelector('input.cont-number-input');
+        const typeSel = tr.querySelector('select[data-field="container_type"]') || tr.querySelector('select.cont-type-select');
+        const sealInp = tr.querySelector('input[data-field="seal_number"]') || tr.querySelector('input.cont-seal-input');
+        const vgmInp = tr.querySelector('input[data-field="gross_weight_kg"]') || tr.querySelector('input.cont-vgm-input');
+        const delivInp = tr.querySelector('input[data-field="delivery_loc"]') || tr.querySelector('input.cont-delivery-input');
+        const dropInp = tr.querySelector('input[data-field="dropoff_loc"]') || tr.querySelector('input.cont-dropoff-input');
+        const demInp = tr.querySelector('input[data-field="dem_det"]') || tr.querySelector('input.cont-demdet-input');
+        const vendorSel = tr.querySelector('select[data-field="vendor_id"]') || tr.querySelector('select.cont-vendor-select');
+        const truckInp = tr.querySelector('input[data-field="tractor_plate"]') || tr.querySelector('input.cont-truck-input');
+        const driverInp = tr.querySelector('input[data-field="driver_name"]') || tr.querySelector('input.cont-driver-input');
+
+        if (contInp) {
+            const num = (contInp.value || '').trim().toUpperCase();
+            if (num) {
+                conts.push({
+                    container_number: num,
+                    container_type: typeSel ? typeSel.value : '40HC',
+                    seal_number: sealInp ? (sealInp.value || '').trim().toUpperCase() : '',
+                    gross_weight_kg: vgmInp && vgmInp.value ? Number(vgmInp.value) : null,
+                    delivery_loc: delivInp ? delivInp.value.trim() : '',
+                    dropoff_loc: dropInp ? dropInp.value.trim() : '',
+                    dem_det: demInp ? demInp.value.trim() : '',
+                    vendor_id: vendorSel ? vendorSel.value : '',
+                    tractor_plate: truckInp ? (truckInp.value || '').trim().toUpperCase() : '',
+                    driver_name: driverInp ? (driverInp.value || '').trim() : '',
+                    is_inline_input: true
+                });
+            }
+        }
+    });
+
+    return conts;
+}
+window.collectContainersFromTable = collectContainersFromTable;
+
+function updateStagedContField(idx, field, val) {
+    if (idx >= 0 && idx < stagedBookingContainers.length) {
+        if (field === 'gross_weight_kg') {
+            const num = Number(val);
+            stagedBookingContainers[idx][field] = num > 0 ? num : null;
+        } else if (field === 'container_number' || field === 'seal_number') {
+            stagedBookingContainers[idx][field] = String(val || '').trim().toUpperCase();
+        } else {
+            stagedBookingContainers[idx][field] = val;
+        }
+        window.stagedBookingContainers = stagedBookingContainers;
+    }
+}
+window.updateStagedContField = updateStagedContField;
+
+function addNewContainerRow() {
+    const deliveryLocText = document.getElementById('fullpage-booking-delivery')?.selectedOptions?.[0]?.text?.replace(/^--.*--$/, '') || '';
+    const dropoffLocText = document.getElementById('fullpage-booking-dropoff')?.selectedOptions?.[0]?.text?.replace(/^--.*--$/, '') || '';
+
+    // Thu thập dữ liệu hiện có trên các ô input
+    const tableConts = collectContainersFromTable();
+    if (tableConts.length > 0) {
+        stagedBookingContainers = tableConts;
+    }
+
+    // Thêm 1 dòng mới với đầy đủ các trường
+    stagedBookingContainers.push({
+        container_number: '',
+        container_type: '40HC',
+        seal_number: '',
+        gross_weight_kg: null,
+        delivery_loc: deliveryLocText,
+        dropoff_loc: dropoffLocText,
+        dem_det: '',
+        vendor_id: '',
+        is_inline_input: true
+    });
+
+    window.stagedBookingContainers = stagedBookingContainers;
+    renderStagedBookingContainers();
+
+    // Tự động focus vào ô Số Container vừa thêm
+    setTimeout(() => {
+        const inputs = document.querySelectorAll('#fullpage-booking-containers-tbody input[data-field="container_number"]');
+        if (inputs.length > 0) {
+            inputs[inputs.length - 1].focus();
+        }
+    }, 60);
+}
+window.addNewContainerRow = addNewContainerRow;
+
+function renderStagedBookingContainers() {
+    const tbody = document.getElementById('fullpage-booking-containers-tbody');
+    const badge = document.getElementById('fullpage-cont-badge');
+    const progressEl = document.getElementById('fullpage-cont-progress');
+    const totalInp = document.getElementById('fullpage-booking-total-containers');
+
+    const total = stagedBookingContainers.length;
+    if (totalInp) {
+        totalInp.value = formatNumberVN(total);
+    }
+    if (badge) {
+        badge.innerText = `${total} Container (Chờ Lưu)`;
+    }
+    if (progressEl) {
+        progressEl.innerHTML = `<span class="text-teal-700 font-bold"><i class="ph-bold ph-cloud-arrow-up"></i> Đã nạp tạm ${total} container. Danh sách sẽ được tự động lưu vào cơ sở dữ liệu khi bạn bấm "Lưu".</span>`;
+    }
+
+    if (!tbody) return;
+    if (total === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="13" class="p-8 text-center text-slate-400 italic">
+                    <i class="ph-bold ph-tray text-2xl mb-1 block"></i>
+                    Chưa có danh sách container cho B/L này. Bấm nút <strong>"+ Thêm Dòng"</strong> hoặc <strong>"Nhập Từ Excel"</strong> để nạp danh sách container.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const deliveryLocDefault = document.getElementById('fullpage-booking-delivery')?.selectedOptions?.[0]?.text?.replace(/^--.*--$/, '') || 'Theo Kho Giao';
+    const dropoffLocDefault = document.getElementById('fullpage-booking-dropoff')?.selectedOptions?.[0]?.text?.replace(/^--.*--$/, '') || 'Theo Depot';
+
+    // Xây dựng danh sách vendor options
+    let vendorOptionsHtml = '<option value="">-- Chưa phân bổ --</option>';
+    if (bookingCarriersList && bookingCarriersList.length > 0) {
+        bookingCarriersList.forEach(s => {
+            const label = (s.code ? s.code + ' · ' : '') + (s.short_name || s.name);
+            vendorOptionsHtml += `<option value="${s.id}">${escapeHtml(label)}</option>`;
+        });
+    }
+
+    tbody.innerHTML = stagedBookingContainers.map((c, idx) => {
+        const delivVal = c.delivery_loc !== undefined && c.delivery_loc !== '' ? c.delivery_loc : deliveryLocDefault;
+        const dropVal = c.dropoff_loc !== undefined && c.dropoff_loc !== '' ? c.dropoff_loc : dropoffLocDefault;
+        const demVal = c.dem_det || 'Theo B/L';
+
+        return `
+            <tr class="bg-teal-50/40 hover:bg-teal-50/80 transition-colors">
+                <td class="p-2 text-center text-teal-700">
+                    <input type="checkbox" value="${idx}" ${selectedStagedContIndices.has(idx) ? 'checked' : ''} onchange="toggleSelectStagedContRow(${idx}, this.checked)" class="rounded cursor-pointer">
+                </td>
+                <td class="p-2 text-center font-bold text-teal-800 text-xs">${idx + 1}</td>
+                
+                <!-- 1. Số Container (Cho phép gõ trực tiếp) -->
+                <td class="p-1.5 min-w-[140px]">
+                    <input type="text" data-field="container_number" 
+                        placeholder="VD: MSCU1234567" 
+                        value="${escapeHtml(c.container_number || '')}" 
+                        oninput="this.value = this.value.toUpperCase(); updateStagedContField(${idx}, 'container_number', this.value);"
+                        class="cont-number-input w-full h-8 px-2 uppercase font-mono font-bold text-teal-900 border border-teal-400 rounded-lg text-xs bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-500 shadow-2xs">
+                </td>
+
+                <!-- 2. Loại Cont (Dropdown) -->
+                <td class="p-1.5 min-w-[100px]">
+                    <select data-field="container_type" 
+                        onchange="updateStagedContField(${idx}, 'container_type', this.value);" 
+                        class="cont-type-select w-full h-8 px-1.5 font-bold text-slate-700 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                        <option value="40HC" ${(!c.container_type || c.container_type === '40HC') ? 'selected' : ''}>40HC</option>
+                        <option value="20GP" ${c.container_type === '20GP' ? 'selected' : ''}>20GP</option>
+                        <option value="45HC" ${c.container_type === '45HC' ? 'selected' : ''}>45HC</option>
+                        <option value="40GP" ${c.container_type === '40GP' ? 'selected' : ''}>40GP</option>
+                        <option value="20RF" ${c.container_type === '20RF' ? 'selected' : ''}>20RF</option>
+                        <option value="40RF" ${c.container_type === '40RF' ? 'selected' : ''}>40RF</option>
+                    </select>
+                </td>
+
+                <!-- 3. Số Chì / Seal (Cho phép gõ) -->
+                <td class="p-1.5 min-w-[120px]">
+                    <input type="text" data-field="seal_number" 
+                        placeholder="Số seal" 
+                        value="${escapeHtml(c.seal_number || '')}" 
+                        oninput="this.value = this.value.toUpperCase(); updateStagedContField(${idx}, 'seal_number', this.value);"
+                        class="cont-seal-input w-full h-8 px-2 font-mono text-slate-800 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                </td>
+
+                <!-- 4. Trọng Lượng VGM (Cho phép gõ số) -->
+                <td class="p-1.5 min-w-[100px]">
+                    <input type="number" data-field="gross_weight_kg" 
+                        placeholder="VGM (kg)" 
+                        value="${c.gross_weight_kg || ''}" 
+                        oninput="updateStagedContField(${idx}, 'gross_weight_kg', this.value);"
+                        class="cont-vgm-input w-full h-8 px-2 text-right font-mono font-bold text-slate-800 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                </td>
+
+                <!-- 5. Nơi Giao Hàng (Cho phép gõ) -->
+                <td class="p-1.5 min-w-[150px]">
+                    <input type="text" data-field="delivery_loc" 
+                        placeholder="Kho khách hàng" 
+                        value="${escapeHtml(delivVal)}" 
+                        oninput="updateStagedContField(${idx}, 'delivery_loc', this.value);"
+                        class="cont-delivery-input w-full h-8 px-2 text-slate-700 font-medium border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                </td>
+
+                <!-- 6. Nơi Trả Rỗng (Cho phép gõ) -->
+                <td class="p-1.5 min-w-[150px]">
+                    <input type="text" data-field="dropoff_loc" 
+                        placeholder="Depot hạ vỏ" 
+                        value="${escapeHtml(dropVal)}" 
+                        oninput="updateStagedContField(${idx}, 'dropoff_loc', this.value);"
+                        class="cont-dropoff-input w-full h-8 px-2 text-slate-700 font-medium border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                </td>
+
+                <!-- 7. Hạn Lệnh DEM/DET (Cho phép gõ) -->
+                <td class="p-1.5 min-w-[130px]">
+                    <input type="text" data-field="dem_det" 
+                        placeholder="Hạn DEM/DET" 
+                        value="${escapeHtml(demVal)}" 
+                        oninput="updateStagedContField(${idx}, 'dem_det', this.value);"
+                        class="cont-demdet-input w-full h-8 px-2 text-slate-700 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                </td>
+
+                <!-- 8. Nhà Xe / Vendor (Dropdown) -->
+                <td class="p-1.5 min-w-[160px]">
+                    <select data-field="vendor_id" 
+                        onchange="updateStagedContField(${idx}, 'vendor_id', this.value);"
+                        class="cont-vendor-select w-full h-8 px-1.5 text-slate-700 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                        ${vendorOptionsHtml}
+                    </select>
+                </td>
+
+                <!-- 9. Số Đầu Kéo (Tách riêng cho dễ xem & sửa) -->
+                <td class="p-1.5 min-w-[130px]">
+                    <input type="text" data-field="tractor_plate" 
+                        placeholder="VD: 51C-123.45" 
+                        value="${escapeHtml(c.tractor_plate || '')}" 
+                        oninput="this.value = this.value.toUpperCase(); updateStagedContField(${idx}, 'tractor_plate', this.value);"
+                        class="cont-truck-input w-full h-8 px-2 font-mono uppercase text-slate-800 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                </td>
+
+                <!-- 10. Tài Xế (Tách riêng cho dễ xem & sửa) -->
+                <td class="p-1.5 min-w-[150px]">
+                    <input type="text" data-field="driver_name" 
+                        placeholder="Tên tài xế & SĐT" 
+                        value="${escapeHtml(c.driver_name || '')}" 
+                        oninput="updateStagedContField(${idx}, 'driver_name', this.value);"
+                        class="cont-driver-input w-full h-8 px-2 text-slate-800 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                </td>
+
+                <!-- 11. Trạng Thái -->
+                <td class="p-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Chờ lưu</span>
+                </td>
+
+                <!-- 11. Thao Tác (Xóa dòng) -->
+                <td class="p-1.5 text-center">
+                    <button type="button" onclick="removeStagedContainer(${idx})" class="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer" title="Xóa dòng cont này">
+                        <i class="ph-bold ph-trash text-base"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+window.renderStagedBookingContainers = renderStagedBookingContainers;
+
+function removeStagedContainer(index) {
+    if (index >= 0 && index < stagedBookingContainers.length) {
+        stagedBookingContainers.splice(index, 1);
+        window.stagedBookingContainers = stagedBookingContainers;
+        renderStagedBookingContainers();
+    }
+}
+window.removeStagedContainer = removeStagedContainer;
+
+async function submitImportContainers() {
+    const bookingId = window.activeTargetBookingId || document.getElementById('fullpage-booking-id')?.value;
+    const isNew = !bookingId;
+
+    const pPanel = document.getElementById('tab-panel-paste-containers');
+    const isPaste = pPanel && !pPanel.classList.contains('hidden');
+    const btn = document.getElementById('btn-submit-import-containers');
+    const origHtml = btn ? btn.innerHTML : '';
+
+    let contList = [];
+    if (isPaste) {
+        const rawText = document.getElementById('import-containers-text')?.value?.trim();
+        if (!rawText) {
+            showToast('warning', 'Vui lòng dán danh sách số container vào khung văn bản.');
+            return;
+        }
+        contList = parseRawContainerTextLines(rawText);
+    } else {
+        if (stagedParsedExcelRows && stagedParsedExcelRows.length > 0) {
+            contList = stagedParsedExcelRows;
+        } else {
+            showToast('warning', 'Vui lòng chọn file Excel danh sách container.');
+            return;
+        }
+    }
+
+    if (!contList || contList.length === 0) {
+        showToast('warning', 'Không nhận diện được số container nào hợp lệ từ dữ liệu nhập.');
+        return;
+    }
+
+    if (isNew) {
+        // CHẾ ĐỘ TẠO MỚI BOOKING: Lưu vào stagedBookingContainers và hiển thị ngay trên bảng
+        stagedBookingContainers = contList;
+        window.stagedBookingContainers = stagedBookingContainers;
+        
+        const totalInp = document.getElementById('fullpage-booking-total-containers');
+        if (totalInp) {
+            totalInp.value = formatNumberVN(contList.length);
+        }
+
+        renderStagedBookingContainers();
+        closeImportContainersModal();
+        showToast('success', `Đã nạp thành công ${contList.length} container từ Excel vào bảng! Bấm "Lưu" để hoàn tất.`, 'Đã Nạp Excel');
+        return;
+    }
+
+    // CHẾ ĐỘ SỬA BOOKING ĐÃ CÓ ID: Gửi API lưu trực tiếp vào CSDL
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Đang nạp danh sách...';
+    }
+
+    try {
+        const rowsPayload = contList.map((c, idx) => ({
+            source_line: idx + 1,
+            raw: c.container_number,
+            container_number: c.container_number,
+            container_type: c.container_type || '40HC',
+            seal_number: c.seal_number || '',
+            gross_weight_kg: c.gross_weight_kg || null,
+            delivery_address: c.delivery_loc || '',
+            dropoff_loc: c.dropoff_loc || '',
+            dem_det: c.dem_det || '',
+            tractor_plate: c.tractor_plate || '',
+            driver_name: c.driver_name || ''
+        }));
+
+        const res = await fetchWithAuth(`/api/gss/bookings/${bookingId}/containers/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows: rowsPayload, skip_invalid: true, commit: 1 })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success !== false) {
+            showToast('success', data.message || `Đã nạp thành công ${contList.length} container vào đơn hàng!`, 'Thành Công');
+            closeImportContainersModal();
+            if (typeof loadBookingContainersList === 'function') {
+                await loadBookingContainersList(bookingId);
+            }
+        } else {
+            showToast('error', data.message || 'Không thể nạp danh sách container.', 'Lỗi Dữ Liệu');
+            const prev = document.getElementById('import-containers-preview');
+            if (prev) {
+                prev.classList.remove('hidden');
+                prev.innerHTML = `<span class="text-rose-600 font-bold"><i class="ph-bold ph-warning"></i> ${data.message || 'Lỗi nạp container'}</span>`;
+            }
+        }
+    } catch (e) {
+        console.error('Lỗi nạp container:', e);
+        showToast('error', 'Đã xảy ra lỗi khi kết nối server: ' + e.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
+    }
+}
+window.submitImportContainers = submitImportContainers;
+
+function downloadSampleContainerExcel() {
+    // Tải file Excel mẫu chuẩn 10 trường chuyên nghiệp từ API backend GSS
+    // Định dạng: Header màu Teal #0F766E, font Calibri 12pt, border mỏng, số format chuẩn
+    try {
+        window.location.href = '/api/gss/containers/sample-excel/';
+        if (typeof showToast === 'function') {
+            showToast('success', 'Đang tải tệp Excel mẫu danh sách 10 trường chuẩn TMS (màu Teal, font Calibri)...');
+        }
+    } catch (e) {
+        console.error('Lỗi tải tệp mẫu Excel:', e);
+        if (typeof showToast === 'function') {
+            showToast('error', 'Không thể kết nối đến máy chủ để tải file mẫu Excel.');
+        }
+    }
+}
+window.downloadSampleContainerExcel = downloadSampleContainerExcel;
+
+async function loadBookingCarriers() {
+    if (bookingCarriersList && bookingCarriersList.length > 0) return bookingCarriersList;
+    try {
+        const res = await fetchWithAuth('/api/master-data/subcontractors/');
+        if (res.ok) {
+            const data = await res.json();
+            bookingCarriersList = (data.results || data || []).filter(s => s.is_active !== false);
+            populateBulkCarrierSelect();
+        }
+    } catch (e) {
+        console.warn('Lỗi tải danh mục nhà xe:', e);
+    }
+    return bookingCarriersList;
+}
+
+function populateBulkCarrierSelect() {
+    const sel = document.getElementById('fullpage-select-bulk-vendor');
+    if (!sel) return;
+    let html = '<option value="">-- Chọn Nhà xe đối tác (Vendor) --</option>';
+    bookingCarriersList.forEach(s => {
+        const label = (s.code ? s.code + ' · ' : '') + (s.short_name || s.name);
+        html += `<option value="${s.id}">${label}</option>`;
+    });
+    sel.innerHTML = html;
+}
+
+async function loadBookingContainersList(bookingId) {
+    if (!bookingId) return;
+    const badge = document.getElementById('fullpage-cont-badge');
+    const progressEl = document.getElementById('fullpage-cont-progress');
+    const exportTplBtn = document.getElementById('btn-export-alloc-template');
+
+    if (exportTplBtn) {
+        exportTplBtn.href = `/api/gss/bookings/${bookingId}/allocation-template/`;
+    }
+
+    await loadBookingCarriers();
+
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${bookingId}/containers/`);
+        if (!res.ok) return;
+        const out = await res.json();
+        const d = out.data || {};
+        const conts = d.containers || [];
+        const p = d.progress || {};
+
+        currentBookingContainers = conts;
+        selectedBookingContIds.clear();
+        updateSelectedContsCount();
+        updateContTableSortIcons();
+
+        if (badge) {
+            badge.innerText = `${conts.length} Container`;
+        }
+        if (progressEl && p) {
+            progressEl.innerHTML = `Đã phân bổ: <strong class="text-teal-700">${p.allocated || 0}</strong> · Có xe/tài: <strong class="text-indigo-700">${p.assigned_truck || 0}</strong> · Đang chạy: <strong class="text-blue-700">${p.running || 0}</strong> · Đã giao: <strong class="text-amber-700">${p.delivered || 0}</strong> · Hoàn tất: <strong class="text-emerald-700">${p.done || 0}</strong>`;
+        }
+
+        // Cập nhật tổng số cont trên form
+        const totalInp = document.getElementById('fullpage-booking-total-containers');
+        if (totalInp && conts.length > 0) {
+            totalInp.value = formatNumberVN(conts.length);
+        }
+
+        renderSavedBookingContainers();
+
+    } catch (e) {
+        console.error('Lỗi tải danh sách container B/L:', e);
+    }
+}
+window.loadBookingContainersList = loadBookingContainersList;
+
+function renderSavedBookingContainers() {
+    const tbody = document.getElementById('fullpage-booking-containers-tbody');
+    if (!tbody) return;
+
+    const countBadge = document.getElementById('cont-table-filter-count');
+    const masterCheckbox = document.getElementById('check-all-booking-conts');
+    const totalConts = (currentBookingContainers || []).length;
+
+    filteredBookingContainers = getFilteredAndSortedContainers(currentBookingContainers || []);
+
+    if (countBadge) {
+        countBadge.innerText = `Hiển thị: ${filteredBookingContainers.length}/${totalConts}`;
+        if (filteredBookingContainers.length < totalConts) {
+            countBadge.className = 'px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold whitespace-nowrap shadow-2xs';
+        } else {
+            countBadge.className = 'px-2.5 py-1 rounded-lg bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold whitespace-nowrap';
+        }
+    }
+
+    if (masterCheckbox) {
+        if (filteredBookingContainers.length > 0 && filteredBookingContainers.every(c => selectedBookingContIds.has(c.id))) {
+            masterCheckbox.checked = true;
+        } else {
+            masterCheckbox.checked = false;
+        }
+    }
+
+    if (totalConts === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="14" class="p-10 text-center text-slate-400 italic">
+                    <i class="ph-bold ph-tray text-3xl mb-2 block text-slate-300"></i>
+                    Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Từ Excel"</strong> hoặc <strong>"+ Thêm Dòng"</strong> ở trên để nạp danh sách container.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    if (filteredBookingContainers.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="14" class="p-10 text-center text-slate-400 italic">
+                    <i class="ph-bold ph-funnel-x text-3xl mb-2 block text-slate-300"></i>
+                    Không tìm thấy container nào phù hợp với bộ lọc tìm kiếm.
+                    <button type="button" onclick="resetContTableFilters()" class="ml-2 text-teal-700 hover:text-teal-900 underline font-bold cursor-pointer">
+                        Đặt lại bộ lọc
+                    </button>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const dropoffLocName = document.getElementById('fullpage-booking-dropoff')?.selectedOptions?.[0]?.text?.replace(/^--.*--$/, '') || '-';
+    const deliveryLocName = document.getElementById('fullpage-booking-delivery')?.selectedOptions?.[0]?.text?.replace(/^--.*--$/, '') || '-';
+
+    tbody.innerHTML = filteredBookingContainers.map((c, idx) => {
+        const isChecked = selectedBookingContIds.has(c.id);
+        const isEditing = editingSavedContId === c.id;
+        const hasVendor = Boolean(c.vendor || c.subcontractor_name);
+        const hasTrip = Boolean(c.trip_code);
+        let vendorName = '<span class="text-slate-400 italic text-xs">Chưa gán</span>';
+        let tripDisplay = '<span class="text-slate-400 italic text-xs">Chưa điều độ</span>';
+
+        if (hasVendor) {
+            const vLabel = (c.vendor_code ? escapeHtml(c.vendor_code) + ' · ' : '') + escapeHtml(c.vendor || c.subcontractor_name);
+            if (hasTrip) {
+                vendorName = `<span class="font-bold text-teal-800 text-xs">${vLabel}</span>`;
+                const stepCode = (c.step_status || c.dispatch_status || 'READY').toUpperCase();
+                const stepLbl = (c.step_label && c.step_label !== 'Sẵn sàng') ? c.step_label : 'Đã Phát lệnh Điều độ';
+                const stepColor = stepCode === 'CANCELLED' ? 'text-rose-700' : (stepCode === 'EMPTY_RETURNED' ? 'text-emerald-700' : (stepCode === 'READY' ? 'text-teal-700' : 'text-sky-700'));
+                const stepIcon = stepCode === 'CANCELLED' ? 'ph-x-circle' : (stepCode === 'EMPTY_RETURNED' ? 'ph-check-circle' : (stepCode === 'READY' ? 'ph-file-text' : 'ph-truck'));
+                tripDisplay = `<span class="font-bold text-slate-800 font-mono text-xs">${escapeHtml(c.trip_code)}</span> · <span class="inline-flex items-center gap-1 text-xs font-bold ${stepColor}"><i class="ph-bold ${stepIcon}"></i>${escapeHtml(stepLbl)}</span>`;
+            } else {
+                vendorName = `<span class="font-bold text-amber-800 text-xs">${vLabel}</span>`;
+                const stText = c.dispatch_status === 'ASSIGNED' ? 'Đã giao cho Nhà xe' : 'Gán dự kiến (Chờ phát lệnh)';
+                const stIcon = c.dispatch_status === 'ASSIGNED' ? 'ph-user-check' : 'ph-clock';
+                tripDisplay = `<span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700" title="${stText}"><i class="ph-bold ${stIcon}"></i>${stText}</span>`;
+            }
+        }
+        
+        let demDet = '-';
+        if (c.dem_expiry || c.det_expiry) {
+            const demStr = c.dem_expiry ? formatDateVN(c.dem_expiry) : '';
+            const detStr = c.det_expiry ? formatDateVN(c.det_expiry) : '';
+            if (demStr && detStr && demStr === detStr) {
+                demDet = `<span class="font-medium text-slate-700">${demStr}</span>`;
+            } else if (demStr && detStr) {
+                demDet = `<span class="font-medium text-slate-700">DEM: ${demStr}</span> · <span class="font-medium text-slate-700">DET: ${detStr}</span>`;
+            } else {
+                demDet = `<span class="font-medium text-slate-700">${demStr || detStr}</span>`;
+            }
+        } else if (c.dem_expiry_override) {
+            demDet = `<span class="font-medium text-slate-700">${formatDateVN(c.dem_expiry_override)}</span>`;
+        } else if (c.notes && c.notes.toLowerCase().includes('hạn:')) {
+            const match = c.notes.match(/hạn:\s*([^|]+)/i);
+            if (match) demDet = `<span class="font-medium text-slate-700">${escapeHtml(match[1].trim())}</span>`;
+        }
+
+        const deliveryCol = c.delivery_address || c.delivery_loc || c.delivery_loc_name || deliveryLocName || '-';
+        const dropoffCol = c.dropoff_loc || c.dropoff_loc_name || dropoffLocName || '-';
+
+        if (isEditing) {
+            return `
+                <tr class="bg-amber-50/70 border-2 border-amber-400">
+                    <td class="p-2 text-center text-amber-700">
+                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                    </td>
+                    <td class="p-2 text-center font-bold text-amber-900 text-xs">${c.line_no || (idx + 1)}</td>
+                    <td class="p-1 min-w-[130px]">
+                        <input type="text" id="inline-edit-cont-number-${c.id}" 
+                            value="${escapeHtml(c.container_number || '')}" 
+                            oninput="this.value = this.value.toUpperCase();"
+                            class="w-full h-8 px-2 font-mono font-bold text-teal-900 border border-amber-500 rounded-lg text-xs bg-white focus:ring-1 focus:ring-amber-500 shadow-2xs">
+                    </td>
+                    <td class="p-1 min-w-[95px]">
+                        <select id="inline-edit-cont-type-${c.id}" 
+                            class="w-full h-8 px-1.5 font-bold text-slate-700 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
+                            <option value="40HC" ${(!c.container_type || c.container_type === '40HC') ? 'selected' : ''}>40HC</option>
+                            <option value="20GP" ${c.container_type === '20GP' ? 'selected' : ''}>20GP</option>
+                            <option value="45HC" ${c.container_type === '45HC' ? 'selected' : ''}>45HC</option>
+                            <option value="40GP" ${c.container_type === '40GP' ? 'selected' : ''}>40GP</option>
+                            <option value="20RF" ${c.container_type === '20RF' ? 'selected' : ''}>20RF</option>
+                            <option value="40RF" ${c.container_type === '40RF' ? 'selected' : ''}>40RF</option>
+                        </select>
+                    </td>
+                    <td class="p-1 min-w-[110px]">
+                        <input type="text" id="inline-edit-seal-${c.id}" 
+                            value="${escapeHtml(c.seal_number || '')}" 
+                            oninput="this.value = this.value.toUpperCase();"
+                            placeholder="Số seal"
+                            class="w-full h-8 px-2 font-mono text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
+                    </td>
+                    <td class="p-1 min-w-[95px]">
+                        <input type="number" id="inline-edit-vgm-${c.id}" 
+                            value="${c.gross_weight_kg || ''}" 
+                            placeholder="kg"
+                            class="w-full h-8 px-2 text-right font-mono font-bold text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
+                    </td>
+                    <td class="p-1 min-w-[140px]">
+                        <input type="text" id="inline-edit-delivery-${c.id}" 
+                            value="${escapeHtml(c.delivery_address || c.delivery_loc_name || '')}" 
+                            placeholder="Địa chỉ giao"
+                            class="w-full h-8 px-2 text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
+                    </td>
+                    <td class="p-2 text-slate-600 text-xs truncate max-w-[120px]" title="${escapeHtml(dropoffCol)}">
+                        ${escapeHtml(dropoffCol)}
+                    </td>
+                    <td class="p-1 min-w-[130px]">
+                        <input type="date" id="inline-edit-dem-${c.id}" 
+                            value="${c.dem_expiry ? c.dem_expiry.slice(0, 10) : ''}" 
+                            class="w-full h-8 px-1.5 text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
+                    </td>
+                    <td class="p-2 text-slate-700 text-xs">${vendorName}</td>
+                    <td class="p-1 min-w-[130px]">
+                        <input type="text" id="inline-edit-truck-${c.id}" 
+                            value="${escapeHtml(c.tractor_plate || c.truck_plate || '')}" 
+                            oninput="this.value = this.value.toUpperCase();"
+                            placeholder="Biển số xe"
+                            class="w-full h-8 px-2 font-mono uppercase text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
+                    </td>
+                    <td class="p-1 min-w-[150px]">
+                        <input type="text" id="inline-edit-driver-${c.id}" 
+                            value="${escapeHtml(c.driver_name || '')}" 
+                            placeholder="Tài xế & SĐT"
+                            class="w-full h-8 px-2 text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
+                    </td>
+                    <td class="p-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">Đang sửa</span>
+                    </td>
+                    <td class="p-1.5 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button type="button" onclick="saveSavedContainerRow(${c.id})" 
+                                class="px-2.5 py-1 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-colors cursor-pointer" title="Lưu thay đổi dòng này">
+                                <i class="ph-bold ph-check text-xs"></i> <span>Lưu</span>
+                            </button>
+                            <button type="button" onclick="cancelSavedContainerRow()" 
+                                class="px-2 py-1 rounded-lg border border-slate-300 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer" title="Hủy bỏ">
+                                <i class="ph-bold ph-x text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        return `
+            <tr class="hover:bg-slate-50/80 transition-colors ${isChecked ? 'bg-teal-50/40' : ''}">
+                <td class="p-2.5 text-center">
+                    <input type="checkbox" value="${c.id}" ${isChecked ? 'checked' : ''} onchange="toggleSelectContRow(${c.id}, this.checked)" class="rounded w-4 h-4 cursor-pointer text-teal-600">
+                </td>
+                <td class="p-2.5 text-center font-bold text-slate-400 text-xs">${c.line_no || (idx + 1)}</td>
+                <td class="p-2.5">
+                    <span class="font-black font-mono text-teal-900 text-xs tracking-wide">${c.container_number}</span>
+                    ${c.iso_valid === false ? '<span class="text-[10px] text-amber-600 font-bold ml-1">(Sai ISO)</span>' : ''}
+                </td>
+                <td class="p-2.5 font-bold text-slate-600">${c.container_type || '40HC'}</td>
+                <td class="p-2.5 font-mono text-slate-700 font-medium">${c.seal_number || '-'}</td>
+                <td class="p-2.5 text-right font-mono font-bold text-slate-800">${c.gross_weight_kg ? formatNumberVN(c.gross_weight_kg) + ' kg' : '-'}</td>
+                <td class="p-2.5 text-slate-700 font-medium truncate max-w-[120px]" title="${escapeHtml(deliveryCol)}">${escapeHtml(deliveryCol)}</td>
+                <td class="p-2.5 text-slate-700 font-medium truncate max-w-[120px]" title="${escapeHtml(dropoffCol)}">${escapeHtml(dropoffCol)}</td>
+                <td class="p-2.5 text-[11px]">${demDet}</td>
+                <td class="p-2.5 font-bold text-slate-800">${vendorName}</td>
+                <td class="p-2.5 font-mono text-slate-800 font-bold text-xs">${escapeHtml(c.tractor_plate || c.truck_plate || '-')}</td>
+                <td class="p-2.5 text-slate-700 text-xs">${escapeHtml(c.driver_name || '-')}</td>
+                <td class="p-2.5">${tripDisplay}</td>
+                <td class="p-2.5 text-center whitespace-nowrap">
+                    <div class="flex items-center justify-center gap-1">
+                        <button type="button" onclick="editSavedContainerRow(${c.id})" 
+                            class="p-1.5 rounded-lg text-teal-700 hover:text-teal-900 hover:bg-teal-100 transition-colors cursor-pointer" title="Sửa dòng container này">
+                            <i class="ph-bold ph-pencil-simple text-sm"></i>
+                        </button>
+                        <button type="button" onclick="deleteSavedContainerRow(${c.id}, '${escapeHtml(c.container_number)}')" 
+                            class="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer" title="Xóa container này khỏi đơn hàng">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                        </button>
+                        ${c.trip_code ? `
+                            <button type="button" onclick="if(window.viewTripDetail)viewTripDetail('${c.trip_code}')" class="p-1 rounded text-teal-700 hover:bg-teal-100" title="Xem chuyến">
+                                <i class="ph-bold ph-arrow-square-out text-sm"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+window.renderSavedBookingContainers = renderSavedBookingContainers;
+
+function toggleSelectContRow(id, checked) {
+    if (checked) {
+        selectedBookingContIds.add(id);
+    } else {
+        selectedBookingContIds.delete(id);
+    }
+    
+    // Đồng bộ master checkbox
+    const master = document.getElementById('check-all-booking-conts');
+    if (master && filteredBookingContainers.length > 0) {
+        master.checked = filteredBookingContainers.every(c => selectedBookingContIds.has(c.id));
+    }
+    updateSelectedContsCount();
+}
+window.toggleSelectContRow = toggleSelectContRow;
+
+function toggleSelectStagedContRow(idx, checked) {
+    if (checked) {
+        selectedStagedContIndices.add(idx);
+    } else {
+        selectedStagedContIndices.delete(idx);
+    }
+    updateSelectedContsCount();
+}
+window.toggleSelectStagedContRow = toggleSelectStagedContRow;
+
+function toggleSelectAllBookingConts(master) {
+    const isChecked = master.checked;
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+
+    if (!bookingId) {
+        // Chế độ tạm (staged)
+        selectedStagedContIndices.clear();
+        const targetList = (filteredBookingContainers.length > 0) ? filteredBookingContainers : stagedBookingContainers;
+        if (isChecked && targetList) {
+            targetList.forEach((_, i) => selectedStagedContIndices.add(i));
+        }
+    } else {
+        // Chế độ đã lưu (saved): Chọn / bỏ chọn trên danh sách filteredBookingContainers đang hiển thị
+        const targetList = (filteredBookingContainers.length > 0) ? filteredBookingContainers : (currentBookingContainers || []);
+        if (isChecked) {
+            targetList.forEach(c => selectedBookingContIds.add(c.id));
+        } else {
+            targetList.forEach(c => selectedBookingContIds.delete(c.id));
+        }
+    }
+
+    const tbody = document.getElementById('fullpage-booking-containers-tbody');
+    if (tbody) {
+        tbody.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = isChecked);
+    }
+    updateSelectedContsCount();
+}
+window.toggleSelectAllBookingConts = toggleSelectAllBookingConts;
+
+function updateSelectedContsCount() {
+    const lbl = document.getElementById('fullpage-cont-selected-count');
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+    const count = !bookingId ? selectedStagedContIndices.size : selectedBookingContIds.size;
+    if (lbl) {
+        lbl.innerText = `Đã chọn: ${count} cont`;
+    }
+}
+window.updateSelectedContsCount = updateSelectedContsCount;
+
+async function doAssignBulkContainers() {
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+    const vendorId = document.getElementById('fullpage-select-bulk-vendor')?.value;
+
+    if (!vendorId) {
+        showToast('warning', 'Vui lòng chọn Nhà xe đối tác trong danh sách trước khi bấm Giao.');
+        return;
+    }
+
+    if (!bookingId) {
+        // CHẾ ĐỘ TẠO MỚI (STAGED):
+        if (!stagedBookingContainers || stagedBookingContainers.length === 0) {
+            showToast('warning', 'Chưa có container nào trong bảng. Bấm "+ Thêm Dòng" hoặc "Nhập Từ Excel" trước.');
+            return;
+        }
+
+        const targetIndices = selectedStagedContIndices.size > 0 
+            ? Array.from(selectedStagedContIndices) 
+            : stagedBookingContainers.map((_, i) => i);
+
+        targetIndices.forEach(idx => {
+            if (stagedBookingContainers[idx]) {
+                stagedBookingContainers[idx].vendor_id = vendorId;
+            }
+        });
+
+        window.stagedBookingContainers = stagedBookingContainers;
+        renderStagedBookingContainers();
+        showToast('success', `Đã gán tạm Nhà xe (dự kiến) cho ${targetIndices.length} cont! Bấm "Lưu" để lưu. Điều độ viên sẽ duyệt và phát lệnh.`, 'Gán Tạm Thành Công');
+        return;
+    }
+
+    // CHẾ ĐỘ ĐƠN HÀNG ĐÃ LƯU:
+    const list = Array.from(selectedBookingContIds);
+    if (!list.length) {
+        showToast('warning', 'Vui lòng tích chọn ít nhất 1 container trên bảng để gán Nhà xe.');
+        return;
+    }
+
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${bookingId}/containers/assign/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                container_ids: list,
+                subcontractor_id: Number(vendorId)
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message || `Đã gán tạm ${list.length} container cho Nhà xe (Dự kiến). Điều độ viên sẽ lập lệnh và phát lệnh chính thức.`, 'Gán Tạm Thành Công');
+            await loadBookingContainersList(bookingId);
+        } else {
+            showToast('error', data.message || 'Lỗi khi phân bổ container cho nhà xe.');
+        }
+    } catch (e) {
+        console.error('Lỗi phân bổ cont:', e);
+        showToast('error', 'Lỗi kết nối khi phân bổ container: ' + e.message);
+    }
+}
+window.doAssignBulkContainers = doAssignBulkContainers;
+
+async function doUnassignBulkContainers() {
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+
+    if (!bookingId) {
+        // CHẾ ĐỘ TẠO MỚI: Bỏ phân bổ cho các cont staged
+        if (!stagedBookingContainers || stagedBookingContainers.length === 0) return;
+        const targetIndices = selectedStagedContIndices.size > 0 
+            ? Array.from(selectedStagedContIndices) 
+            : stagedBookingContainers.map((_, i) => i);
+
+        targetIndices.forEach(idx => {
+            if (stagedBookingContainers[idx]) {
+                stagedBookingContainers[idx].vendor_id = '';
+            }
+        });
+        window.stagedBookingContainers = stagedBookingContainers;
+        renderStagedBookingContainers();
+        showToast('success', `Đã hủy gán tạm cho ${targetIndices.length} cont!`, 'Thành Công');
+        return;
+    }
+
+    const list = Array.from(selectedBookingContIds);
+    if (!list.length) {
+        showToast('warning', 'Vui lòng tích chọn container cần bỏ phân bổ.');
+        return;
+    }
+
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${bookingId}/containers/assign/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                container_ids: list,
+                subcontractor_id: null
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', 'Đã hủy phân bổ các container đã chọn.', 'Thành Công');
+            await loadBookingContainersList(bookingId);
+        } else {
+            showToast('error', data.message || 'Lỗi khi bỏ phân bổ.');
+        }
+    } catch (e) {
+        showToast('error', 'Lỗi kết nối khi bỏ phân bổ container.');
+    }
+}
+window.doUnassignBulkContainers = doUnassignBulkContainers;
+
+// =========================================================================
+// CHẾ ĐỘ TOÀN MÀN HÌNH (FULLSCREEN) CHO BẢNG CONTAINER (HỖ TRỢ 100+ CONT)
+// =========================================================================
+function toggleFullscreenContainersTable() {
+    const section = document.getElementById('fullpage-booking-containers-section');
+    const btnIcon = document.getElementById('btn-fullscreen-containers-icon');
+    const btnText = document.getElementById('btn-fullscreen-containers-text');
+    const tableWrap = document.getElementById('fullpage-booking-containers-table-wrap');
+    if (!section) return;
+
+    isContTableFullscreen = !isContTableFullscreen;
+    window.isContTableFullscreen = isContTableFullscreen;
+
+    if (isContTableFullscreen) {
+        section.classList.add('fixed', 'inset-0', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'flex', 'flex-col', 'm-0', 'rounded-none', 'shadow-2xl');
+        section.style.height = '100vh';
+        section.style.maxHeight = '100vh';
+        document.body.classList.add('overflow-hidden');
+        if (btnIcon) btnIcon.className = 'ph-bold ph-corners-in text-sm text-teal-700';
+        if (btnText) btnText.innerText = 'Thu Gọn (Esc)';
+        if (tableWrap) {
+            tableWrap.classList.remove('max-h-[640px]');
+            tableWrap.classList.add('flex-1', 'overflow-y-auto', 'max-h-[calc(100vh-210px)]');
+        }
+        showToast('info', 'Đã mở rộng toàn màn hình. Nhấn phím Esc hoặc nút Thu Gọn để trở lại.');
+    } else {
+        section.classList.remove('fixed', 'inset-0', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'm-0', 'rounded-none', 'shadow-2xl');
+        section.style.height = '';
+        section.style.maxHeight = '';
+        document.body.classList.remove('overflow-hidden');
+        if (btnIcon) btnIcon.className = 'ph-bold ph-corners-out text-sm text-teal-600';
+        if (btnText) btnText.innerText = 'Toàn Màn Hình';
+        if (tableWrap) {
+            tableWrap.classList.remove('flex-1', 'max-h-[calc(100vh-210px)]');
+            tableWrap.classList.add('max-h-[640px]');
+        }
+    }
+}
+window.toggleFullscreenContainersTable = toggleFullscreenContainersTable;
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isContTableFullscreen) {
+        toggleFullscreenContainersTable();
+    }
+});
+
+async function handleAllocExcelUpload(input) {
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+    if (!bookingId || !input.files || !input.files[0]) return;
+
+    const fd = new FormData();
+    fd.append('file', input.files[0]);
+
+    try {
+        showToast('info', 'Đang tải lên và xử lý file phân bổ...');
+        const res = await fetchWithAuth(`/api/gss/bookings/${bookingId}/allocation-import/`, {
+            method: 'POST',
+            body: fd
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message || 'Đã import phân bổ container thành công!', 'Thành Công');
+            loadBookingContainersList(bookingId);
+        } else {
+            showToast('error', data.message || 'Lỗi khi import file phân bổ Excel.');
+        }
+    } catch (e) {
+        showToast('error', 'Lỗi kết nối khi import Excel.');
+    } finally {
+        input.value = '';
+    }
+}
+window.handleAllocExcelUpload = handleAllocExcelUpload;
+
+function printDispatchOrderSlip(bookingId = null, vendorId = null) {
+    const bId = bookingId 
+        || (typeof mdoCurrentBooking !== 'undefined' && mdoCurrentBooking?.id) 
+        || (typeof currentActiveFullpageBooking !== 'undefined' && currentActiveFullpageBooking?.id)
+        || document.getElementById('fullpage-booking-id')?.value
+        || document.getElementById('mdo-booking-select')?.value;
+    if (!bId) {
+        showToast('warning', 'Vui lòng chọn hoặc lưu booking trước khi in lệnh.');
+        return;
+    }
+    let url = `/api/gss/bookings/${bId}/dispatch-order/`;
+    if (vendorId) {
+        url += `?vendor=${encodeURIComponent(vendorId)}`;
+    }
+    window.open(url, '_blank', 'noopener');
+}
+window.printDispatchOrderSlip = printDispatchOrderSlip;
+
+function editSavedContainerRow(contId) {
+    editingSavedContId = contId;
+    window.editingSavedContId = contId;
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+    if (bookingId && typeof loadBookingContainersList === 'function') {
+        loadBookingContainersList(bookingId);
+    }
+}
+window.editSavedContainerRow = editSavedContainerRow;
+
+function cancelSavedContainerRow() {
+    editingSavedContId = null;
+    window.editingSavedContId = null;
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+    if (bookingId && typeof loadBookingContainersList === 'function') {
+        loadBookingContainersList(bookingId);
+    }
+}
+window.cancelSavedContainerRow = cancelSavedContainerRow;
+
+async function saveSavedContainerRow(contId) {
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+    const contNumInp = document.getElementById(`inline-edit-cont-number-${contId}`);
+    const typeSel = document.getElementById(`inline-edit-cont-type-${contId}`);
+    const sealInp = document.getElementById(`inline-edit-seal-${contId}`);
+    const vgmInp = document.getElementById(`inline-edit-vgm-${contId}`);
+    const delivInp = document.getElementById(`inline-edit-delivery-${contId}`);
+    const demInp = document.getElementById(`inline-edit-dem-${contId}`);
+    const truckInp = document.getElementById(`inline-edit-truck-${contId}`);
+    const driverInp = document.getElementById(`inline-edit-driver-${contId}`);
+
+    const payload = {};
+    if (truckInp) {
+        payload.tractor_plate = truckInp.value.trim().toUpperCase();
+    }
+    if (driverInp) {
+        payload.driver_name = driverInp.value.trim();
+    }
+    if (contNumInp && contNumInp.value) {
+        payload.container_number = contNumInp.value.trim().toUpperCase();
+    }
+    if (typeSel) payload.container_type = typeSel.value;
+    if (sealInp) payload.seal_number = sealInp.value.trim().toUpperCase();
+    if (vgmInp && vgmInp.value) {
+        payload.gross_weight_kg = Number(vgmInp.value);
+    }
+    if (delivInp) payload.delivery_address = delivInp.value.trim();
+    if (demInp && demInp.value) {
+        payload.dem_expiry_override = demInp.value;
+    }
+
+    try {
+        const res = await fetchWithAuth(`/api/gss/containers/${contId}/`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success !== false) {
+            showToast('success', data.message || 'Đã lưu cập nhật container thành công!', 'Đã Lưu');
+            editingSavedContId = null;
+            window.editingSavedContId = null;
+            if (bookingId && typeof loadBookingContainersList === 'function') {
+                await loadBookingContainersList(bookingId);
+            }
+        } else {
+            showToast('error', data.message || 'Không thể lưu thay đổi container.', 'Lỗi Lưu');
+        }
+    } catch (e) {
+        console.error('Lỗi lưu container:', e);
+        showToast('error', 'Lỗi khi lưu container: ' + e.message);
+    }
+}
+window.saveSavedContainerRow = saveSavedContainerRow;
+
+async function deleteSavedContainerRow(contId, contNumber) {
+    if (!confirm(`Bạn có chắc chắn muốn xóa container "${contNumber || ''}" khỏi đơn hàng này?`)) return;
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+
+    try {
+        const res = await fetchWithAuth(`/api/gss/containers/${contId}/`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: 'Người dùng xóa từ bảng danh sách container' })
+        });
+        const data = await res.json();
+        if (res.ok && data.success !== false) {
+            showToast('success', data.message || `Đã xóa container ${contNumber} thành công!`, 'Đã Xóa');
+            if (bookingId && typeof loadBookingContainersList === 'function') {
+                await loadBookingContainersList(bookingId);
+            }
+        } else {
+            showToast('error', data.message || 'Không thể xóa container này.');
+        }
+    } catch (e) {
+        console.error('Lỗi xóa container:', e);
+        showToast('error', 'Lỗi khi xóa container: ' + e.message);
+    }
+}
+window.deleteSavedContainerRow = deleteSavedContainerRow;
 
 // ---- src/app/sales/booking-page/vendor-allocations.js ----
 // GSS: hạn lệnh DEM/DET, ghi chú điểm đến và chia cont cho nhà xe trên trang chi tiết Booking.
@@ -17613,6 +23377,7 @@ function paintVendorAllocations(host, data) {
         row.append(st);
         const spacer = vaEl('span'); spacer.style.flex = '1'; row.append(spacer);
         const mk = (label, fn) => { const bt = vaEl('button', 'min-h-[36px] px-3 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 cursor-pointer', label); bt.type = 'button'; bt.addEventListener('click', fn); return bt; };
+        row.append(mk('Gửi Email', () => vendorAllocAction(a.id, 'send_email', host)));
         row.append(mk('Cấp link mới', () => vendorAllocAction(a.id, 'regenerate', host)));
         row.append(mk('Đổi số cont', () => vendorAllocResize(a, host)));
         row.append(mk(a.locked ? 'Mở khóa' : 'Khóa', () => vendorAllocAction(a.id, a.locked ? 'unlock' : 'lock', host)));
@@ -17622,12 +23387,17 @@ function paintVendorAllocations(host, data) {
     host.append(list);
 
     if (data.remaining > 0) {
-        const form = vaEl('div', 'grid grid-cols-1 md:grid-cols-12 gap-2 items-end pt-2 border-t border-slate-100');
-        const sel = vaEl('select', 'md:col-span-6 min-h-[44px] px-3 rounded-xl border border-slate-300 text-sm bg-white');
+        const form = vaEl('div', 'grid grid-cols-1 md:grid-cols-12 gap-2 items-center pt-2 border-t border-slate-100');
+        const sel = vaEl('select', 'md:col-span-5 min-h-[44px] px-3 rounded-xl border border-slate-300 text-sm bg-white');
         sel.id = 'va-sub';
         sel.append(new Option('— Chọn nhà xe —', ''));
-        const num = vaEl('input', 'md:col-span-3 min-h-[44px] px-3 rounded-xl border border-slate-300 text-sm');
+        const num = vaEl('input', 'md:col-span-2 min-h-[44px] px-3 rounded-xl border border-slate-300 text-sm');
         num.type = 'number'; num.min = 1; num.max = data.remaining; num.value = data.remaining; num.id = 'va-count';
+        
+        const chkBox = vaEl('label', 'md:col-span-2 flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer select-none');
+        const chk = vaEl('input'); chk.type = 'checkbox'; chk.id = 'va-send-email'; chk.checked = true;
+        chkBox.append(chk, document.createTextNode('Gửi Email'));
+
         const btn = vaEl('button', 'md:col-span-3 min-h-[44px] rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm cursor-pointer', 'Chia & lấy link');
         btn.type = 'button';
         btn.addEventListener('click', async () => {
@@ -17636,7 +23406,11 @@ function paintVendorAllocations(host, data) {
             try {
                 const res = await fetchWithAuth(`/api/bookings/${vendorAllocBookingId}/vendor-allocations/`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ subcontractor_id: Number(sel.value), allocated_containers: Number(num.value) }),
+                    body: JSON.stringify({ 
+                        subcontractor_id: Number(sel.value), 
+                        allocated_containers: Number(num.value),
+                        send_email: chk.checked
+                    }),
                 });
                 const out = await res.json();
                 if (!res.ok || !out.success) { showToast('danger', out.message || 'Không chia được.'); return; }
@@ -17952,15 +23726,43 @@ async function openDirectPrintBooking(bookingId) {
 window.openDirectPrintBooking = openDirectPrintBooking;
 
 /**
- * Xác nhận xóa booking đang mở trong form chi tiết
+ * Xác nhận xóa booking đang mở trong form chi tiết (Chuẩn BIM Logistics - Soft Delete)
  */
-function confirmDeleteCurrentBooking() {
+async function confirmDeleteCurrentBooking() {
     const id = document.getElementById('fullpage-booking-id')?.value;
     if (!id) {
         showToast('warning', 'Chưa có đơn hàng nào được lưu để xóa!', 'Thông Báo');
         return;
     }
-    deleteBooking(id);
+    let bookingNumber = '';
+    const numInput = document.getElementById('fullpage-booking-number');
+    if (numInput && numInput.value) bookingNumber = ` (${numInput.value})`;
+
+    const confirmed = await showConfirmModal({
+        title: 'Hủy / Xóa Đơn Hàng',
+        message: `Bạn có chắc chắn muốn xóa / hủy đơn hàng${bookingNumber} này không?\n\nDữ liệu lịch sử sẽ được bảo lưu an toàn (Soft-Delete).`,
+        confirmText: 'Xác Nhận Xóa',
+        cancelText: 'Hủy bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!confirmed) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/bookings/${id}/`, {
+            method: 'DELETE'
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi khi xóa đơn hàng');
+
+        showToast('success', data.message || 'Đã xóa / hủy đơn hàng thành công!', 'Thành Công');
+        if (typeof loadSalesData === 'function') loadSalesData();
+        if (typeof loadActiveBookingsForModal === 'function') loadActiveBookingsForModal();
+        if (typeof backToBookings === 'function') backToBookings();
+    } catch (err) {
+        console.error('Error deleting booking:', err);
+        showToast('error', err.message || 'Không thể xóa đơn hàng / booking', 'Lỗi');
+    }
 }
 window.confirmDeleteCurrentBooking = confirmDeleteCurrentBooking;
 
@@ -17975,63 +23777,37 @@ let trailerSortColumn = null;
 let trailerSortDirection = 'asc';
 
 function switchFleetSubTab(tab) {
-    currentFleetSubTab = tab === 'trailers' ? 'trailers' : 'vehicles';
+    currentFleetSubTab = tab;
     const btnVehicles = document.getElementById('fleet-tab-btn-vehicles');
     const btnTrailers = document.getElementById('fleet-tab-btn-trailers');
-    const badgeVehicles = document.getElementById('fleet-badge-tractors-count');
-    const badgeTrailers = document.getElementById('fleet-badge-trailers-count');
-    const iconVehicles = btnVehicles ? btnVehicles.querySelector('i') : null;
-    const iconTrailers = btnTrailers ? btnTrailers.querySelector('i') : null;
+    const btnDepot = document.getElementById('fleet-tab-btn-depot');
     const panelVehicles = document.getElementById('fleet-panel-vehicles');
     const panelTrailers = document.getElementById('fleet-panel-trailers');
+    const panelDepot = document.getElementById('fleet-panel-depot');
     const btnCreateLabel = document.getElementById('btn-fleet-create-label');
 
-    if (currentFleetSubTab === 'vehicles') {
-        if (btnVehicles) {
-            btnVehicles.className = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-teal-600 bg-teal-50/70 text-teal-900 shadow-2xs box-border';
-        }
-        if (badgeVehicles) {
-            badgeVehicles.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-teal-100 text-teal-800 border-teal-200';
-        }
-        if (iconVehicles) {
-            iconVehicles.className = 'ph-bold ph-truck text-base text-teal-600';
-        }
-        if (btnTrailers) {
-            btnTrailers.className = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border';
-        }
-        if (badgeTrailers) {
-            badgeTrailers.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200';
-        }
-        if (iconTrailers) {
-            iconTrailers.className = 'ph-bold ph-arrows-horizontal text-base text-slate-500';
-        }
-        if (panelVehicles) panelVehicles.classList.remove('hidden');
-        if (panelTrailers) panelTrailers.classList.add('hidden');
+    const activeClassTeal = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-teal-600 bg-teal-50/70 text-teal-900 shadow-2xs box-border';
+    const activeClassIndigo = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-2xs box-border';
+    const inactiveClass = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border';
+
+    if (btnVehicles) btnVehicles.className = tab === 'vehicles' ? activeClassTeal : inactiveClass;
+    if (btnTrailers) btnTrailers.className = tab === 'trailers' ? activeClassIndigo : inactiveClass;
+    if (btnDepot) btnDepot.className = tab === 'depot' ? activeClassTeal : inactiveClass;
+
+    if (panelVehicles) panelVehicles.classList.toggle('hidden', tab !== 'vehicles');
+    if (panelTrailers) panelTrailers.classList.toggle('hidden', tab !== 'trailers');
+    if (panelDepot) panelDepot.classList.toggle('hidden', tab !== 'depot');
+
+    if (tab === 'vehicles') {
         if (btnCreateLabel) btnCreateLabel.innerText = 'Thêm Đầu Kéo';
         applyFleetFilters();
-    } else {
-        if (btnVehicles) {
-            btnVehicles.className = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border';
-        }
-        if (badgeVehicles) {
-            badgeVehicles.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200';
-        }
-        if (iconVehicles) {
-            iconVehicles.className = 'ph-bold ph-truck text-base text-slate-500';
-        }
-        if (btnTrailers) {
-            btnTrailers.className = 'fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-2xs box-border';
-        }
-        if (badgeTrailers) {
-            badgeTrailers.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-indigo-100 text-indigo-800 border-indigo-200';
-        }
-        if (iconTrailers) {
-            iconTrailers.className = 'ph-bold ph-arrows-horizontal text-base text-indigo-600';
-        }
-        if (panelVehicles) panelVehicles.classList.add('hidden');
-        if (panelTrailers) panelTrailers.classList.remove('hidden');
+    } else if (tab === 'trailers') {
         if (btnCreateLabel) btnCreateLabel.innerText = 'Thêm Rơ-Moóc';
         applyTrailerFilters();
+    } else if (tab === 'depot') {
+        if (btnCreateLabel) btnCreateLabel.innerText = 'Nhập Bãi';
+        loadDepotStats();
+        loadDepotMovements();
     }
 }
 
@@ -18599,11 +24375,6 @@ async function loadFleetData() {
         setTxt('fleet-card-maint-line1', data.card_maint?.line_1);
         setTxt('fleet-card-maint-line2', data.card_maint?.line_2);
 
-        const badgeTractorsEl = document.getElementById('fleet-badge-tractors-count');
-        if (badgeTractorsEl) badgeTractorsEl.innerText = data.total_tractors || 0;
-        const badgeTrailersEl = document.getElementById('fleet-badge-trailers-count');
-        if (badgeTrailersEl) badgeTrailersEl.innerText = data.total_trailers || 0;
-
         rawFleetVehicles = data.vehicles || [];
         rawFleetTrailers = data.trailers || [];
         populateFleetFilterDropdowns(rawFleetVehicles);
@@ -18614,6 +24385,166 @@ async function loadFleetData() {
         console.error('Error loading fleet data:', err);
     }
 }
+
+
+// =========================================================================
+// QUẢN LÝ BÃI CONTAINER (DEPOT YARD) - GSS STANDARD
+// =========================================================================
+async function loadDepotStats() {
+    try {
+        const res = await fetchWithAuth('/api/depot/stats/');
+        if (!res.ok) return;
+        const j = await res.json();
+        const d = j.data || j;
+        const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+        setT('depot-stat-total', d.total_in_yard || 0);
+        setT('depot-stat-full', d.full_count || 0);
+        setT('depot-stat-empty', d.empty_count || 0);
+        setT('depot-stat-in-today', `+${d.in_today || 0}`);
+        setT('depot-stat-out-today', `-${d.out_today || 0}`);
+    } catch (e) {
+        console.warn('Lỗi tải thống kê bãi depot:', e);
+    }
+}
+
+let rawDepotMovements = [];
+async function loadDepotMovements() {
+    const tbody = document.getElementById('depot-movements-tbody');
+    if (!tbody) return;
+    const statusVal = document.getElementById('filter-depot-status')?.value || '';
+    const searchVal = (document.getElementById('filter-depot-search')?.value || '').trim();
+
+    let url = '/api/depot/movements/?';
+    if (statusVal) url += `status=${encodeURIComponent(statusVal)}&`;
+    if (searchVal) url += `q=${encodeURIComponent(searchVal)}&`;
+
+    try {
+        const res = await fetchWithAuth(url);
+        if (!res.ok) throw new Error('Không tải được danh sách bãi.');
+        const j = await res.json();
+        rawDepotMovements = j.results || j.data || j || [];
+        renderDepotTable(rawDepotMovements);
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-rose-500 font-bold">${escapeHtml(e.message)}</td></tr>`;
+    }
+}
+
+let depotSearchTimeout = null;
+function debounceDepotSearch() {
+    clearTimeout(depotSearchTimeout);
+    depotSearchTimeout = setTimeout(() => { loadDepotMovements(); }, 300);
+}
+
+function renderDepotTable(items) {
+    const tbody = document.getElementById('depot-movements-tbody');
+    if (!tbody) return;
+    if (!items.length) {
+        tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center text-slate-400 italic">Không có container nào phù hợp bộ lọc.</td></tr>';
+        return;
+    }
+
+    let html = '';
+    items.forEach((m, idx) => {
+        const isIn = m.status === 'IN_YARD';
+        const stBadge = isIn 
+            ? '<span class="text-teal-700 font-bold flex items-center gap-1"><i class="ph-bold ph-arrow-down-left"></i> Đang tồn bãi</span>'
+            : '<span class="text-slate-500 font-medium flex items-center gap-1"><i class="ph-bold ph-arrow-up-right"></i> Đã rời bãi</span>';
+        const cargoBadge = m.cargo_status === 'FULL'
+            ? '<span class="text-indigo-700 font-bold">Hàng (Full)</span>'
+            : '<span class="text-emerald-700 font-bold">Rỗng (Empty)</span>';
+
+        const fmtDate = (iso) => {
+            if (!iso) return '—';
+            try {
+                const d = new Date(iso);
+                return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+            } catch(e) { return iso; }
+        };
+
+        const inTime = fmtDate(m.gate_in_at);
+        const outTime = fmtDate(m.gate_out_at);
+        const days = m.storage_days != null ? `${m.storage_days} ngày` : '—';
+
+        html += `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="p-2.5 font-mono font-black text-slate-800 text-xs">${escapeHtml(m.container_number)}</td>
+                <td class="p-2.5 font-bold text-slate-600">${escapeHtml(m.container_type || '40HC')}</td>
+                <td class="p-2.5">${cargoBadge}</td>
+                <td class="p-2.5 font-mono font-bold text-slate-700">${escapeHtml(m.in_vehicle_plate || '—')}</td>
+                <td class="p-2.5 font-mono text-slate-600">${escapeHtml(m.in_trailer_plate || '—')}</td>
+                <td class="p-2.5 text-slate-700">${escapeHtml(m.in_driver_name || '—')}</td>
+                <td class="p-2.5 font-medium text-slate-600">${inTime}</td>
+                <td class="p-2.5 font-medium text-slate-600">${outTime}</td>
+                <td class="p-2.5 text-center font-bold text-slate-800 font-heading">${days}</td>
+                <td class="p-2.5">${stBadge}</td>
+                <td class="p-2.5 text-center">
+                    ${isIn ? `
+                        <button type="button" onclick="depotGateOutMovement(${m.id}, '${escapeHtml(m.container_number)}')" 
+                            class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded font-bold text-[11px] cursor-pointer">
+                            Gate-Out
+                        </button>
+                    ` : '<span class="text-slate-400 text-[11px]">Hoàn tất</span>'}
+                </td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+async function depotGateOutMovement(id, contNum) {
+    const plate = prompt(`Xác nhận cho cont [${contNum}] rời bãi (Gate-Out).
+Nhập biển số xe kéo cont đi:`);
+    if (!plate) return;
+    try {
+        const res = await fetchWithAuth(`/api/depot/movements/${id}/gate-out/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ out_vehicle_plate: plate.trim() })
+        });
+        const out = await res.json();
+        if (res.ok && out.success) {
+            showToast('success', `Đã xác nhận Gate-Out cont ${contNum}!`);
+            loadDepotStats();
+            loadDepotMovements();
+        } else {
+            showToast('danger', out.message || 'Lỗi khi Gate-Out.');
+        }
+    } catch (e) {
+        showToast('danger', 'Lỗi: ' + e.message);
+    }
+}
+
+function openDepotGateInModal() {
+    const cont = prompt('Nhập Số Container Gate-In vào bãi:');
+    if (!cont) return;
+    const plate = prompt('Nhập Biển số xe kéo cont đến:') || '';
+    const driver = prompt('Nhập Tên tài xế:') || '';
+    
+    fetchWithAuth('/api/depot/movements/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            container_number: cont.trim().toUpperCase(),
+            in_vehicle_plate: plate.trim().toUpperCase(),
+            in_driver_name: driver.trim(),
+            cargo_status: 'EMPTY'
+        })
+    }).then(r => r.json()).then(out => {
+        if (out.success) {
+            showToast('success', `Đã nhập cont ${cont} vào bãi thành công!`);
+            loadDepotStats();
+            loadDepotMovements();
+        } else {
+            showToast('danger', out.message || 'Lỗi khi nhập bãi.');
+        }
+    }).catch(e => showToast('danger', 'Lỗi: ' + e.message));
+}
+
+window.loadDepotStats = loadDepotStats;
+window.loadDepotMovements = loadDepotMovements;
+window.debounceDepotSearch = debounceDepotSearch;
+window.depotGateOutMovement = depotGateOutMovement;
+window.openDepotGateInModal = openDepotGateInModal;
 
 // ---- src/app/hr/employees.js ----
 // --- 6. PHÂN HỆ QUẢN TRỊ NHÂN SỰ & HYBRID PAYROLL ---
@@ -20252,6 +26183,19 @@ window.onDriverTripSelectionChange = onDriverTripSelectionChange;
 window.updateDriverBatchSettleButtonState = updateDriverBatchSettleButtonState;
 window.openBatchSettleDriverModal = openBatchSettleDriverModal;
 
+
+function printTripSettlementVoucher(tripCode) {
+    if (typeof openSettlementStatement === 'function') {
+        openSettlementStatement('DRIVER', [tripCode]);
+    } else if (typeof printSettleVoucher === 'function') {
+        printSettleVoucher(tripCode);
+    } else {
+        window.print();
+    }
+}
+
+window.printTripSettlementVoucher = printTripSettlementVoucher;
+
 // ---- src/app/accounting/advances/advances-list.js ----
 // =========================================================================
 // 10.1 PHÂN HỆ TẠM ỨNG & HOÀN ỨNG (DISPATCHER FUND & DRIVER ADVANCES)
@@ -20361,18 +26305,6 @@ async function loadAccountingAdvancesData() {
         }
         const data = await res.json();
         accountingAdvancesData = data;
-
-        // Cập nhật badges trên Subtab Bar
-        const badgeAdv = document.getElementById('badge-acct-driver-advances');
-        if (badgeAdv && data.stats) {
-            badgeAdv.innerText = data.stats.pending_advances_count || 0;
-        }
-
-        const badgeFund = document.getElementById('badge-acct-dispatcher-funds');
-        if (badgeFund && data.dispatcher_funds) {
-            const activeCount = data.dispatcher_funds.filter(f => f.status === 'APPROVED').length;
-            badgeFund.innerText = activeCount;
-        }
 
         // Render KPI cards Tạm ứng tài xế
         if (data.stats) {
@@ -23494,8 +29426,6 @@ async function loadReimbursablesData() {
             const elPCount = document.getElementById('reimburse-stat-pending-count');
             if (elPCount) elPCount.innerText = `${kp.pending_items_count} khoản chờ thu`;
 
-            const badge = document.getElementById('badge-acct-reimbursables');
-            if (badge) badge.innerText = kp.pending_items_count;
         }
 
         // Cập nhật dropdown Khách hàng (nếu chưa có hoặc lần đầu)
@@ -25130,9 +31060,6 @@ async function loadSubcontractorData() {
             const elInfo = document.getElementById('subcon-stat-settled-info');
             if (elInfo) elInfo.innerText = `Đã quyết toán: ${kp.settled_count} / ${kp.total_trips} chuyến`;
 
-            const badge = document.getElementById('badge-acct-subcontractors');
-            if (badge) badge.innerText = kp.pending_count;
-
             const badgeFiltered = document.getElementById('subcon-filtered-badge');
             if (badgeFiltered) badgeFiltered.innerText = `Hiển thị: ${rawSubcontractorList.length} chuyến xe bạn`;
         }
@@ -26240,9 +32167,6 @@ async function loadCustomerSettlementsData() {
 
         const elTripsSub = document.getElementById('cust-settle-stat-trips-sub');
         if (elTripsSub) elTripsSub.innerText = `Chờ quyết toán: ${data.summary?.pending_trips || 0} | Đã chốt: ${data.summary?.settled_trips || 0}`;
-
-        const badgeTab = document.getElementById('badge-acct-customer-settlements');
-        if (badgeTab) badgeTab.innerText = data.summary?.pending_trips || 0;
 
         const countEl = document.getElementById('cust-settle-count-badge');
         if (countEl) countEl.innerText = `${customerSettlementsCache.length} chuyến`;

@@ -29,6 +29,7 @@ dispatch/trip-list.js
 dispatch/trip-detail.js
 dispatch/trip-cost-sheet.js
 dispatch/trip-actions.js
+dispatch/dispatch-order-modal.js
 dispatch/trip-expenses.js
 dispatch/driver-simulator.js
 dispatch/create-trip/page.js
@@ -46,6 +47,7 @@ sales/booking-modal.js
 sales/booking-page/files.js
 sales/booking-page/form.js
 sales/booking-page/page.js
+sales/booking-page/containers.js
 sales/booking-page/vendor-allocations.js
 sales/booking-page/print.js
 # 5. Đội xe

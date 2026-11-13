@@ -24,15 +24,11 @@ function switchSalesSubTab(tabName) {
             tabQuotesBtn.className = activeQuotesClass;
             const icon = tabQuotesBtn.querySelector('i');
             if (icon) icon.className = 'ph-bold ph-handshake text-base text-indigo-600';
-            const badge = tabQuotesBtn.querySelector('#badge-count-quotes');
-            if (badge) badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-indigo-100 text-indigo-800 border-indigo-200';
         }
         if (tabBookingsBtn) {
             tabBookingsBtn.className = inactiveTabClass;
             const icon = tabBookingsBtn.querySelector('i');
             if (icon) icon.className = 'ph-bold ph-truck text-base text-slate-500';
-            const badge = tabBookingsBtn.querySelector('#badge-count-bookings');
-            if (badge) badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200';
         }
         if (roleHint) {
             roleHint.innerHTML = 'Phân quyền: <strong class="text-indigo-700">Nhân viên Kinh doanh (NVKD)</strong> — Khảo sát tuyến, chào giá, đàm phán hợp đồng';
@@ -57,15 +53,11 @@ function switchSalesSubTab(tabName) {
             tabBookingsBtn.className = activeBookingsClass;
             const icon = tabBookingsBtn.querySelector('i');
             if (icon) icon.className = 'ph-bold ph-truck text-base text-teal-600';
-            const badge = tabBookingsBtn.querySelector('#badge-count-bookings');
-            if (badge) badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-teal-100 text-teal-800 border-teal-200';
         }
         if (tabQuotesBtn) {
             tabQuotesBtn.className = inactiveTabClass;
             const icon = tabQuotesBtn.querySelector('i');
             if (icon) icon.className = 'ph-bold ph-handshake text-base text-slate-500';
-            const badge = tabQuotesBtn.querySelector('#badge-count-quotes');
-            if (badge) badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200';
         }
         if (roleHint) {
             roleHint.innerHTML = 'Phân quyền: <strong class="text-teal-700">Sale Admin / CS (Chăm sóc Khách hàng)</strong> — Booking hãng tàu, kiểm soát SI/CY cut-off, chuyển giao điều xe';
@@ -558,12 +550,6 @@ async function loadSalesData() {
             const winNoteEl = document.getElementById('sales-note-winrate');
             if (winNoteEl) winNoteEl.innerHTML = `<i class="ph-bold ph-chats-circle text-emerald-600 text-xs"></i> ${ov.win_rate_note}`;
         }
-
-        // Cập nhật badges số lượng trên 2 tab
-        const bQuoteCount = document.getElementById('badge-count-quotes');
-        if (bQuoteCount && data.quotations) bQuoteCount.innerText = new Intl.NumberFormat('vi-VN').format(data.quotations.length);
-        const bBookingCount = document.getElementById('badge-count-bookings');
-        if (bBookingCount && data.bookings) bBookingCount.innerText = new Intl.NumberFormat('vi-VN').format(data.bookings.length);
 
         // Cập nhật stats con cho Báo giá & Booking (Dashboard riêng từng tab 5 thẻ)
         if (data.stats) {

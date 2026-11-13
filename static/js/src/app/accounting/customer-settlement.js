@@ -107,9 +107,6 @@ async function loadCustomerSettlementsData() {
         const elTripsSub = document.getElementById('cust-settle-stat-trips-sub');
         if (elTripsSub) elTripsSub.innerText = `Chờ quyết toán: ${data.summary?.pending_trips || 0} | Đã chốt: ${data.summary?.settled_trips || 0}`;
 
-        const badgeTab = document.getElementById('badge-acct-customer-settlements');
-        if (badgeTab) badgeTab.innerText = data.summary?.pending_trips || 0;
-
         const countEl = document.getElementById('cust-settle-count-badge');
         if (countEl) countEl.innerText = `${customerSettlementsCache.length} chuyến`;
 

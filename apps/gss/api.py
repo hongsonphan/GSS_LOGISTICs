@@ -118,6 +118,8 @@ class BookingContainersAPI(Base):
             if f.size > 3 * 1024 * 1024:
                 return err('File quá lớn (tối đa 3MB).')
             rows = cs.parse_xlsx(f)
+        elif 'rows' in request.data and isinstance(request.data.get('rows'), list):
+            rows = request.data.get('rows')
         else:
             rows = cs.parse_text(request.data.get('text'))
         if not rows:
@@ -140,6 +142,34 @@ class ContainerDetailAPI(Base):
         c = obj_or_404(BookingContainer, pk)
         d = request.data
         fields = []
+        if 'tractor_plate' in d or 'driver_name' in d:
+            plate = str(d.get('tractor_plate') or '').strip().upper()
+            driver = str(d.get('driver_name') or '').strip()
+            if c.trip_id:
+                t = c.trip
+                if plate:
+                    t.subcontractor_truck = plate
+                if driver:
+                    t.subcontractor_driver_name = driver
+                t.save(update_fields=['subcontractor_truck', 'subcontractor_driver_name', 'updated_at'])
+            note_parts = []
+            if plate:
+                note_parts.append(f'Xe: {plate}')
+            if driver:
+                note_parts.append(f'Tài: {driver}')
+            if note_parts:
+                c.notes = ' | '.join(note_parts)
+                fields.append('notes')
+        if 'container_number' in d:
+            num = cs.normalize_container(d.get('container_number'))
+            if not cs._CONT_TOKEN.match(num):
+                return err('Số cont không hợp lệ (gồm 4-15 ký tự chữ và số).')
+            if BookingContainer.objects.filter(booking=c.booking, container_number=num, is_deleted=False).exclude(pk=c.pk).exists():
+                return err(f'Số cont {num} đã tồn tại trong đơn hàng này.')
+            c.container_number = num
+            c.raw_input = str(d.get('container_number') or '')[:60]
+            c.iso_valid = cs.iso6346_valid(num)
+            fields.extend(['container_number', 'raw_input', 'iso_valid'])
         if 'container_type' in d:
             c.container_type = str(d.get('container_type') or '').strip().upper()[:10]
             fields.append('container_type')
@@ -178,12 +208,13 @@ class ContainerDetailAPI(Base):
         from apps.gss.models import BookingContainer
         c = obj_or_404(BookingContainer, pk)
         cs.remove_container(c, user=request.user, reason=str(request.data.get('reason') or ''))
+        return ok(None, 'Đã xoá container khỏi danh sách.')
         return ok(None, 'Đã xoá cont khỏi danh sách.')
 
 
 class AssignContainersAPI(Base):
     """Giao cont cho nhà xe (subcontractor_id rỗng = bỏ phân bổ). Phiếu mới thì trả link một lần."""
-    permission_classes = [IsDispatcher]
+    permission_classes = [IsBookingStaff]
 
     def post(self, request, pk):
         b = booking_or_404(pk)
@@ -787,6 +818,22 @@ class ParseQrAPI(Base):
         return ok(cl.parse_qr(request.data.get('qr')))
 
 
+class InvoiceOcrPreviewAPI(Base):
+    """Nhận ảnh hóa đơn để trích xuất OCR (nếu đã cấu hình) hoặc trả fallback nhập tay (MANUAL)."""
+    permission_classes = [IsTripFinance]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get(self, request):
+        from apps.gss import ocr
+        return ok({
+            'ocr_configured': ocr.is_ocr_configured(),
+            'einvoice_fetch_configured': ocr.is_einvoice_fetch_configured(),
+        })
+
+    def post(self, request):
+        from apps.gss import ocr
+        return ok(ocr.extract_invoice_from_image(request.FILES.get('file')))
+
 class InvoicesAPI(Base):
     permission_classes = [IsFinanceStaff]
 
@@ -859,7 +906,7 @@ class StatementCandidatesAPI(Base):
         q = request.query_params
         side = q.get('side')
         party = _party(side, q.get('party_id'))
-        rows = stm.candidates(side, party, parse_date(q.get('period_from'), 'Từ ngày', True), parse_date(q.get('period_to'), 'Đến ngày', True))
+        rows = stm.candidates(side, party, parse_date(q.get('period_from'), 'Từ ngày', True), parse_date(q.get('period_to'), 'Đến ngày', True), (q.get('bl') or '').strip())
         return ok([{'trip_code': j.trip.trip_code, 'container': j.trip.container_number, 'charge': j.charge_code.name, 'kind': j.charge_code.kind,
                     'amount': str(j.amount)} for j in rows[:1000]])
 
@@ -959,3 +1006,89 @@ class TripLegsAPI(Base):
             fields['subcontractor_id'] = t.subcontractor_id
         run = lg.assign_legs(legs, run=run, **fields)
         return ok(self._payload(t), f'Đã gán vào lượt xe {run.code}.')
+
+class ContainerSampleExcelAPI(Base):
+    """Tải file Excel mẫu danh sách 10 cột chuẩn: tiêu đề Teal #0F766E, font Calibri 12px, tách riêng cột Đầu Kéo và Tài Xế."""
+    permission_classes = []
+
+    def get(self, request):
+        import io
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'DanhSachContainer'
+        ws.views.sheetView[0].showGridLines = True
+
+        headers = [
+            'STT',
+            'Số Container',
+            'Loại Cont',
+            'Số Chì (Seal)',
+            'Trọng Lượng VGM (kg)',
+            'Nơi Giao Hàng',
+            'Nơi Trả Rỗng',
+            'Hạn Lệnh DEM/DET',
+            'Số Đầu Kéo',
+            'Tài Xế'
+        ]
+
+        teal_fill = PatternFill(start_color='0F766E', end_color='0F766E', fill_type='solid')
+        header_font = Font(name='Calibri', size=12, bold=True, color='FFFFFF')
+        data_font = Font(name='Calibri', size=12, bold=False, color='0F172A')
+        center_align = Alignment(horizontal='center', vertical='center')
+        left_align = Alignment(horizontal='left', vertical='center')
+        right_align = Alignment(horizontal='right', vertical='center')
+        header_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+        thin_side = Side(border_style='thin', color='CBD5E1')
+        thin_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+        ws.append(headers)
+        ws.row_dimensions[1].height = 28
+
+        for col_num in range(1, len(headers) + 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.font = header_font
+            cell.fill = teal_fill
+            cell.alignment = header_align
+            cell.border = thin_border
+
+        sample_rows = [
+            [1, 'MSCU1234565', '40HC', 'MLVN98765', 24500, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '20/11/2026', '51C-123.45', 'Nguyễn Văn An (0901234567)'],
+            [2, 'TCNU1234567', '40HC', 'MLVN98766', 26000, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '20/11/2026', '51C-234.56', 'Trần Văn Bình (0902345678)'],
+            [3, 'ONEU9988776', '40HC', 'MLVN98767', 25200, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '21/11/2026', '51C-345.67', 'Lê Văn Cường (0903456789)'],
+            [4, 'CMAU1122334', '20GP', 'MLVN98768', 18000, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '21/11/2026', '51C-456.78', 'Phạm Văn Dũng (0904567890)'],
+            [5, 'EMCU5566778', '40HC', 'MLVN98769', 24800, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '22/11/2026', '51C-567.89', 'Hoàng Văn Em (0905678901)'],
+            [6, 'SUDU7890123', '40HC', 'MLVN98770', 25500, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '22/11/2026', '51C-678.90', 'Đỗ Văn Phúc (0906789012)'],
+            [7, 'TEMU3456789', '20GP', 'MLVN98771', 19500, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '23/11/2026', '51C-789.01', 'Vũ Văn Giáp (0907890123)'],
+            [8, 'YMLU4567890', '40HC', 'MLVN98772', 26200, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '23/11/2026', '51C-890.12', 'Bùi Văn Hùng (0908901234)'],
+            [9, 'OOCU5678901', '40HC', 'MLVN98773', 25000, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '24/11/2026', '51C-901.23', 'Ngô Văn Khang (0909012345)'],
+            [10, 'WHLU6789012', '40HC', 'MLVN98774', 24700, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '24/11/2026', '51C-012.34', 'Lý Văn Long (0909123456)']
+        ]
+
+        col_alignments = [
+            center_align, center_align, center_align, center_align, right_align,
+            left_align, left_align, center_align, center_align, left_align
+        ]
+
+        col_widths = [8, 18, 14, 16, 22, 32, 28, 20, 18, 26]
+        for col_idx, width in enumerate(col_widths, start=1):
+            ws.column_dimensions[get_column_letter(col_idx)].width = width
+
+        for r_idx, r_data in enumerate(sample_rows, start=2):
+            ws.row_dimensions[r_idx].height = 22
+            for c_idx, val in enumerate(r_data, start=1):
+                cell = ws.cell(row=r_idx, column=c_idx, value=val)
+                cell.font = data_font
+                cell.border = thin_border
+                cell.alignment = col_alignments[c_idx - 1]
+                if c_idx == 5:
+                    cell.number_format = '#,##0'
+
+        bio = io.BytesIO()
+        wb.save(bio)
+        bio.seek(0)
+        return xlsx(bio.getvalue(), 'Mau_Danh_Sach_Container_10_Cot_Chuan_GSS.xlsx')

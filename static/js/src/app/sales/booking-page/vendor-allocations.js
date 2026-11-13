@@ -88,6 +88,7 @@ function paintVendorAllocations(host, data) {
         row.append(st);
         const spacer = vaEl('span'); spacer.style.flex = '1'; row.append(spacer);
         const mk = (label, fn) => { const bt = vaEl('button', 'min-h-[36px] px-3 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 cursor-pointer', label); bt.type = 'button'; bt.addEventListener('click', fn); return bt; };
+        row.append(mk('Gửi Email', () => vendorAllocAction(a.id, 'send_email', host)));
         row.append(mk('Cấp link mới', () => vendorAllocAction(a.id, 'regenerate', host)));
         row.append(mk('Đổi số cont', () => vendorAllocResize(a, host)));
         row.append(mk(a.locked ? 'Mở khóa' : 'Khóa', () => vendorAllocAction(a.id, a.locked ? 'unlock' : 'lock', host)));
@@ -97,12 +98,17 @@ function paintVendorAllocations(host, data) {
     host.append(list);
 
     if (data.remaining > 0) {
-        const form = vaEl('div', 'grid grid-cols-1 md:grid-cols-12 gap-2 items-end pt-2 border-t border-slate-100');
-        const sel = vaEl('select', 'md:col-span-6 min-h-[44px] px-3 rounded-xl border border-slate-300 text-sm bg-white');
+        const form = vaEl('div', 'grid grid-cols-1 md:grid-cols-12 gap-2 items-center pt-2 border-t border-slate-100');
+        const sel = vaEl('select', 'md:col-span-5 min-h-[44px] px-3 rounded-xl border border-slate-300 text-sm bg-white');
         sel.id = 'va-sub';
         sel.append(new Option('— Chọn nhà xe —', ''));
-        const num = vaEl('input', 'md:col-span-3 min-h-[44px] px-3 rounded-xl border border-slate-300 text-sm');
+        const num = vaEl('input', 'md:col-span-2 min-h-[44px] px-3 rounded-xl border border-slate-300 text-sm');
         num.type = 'number'; num.min = 1; num.max = data.remaining; num.value = data.remaining; num.id = 'va-count';
+        
+        const chkBox = vaEl('label', 'md:col-span-2 flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer select-none');
+        const chk = vaEl('input'); chk.type = 'checkbox'; chk.id = 'va-send-email'; chk.checked = true;
+        chkBox.append(chk, document.createTextNode('Gửi Email'));
+
         const btn = vaEl('button', 'md:col-span-3 min-h-[44px] rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm cursor-pointer', 'Chia & lấy link');
         btn.type = 'button';
         btn.addEventListener('click', async () => {
@@ -111,7 +117,11 @@ function paintVendorAllocations(host, data) {
             try {
                 const res = await fetchWithAuth(`/api/bookings/${vendorAllocBookingId}/vendor-allocations/`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ subcontractor_id: Number(sel.value), allocated_containers: Number(num.value) }),
+                    body: JSON.stringify({ 
+                        subcontractor_id: Number(sel.value), 
+                        allocated_containers: Number(num.value),
+                        send_email: chk.checked
+                    }),
                 });
                 const out = await res.json();
                 if (!res.ok || !out.success) { showToast('danger', out.message || 'Không chia được.'); return; }

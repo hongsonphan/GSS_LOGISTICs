@@ -43,6 +43,10 @@
     }
 
     function apply(root) {
+        // Ẩn phần tử thuộc cấu phần đang tắt theo hồ sơ doanh nghiệp (kể cả quản trị viên): data-feature="fleet_internal"
+        (root || document).querySelectorAll('[data-feature]').forEach(el => {
+            if (typeof window.hasFeature === 'function' && !window.hasFeature(el.getAttribute('data-feature'))) el.classList.add('hidden', 'acc-hidden');
+        });
         if (!window.BIM_ACCESS || (window.CURRENT_USER || {}).is_superuser) return;
         (root || document).querySelectorAll('[data-access]').forEach(el => {
             const [m, a] = el.getAttribute('data-access').split(':');

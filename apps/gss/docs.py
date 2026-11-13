@@ -51,6 +51,17 @@ def folder_of(trip, when):
     return f'{month}/{bl_of(trip)}/{_safe(trip.container_number, 15)}'
 
 
+def storage_rel_path(trip, stage, seq, when, orig_name, key='', doc_kind='JOURNEY'):
+    """Đường dẫn lưu trữ vật lý chuẩn hoá: Storage/[Nam_Thang]/[So_BL]/[So_Cont]/[Thu_Muc]/[Ten_File_Chuan]."""
+    sub = INVOICE_DIR if doc_kind == 'INVOICE' else JOURNEY_DIR
+    tcode = TYPE_CODE.get(stage) or DOC_TYPE_CODE.get(stage, 'DOC')
+    std = standard_name(trip, tcode, when, seq, orig_name)
+    if key:
+        stem, ext = os.path.splitext(std)
+        std = f'{stem}_{str(key)[:4]}{ext}'
+    return f'Storage/{folder_of(trip, when)}/{sub}/{std}'
+
+
 def entries_for_trip(trip):
     """[(đường dẫn trong cây, đường dẫn file /media/..., nhãn)] của một chuyến: chứng từ hành trình + ảnh/XML hoá đơn."""
     from apps.documents.models import TripDocument

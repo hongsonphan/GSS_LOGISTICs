@@ -96,7 +96,7 @@ Không có `send` thì chỉ ghi nhận đã gửi tay (`MANUAL`) như trước.
    kiểm tra ISO 6346 từng dòng, có lỗi thì không ghi; xác nhận để ghi. Sửa từng cont: loại, seal, trọng lượng, nơi giao riêng, hạn DEM/DET riêng.
 2. **Quy tắc DEM/DET** (Sale & Booking → Quy tắc DEM/DET) rồi "Áp quy tắc DEM/DET" ở đơn (tự áp khi nhập cont nếu đơn có ngày dỡ/ETA).
 3. **Phân bổ**: tích chọn cont → chọn nhà xe → "Giao cho nhà xe" (phiếu mới hiện link MỘT lần). Hoặc "Tải file mẫu phân bổ" → điền mã nhà xe →
-   "Nhập file phân bổ" (xem trước, có lỗi thì tải file kết quả đánh dấu lỗi) → xác nhận. Đổi nhà xe: chỉ khi cont chưa chạy (chuyến "Sẵn sàng" bị huỷ, cần lý do).
+   "Nhập file phân bổ" (xem trước, có lỗi thì tải file kết quả đánh dấu lỗi) → xác nhận. Đổi nhà xe: chỉ khi cont chưa chạy (chuyến "Đã Phát lệnh Điều độ" (`READY`) bị huỷ, cần lý do).
 4. **Nhà xe** mở link: số cont đã khoá theo B/L, gõ tìm biển số/tài xế đã dùng, hoặc tải/nhập Excel. Khi mọi chuyến hoàn tất: chỉ xem, sau 7 ngày link đóng.
 5. **Tài xế** (QR lệnh): ảnh chứng từ chỉ chụp camera (ghi GPS nếu cho phép, giờ thiết bị/máy chủ, bản gốc + bản có dấu thời gian); "Qua trạm / bãi";
    "Khai chi phí chi hộ" kèm ảnh hoá đơn. Mất sóng: ảnh được giữ và tự gửi lại khi có mạng (không đóng trang).

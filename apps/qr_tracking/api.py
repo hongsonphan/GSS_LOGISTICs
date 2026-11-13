@@ -4,7 +4,7 @@ Quyền = nắm token (lệnh đã cấp cho tài xế) HOẶC đăng nhập nh�
 Không trả doanh thu / chi phí / lợi nhuận.
 """
 from django.core.exceptions import ValidationError
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from rest_framework import permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
@@ -46,6 +46,17 @@ class _TokenView(APIView):
             raise Http404
         return trip
 
+
+class TripQrSvgAPIView(_TokenView):
+    """Trang anh QR (SVG) theo token de hien thi ma QR tai xe khong can quyen dispatcher."""
+    def get(self, request, token):
+        trip = self.trip(request, token)
+        from core import qr_tokens
+        from apps.dispatch.api_views.gss import base_url
+        url = msg.trip_link(trip, base_url(request))
+        resp = HttpResponse(qr_tokens.qr_svg(url), content_type='image/svg+xml')
+        resp['Cache-Control'] = 'public, max-age=3600'
+        return resp
 
 class TripQrInfoAPIView(_TokenView):
     def get(self, request, token):

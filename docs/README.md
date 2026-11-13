@@ -1,80 +1,38 @@
-# TÀI LIỆU KIẾN TRÚC HỆ THỐNG GSS LOGISTICS (TMS & WMS PLATFORM)
-## Architecture Documentation Hub & System Landscape
+# TÀI LIỆU GSS TMS – MỤC LỤC
 
-> **Hệ thống:** GSS Logistics Platform  
-> **Đơn vị phát triển:** Green Solutions Smart (GSS)  
-> **Phiên bản nền:** v4.7.19 (kế thừa từ GSS Logistics) · **Dự án:** GSS-TMS-2026 (repo `GSS_LOGISTICs`)  
-> **Cập nhật lần cuối:** 01/11/2026  
-> **Tiêu chuẩn tài liệu:** ISO/IEC/IEEE 42010, Arc42 Template & C4 Model  
-> **Mô hình quản trị:** Documentation-as-Code
+> **Hệ thống:** GSS TMS (Green Solutions Smart) · dự án GSS-TMS-2026
+> **Quy tắc làm việc của AI/lập trình viên:** [`../CLAUDE.md`](../CLAUDE.md) (đọc trước) · **Nhật ký thay đổi:** [`CHANGELOG.md`](CHANGELOG.md)
+> Tên file theo quy ước `NN-chu-de.md`: NN là số thứ tự liên tục (01, 02…), chủ đề viết tiếng Anh, chữ thường, nối bằng gạch ngang. Mỗi chủ đề **một file duy nhất**; không tạo bản sao.
 
-Thư mục `docs/` kết hợp cùng các tài liệu chỉ thị tại thư mục gốc tạo thành bộ đặc tả kiến trúc phần mềm hoàn chỉnh, tinh gọn và không trùng lặp cho nền tảng **GSS Logistics (GSS_LOGISTICs)**, phục vụ các bên liên quan: Ban Giám Đốc, Kiến trúc sư phần mềm, Lập trình viên và các AI Autonomous Agents.
+## Bản đồ tài liệu
 
----
+| Nhóm | File | Nội dung | Tình trạng |
+|---|---|---|---|
+| **Nghiệp vụ** | [`01-spec-brd.md`](01-spec-brd.md) | Đặc tả nghiệp vụ và lộ trình giai đoạn của GSS (nguồn yêu cầu gốc) | Hiện hành |
+| | [`02-operational-workflow.md`](02-operational-workflow.md) | Quy trình điều vận, máy trạng thái chuyến, vòng đời chi phí | Kế thừa BIM, cần rà lại |
+| | [`03-features.md`](03-features.md) | Danh mục tính năng đã lập trình (tài liệu sống; ghi việc xong vào đây) | Kế thừa BIM, đang rà soát |
+| | [`04-user-guide.md`](04-user-guide.md) | Sổ tay người dùng; nguồn của trang `/helps` (chạy `scripts/build_help_page.py`) | Kế thừa BIM, cần rà lại |
+| **Kỹ thuật** | [`05-architecture.md`](05-architecture.md) | Kiến trúc tổng quan (C4), cấu trúc thư mục, bất biến kiến trúc, hạ tầng và email | Kế thừa, cần rà lại |
+| | [`06-database.md`](06-database.md) | Sơ đồ dữ liệu hiện hành (phần A) + danh mục bảng kế thừa (phụ lục B) | A hiện hành, B cần rà lại |
+| | [`07-api-reference.md`](07-api-reference.md) | Hợp đồng REST API | Kế thừa, cần rà lại |
+| | [`08-security.md`](08-security.md) | Chuẩn an ninh và bảo vệ dữ liệu cá nhân | Kế thừa, cần rà lại |
+| | [`09-coding-standards.md`](09-coding-standards.md) | Quy chuẩn lập trình và kiến trúc mã | Kế thừa, cần rà lại |
+| | [`10-ui-ux-guidelines.md`](10-ui-ux-guidelines.md) | Nguyên tắc giao diện; mục 12 là quy định riêng của GSS (ưu tiên hơn khi mâu thuẫn) | Hiện hành |
+| **Vận hành** | [`11-runbook.md`](11-runbook.md) | Chạy local, triển khai, sao lưu, giới hạn đã biết | Hiện hành |
+| | [`15-deployment-guide.md`](15-deployment-guide.md) | Hướng dẫn chi tiết đưa dự án lên GitHub & triển khai VPS | Hiện hành |
+| **Kế hoạch** | [`12-backlog.md`](12-backlog.md) | Việc tồn đọng và câu hỏi chờ quyết (Team Leader đọc đầu mỗi phiên) | Hiện hành |
+| | [`13-architecture-decisions.md`](13-architecture-decisions.md) | Quyết định kiến trúc đã chốt, phân tích tái cấu trúc (đọc §0 trước) và ADR kế thừa | Một phần đã đổi sau GĐ0 |
+| **Đội AI** | [`14-ai-team.md`](14-ai-team.md) | Sơ đồ đội AI, quy trình phối hợp, nguyên tắc hành vi | Hiện hành |
+| **Rules** | [`.agents/rules/backend-rules.md`](../.agents/rules/backend-rules.md) | Bộ quy tắc lập trình Backend tách biệt (chuẩn bị cho Skill) | Hiện hành |
+| | [`.agents/rules/uiux-rules.md`](../.agents/rules/uiux-rules.md) | Bộ quy tắc thiết kế & kiểm thử UI/UX tách biệt (chuẩn bị cho Skill) | Hiện hành |
+| **archive/** | [`archive/`](archive/) | Báo cáo và kế hoạch đã hoàn tất, chỉ để tra cứu | Không sửa nữa |
 
-## 🗺️ BẢN ĐỒ ĐIỀU HƯỚNG BỘ TÀI LIỆU KIẾN TRÚC ĐÃ CHUẨN HÓA
+Bất biến kiến trúc (không xóa cứng, máy trạng thái tập trung, số liệu tài chính khớp tuyệt đối…) ghi ở [`05-architecture.md`](05-architecture.md) và [`../CLAUDE.md`](../CLAUDE.md).
 
-Toàn bộ hệ thống tài liệu được tái cấu trúc thành 4 nhóm nghiệp vụ chính:
+## Quy ước khi thêm hoặc sửa tài liệu
 
-```mermaid
-flowchart TD
-    subgraph G1["1. GOVERNANCE & PRINCIPLES"]
-        A1["AGENTS.md<br/>(Protocols & AI System Map)"]
-        A2["CODING_STANDARDS.md<br/>(Clean Architecture)"]
-        A3["SECURITY_AUDIT.md<br/>(Security & Privacy 91/2025)"]
-    end
-
-    subgraph G2["2. SYSTEM ARCHITECTURE & REQUIREMENTS"]
-        B1["PROJECT_OVERVIEW.md<br/>(C4 Model & Infrastructure)"]
-        B2["FEATURES.md<br/>(Functional Specs)"]
-        B3["DEVELOPMENT_PLAN.md<br/>(Roadmap & ADRs)"]
-        B4["CHANGELOG.md<br/>(SemVer Release Log)"]
-    end
-
-    subgraph G3["3. DOMAIN WORKFLOWS & DATA LAYER"]
-        C1["OPERATIONAL_WORKFLOW.md<br/>(11-Step Trip & Expense Settle)"]
-        C2["DATABASE_SCHEMA.md<br/>(ORM & Domain ERD)"]
-    end
-
-    subgraph G4["4. INTERFACES & USER EXPERIENCE"]
-        D1["API_REFERENCE.md<br/>(REST API Contracts)"]
-        D2["UI_UX_GUIDELINES.md<br/>(GSS Design System)"]
-        D3["USER_GUIDE.md<br/>(End-User Manual)"]
-    end
-
-    G1 --> G2
-    G2 --> G3
-    G3 --> G4
-```
-
-### Bảng Danh Mục 16 Tài Liệu:
-
-| STT | Tài liệu | Đường dẫn | Tiêu chuẩn & Trọng tâm nghiệp vụ |
-|:---:|---|---|---|
-| **01** | **Documentation Hub** | [`README.md`](README.md) | *(File này)* Cổng thông tin điều hướng toàn bộ hệ thống tài liệu kiến trúc phần mềm. |
-| **02** | **Agent Governance & Map** | [`AGENTS.md`](AGENTS.md) | **[Hợp nhất GEMINI.md]** 4 quy tắc hành vi, kiểm chứng chất lượng, bảo toàn dữ liệu & bản đồ tra cứu tài liệu cho AI. |
-| **03** | **Coding Standards** | [`CODING_STANDARDS.md`](CODING_STANDARDS.md) | Clean Architecture, Modular Monolith Django, ORM First, Defensive Backend chống lỗi 500, Design Tokens GSS. |
-| **04** | **Security & Privacy** | [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md) | 20 chuẩn an ninh chuỗi cung ứng + Tuân thủ Luật Bảo vệ dữ liệu cá nhân (số 91/2025/QH15 & NĐ 356/2025/NĐ-CP). |
-| **05** | **System Overview & C4** | [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) | Kiến trúc C4 Level 1 & Level 2, Bounded Contexts + Cấu hình hạ tầng & Dịch vụ Email SMTP. |
-| **06** | **Feature Specifications** | [`FEATURES.md`](FEATURES.md) | Đặc tả 22 phân hệ tính năng nghiệp vụ TMS/WMS, UI details, tổng hợp 25 Django Models thực tế. |
-| **07** | **API Reference** | [`API_REFERENCE.md`](API_REFERENCE.md) | Hợp đồng giao tiếp RESTful API 9 phân hệ, Auth JWT/Session, schema payload, HTTP response & error codes. |
-| **08** | **Database Schema** | [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) | Mô hình thực thể ERD 25 models, quan hệ khóa ngoại PROTECT, chiến lược Indexing và Denormalization Signals. |
-| **09** | **Operational & Financial Workflow** | [`OPERATIONAL_WORKFLOW.md`](OPERATIONAL_WORKFLOW.md) | Chu trình điều vận 11 bước + Máy trạng thái chi phí (`PENDING` ➔ `APPROVED` ➔ `SETTLED`), Sổ quỹ S03a-DN & Tạm ứng 2 cấp. |
-| **10** | **UI/UX Guidelines** | [`UI_UX_GUIDELINES.md`](UI_UX_GUIDELINES.md) | Triết lý Field-First, Design Tokens GSS, Thang đo Typography 7 bậc chuẩn ERP, thư viện component và 2-touch rule. |
-| **11** | **Development Roadmap & ADRs** | [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md) | Lộ trình kỹ thuật TMS nâng cao, 5 Architecture Decision Records (ADRs) và mô hình triển khai On-Premise chuẩn MISA. |
-| **12** | **Release Changelog** | [`CHANGELOG.md`](CHANGELOG.md) | Lịch sử phát hành và thay đổi mã nguồn chi tiết từ v1.0.0 đến v4.7.19 theo chuẩn SemVer & Keep a Changelog. |
-| **15** | **GSS Restructure Plan** | [`GSS_RESTRUCTURE_PLAN.md`](GSS_RESTRUCTURE_PLAN.md) | Quyết định kiến trúc đã chốt của GSS, bảng việc đã/chưa làm, quy tắc phối hợp (đọc §0 trước). |
-| **16** | **GSS Runbook** | [`GSS_RUNBOOK.md`](GSS_RUNBOOK.md) | Chạy local, triển khai khách mới, địa chỉ chính, quy tắc nghiệp vụ đã kiểm thử, giới hạn đã biết. |
-| **14** | **Business Requirements (GSS)** | [`BRD_GREEN_SOLUTIONS_SMART_GSS.md`](BRD_GREEN_SOLUTIONS_SMART_GSS.md) | Đặc tả nghiệp vụ & lộ trình 5 giai đoạn riêng của dự án GSS: Vendor Link, chứng từ Nhận – Giao – Hạ rỗng, Bãi Cont Đắk Nông, QR Code, Dashboard Nhà xe. |
-| **13** | **System User Manual** | [`USER_GUIDE.md`](USER_GUIDE.md) | Cẩm nang hướng dẫn sử dụng phần mềm toàn diện từng màn hình cho Ban Giám Đốc, Điều Vận, Tài Xế và Kế Toán. |
-
----
-
-## 🏗️ CÁC NGUYÊN TẮC BẤT KHẢ XÂM PHẠM TRONG KIẾN TRÚC (ARCHITECTURAL INVARIANTS)
-
-1. **No Hard-Delete on Legal Data (Bảo toàn lịch sử truy vết):**
-   Mọi dữ liệu vận đơn, phiếu EIR, biên bản POD có chữ ký và sự cố bồi thường là chứng cứ pháp lý giải quyết tranh chấp. Tuyệt đối không dùng `.delete()` cứng, chỉ dùng Soft-Delete (`is_deleted=True`) kế thừa từ `SoftDeleteModel`.
-2. **Zero Variance Financial Accounting (Chính xác tuyệt đối tài chính):**
-   Số liệu P&L chuyến xe và đối soát sổ quỹ luôn bằng tổng đại số chi tiết của từng khoản mục chi phí được duyệt. Mọi thay đổi về chi phí đều tự động cập nhật cache tài chính trên bảng `DispatchTrip` qua Django Signals.
-3. **Deterministic State Machine (Máy trạng thái đơn định):**
-   Vòng đời chuyến xe trải qua 11 bước vận hành được quản lý tập trung qua `core.workflows`, ngăn chặn mọi hành vi nhảy cóc trạng thái trái quy luật vận tải.
+1. Chủ đề đã có file thì sửa file đó, không tạo file mới trùng chủ đề.
+2. File mới lấy số kế tiếp, tên chữ thường kiểu `NN-chu-de.md`; cập nhật bảng trên trong cùng lần sửa. Xóa file thì đánh số lại cho liên tục.
+3. Việc đã xong ghi vào `03-features.md` và `CHANGELOG.md`; việc chưa xong ghi vào `12-backlog.md`; báo cáo/kế hoạch đã hoàn tất chuyển vào `archive/`.
+4. Đổi tên file thì sửa mọi tham chiếu (`CLAUDE.md`, `.claude/`, `scripts/`, mã nguồn) và chạy `python scripts/qa.py audit` để kiểm tra link.
+5. Tài liệu kế thừa từ BIM không còn đúng với GSS thì xóa hoặc viết lại, không để nguyên cho người sau đọc nhầm (đã xóa lộ trình báo cáo BIM cũ; các ADR còn đúng được chuyển vào `13-architecture-decisions.md`).

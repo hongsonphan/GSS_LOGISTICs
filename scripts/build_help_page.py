@@ -1,6 +1,6 @@
-"""Đồng bộ trang Trợ giúp /helps (templates/help.html) từ sổ tay docs/USER_GUIDE.md.
+"""Đồng bộ trang Trợ giúp /helps (templates/help.html) từ sổ tay docs/04-user-guide.md.
 
-docs/USER_GUIDE.md là nguồn nội dung duy nhất. Sau khi sửa file Markdown, chạy:
+docs/04-user-guide.md là nguồn nội dung duy nhất. Sau khi sửa file Markdown, chạy:
     python scripts/build_help_page.py
     python scripts/build_css.py        # build lại static/css/tailwind-help.css
 Script giữ nguyên phần <head>, topbar, hero, footer và JavaScript hiện có của help.html,
@@ -14,7 +14,7 @@ import markdown
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-md_path = ROOT / 'docs' / 'USER_GUIDE.md'
+md_path = ROOT / 'docs' / '04-user-guide.md'
 out_path = ROOT / 'templates' / 'help.html'
 src = open(md_path, encoding='utf-8').read()
 src = re.sub(r'<!-- TOC -->.*?<!-- /TOC -->', '', src, flags=re.S)

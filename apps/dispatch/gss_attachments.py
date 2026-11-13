@@ -129,7 +129,9 @@ def add_attachments(trip, stage, files, *, label='', meta=None, staff=False):
                 now = tz.now()
                 opt = optimize_and_resize_image(f)
                 stamped = _timemark(opt, f'GSS {tz.localtime(now):%d/%m/%Y %H:%M:%S} | {locked.trip_code} | {locked.container_number or ""} | {STAGE_LABELS[stage]}')
-                name = default_storage.save(f'gss_docs/{locked.trip_code}/{stage}_{seq:02d}_{key[:10]}_{sanitize_filename(stamped.name)}', stamped)
+                from apps.gss.docs import storage_rel_path
+                rel = storage_rel_path(locked, stage, seq, now, stamped.name, key=key)
+                name = default_storage.save(rel, stamped)
                 saved_names.append(name)
                 cap = {'original': f'/media/{orig}', 'server_time': now.isoformat(), 'exif': exif,
                        'source': str(meta.get('source') or ('staff_upload' if staff else 'unknown'))[:20],

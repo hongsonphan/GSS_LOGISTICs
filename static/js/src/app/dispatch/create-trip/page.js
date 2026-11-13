@@ -18,6 +18,11 @@ function backToDispatch() {
 }
 
 async function openCreateTripPage(bookingId = null, updateHistory = true) {
+    if (typeof openDispatchOrderModal === 'function') {
+        openDispatchOrderModal(bookingId);
+        return;
+    }
+
     if (typeof checkAndSyncMasterData === 'function') {
         await checkAndSyncMasterData(false);
     } else {

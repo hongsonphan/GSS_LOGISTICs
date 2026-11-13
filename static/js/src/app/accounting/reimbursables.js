@@ -42,8 +42,6 @@ async function loadReimbursablesData() {
             const elPCount = document.getElementById('reimburse-stat-pending-count');
             if (elPCount) elPCount.innerText = `${kp.pending_items_count} khoản chờ thu`;
 
-            const badge = document.getElementById('badge-acct-reimbursables');
-            if (badge) badge.innerText = kp.pending_items_count;
         }
 
         // Cập nhật dropdown Khách hàng (nếu chưa có hoặc lần đầu)

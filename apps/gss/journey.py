@@ -118,6 +118,20 @@ def attach_signed_scan(note, fileobj, user):
 
 
 # ------------------------------------------------------------------ lệnh điều vận (in)
+def auto_delivery_note_for_trip(trip):
+    """Tự động sinh Phiếu giao hàng theo PodTemplate khi chuyến hạ hàng/hoàn tất (idempotent, không làm lỗi luồng)."""
+    if not trip or not trip.booking_order_id:
+        return None
+    from apps.gss.models import DeliveryNote
+    if DeliveryNote.objects.filter(trips=trip, is_deleted=False).exists():
+        return None
+    booking = trip.booking_order
+    stop = next((s for s in stops_of(booking) if trip.trip_code in s.get('trips', [])), None)
+    if not stop:
+        return None
+    return create_delivery_note(booking, stop['key'], user=None)
+
+
 def dispatch_order_html(booking, vendor=None):
     """Lệnh điều vận tổng (mọi nhà xe) hoặc chi tiết của một nhà xe. Không có giá cước."""
     from apps.gss import containers as cs

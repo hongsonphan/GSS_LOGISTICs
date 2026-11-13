@@ -164,7 +164,19 @@
 .gss-scope .fleet-lbl{position:absolute;top:0;transform:translateX(-50%);max-width:16%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font:700 12px/1.2 var(--font-heading);color:var(--ink)}
 .gss-scope .fleet-lbl.hd{width:14%;max-width:none;white-space:normal;text-align:center;font-size:13px;line-height:1.25;font-weight:800;color:#1e293b}
 .gss-scope .fleet-lbl.off{color:#cbd5e1}
-.gss-scope .fleet-row .fleet-wrap{padding-top:20px;height:62px;margin-top:2px}
+.gss-scope .fleet-row .fleet-wrap{padding-top:22px;height:68px;margin-top:2px}
+.gss-scope .fleet-lbl.node-dest{position:absolute;top:0;transform:translateX(-50%);max-width:30%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font:800 12.5px/1.2 var(--font-heading);z-index:3;transition:all .15s}
+.gss-scope .fleet-lbl.node-pickup{color:#0f766e;font-weight:800}
+.gss-scope .fleet-head .fleet-lbl.hd-pickup{color:#0f766e;font-weight:900}
+.gss-scope .fleet-line .dot.dot-pickup{width:12px;height:12px;border:2px solid #fff;background:#0d9488;box-shadow:0 0 0 1.5px #0f766e}
+.gss-scope .fleet-lbl.node-delivery{color:#1d4ed8;font-weight:800}
+.gss-scope .fleet-head .fleet-lbl.hd-delivery{color:#1d4ed8;font-weight:900}
+.gss-scope .fleet-line .dot.dot-delivery{width:12px;height:12px;border:2px solid #fff;background:#2563eb;box-shadow:0 0 0 1.5px #1d4ed8}
+.gss-scope .fleet-lbl.node-dropoff{color:#7e22ce;font-weight:800}
+.gss-scope .fleet-head .fleet-lbl.hd-dropoff{color:#7e22ce;font-weight:900}
+.gss-scope .fleet-line .dot.dot-dropoff{width:12px;height:12px;border:2px solid #fff;background:#7c3aed;box-shadow:0 0 0 1.5px #7e22ce}
+.gss-scope .fleet-lbl.node-dest.upcoming{opacity:.95}
+.gss-scope .fleet-lbl.node-dest.passed{font-weight:900}
 .gss-scope .fleet-vendor{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 12px;margin-top:8px;background:#f1f5f9;border:1px solid var(--line);border-radius:10px;font-size:12px;text-transform:uppercase}
 .gss-scope .fleet-vendor .sep{color:#cbd5e1}
 .gss-scope .fleet-vendor .ell{text-transform:none;max-width:45%}
@@ -172,7 +184,7 @@
 .gss-scope .fleet-row:hover,.gss-scope .fleet-row:focus-visible{border-color:#94a3b8;box-shadow:0 2px 8px rgba(15,23,42,.08)}
 .gss-scope .fleet-row .plate{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;font-size:12px;color:var(--ink);background:var(--soft);border:1px solid var(--line2);padding:1px 8px;border-radius:6px}
 .gss-scope .fleet-row .ph{color:#94a3b8}
-.gss-scope .fleet-line{position:absolute;left:0;right:0;top:34px;height:2px;background:#e2e8f0;border-radius:2px}
+.gss-scope .fleet-line{position:absolute;left:0;right:0;top:40px;height:3px;background:#e2e8f0;border-radius:3px}
 .gss-scope .fleet-line>i{position:absolute;left:0;top:0;height:2px;background:var(--vc);border-radius:2px;transition:width .3s}
 .gss-scope .fleet-line .dot{position:absolute;top:50%;width:8px;height:8px;border-radius:50%;background:#e2e8f0;border:1px solid #fff;transform:translate(-50%,-50%);z-index:1}
 .gss-scope .fleet-line .dot.on{background:var(--vc)}
@@ -196,7 +208,7 @@ body.gss-scope>main{max-width:720px;margin:0 auto;padding:14px 12px 80px}
 @media print{.gss-subnav,.noprint{display:none!important}}
 
 .gss-scope .fleet-row .cust{display:block;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;font:800 12px/1.3 var(--font-heading);color:#0f766e;background:#f0fdfa;border:1px solid #5eead4;padding:1px 8px;border-radius:6px;min-width:0;white-space:nowrap}
-.gss-scope .fleet-row .conts{font-size:12px;font-weight:700;color:var(--ink)}
+.gss-scope .fleet-row .conts{font-size:14.5px;font-weight:900;letter-spacing:.4px;color:#0f172a;margin-top:2px}
 
 /* Bổ trợ GSS 11/2026: chữ màu theo nghĩa (thay nhãn tròn trong bảng), số căn phải, dòng tổng */
 .gss-scope .t-ok{color:var(--ok)}

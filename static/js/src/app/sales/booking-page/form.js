@@ -233,6 +233,9 @@ function onFullpageBookingCustomerChange() {
         if (headerCust) headerCust.innerText = custName;
         if (topbarCust) topbarCust.innerText = custName;
     }
+    if (typeof autoLookupBookingPrice === 'function') {
+        autoLookupBookingPrice('fullpage-');
+    }
 }
 
 function onFullpageBookingDateChange() {
@@ -297,3 +300,53 @@ function parseSiCutoffToFullpageInputs(siStr) {
         }
     }
 }
+
+
+async function autoLookupBookingPrice(prefix = 'fullpage-') {
+    const custEl = document.getElementById(prefix + 'booking-customer');
+    const customer = custEl ? custEl.value?.trim() : '';
+    if (!customer) return;
+
+    const pickup = document.getElementById(prefix + 'booking-pickup')?.value?.trim() || '';
+    const delivery = document.getElementById(prefix + 'booking-delivery')?.value?.trim() || '';
+    const containerSize = document.getElementById(prefix + 'booking-container-size')?.value || '40HC';
+    const priceInput = document.getElementById(prefix + 'booking-price');
+    const hintEl = document.getElementById(prefix + 'booking-price-hint');
+
+    try {
+        const params = new URLSearchParams({
+            customer: customer,
+            pickup: pickup,
+            delivery: delivery,
+            container_size: containerSize
+        });
+        const res = await fetchWithAuth(`/api/sales/price-lookup/?${params.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.found && data.price > 0) {
+            if (priceInput) {
+                priceInput.value = formatNumberVN(data.price);
+                priceInput.classList.remove('border-rose-500', 'bg-rose-50');
+            }
+            if (hintEl) {
+                hintEl.className = 'text-[11px] font-bold mt-1 text-teal-700 flex items-center gap-1';
+                hintEl.innerHTML = `<i class="ph-bold ph-check-circle text-xs text-teal-600"></i> ${data.message || ('Áp dụng từ báo giá: ' + formatNumberVN(data.price) + ' đ')}`;
+                hintEl.classList.remove('hidden');
+            }
+        } else {
+            // Nếu chưa có báo giá riêng, nếu ô giá đang rỗng hoặc = 0 thì tự gợi ý mức chuẩn 4.000.000 VNĐ
+            if (priceInput && (!priceInput.value || parseNumberVN(priceInput.value) <= 0)) {
+                priceInput.value = formatNumberVN(4000000);
+            }
+            if (hintEl) {
+                hintEl.className = 'text-[11px] font-medium mt-1 text-slate-500 flex items-center gap-1';
+                hintEl.innerHTML = `<i class="ph-bold ph-info text-xs text-amber-500"></i> Chưa có báo giá riêng. Đã điền đơn giá tiêu chuẩn (bạn có thể chỉnh sửa).`;
+                hintEl.classList.remove('hidden');
+            }
+        }
+    } catch (e) {
+        console.warn('Lỗi tra cứu giá cước tự động:', e);
+    }
+}
+window.autoLookupBookingPrice = autoLookupBookingPrice;

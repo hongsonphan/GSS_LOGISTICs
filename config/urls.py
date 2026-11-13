@@ -36,6 +36,11 @@ from apps.dispatch.api_views import (
     BookingVendorAllocationsAPIView,
     VendorAllocationDetailAPIView,
     VendorPortalAPIView, VendorPortalCatalogAPIView, VendorPortalExcelAPIView,
+    VendorPortalAuthStatusAPIView, VendorPortalLoginAPIView, VendorPortalLogoutAPIView, VendorPortalHeartbeatAPIView,
+    VendorWorkspaceOverviewAPIView, VendorWorkspaceAllocationAPIView, VendorWorkspaceExcelAPIView,
+    VendorWorkspaceCatalogAPIView, VendorWorkspaceTrackingAPIView,
+    VendorPortalAccountAdminAPIView,
+    VendorContainersMonitoringAPIView,
     BookingOrderStatusAPIView,
     BookingDocumentDeleteAPIView,
     CustomsAPIView,
@@ -109,6 +114,11 @@ urlpatterns = [
     path('dispatch/', index_view, name='spa-dispatch'),
     path('dispatch/trips/<str:trip_hash>/', index_view, name='spa-dispatch-trip-slash'),
     path('dispatch/trips/<str:trip_hash>', index_view, name='spa-dispatch-trip'),
+    # Lệnh Điều Động & Phân bổ Vendor (Deep-link SPA: /dispatch/orders/<order_id>)
+    path('dispatch/orders/<str:order_id>/', index_view, name='spa-dispatch-order-slash'),
+    path('dispatch/orders/<str:order_id>', index_view, name='spa-dispatch-order'),
+    path('dispatch/orders/', index_view, name='spa-dispatch-orders-slash'),
+    path('dispatch/orders', index_view, name='spa-dispatch-orders'),
     path('settlements/', index_view, name='spa-settlements'),
     path('settlements', index_view, name='spa-settlements-noslash'),
     path('quyet-toan/', index_view, name='spa-quyet-toan'),
@@ -152,7 +162,8 @@ urlpatterns = [
     path('help/', help_view, name='help-alias'),
     path('help', help_view, name='help-alias-noslash'),
 
-    # Mobile Portal dành riêng cho Tài xế xe đầu kéo (Capability Token HashID)
+    # Cổng Khai Báo Phương Tiện Dành Cho Nhà Xe Đối Tác (Vendor Portal)
+    path('vendor/', vendor_portal_view, name='vendor-portal-home'),
     path('vendor/<str:token>/', vendor_portal_view, name='vendor-portal'),
     path('q/<str:token>/', qr_trip_page_view, name='qr-trip-page'),
 
@@ -206,7 +217,18 @@ urlpatterns = [
     path('api/bookings/<int:pk>/documents/<int:doc_id>/', BookingDocumentDeleteAPIView.as_view(), name='api-booking-doc-delete'),
     path('api/bookings/<int:pk>/vendor-allocations/', BookingVendorAllocationsAPIView.as_view(), name='api-booking-vendor-allocations'),
     path('api/vendor-allocations/<int:pk>/', VendorAllocationDetailAPIView.as_view(), name='api-vendor-allocation-detail'),
+    path('api/vendor-portal-accounts/<int:pk>/', VendorPortalAccountAdminAPIView.as_view(), name='api-vendor-portal-account-admin'),
+    path('api/vendor/auth/status/', VendorPortalAuthStatusAPIView.as_view(), name='api-vendor-auth-status'),
+    path('api/vendor/auth/login/', VendorPortalLoginAPIView.as_view(), name='api-vendor-auth-login'),
+    path('api/vendor/auth/logout/', VendorPortalLogoutAPIView.as_view(), name='api-vendor-auth-logout'),
+    path('api/vendor/auth/heartbeat/', VendorPortalHeartbeatAPIView.as_view(), name='api-vendor-auth-heartbeat'),
+    path('api/vendor/portal/overview/', VendorWorkspaceOverviewAPIView.as_view(), name='api-vendor-workspace-overview'),
+    path('api/vendor/portal/allocations/<int:alloc_id>/', VendorWorkspaceAllocationAPIView.as_view(), name='api-vendor-workspace-alloc'),
+    path('api/vendor/portal/allocations/<int:alloc_id>/excel/', VendorWorkspaceExcelAPIView.as_view(), name='api-vendor-workspace-excel'),
+    path('api/vendor/portal/catalog/', VendorWorkspaceCatalogAPIView.as_view(), name='api-vendor-workspace-catalog'),
+    path('api/vendor/portal/tracking/', VendorWorkspaceTrackingAPIView.as_view(), name='api-vendor-workspace-tracking'),
     path('api/vendor/<str:token>/', VendorPortalAPIView.as_view(), name='api-vendor-portal'),
+    path('api/dispatch/vendor-containers/', VendorContainersMonitoringAPIView.as_view(), name='api-dispatch-vendor-containers'),
     # GSS: điều vận Nhận–Giao–Hạ, chứng từ, kiện hàng lẻ, tem QR
     path('api/gss/bookings/', gss_booking_api.GssBookingListAPIView.as_view()),
     path('api/gss/bookings/<int:pk>/', gss_booking_api.GssBookingDetailAPIView.as_view()),
@@ -247,6 +269,7 @@ urlpatterns = [
     path('api/depot/movements/<int:pk>/gate-out/', depot_api.MovementGateOutAPIView.as_view()),
     path('api/depot/movements/<int:pk>/photos/', depot_api.MovementPhotosAPIView.as_view()),
     path('api/qr/t/<str:token>/', qr_api.TripQrInfoAPIView.as_view()),
+    path('api/qr/t/<str:token>/qr.svg', qr_api.TripQrSvgAPIView.as_view(), name='api-trip-qr-svg'),
     path('api/qr/t/<str:token>/step/', qr_api.TripQrStepAPIView.as_view()),
     path('api/qr/t/<str:token>/attachments/', qr_api.TripQrAttachmentsAPIView.as_view()),
     path('api/qr/t/<str:token>/claims/', qr_api.TripQrClaimAPIView.as_view()),
@@ -302,3 +325,14 @@ urlpatterns += [
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Đăng ký handler chuẩn quốc tế cho mã lỗi 404 & 500
+handler404 = 'core.exceptions.custom_404_view'
+handler500 = 'core.exceptions.custom_500_view'
+
+# Chặn lộ lọt thông tin hệ thống (Information Disclosure): Bắt mọi URL không tồn tại
+# và hiển thị trang 404 bảo mật của GSS TMS thay vì trang vàng kỹ thuật của Django.
+from core.exceptions import custom_404_view
+urlpatterns += [
+    re_path(r'^.*$', custom_404_view, name='catchall-404'),
+]

@@ -3,6 +3,8 @@ let masterDataFormOptionsCache = null;
 let quickMasterDataTargetSelectId = null;
 let currentMasterDataVersion = null;
 let isSyncingMasterData = false;
+let lastMasterDataSyncTimestamp = 0;
+const currentTabInstanceId = 'tab_' + Math.random().toString(36).substring(2, 9);
 
 // Kênh giao tiếp tức thì giữa các tab cùng trình duyệt (Cross-tab Realtime Sync)
 const masterDataSyncChannel = (typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined')
@@ -11,9 +13,9 @@ const masterDataSyncChannel = (typeof window !== 'undefined' && typeof window.Br
 
 if (masterDataSyncChannel) {
     masterDataSyncChannel.onmessage = (event) => {
-        if (event && event.data && event.data.type === 'MASTER_DATA_UPDATED') {
-            // Nhận tín hiệu từ tab khác vừa thêm/sửa/xóa danh mục -> tự động đồng bộ ngay lập tức
-            checkAndSyncMasterData(true);
+        // Bỏ qua nếu tin nhắn do chính tab này gửi ra (chống lặp ping-pong)
+        if (event && event.data && event.data.type === 'MASTER_DATA_UPDATED' && event.data.senderId !== currentTabInstanceId) {
+            checkAndSyncMasterData(true, true);
         }
     };
 }
@@ -21,7 +23,11 @@ if (masterDataSyncChannel) {
 function broadcastMasterDataChanged() {
     if (masterDataSyncChannel) {
         try {
-            masterDataSyncChannel.postMessage({ type: 'MASTER_DATA_UPDATED', timestamp: Date.now() });
+            masterDataSyncChannel.postMessage({ 
+                type: 'MASTER_DATA_UPDATED', 
+                senderId: currentTabInstanceId,
+                timestamp: Date.now() 
+            });
         } catch (e) {
             // Không làm gián đoạn luồng chính
         }
@@ -49,17 +55,29 @@ async function loadMasterDataFormOptions(forceReload = false) {
 
 /**
  * Kiểm tra và đồng bộ danh mục tức thời (Realtime Instant Master Data Sync):
- * - Nếu force = true: ép tải lại toàn bộ danh mục mới nhất, điền lại các select và phát tín hiệu cho các tab khác.
+ * - Nếu force = true: ép tải lại toàn bộ danh mục mới nhất, điền lại các select.
  * - Nếu force = false: gọi endpoint version siêu nhẹ (~1ms). Chỉ khi server có dữ liệu mới thì mới tải và cập nhật.
+ * - Có cơ chế cooldown chống bão gọi API lặp vô hạn.
  */
-async function checkAndSyncMasterData(force = false) {
+async function checkAndSyncMasterData(force = false, isFromBroadcast = false) {
+    const now = Date.now();
+    // Cooldown: không gọi liên tiếp quá dày (force: tối thiểu 3s; ngầm: tối thiểu 10s)
+    if (!isFromBroadcast) {
+        const minGap = force ? 3000 : 10000;
+        if (now - lastMasterDataSyncTimestamp < minGap) {
+            return masterDataFormOptionsCache;
+        }
+    }
+
     if (isSyncingMasterData) return masterDataFormOptionsCache;
     isSyncingMasterData = true;
+    lastMasterDataSyncTimestamp = now;
+
     try {
         if (force) {
             await loadMasterDataFormOptions(true);
             populateMasterDataDropdowns();
-            broadcastMasterDataChanged();
+            // LƯU Ý BẢO MẬT: Tuyệt đối KHÔNG gọi broadcastMasterDataChanged() ở đây để tránh lặp vô hạn ping-pong giữa các tab
             return masterDataFormOptionsCache;
         }
 
@@ -199,12 +217,12 @@ if (typeof window !== 'undefined') {
         });
     }
 
-    // 2. Định kỳ 5 giây kiểm tra version ngầm siêu nhẹ (~1ms) khi tab đang hoạt động
+    // 2. Định kỳ 60 giây kiểm tra version ngầm siêu nhẹ (~1ms) khi tab đang hoạt động
     setInterval(() => {
         if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
             checkAndSyncMasterData(false);
         }
-    }, 5000);
+    }, 60000);
 }
 
 // Cung cấp hàm toàn cục cho toàn hệ thống

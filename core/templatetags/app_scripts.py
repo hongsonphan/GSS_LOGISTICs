@@ -38,10 +38,11 @@ def _bundle_version():
 
 @register.simple_tag
 def app_scripts():
+    ver = _bundle_version()
     if getattr(settings, "FRONTEND_SPLIT_SCRIPTS", settings.DEBUG):
         return format_html_join(
             "\n    ",
-            '<script src="{}"></script>',
+            '<script src="{}?v=' + ver + '"></script>',
             ((static(f"js/src/app/{name}"),) for name in _manifest()),
         )
-    return format_html('<script src="{}?v={}"></script>', static("js/app.js"), _bundle_version())
+    return format_html('<script src="{}?v={}"></script>', static("js/app.js"), ver)

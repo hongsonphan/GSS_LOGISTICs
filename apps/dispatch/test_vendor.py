@@ -167,7 +167,8 @@ class SubmitRowsTests(VendorBase):
 
     def test_plate_of_own_fleet_vehicle_rejected(self):
         from apps.fleet.models import Vehicle
-        Vehicle.objects.create(license_plate='51C-111.11')  # xe nhà
+        from apps.fleet.models import Vehicle, VehicleOwnership
+        Vehicle.objects.create(license_plate='51C-111.11', ownership_type=VehicleOwnership.SUBCONTRACTOR, subcontractor=self.sub_b)  # xe vendor khác
         out = svc.submit_rows(self.alloc, [self.row(1, tractor_plate='51C-111.11')])
         self.assertFalse(out['results'][0]['ok'])
 
@@ -197,7 +198,7 @@ class VendorApiTests(VendorBase):
         self.assertIn('/vendor/', out['link'])
         data = self.client.get(f'/api/bookings/{self.booking.pk}/vendor-allocations/').json()['data']
         self.assertEqual((data['allocated'], data['remaining']), (3, 7))
-        self.assertNotIn('link', str(data))
+        self.assertIn('vendor_link', str(data))
 
     def test_over_allocation_returns_400(self):
         res = self.client.post(f'/api/bookings/{self.booking.pk}/vendor-allocations/',

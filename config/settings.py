@@ -141,7 +141,7 @@ else:
         }
     }
 
-# 1. Password Hashing (Tiêu chuẩn 1 - SECURITY_AUDIT.md: Argon2 + PBKDF2)
+# 1. Password Hashing (Tiêu chuẩn 1 - 08-security.md: Argon2 + PBKDF2)
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
@@ -196,7 +196,7 @@ if 'test' in sys.argv[1:2]:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# 16. Strict CORS Configuration (Tiêu chuẩn 16 - SECURITY_AUDIT.md)
+# 16. Strict CORS Configuration (Tiêu chuẩn 16 - 08-security.md)
 CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1')
 
 cors_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
@@ -356,7 +356,7 @@ PASSWORD_RESET_TIMEOUT = int(os.environ.get('PASSWORD_RESET_TIMEOUT', '3600'))
 SITE_URL = os.environ.get('SITE_URL', '').rstrip('/')
 
 # Email gửi đi (đặt lại mật khẩu, cảnh báo đăng nhập). Gmail / Google Workspace:
-#   EMAIL_HOST_USER=hop-thu@gmail.com  EMAIL_HOST_PASSWORD=<Mật khẩu ứng dụng 16 ký tự>  (xem docs/CAU_HINH_EMAIL.md)
+#   EMAIL_HOST_USER=hop-thu@gmail.com  EMAIL_HOST_PASSWORD=<Mật khẩu ứng dụng 16 ký tự>  (xem docs/05-architecture.md)
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', True)

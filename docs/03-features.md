@@ -1,7 +1,7 @@
-# FEATURES.md — GSS LOGISTICS PLATFORM
+# 03-features.md — GSS LOGISTICS PLATFORM
 ## Tài liệu Đặc tả Tính năng Đầy đủ (Living Document)
 
-> **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 2026-11-01
+> **Phiên bản:** v4.8.0 | **Cập nhật lần cuối:** 2026-11-09
 > **Trạng thái:** Production-Ready
 > **Đơn vị:** Green Solutions Smart (GSS) · Dự án GSS-TMS-2026 (repo `GSS_LOGISTICs`)
 > **Lưu ý:** Tài liệu mô tả tính năng của nền tảng hiện có (kế thừa từ GSS Logistics). Hạng mục riêng của GSS chưa lập trình xem BRD, được đánh dấu [KẾ HOẠCH].
@@ -461,6 +461,14 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 - Biển số, Loại moóc (Xương 40ft, Cổ cò...), Tải trọng
 - Hạn đăng kiểm + Cảnh báo ≤ 15 ngày
 
+### 10.3 Quản lý Đội Xe, Rơ-moóc & Hồ Sơ Tài Xế trên Cổng Nhà Xe (Vendor Portal)
+- **Tài xế (`SubcontractorDriver`):** Quản lý chi tiết ảnh đại diện/chân dung (`avatar_url`), Họ tên, SĐT Zalo, Số CCCD 12 chữ số (`citizen_id`), Tuổi (`age`), Ngày sinh (`date_of_birth`), Hạng bằng lái (`license_class` FC/FE/C...), Số bằng lái GPLX (`license_number`), Số năm kinh nghiệm lái cont (`experience_years`), Trạng thái làm việc và Ghi chú.
+- **Xe đầu kéo (`Vehicle`):** Quản lý Biển số xe, Hãng/Nhãn hiệu xe (`brand`), Tải trọng kéo theo (`payload_capacity_kg`), Hạn đăng kiểm định kỳ, Lịch bảo dưỡng tiếp theo, Trạng thái hoạt động (`ACTIVE`, `MAINTENANCE`, `IDLE`), Ghi chú kỹ thuật.
+- **Rơ-moóc (`SubcontractorTrailer`):** Quản lý Biển số moóc, Quy cách/Loại moóc (`trailer_type`), Hãng sản xuất (`brand`), Tải trọng cho phép, Hạn đăng kiểm, Lịch bảo dưỡng tiếp theo, Trạng thái.
+- **Thao tác Sửa & Xóa trực quan:**
+  - Tích hợp nút `[Sửa]` (mở modal cập nhật thông tin chi tiết) và nút `[Xóa]` (cảnh báo xác nhận trước khi xóa, soft-delete bảo toàn lịch sử dữ liệu).
+  - Tích hợp thanh tìm kiếm tức thời và xem trước avatar trực quan.
+
 ---
 
 ## 11. Phân hệ 10: Nhân sự & Lương chuyến
@@ -594,7 +602,7 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 
 ## 15. Bảo mật & Phân quyền
 
-*(Chi tiết đầy đủ tại [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md))*
+*(Chi tiết đầy đủ tại [`08-security.md`](08-security.md))*
 
 | Tiêu chuẩn | Trạng thái |
 |---|---|
@@ -830,7 +838,7 @@ Khi thêm tính năng mới hoặc thay đổi tính năng hiện có, **bắt b
 
 ```
 1. Hoàn thành code + test pass
-2. Cập nhật section tương ứng trong FEATURES.md này
+2. Cập nhật section tương ứng trong 03-features.md này
 3. Thêm entry vào docs/CHANGELOG.md với phiên bản mới
 4. Commit cả 3 thay đổi trong cùng 1 commit
 ```

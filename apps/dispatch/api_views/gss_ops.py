@@ -79,7 +79,7 @@ class _SettlementBase(APIView):
         q = request.query_params
         try:
             return st.queryset(int(q['vendor']) if q.get('vendor', '').isdigit() else None, q.get('status', ''),
-                               st.parse_date(q.get('from'), 'Từ ngày'), st.parse_date(q.get('to'), 'Đến ngày'), (q.get('q') or '').strip())
+                               st.parse_date(q.get('from'), 'Từ ngày'), st.parse_date(q.get('to'), 'Đến ngày'), (q.get('q') or '').strip(), (q.get('bl') or '').strip())
         except ValidationError as exc:
             from rest_framework.exceptions import ValidationError as DRFError
             raise DRFError(vmsg(exc))

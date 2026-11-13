@@ -28,7 +28,7 @@ def _bl(trip):
     return (b.hbl_number or b.mbl_number or b.booking_number) if b else ''
 
 
-def candidates(side, party, date_from, date_to):
+def candidates(side, party, date_from, date_to, bl=''):
     if side not in SIDE_OF:
         raise ValidationError('Loại bảng kê không hợp lệ.')
     if date_from > date_to:
@@ -38,6 +38,14 @@ def candidates(side, party, date_from, date_to):
     qs = JobCharge.objects.filter(is_deleted=False, side=SIDE_OF[side], trip__is_deleted=False, trip__step_status='EMPTY_RETURNED',
                                   trip__actual_end_time__range=(start, end))
     qs = qs.filter(trip__customer=party) if side == 'CUSTOMER' else qs.filter(trip__subcontractor=party)
+    if bl:
+        bl = bl.strip()
+        qs = qs.filter(
+            Q(trip__booking_order__hbl_number__icontains=bl)
+            | Q(trip__booking_order__mbl_number__icontains=bl)
+            | Q(trip__booking_order__booking_number__icontains=bl)
+            | Q(trip__booking_order__booking_code__icontains=bl)
+        )
     used = StatementLine.objects.filter(statement__is_deleted=False).exclude(statement__status='CANCELLED').values('job_line_id')
     return qs.exclude(pk__in=used).select_related('trip', 'trip__booking_order', 'charge_code').order_by('trip__actual_end_time', 'trip_id', 'id')
 

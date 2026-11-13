@@ -19,7 +19,7 @@ STATUS_LABELS = {'PENDING': 'Chờ đối soát', 'RECONCILING': 'Đã chốt đ
 MAX_AMOUNT = Decimal('100000000000')
 
 
-def queryset(vendor_id=None, status='', date_from=None, date_to=None, search=''):
+def queryset(vendor_id=None, status='', date_from=None, date_to=None, search='', bl=''):
     qs = DispatchTrip.objects.filter(is_deleted=False, subcontractor__isnull=False).exclude(step_status='CANCELLED') \
         .select_related('subcontractor', 'vehicle', 'trailer', 'booking_order', 'customer')
     qs = qs.annotate(**{f'n_{s.lower()}': Count('documents', filter=Q(documents__workflow_stage=s, documents__is_deleted=False) & ~Q(documents__file_path=''), distinct=True)
@@ -32,9 +32,17 @@ def queryset(vendor_id=None, status='', date_from=None, date_to=None, search='')
         qs = qs.filter(Q(loading_date__gte=date_from) | Q(loading_date__isnull=True, created_at__date__gte=date_from))
     if date_to:
         qs = qs.filter(Q(loading_date__lte=date_to) | Q(loading_date__isnull=True, created_at__date__lte=date_to))
+    if bl:
+        bl = bl.strip()
+        qs = qs.filter(Q(booking_order__hbl_number__icontains=bl) | Q(booking_order__mbl_number__icontains=bl)
+                       | Q(booking_order__booking_number__icontains=bl) | Q(booking_order__booking_code__icontains=bl))
     if search:
-        qs = qs.filter(Q(container_number__icontains=search) | Q(return_container_number__icontains=search) | Q(trip_code__icontains=search)
-                       | Q(vehicle__license_plate__icontains=search) | Q(booking_order__booking_code__icontains=search))
+        qs = qs.filter(Q(container_number__icontains=search) | Q(container_number_2__icontains=search)
+                       | Q(return_container_number__icontains=search) | Q(trip_code__icontains=search)
+                       | Q(vehicle__license_plate__icontains=search) | Q(booking_order__booking_code__icontains=search)
+                       | Q(booking_order__mbl_number__icontains=search) | Q(booking_order__hbl_number__icontains=search))
+
+
     return qs.order_by('subcontractor__name', '-created_at')
 
 

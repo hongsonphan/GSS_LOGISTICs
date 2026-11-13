@@ -14,7 +14,7 @@
 ## 0. ĐỊNH VỊ DỰ ÁN GSS_LOGISTICs
 
 - **GSS_LOGISTICs** là dự án **độc lập**, khởi đầu từ bản sao của nền tảng GSS Logistics rồi tái cấu trúc cho Green Solutions Smart (GSS). Repo, CSDL, cổng, tên container và máy chủ triển khai đều tách riêng, **không dùng chung** với GSS Logistics.
-- Đặc tả nghiệp vụ & lộ trình riêng của GSS nằm ở [`BRD_GREEN_SOLUTIONS_SMART_GSS.md`](BRD_GREEN_SOLUTIONS_SMART_GSS.md): điều phối nhà xe (Vendor), kiểm soát chứng từ Nhận – Giao – Hạ rỗng, Bãi Cont Đắk Nông, mã QR cho Cont và hàng lẻ có Seal.
+- Đặc tả nghiệp vụ & lộ trình riêng của GSS nằm ở [`01-spec-brd.md`](01-spec-brd.md): điều phối nhà xe (Vendor), kiểm soát chứng từ Nhận – Giao – Hạ rỗng, Bãi Cont Đắk Nông, mã QR cho Cont và hàng lẻ có Seal.
 - Các phần mô tả bên dưới phản ánh **nền tảng hiện có** trong mã nguồn. Hạng mục GSS chưa lập trình được đánh dấu **[KẾ HOẠCH]**.
 
 ---
@@ -127,18 +127,18 @@ e:/GSS_LOGISTICs/
 │   └── security/                       # HashID chống IDOR, Simple JWT Helpers
 ├── docs/                               # Toàn bộ tài liệu kiến trúc & vận hành (Documentation-as-Code)
 │   ├── README.md                       # Hub điều hướng toàn bộ hệ thống tài liệu kiến trúc
-│   ├── AGENTS.md                       # Quy tắc hành vi kỹ thuật & Bản đồ kiến trúc cho AI (ISO 42010)
-│   ├── CODING_STANDARDS.md             # Quy chuẩn Clean Architecture & Code Quality (ISO 25010)
-│   ├── SECURITY_AUDIT.md               # 20 Tiêu chuẩn an ninh chuỗi cung ứng & Luật BV DLCN 91/2025
-│   ├── PROJECT_OVERVIEW.md             # (File này) Tổng quan hệ thống, C4 Model & Cấu hình Hạ tầng
-│   ├── FEATURES.md                     # Đặc tả 22 phân hệ tính năng & 25 Django models
-│   ├── API_REFERENCE.md                # Tài liệu hợp đồng RESTful API đầy đủ
-│   ├── DATABASE_SCHEMA.md              # Sơ đồ CSDL, ORM, Core ERD & chiến lược Indexing
-│   ├── OPERATIONAL_WORKFLOW.md         # Quy trình điều vận 11 bước, State Machine & Vòng đời chi phí
-│   ├── UI_UX_GUIDELINES.md             # Design Tokens GSS & Thang đo Typography 7 bậc
-│   ├── DEVELOPMENT_PLAN.md             # Lộ trình TMS nâng cao, ADRs & On-Premise
+│   ├── 14-ai-team.md                       # Quy tắc hành vi kỹ thuật & Bản đồ kiến trúc cho AI (ISO 42010)
+│   ├── 09-coding-standards.md             # Quy chuẩn Clean Architecture & Code Quality (ISO 25010)
+│   ├── 08-security.md               # 20 Tiêu chuẩn an ninh chuỗi cung ứng & Luật BV DLCN 91/2025
+│   ├── 05-architecture.md             # (File này) Tổng quan hệ thống, C4 Model & Cấu hình Hạ tầng
+│   ├── 03-features.md                     # Đặc tả 22 phân hệ tính năng & 25 Django models
+│   ├── 07-api-reference.md                # Tài liệu hợp đồng RESTful API đầy đủ
+│   ├── 06-database.md              # Sơ đồ CSDL, ORM, Core ERD & chiến lược Indexing
+│   ├── 02-operational-workflow.md         # Quy trình điều vận 11 bước, State Machine & Vòng đời chi phí
+│   ├── 10-ui-ux-guidelines.md             # Design Tokens GSS & Thang đo Typography 7 bậc
+│   ├── 13-architecture-decisions.md             # Lộ trình TMS nâng cao, ADRs & On-Premise
 │   ├── CHANGELOG.md                    # Nhật ký phát hành phiên bản (SemVer)
-│   └── USER_GUIDE.md                   # Cẩm nang hướng dẫn sử dụng phần mềm cho người dùng cuối
+│   └── 04-user-guide.md                   # Cẩm nang hướng dẫn sử dụng phần mềm cho người dùng cuối
 ├── scripts/                            # Tiện ích tự động hóa & Kiểm thử
 │   ├── build_app_js.py                 # Engine đóng gói JS phân hệ sang static/js/app.js
 │   └── run_migrations_and_tests.py     # Quy trình kiểm thử toàn diện

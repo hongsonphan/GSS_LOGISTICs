@@ -10,7 +10,7 @@
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-2 border-l-teal-600 hover:shadow-sm transition-all">
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Thực Hiện</span>
-                    <span id="sales-trend-earned" class="text-xs font-bold text-teal-800 flex items-center gap-1 font-heading">
+                    <span id="sales-trend-earned" class="text-xs font-bold text-teal-800 flex items-center gap-1 font-heading whitespace-nowrap shrink-0">
                         <i class="ph-bold ph-check-circle"></i> Đã Giao Nhận
                     </span>
                 </div>
@@ -88,7 +88,6 @@
                 class="flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-2xs box-border">
                 <i class="ph-bold ph-handshake text-base text-indigo-600"></i>
                 <span>Báo Giá & Hợp Đồng</span>
-                <span class="px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-indigo-100 text-indigo-800 border-indigo-200" id="badge-count-quotes">4</span>
             </button>
             
             <!-- Subtab 2: Sale Admin / CS / Booking (Mặc định Inactive nhưng cùng cấu trúc border-2 h-10 không xê dịch) -->
@@ -96,7 +95,6 @@
                 class="flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border">
                 <i class="ph-bold ph-truck text-base text-slate-500"></i>
                 <span>Booking / Đơn Đặt Hàng</span>
-                <span class="px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200" id="badge-count-bookings">8</span>
             </button>
         </div>
         
@@ -386,7 +384,7 @@
                     <div>
                         <div class="relative">
                             <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                            <input type="text" id="filter-quote-search" oninput="applyQuoteFilters()" placeholder="Tìm số xe, số chuyến, khách hàng, vendor, mã BG..." 
+                            <input type="text" id="filter-quote-search" oninput="applyQuoteFilters()" placeholder="Tìm mã báo giá, khách hàng, tuyến đường..." 
                                 class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500">
                             <button type="button" onclick="clearQuoteSearch()" id="btn-clear-quote-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                                 <i class="ph-bold ph-x text-xs"></i>
@@ -431,7 +429,7 @@
                             <!-- 3. Tuyến Đường Vận Chuyển (Có sắp xếp) -->
                             <th data-col-key="route" data-col-name="Tuyến Đường Vận Chuyển" onclick="toggleQuoteSort('route')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tuyến Đường">
                                 <div class="flex items-center gap-1.5">
-                                    <span>Tuyến Đường Vận Chuyển</span>
+                                    <span>Tuyến Vận Chuyển</span>
                                     <i id="sort-icon-quote-route" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
@@ -439,7 +437,7 @@
                             <!-- 4. Đơn Giá Cước (Có sắp xếp số) -->
                             <th data-col-key="unit_price" data-col-name="Đơn Giá Cước (VNĐ)" onclick="toggleQuoteSort('unit_price')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Đơn Giá Cước">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    <span>Đơn Giá Cước (VNĐ)</span>
+                                    <span>Đơn Giá (VNĐ)</span>
                                     <i id="sort-icon-quote-unit_price" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
@@ -447,7 +445,7 @@
                             <!-- 5. Sản Lượng Dự Kiến (Có sắp xếp số) -->
                             <th data-col-key="monthly_trips" data-col-name="Sản Lượng Dự Kiến" onclick="toggleQuoteSort('monthly_trips')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Sản Lượng Chuyến">
                                 <div class="flex items-center justify-center gap-1.5">
-                                    <span>Sản Lượng Dự Kiến</span>
+                                    <span>SL Dự Kiến</span>
                                     <i id="sort-icon-quote-monthly_trips" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
@@ -455,7 +453,7 @@
                             <!-- 6. Doanh Thu Kế Hoạch (Có sắp xếp số) -->
                             <th data-col-key="expected_revenue" data-col-name="Doanh Thu Kế Hoạch" onclick="toggleQuoteSort('expected_revenue')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Doanh Thu Kế Hoạch">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    <span>Doanh Thu Kế Hoạch</span>
+                                    <span>DT Kế Hoạch</span>
                                     <i id="sort-icon-quote-expected_revenue" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
@@ -463,7 +461,7 @@
                             <!-- 7. Trạng Thái Hợp Đồng (Có sắp xếp) -->
                             <th data-col-key="status" data-col-name="Trạng Thái Hợp Đồng" onclick="toggleQuoteSort('status')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Trạng Thái">
                                 <div class="flex items-center gap-1.5">
-                                    <span>Trạng Thái Hợp Đồng</span>
+                                    <span>Trạng Thái</span>
                                     <i id="sort-icon-quote-status" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
@@ -737,7 +735,7 @@
                     <div>
                         <div class="relative">
                             <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                            <input type="text" id="filter-bk-search" oninput="applyBookingFilters()" placeholder="Tìm số xe, số chuyến, khách hàng, vendor, số booking..." 
+                            <input type="text" id="filter-bk-search" oninput="applyBookingFilters()" placeholder="Tìm số booking, B/L, khách hàng, tuyến đường..." 
                                 class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
                             <button type="button" onclick="clearBookingSearch()" id="btn-clear-bk-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                                 <i class="ph-bold ph-x text-xs"></i>

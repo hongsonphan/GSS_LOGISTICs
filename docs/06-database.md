@@ -1,5 +1,80 @@
-# GSS LOGISTICS — DATABASE SCHEMA & ORM ARCHITECTURE
-## Data Layer Architecture & Relational Entity-Relationship Specification
+# CƠ SỞ DỮ LIỆU GSS TMS
+
+> Gộp từ `06-database.md` (sơ đồ hiện hành sau GĐ0) và `06-database.md` (danh mục bảng kế thừa, **chưa rà soát lại cho GSS** – còn nhắc SQLite, mô hình cũ).
+> Phần A là nguồn đúng; phần B chỉ để tra cứu lịch sử, sửa dần khi rà soát từng phân hệ.
+
+## A. Sơ đồ dữ liệu hiện hành
+
+Sơ đồ dưới bám theo §4 của đặc tả, ghi tên model thật trong mã. Các cột chung không vẽ lại:
+`company` (đa doanh nghiệp + RLS), `created_at` / `updated_at`, `is_deleted` (xoá mềm), `public_id` (UUIDv7, ở các bảng lộ ra ngoài).
+
+```mermaid
+erDiagram
+    Company ||--o{ Party : "sở hữu"
+    Party ||--o{ RateCard : "bảng giá bán (khách) / mua (nhà xe)"
+    RateCard ||--o{ RateLine : ""
+    ChargeCode ||--o{ RateLine : ""
+    Party ||--o{ SubcontractorDriver : "tài xế của nhà xe"
+    Party ||--o{ Vehicle : "xe của nhà xe"
+    Party ||--o{ BookingOrder : "khách hàng"
+    BillOfLading ||--o{ BillOfLading : "MBL có nhiều HBL"
+    Party ||--o{ BillOfLading : "hãng phát hành"
+    BillOfLading ||--o{ BookingOrder : "vận đơn của đơn"
+    BookingOrder ||--o{ CustomsDeclarationRef : "tờ khai"
+    BookingOrder ||--o{ BookingContainer : "danh sách cont (Equipment)"
+    BookingOrder ||--o{ BookingVendorAllocation : "phân bổ nhà xe"
+    Party ||--o{ BookingVendorAllocation : "nhà xe"
+    BookingVendorAllocation ||--o{ DispatchTrip : "dòng nhà xe khai"
+    BookingContainer |o--o| DispatchTrip : "1 cont = 1 chuyến"
+    BookingOrder ||--o{ DispatchTrip : "TransportJob"
+    DispatchTrip ||--o{ Leg : "chặng"
+    TruckRun ||--o{ Leg : "lượt xe (<= 2 TEU)"
+    RouteTemplate ||..o{ Leg : "sinh chặng"
+    DispatchTrip ||--o{ TrackingEventLog : "mốc (chỉ ghi thêm)"
+    DispatchTrip ||--o{ TripDocument : "chứng từ (EXIF, GPS, bản gốc)"
+    DispatchTrip ||--o{ JobCharge : "dòng bán / mua (JobCost)"
+    DispatchTrip ||--o{ CostClaim : "chi hộ tài xế khai"
+    CostClaim ||--o| EInvoice : "hoá đơn"
+    JobCharge }o--o{ StatementLine : ""
+    Statement ||--o{ StatementLine : "bảng kê khách / nhà xe"
+    Statement ||--o| JournalEntry : "bút toán khi chốt"
+    BookingOrder ||--o{ DeliveryNote : "phiếu giao hàng theo điểm giao"
+    Yard ||--o{ DepotContainerMovement : "gate-in / gate-out bãi"
+```
+
+### Ánh xạ khái niệm đặc tả → model
+
+| Đặc tả §4 | Model | Ghi chú |
+| :-- | :-- | :-- |
+| Party | `master_data.Party` | một bảng, cờ vai trò; proxy `Customer`, `Subcontractor`, `ShippingLine` |
+| Location, ContainerType, FreeTimeRule, DeliveryNoteTemplate | `master_data.Location`, `master_data.ContainerType`, `gss.FreeTimeRule`, `customers.PodTemplate` | |
+| Vehicle / Chassis / Driver | `fleet.Vehicle`, `fleet.Trailer`, `master_data.SubcontractorDriver` | |
+| ChargeCode, RateCard, RateLine | `gss.ChargeCode`, `gss.RateCard`, `gss.RateLine` | |
+| BillOfLading (MBL ◄ HBL) | `gss.BillOfLading` | đồng bộ từ số MBL/HBL của đơn |
+| Shipment | `customers.BookingOrder` | |
+| CustomsDeclaration | `gss.CustomsDeclarationRef` | |
+| Equipment | `gss.BookingContainer` | |
+| TransportJob | `dispatch.DispatchTrip` | máy 7 bước GSS ở `step_status` |
+| Leg, TruckRun, RouteTemplate | `gss.Leg`, `gss.TruckRun`, `gss.RouteTemplate` | |
+| VendorAllocation, AccessGrant | `dispatch.BookingVendorAllocation` | token băm, hạn, thu hồi, khoá |
+| TrackingEvent | `core.TrackingEventLog` | |
+| StoredFile / DocumentLink | `documents.TripDocument` (+ `capture_meta`) | tên chuẩn sinh khi xem (`apps/gss/docs.py`) |
+| GateTransaction | `depot_yard.DepotContainerMovement` | mỗi cont một lượt vào bãi chưa đóng |
+| CostItem, EInvoice, JobCharge / JobCost, Statement, DeliveryNote | `gss.CostClaim`, `gss.EInvoice`, `gss.JobCharge` / proxy `gss.JobCost`, `gss.Statement`, `gss.DeliveryNote` | |
+| Ledger | `ledger.*` | nguồn bút toán: chuyến, chi phí, hoá đơn, bảng kê |
+
+### Chưa tách theo đặc tả (ghi nhận)
+
+- `DispatchTrip` vẫn là tên model của TransportJob và còn các cột của mô hình chuyến cũ (máy trạng thái `status` 11 bước
+  được giữ đồng bộ từ `step_status` cho báo cáo/sổ cái cũ).
+- `JobCost` là proxy (cùng bảng với JobCharge, `side='BUY'`), chưa phải bảng riêng.
+- Chưa có `StoredFile` / `FileDerivative` / `DocumentLink` tách bảng; `CargoItem` / `Stop` / `DeliveryDrop` (GĐ4, hàng lẻ).
+
+---
+
+## B. Phụ lục – danh mục bảng kế thừa (chưa rà soát)
+
+### Data Layer Architecture & Relational Entity-Relationship Specification
 
 > **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 01/11/2026  
 > **Hệ quản trị CSDL:** PostgreSQL 16 (Production) / SQLite3 (Development)  
@@ -8,7 +83,7 @@
 
 ---
 
-## 1. SƠ ĐỒ THỰC THỂ QUAN HỆ CỐT LÕI (CORE DOMAIN ERD)
+### 1. SƠ ĐỒ THỰC THỂ QUAN HỆ CỐT LÕI (CORE DOMAIN ERD)
 
 ```mermaid
 erDiagram
@@ -34,7 +109,7 @@ erDiagram
 
 ---
 
-## 2. NGUYÊN TẮC THIẾT KẾ CỐT LÕI
+### 2. NGUYÊN TẮC THIẾT KẾ CỐT LÕI
 
 1. **Kế thừa Chuẩn mực:**
    - Mọi model kế thừa `TimeStampedModel` (`created_at`, `updated_at`).
@@ -51,12 +126,12 @@ erDiagram
 
 ---
 
-## 3. DANH MỤC CÁC PHÂN HỆ & BẢNG DỮ LIỆU (25 MODELS TRÊN 9 PHÂN HỆ)
+### 3. DANH MỤC CÁC PHÂN HỆ & BẢNG DỮ LIỆU (25 MODELS TRÊN 9 PHÂN HỆ)
 
-### A. Phân hệ Nền tảng (`core`)
+#### A. Phân hệ Nền tảng (`core`)
 - `core.TrackingEventLog`: Lưu chuỗi sự kiện bất biến (Event Sourcing) cho mọi thay đổi trạng thái, tọa độ GPS và thao tác của điều độ/tài xế.
 
-### B. Phân hệ Nhân sự & Tiền lương (`apps/personnel`)
+#### B. Phân hệ Nhân sự & Tiền lương (`apps/personnel`)
 - `personnel.Employee`: Quản lý hồ sơ nhân thân cá nhân 360° (độc lập với công ty), CCCD, MST cá nhân, số sổ BHXH, tài khoản ngân hàng chi lương, thông tin GPLX hạng C/FC/FE, người phụ thuộc giảm trừ gia cảnh. Tích hợp các Helper Properties tự động kế thừa chế độ kinh tế từ HĐLĐ hiện hành (`active_contract`).
 - `personnel.EmployeeDependent`: Người phụ thuộc đăng ký giảm trừ gia cảnh thuế TNCN theo quy định (Nghị quyết 110/2025/UBTVQH15: 6.2tr/người/tháng).
 - `personnel.LaborContract`: Hợp đồng lao động chuẩn GSS (Thử việc, Xác định thời hạn, Không xác định thời hạn, Thời vụ), lưu trữ các cam kết kinh tế: Lương CB, Lương BHXH, Phụ cấp cố định, Trợ cấp phúc lợi, Tổng thu nhập HĐ, Tỷ lệ hưởng lương %, Cờ tham gia BHXH (`is_social_insurance_participant`), Tính thuế TNCN (`is_taxable`), Đoàn viên Công đoàn (`is_union_member`), Phân loại cư trú thuế TNCN (`tax_resident_type`).
@@ -67,11 +142,11 @@ erDiagram
 - `personnel.PayrollPeriod`: Kỳ tính lương hàng tháng (`YYYY-MM`), vòng đời 4 bước (`DRAFT ➔ REVIEWED ➔ LOCKED ➔ PAID`), liên thông Sổ Quỹ `CashTransaction`.
 - `personnel.PayrollSlip`: Phiếu lương cá nhân chi tiết theo động cơ Hybrid Payroll kết nối HĐLĐ hiện hành (Lương thời gian theo tỷ lệ HĐ, Lương sản lượng chuyến `DispatchTrip`, Lương cắt kéo, Neo xe, Thưởng dầu, Phụ cấp HĐ, Trợ cấp HĐ, BHXH 10.5%, Đoàn phí CĐ 1%, Thuế TNCN đa chế độ, Khấu trừ tạm ứng `DriverTripAdvance`, Thực lĩnh Net).
 
-### C. Phân hệ Quản lý Đội xe (`apps/fleet`)
+#### C. Phân hệ Quản lý Đội xe (`apps/fleet`)
 - `fleet.Vehicle`: Quản lý đầu kéo, xe tải 10T, xe tải 2T. Hỗ trợ phân định xe nội bộ công ty GSS và xe đối tác 3PL/thầu phụ qua trường `subcontractor` (ForeignKey tới `master_data.Subcontractor`, `null=True, blank=True`). Lưu trữ thông tin đăng kiểm (`registration_expiry`, hỗ trợ nullable đối với xe ngoài), định kỳ bảo trì (`next_maintenance_date`), tài xế chỉ định, trạng thái hoạt động (`ACTIVE`, `IDLE`, `MAINTENANCE`).
 - `fleet.Trailer`: Quản lý sơ-mi rơ-moóc 40ft, moóc cổ cò, moóc xương.
 
-### D. Phân hệ Danh mục Dùng chung (`apps/master_data`)
+#### D. Phân hệ Danh mục Dùng chung (`apps/master_data`)
 - `master_data.Subcontractor`: Danh mục đối tác vận tải 3PL / thầu phụ / nhà xe ngoài, gara sửa chữa và nhà cung cấp vật tư (`partner_type`: CARRIER, GARAGE, SUPPLIER; mã số, tên viết tắt `short_name`, tên pháp nhân, MST, số điện thoại, địa chỉ công ty `address`, người liên hệ, tài khoản ngân hàng, cờ kích hoạt).
 - `master_data.SubcontractorDriver`: Danh bạ tài xế thuộc đối tác 3PL (`subcontractor`, `full_name`, `phone`, `license_number`, `is_active`, `notes`). Quản lý tập trung theo pháp nhân đối tác vận tải, cách ly tuyệt đối khỏi nhân sự nội bộ `personnel.Employee`.
 - `master_data.Location`: Danh mục cảng biển, ICD, Depot bãi rỗng và Kho nhà máy khách hàng chuẩn hóa (`LocationType`: PORT, ICD, DEPOT, WAREHOUSE, YARD).
@@ -80,13 +155,13 @@ erDiagram
 - `master_data.DriverSalaryTariff`: Biểu phí lương chuyến tài xế phân nhóm theo khu vực kho và tuyến vận chuyển.
 - `master_data.DriverAllowanceCatalog`: Danh mục phụ cấp cảng xa, kiểm hóa và tác nghiệp đặc thù.
 
-### E. Phân hệ Khách hàng & Báo giá (`apps/customers`)
+#### E. Phân hệ Khách hàng & Báo giá (`apps/customers`)
 - `customers.Customer`: Danh bạ khách hàng doanh nghiệp, tên viết tắt / tên giao dịch (`short_name`), mã số thuế, địa chỉ, người liên hệ, số điện thoại, ghi chú.
 - `customers.RouteTariff`: Biểu cước theo từng tuyến đường, chuẩn hóa liên kết ForeignKey tới `master_data.Location` (`pickup_loc`, `delivery_loc`, `dropoff_loc`), đơn giá cước xuất hóa đơn và định mức lương chuyến tài xế.
 - `customers.Quotation`: Quản lý báo giá và phễu khách hàng (CRM).
 - `customers.BookingOrder`: Đơn hàng đặt xe / Booking tiếp nhận từ Sales/CS; chuẩn hóa lộ trình 3 điểm với ForeignKey `master_data.Location`. Đính kèm tệp tin gốc `booking_file` (`FileField` hỗ trợ PDF/Ảnh $\le 5\text{MB}$ có kiểm tra Magic Bytes và Pillow).
 
-### F. Phân hệ Điều độ Vận tải (`apps/dispatch`)
+#### F. Phân hệ Điều độ Vận tải (`apps/dispatch`)
 - `dispatch.DispatchTrip`: Bảng hạt nhân điều hành chuyến xe. Hỗ trợ điều phối linh hoạt cả Xe Nhà (GSS) và Xe Ngoài / Đối tác 3PL (`subcontractor`, `subcontractor_driver`, `subcontractor_driver_name`, `subcontractor_driver_phone`, `subcontractor_cost`, `subcontractor_advance`). Thuộc tính dynamic `assigned_driver_name`, `assigned_driver_phone`, `carrier_name`. Khi điều xe 3PL, `driver` (nội bộ) là `None` giúp cách ly hoàn toàn khỏi bảng tính lương nhân sự nội bộ. Chứa toàn bộ thông tin về loại hình (Nhập/Xuất/Nội địa), số Cont, loại Cont/Xe (`45G1`, `40HC`, `40GP`, `22GP`, `2x20DC`, xe tải `1T` - `15T`), số Seal, Booking/Bill, hạn Cắt Máng CY / Giờ SI, thông tin phiếu EIR (`eir_number`), hãng tàu (`shipping_line`), tên tàu/số chuyến (`vessel_voyage`), cảng đích (`destination_port`), trọng lượng VGM (`vgm_weight`), vị trí bãi cont (`bay_location`), 3 điểm lộ trình chuẩn hóa liên kết ForeignKey tới `master_data.Location` (`pickup_loc`, `warehouse_loc`, `dropoff_loc`), các mốc thời gian chuẩn hóa `DateTimeField` (`actual_gate_in_at`, `actual_gate_out_at`), và máy trạng thái 10 bước.
   - **Tệp tin đính kèm Booking (`booking_file`):** Lưu trữ file booking / lệnh cấp rỗng từ khách hàng hoặc kế thừa từ `BookingOrder`.
   - **Nghiệp vụ Cắt Kéo (Drop & Hook):** `is_split_trip`, `dropoff_driver`, `dropoff_vehicle`, `dropoff_trailer`, `driver_split_ratio`, `driver_allowance`, `dropoff_driver_allowance`.
@@ -94,10 +169,10 @@ erDiagram
   - **Quản lý Hạn Free DEM/DET & Giám định EIR:** `det_free_days`, `dem_free_days`, `det_expiry_date`, `dem_expiry_date`, `container_condition` (`GOOD`, `DAMAGED`, `CLEANING_REQUIRED`), `damage_description`.
 - `dispatch.TripTimelineItem`: Chi tiết các mốc tiến độ thực tế theo thời gian.
 
-### G. Phân hệ Chứng từ Số & OCR (`apps/documents`)
+#### G. Phân hệ Chứng từ Số & OCR (`apps/documents`)
 - `documents.TripDocument`: Lưu trữ ảnh chụp phiếu EIR lấy cont, EIR hạ cont, biên bản giao nhận hàng (POD), phiếu cân xe, hóa đơn nâng hạ, và file Booking / Lệnh cấp rỗng (`BOOKING_NOTE`) kèm kết quả nhận diện OCR AI. Tự động sinh bản ghi chứng từ khi chuyến xe có file booking đính kèm.
 
-### H. Phân hệ Chi phí & Đối chiếu (`apps/billing`)
+#### H. Phân hệ Chi phí & Đối chiếu (`apps/billing`)
 - `billing.TripExpense`: Chi phí phát sinh hiện trường liên kết trực tiếp tới `master_data.ExpenseItem` (`expense_item`) và tương thích ngược với 8 danh mục Bảng Kê Chi Phí GSS (`category`). Hỗ trợ phân loại 3 dòng chi phí chuẩn tài xế (`expense_payer_type`: COMPANY_COST, COMPANY_OBH, SUB_OBH), cờ hoàn chi hộ cho nhà xe thầu phụ `reimburse_to_subcontractor`, cờ thu hộ/chi hộ khách hàng `is_on_behalf_of_customer`, lưu trữ đầy đủ metadata hóa đơn điện tử: đơn vị phát hành (`invoice_issuer`), số hóa đơn (`invoice_number`), mã tra cứu (`invoice_lookup_code`), link tra cứu online (`invoice_lookup_url`), tiền trước thuế, thuế suất và tiền thuế GTGT. Tự động tính tổng chi phí và cập nhật P&L chuyến xe.
 - `billing.DispatcherAdvanceFund`: Quỹ tạm ứng Cấp 1 cấp cho Điều phối viên để điều hành đội xe.
 - `billing.DriverTripAdvance`: Quỹ tạm ứng Cấp 2 cấp cho Tài xế theo từng chuyến xe.
@@ -107,6 +182,5 @@ erDiagram
 - `billing.DriverPayrollSettlement`: Bảng Chốt Lương Chuyến & Quyết Toán Thu Nhập Tài Xế (Payroll Settlement). Cố định thu nhập theo kỳ, lương khoán chuyến, phụ cấp qua đêm, thưởng phạt và trừ tạm ứng tồn.
 - `billing.DebitNote`: Bảng Kê Chi Hộ Riêng Biệt (Debit Note). Tập hợp các khoản `TripExpense` có cờ `is_on_behalf_of_customer` để gửi chủ hàng thu tiền hoàn ứng.
 
-### I. Phân hệ Xử lý Sự cố (`apps/exceptions`)
+#### I. Phân hệ Xử lý Sự cố (`apps/exceptions`)
 - `exceptions.TripException`: Ghi nhận sự cố kẹt cảng, kẹt kho, vỏ cont hư hỏng, va chạm tai nạn kèm mức độ nghiêm trọng và phương án xử lý.
-

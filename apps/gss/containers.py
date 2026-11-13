@@ -1,3 +1,26 @@
+
+def _extract_note(notes, prefix):
+    if not notes:
+        return ''
+    p_lower = str(prefix).lower().strip()
+    for part in str(notes).split('|'):
+        part = part.strip()
+        if part.lower().startswith(p_lower):
+            return part[len(prefix):].strip()
+    return ''
+
+def _parse_date_safe(val):
+    if not val:
+        return None
+    if isinstance(val, (datetime.date, datetime.datetime)):
+        return val if isinstance(val, datetime.date) else val.date()
+    val_str = str(val).strip()
+    for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%Y/%m/%d'):
+        try:
+            return datetime.datetime.strptime(val_str.split()[0], fmt).date()
+        except Exception:
+            pass
+    return None
 """Danh sách container của B/L: nhập bằng dán/Excel (báo lỗi từng dòng), tự tính hạn DEM/DET, phân bổ từng cont cho nhà xe.
 
 Quy ước phân bổ theo cont (khi B/L có danh sách cont):
@@ -15,10 +38,11 @@ from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
 
+from apps.dispatch import gss_workflow as wf
 from apps.dispatch.vendor_service import iso6346_valid
 from apps.gss.models import BookingContainer, FreeTimeRule
 
-_CONT_TOKEN = re.compile(r'^[A-Z]{4}\d{7}$')
+_CONT_TOKEN = re.compile(r'^[A-Z]{4}[0-9]{7}$')
 _TYPE_RE = re.compile(r'^(20|22|40|42|45|L5|25|2[0-9A-Z]|4[0-9A-Z])[A-Z0-9]{1,3}$')
 MAX_ROWS = 1000
 
@@ -64,24 +88,105 @@ def parse_text(text):
 
 
 def parse_xlsx(fileobj):
-    """Excel: cột A số cont, B loại, C seal, D trọng lượng (kg); dòng tiêu đề tự bỏ qua."""
+    """Excel: tự động nhận diện cột Số Cont, Loại, Seal, Trọng lượng theo tiêu đề hoặc theo thứ tự (hỗ trợ có cột STT)."""
     from openpyxl import load_workbook
     try:
         wb = load_workbook(fileobj, read_only=True, data_only=True)
     except Exception:
         raise ValidationError('Không đọc được file Excel (.xlsx).')
     ws = wb.worksheets[0]
-    rows = []
-    for i, vals in enumerate(ws.iter_rows(values_only=True), start=1):
-        vals = list(vals or []) + [None] * 4
-        first = str(vals[0] or '').strip()
-        if not first or (i == 1 and not re.search(r'\d{4,}', first)):
-            continue
-        rows.append({'source_line': i, 'raw': first, 'container_type': str(vals[1] or '').strip().upper()[:10],
-                     'seal_number': str(vals[2] or '').strip().upper()[:50],
-                     'gross_weight_kg': str(vals[3]).replace(',', '.') if vals[3] not in (None, '') else None})
-        if len(rows) > MAX_ROWS:
+    all_rows = list(ws.iter_rows(values_only=True))
+    if not all_rows:
+        return []
+
+    # Tìm hàng tiêu đề trong 5 dòng đầu
+    header_idx = -1
+    col_cont = -1
+    col_type = -1
+    col_seal = -1
+    col_vgm = -1
+    col_deliv = -1
+    col_drop = -1
+    col_dem = -1
+    col_truck = -1
+    col_driver = -1
+    col_notes = -1
+
+    for r_idx, row in enumerate(all_rows[:5]):
+        row_str = [str(c or '').lower().strip() for c in (row or [])]
+        found_cont = False
+        for c_idx, cell in enumerate(row_str):
+            if any(k in cell for k in ['container', 'số cont', 'so cont', 'so container', 'số container']) or cell == 'cont':
+                col_cont = c_idx
+                found_cont = True
+            elif any(k in cell for k in ['loại', 'loai', 'size', 'type']):
+                col_type = c_idx
+            elif any(k in cell for k in ['seal', 'chì', 'chi', 'niêm']):
+                col_seal = c_idx
+            elif any(k in cell for k in ['vgm', 'trọng lượng', 'trong luong', 'weight', 'kg']):
+                col_vgm = c_idx
+            elif any(k in cell for k in ['giao', 'đóng', 'rút', 'kho']):
+                col_deliv = c_idx
+            elif any(k in cell for k in ['trả', 'rỗng', 'depot']):
+                col_drop = c_idx
+            elif any(k in cell for k in ['dem', 'det', 'hạn lệnh', 'han lenh']):
+                col_dem = c_idx
+            elif any(k in cell for k in ['đầu kéo', 'dau keo', 'biển số', 'bien so', 'số xe', 'so xe', 'truck', 'plate']):
+                col_truck = c_idx
+            elif any(k in cell for k in ['tài xế', 'tai xe', 'lái xe', 'lai xe', 'driver']) or cell in ('tài', 'tai'):
+                col_driver = c_idx
+            elif any(k in cell for k in ['ghi chú', 'ghi chu', 'note']):
+                col_notes = c_idx
+
+        if found_cont or col_cont != -1:
+            header_idx = r_idx
             break
+
+    start_row = header_idx + 1 if header_idx != -1 else 0
+    if col_cont == -1:
+        # Nếu không có header, kiểm tra nếu cột 0 là số thứ tự 1, 2, 3 thì cột cont là 1
+        if start_row < len(all_rows) and str(all_rows[start_row][0] or '').strip().isdigit():
+            col_cont, col_type, col_seal, col_vgm, col_deliv, col_drop, col_dem, col_truck, col_driver = 1, 2, 3, 4, 5, 6, 7, 8, 9
+        else:
+            col_cont, col_type, col_seal, col_vgm, col_deliv, col_drop, col_dem, col_truck, col_driver = 0, 1, 2, 3, 4, 5, 6, 7, 8
+
+    rows = []
+    for i in range(start_row, min(len(all_rows), start_row + MAX_ROWS)):
+        vals = list(all_rows[i] or [])
+        if not vals:
+            continue
+        raw_cont = str(vals[col_cont] if col_cont < len(vals) and vals[col_cont] is not None else '').strip()
+        if not raw_cont:
+            continue
+        # Bỏ qua dòng tiêu đề nếu còn sót
+        if any(h in raw_cont.lower() for h in ['số container', 'so container', 'container', 'stt']):
+            continue
+
+        raw_type = str(vals[col_type] if col_type != -1 and col_type < len(vals) and vals[col_type] is not None else '').strip().upper()[:10]
+        raw_seal = str(vals[col_seal] if col_seal != -1 and col_seal < len(vals) and vals[col_seal] is not None else '').strip().upper()[:50]
+        raw_vgm = None
+        if col_vgm != -1 and col_vgm < len(vals) and vals[col_vgm] is not None:
+            raw_vgm = str(vals[col_vgm]).replace(',', '.')
+
+        raw_truck = str(vals[col_truck] if col_truck != -1 and col_truck < len(vals) and vals[col_truck] is not None else '').strip().upper()
+        raw_driver = str(vals[col_driver] if col_driver != -1 and col_driver < len(vals) and vals[col_driver] is not None else '').strip()
+        raw_deliv = str(vals[col_deliv] if col_deliv != -1 and col_deliv < len(vals) and vals[col_deliv] is not None else '').strip()
+        raw_drop = str(vals[col_drop] if col_drop != -1 and col_drop < len(vals) and vals[col_drop] is not None else '').strip()
+        raw_dem = str(vals[col_dem] if col_dem != -1 and col_dem < len(vals) and vals[col_dem] is not None else '').strip()
+
+        rows.append({
+            'source_line': i + 1,
+            'raw': raw_cont,
+            'container_type': raw_type,
+            'seal_number': raw_seal,
+            'gross_weight_kg': raw_vgm,
+            'tractor_plate': raw_truck,
+            'driver_name': raw_driver,
+            'delivery_address': raw_deliv,
+            'dropoff_loc': raw_drop,
+            'dem_det': raw_dem
+        })
+
     return rows
 
 
@@ -95,11 +200,20 @@ def validate_rows(booking, rows):
         cn = normalize_container(r.get('raw'))
         res = {'source_line': r.get('source_line'), 'raw': r.get('raw', ''), 'container_number': cn,
                'container_type': (r.get('container_type') or '').upper()[:10], 'seal_number': (r.get('seal_number') or '')[:50],
-               'gross_weight_kg': None, 'errors': [], 'warnings': [], 'action': 'CREATE'}
+               'gross_weight_kg': None,
+               'tractor_plate': str(r.get('tractor_plate') or '').strip().upper(),
+               'driver_name': str(r.get('driver_name') or '').strip(),
+               'delivery_address': str(r.get('delivery_address') or r.get('delivery_loc') or '').strip(),
+               'dropoff_loc': str(r.get('dropoff_loc') or '').strip(),
+               'dem_det': str(r.get('dem_det') or '').strip(),
+               'errors': [], 'warnings': [], 'action': 'CREATE'}
         if not _CONT_TOKEN.match(cn):
-            res['errors'].append('Số cont phải gồm 4 chữ cái + 7 chữ số.')
+            res['errors'].append('Số cont phải đúng chuẩn 4 chữ cái + 7 chữ số (VD: MSCU1234565).')
         elif not iso6346_valid(cn):
-            res['errors'].append('Sai số kiểm tra ISO 6346 (chữ số cuối).')
+            res['warnings'].append('Sai số kiểm tra ISO 6346 (chữ số cuối).')
+            res['iso_valid'] = False
+        else:
+            res['iso_valid'] = True
         if cn in seen:
             res['errors'].append(f'Trùng với dòng {seen[cn]} trong dữ liệu nhập.')
         seen.setdefault(cn, r.get('source_line'))
@@ -124,6 +238,7 @@ def import_containers(booking, rows, *, user=None, commit=True, skip_invalid=Fal
     results = validate_rows(booking, rows)
     bad = [r for r in results if not r['ok']]
     summary = {'total': len(results), 'valid': len(results) - len(bad), 'errors': len(bad),
+               'warnings': sum(1 for r in results if r.get('warnings')),
                'create': sum(1 for r in results if r['ok'] and r['action'] == 'CREATE'),
                'update': sum(1 for r in results if r['ok'] and r['action'] == 'UPDATE'), 'results': results, 'committed': False}
     if not commit or (bad and not skip_invalid):
@@ -139,7 +254,7 @@ def import_containers(booking, rows, *, user=None, commit=True, skip_invalid=Fal
             next_no += 1
             c = BookingContainer(booking=booking, line_no=next_no, container_number=r['container_number'], company=booking.company)
         c.raw_input = str(r['raw'])[:60]
-        c.iso_valid = True
+        c.iso_valid = r.get('iso_valid', True)
         if r['container_type']:
             c.container_type = r['container_type']
         elif not c.container_type:
@@ -148,7 +263,42 @@ def import_containers(booking, rows, *, user=None, commit=True, skip_invalid=Fal
             c.seal_number = r['seal_number']
         if r['gross_weight_kg'] is not None:
             c.gross_weight_kg = r['gross_weight_kg']
+        # 1. Nơi giao hàng
+        if r.get('delivery_address'):
+            c.delivery_address = r['delivery_address']
+
+        # 2. Hạn lệnh DEM / DET
+        dem_raw = r.get('dem_det')
+        parsed_dem = _parse_date_safe(dem_raw)
+        if parsed_dem:
+            c.dem_expiry_override = parsed_dem
+            c.det_expiry_override = parsed_dem
+
+        # 3. Đầu kéo, tài xế và hạn lệnh vào notes
+        note_parts = []
+        if r.get('tractor_plate'):
+            note_parts.append(f"Xe: {r['tractor_plate']}")
+        if r.get('driver_name'):
+            note_parts.append(f"Tài: {r['driver_name']}")
+        if dem_raw and not parsed_dem:
+            note_parts.append(f"Hạn: {dem_raw}")
+        if note_parts:
+            c.notes = ' | '.join(note_parts)
+
         c.save()
+
+        # 4. Đồng bộ vào chuyến xe nếu container đã phát lệnh
+        if c.trip_id:
+            t = c.trip
+            changed_trip = False
+            if r.get('tractor_plate'):
+                t.subcontractor_truck = r['tractor_plate']
+                changed_trip = True
+            if r.get('driver_name'):
+                t.subcontractor_driver_name = r['driver_name']
+                changed_trip = True
+            if changed_trip:
+                t.save(update_fields=['subcontractor_truck', 'subcontractor_driver_name', 'updated_at'])
     sync_booking_total(booking)
     _audit(booking, 'update', user, {'containers_import': {'create': summary['create'], 'update': summary['update']}})
     summary['committed'] = True
@@ -272,7 +422,8 @@ def assign(booking, container_ids, subcontractor, *, user=None, reason='', expir
             days = vs.DEFAULT_LINK_DAYS if expires_days is None else expires_days
             alloc = BookingVendorAllocation.objects.create(
                 booking=booking, subcontractor=subcontractor, allocated_containers=0, token_hash=hashed,
-                expires_at=timezone.now() + datetime.timedelta(days=days) if days else None, company=booking.company)
+                expires_at=timezone.now() + datetime.timedelta(days=days) if days else None, company=booking.company,
+                draft_rows={'_raw_token': raw})
             vs.audit_allocation(alloc, 'GRANT', user, {'source': 'assign_containers'})
     for c in conts:
         if alloc is not None and c.allocation_id == alloc.id:
@@ -366,18 +517,22 @@ def serialize(c):
         'allocation_id': alloc.id if alloc else None, 'alloc_line_no': c.alloc_line_no,
         'vendor_id': alloc.subcontractor_id if alloc else None,
         'vendor': (alloc.subcontractor.short_name or alloc.subcontractor.name) if alloc else '',
+        'subcontractor_name': (alloc.subcontractor.short_name or alloc.subcontractor.name) if alloc else '',
         'vendor_code': alloc.subcontractor.code if alloc else '',
         'trip_code': t.trip_code if t else None, 'step_status': t.step_status if t else '',
-        'step_label': t.get_step_status_display() if t else '',
-        'tractor_plate': t.vehicle.license_plate if t and t.vehicle_id else '',
-        'driver_name': t.subcontractor_driver_name if t else '', 'driver_phone': t.subcontractor_driver_phone if t else '',
+        'is_twin_container': bool(t.is_twin_container) if t else False,
+        'container_number_2': (t.container_number_2 or '') if t else '',
+        'step_label': wf.STEP_LABELS.get(t.step_status, t.get_step_status_display()) if t else '', 'dispatch_status': (t.step_status if t else ('ASSIGNED' if alloc else 'UNASSIGNED')), 'dispatch_status_label': (wf.STEP_LABELS.get(t.step_status, t.get_step_status_display()) if t else ('Đã giao cho Nhà xe' if alloc else 'Chưa phân bổ')),
+        'tractor_plate': (t.vehicle.license_plate if t and t.vehicle_id else (t.subcontractor_truck if t and t.subcontractor_truck else (_extract_note(c.notes, 'Xe:') or ''))),
+        'driver_name': (t.subcontractor_driver_name if t and t.subcontractor_driver_name else (t.driver.full_name if t and t.driver_id else (_extract_note(c.notes, 'Tài:') or _extract_note(c.notes, 'Tai:') or ''))),
+        'driver_phone': t.subcontractor_driver_phone if t else '',
         'locked': bool(_container_locked_reason(c)), 'notes': c.notes,
     }
 
 
 def list_for(booking):
     qs = BookingContainer.objects.filter(booking=booking, is_deleted=False) \
-        .select_related('delivery_loc', 'allocation', 'allocation__subcontractor', 'trip', 'trip__vehicle', 'booking')
+        .select_related('delivery_loc', 'allocation', 'allocation__subcontractor', 'trip', 'trip__vehicle', 'trip__driver', 'booking')
     return [serialize(c) for c in qs]
 
 

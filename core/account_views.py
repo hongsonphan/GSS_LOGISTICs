@@ -136,7 +136,7 @@ class SendPasswordResetAPIView(APIView):
         if user is None:
             return Response({'detail': 'Không tìm thấy tài khoản'}, status=status.HTTP_404_NOT_FOUND)
         if not sec.email_enabled():
-            return Response({'detail': 'Hệ thống chưa cấu hình email gửi đi (xem docs/CAU_HINH_EMAIL.md)'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Hệ thống chưa cấu hình email gửi đi (xem docs/05-architecture.md)'}, status=status.HTTP_400_BAD_REQUEST)
         to = sec.user_email(user)
         if not to:
             return Response({'detail': 'Tài khoản chưa có email. Hãy bổ sung email trong hồ sơ nhân sự.'}, status=status.HTTP_400_BAD_REQUEST)

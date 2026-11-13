@@ -42,6 +42,6 @@ htmlcov/
 Claude outputs/
 gss_local_credentials.txt
 
-# Claude Code: worktree và cấu hình riêng máy
-.claude/worktrees/
-.claude/settings.local.json
+# Claude Code / AI Agents riêng máy
+.claude/
+.agents/

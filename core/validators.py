@@ -16,7 +16,7 @@ MAGIC_BYTES = {
 
 def validate_uploaded_document(file_obj, max_size=MAX_UPLOAD_SIZE_BYTES):
     """
-    Xác thực tệp chứng từ tải lên (POD, EIR, hóa đơn) theo Tiêu chuẩn 7 & 8 (SECURITY_AUDIT.md):
+    Xác thực tệp chứng từ tải lên (POD, EIR, hóa đơn) theo Tiêu chuẩn 7 & 8 (08-security.md):
     1. Giới hạn kích thước tối đa 5MB.
     2. Chống giả mạo đuôi tệp: Kiểm tra chữ ký Magic Bytes.
     3. Xác thực tính toàn vẹn hình ảnh bằng Pillow (đối với ảnh).

@@ -192,10 +192,23 @@ function switchTab(tabId, updateHistory = true) {
     // Ẩn view chi tiết chuyến xe, phiếu thu chi, bảng kê đối soát nếu đang mở
     const detailView = document.getElementById('view-trip-detail');
     if (detailView) detailView.classList.add('hidden-view');
+    const dispatchOrderView = document.getElementById('view-dispatch-order');
+    if (dispatchOrderView) dispatchOrderView.classList.add('hidden-view');
     const voucherDetailView = document.getElementById('view-cash-voucher-detail');
     if (voucherDetailView) voucherDetailView.classList.add('hidden-view');
     const soaDetailView = document.getElementById('view-customer-ar-statement');
     if (soaDetailView) soaDetailView.classList.add('hidden-view');
+
+    // Tự động đóng tất cả các popup modal nổi khi chuyển đổi phân hệ (chỉ dùng class 'hidden' chuẩn modal, không gắn 'hidden-view' để tránh lỗi display:none !important)
+    if (typeof closeDispatchOrderModal === 'function') closeDispatchOrderModal();
+    if (typeof closeImportContainersModal === 'function') closeImportContainersModal();
+    ['modal-dispatch-order', 'modal-import-containers', 'modal-booking', 'modal-quotation', 'modal-cash-transaction', 'modal-driver-advance', 'modal-settle-advance', 'modal-dispatcher-fund'].forEach(id => {
+        const m = document.getElementById(id);
+        if (m) {
+            m.classList.add('hidden');
+            m.classList.remove('hidden-view');
+        }
+    });
 
     // Chuyển đổi hiển thị view. Gói GSS: các mục Dashboard/Điều vận & Vendor/Sale & Booking/Bãi & Phương Tiện hiển thị màn hình GSS (view-gss)
     const gssTab = !!(window.GSSApp && GSSApp.hasTab(tabId));
@@ -259,13 +272,16 @@ function switchTab(tabId, updateHistory = true) {
     try {
         if (gssTab) GSSApp.enter(tabId);
         if (tabId === 'dashboard' && !gssTab) loadDashboardData();
-        if (tabId === 'dieu-van' && !gssTab) loadTripsData();
+        if (tabId === 'dieu-van' && !gssTab) {
+            if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+            if (typeof loadTripsData === 'function') loadTripsData();
+        }
         if (tabId === 'nhan-su') loadHRData();
         if (tabId === 'xe-bai' && !gssTab) loadFleetData();
         if (tabId === 'kinh-doanh' && !gssTab) loadSalesData();
         if (tabId === 'ke-toan') {
             switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook');
-            loadAccountingAdvancesData();
+            if (window.hasFeature('fleet_internal')) loadAccountingAdvancesData();
         }
         if (tabId === 'quyet-toan') loadSettlementData();
         if (tabId === 'hai-quan') fetchCustomsDeclarations();
@@ -304,6 +320,20 @@ function resolveInitialRoute() {
     // 0. Kiểm tra URL trang chi tiết bản tin: /news/<hashid> (đã được Django render trên base.html)
     const newsDetailMatch = pathname.match(/^\/news\/([a-zA-Z0-9_-]+)/);
     if (newsDetailMatch && newsDetailMatch[1]) {
+        return;
+    }
+
+    // 0.9. Kiểm tra deep-link Lệnh điều động & Phân bổ Vendor trang riêng: /dispatch/orders/<id>
+    const orderMatch = pathname.match(/^\/dispatch\/orders\/([a-zA-Z0-9_-]+)/);
+    if (orderMatch && orderMatch[1]) {
+        const orderId = orderMatch[1];
+        switchTab('dieu-van', false);
+        if (typeof openDispatchOrderPage === 'function') {
+            openDispatchOrderPage(orderId === 'new' ? null : orderId, false);
+        }
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: 'dispatch-order', orderId }, '', window.location.pathname);
+        }
         return;
     }
 

@@ -63,7 +63,13 @@ class BookingActiveAPIView(APIView):
         ).order_by('-created_at', '-id')
         results = []
         for b in bookings:
+            alloc_cnt = b.containers.filter(allocation__isnull=False, is_deleted=False).count()
+            if alloc_cnt == 0:
+                alloc_cnt = b.vendor_allocations.filter(is_deleted=False).exclude(status='REVOKED').aggregate(t=Sum('allocated_containers'))['t'] or 0
+            is_dispatched = (b.total_containers or 0) > 0 and (alloc_cnt >= (b.total_containers or 0))
             results.append({
+                'allocated_containers': alloc_cnt,
+                'is_fully_dispatched': is_dispatched,
                 'id': b.id,
                 'booking_code': b.booking_code,
                 'customer_id': b.customer.id,
@@ -510,7 +516,7 @@ class SalesAPIView(APIView):
         overview_metrics = {
             # Thẻ 1: DOANH THU THỰC HIỆN
             'earned_revenue': earned_revenue_total,
-            'earned_revenue_trend': f"{settled_trips_count}/{total_completed_trips} Chuyến Đối Soát",
+            'earned_revenue_trend': f"{total_completed_trips} Chuyến Hoàn Tất",
             'earned_revenue_note': f"{total_completed_trips} chuyến xe hoàn tất" + (f" · {settled_trips_count} đã đối soát" if settled_trips_count > 0 else ""),
 
             # Thẻ 2: DOANH THU DỰ KIẾN (Kế hoạch từ HĐ đã ký & phễu)
@@ -713,6 +719,11 @@ class SalesAPIView(APIView):
                 container_size=data.get('container_size', '40HC'),
                 total_containers=int(data.get('total_containers') or 1),
                 commodity=data.get('commodity', '').strip(),
+                mbl_number=data.get('mbl_number', '').strip().upper(),
+                hbl_number=data.get('hbl_number', '').strip().upper(),
+                supplier_name=data.get('supplier_name', '').strip(),
+                port_of_loading=data.get('port_of_loading', '').strip().upper(),
+                port_of_discharge=data.get('port_of_discharge', '').strip().upper(),
                 hs_code=data.get('hs_code', '').strip(),
                 pickup_location=pickup_str.upper(),
                 delivery_location=delivery_str.upper(),

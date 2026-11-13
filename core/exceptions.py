@@ -1,4 +1,6 @@
 import logging
+from django.shortcuts import render
+from django.http import JsonResponse
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,10 +9,45 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 
 logger = logging.getLogger(__name__)
 
+
+def custom_404_view(request, exception=None):
+    """
+    Xử lý lỗi 404 bảo mật cấp toàn hệ thống (tuân thủ Tiêu chuẩn 6 / 08-security.md):
+    - Tuyệt đối không làm lộ URLconf, danh sách endpoint hoặc chi tiết hệ thống.
+    - Với API (/api/*): Trả về JSON chuẩn {"success": False, "error_code": "ERR_404", "message": "Tài nguyên không tồn tại."}
+    - Với Web / SPA: Render template 404.html sang trọng, bảo mật của GSS TMS.
+    """
+    if request.path.startswith('/api/'):
+        return JsonResponse({
+            'success': False,
+            'error_code': 'ERR_404',
+            'message': 'Đường dẫn API không tồn tại hoặc đã dời đổi.',
+            'error': 'Đường dẫn API không tồn tại hoặc đã dời đổi.'
+        }, status=404)
+    return render(request, '404.html', status=404)
+
+
+def custom_500_view(request):
+    """
+    Xử lý lỗi 500 bảo mật:
+    - Ẩn toàn bộ traceback / mã nguồn khỏi người dùng.
+    - Ghi log bảo mật phía máy chủ.
+    - Trả về JSON cho API hoặc render template 404.html với mã lỗi 500.
+    """
+    if request.path.startswith('/api/'):
+        return JsonResponse({
+            'success': False,
+            'error_code': 'ERR_INTERNAL_SERVER_ERROR',
+            'message': 'Đã xảy ra lỗi nội bộ máy chủ. Vui lòng liên hệ quản trị hệ thống.',
+            'error': 'Đã xảy ra lỗi nội bộ máy chủ. Vui lòng liên hệ quản trị hệ thống.'
+        }, status=500)
+    return render(request, '404.html', status=500)
+
+
 def custom_exception_handler(exc, context):
     """
     Custom Exception Handler cho toàn bộ REST API của GSS_Logistics.
-    Tuân thủ Tiêu chuẩn 6 (SECURITY_AUDIT.md):
+    Tuân thủ Tiêu chuẩn 6 (08-security.md):
     - Ẩn traceback hệ thống đối với người dùng/mobile client.
     - Chuẩn hóa cấu trúc phản hồi lỗi dạng JSON:
       {

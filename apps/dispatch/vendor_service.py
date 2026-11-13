@@ -10,6 +10,7 @@ Quy tắc chính (xem docs/GSS_RESTRUCTURE_PLAN.md §2.2):
 import hashlib
 import re
 import secrets
+import time
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError
@@ -17,6 +18,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
+from apps.dispatch import gss_workflow as wf
 from apps.dispatch.models import (
     AllocationStatus, BookingVendorAllocation, DispatchTrip, ShipmentType, TripStatus,
 )
@@ -100,7 +102,7 @@ def _check_count(booking, count, exclude_pk=None):
 
 
 @transaction.atomic
-def create_allocation(booking, subcontractor, count, expires_days=DEFAULT_LINK_DAYS, note='', user=None):
+def create_allocation(booking, subcontractor, count, expires_days=DEFAULT_LINK_DAYS, note='', user=None, **kwargs):
     """Tạo phiếu chia cont; trả (phiếu, token gốc – chỉ hiện một lần)."""
     type(booking).objects.select_for_update().get(pk=booking.pk)  # khóa booking để hai người chia cùng lúc không vượt tổng
     if container_mode(booking):
@@ -109,9 +111,12 @@ def create_allocation(booking, subcontractor, count, expires_days=DEFAULT_LINK_D
         raise ValidationError('Nhà xe đã ngừng hoạt động.')
     _check_count(booking, count)
     raw, hashed = _new_token()
+    drafts = dict(kwargs.get('draft_rows') if 'draft_rows' in kwargs else {})
+    drafts['_raw_token'] = raw
     alloc = BookingVendorAllocation.objects.create(
         booking=booking, subcontractor=subcontractor, allocated_containers=count, token_hash=hashed,
-        expires_at=timezone.now() + timedelta(days=expires_days) if expires_days else None, note=note[:255])
+        expires_at=timezone.now() + timedelta(days=expires_days) if expires_days else None, note=note[:255],
+        draft_rows=drafts)
     audit_allocation(alloc, 'GRANT', user, {'containers': count, 'expires_days': expires_days})
     return alloc, raw
 
@@ -127,7 +132,7 @@ def resize_allocation(alloc, count):
     if count < used:
         raise ValidationError(f'Không giảm xuống {count} cont vì dòng #{used} đã có chuyến xe.')
     alloc.allocated_containers = count
-    alloc.draft_rows = {k: v for k, v in (alloc.draft_rows or {}).items() if int(k) <= count}
+    alloc.draft_rows = {k: v for k, v in (alloc.draft_rows or {}).items() if str(k).isdigit() and int(k) <= count or str(k).startswith('_')}
     alloc.save(update_fields=['allocated_containers', 'draft_rows', 'updated_at'])
     refresh_status(alloc)
     return alloc
@@ -164,7 +169,7 @@ def set_locked(alloc, locked, user=None):
 def refresh_status(alloc):
     if alloc.status == AllocationStatus.REVOKED:
         return alloc.status
-    filled = alloc.trips.filter(is_deleted=False).count()
+    filled = alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').count()
     if alloc.locked_at:
         new = AllocationStatus.LOCKED
     elif filled >= alloc.allocated_containers:
@@ -231,6 +236,51 @@ def _is_blank(row):
 
 
 # ---------- đọc / ghi dòng ----------
+def _serialize_milestones(trip):
+    """Mốc thời gian 7 chặng hành trình của chuyến xe (không lộ thông tin nội bộ GSS)."""
+    if not trip:
+        return {}
+    iso = lambda dt: dt.isoformat() if dt else None
+    return {
+        'created_at': iso(getattr(trip, 'created_at', None)),
+        'arrived_pickup_at': iso(getattr(trip, 'arrived_pickup_at', None)),
+        'loaded_at': iso(getattr(trip, 'loaded_at', None)),
+        'arrived_delivery_at': iso(getattr(trip, 'arrived_delivery_at', None)),
+        'unloaded_at': iso(getattr(trip, 'unloaded_at', None)),
+        'empty_returning_at': iso(getattr(trip, 'empty_returning_at', None)),
+        'empty_returned_at': iso(getattr(trip, 'empty_returned_at', None)),
+    }
+
+
+def _step_index(step_status):
+    if step_status in wf.STEPS:
+        return wf.STEPS.index(step_status) + 1
+    return 0
+
+
+def _trip_events_map(trip_ids):
+    """Lấy tối đa 10 sự kiện TrackingEventLog mới nhất cho mỗi chuyến (ẩn actor nội bộ)."""
+    if not trip_ids:
+        return {}
+    from core.models import TrackingEventLog
+    out = {}
+    logs = (
+        TrackingEventLog.objects.filter(trip_id__in=trip_ids)
+        .order_by('trip_id', '-event_time')
+        .values('trip_id', 'event_type', 'title', 'description', 'event_time')
+    )
+    for row in logs:
+        bucket = out.setdefault(row['trip_id'], [])
+        if len(bucket) < 10:
+            bucket.append({
+                'event_type': row['event_type'],
+                'title': row['title'],
+                'description': row['description'] or '',
+                'event_time': row['event_time'].isoformat() if row['event_time'] else None,
+            })
+    return out
+
+
 def _trip_row(trip):
     return {
         'container_number': trip.container_number or '', 'seal_number': '' if trip.seal_number in ('', '-') else trip.seal_number,
@@ -238,6 +288,8 @@ def _trip_row(trip):
         'trailer_plate': (trip.trailer.license_plate if trip.trailer_id else trip.trailer_plate_text) or '',
         'driver_name': trip.subcontractor_driver_name or '', 'driver_phone': trip.subcontractor_driver_phone or '',
         'vendor_note': trip.vendor_note or '',
+        'is_twin_container': bool(trip.is_twin_container),
+        'container_number_2': trip.container_number_2 or '',
     }
 
 
@@ -249,7 +301,9 @@ def row_editable(trip):
 def rows_for(alloc, for_vendor=True):
     """Đúng N dòng: dòng đã có chuyến lấy từ chuyến, dòng khác lấy từ bản nháp hoặc để trống."""
     from apps.gss.models import BookingContainer
-    trips = {t.vendor_line_no: t for t in alloc.trips.filter(is_deleted=False).select_related('vehicle', 'trailer')}
+    trips = {t.vendor_line_no: t for t in alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').select_related('vehicle', 'trailer')}
+    events_map = _trip_events_map([t.id for t in trips.values()])
+    cancelled_cn = {t.vendor_line_no: t.container_number for t in alloc.trips.filter(is_deleted=False, step_status='CANCELLED').order_by('id') if t.container_number}
     drafts = alloc.draft_rows or {}
     by_line = {c.alloc_line_no: c for c in BookingContainer.objects.filter(allocation=alloc, is_deleted=False).select_related('delivery_loc')}
     cmode = bool(by_line) or container_mode(alloc.booking)
@@ -260,15 +314,36 @@ def rows_for(alloc, for_vendor=True):
         bc = by_line.get(n)
         data = _trip_row(trip) if trip else {**{k: '' for k in FIELDS}, **drafts.get(str(n), {})}
         moved = cmode and bc is None and trip is None
+        if moved and not data.get('container_number') and n in cancelled_cn:
+            data['container_number'] = cancelled_cn[n]
         if bc is not None and not trip:
             data['container_number'] = bc.container_number
             data['seal_number'] = data.get('seal_number') or bc.seal_number
+        step_status = trip.step_status if trip else ''
+        from apps.dispatch import gss_messages as msg
+        trip_tok = msg.trip_token(trip) if trip else None
+        driver_url = f'/q/{trip_tok}/' if trip_tok else None
         out.append({
             'line_no': n, **data,
+            'trip_id': trip.id if trip else None,
             'trip_code': trip.trip_code if trip else None,
-            'step_label': trip.get_step_status_display() if trip else ('Đã chuyển cho nhà xe khác' if moved else ''),
+            'trip_token': trip_tok,
+            'driver_token': trip.driver_token if trip else None,
+            'driver_url': driver_url,
+            'zalo_message': msg.compose_message(trip, '') if trip else '',
+            'zalo_url': msg.zalo_url(trip.subcontractor_driver_phone) if trip else '',
+            'pickup': (trip.pickup_location or '') if trip else '',
+            'warehouse': (trip.warehouse_location or '') if trip else '',
+            'dropoff': (trip.dropoff_location or '') if trip else '',
+            'dem_expiry': trip.dem_expiry_date.strftime('%d/%m/%Y') if (trip and trip.dem_expiry_date) else '',
+            'det_expiry': trip.det_expiry_date.strftime('%d/%m/%Y') if (trip and trip.det_expiry_date) else '',
+            'step_status': step_status,
+            'step_index': _step_index(step_status),
+            'step_label': wf.STEP_LABELS.get(step_status, trip.get_step_status_display()) if trip else ('Đã chuyển cho nhà xe khác' if moved else ''),
+            'milestones': _serialize_milestones(trip) if trip else {},
+            'events': events_map.get(trip.id, []) if trip else [],
             'editable': (not moved and not finished and row_editable(trip)) if for_vendor else not moved,
-            'container_locked': bc is not None, 'moved': moved,
+            'container_locked': bool(bc is not None), 'moved': moved,
             'container_type': (bc.container_type if bc else '') or alloc.booking.container_size,
             'delivery': ((bc.delivery_loc.name if bc.delivery_loc_id else bc.delivery_address) if bc else '') or '',
         })
@@ -281,14 +356,27 @@ def _find_or_create_vehicle(plate, subcontractor):
     if veh:
         if veh.is_deleted:
             raise ValidationError(f'Biển số {plate} đã bị ngừng sử dụng trong danh mục, hãy liên hệ điều vận.')
-        if veh.ownership_type != VehicleOwnership.SUBCONTRACTOR or (veh.subcontractor_id and veh.subcontractor_id != subcontractor.id):
-            raise ValidationError(f'Biển số {plate} đã thuộc xe khác trong hệ thống, hãy liên hệ điều vận.')
-        if not veh.subcontractor_id:
+        if veh.subcontractor_id and veh.subcontractor_id != subcontractor.id:
+            raise ValidationError(f'Biển số {plate} đã thuộc nhà xe khác trong hệ thống, hãy liên hệ điều vận.')
+        upd = []
+        if veh.ownership_type != VehicleOwnership.SUBCONTRACTOR:
+            veh.ownership_type = VehicleOwnership.SUBCONTRACTOR
+            upd.append('ownership_type')
+        if not veh.subcontractor_id or veh.ownership_type != VehicleOwnership.SUBCONTRACTOR:
             veh.subcontractor = subcontractor
-            veh.save(update_fields=['subcontractor', 'updated_at'])
+            upd.append('subcontractor')
+        if upd:
+            upd.append('updated_at')
+            veh.save(update_fields=upd)
         return veh
-    return Vehicle.objects.create(license_plate=plate, vehicle_type=VehicleType.TRACTOR,
-                                  ownership_type=VehicleOwnership.SUBCONTRACTOR, subcontractor=subcontractor)
+    return Vehicle.objects.create(
+        license_plate=plate,
+        vehicle_type=VehicleType.TRACTOR,
+        ownership_type=VehicleOwnership.SUBCONTRACTOR,
+        subcontractor=subcontractor,
+        **({'company': subcontractor.company} if getattr(subcontractor, 'company_id', None) else {}),
+    )
+
 
 
 def _by_plate_key(manager, plate):
@@ -333,7 +421,7 @@ def build_trip(booking, subcontractor, row, vehicle, *, alloc=None, line_no=None
     from core.sequences import next_code
     b, extra = booking, extra or {}
     trailer = _find_trailer(row['trailer_plate'])
-    code = next_code(DispatchTrip, 'trip_code', f"DV.{timezone.localdate():%y%m}.", 3)
+    code = next_code(DispatchTrip, 'trip_code', f"VC.{timezone.localdate():%y%m}.", 3)
     common = dict(
         trip_code=code, vehicle=vehicle, trailer=trailer, trailer_plate_text='' if trailer else row['trailer_plate'],
         subcontractor=subcontractor, subcontractor_driver_name=row['driver_name'], subcontractor_driver_phone=row['driver_phone'],
@@ -391,6 +479,28 @@ def _log_changes(alloc, trip, changes, source, user=None):
         changes={k: {'old': a, 'new': b} for k, (a, b) in changes.items()} | {'_source': source}, company=trip.company)
 
 
+def _sync_paired_20_trips(rows, trips):
+    """Liên kết cặp 2 cont 20ft chạy chung đầu kéo (is_twin_container + container_number_2 + sync_trip_containers)."""
+    from apps.dispatch.models import sync_trip_containers
+    for raw in rows:
+        try:
+            n = int(raw.get('line_no'))
+            pair_n = int(raw.get('paired_with_line_no'))
+        except (TypeError, ValueError):
+            continue
+        if n == pair_n:
+            continue
+        t1, t2 = trips.get(n), trips.get(pair_n)
+        if not t1 or not t2:
+            continue
+        for pri, sec in ((t1, t2), (t2, t1)):
+            pri.is_twin_container = True
+            pri.container_number_2 = sec.container_number or ''
+            pri.seal_number_2 = '' if sec.seal_number in ('', '-') else sec.seal_number
+            pri.save(update_fields=['is_twin_container', 'container_number_2', 'seal_number_2', 'updated_at'])
+            sync_trip_containers(pri)
+
+
 @transaction.atomic
 def submit_rows(alloc, rows, source='vendor', user=None):
     """Lưu các dòng gửi lên. rows: list dict có `line_no`. Trả {'results': [...], 'saved': n}.
@@ -410,7 +520,7 @@ def submit_rows(alloc, rows, source='vendor', user=None):
     from apps.gss.models import BookingContainer
     by_line = {c.alloc_line_no: c for c in BookingContainer.objects.filter(allocation=alloc, is_deleted=False)}
     cmode = bool(by_line) or container_mode(alloc.booking)
-    trips = {t.vendor_line_no: t for t in alloc.trips.select_for_update(of=('self',)).filter(is_deleted=False).select_related('vehicle', 'trailer')}
+    trips = {t.vendor_line_no: t for t in alloc.trips.select_for_update(of=('self',)).filter(is_deleted=False).exclude(step_status='CANCELLED').select_related('vehicle', 'trailer')}
     drafts = dict(alloc.draft_rows or {})
     seen_containers, results, saved = {}, [], 0
     for raw in rows:
@@ -430,7 +540,7 @@ def submit_rows(alloc, rows, source='vendor', user=None):
             res.update(ok=False, errors=['Dòng này đã chuyển cho nhà xe khác.'])
             continue
         if bc is not None and not trips.get(n):
-            row['container_number'] = bc.container_number  # số cont do GSS nhập theo B/L, nhà xe không đổi
+            row['container_number'] = bc.container_number
             row['seal_number'] = row['seal_number'] or bc.seal_number.upper()
         errs, warns = _validate_row(row)
         res['errors'], res['warnings'] = errs, warns
@@ -479,7 +589,61 @@ def submit_rows(alloc, rows, source='vendor', user=None):
     alloc.save(update_fields=['draft_rows', 'last_submitted_at', 'updated_at'])
     refresh_status(alloc)
     sync_booking_progress(alloc.booking)
+    _sync_paired_20_trips(rows, trips)
     return {'results': results, 'saved': saved}
+
+
+@transaction.atomic
+def clear_row(alloc, line_no, source='vendor', user=None):
+    """Xóa nháp hoặc hủy gán xe dòng còn ở trạng thái READY (chưa chạy) để gán lại."""
+    from core.models import AuditLog, TrackingEventLog
+    from apps.gss.models import BookingContainer
+    alloc = BookingVendorAllocation.objects.select_for_update().select_related('booking', 'subcontractor').get(pk=alloc.pk)
+    if alloc.status == AllocationStatus.REVOKED:
+        raise ValidationError('Phiếu đã bị thu hồi.')
+    if source == 'vendor':
+        if alloc.locked_at:
+            raise ValidationError('Phiếu đã khóa, nhà xe không thể sửa/xóa. Liên hệ điều vận GSS.')
+        if is_expired(alloc):
+            raise ValidationError('Link đã hết hạn, hãy xin điều vận GSS cấp link mới.')
+        if lifecycle(alloc)['finished']:
+            raise ValidationError('Lệnh đã hoàn tất, nhà xe chỉ còn xem.')
+    try:
+        n = int(line_no)
+    except (TypeError, ValueError):
+        raise ValidationError('Số dòng không hợp lệ.')
+    if not 1 <= n <= alloc.allocated_containers:
+        raise ValidationError(f'Dòng #{n} ngoài phạm vi.')
+    trip = alloc.trips.select_for_update().filter(is_deleted=False, vendor_line_no=n).exclude(step_status='CANCELLED').first()
+    if trip:
+        if source == 'vendor' and trip.step_status != 'READY':
+            raise ValidationError('Chuyến đã bắt đầu thực hiện, không thể hủy gán xe qua cổng nhà xe. Liên hệ điều vận GSS.')
+        old_plate = trip.vehicle.license_plate if trip.vehicle_id else ''
+        trip.step_status = 'CANCELLED'
+        trip.status = TripStatus.CANCELLED
+        trip.is_deleted = True
+        trip.vendor_line_no = None
+        trip.save(update_fields=['step_status', 'status', 'is_deleted', 'vendor_line_no', 'updated_at'])
+        BookingContainer.objects.filter(allocation=alloc, alloc_line_no=n, trip=trip).update(trip=None, updated_at=timezone.now())
+        TrackingEventLog.objects.create(
+            trip=trip, event_type='STEP_CANCELLED', title='Hủy gán xe',
+            description=f'Hủy gán xe {old_plate} ở dòng #{n}', event_time=timezone.now(),
+            metadata={'by': user.get_username() if (user and getattr(user, 'is_authenticated', False)) else f'nhà xe {alloc.subcontractor.short_name or alloc.subcontractor.code}'},
+        )
+        AuditLog.objects.create(
+            actor=user if (user and getattr(user, 'is_authenticated', False)) else None,
+            actor_label=user.get_username() if (user and getattr(user, 'is_authenticated', False)) else f'nhà xe {alloc.subcontractor.short_name or alloc.subcontractor.code} qua link',
+            action='update', model_label='dispatch.dispatchtrip', object_id=str(trip.pk), object_repr=trip.trip_code,
+            changes={'vendor_line_no': {'old': n, 'new': None}, '_source': source, '_action': 'clear_row'},
+            company=trip.company,
+        )
+    drafts = dict(alloc.draft_rows or {})
+    drafts.pop(str(n), None)
+    alloc.draft_rows = drafts
+    alloc.save(update_fields=['draft_rows', 'updated_at'])
+    refresh_status(alloc)
+    sync_booking_progress(alloc.booking)
+    return {'cleared_line': n, 'message': f'Đã xóa/hủy gán xe dòng #{n}.'}
 
 
 def sync_booking_progress(booking):
@@ -496,8 +660,10 @@ def sync_booking_progress(booking):
         booking.save(update_fields=['dispatched_containers', 'status', 'updated_at'])
 
 
-def allocation_summary(alloc):
-    filled = alloc.trips.filter(is_deleted=False).count()
+def allocation_summary(alloc, request=None):
+    filled = alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').count()
+    raw = (alloc.draft_rows or {}).get('_raw_token')
+    vendor_link = request.build_absolute_uri(f'/vendor/{raw}/') if (request and raw) else ''
     return {
         'id': alloc.id, 'subcontractor_id': alloc.subcontractor_id,
         'subcontractor': alloc.subcontractor.short_name or alloc.subcontractor.name,
@@ -508,6 +674,7 @@ def allocation_summary(alloc):
         'containers': alloc.containers.filter(is_deleted=False).count(), 'lifecycle': lifecycle(alloc),
         'last_opened_at': alloc.last_opened_at.isoformat() if alloc.last_opened_at else None,
         'last_submitted_at': alloc.last_submitted_at.isoformat() if alloc.last_submitted_at else None,
+        'vendor_link': vendor_link,
     }
 
 
@@ -518,3 +685,916 @@ def effective_notes(booking):
         'destination_notes': booking.destination_notes or (loc.destination_notes if loc else '') or '',
         'road_restrictions': booking.road_restrictions or (loc.road_restrictions if loc else '') or '',
     }
+
+
+def send_vendor_allocation_email(alloc, raw_token, request=None):
+    """Gửi email thông báo Lệnh Điều Động và link điều phối bảo mật cho Nhà xe."""
+    import logging
+    from django.conf import settings
+    from django.core.mail import send_mail
+    logger = logging.getLogger(__name__)
+
+    sub = alloc.subcontractor
+    to_email = getattr(sub, 'company_email', '') or getattr(sub, 'contact_email', '') or getattr(sub, 'email', '')
+    if not to_email:
+        logger.info(f"Subcontractor {sub.name} chưa cấu hình email, bỏ qua gửi email.")
+        return False, "Nhà xe chưa có địa chỉ email liên hệ trong danh mục."
+
+    if request:
+        base_url = request.build_absolute_uri('/')[:-1]
+    else:
+        base_url = getattr(settings, 'SITE_URL', 'http://127.0.0.1:8086').rstrip('/')
+
+    vendor_link = f"{base_url}/vendor/{raw_token}/"
+    b = alloc.booking
+    notes = effective_notes(b)
+
+    brand = getattr(settings, 'EMAIL_BRAND_NAME', 'GSS TMS')
+    subject = f"[{brand}] Lệnh Điều Động Vận Tải - Booking {b.booking_code} - {sub.name}"
+    message = f"""Kính gửi Quý đối tác vận tải {sub.name},
+
+Phòng Điều Vận trân trọng gửi thông tin Lệnh Điều Động vận chuyển thuộc Booking {b.booking_code}:
+- Số lượng container được phân bổ: {alloc.allocated_containers} cont ({b.container_size or '40HC'})
+- Lộ trình vận chuyển: {b.pickup_location or 'Nơi lấy'} -> {b.delivery_location or 'Nơi giao'} -> {b.dropoff_location or 'Hạ rỗng'}
+- Hạn lệnh DEM / DET: {b.dem_expiry or '—'} / {b.det_expiry or '—'}
+- Ghi chú điểm đến: {notes.get('destination_notes') or 'Theo chỉ dẫn kho'}
+- Lưu ý cấm đường / giờ cấm tải: {notes.get('road_restrictions') or 'Tuân thủ biển báo giao thông'}
+
+Quý nhà xe vui lòng bấm vào liên kết bảo mật dưới đây để gán Đầu kéo, Rơ-moóc và Bác tài nhận lệnh:
+{vendor_link}
+
+(Quý nhà xe cũng có thể chọn trực tiếp xe/tài đã từng chạy từ droplist hoặc tải file Excel mẫu về điền và tải lên hệ thống).
+
+Trân trọng,
+Phòng Điều Vận - Green Solutions Smart (GSS)
+"""
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[to_email],
+            fail_silently=False,
+        )
+        logger.info(f"Đã gửi email điều phối cho {sub.name} ({to_email}) thành công.")
+        return True, f"Đã gửi email thành công tới {to_email}"
+    except Exception as e:
+        logger.warning(f"Lỗi gửi email cho nhà xe {sub.name}: {e}")
+        return False, f"Lỗi gửi email: {str(e)}"
+
+
+def _ensure_vendor_writable(alloc, action_label='sửa'):
+    """Kiểm tra phiếu phân bổ còn cho phép nhà xe thao tác hay đã thu hồi / khóa / hết hạn / hoàn tất."""
+    if alloc.status == AllocationStatus.REVOKED:
+        raise ValidationError('Phiếu đã bị thu hồi.')
+    if alloc.locked_at:
+        raise ValidationError(f'Phiếu đã khóa, nhà xe không thể {action_label}. Liên hệ điều vận GSS.')
+    if is_expired(alloc):
+        raise ValidationError('Link đã hết hạn, hãy xin điều vận GSS cấp link mới.')
+    if lifecycle(alloc)['finished']:
+        raise ValidationError('Lệnh đã hoàn tất, nhà xe chỉ còn xem. Liên hệ điều vận GSS nếu cần sửa.')
+
+
+def _phone_key(phone):
+    """Chuẩn hóa SĐT để gộp trùng khi lấy danh mục tài xế của nhà xe."""
+    raw = (phone or '').strip()
+    digits = re.sub(r'\D', '', raw)
+    return digits or raw.lower()
+
+
+def vendor_catalog(subcontractor):
+    """Trả về danh mục Đầu kéo, Rơ-moóc và Tài xế thuộc riêng một nhà xe."""
+    from apps.fleet.models import Vehicle
+    from apps.gss.containers import normalize_plate
+    from apps.master_data.models import SubcontractorDriver, SubcontractorTrailer
+
+    tractors_qs = (
+        Vehicle.objects.filter(subcontractor=subcontractor, is_deleted=False)
+        .order_by('license_plate')[:500]
+    )
+    tractors = [v.license_plate for v in tractors_qs]
+    tractors_detail = []
+    for v in tractors_qs:
+        tractors_detail.append({
+            'id': v.id,
+            'plate': v.license_plate,
+            'license_plate': v.license_plate,
+            'brand': v.brand or '',
+            'payload_capacity_kg': v.payload_capacity_kg or 0,
+            'display_payload': v.display_payload,
+            'registration_expiry': v.registration_expiry.strftime('%Y-%m-%d') if v.registration_expiry else '',
+            'next_maintenance_date': v.next_maintenance_date.strftime('%Y-%m-%d') if v.next_maintenance_date else '',
+            'status': v.status or 'IDLE',
+            'notes': getattr(v, 'notes', '') or '',
+        })
+
+    trailers_map = {}
+    trailers_detail_map = {}
+    for tr in (
+        SubcontractorTrailer.objects.filter(subcontractor=subcontractor, is_deleted=False, is_active=True)
+        .order_by('license_plate')[:500]
+    ):
+        clean = _norm_plate(tr.license_plate)
+        key = normalize_plate(clean)
+        if clean and key and key not in trailers_map:
+            trailers_map[key] = clean
+            trailers_detail_map[key] = {
+                'id': tr.id,
+                'plate': clean,
+                'license_plate': clean,
+                'trailer_type': tr.trailer_type or 'Moóc Xương 40ft',
+                'brand': getattr(tr, 'brand', '') or '',
+                'payload_capacity_kg': getattr(tr, 'payload_capacity_kg', 32000) or 32000,
+                'registration_expiry': tr.registration_expiry.strftime('%Y-%m-%d') if getattr(tr, 'registration_expiry', None) else '',
+                'next_maintenance_date': tr.next_maintenance_date.strftime('%Y-%m-%d') if getattr(tr, 'next_maintenance_date', None) else '',
+                'status': getattr(tr, 'status', 'ACTIVE') or 'ACTIVE',
+                'notes': tr.notes or '',
+            }
+
+    drivers_map = {}
+    for d in (
+        SubcontractorDriver.objects.filter(subcontractor=subcontractor, is_deleted=False, is_active=True)
+        .order_by('full_name')[:500]
+    ):
+        clean_phone = (d.phone or '').strip()
+        key = _phone_key(clean_phone)
+        if clean_phone and key and key not in drivers_map:
+            drivers_map[key] = {
+                'id': d.id,
+                'phone': clean_phone,
+                'name': (d.full_name or '').strip(),
+                'full_name': (d.full_name or '').strip(),
+                'citizen_id': getattr(d, 'citizen_id', '') or '',
+                'age': getattr(d, 'age', None),
+                'date_of_birth': d.date_of_birth.strftime('%Y-%m-%d') if getattr(d, 'date_of_birth', None) else '',
+                'license_number': d.license_number or '',
+                'license_class': getattr(d, 'license_class', '') or 'FC',
+                'experience_years': getattr(d, 'experience_years', 0) or 0,
+                'avatar_url': getattr(d, 'avatar_url', '') or '',
+                'status': getattr(d, 'status', 'ACTIVE') or 'ACTIVE',
+                'notes': d.notes or '',
+            }
+
+    trips = (
+        DispatchTrip.objects.filter(subcontractor=subcontractor, is_deleted=False)
+        .select_related('trailer')
+        .order_by('-id')[:2000]
+    )
+    for t in trips:
+        tp = _norm_plate((t.trailer.license_plate if t.trailer_id else t.trailer_plate_text) or '')
+        tkey = normalize_plate(tp)
+        if tp and tkey and tkey not in trailers_map:
+            trailers_map[tkey] = tp
+            trailers_detail_map[tkey] = {
+                'id': None,
+                'plate': tp,
+                'license_plate': tp,
+                'trailer_type': 'Moóc Xương 40ft',
+                'brand': '',
+                'payload_capacity_kg': 32000,
+                'registration_expiry': '',
+                'next_maintenance_date': '',
+                'status': 'ACTIVE',
+                'notes': '',
+            }
+        phone = (t.subcontractor_driver_phone or '').strip()
+        pkey = _phone_key(phone)
+        if phone and pkey and pkey not in drivers_map:
+            drivers_map[pkey] = {
+                'id': None,
+                'phone': phone,
+                'name': (t.subcontractor_driver_name or '').strip(),
+                'full_name': (t.subcontractor_driver_name or '').strip(),
+                'citizen_id': '',
+                'age': None,
+                'date_of_birth': '',
+                'license_number': '',
+                'license_class': 'FC',
+                'experience_years': 0,
+                'avatar_url': '',
+                'status': 'ACTIVE',
+                'notes': '',
+            }
+
+    trailers = sorted(trailers_map.values(), key=lambda s: s.upper())[:500]
+    trailers_detail = sorted(trailers_detail_map.values(), key=lambda x: x['plate'].upper())[:500]
+    drivers = sorted(drivers_map.values(), key=lambda d: ((d['name'] or '').lower(), d['phone']))[:500]
+
+    return {
+        'tractors': tractors,
+        'trailers': trailers,
+        'drivers': drivers,
+        'tractors_detail': tractors_detail,
+        'trailers_detail': trailers_detail,
+    }
+
+
+def _parse_custom_date(val):
+    from datetime import datetime
+    if not val:
+        return None
+    val_str = str(val).strip()[:10]
+    for fmt in ('%Y-%m-%d', '%d/%m/%Y'):
+        try:
+            return datetime.strptime(val_str, fmt).date()
+        except Exception:
+            pass
+    return None
+
+
+@transaction.atomic
+def add_vendor_catalog_item(alloc, payload):
+    """Lưu mới (hoặc khôi phục) Đầu kéo / Rơ-moóc / Tài xế vào danh mục riêng của nhà xe."""
+    alloc = BookingVendorAllocation.objects.select_related('booking', 'subcontractor').get(pk=alloc.pk)
+    _ensure_vendor_writable(alloc, 'thêm danh mục')
+    return upsert_subcontractor_catalog_item(alloc.subcontractor, payload)
+
+
+@transaction.atomic
+def upsert_subcontractor_catalog_item(sub, payload):
+    """Tạo mới hoặc khôi phục Đầu kéo / Rơ-moóc / Tài xế trực tiếp cho một nhà xe."""
+    from apps.master_data.models import SubcontractorDriver, SubcontractorTrailer
+    from apps.fleet.models import Vehicle
+
+    data = payload or {}
+    action = str(data.get('action') or '').strip().lower()
+    if action == 'delete':
+        return delete_subcontractor_catalog_item(sub, data)
+    if action == 'update' or data.get('id'):
+        return update_subcontractor_catalog_item(sub, data)
+
+    kind = str(data.get('kind') or '').strip().lower()
+
+    if kind == 'tractor':
+        plate = _norm_plate(data.get('license_plate') or data.get('plate') or data.get('value') or '')
+        if not plate or not _PLATE_RE.match(plate):
+            raise ValidationError('Biển số xe đầu kéo không hợp lệ.')
+        veh = _find_or_create_vehicle(plate, sub)
+        upd = []
+        if 'brand' in data:
+            veh.brand = str(data['brand'])[:50]; upd.append('brand')
+        if 'payload_capacity_kg' in data:
+            try: veh.payload_capacity_kg = int(data['payload_capacity_kg']); upd.append('payload_capacity_kg')
+            except Exception: pass
+        if 'registration_expiry' in data:
+            veh.registration_expiry = _parse_custom_date(data['registration_expiry']); upd.append('registration_expiry')
+        if 'next_maintenance_date' in data:
+            veh.next_maintenance_date = _parse_custom_date(data['next_maintenance_date']); upd.append('next_maintenance_date')
+        if 'status' in data and data['status']:
+            veh.status = str(data['status'])[:20]; upd.append('status')
+        if 'notes' in data:
+            veh.notes = str(data['notes']); upd.append('notes')
+        if upd:
+            veh.save(update_fields=upd)
+        item = {'kind': 'tractor', 'id': veh.id, 'value': veh.license_plate, 'plate': veh.license_plate}
+
+    elif kind == 'trailer':
+        plate = _norm_plate(data.get('license_plate') or data.get('plate') or data.get('value') or '')
+        if not plate or not _PLATE_RE.match(plate):
+            raise ValidationError('Biển số rơ-moóc không hợp lệ.')
+        tr = _by_plate_key(SubcontractorTrailer.all_objects.filter(subcontractor=sub), plate)
+        if tr:
+            upd = []
+            if tr.is_deleted:
+                tr.is_deleted = False; upd.append('is_deleted')
+            if not tr.is_active:
+                tr.is_active = True; upd.append('is_active')
+            if tr.license_plate != plate:
+                tr.license_plate = plate; upd.append('license_plate')
+            if 'trailer_type' in data and data['trailer_type']:
+                tr.trailer_type = str(data['trailer_type'])[:100]; upd.append('trailer_type')
+            if 'brand' in data:
+                tr.brand = str(data['brand'])[:50]; upd.append('brand')
+            if 'payload_capacity_kg' in data:
+                try: tr.payload_capacity_kg = int(data['payload_capacity_kg']); upd.append('payload_capacity_kg')
+                except Exception: pass
+            if 'registration_expiry' in data:
+                tr.registration_expiry = _parse_custom_date(data['registration_expiry']); upd.append('registration_expiry')
+            if 'next_maintenance_date' in data:
+                tr.next_maintenance_date = _parse_custom_date(data['next_maintenance_date']); upd.append('next_maintenance_date')
+            if 'status' in data and data['status']:
+                tr.status = str(data['status'])[:20]; upd.append('status')
+            if 'notes' in data:
+                tr.notes = str(data['notes']); upd.append('notes')
+            if upd:
+                upd.append('updated_at')
+                tr.save(update_fields=upd)
+        else:
+            tr = SubcontractorTrailer.objects.create(
+                subcontractor=sub,
+                license_plate=plate,
+                trailer_type=str(data.get('trailer_type') or 'Moóc Xương 40ft')[:100],
+                brand=str(data.get('brand') or '')[:50],
+                payload_capacity_kg=int(data.get('payload_capacity_kg') or 32000),
+                registration_expiry=_parse_custom_date(data.get('registration_expiry')),
+                next_maintenance_date=_parse_custom_date(data.get('next_maintenance_date')),
+                status=str(data.get('status') or 'ACTIVE')[:20],
+                notes=str(data.get('notes') or ''),
+            )
+        item = {'kind': 'trailer', 'id': tr.id, 'value': tr.license_plate, 'plate': tr.license_plate}
+
+    elif kind == 'driver':
+        name = str(data.get('full_name') or data.get('name') or '').strip()[:100]
+        phone = str(data.get('phone') or '').strip()[:20]
+        if not name:
+            raise ValidationError('Vui lòng nhập họ tên tài xế.')
+        if not phone or not _PHONE_RE.match(phone):
+            raise ValidationError('Số điện thoại tài xế không hợp lệ.')
+        target_key = _phone_key(phone)
+        existing = None
+        for d in SubcontractorDriver.all_objects.filter(subcontractor=sub).order_by('is_deleted', 'id'):
+            if _phone_key(d.phone) == target_key:
+                existing = d
+                break
+        if existing:
+            upd = []
+            if existing.is_deleted:
+                existing.is_deleted = False; upd.append('is_deleted')
+            if not existing.is_active:
+                existing.is_active = True; upd.append('is_active')
+            if existing.full_name != name:
+                existing.full_name = name; upd.append('full_name')
+            if existing.phone != phone:
+                existing.phone = phone; upd.append('phone')
+            if 'citizen_id' in data:
+                existing.citizen_id = str(data['citizen_id'])[:20]; upd.append('citizen_id')
+            if 'age' in data and data['age']:
+                try: existing.age = int(data['age']); upd.append('age')
+                except Exception: pass
+            if 'date_of_birth' in data:
+                existing.date_of_birth = _parse_custom_date(data['date_of_birth']); upd.append('date_of_birth')
+            if 'license_number' in data:
+                existing.license_number = str(data['license_number'])[:50]; upd.append('license_number')
+            if 'license_class' in data and data['license_class']:
+                existing.license_class = str(data['license_class'])[:20]; upd.append('license_class')
+            if 'experience_years' in data and data['experience_years']:
+                try: existing.experience_years = int(data['experience_years']); upd.append('experience_years')
+                except Exception: pass
+            if 'avatar_url' in data:
+                existing.avatar_url = str(data['avatar_url'])[:500]; upd.append('avatar_url')
+            if 'status' in data and data['status']:
+                existing.status = str(data['status'])[:20]; upd.append('status')
+            if 'notes' in data:
+                existing.notes = str(data['notes']); upd.append('notes')
+            if upd:
+                upd.append('updated_at')
+                existing.save(update_fields=upd)
+            drv = existing
+        else:
+            age_val = None
+            if data.get('age'):
+                try: age_val = int(data['age'])
+                except Exception: pass
+            exp_val = 0
+            if data.get('experience_years'):
+                try: exp_val = int(data['experience_years'])
+                except Exception: pass
+
+            drv = SubcontractorDriver.objects.create(
+                subcontractor=sub,
+                full_name=name,
+                phone=phone,
+                citizen_id=str(data.get('citizen_id') or '')[:20],
+                age=age_val,
+                date_of_birth=_parse_custom_date(data.get('date_of_birth')),
+                license_number=str(data.get('license_number') or '')[:50],
+                license_class=str(data.get('license_class') or 'FC')[:20],
+                experience_years=exp_val,
+                avatar_url=str(data.get('avatar_url') or '')[:500],
+                status=str(data.get('status') or 'ACTIVE')[:20],
+                notes=str(data.get('notes') or ''),
+            )
+        item = {'kind': 'driver', 'id': drv.id, 'name': drv.full_name, 'phone': drv.phone}
+    else:
+        raise ValidationError('Loại danh mục không hợp lệ.')
+
+    return {'item': item, 'catalog': vendor_catalog(sub)}
+
+
+@transaction.atomic
+def update_subcontractor_catalog_item(sub, payload):
+    """Cập nhật chi tiết Đầu kéo / Rơ-moóc / Tài xế của nhà xe."""
+    from apps.fleet.models import Vehicle
+    from apps.master_data.models import SubcontractorDriver, SubcontractorTrailer
+
+    data = payload or {}
+    kind = str(data.get('kind') or '').strip().lower()
+    item_id = data.get('id')
+
+    if kind == 'tractor':
+        plate = _norm_plate(data.get('license_plate') or data.get('plate') or data.get('value') or '')
+        if not plate or not _PLATE_RE.match(plate):
+            raise ValidationError('Biển số xe đầu kéo không hợp lệ.')
+        veh = None
+        if item_id:
+            veh = Vehicle.objects.filter(id=item_id, subcontractor=sub, is_deleted=False).first()
+        if not veh:
+            veh = _find_or_create_vehicle(plate, sub)
+        veh.license_plate = plate
+        if 'brand' in data: veh.brand = str(data['brand'])[:50]
+        if 'payload_capacity_kg' in data:
+            try: veh.payload_capacity_kg = int(data['payload_capacity_kg'])
+            except Exception: pass
+        if 'registration_expiry' in data:
+            veh.registration_expiry = _parse_custom_date(data['registration_expiry'])
+        if 'next_maintenance_date' in data:
+            veh.next_maintenance_date = _parse_custom_date(data['next_maintenance_date'])
+        if 'status' in data and data['status']:
+            veh.status = str(data['status'])[:20]
+        if 'notes' in data:
+            veh.notes = str(data['notes'])
+        veh.save()
+        item = {'kind': 'tractor', 'id': veh.id, 'value': veh.license_plate, 'plate': veh.license_plate}
+
+    elif kind == 'trailer':
+        plate = _norm_plate(data.get('license_plate') or data.get('plate') or data.get('value') or '')
+        if not plate or not _PLATE_RE.match(plate):
+            raise ValidationError('Biển số rơ-moóc không hợp lệ.')
+        tr = None
+        if item_id:
+            tr = SubcontractorTrailer.objects.filter(id=item_id, subcontractor=sub, is_deleted=False).first()
+        if not tr:
+            tr = _by_plate_key(SubcontractorTrailer.all_objects.filter(subcontractor=sub), plate)
+        if not tr:
+            tr = SubcontractorTrailer(subcontractor=sub)
+        tr.license_plate = plate
+        tr.is_deleted = False
+        tr.is_active = True
+        if 'trailer_type' in data and data['trailer_type']: tr.trailer_type = str(data['trailer_type'])[:100]
+        if 'brand' in data: tr.brand = str(data['brand'])[:50]
+        if 'payload_capacity_kg' in data:
+            try: tr.payload_capacity_kg = int(data['payload_capacity_kg'])
+            except Exception: pass
+        if 'registration_expiry' in data:
+            tr.registration_expiry = _parse_custom_date(data['registration_expiry'])
+        if 'next_maintenance_date' in data:
+            tr.next_maintenance_date = _parse_custom_date(data['next_maintenance_date'])
+        if 'status' in data and data['status']:
+            tr.status = str(data['status'])[:20]
+        if 'notes' in data:
+            tr.notes = str(data['notes'])
+        tr.save()
+        item = {'kind': 'trailer', 'id': tr.id, 'value': tr.license_plate, 'plate': tr.license_plate}
+
+    elif kind == 'driver':
+        name = str(data.get('full_name') or data.get('name') or '').strip()[:100]
+        phone = str(data.get('phone') or '').strip()[:20]
+        if not name:
+            raise ValidationError('Vui lòng nhập họ tên tài xế.')
+        if not phone or not _PHONE_RE.match(phone):
+            raise ValidationError('Số điện thoại tài xế không hợp lệ.')
+        drv = None
+        if item_id:
+            drv = SubcontractorDriver.objects.filter(id=item_id, subcontractor=sub, is_deleted=False).first()
+        if not drv:
+            target_key = _phone_key(phone)
+            for d in SubcontractorDriver.all_objects.filter(subcontractor=sub):
+                if _phone_key(d.phone) == target_key:
+                    drv = d
+                    break
+        if not drv:
+            drv = SubcontractorDriver(subcontractor=sub)
+        drv.full_name = name
+        drv.phone = phone
+        drv.is_deleted = False
+        drv.is_active = True
+        if 'citizen_id' in data: drv.citizen_id = str(data['citizen_id'])[:20]
+        if 'age' in data and data['age']:
+            try: drv.age = int(data['age'])
+            except Exception: pass
+        if 'date_of_birth' in data:
+            drv.date_of_birth = _parse_custom_date(data['date_of_birth'])
+        if 'license_number' in data: drv.license_number = str(data['license_number'])[:50]
+        if 'license_class' in data and data['license_class']: drv.license_class = str(data['license_class'])[:20]
+        if 'experience_years' in data and data['experience_years']:
+            try: drv.experience_years = int(data['experience_years'])
+            except Exception: pass
+        if 'avatar_url' in data: drv.avatar_url = str(data['avatar_url'])[:500]
+        if 'status' in data and data['status']: drv.status = str(data['status'])[:20]
+        if 'notes' in data: drv.notes = str(data['notes'])
+        drv.save()
+        item = {'kind': 'driver', 'id': drv.id, 'name': drv.full_name, 'phone': drv.phone}
+    else:
+        raise ValidationError('Loại danh mục không hợp lệ.')
+
+    return {'item': item, 'catalog': vendor_catalog(sub)}
+
+
+@transaction.atomic
+def delete_subcontractor_catalog_item(sub, payload):
+    """Xóa (soft-delete) Đầu kéo / Rơ-moóc / Tài xế khỏi danh mục nhà xe."""
+    from apps.fleet.models import Vehicle
+    from apps.master_data.models import SubcontractorDriver, SubcontractorTrailer
+
+    data = payload or {}
+    kind = str(data.get('kind') or '').strip().lower()
+    item_id = data.get('id')
+    val = str(data.get('value') or data.get('plate') or data.get('license_plate') or data.get('phone') or '').strip()
+
+    if kind == 'tractor':
+        q = Vehicle.objects.filter(subcontractor=sub, is_deleted=False)
+        v = None
+        if item_id:
+            v = q.filter(id=item_id).first()
+        if not v and val:
+            plate = _norm_plate(val)
+            v = _by_plate_key(q, plate)
+        if v:
+            v.is_deleted = True
+            v.save(update_fields=['is_deleted', 'updated_at'])
+    elif kind == 'trailer':
+        q = SubcontractorTrailer.objects.filter(subcontractor=sub, is_deleted=False)
+        tr = None
+        if item_id:
+            tr = q.filter(id=item_id).first()
+        if not tr and val:
+            plate = _norm_plate(val)
+            tr = _by_plate_key(q, plate)
+        if tr:
+            tr.is_deleted = True
+            tr.is_active = False
+            tr.save(update_fields=['is_deleted', 'is_active', 'updated_at'])
+    elif kind == 'driver':
+        q = SubcontractorDriver.objects.filter(subcontractor=sub, is_deleted=False)
+        drv = None
+        if item_id:
+            drv = q.filter(id=item_id).first()
+        if not drv and val:
+            target_key = _phone_key(val)
+            for d in q:
+                if _phone_key(d.phone) == target_key:
+                    drv = d
+                    break
+        if drv:
+            drv.is_deleted = True
+            drv.is_active = False
+            drv.save(update_fields=['is_deleted', 'is_active', 'updated_at'])
+    else:
+        raise ValidationError('Loại danh mục không hợp lệ.')
+
+    return {'success': True, 'catalog': vendor_catalog(sub)}
+
+
+
+# ---------- xác thực & phiên Portal Nhà Xe ----------
+VENDOR_SESSION_KEY = '_vendor_auth'
+VENDOR_MAX_FAILED = 5
+VENDOR_LOCK_MINUTES = 15
+
+
+def subcontractor_requires_portal_auth(subcontractor):
+    from django.conf import settings
+    if getattr(settings, 'VENDOR_PORTAL_STRICT_3FACTOR', False):
+        return True
+    from apps.master_data.models import SubcontractorPortalAccount
+    return SubcontractorPortalAccount.objects.filter(subcontractor=subcontractor, is_deleted=False, is_active=True).exists()
+
+
+def _record_login_failure(acct):
+    acct.failed_attempts = int(acct.failed_attempts or 0) + 1
+    upd = ['failed_attempts', 'updated_at']
+    if acct.failed_attempts >= VENDOR_MAX_FAILED:
+        acct.locked_until = timezone.now() + timedelta(minutes=VENDOR_LOCK_MINUTES)
+        upd.append('locked_until')
+    acct.save(update_fields=upd)
+
+
+def vendor_login(request, username, password, confirm_token=''):
+    """Xác thực 3 lớp cho Portal Nhà xe: Username + Password + Mã Token xác nhận (hoặc token lệnh của nhà xe)."""
+    from apps.master_data.models import SubcontractorPortalAccount
+
+    uname = str(username or '').strip()
+    pw = str(password or '')
+    tok = str(confirm_token or '').strip()
+    if not uname or not pw or not tok:
+        raise ValidationError('Vui lòng nhập đầy đủ Tên đăng nhập, Mật khẩu và Mã Token xác nhận.')
+
+    acct = (
+        SubcontractorPortalAccount.objects
+        .select_related('subcontractor')
+        .filter(username__iexact=uname, is_deleted=False)
+        .first()
+    )
+    if not acct or not acct.is_active or not acct.subcontractor.is_active:
+        raise ValidationError('Tên đăng nhập hoặc thông tin xác thực không đúng.')
+
+    if acct.locked_until and acct.locked_until > timezone.now():
+        mins = max(1, int((acct.locked_until - timezone.now()).total_seconds() // 60) + 1)
+        raise ValidationError(
+            f'Tài khoản đang tạm khóa do nhập sai nhiều lần. Vui lòng thử lại sau {mins} phút hoặc liên hệ Điều vận GSS.',
+            code='vendor_account_locked',
+        )
+
+    if not acct.check_password(pw):
+        _record_login_failure(acct)
+        if acct.locked_until and acct.locked_until > timezone.now():
+            raise ValidationError(
+                'Đã nhập sai 5 lần liên tiếp. Tài khoản tạm khóa 15 phút hoặc liên hệ Điều vận GSS mở khóa.',
+                code='vendor_account_locked',
+            )
+        raise ValidationError('Tên đăng nhập, mật khẩu hoặc mã Token xác nhận không đúng.')
+
+    token_ok = acct.check_confirm_token(tok)
+    matched_alloc = None
+    if not token_ok:
+        alloc = allocation_by_token(tok)
+        if alloc and alloc.subcontractor_id == acct.subcontractor_id and not lifecycle(alloc)['closed']:
+            token_ok = True
+            matched_alloc = alloc
+
+    if not token_ok:
+        _record_login_failure(acct)
+        if acct.locked_until and acct.locked_until > timezone.now():
+            raise ValidationError(
+                'Đã nhập sai quá nhiều lần. Tài khoản tạm khóa 15 phút hoặc liên hệ Điều vận GSS mở khóa.',
+                code='vendor_account_locked',
+            )
+        raise ValidationError('Mã Token xác nhận không hợp lệ hoặc không thuộc nhà xe này.')
+
+    now_dt = timezone.now()
+    acct.failed_attempts = 0
+    acct.locked_until = None
+    acct.last_login_at = now_dt
+    acct.save(update_fields=['failed_attempts', 'locked_until', 'last_login_at', 'updated_at'])
+
+    if hasattr(request, 'session'):
+        try:
+            request.session.cycle_key()
+        except Exception:
+            pass
+        now_ts = int(time.time())
+        idle_secs = max(60, int(acct.idle_timeout_minutes or 15) * 60)
+        request.session[VENDOR_SESSION_KEY] = {
+            'account_id': acct.id,
+            'subcontractor_id': acct.subcontractor_id,
+            'username': acct.username,
+            'idle_seconds': idle_secs,
+            'logged_in_at': now_ts,
+            'last_seen': now_ts,
+        }
+        request.session.modified = True
+
+    return {
+        'authenticated': True,
+        'username': acct.username,
+        'subcontractor_id': acct.subcontractor_id,
+        'subcontractor': acct.subcontractor.short_name or acct.subcontractor.name,
+        'subcontractor_code': acct.subcontractor.code or '',
+        'idle_timeout_minutes': int(acct.idle_timeout_minutes or 15),
+        'matched_alloc_id': matched_alloc.id if matched_alloc else None,
+    }
+
+
+def vendor_logout(request):
+    if hasattr(request, 'session'):
+        request.session.pop(VENDOR_SESSION_KEY, None)
+        request.session.modified = True
+
+
+def vendor_session_state(request, touch=True):
+    """Kiểm tra phiên Vendor hiện tại & thời gian nhàn rỗi; trả ( (acct, sess, remaining_secs), status_code_str )."""
+    from apps.master_data.models import SubcontractorPortalAccount
+
+    if not hasattr(request, 'session'):
+        return None, 'unauthenticated'
+    sess = request.session.get(VENDOR_SESSION_KEY)
+    if not isinstance(sess, dict) or not sess.get('account_id'):
+        return None, 'unauthenticated'
+
+    now_ts = int(time.time())
+    idle_secs = max(60, int(sess.get('idle_seconds') or 900))
+    last_seen = int(sess.get('last_seen') or sess.get('logged_in_at') or now_ts)
+    elapsed = now_ts - last_seen
+    if elapsed > idle_secs:
+        vendor_logout(request)
+        return None, 'idle_expired'
+
+    acct = (
+        SubcontractorPortalAccount.objects
+        .select_related('subcontractor')
+        .filter(pk=sess.get('account_id'), is_deleted=False, is_active=True, subcontractor__is_active=True)
+        .first()
+    )
+    if not acct or acct.subcontractor_id != sess.get('subcontractor_id'):
+        vendor_logout(request)
+        return None, 'account_disabled'
+
+    # Đồng bộ idle_timeout_minutes mới nhất nếu admin đổi
+    live_idle = max(60, int(acct.idle_timeout_minutes or 15) * 60)
+    remaining = max(0, live_idle - elapsed)
+    if touch:
+        sess['last_seen'] = now_ts
+        sess['idle_seconds'] = live_idle
+        request.session[VENDOR_SESSION_KEY] = sess
+        request.session.modified = True
+        remaining = live_idle
+    return (acct, sess, remaining), 'ok'
+
+
+def provision_portal_account(subcontractor, data, user=None):
+    """Tạo hoặc cập nhật tài khoản Portal cho nhà xe (chỉ Điều vận/Admin GSS gọi)."""
+    from apps.master_data.models import SubcontractorPortalAccount
+
+    d = data or {}
+    acct = SubcontractorPortalAccount.all_objects.filter(subcontractor=subcontractor).first()
+    creating = acct is None
+
+    raw_uname = str(d.get('username') or '').strip()
+    if creating and not raw_uname:
+        raw_uname = (subcontractor.code or f'vendor{subcontractor.id}').lower()
+    if raw_uname:
+        if len(raw_uname) < 3:
+            raise ValidationError('Tên đăng nhập phải có ít nhất 3 ký tự.')
+        dup = SubcontractorPortalAccount.all_objects.filter(username__iexact=raw_uname).exclude(subcontractor=subcontractor).exists()
+        if dup:
+            raise ValidationError(f'Tên đăng nhập "{raw_uname}" đã được dùng cho nhà xe khác.')
+
+    raw_pw = d.get('password')
+    if creating and (not raw_pw or len(str(raw_pw)) < 6):
+        raise ValidationError('Mật khẩu khởi tạo phải có ít nhất 6 ký tự.')
+    if raw_pw not in (None, '') and len(str(raw_pw)) < 6:
+        raise ValidationError('Mật khẩu mới phải có ít nhất 6 ký tự.')
+
+    idle_mins = d.get('idle_timeout_minutes')
+    if idle_mins not in (None, ''):
+        try:
+            idle_mins = int(idle_mins)
+        except (TypeError, ValueError):
+            raise ValidationError('Thời gian tự đăng xuất không hợp lệ.')
+        if not 1 <= idle_mins <= 480:
+            raise ValidationError('Thời gian tự đăng xuất phải từ 1 đến 480 phút.')
+
+    if creating:
+        acct = SubcontractorPortalAccount(
+            subcontractor=subcontractor,
+            username=raw_uname,
+            idle_timeout_minutes=idle_mins if isinstance(idle_mins, int) else 15,
+            is_active=bool(d.get('is_active', True)),
+        )
+    else:
+        if acct.is_deleted:
+            acct.is_deleted = False
+        if raw_uname:
+            acct.username = raw_uname
+        if isinstance(idle_mins, int):
+            acct.idle_timeout_minutes = idle_mins
+        if 'is_active' in d:
+            acct.is_active = bool(d.get('is_active'))
+        if d.get('unlock'):
+            acct.failed_attempts = 0
+            acct.locked_until = None
+
+    if raw_pw not in (None, ''):
+        acct.set_password(str(raw_pw))
+
+    issued_token = None
+    if d.get('regenerate_token') or (creating and not d.get('confirm_token')):
+        issued_token = 'GSSV-' + secrets.token_urlsafe(12).upper()
+        acct.set_confirm_token(issued_token)
+    elif d.get('confirm_token'):
+        issued_token = str(d.get('confirm_token')).strip()
+        if len(issued_token) < 6:
+            raise ValidationError('Mã Token xác nhận phải có ít nhất 6 ký tự.')
+        acct.set_confirm_token(issued_token)
+
+    acct.notes = str(d.get('notes', acct.notes) or '')[:500]
+    acct.save()
+
+    from core.models import AuditLog
+    ok_user = user is not None and getattr(user, 'is_authenticated', False)
+    AuditLog.objects.create(
+        actor=user if ok_user else None,
+        actor_label=user.get_username() if ok_user else 'hệ thống',
+        action='update',
+        model_label='master_data.subcontractorportalaccount',
+        object_id=str(acct.pk),
+        object_repr=f'{acct.username} -> {subcontractor.short_name or subcontractor.name}'[:255],
+        changes={'username': acct.username, 'idle_timeout_minutes': acct.idle_timeout_minutes, 'is_active': acct.is_active, 'token_rotated': bool(issued_token)},
+        company=subcontractor.company,
+    )
+    return {
+        'has_account': True,
+        'username': acct.username,
+        'confirm_token_preview': acct.confirm_token_preview,
+        'issued_confirm_token': issued_token,
+        'idle_timeout_minutes': acct.idle_timeout_minutes,
+        'is_active': acct.is_active,
+        'locked': bool(acct.locked_until and acct.locked_until > timezone.now()),
+        'locked_until': acct.locked_until.isoformat() if acct.locked_until else None,
+        'last_login_at': acct.last_login_at.isoformat() if acct.last_login_at else None,
+    }
+
+
+def vendor_overview(subcontractor):
+    """Tổng hợp các Lệnh / Booking và KPI điều xe thuộc riêng nhà xe hiện tại (ẩn hoàn toàn khách hàng & tài chính)."""
+    allocs = (
+        BookingVendorAllocation.objects
+        .filter(subcontractor=subcontractor, is_deleted=False)
+        .exclude(status=AllocationStatus.REVOKED)
+        .select_related('booking')
+        .order_by('-id')[:60]
+    )
+    items = []
+    total_cont = 0
+    assigned_cont = 0
+    in_transit_cont = 0
+    completed_cont = 0
+
+    for a in allocs:
+        lc = lifecycle(a)
+        if lc['closed']:
+            continue
+        trips = list(a.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').values_list('step_status', flat=True))
+        filled = len(trips)
+        running = sum(1 for st in trips if st in ('ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY'))
+        done = sum(1 for st in trips if st == 'EMPTY_RETURNED')
+        total_cont += a.allocated_containers
+        assigned_cont += filled
+        in_transit_cont += running
+        completed_cont += done
+        b = a.booking
+        items.append({
+            'alloc_id': a.id,
+            'booking_code': b.booking_code,
+            'bl_number': b.hbl_number or b.mbl_number or b.booking_number or '',
+            'shipping_line': b.shipping_line or '',
+            'container_size': b.container_size or '',
+            'commodity': b.commodity or '',
+            'pickup_location': b.pickup_location or '',
+            'delivery_location': b.delivery_location or '',
+            'dropoff_location': b.dropoff_location or '',
+            'loading_date': b.loading_date.isoformat() if b.loading_date else None,
+            'allocated_containers': a.allocated_containers,
+            'filled': filled,
+            'running': running,
+            'completed': done,
+            'status': a.status,
+            'status_label': a.get_status_display(),
+            'locked': bool(a.locked_at),
+            'expired': is_expired(a),
+            'lifecycle': lc,
+        })
+
+    return {
+        'subcontractor_id': subcontractor.id,
+        'subcontractor': subcontractor.short_name or subcontractor.name,
+        'subcontractor_code': subcontractor.code or '',
+        'kpis': {
+            'allocations_count': len(items),
+            'total_containers': total_cont,
+            'assigned_count': assigned_cont,
+            'pending_count': max(0, total_cont - assigned_cont),
+            'in_transit_count': in_transit_cont,
+            'completed_count': completed_cont,
+        },
+        'allocations': items,
+    }
+
+
+def vendor_tracking_rows(subcontractor, alloc_id=None):
+    """Danh sách chuyến xe để nhà xe theo dõi hành trình 7 chặng & nhật ký sự kiện của chính mình."""
+    qs = (
+        DispatchTrip.objects
+        .filter(subcontractor=subcontractor, is_deleted=False)
+        .exclude(step_status='CANCELLED')
+        .select_related('vehicle', 'trailer', 'booking_order', 'vendor_allocation')
+        .order_by('-id')
+    )
+    if alloc_id:
+        qs = qs.filter(vendor_allocation_id=alloc_id)
+    trips = list(qs[:200])
+    events_map = _trip_events_map([t.id for t in trips])
+    out = []
+    for t in trips:
+        b = t.booking_order
+        out.append({
+            'trip_id': t.id,
+            'trip_code': t.trip_code,
+            'alloc_id': t.vendor_allocation_id,
+            'line_no': t.vendor_line_no,
+            'booking_code': b.booking_code if b else '',
+            'bl_number': (b.hbl_number or b.mbl_number or b.booking_number) if b else (t.booking_or_bill or ''),
+            'container_number': t.container_number or '',
+            'is_twin_container': bool(t.is_twin_container),
+            'container_number_2': t.container_number_2 or '',
+            'container_type': t.container_type or '',
+            'seal_number': '' if t.seal_number in ('', '-') else t.seal_number,
+            'tractor_plate': t.vehicle.license_plate if t.vehicle_id else '',
+            'trailer_plate': (t.trailer.license_plate if t.trailer_id else t.trailer_plate_text) or '',
+            'driver_name': t.subcontractor_driver_name or '',
+            'driver_phone': t.subcontractor_driver_phone or '',
+            'pickup_location': t.pickup_location or (b.pickup_location if b else ''),
+            'delivery_location': t.warehouse_location or (b.delivery_location if b else ''),
+            'dropoff_location': t.dropoff_location or (b.dropoff_location if b else ''),
+            'loading_date': t.loading_date.isoformat() if t.loading_date else None,
+            'loading_time': t.loading_time or '',
+            'step_status': t.step_status,
+            'step_index': _step_index(t.step_status),
+            'step_label': wf.STEP_LABELS.get(t.step_status, t.get_step_status_display()),
+            'milestones': _serialize_milestones(t),
+            'events': events_map.get(t.id, []),
+            'vendor_note': t.vendor_note or '',
+            'editable': row_editable(t),
+        })
+    return out
+
