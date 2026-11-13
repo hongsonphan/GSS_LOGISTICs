@@ -112,12 +112,10 @@ class WorkflowTests(GssBase):
         with self.assertRaises(ValidationError):
             wf.advance(t, 'UNLOADED', force=True, reason='lý do dài')  # không có user
 
-    def test_staff_backward_resets_later_timestamps_and_swap(self):
+    def test_staff_cannot_move_backward_once_advanced(self):
         t = self.run_to(self.trip(), 'EMPTY_RETURNED')
-        t = wf.advance(t, 'UNLOADED', user=self.staff, force=True, reason='Nhập nhầm bước hạ rỗng')
-        self.assertIsNone(t.empty_returned_at)
-        self.assertIsNone(t.actual_end_time)
-        self.assertEqual(t.status, 'DELIVERED')
+        with self.assertRaisesMessage(ValidationError, 'chuyển ngược lại trạng thái của bước trước'):
+            wf.advance(t, 'UNLOADED', user=self.staff, force=True, reason='Nhập nhầm bước hạ rỗng')
 
     def test_container_number_required_to_load(self):
         t = self.trip(cont='')

@@ -641,6 +641,11 @@ async function deleteOrCancelTrip(tripCode = null) {
         return;
     }
 
+    if (window.currentTripDetail && window.currentTripDetail.step_status && !['READY', 'CANCELLED', ''].includes(window.currentTripDetail.step_status)) {
+        showToast('danger', 'Chuyến xe đã phát sinh hành trình thực tế trên đường, tuyệt đối không thể xóa hay hủy chuyến!');
+        return;
+    }
+
     const confirmed = await showConfirmModal({
         title: 'Xác Nhận Xóa Phiếu Điều Độ',
         message: `Bạn có chắc chắn muốn xóa / hủy phiếu điều độ "${code}" không?\n\n• Trạng thái chuyến sẽ chuyển sang Đã Hủy (Soft-Delete an toàn bảo toàn Audit Trail).\n• Hạn mức container sẽ tự động hoàn lại cho đơn hàng Booking liên quan.\n• Các chứng từ chi phí và hình ảnh chưa chốt sổ sẽ được đồng bộ dọn dẹp an toàn.`,

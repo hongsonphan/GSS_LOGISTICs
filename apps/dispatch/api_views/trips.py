@@ -1268,6 +1268,13 @@ class TripDetailAPIView(APIView):
         can_delete, del_msg = check_can_edit_or_delete(request.user, trip, owner_field='dispatcher', action='delete')
         if not can_delete:
             return Response({'error': del_msg}, status=status.HTTP_403_FORBIDDEN)
+        if trip.step_status not in ('READY', 'CANCELLED', ''):
+            from apps.dispatch.gss_workflow import STEP_LABELS
+            step_name = STEP_LABELS.get(trip.step_status, trip.step_status)
+            return Response({
+                'error': f'Chuyên xe [{trip.trip_code}] đã phát sinh hành trình thực tế (trạng thái: "{step_name}"). Không thể xóa hay hủy chuyến khi xe đang/đã chạy!'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
         if trip.is_expenses_settled:
             return Response({'error': 'Chuyến xe đã được Kế toán chốt sổ chi phí quyết toán, không thể xóa/hủy!'}, status=status.HTTP_403_FORBIDDEN)

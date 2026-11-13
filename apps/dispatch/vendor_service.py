@@ -294,8 +294,7 @@ def _trip_row(trip):
 
 
 def row_editable(trip):
-    from apps.dispatch.gss_workflow import VENDOR_EDITABLE_STEPS  # nhà xe chỉ sửa tới khi tài xế lên xe nhận cont
-    return trip is None or trip.step_status in VENDOR_EDITABLE_STEPS
+    return trip is None or trip.step_status == 'READY'
 
 
 def rows_for(alloc, for_vendor=True):
@@ -616,8 +615,8 @@ def clear_row(alloc, line_no, source='vendor', user=None):
         raise ValidationError(f'Dòng #{n} ngoài phạm vi.')
     trip = alloc.trips.select_for_update().filter(is_deleted=False, vendor_line_no=n).exclude(step_status='CANCELLED').first()
     if trip:
-        if source == 'vendor' and trip.step_status != 'READY':
-            raise ValidationError('Chuyến đã bắt đầu thực hiện, không thể hủy gán xe qua cổng nhà xe. Liên hệ điều vận GSS.')
+        if trip.step_status != 'READY':
+            raise ValidationError(f'Chuyến đã bắt đầu thực hiện ({trip.get_step_status_display()}), không thể hủy gán xe.')
         old_plate = trip.vehicle.license_plate if trip.vehicle_id else ''
         trip.step_status = 'CANCELLED'
         trip.status = TripStatus.CANCELLED

@@ -1587,6 +1587,11 @@ async function saveSavedContainerRow(contId) {
 window.saveSavedContainerRow = saveSavedContainerRow;
 
 async function deleteSavedContainerRow(contId, contNumber) {
+    const targetCont = (window.loadedBookingContainers || []).find(c => String(c.id) === String(contId));
+    if (targetCont && targetCont.step_status && !['READY', 'CANCELLED', ''].includes(targetCont.step_status)) {
+        showToast('error', `Container "${contNumber}" đã phát sinh hành trình chạy thực tế, không thể xóa khỏi đơn hàng!`);
+        return;
+    }
     if (!confirm(`Bạn có chắc chắn muốn xóa container "${contNumber || ''}" khỏi đơn hàng này?`)) return;
     const bookingId = document.getElementById('fullpage-booking-id')?.value;
 

@@ -319,7 +319,9 @@ def has_container_list(booking):
 
 def remove_container(container, *, user=None, reason=''):
     if container.trip_id and container.trip.step_status != 'CANCELLED':
-        raise ValidationError('Cont đã có chuyến xe, hãy huỷ chuyến trước khi xoá khỏi danh sách.')
+        if container.trip.step_status != 'READY':
+            raise ValidationError(f'Container {container.container_number} đã bắt đầu hành trình ({container.trip.get_step_status_display()}), không thể xóa khỏi danh sách.')
+        raise ValidationError(f'Container {container.container_number} đã phát lệnh điều độ ({container.trip.trip_code}), hãy hủy chuyến điều độ trước khi xóa.')
     container.allocation, container.alloc_line_no = None, None
     container.save(update_fields=['allocation', 'alloc_line_no', 'updated_at'])
     container.delete()

@@ -141,6 +141,10 @@ class ContainerDetailAPI(Base):
         from apps.gss.models import BookingContainer
         c = obj_or_404(BookingContainer, pk)
         d = request.data
+        if c.trip_id and c.trip.step_status not in ('READY', 'CANCELLED'):
+            locked_fields = {'container_number', 'tractor_plate', 'driver_name', 'container_type'}
+            if any(k in d for k in locked_fields):
+                return err(f'Container {c.container_number} đã bắt đầu hành trình ({c.trip.get_step_status_display()}). Không thể sửa thông tin số cont, xe hoặc tài xế!')
         fields = []
         if 'tractor_plate' in d or 'driver_name' in d:
             plate = str(d.get('tractor_plate') or '').strip().upper()

@@ -6,50 +6,65 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
+<link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
+<link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=3.0">
 <title>Cổng Nhà Xe Đối Tác · GSS Smart Logistics TMS</title>
+<!-- Phosphor Icons -->
 <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/regular/style.css' %}"/>
 <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/fill/style.css' %}"/>
 <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/bold/style.css' %}"/>
+<!-- International Enterprise Typography & Custom Styles -->
+<link rel="stylesheet" href="{% static 'css/main.css' %}?v=2.9.86">
+<!-- Tailwind CSS & Contrast System -->
 <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+<link rel="stylesheet" href="{% static 'css/contrast.css' %}">
 <style>
-  :root { --brand: #0f766e; --brand-dark: #0d5f58; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  :root {
+    --brand: #0f766e;
+    --brand-dark: #0d5f58;
+  }
 </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col justify-between antialiased">
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col justify-between antialiased selection:bg-teal-100 selection:text-teal-900">
 
-<!-- HEADER CHÍNH -->
-<header class="bg-gradient-to-r from-teal-800 via-teal-700 to-slate-800 text-white shadow-md">
-  <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
-        <i class="ph-bold ph-truck text-2xl text-teal-200"></i>
+<!-- TOPBAR CHUẨN GSS TMS (ĐỒNG BỘ MÀN HÌNH CHÍNH) -->
+<header class="h-16 bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm flex items-center justify-between px-4 sm:px-6">
+  <div class="flex items-center gap-3">
+    <a href="/vendor/" class="flex items-center gap-2.5 cursor-pointer hover:opacity-95 transition-opacity group">
+      <img src="{% static 'images/logo_clean.png' %}" alt="GSS" class="h-10 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-sm">
+      <div class="flex flex-col justify-center">
+        <span class="text-[11px] font-extrabold text-teal-600 uppercase tracking-wider font-heading leading-tight">GREEN SOLUTIONS SMART</span>
+        <h1 class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight font-heading leading-tight mt-0.5">GSS LOGISTICS</h1>
       </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs uppercase font-extrabold tracking-wider text-teal-300">GSS SMART LOGISTICS</span>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/30 text-teal-100 border border-teal-400/30">CỔNG ĐỐI TÁC</span>
-        </div>
-        <h1 class="text-base sm:text-lg font-black tracking-tight">Cổng Khai Báo Phương Tiện Nhà Xe</h1>
-      </div>
-    </div>
+    </a>
+  </div>
+  <div class="flex items-center gap-2.5">
+    <span class="px-3 py-1.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 shadow-2xs flex items-center gap-1.5 font-heading">
+      <i class="ph-bold ph-truck text-teal-600 text-sm"></i>
+      <span class="hidden sm:inline">CỔNG ĐỐI TÁC NHÀ XE</span>
+      <span class="sm:hidden">VENDOR</span>
+    </span>
   </div>
 </header>
 
 <!-- MAIN CONTAINER -->
-<main class="max-w-xl mx-auto px-4 py-10 w-full flex-1 flex flex-col justify-center">
+<main class="max-w-xl mx-auto px-4 py-8 sm:py-12 w-full flex-1 flex flex-col justify-center">
   <div class="bg-white rounded-2xl shadow-xl border border-slate-200/90 p-6 sm:p-8 space-y-6">
-    <div class="text-center space-y-2">
-      <div class="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center mx-auto text-3xl">
+    <div class="text-center space-y-2.5">
+      <div class="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center mx-auto text-3xl shadow-xs">
         <i class="ph-bold ph-key"></i>
       </div>
-      <h2 class="text-xl font-black text-slate-800">Truy Cập Lệnh Điều Vận Nhà Xe</h2>
-      <p class="text-xs text-slate-500">Mỗi lệnh điều động bàn giao container được cấp một liên kết bảo mật riêng biệt. Quý nhà xe vui lòng nhập mã Token hoặc bấm trực tiếp vào liên kết được gửi qua Zalo/Email.</p>
+      <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-heading tracking-tight">Truy Cập Lệnh Điều Vận Nhà Xe</h2>
+      <p class="text-xs text-slate-500 leading-relaxed max-w-md mx-auto font-medium">
+        Mỗi lệnh điều động container được cấp một liên kết bảo mật riêng biệt. Quý nhà xe vui lòng nhập mã Token hoặc bấm trực tiếp vào liên kết được cấp từ Điều vận GSS.
+      </p>
     </div>
 
     <form onsubmit="handleTokenSubmit(event)" class="space-y-4">
       <div>
-        <label for="token-input" class="block font-bold text-xs text-slate-700 mb-1.5">Mã Token hoặc Đường dẫn liên kết</label>
+        <label for="token-input" class="block font-bold text-xs text-slate-700 mb-1.5">
+          Mã Token hoặc Đường dẫn liên kết <span class="text-rose-600">*</span>
+        </label>
         <div class="relative">
           <i class="ph-bold ph-link absolute left-3.5 top-3 text-slate-400 text-base"></i>
           <input type="text" id="token-input" required placeholder="Dán mã Token hoặc đường dẫn link tại đây..." 
@@ -58,27 +73,27 @@
       </div>
 
       <button type="submit" 
-        class="w-full h-11 rounded-xl bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer">
+        class="w-full h-11 rounded-xl bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white font-bold text-sm font-heading shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer">
         <i class="ph-bold ph-sign-in text-base"></i>
         <span>Vào Cổng Khai Báo Phương Tiện</span>
       </button>
     </form>
 
-    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1.5">
-      <div class="font-bold text-slate-700 flex items-center gap-1.5">
+    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
+      <div class="font-bold text-slate-800 flex items-center gap-1.5 font-heading">
         <i class="ph-bold ph-info text-teal-600 text-sm"></i>
         <span>Hướng dẫn đối tác vận tải:</span>
       </div>
-      <ul class="list-disc pl-5 space-y-1 text-[11px] text-slate-500">
-        <li>Không cần mật khẩu: Quý nhà xe truy cập an toàn bằng mã định danh token.</li>
-        <li>Hỗ trợ 2 phương thức: Chọn trực tiếp xe/tài trên điện thoại hoặc tải file Excel mẫu về điền và nộp lên hệ thống.</li>
+      <ul class="list-disc pl-5 space-y-1 text-xs text-slate-500 leading-relaxed font-medium">
+        <li>Truy cập bảo mật: Quý nhà xe truy cập an toàn bằng mã Token hoặc tài khoản do GSS cấp.</li>
+        <li>Hỗ trợ 2 phương thức: Chọn trực tiếp xe/tài trên giao diện hoặc tải file Excel mẫu về điền và nộp lên hệ thống.</li>
         <li>Cần cấp mới hoặc gia hạn liên kết? Vui lòng liên hệ Phòng Điều Vận GSS Logistics.</li>
       </ul>
     </div>
   </div>
 </main>
 
-<footer class="text-center py-4 text-xs text-slate-400 border-t border-slate-200 bg-white">
+<footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-200 bg-white">
   &copy; 2026 Green Solutions Smart Logistics (GSS). Nền tảng điều độ vận tải thông minh TMS.
 </footer>
 

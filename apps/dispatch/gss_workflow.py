@@ -86,10 +86,12 @@ def advance(trip, target, *, user=None, actor_label='', reason='', fields=None, 
         raise ValidationError('Chuyến đang ở bước này rồi.')
     ci, ti = STEPS.index(cur), STEPS.index(target)
     backward, skipping = ti < ci, ti > ci + 1
-    if (backward or skipping) and not (staff and force):
-        raise ValidationError('Phải đi lần lượt từng bước kế tiếp.' if skipping else 'Tài xế không được lùi bước, hãy liên hệ điều vận.')
-    if (backward or skipping or force) and staff and len(reason) < 5:
-        raise ValidationError('Cần nhập lý do khi lùi/nhảy bước hoặc bỏ qua kiểm tra.')
+    if backward:
+        raise ValidationError(f'Không được phép chuyển ngược lại trạng thái của bước trước (từ "{STEP_LABELS.get(cur, cur)}" về "{STEP_LABELS.get(target, target)}"). Hành trình vận chuyển chỉ được đi tiến theo đúng trình tự.')
+    if skipping and not (staff and force):
+        raise ValidationError('Phải đi lần lượt từng bước kế tiếp.')
+    if skipping and staff and len(reason) < 5:
+        raise ValidationError('Cần nhập lý do khi nhảy bước hoặc bỏ qua kiểm tra.')
 
     overridden = []
     if not backward:
@@ -194,8 +196,10 @@ def cancel(trip, *, user, reason):
     with transaction.atomic():
         trip = DispatchTrip.objects.select_for_update().get(pk=trip.pk)
         cur = trip.step_status
-        if cur == 'CANCELLED' or (cur in STEPS and STEPS.index(cur) >= STEPS.index('LOADED_ON_VEHICLE')):
-            raise ValidationError('Chỉ hủy được chuyến trước khi nhận cont.')
+        if cur == 'CANCELLED':
+            raise ValidationError('Chuyến đã hủy trước đó.')
+        if cur in STEPS and STEPS.index(cur) >= STEPS.index('ARRIVED_AT_PICKUP'):
+            raise ValidationError(f'Chuyến xe đã bắt đầu chạy ({STEP_LABELS.get(cur, cur)}), không thể hủy chuyến.')
         trip.step_status, trip.status = 'CANCELLED', TripStatus.CANCELLED
         trip.save()
         from core.models import TrackingEventLog

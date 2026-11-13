@@ -10305,6 +10305,11 @@ async function deleteOrCancelTrip(tripCode = null) {
         return;
     }
 
+    if (window.currentTripDetail && window.currentTripDetail.step_status && !['READY', 'CANCELLED', ''].includes(window.currentTripDetail.step_status)) {
+        showToast('danger', 'Chuyến xe đã phát sinh hành trình thực tế trên đường, tuyệt đối không thể xóa hay hủy chuyến!');
+        return;
+    }
+
     const confirmed = await showConfirmModal({
         title: 'Xác Nhận Xóa Phiếu Điều Độ',
         message: `Bạn có chắc chắn muốn xóa / hủy phiếu điều độ "${code}" không?\n\n• Trạng thái chuyến sẽ chuyển sang Đã Hủy (Soft-Delete an toàn bảo toàn Audit Trail).\n• Hạn mức container sẽ tự động hoàn lại cho đơn hàng Booking liên quan.\n• Các chứng từ chi phí và hình ảnh chưa chốt sổ sẽ được đồng bộ dọn dẹp an toàn.`,
@@ -11639,11 +11644,11 @@ function mdoFilterContainers() {
         const isChecked = mdoSelectedContIds.has(String(c.id));
         const subName = c.vendor || c.subcontractor_name || (c.subcontractor ? (c.subcontractor.short_name || c.subcontractor.name) : '');
         const currentSubId = c.vendor_id || c.subcontractor_id || (c.subcontractor ? c.subcontractor.id : '') || (c.allocation ? c.allocation.subcontractor_id : '');
-        const isLocked = ['LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED'].includes(c.step_status);
+        const isLocked = ['ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED'].includes(c.step_status);
 
         let vendorSelectHtml = '';
         if (isLocked) {
-            vendorSelectHtml = `<div class="font-bold text-teal-800 text-xs">${escapeHtml(subName || 'Chưa phân bổ')}</div>`;
+            vendorSelectHtml = `<div class="font-bold text-slate-700 text-xs flex items-center gap-1.5" title="Container đang chạy, đã khóa đổi nhà xe"><i class="ph-bold ph-lock-key text-teal-700"></i> ${escapeHtml(subName || 'Chưa phân bổ')}</div>`;
         } else {
             let subOptions = '<option value="">-- Chưa phân bổ --</option>';
             mdoSubcontractors.forEach(s => {
@@ -11670,7 +11675,7 @@ function mdoFilterContainers() {
                     </button>
                 `;
             } else {
-                actionBtn = `<span class="text-slate-400 text-xs font-medium">Đang chạy</span>`;
+                actionBtn = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200" title="Chuyến xe đang/đã chạy trên hành trình, không thể bỏ gán"><i class="ph-bold ph-lock-simple text-xs text-slate-500"></i> Đang chạy</span>`;
             }
         } else {
             actionBtn = `<span class="text-slate-400 text-xs italic">--</span>`;
@@ -11693,7 +11698,7 @@ function mdoFilterContainers() {
         html += `
         <tr class="hover:bg-teal-50/30 transition-colors ${isChecked ? 'bg-teal-50/50' : ''}">
             <td class="p-2.5 text-center">
-                <input type="checkbox" class="mdo-cont-cb rounded text-teal-600 cursor-pointer" value="${c.id}" ${isChecked ? 'checked' : ''} onchange="mdoOnContCheckChange(this)">
+                <input type="checkbox" class="mdo-cont-cb rounded text-teal-600 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed" value="${c.id}" ${isChecked ? 'checked' : ''} ${isLocked ? 'disabled title="Container đang chạy trên đường, không thể chọn hàng loạt"' : 'onchange="mdoOnContCheckChange(this)"'}>
             </td>
             <td class="p-2.5 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
             <td class="p-2.5 font-bold font-mono text-teal-950">
@@ -11722,7 +11727,7 @@ function mdoUpdateSelectedBadge() {
 }
 
 function mdoToggleSelectAllConts(master) {
-    const cbs = document.querySelectorAll('.mdo-cont-cb');
+    const cbs = document.querySelectorAll('.mdo-cont-cb:not(:disabled)');
     cbs.forEach(cb => {
         cb.checked = master.checked;
         if (master.checked) mdoSelectedContIds.add(String(cb.value));
@@ -11753,9 +11758,12 @@ async function mdoAssignBulkContainers() {
         showToast('warning', 'Vui lòng chọn Nhà xe (Vendor) cần gán!');
         return;
     }
-    const ids = Array.from(mdoSelectedContIds);
+    const ids = Array.from(mdoSelectedContIds).filter(id => {
+        const c = mdoLoadedContainers.find(x => String(x.id) === String(id));
+        return !(c && ['ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED'].includes(c.step_status));
+    });
     if (ids.length === 0) {
-        showToast('warning', 'Vui lòng tích chọn ít nhất 1 container!');
+        showToast('warning', 'Các container đã chọn đang trong quá trình chạy thực tế hoặc chưa chọn container nào khả dụng!');
         return;
     }
 
@@ -11787,9 +11795,12 @@ async function mdoUnassignBulkContainers() {
         showToast('warning', 'Vui lòng chọn Booking trước!');
         return;
     }
-    const ids = Array.from(mdoSelectedContIds);
+    const ids = Array.from(mdoSelectedContIds).filter(id => {
+        const c = mdoLoadedContainers.find(x => String(x.id) === String(id));
+        return !(c && ['ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED'].includes(c.step_status));
+    });
     if (ids.length === 0) {
-        showToast('warning', 'Vui lòng tích chọn ít nhất 1 container cần bỏ phân bổ!');
+        showToast('warning', 'Các container đã chọn đang chạy trên đường, không thể bỏ phân bổ!');
         return;
     }
 
@@ -12047,6 +12058,20 @@ window.mdoReloadAllocationsAndCards = mdoReloadAllocationsAndCards;
 
 async function mdoChangeSingleContainerVendor(containerId, vendorId) {
     if (!mdoCurrentBooking) return;
+    const cont = (mdoLoadedContainers || []).find(c => String(c.id) === String(containerId));
+    if (cont && ['ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED'].includes(cont.step_status)) {
+        showToast('warning', 'Container đang trong hành trình chạy thực tế, không thể thay đổi nhà xe hoặc bỏ gán!');
+        await loadMdoContainers(mdoCurrentBooking.id);
+        return;
+    }
+    if (cont && (cont.step_status === 'READY' || cont.trip_code)) {
+        const actionText = vendorId ? 'đổi nhà xe cho' : 'bỏ gán';
+        const ok = confirm(`Container ${cont.container_number || ''} đã phát lệnh điều độ. Việc ${actionText} container này sẽ hủy chuyến điều độ tương ứng. Bạn có chắc chắn muốn tiếp tục?`);
+        if (!ok) {
+            await loadMdoContainers(mdoCurrentBooking.id);
+            return;
+        }
+    }
     try {
         const res = await fetchWithAuth(`/api/gss/bookings/${mdoCurrentBooking.id}/containers/assign/`, {
             method: 'POST',
@@ -23261,6 +23286,11 @@ async function saveSavedContainerRow(contId) {
 window.saveSavedContainerRow = saveSavedContainerRow;
 
 async function deleteSavedContainerRow(contId, contNumber) {
+    const targetCont = (window.loadedBookingContainers || []).find(c => String(c.id) === String(contId));
+    if (targetCont && targetCont.step_status && !['READY', 'CANCELLED', ''].includes(targetCont.step_status)) {
+        showToast('error', `Container "${contNumber}" đã phát sinh hành trình chạy thực tế, không thể xóa khỏi đơn hàng!`);
+        return;
+    }
     if (!confirm(`Bạn có chắc chắn muốn xóa container "${contNumber || ''}" khỏi đơn hàng này?`)) return;
     const bookingId = document.getElementById('fullpage-booking-id')?.value;
 
