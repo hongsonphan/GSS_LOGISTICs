@@ -25,6 +25,14 @@ Nhật ký của hệ thống trước đó không chuyển sang repo này.
     + **Bên TRÁI (cạnh cột Checkbox chọn Container):** Đặt cụm thao tác hàng loạt gồm [Đã chọn: X cont], dropdown [Chọn Nhà xe phụ trách], nút [✓ Giao Cho Nhà Xe] và nút [✕ Hủy Giao]. Giúp người dùng ngay sau khi tick chọn các container ở góc trái bảng có thể thực hiện gán/hủy xe tức thì tại cự ly chuột gần nhất, giảm tối đa quãng đường di chuyển con trỏ chuột.
     + **Bên PHẢI:** Chuyển cụm tra cứu gồm ô tìm kiếm [Tìm số cont, seal, xe...], dropdown bộ lọc trạng thái [Tất cả trạng thái (10)] và nhãn đếm [Đã nạp X container] sang lề phải bảng dữ liệu, tạo phân định thị giác rõ ràng giữa nhóm hành động (action group) và nhóm tra cứu (filter group).
 
+- **Đồng bộ Công thái học Fitts's Law cho Bảng Gán Nhà Xe bên Booking (`view_booking_detail.html`):**
+  - Hợp nhất 2 hàng công cụ rời rạc (`#fullpage-cont-bulk-bar` và `#fullpage-cont-filter-bar`) thành 1 thanh Toolbar duy nhất tiết kiệm không gian:
+    + **Bên TRÁI (cạnh cột Checkbox `#check-all-booking-conts`):** Nhóm hành động gồm `[Đã chọn: X cont]`, dropdown `[-- Chọn Nhà xe đối tác (Vendor) --]`, nút `[✓ Giao Cho Nhà Xe]` và nút `[✕ Hủy Giao]`.
+    + **Bên PHẢI:** Nhóm tra cứu gồm ô tìm kiếm `[Tìm số cont, seal...]`, bộ lọc `[Tất cả trạng thái (10)]`, dropdown `[Sắp xếp]`, badge `[Hiển thị: 0/0]` và nút `[Đặt lại]`.
+- **Sửa Lỗi Triệt Để & Nâng Cấp Nút "Toàn Màn Hình" Bảng Container (Booking & Điều Độ):**
+  - Bổ sung `id="mdo-modal-containers-table-wrapper"` bị thiếu trong `modal_dispatch_order.html`, khắc phục lỗi bảng không mở rộng chiều cao khi bấm Toàn Màn Hình trong popup.
+  - Nâng cấp `toggleMdoContainersTableExpand` và `toggleFullscreenContainersTable` lên lớp phủ `z-[80]` (vượt qua z-index topbar `z-40` và modal cha `z-50`), tự động bung trọn màn hình `max-h-[calc(100vh-210px)]` và khôi phục chính xác `max-h-80` hoặc `max-h-[500px]` / `max-h-[640px]` khi thu gọn.
+
 - **Kiểm thử & Xác thực hệ thống:**
   - Build lại `static/css/tailwind.css` và `static/js/app.js` khớp 100% mã nguồn.
   - Chạy toàn bộ bộ kiểm thử tự động `python scripts/qa.py verify`: 7/7 bước ĐẠT (PASS=7, FAIL=0, test `apps.gss apps.dispatch apps.billing` xanh 100%).

@@ -12119,21 +12119,21 @@ function toggleMdoContainersTableExpand() {
     window.isMdoTableFullscreen = isMdoTableFullscreen;
 
     if (isMdoTableFullscreen) {
-        section.classList.add('fixed', 'inset-0', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'flex', 'flex-col', 'm-0', 'rounded-none', 'shadow-2xl');
+        section.classList.add('fixed', 'inset-0', 'z-[80]', 'bg-white', 'p-6', 'overflow-hidden', 'flex', 'flex-col', 'm-0', 'rounded-none', 'shadow-2xl');
         section.style.height = '100vh';
         section.style.maxHeight = '100vh';
         document.body.classList.add('overflow-hidden');
         if (icon) icon.className = 'ph-bold ph-corners-in text-sm text-teal-700';
         if (text) text.innerText = 'Thu Gọn (Esc)';
         if (tableWrap) {
-            tableWrap.classList.remove('max-h-[500px]', 'max-h-[460px]');
+            tableWrap.classList.remove('max-h-[500px]', 'max-h-[460px]', 'max-h-80');
             tableWrap.classList.add('flex-1', 'overflow-y-auto', 'max-h-[calc(100vh-210px)]');
         }
         if (typeof showToast === 'function') {
             showToast('info', 'Đã mở rộng toàn màn hình. Nhấn phím Esc hoặc nút Thu Gọn để trở lại.');
         }
     } else {
-        section.classList.remove('fixed', 'inset-0', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'flex', 'flex-col', 'm-0', 'rounded-none', 'shadow-2xl');
+        section.classList.remove('fixed', 'inset-0', 'z-[80]', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'flex', 'flex-col', 'm-0', 'rounded-none', 'shadow-2xl');
         section.style.height = '';
         section.style.maxHeight = '';
         document.body.classList.remove('overflow-hidden');
@@ -12141,7 +12141,11 @@ function toggleMdoContainersTableExpand() {
         if (text) text.innerText = 'Toàn Màn Hình';
         if (tableWrap) {
             tableWrap.classList.remove('flex-1', 'max-h-[calc(100vh-210px)]');
-            tableWrap.classList.add('max-h-[500px]');
+            if (section.id === 'mdo-modal-containers-section') {
+                tableWrap.classList.add('max-h-80');
+            } else {
+                tableWrap.classList.add('max-h-[500px]');
+            }
         }
     }
 }
@@ -23132,7 +23136,7 @@ function toggleFullscreenContainersTable() {
     window.isContTableFullscreen = isContTableFullscreen;
 
     if (isContTableFullscreen) {
-        section.classList.add('fixed', 'inset-0', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'flex', 'flex-col', 'm-0', 'rounded-none', 'shadow-2xl');
+        section.classList.add('fixed', 'inset-0', 'z-[80]', 'bg-white', 'p-6', 'overflow-hidden', 'flex', 'flex-col', 'm-0', 'rounded-none', 'shadow-2xl');
         section.style.height = '100vh';
         section.style.maxHeight = '100vh';
         document.body.classList.add('overflow-hidden');
@@ -23144,7 +23148,7 @@ function toggleFullscreenContainersTable() {
         }
         showToast('info', 'Đã mở rộng toàn màn hình. Nhấn phím Esc hoặc nút Thu Gọn để trở lại.');
     } else {
-        section.classList.remove('fixed', 'inset-0', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'm-0', 'rounded-none', 'shadow-2xl');
+        section.classList.remove('fixed', 'inset-0', 'z-[80]', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'm-0', 'rounded-none', 'shadow-2xl');
         section.style.height = '';
         section.style.maxHeight = '';
         document.body.classList.remove('overflow-hidden');
