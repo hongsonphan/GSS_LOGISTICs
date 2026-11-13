@@ -1172,7 +1172,7 @@ class GssLogisticsCoreTestCase(TestCase):
 
         # 2. Gửi request kèm Header Authorization với JWT token hỏng / hết hạn
         # GracefulJWTAuthentication phải bắt lỗi và fallback về session user, trả về 200 OK!
-        bad_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDAwMDAwMDB9.invalid_signature"
+        bad_token = "invalid_jwt_token_for_resilience_test"
         res = self.client.get('/api/trips/', HTTP_AUTHORIZATION=f"Bearer {bad_token}")
         self.assertEqual(res.status_code, 200)
 
