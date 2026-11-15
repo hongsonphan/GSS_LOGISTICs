@@ -3,6 +3,13 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-15 – Rà soát Bước 1–3 theo kế hoạch GSS (BRD): gửi lệnh email và mẫu phiếu giao hàng
+- **Sửa lỗi «Lưu & Phát Lệnh» không gửi email (Bước 2):** ở màn Lệnh điều vận (`/dispatch/orders/<id>`), khi các nhà xe đã được giao cont theo từng cont, nút chỉ báo «phát hành thành công» mà không gửi email, và dừng sớm với thông báo «thêm ít nhất một nhà xe». Nay nút gửi email lệnh kèm link riêng cho từng nhà xe (`POST /api/bookings/<id>/send-orders/`, tuỳ chọn `subcontractor_ids`), báo rõ nhà xe nào gửi được, nhà xe nào thiếu email hoặc bị khóa.
+- Dùng lại link đang chạy của nhà xe (không làm hỏng link đã mở); email liệt kê số cont được giao (tối đa 60 số).
+- **Mẫu phiếu giao hàng (Bước 1/5):** form Booking có ô chọn mẫu (lưu `pod_template_id`) và nút «Quản lý mẫu» mở màn tạo/sửa/xóa/xem trước mẫu và gán mẫu cho từng khách hàng (`pod-templates.js`). Thứ tự ưu tiên khi in: mẫu của Booking → mẫu gán cho khách → mẫu mặc định.
+- `GET /api/gss/pod-templates/` mở cho Kinh doanh/Điều vận; ghi mẫu vẫn chỉ Quản trị/Giám đốc.
+- Test mới: gửi lệnh theo nhà xe (giữ link, báo thiếu email, lọc nhà xe, quyền), chọn mẫu qua API Booking, quyền xem mẫu.
+
 ## 2026-11-13 (Cập nhật 18) – Tái Cấu Trúc Giao Diện Cổng Nhà Xe (Vendor Portal) Đồng Bộ 100% Design System & Rules Giao Diện Màn Hình Chính
 - **Đồng bộ Topbar chuẩn văn phòng GSS (`h-16 bg-white border-b border-slate-200`):**
   - Loại bỏ hoàn toàn thanh header gradient xanh tối màu (`h-14 bg-gradient-to-r from-teal-800 ...`) gây cảm giác tách rời ứng dụng.

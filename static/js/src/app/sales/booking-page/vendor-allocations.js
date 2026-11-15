@@ -17,6 +17,7 @@ function fillBookingDemDet(b) {
     set('fullpage-booking-det-override', b && b.det_expiry_override);
     set('fullpage-booking-dest-notes', b && b.destination_notes);
     set('fullpage-booking-road-restrictions', b && b.road_restrictions);
+    loadBookingPodTemplates(b && b.pod_template_id);
     const box = document.getElementById('fullpage-demdet-summary');
     if (!box) return;
     box.replaceChildren();
@@ -32,6 +33,29 @@ function fillBookingDemDet(b) {
     });
 }
 
+// Mẫu phiếu giao hàng: nạp danh sách mẫu vào ô chọn (lỗi/không đủ quyền thì ẩn ô, không chặn lưu đơn)
+let bookingPodTemplatesCache = null;
+async function loadBookingPodTemplates(selectedId) {
+    const wrap = document.getElementById('fullpage-wrapper-booking-pod-template');
+    const sel = document.getElementById('fullpage-booking-pod-template');
+    if (!sel) return;
+    try {
+        if (!bookingPodTemplatesCache) {
+            const res = await fetchWithAuth('/api/gss/pod-templates/');
+            const out = await res.json();
+            if (!res.ok || !out.success) throw new Error('no-access');
+            bookingPodTemplatesCache = (out.templates || []).filter(t => t.is_active !== false);
+        }
+        const first = sel.options[0];
+        sel.replaceChildren(first);
+        bookingPodTemplatesCache.forEach(t => sel.append(new Option(t.name + (t.is_default ? ' (mặc định)' : ''), t.id)));
+        sel.value = selectedId ? String(selectedId) : '';
+        if (wrap) wrap.classList.remove('hidden');
+    } catch (e) {
+        if (wrap) wrap.classList.add('hidden');
+    }
+}
+
 function collectBookingDemDet() {
     const val = (id) => (document.getElementById(id)?.value || '').trim();
     return [
@@ -41,6 +65,7 @@ function collectBookingDemDet() {
         ['det_expiry_override', val('fullpage-booking-det-override')],
         ['destination_notes', val('fullpage-booking-dest-notes')],
         ['road_restrictions', val('fullpage-booking-road-restrictions')],
+        ['pod_template_id', val('fullpage-booking-pod-template')],
     ];
 }
 

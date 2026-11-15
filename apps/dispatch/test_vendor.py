@@ -200,6 +200,53 @@ class VendorApiTests(VendorBase):
         self.assertEqual((data['allocated'], data['remaining']), (3, 7))
         self.assertIn('vendor_link', str(data))
 
+    def test_send_orders_emails_each_vendor_with_own_link_and_keeps_link(self):
+        from django.core import mail
+        self.sub_a.company_email = 'a@xe.vn'
+        self.sub_a.save()
+        self.sub_b.company_email = ''
+        self.sub_b.save()
+        first = self._create(3)
+        res = self.client.post(f'/api/bookings/{self.booking.pk}/vendor-allocations/',
+                               {'subcontractor_id': self.sub_b.pk, 'allocated_containers': 2}, content_type='application/json')
+        self.assertEqual(res.status_code, 201)
+        token_a = first['link'].rstrip('/').split('/')[-1]
+        mail.outbox.clear()
+        out = self.client.post(f'/api/bookings/{self.booking.pk}/send-orders/', {}, content_type='application/json')
+        body = out.json()
+        self.assertEqual(body['data']['total'], 2)
+        self.assertEqual(body['data']['sent'], 1)          # nhà xe B chưa có email -> báo rõ, không im lặng
+        self.assertTrue(body['success'])
+        self.assertIn('chưa có địa chỉ email', body['message'])
+        self.assertFalse([r for r in body['data']['results'] if r['sent'] is False and 'email' not in r['message']])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['a@xe.vn'])
+        self.assertIn(f'/vendor/{token_a}/', mail.outbox[0].body)      # dùng lại đúng link đang chạy
+        self.assertIsNotNone(svc.allocation_by_token(token_a))
+
+    def test_send_orders_can_target_selected_vendors(self):
+        from django.core import mail
+        for s in (self.sub_a, self.sub_b):
+            s.company_email = f'{s.pk}@xe.vn'
+            s.save()
+        self._create(2)
+        self.client.post(f'/api/bookings/{self.booking.pk}/vendor-allocations/',
+                         {'subcontractor_id': self.sub_b.pk, 'allocated_containers': 2}, content_type='application/json')
+        mail.outbox.clear()
+        out = self.client.post(f'/api/bookings/{self.booking.pk}/send-orders/', {'subcontractor_ids': [self.sub_b.pk]},
+                               content_type='application/json').json()
+        self.assertEqual((out['data']['total'], out['data']['sent']), (1, 1))
+        self.assertEqual([m.to for m in mail.outbox], [[f'{self.sub_b.pk}@xe.vn']])
+        bad = self.client.post(f'/api/bookings/{self.booking.pk}/send-orders/', {'subcontractor_ids': ['x']}, content_type='application/json')
+        self.assertEqual(bad.status_code, 400)
+
+    def test_send_orders_requires_dispatcher_and_allocations(self):
+        res = self.client.post(f'/api/bookings/{self.booking.pk}/send-orders/', {}, content_type='application/json')
+        self.assertEqual(res.status_code, 400)             # chưa có phiếu nào
+        self.client.logout()
+        res = self.client.post(f'/api/bookings/{self.booking.pk}/send-orders/', {}, content_type='application/json')
+        self.assertIn(res.status_code, (401, 403))
+
     def test_over_allocation_returns_400(self):
         res = self.client.post(f'/api/bookings/{self.booking.pk}/vendor-allocations/',
                                {'subcontractor_id': self.sub_a.pk, 'allocated_containers': 11}, content_type='application/json')

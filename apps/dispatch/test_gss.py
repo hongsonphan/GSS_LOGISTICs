@@ -592,6 +592,25 @@ class PodTemplateApiTests(GssBase):
         listing = self.client.get('/api/gss/pod-templates/').json()
         self.assertEqual(listing['customers'][0]['pod_template_id'], tid)
 
+    def test_booking_can_choose_template_via_booking_api(self):
+        self.client.force_login(self.staff)
+        tpl = PodTemplate.objects.create(code='MAU2', name='Mẫu 2', body_html='<p>x</p>')
+        url = f'/api/bookings/{self.booking.pk}/'
+        r = self.client.put(url, {'pod_template_id': tpl.pk}, content_type='application/json')
+        self.assertEqual(r.status_code, 200, r.content)
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.pod_template_id, tpl.pk)
+        self.assertEqual(self.client.get(url).json()['pod_template_id'], tpl.pk)
+        self.assertEqual(self.client.put(url, {'pod_template_id': 999999}, content_type='application/json').status_code, 400)
+        self.assertEqual(self.client.put(url, {'pod_template_id': ''}, content_type='application/json').status_code, 200)
+        self.booking.refresh_from_db()
+        self.assertIsNone(self.booking.pod_template_id)
+
+    def test_booking_staff_can_list_templates_but_not_unrelated_user(self):
+        user = get_user_model().objects.create_user('nv2', 'n2@x.vn', 'pw-Test-12345')
+        self.client.force_login(user)
+        self.assertIn(self.client.get('/api/gss/pod-templates/').status_code, (401, 403))
+
     def test_non_admin_cannot_write_templates(self):
         user = get_user_model().objects.create_user('nv', 'n@x.vn', 'pw-Test-12345')
         self.client.force_login(user)

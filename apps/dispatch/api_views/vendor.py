@@ -92,6 +92,33 @@ class BookingVendorAllocationsAPIView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+class BookingSendOrdersAPIView(APIView):
+    """«Gửi lệnh»: email lệnh điều động + link riêng cho từng nhà xe của B/L (mỗi link chỉ thấy cont của nhà xe đó)."""
+    permission_classes = [IsDispatcher]
+
+    def post(self, request, pk):
+        if (off := _feature_off(request)):
+            return off
+        b = BookingOrder.objects.filter(pk=pk, is_deleted=False).first()
+        if not b:
+            raise Http404
+        ids = request.data.get('subcontractor_ids')
+        if ids is not None:
+            try:
+                ids = [int(i) for i in ids]
+            except (TypeError, ValueError):
+                return _err('Danh sách nhà xe không hợp lệ.')
+        results = svc.send_all_vendor_emails(b, request, user=request.user, subcontractor_ids=ids)
+        if not results:
+            return _err('B/L chưa có phiếu giao cont cho nhà xe nào. Hãy gán cont cho nhà xe trước.')
+        sent = sum(1 for r in results if r['sent'])
+        msg = f'Đã gửi lệnh cho {sent}/{len(results)} nhà xe.'
+        failed = [f"{r['subcontractor']}: {r['message']}" for r in results if not r['sent']]
+        if failed:
+            msg += ' Chưa gửi được — ' + '; '.join(failed)
+        return Response({'success': sent > 0, 'message': msg, 'data': {'results': results, 'sent': sent, 'total': len(results)}})
+
+
 class VendorAllocationDetailAPIView(APIView):
     """Điều vận xem/sửa một phiếu: đổi số cont, cấp link mới, khóa/mở khóa, thu hồi, sửa dòng."""
     permission_classes = [IsDispatcher]

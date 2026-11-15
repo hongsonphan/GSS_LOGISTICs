@@ -707,14 +707,20 @@ def send_vendor_allocation_email(alloc, raw_token, request=None):
     vendor_link = f"{base_url}/vendor/{raw_token}/"
     b = alloc.booking
     notes = effective_notes(b)
+    conts = list(alloc.containers.filter(is_deleted=False).order_by('alloc_line_no', 'id')
+                 .values_list('container_number', flat=True)[:60])
+    n_conts = alloc.containers.filter(is_deleted=False).count() or alloc.allocated_containers
+    cont_block = ''
+    if conts:
+        cont_block = '- Danh sách container: ' + ', '.join(conts) + (f' … (+{n_conts - len(conts)} cont nữa, xem trên link)' if n_conts > len(conts) else '') + '\n'
 
     brand = getattr(settings, 'EMAIL_BRAND_NAME', 'GSS TMS')
     subject = f"[{brand}] Lệnh Điều Động Vận Tải - Booking {b.booking_code} - {sub.name}"
     message = f"""Kính gửi Quý đối tác vận tải {sub.name},
 
 Phòng Điều Vận trân trọng gửi thông tin Lệnh Điều Động vận chuyển thuộc Booking {b.booking_code}:
-- Số lượng container được phân bổ: {alloc.allocated_containers} cont ({b.container_size or '40HC'})
-- Lộ trình vận chuyển: {b.pickup_location or 'Nơi lấy'} -> {b.delivery_location or 'Nơi giao'} -> {b.dropoff_location or 'Hạ rỗng'}
+- Số lượng container được phân bổ: {n_conts} cont ({b.container_size or '40HC'})
+{cont_block}- Lộ trình vận chuyển: {b.pickup_location or 'Nơi lấy'} -> {b.delivery_location or 'Nơi giao'} -> {b.dropoff_location or 'Hạ rỗng'}
 - Hạn lệnh DEM / DET: {b.dem_expiry or '—'} / {b.det_expiry or '—'}
 - Ghi chú điểm đến: {notes.get('destination_notes') or 'Theo chỉ dẫn kho'}
 - Lưu ý cấm đường / giờ cấm tải: {notes.get('road_restrictions') or 'Tuân thủ biển báo giao thông'}
@@ -740,6 +746,32 @@ Phòng Điều Vận - Green Solutions Smart (GSS)
     except Exception as e:
         logger.warning(f"Lỗi gửi email cho nhà xe {sub.name}: {e}")
         return False, f"Lỗi gửi email: {str(e)}"
+
+
+def send_all_vendor_emails(booking, request=None, user=None, subcontractor_ids=None):
+    """«Gửi lệnh»: email từng nhà xe còn phiếu hiệu lực của B/L (hoặc chỉ các nhà xe trong `subcontractor_ids`).
+    Dùng lại link đang chạy (không làm hỏng link nhà xe đã mở); chỉ cấp link mới khi link cũ không còn dùng được.
+    Trả danh sách kết quả theo nhà xe."""
+    allocs = BookingVendorAllocation.objects.filter(booking=booking, is_deleted=False) \
+        .exclude(status=AllocationStatus.REVOKED).select_related('subcontractor').order_by('id')
+    if subcontractor_ids is not None:
+        allocs = allocs.filter(subcontractor_id__in=subcontractor_ids)
+    results = []
+    for a in allocs:
+        name = a.subcontractor.short_name or a.subcontractor.name
+        if a.locked_at:
+            results.append({'id': a.id, 'subcontractor': name, 'sent': False, 'message': 'Phiếu đang bị khóa, bỏ qua.'})
+            continue
+        if not (a.containers.filter(is_deleted=False).exists() or a.allocated_containers):
+            results.append({'id': a.id, 'subcontractor': name, 'sent': False, 'message': 'Chưa giao cont nào, bỏ qua.'})
+            continue
+        raw = (a.draft_rows or {}).get('_raw_token')
+        if not raw or not allocation_by_token(raw):
+            raw = regenerate_link(a, user=user)
+            a.refresh_from_db()
+        sent, msg = send_vendor_allocation_email(a, raw, request)
+        results.append({'id': a.id, 'subcontractor': name, 'sent': sent, 'message': msg})
+    return results
 
 
 def _ensure_vendor_writable(alloc, action_label='sửa'):

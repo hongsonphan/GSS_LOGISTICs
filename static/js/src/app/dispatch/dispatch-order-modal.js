@@ -293,7 +293,7 @@ function mdoAddAllocationRow(subId = null, count = 1, note = '', isExisting = fa
         </td>
         <td class="p-2.5 text-center">
             <label class="inline-flex items-center cursor-pointer">
-                <input type="checkbox" ${isExisting ? '' : 'checked'} class="mdo-email-chk rounded text-teal-600 focus:ring-teal-500 h-4 w-4">
+                <input type="checkbox" checked class="mdo-email-chk rounded text-teal-600 focus:ring-teal-500 h-4 w-4">
             </label>
         </td>
         <td class="p-2.5 text-center">
@@ -388,8 +388,10 @@ async function submitDispatchOrderAllocation() {
     }
 
     const rows = document.querySelectorAll('#mdo-allocations-tbody tr');
-    if (!rows.length) {
-        showToast('warning', 'Vui lòng thêm ít nhất một Nhà xe để phân bổ container.');
+    // Giao theo từng cont: nhà xe hiện ở dạng thẻ (không có dòng bảng) nhưng vẫn là phiếu hợp lệ để phát lệnh
+    const cardAllocs = rows.length ? [] : (mdoCurrentAllocations || []);
+    if (!rows.length && !cardAllocs.length) {
+        showToast('warning', 'Chưa có nhà xe nào được giao container. Hãy tích chọn cont bên dưới và giao cho nhà xe trước.');
         return;
     }
 
@@ -424,9 +426,33 @@ async function submitDispatchOrderAllocation() {
 
     const bookingId = mdoCurrentBooking.id;
 
+    // Nhà xe đã được giao cont từ trước (giao theo từng cont): gửi email lệnh + link riêng cho các dòng được tích «Gửi email»
+    const existingIds = cardAllocs.map(a => Number(a.subcontractor_id)).filter(Boolean);
+    rows.forEach(tr => {
+        if (tr.dataset.existing === '1' && tr.querySelector('.mdo-email-chk')?.checked) {
+            const sid = Number(tr.querySelector('.mdo-sub-select')?.value);
+            if (sid) existingIds.push(sid);
+        }
+    });
+    let sendSummary = null;
+    if (existingIds.length) {
+        try {
+            const res = await fetchWithAuth(`/api/bookings/${bookingId}/send-orders/`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subcontractor_ids: existingIds }),
+            });
+            sendSummary = await res.json();
+            showToast(res.ok && sendSummary.success ? 'success' : 'warning', sendSummary.message || 'Không gửi được lệnh.', 'Gửi Lệnh Cho Nhà Xe');
+        } catch (e) {
+            showToast('danger', 'Lỗi kết nối khi gửi email lệnh: ' + e.message);
+        }
+    }
+
     // Nếu không có dòng phân bổ mới cần tạo (ví dụ đã chia đủ từ trước)
     if (newAllocations.length === 0) {
-        showToast('success', 'Lệnh điều động đã được xác nhận phát hành thành công cho các Nhà xe đối tác!', 'Phát Lệnh Thành Công');
+        if (!existingIds.length) {
+            showToast('info', 'Lệnh đã được lưu. Chưa tích «Gửi email» cho nhà xe nào nên chưa có email nào được gửi.', 'Chưa Gửi Email');
+        }
         try {
             const allocRes = await fetchWithAuth(`/api/bookings/${bookingId}/vendor-allocations/`);
             if (allocRes.ok) {

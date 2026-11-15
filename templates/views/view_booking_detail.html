@@ -371,6 +371,22 @@
                         <textarea id="fullpage-booking-notes" rows="2" placeholder="VD: Xe vào cổng 2, gọi kho trước 1h, kiểm tra kỹ số seal, tuân thủ giờ cấm tải..." 
                             class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 text-slate-800 text-xs font-medium"></textarea>
                     </div>
+
+                    <!-- Mẫu Phiếu Giao Hàng / Biên Bản (theo khách hàng) -->
+                    <div id="fullpage-wrapper-booking-pod-template">
+                        <div class="h-6 flex items-center justify-between mb-1.5">
+                            <label for="fullpage-booking-pod-template" class="block font-bold text-slate-700 text-xs truncate">Mẫu Phiếu Giao Hàng / Biên Bản</label>
+                            <button type="button" tabindex="-1" onclick="openPodTemplateManager()"
+                                class="h-5 px-2 text-[10.5px] font-bold text-teal-800 hover:text-teal-950 bg-teal-50 rounded border border-teal-200 transition-colors cursor-pointer">
+                                Quản lý mẫu
+                            </button>
+                        </div>
+                        <select id="fullpage-booking-pod-template"
+                            class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs">
+                            <option value="">Theo mẫu đã gán cho khách hàng / mẫu mặc định</option>
+                        </select>
+                        <p class="text-[11px] text-slate-400 mt-1">Hệ thống tự sinh phiếu giao hàng theo mẫu này khi chuyến xe hoàn tất, để in và ký nhận.</p>
+                    </div>
                 </div>
 
                 <!-- ========================================================================= -->

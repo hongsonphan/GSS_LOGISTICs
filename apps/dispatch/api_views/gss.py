@@ -341,7 +341,8 @@ class GssPodTemplatesAPIView(APIView):
     """GET: danh sách mẫu + khách hàng (để gán mẫu). POST: tạo mẫu mới (Ban giám đốc/quản trị)."""
 
     def get_permissions(self):
-        return [IsDispatcher()] if self.request.method == 'GET' else [IsAdminOrDirector()]
+        from core.permissions import IsBookingStaff
+        return [IsBookingStaff()] if self.request.method == 'GET' else [IsAdminOrDirector()]
 
     def get(self, request):
         from apps.customers.models import Customer, PodTemplate

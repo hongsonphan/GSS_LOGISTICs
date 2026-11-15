@@ -49,6 +49,7 @@ sales/booking-page/form.js
 sales/booking-page/page.js
 sales/booking-page/containers.js
 sales/booking-page/vendor-allocations.js
+sales/booking-page/pod-templates.js
 sales/booking-page/print.js
 # 5. Đội xe
 fleet/fleet.js

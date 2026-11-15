@@ -750,6 +750,14 @@ class SalesAPIView(APIView):
                 notes=data.get('notes', '')
             )
 
+            _tid = str(data.get('pod_template_id') or '').strip()
+            if _tid.isdigit():
+                from apps.customers.models import PodTemplate
+                _tpl = PodTemplate.objects.filter(pk=_tid, is_deleted=False, is_active=True).first()
+                if _tpl:
+                    booking.pod_template = _tpl
+                    booking.save(update_fields=['pod_template'])
+
             # Lưu tất cả các file đính kèm vào BookingDocument với tên đã gán mã Booking
             for bf in uploaded_bk_files:
                 doc_file_name = getattr(bf, 'name', '') or f"{booking.booking_code}_booking_document"

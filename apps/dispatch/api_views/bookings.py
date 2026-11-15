@@ -140,6 +140,7 @@ class BookingOrderDetailAPIView(APIView):
             'det_expiry_override': b.det_expiry_override.isoformat() if b.det_expiry_override else '',
             'dem': describe_dem_det(b.dem_expiry), 'det': describe_dem_det(b.det_expiry),
             'destination_notes': b.destination_notes, 'road_restrictions': b.road_restrictions,
+            'pod_template_id': b.pod_template_id or '',
             'selling_freight_price': float(b.selling_freight_price),
             'status': b.status,
             'status_label': b.get_status_display(),
@@ -257,6 +258,16 @@ class BookingOrderDetailAPIView(APIView):
             b.destination_notes = str(data['destination_notes'] or '').strip()
         if 'road_restrictions' in data:
             b.road_restrictions = str(data['road_restrictions'] or '').strip()
+        if 'pod_template_id' in data:
+            from apps.customers.models import PodTemplate
+            tid = str(data.get('pod_template_id') or '').strip()
+            if tid:
+                tpl = PodTemplate.objects.filter(pk=tid, is_deleted=False, is_active=True).first() if tid.isdigit() else None
+                if tpl is None:
+                    return Response({'error': 'Mẫu phiếu giao hàng không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
+                b.pod_template = tpl
+            else:
+                b.pod_template = None
         if 'selling_freight_price' in data:
             try:
                 price_val = float(data.get('selling_freight_price') or 0)
