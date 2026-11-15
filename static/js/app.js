@@ -4583,8 +4583,12 @@ function switchTab(tabId, updateHistory = true) {
         if (gssTab) GSSApp.enter(tabId);
         if (tabId === 'dashboard' && !gssTab) loadDashboardData();
         if (tabId === 'dieu-van' && !gssTab) {
-            if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
-            if (typeof loadTripsData === 'function') loadTripsData();
+            if (typeof switchDispatchViewTab === 'function' && typeof currentDispatchTab !== 'undefined' && currentDispatchTab && currentDispatchTab !== 'orders') {
+                switchDispatchViewTab(currentDispatchTab);
+            } else {
+                if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+                if (typeof loadTripsData === 'function') loadTripsData();
+            }
         }
         if (tabId === 'nhan-su') loadHRData();
         if (tabId === 'xe-bai' && !gssTab) loadFleetData();
@@ -11939,10 +11943,15 @@ async function loadVendorContainersTab() {
 
             const lddDisplay = `
                 <div>
-                    <span class="font-mono text-xs font-bold text-teal-950">${r.dispatch_order_code}</span>
-                    <div class="text-xs text-slate-700 font-semibold truncate max-w-[180px]" title="${r.customer_name}">${r.customer_name}</div>
-                    <div class="text-[11px] text-slate-500 truncate max-w-[180px]" title="${r.pickup_location} -> ${r.delivery_location} -> ${r.dropoff_location}">
-                        ${r.pickup_location} &rarr; ${r.delivery_location}
+                    <button type="button" onclick="openDispatchOrderPage(${r.booking_id})"
+                        class="font-mono text-xs font-bold text-teal-800 hover:text-teal-950 hover:underline cursor-pointer inline-flex items-center gap-1 text-left"
+                        title="Xem Lệnh Điều Động [${escapeHtml(r.dispatch_order_code)}]">
+                        <span>${escapeHtml(r.dispatch_order_code)}</span>
+                        <i class="ph-bold ph-arrow-square-out text-[11px] text-teal-600"></i>
+                    </button>
+                    <div class="text-xs text-slate-700 font-semibold truncate max-w-[180px]" title="${escapeHtml(r.customer_name)}">${escapeHtml(r.customer_name)}</div>
+                    <div class="text-[11px] text-slate-500 truncate max-w-[180px]" title="${escapeHtml(r.pickup_location)} -> ${escapeHtml(r.delivery_location)} -> ${escapeHtml(r.dropoff_location)}">
+                        ${escapeHtml(r.pickup_location)} &rarr; ${escapeHtml(r.delivery_location)}
                     </div>
                 </div>
             `;
@@ -11952,9 +11961,9 @@ async function loadVendorContainersTab() {
                 vendorDisplay = `
                     <div>
                         <span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-900 border border-teal-200 font-bold text-xs inline-flex items-center gap-1">
-                            <i class="ph-bold ph-buildings"></i> ${r.vendor_short || r.vendor_name}
+                            <i class="ph-bold ph-buildings"></i> ${escapeHtml(r.vendor_short || r.vendor_name)}
                         </span>
-                        <div class="text-[11px] text-slate-400 font-mono mt-0.5">${r.vendor_code ? `Mã: ${r.vendor_code}` : ''}</div>
+                        <div class="text-[11px] text-slate-400 font-mono mt-0.5">${r.vendor_code ? `Mã: ${escapeHtml(r.vendor_code)}` : ''}</div>
                     </div>
                 `;
             } else {
@@ -11970,10 +11979,13 @@ async function loadVendorContainersTab() {
             if (r.trip_code) {
                 vcDisplay = `
                     <div class="text-center">
-                        <span class="px-2.5 py-1 rounded-lg bg-teal-100 text-teal-950 font-mono font-bold text-xs border border-teal-300 shadow-2xs inline-block">
-                            ${r.trip_code}
-                        </span>
-                        ${r.step_status_display ? `<div class="text-[10px] text-teal-700 font-semibold mt-0.5">${r.step_status_display}</div>` : ''}
+                        <button type="button" onclick="viewTripDetail('${r.trip_code}')"
+                            class="px-2.5 py-1 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-950 font-mono font-bold text-xs border border-teal-300 shadow-2xs inline-flex items-center gap-1 cursor-pointer transition-colors"
+                            title="Bấm để xem Chi tiết Phiếu Vận Chuyển [${r.trip_code}]">
+                            <span>${r.trip_code}</span>
+                            <i class="ph-bold ph-arrow-square-out text-[11px] text-teal-700"></i>
+                        </button>
+                        ${r.step_status_display ? `<div class="text-[10px] text-teal-700 font-semibold mt-0.5">${escapeHtml(r.step_status_display)}</div>` : ''}
                     </div>
                 `;
             } else {
@@ -12061,15 +12073,27 @@ async function loadVendorContainersTab() {
             // Thao tác
             let actions = `
                 <div class="inline-flex items-center gap-1 justify-center">
-                    <button type="button" onclick="openDispatchOrderPage(${r.booking_id})"
+            `;
+            if (r.trip_code) {
+                actions += `
+                    <button type="button" onclick="viewTripDetail('${r.trip_code}')"
                         class="px-2 py-1 bg-white hover:bg-teal-50 text-teal-700 border border-teal-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
-                        title="Xem Lệnh Điều Động / Phân Bổ">
+                        title="Xem Chi Tiết Phiếu Vận Chuyển [${r.trip_code}]">
                         <i class="ph-bold ph-eye"></i> <span>Xem</span>
                     </button>
-            `;
+                `;
+            } else {
+                actions += `
+                    <button type="button" onclick="handleViewVcRowMissing('${escapeHtml(r.container_number)}', ${r.booking_id})"
+                        class="px-2 py-1 bg-white hover:bg-slate-50 text-slate-500 border border-slate-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        title="Container chưa phát sinh Phiếu VC (chưa gán xe)">
+                        <i class="ph-bold ph-eye"></i> <span>Xem</span>
+                    </button>
+                `;
+            }
             if (r.status_code === 'WAITING_VEHICLE') {
                 actions += `
-                    <button type="button" onclick="remindVendorZalo('${r.vendor_short || r.vendor_name}', '${r.container_number}', '${r.dispatch_order_code}', '${r.portal_token || ''}')"
+                    <button type="button" onclick="remindVendorZalo('${escapeHtml(r.vendor_short || r.vendor_name)}', '${escapeHtml(r.container_number)}', '${escapeHtml(r.dispatch_order_code)}', '${r.portal_token || ''}')"
                         class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Gửi nhắc nhở Vendor qua Zalo / Copy thông điệp">
                         <i class="ph-bold ph-chat-teardrop-dots"></i> <span>Nhắc</span>
@@ -12126,6 +12150,26 @@ function clearVcSearch() {
     if (clearBtn) clearBtn.classList.add('hidden');
     loadVendorContainersTab();
 }
+
+async function handleViewVcRowMissing(containerNumber, bookingId) {
+    if (typeof showConfirmModal === 'function') {
+        const ok = await showConfirmModal({
+            title: 'Chưa Phát Sinh Phiếu Vận Chuyển',
+            message: `Container <strong>${escapeHtml(containerNumber)}</strong> hiện chưa có Phiếu Vận Chuyển (VC) do Nhà xe chưa gán đầu kéo & tài xế.<br><br>Bạn có muốn mở <strong>Lệnh Điều Động</strong> của lô hàng này để kiểm tra và phân bổ không?`,
+            type: 'warning',
+            confirmText: 'Mở Lệnh Điều Động',
+            cancelText: 'Đóng'
+        });
+        if (ok && typeof openDispatchOrderPage === 'function') {
+            openDispatchOrderPage(bookingId);
+        }
+    } else if (typeof showToast === 'function') {
+        showToast('warning', `Container ${containerNumber} chưa có Phiếu Vận Chuyển (chờ Nhà xe gán xe).`, 'Chưa Có Phiếu VC');
+    } else {
+        alert(`Container ${containerNumber} chưa có Phiếu Vận Chuyển (chờ Nhà xe gán xe).`);
+    }
+}
+window.handleViewVcRowMissing = handleViewVcRowMissing;
 
 function remindVendorZalo(vendorName, contNumber, lddCode, token) {
     const link = token ? `${window.location.origin}/vendor/${token}/` : `${window.location.origin}/vendor/`;

@@ -273,8 +273,12 @@ function switchTab(tabId, updateHistory = true) {
         if (gssTab) GSSApp.enter(tabId);
         if (tabId === 'dashboard' && !gssTab) loadDashboardData();
         if (tabId === 'dieu-van' && !gssTab) {
-            if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
-            if (typeof loadTripsData === 'function') loadTripsData();
+            if (typeof switchDispatchViewTab === 'function' && typeof currentDispatchTab !== 'undefined' && currentDispatchTab && currentDispatchTab !== 'orders') {
+                switchDispatchViewTab(currentDispatchTab);
+            } else {
+                if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
+                if (typeof loadTripsData === 'function') loadTripsData();
+            }
         }
         if (tabId === 'nhan-su') loadHRData();
         if (tabId === 'xe-bai' && !gssTab) loadFleetData();

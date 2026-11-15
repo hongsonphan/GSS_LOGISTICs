@@ -3,6 +3,12 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-15 – Sửa chuẩn logic nút «Xem» Tab 2 Điều vận: mở đúng Phiếu Vận Chuyển (VC)
+- **Chuẩn hóa nút «Xem» cột Thao tác Tab 2 (Phân bổ & Gán xe):** Khắc phục lỗi nút Xem mở nhầm trang Lệnh Điều Động (openDispatchOrderPage). Nay nút «Xem» mở trực tiếp Chi tiết Phiếu Vận Chuyển (iewTripDetail(r.trip_code)); trường hợp container chưa được gán xe (chưa phát sinh VC), hệ thống bật modal xác nhận thông báo rõ tình trạng và hỏi người dùng có muốn mở Lệnh Điều Động để kiểm tra/phân bổ không.
+- **Tương tác linh hoạt:** Cột Lệnh Điều Động (dispatch_order_code) và cột Phiếu Vận Chuyển (	rip_code) nay đều là các liên kết bấm được (clickable), giúp người dùng xem nhanh từng chứng từ tương ứng chỉ với 1 click.
+- **Duy trì ngữ cảnh Tab 2:** Khi quay lại từ màn hình Chi tiết chuyến, hệ thống lưu giữ nguyên trạng thái Tab 2 endor-containers thay vì tự động quay về Tab 1.
+- File: static/js/src/app/dispatch/dispatch-order-modal.js, static/js/src/app/core/router.js, static/js/app.js.
+
 ## 2026-11-15 – Skill thiết kế giao diện `gss-ui-design`, chốt Sidebar 8 mục, dọn cỡ chữ `gss.css`
 - Thêm skill `.claude/skills/gss-ui-design/SKILL.md`: hợp nhất chuẩn BIM + GSS (4 tầng Zero Layout Shift, token, cây quyết định theo loại việc, danh sách cấm, cổng nghiệm thu).
 - Chốt Sidebar GSS **8 mục** (không Hải quan) trong `docs/10-ui-ux-guidelines.md` (mục 0 #14, 5.2).
