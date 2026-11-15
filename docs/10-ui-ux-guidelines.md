@@ -24,7 +24,8 @@
 | 11 | Dropzone hover | `hover:border-teal-500` |
 | 12 | Timeline | 11 bước |
 | 13 | Nhãn trạng thái chuyến | Dùng nhãn tiếng Việt ở 3.1 |
-| 14 | Sidebar | 9 mục theo USER_GUIDE A1; Bản tin/Giao việc gỡ khỏi Sidebar |
+| 14 | Sidebar | **8 mục** theo mục 12.2 (chốt 15/11/2026; không có Hải quan); Bản tin/Giao việc gỡ khỏi Sidebar |
+| 18 | Cỡ chữ `gss.css` | Đã nâng mọi cỡ <12px lên 12px (15/11/2026) |
 | 15 | Đánh số mục | Đã đánh số lại toàn bộ |
 | 16 | Thanh chi tiết | Thứ tự `Quay lại \| Sửa \| Lưu \| In \| Xóa`, kiểu viền → nền đặc khi hover. Nút Hủy/Lưu nền đặc chỉ dùng ở header form tạo/sửa |
 | 17 | Phông & cỡ chữ | Be Vietnam Pro / Plus Jakarta Sans / JetBrains Mono; cỡ chữ tối thiểu **12px**, thang chuẩn ở 2.3 và Phần 9 (các thẻ 8–11px hiện có cần nâng lên) |
@@ -276,7 +277,7 @@ Topbar `h-14` (logo, tên màn hình, `Trợ giúp`, chuông thông báo, avatar
 
 - Active: `bg-teal-700/90 text-white border-l-[3px] border-teal-300`; hover `hover:bg-white/10`.
 - Chỉ hiện menu người dùng có quyền.
-- Thứ tự (theo USER_GUIDE A1): Dashboard Tổng quan `/` · Sale & Booking `/sales` · Điều vận `/dispatch` · Xe & Bãi `/fleet` · Hành chính & Nhân sự `/hr` · Tài chính & Kế toán `/accounting` · Dịch vụ Hải quan `/customs` · Báo cáo & Thống kê `/reports` · Cài đặt `/settings`.
+- **8 mục (chốt 15/11/2026, đúng tên theo mục 12.2):** Dashboard Tổng quan · Sale & Booking · Điều vận & Vendor · Bãi & Phương Tiện · Hành chính & Nhân sự · Tài chính & Kế toán · Báo cáo · Cài đặt. Không có Hải quan, không có Audit Log trên Sidebar.
 - **Bản tin** và **Giao việc** đã gỡ khỏi Sidebar; mở từ Dashboard bằng `[Xem tất cả]` / `[Bảng việc]`, và có nút `[← Tổng quan]` ở trang con.
 - **Logo/trang chủ luôn về Dashboard**, không về Điều vận.
 

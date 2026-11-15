@@ -18,11 +18,11 @@
     --font-h2: 17px;              /* Section Title H2: 16px - 18px */
     --font-h3: 15px;              /* Card / Modal Title H3: 14px - 15px */
     --font-body-main: 13px;       /* Primary Table / Input / Button: 13px */
-    --font-body-sub: 11.5px;      /* Secondary / Sub-text / Route: 11.5px */
-    --font-caption: 11px;         /* Badges, Tags, Pill Indicators: 11px */
+    --font-body-sub: 12px;        /* Secondary / Sub-text / Route: 12px (sàn) */
+    --font-caption: 12px;         /* Caption, Tags: 12px (sàn) */
     --font-size-main: 13px;
-    --font-size-sub: 11.5px;
-    --font-size-caption: 11px;
+    --font-size-sub: 12px;
+    --font-size-caption: 12px;
 
     /* Bảng màu Brand Tokens đồng bộ GSS */
     --color-primary: #0d9488;      /* Teal 600 */
@@ -157,7 +157,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .app-form-label,
 .form-label {
     font-family: var(--font-heading) !important;
-    font-size: 11.5px !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
     color: #475569;
     margin-bottom: 0px;

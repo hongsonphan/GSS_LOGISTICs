@@ -3,6 +3,12 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-15 – Skill thiết kế giao diện `gss-ui-design`, chốt Sidebar 8 mục, dọn cỡ chữ `gss.css`
+- Thêm skill `.claude/skills/gss-ui-design/SKILL.md`: hợp nhất chuẩn BIM + GSS (4 tầng Zero Layout Shift, token, cây quyết định theo loại việc, danh sách cấm, cổng nghiệm thu).
+- Chốt Sidebar GSS **8 mục** (không Hải quan) trong `docs/10-ui-ux-guidelines.md` (mục 0 #14, 5.2).
+- `static/css/gss.css`: nâng 10 chỗ cỡ chữ 11px/11.5px lên 12px (nhãn form, `.pill`, tiêu đề bảng, KPI, `.steps`, `.thumb`, `.small`, `.kcard .kt/.klink`). Không đổi bố cục khác.
+- `static/css/main.css`: nâng `--font-body-sub`, `--font-caption`, `--font-size-sub`, `--font-size-caption` (11/11.5px) và nhãn `.app-form-label`/`.form-label` lên 12px.
+
 ## 2026-11-15 – Dashboard: vùng hành trình giãn tới đáy màn hình khi ẩn vùng phía dưới
 - Khi tắt vùng "Công việc & Bản tin" (vùng cuối), vùng tab thông tin (Theo dõi hành trình, Danh sách chuyến...) tự kéo cao tới sát đáy khung nhìn; đo theo cỡ màn thực tế, đổi cỡ cửa sổ / thu phóng / đổi tab / thanh lọc đều tự tính lại, không sinh thanh cuộn thừa.
 - Chiều cao Thấp/Vừa/Cao là mức tối thiểu (vùng phía trên còn cao thì trang cuộn như cũ); "Tự kéo" giữ theo tay người dùng. Chế độ giãn bỏ dải đệm 64px cuối trang và chừa chỗ cho nút chat nổi ở chân bảng. Bật lại vùng cuối thì trở về cách cũ.
