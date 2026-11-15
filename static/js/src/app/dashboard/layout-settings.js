@@ -171,6 +171,7 @@ function applyDashboardLayout() {
         jbody.style.height = L.journey.height === 'free' ? '360px' : '';
         jbody.style.resize = L.journey.height === 'free' ? 'vertical' : '';
     }
+    dashFitJourneyToScreen();
 
     // --- Vùng 4: công việc | bản tin ---
     const tasks = document.getElementById('dash-widget-tasks-card');
@@ -198,7 +199,55 @@ function applyDashboardLayout() {
 }
 window.applyDashboardLayout = applyDashboardLayout;
 
+// Khi vùng 4 (công việc & bản tin) bị ẩn, vùng tab thông tin là vùng cuối: kéo giãn tới đáy màn hình.
+// Đo theo khung nhìn thực tế nên màn nhỏ hay màn lớn đều vừa; tối thiểu 240px (màn quá thấp thì trang tự cuộn).
+// Chế độ "Tự kéo" giữ nguyên theo tay người dùng; chiều cao Thấp/Vừa/Cao là mức tối thiểu.
+const DASH_JOURNEY_MIN_FILL = 240;
+function dashFitJourneyToScreen() {
+    const L = dashLayoutLoad();
+    const view = document.getElementById('view-dashboard');
+    const jbody = document.getElementById('dash-journey-body');
+    const foot = document.getElementById('dash-journey-foot');
+    if (!view || !jbody) return;
+    const fill = L.journey.visible && !L.widgets.visible && L.journey.height !== 'free';
+    // Chế độ giãn: bỏ dải đệm 64px cuối trang (chừa cho nút chat nổi) và nhường chỗ nút chat bằng lề phải của chân bảng
+    view.classList.toggle('[&::after]:!hidden', fill);
+    if (foot) foot.classList.toggle('pr-16', fill);
+    if (!fill) return;
+    if (!view.clientHeight || jbody.offsetParent === null) return; // đang ở tab khác (view bị ẩn)
+    const cs = getComputedStyle(view);
+    const padBottom = parseFloat(cs.paddingBottom) || 0;
+    const topInContent = jbody.getBoundingClientRect().top - view.getBoundingClientRect().top + view.scrollTop;
+    const avail = view.clientHeight - topInContent - (foot ? foot.offsetHeight : 0) - padBottom - 2; // 2px = viền thẻ
+    // Không nhỏ hơn chiều cao người dùng đã chọn (Thấp/Vừa/Cao): vùng phía trên cao thì trang cuộn như cũ
+    const minH = { s: 240, m: 360, l: 560 }[L.journey.height] || DASH_JOURNEY_MIN_FILL;
+    const h = Math.max(minH, Math.floor(avail));
+    jbody.style.maxHeight = h + 'px';
+    jbody.style.height = h + 'px';
+}
+window.dashFitJourneyToScreen = dashFitJourneyToScreen;
+
+(function bindDashJourneyFit() {
+    let raf = 0;
+    const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(dashFitJourneyToScreen); };
+    window.addEventListener('resize', schedule);
+    window.dashScheduleJourneyFit = schedule;
+})();
+
+let dashFitObserved = false;
 function initDashboardLayout() {
+    if (!dashFitObserved) {
+        const view = document.getElementById('view-dashboard');
+        if (view && typeof ResizeObserver !== 'undefined') {
+            dashFitObserved = true;
+            const ro = new ResizeObserver(() => window.dashScheduleJourneyFit());
+            ro.observe(view); // đổi cỡ cửa sổ / thu phóng
+            // thanh tab (xuống dòng khi hẹp), thanh lọc và chân bảng đổi cao thì đầu bảng dịch chỗ
+            ['dash-journey-filters', 'dash-journey-foot'].forEach(id => { const e = document.getElementById(id); if (e) ro.observe(e); });
+            const hdr = document.getElementById('dash-journey-tabs')?.parentElement;
+            if (hdr) ro.observe(hdr);
+        }
+    }
     applyDashboardLayout();
     const L = dashLayoutLoad();
     const firstVisible = DASH_TABS.find(t => L.journey.tabs[t]);
@@ -370,6 +419,7 @@ function setDashJourneyTab(tab, silent) {
     document.getElementById('dash-journey-searchbox')?.classList.toggle('hidden', !['trips', 'alert', 'pending'].includes(tab));
     renderDashJourneyFilters();
     renderDashJourney();
+    dashFitJourneyToScreen(); // thanh lọc hiện/ẩn theo tab làm đổi vị trí đầu bảng
     if (!silent && ['trips', 'alert', 'pending', 'matrix'].includes(tab) && !dashJourneyState.data[tab]) loadDashJourney();
 }
 window.setDashJourneyTab = setDashJourneyTab;

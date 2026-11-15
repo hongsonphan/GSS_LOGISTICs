@@ -3,6 +3,11 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-15 – Dashboard: vùng hành trình giãn tới đáy màn hình khi ẩn vùng phía dưới
+- Khi tắt vùng "Công việc & Bản tin" (vùng cuối), vùng tab thông tin (Theo dõi hành trình, Danh sách chuyến...) tự kéo cao tới sát đáy khung nhìn; đo theo cỡ màn thực tế, đổi cỡ cửa sổ / thu phóng / đổi tab / thanh lọc đều tự tính lại, không sinh thanh cuộn thừa.
+- Chiều cao Thấp/Vừa/Cao là mức tối thiểu (vùng phía trên còn cao thì trang cuộn như cũ); "Tự kéo" giữ theo tay người dùng. Chế độ giãn bỏ dải đệm 64px cuối trang và chừa chỗ cho nút chat nổi ở chân bảng. Bật lại vùng cuối thì trở về cách cũ.
+- File: `static/js/src/app/dashboard/layout-settings.js` (`dashFitJourneyToScreen`).
+
 ## 2026-11-15 – Rà soát bảo mật toàn repo và dựng lại luồng local → GitHub → VPS cho riêng GSS
 - **Kết quả rà soát:** không có khoá/token/.env trong file đang theo dõi hay trong lịch sử git (đã quét toàn bộ lịch sử); `qa.py audit` phần bảo mật: bandit, pip-audit, check --deploy, eval/exec, SQL ghép chuỗi, TLS đều sạch.
 - **Chặn lộ khoá:** `.gitignore` thêm `.ssh/`, `gss_deploy*`, `id_*`, `*.pem`; `.dockerignore` loại khoá và `gss_local_credentials.txt` khỏi image; hook `.githooks/pre-commit` chặn commit có `.env`, khoá SSH, file dump/CSDL hoặc nội dung chứa khoá riêng/token (đã thử bằng file giả).
