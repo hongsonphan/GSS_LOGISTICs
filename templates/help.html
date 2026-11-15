@@ -236,6 +236,7 @@
 <a href="#sec-c3-6" class="nav-link block pl-8 pr-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">C3.6. Đổi tài xế, báo sự cố</a>
 <a href="#sec-c3-7" class="nav-link block pl-8 pr-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">C3.7. Xe chờ hạ sau 0h &amp; phí lưu xe qua đêm</a>
 <a href="#sec-c3-8" class="nav-link block pl-8 pr-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">C3.8. Quyết toán đợt cho tài xế (gom nhiều chuyến)</a>
+<a href="#sec-c3-9" class="nav-link block pl-8 pr-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">C3.9. Bốn tab của màn Điều vận và quản lý Vendor</a>
 <a href="#sec-c4" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]"><span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span><span class="truncate">C4. Cổng tài xế trên điện thoại (Driver Portal)</span></a>
 <a href="#sec-c5" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]"><span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span><span class="truncate">C5. Link tra cứu hành trình cho khách hàng</span></a>
 <a href="#sec-c6" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]"><span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span><span class="truncate">C6. Hành chính &amp; Nhân sự</span></a>
@@ -2004,6 +2005,47 @@
 </div>
 <div id="sec-c3-8" class="scroll-mt-24 space-y-3 pt-2"><h4 class="text-base font-bold text-slate-900 font-heading">C3.8. Quyết toán đợt cho tài xế (gom nhiều chuyến)</h4>
 <p class="leading-relaxed">Từ <strong class="font-bold text-slate-900">Điều vận</strong> bấm <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Quyết Toán Đợt Tài Xế</span> (hoặc mở <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">/settlements</code>) – xem hướng dẫn chi tiết ở C7.9.</p>
+</div>
+<div id="sec-c3-9" class="scroll-mt-24 space-y-3 pt-2"><h4 class="text-base font-bold text-slate-900 font-heading">C3.9. Bốn tab của màn Điều vận và quản lý Vendor</h4>
+<p class="leading-relaxed">Thanh tab Điều vận có 4 tab (tên chữ thường, không số đếm):</p>
+<div class="overflow-x-auto border border-slate-200 rounded-lg my-3"><table class="w-full text-left text-xs erp-table border-collapse">
+<thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+<tr>
+<th class="p-2.5 align-top">Tab</th>
+<th class="p-2.5 align-top">Hiển thị</th>
+<th class="p-2.5 align-top">Dùng để</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 bg-white">
+<tr>
+<td class="p-2.5 align-top"><strong class="font-bold text-slate-900">Lệnh điều độ</strong></td>
+<td class="p-2.5 align-top">Booking (BK...) chưa phân bổ hoặc phân bổ chưa hết</td>
+<td class="p-2.5 align-top">Theo dõi booking chưa gán nhà xe; bấm <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Xem</span> để chia cont</td>
+</tr>
+<tr>
+<td class="p-2.5 align-top"><strong class="font-bold text-slate-900">Phân bổ &amp; gán xe</strong></td>
+<td class="p-2.5 align-top">Mỗi dòng là một nhà xe được phân bổ trong một lệnh, kèm <em>đã gán xe/tổng cont</em></td>
+<td class="p-2.5 align-top">Theo dõi nhà xe gán xe/tài chưa hết; bấm dòng hoặc <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Gán tiếp</span> để mở lệnh, <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Link</span> để sao chép link nhắc nhà xe. Tích <em>Hiện cả phiếu đã gán đủ</em> để xem hết</td>
+</tr>
+<tr>
+<td class="p-2.5 align-top"><strong class="font-bold text-slate-900">Theo dõi hành trình</strong></td>
+<td class="p-2.5 align-top">Xe đã nhận lệnh và đang hành trình. Ba chế độ: <strong class="font-bold text-slate-900">Bảng container</strong>, <strong class="font-bold text-slate-900">Theo bước hành trình</strong> (cột theo bước, giống Dashboard), <strong class="font-bold text-slate-900">Phiếu VC</strong></td>
+<td class="p-2.5 align-top">Theo dõi xe đang chạy</td>
+</tr>
+<tr>
+<td class="p-2.5 align-top"><strong class="font-bold text-slate-900">Quản lý Vendor</strong></td>
+<td class="p-2.5 align-top">Ba mục: <strong class="font-bold text-slate-900">Nhà xe &amp; tài khoản</strong>, <strong class="font-bold text-slate-900">Link nhà xe</strong>, <strong class="font-bold text-slate-900">Link tài xế</strong></td>
+<td class="p-2.5 align-top">Cấp và theo dõi quyền vào cổng nhà xe</td>
+</tr>
+</tbody>
+</table></div>
+<p class="leading-relaxed"><strong class="font-bold text-slate-900">Quản lý Vendor</strong></p>
+<ol class="list-decimal pl-5 space-y-1.5">
+<li><strong class="font-bold text-slate-900">Nhà xe &amp; tài khoản:</strong> nhà xe chưa có tài khoản bấm <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Cấp tài khoản</span> (tên đăng nhập, mật khẩu khởi tạo ≥ 6 ký tự, thời gian tự đăng xuất). Hệ thống hiện <strong class="font-bold text-slate-900">token xác nhận một lần</strong>, hãy sao chép gửi nhà xe. Các nút khác: <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Cấp token</span> (token cũ mất hiệu lực), <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Sửa</span>, <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Mở khóa</span> (khi sai quá nhiều lần), <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Tắt</code> / <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">Bật</span>. Bảng hiện trạng thái, lần đăng nhập gần nhất và số link còn hiệu lực.</li>
+<li><strong class="font-bold text-slate-900">Link nhà xe:</strong> mỗi phiếu chia cont có hạn dùng; <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Sao chép</span>, <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Cấp lại / đặt hạn</span> (link cũ chết ngay), <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Khóa</span>, <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Thu hồi</span> (chỉ khi chưa sinh chuyến xe).</li>
+<li><strong class="font-bold text-slate-900">Link tài xế</strong> (<code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">/q/&lt;mã&gt;/</code>): xem link của từng chuyến đang chạy, bấm <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Đặt hạn</span> (giữ nguyên link, tính từ bây giờ; 0 = không giới hạn), <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Cấp lại</span> (link và QR cũ mất hiệu lực), <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Thu hồi</span> (tài xế mở link sẽ thấy hết hạn). Tích <em>Gồm chuyến đã hạ rỗng</em> để xem cả chuyến cũ.
+Mọi thao tác đều ghi nhật ký kiểm toán.</li>
+</ol>
 </div>
 </div>
 </section>

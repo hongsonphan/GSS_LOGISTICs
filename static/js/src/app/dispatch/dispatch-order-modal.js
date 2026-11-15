@@ -614,70 +614,56 @@ window.mdoUploadExcel = mdoUploadExcel;
 // -------------------------------------------------------------
 
 var currentDispatchTab = 'orders';
-var currentOrderGroup = 'ALL';
+var currentOrderGroup = 'PENDING'; // tab Lệnh điều độ chỉ hiện booking chưa phân bổ hoặc phân bổ chưa hết
 var allDispatchBookings = [];
 var loadedVcContainers = [];
 var vcSearchTimeout = null;
 
-function switchDispatchViewTab(tab) {
-    currentDispatchTab = tab;
-    const btnOrders = document.getElementById('btn-dispatch-tab-orders');
-    const btnVc = document.getElementById('btn-dispatch-tab-vendor-containers');
-    const btnTrips = document.getElementById('btn-dispatch-tab-trips');
+// 4 tab: orders | allocations | journey | vendor-admin (khóa cũ 'vendor-containers' và 'trips' quy về journey)
+const DISPATCH_TAB_ICONS = {
+    'orders': 'ph-newspaper', 'allocations': 'ph-stack', 'journey': 'ph-navigation-arrow', 'vendor-admin': 'ph-identification-badge'
+};
+const DISPATCH_TAB_VIEWS = [
+    'dispatch-orders-view', 'dispatch-allocations-view', 'dispatch-vendor-containers-view',
+    'dispatch-journey-board-view', 'dispatch-trips-view', 'dispatch-vendor-admin-view'
+];
 
-    const ordersView = document.getElementById('dispatch-orders-view');
-    const vcView = document.getElementById('dispatch-vendor-containers-view');
-    const tripsView = document.getElementById('dispatch-trips-view');
+function switchDispatchViewTab(tab) {
+    if (tab === 'vendor-containers' || tab === 'trips') tab = 'journey';
+    if (!DISPATCH_TAB_ICONS[tab]) tab = 'orders';
+    currentDispatchTab = tab;
 
     const activeCls = 'flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-2xs box-border';
     const inactiveCls = 'flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border';
 
-    // Reset buttons & icons
-    if (btnOrders) {
-        btnOrders.className = inactiveCls;
-        const ic = btnOrders.querySelector('i');
-        if (ic) ic.className = 'ph-bold ph-newspaper text-base text-slate-500';
-    }
-    if (btnVc) {
-        btnVc.className = inactiveCls;
-        const ic = btnVc.querySelector('i');
-        if (ic) ic.className = 'ph-bold ph-stack text-base text-slate-500';
-    }
-    if (btnTrips) {
-        btnTrips.className = inactiveCls;
-        const ic = btnTrips.querySelector('i');
-        if (ic) ic.className = 'ph-bold ph-navigation-arrow text-base text-slate-500';
-    }
+    Object.keys(DISPATCH_TAB_ICONS).forEach(key => {
+        const btn = document.getElementById('btn-dispatch-tab-' + key);
+        if (!btn) return;
+        const on = key === tab;
+        btn.className = on ? activeCls : inactiveCls;
+        const ic = btn.querySelector('i');
+        if (ic) ic.className = 'ph-bold ' + DISPATCH_TAB_ICONS[key] + ' text-base ' + (on ? 'text-indigo-600' : 'text-slate-500');
+    });
 
-    // Reset views
-    if (ordersView) { ordersView.classList.add('hidden'); ordersView.classList.remove('flex'); }
-    if (vcView) { vcView.classList.add('hidden'); vcView.classList.remove('flex'); }
-    if (tripsView) { tripsView.classList.add('hidden'); tripsView.classList.remove('flex'); }
+    DISPATCH_TAB_VIEWS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+    });
+    const modebar = document.getElementById('dispatch-journey-modebar');
+    if (modebar) { modebar.classList.toggle('hidden', tab !== 'journey'); modebar.classList.toggle('flex', tab === 'journey'); }
 
+    const show = id => { const el = document.getElementById(id); if (el) { el.classList.remove('hidden'); el.classList.add('flex'); } };
     if (tab === 'orders') {
-        if (btnOrders) {
-            btnOrders.className = activeCls;
-            const ic = btnOrders.querySelector('i');
-            if (ic) ic.className = 'ph-bold ph-newspaper text-base text-indigo-600';
-        }
-        if (ordersView) { ordersView.classList.remove('hidden'); ordersView.classList.add('flex'); }
+        show('dispatch-orders-view');
         loadDispatchOrdersTab();
-    } else if (tab === 'vendor-containers') {
-        if (btnVc) {
-            btnVc.className = activeCls;
-            const ic = btnVc.querySelector('i');
-            if (ic) ic.className = 'ph-bold ph-stack text-base text-indigo-600';
-        }
-        if (vcView) { vcView.classList.remove('hidden'); vcView.classList.add('flex'); }
-        loadVendorContainersTab();
+    } else if (tab === 'allocations') {
+        show('dispatch-allocations-view');
+        if (typeof loadAllocationsTab === 'function') loadAllocationsTab();
+    } else if (tab === 'journey') {
+        if (typeof setJourneyMode === 'function') setJourneyMode(window.currentJourneyMode || 'table');
     } else {
-        if (btnTrips) {
-            btnTrips.className = activeCls;
-            const ic = btnTrips.querySelector('i');
-            if (ic) ic.className = 'ph-bold ph-navigation-arrow text-base text-indigo-600';
-        }
-        if (tripsView) { tripsView.classList.remove('hidden'); tripsView.classList.add('flex'); }
-        if (typeof loadTripsData === 'function') loadTripsData();
+        show('dispatch-vendor-admin-view');
+        if (typeof loadVendorAdminTab === 'function') loadVendorAdminTab();
     }
 }
 
@@ -709,7 +695,7 @@ function renderDispatchOrdersTable() {
     }
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy Lệnh Điều Động / Booking nào phù hợp với bộ lọc hiện tại.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không còn booking nào chưa phân bổ hoặc phân bổ chưa hết.</td></tr>`;
         return;
     }
 
@@ -817,7 +803,7 @@ async function loadDispatchOrdersTab() {
         if (elAll) elAll.innerText = totalCount;
         if (elPending) elPending.innerText = pendingCount;
         if (elDispatched) elDispatched.innerText = dispatchedCount;
-        if (elTabBadge) elTabBadge.innerText = totalCount;
+        if (elTabBadge) elTabBadge.innerText = pendingCount;
 
         renderDispatchOrdersTable();
     } catch (e) {

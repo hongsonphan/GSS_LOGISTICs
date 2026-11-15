@@ -37,7 +37,11 @@ def trip_by_token(token):
         return None
     trip = DispatchTrip.objects.select_related('customer', 'vehicle', 'trailer', 'booking_order', 'subcontractor') \
         .filter(pk=parsed[1], is_deleted=False).first()
-    return trip if trip and qr_tokens.verify(token, qr_tokens.TRIP, trip.pk, trip.qr_version) else None
+    if not trip or not qr_tokens.verify(token, qr_tokens.TRIP, trip.pk, trip.qr_version):
+        return None
+    if trip.qr_expires_at and trip.qr_expires_at <= timezone.now():  # link đã hết hạn hoặc bị thu hồi
+        return None
+    return trip
 
 
 def log_scan(target_type, target_id, action, result='OK', detail='', actor_label='', ip=''):

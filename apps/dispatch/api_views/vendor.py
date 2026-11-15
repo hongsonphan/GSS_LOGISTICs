@@ -762,6 +762,8 @@ class VendorContainersMonitoringAPIView(APIView):
                     continue
                 elif status_filter == 'COMPLETED' and st_code != 'COMPLETED':
                     continue
+                elif status_filter == 'ACTIVE' and st_code not in ('ASSIGNED', 'IN_TRANSIT', 'EMPTY_RETURNING'):
+                    continue  # xe đã nhận lệnh và đang hành trình
 
             # Tra cứu thông tin xe & tài xế
             tractor = t.vehicle.license_plate if (t and t.vehicle) else ((t.draft_rows or {}).get('tractor_plate') if t else '')

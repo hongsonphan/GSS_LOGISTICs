@@ -298,6 +298,7 @@ class DispatchTrip(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDelet
     is_container_swapped = models.BooleanField(default=False)
     container_swap_reason = models.CharField(max_length=255, blank=True, default='')
     qr_version = models.PositiveSmallIntegerField(default=1, help_text="Tăng lên để vô hiệu hóa mã QR đã phát")
+    qr_expires_at = models.DateTimeField(null=True, blank=True, help_text="Hạn dùng link/QR tài xế (trống = không giới hạn); thu hồi = đặt về hiện tại")
     trailer_plate_text = models.CharField(max_length=20, blank=True, default='', help_text="Biển số rơ-moóc nhà xe khai (khi chưa có trong danh mục)")
     special_notes = models.TextField(blank=True, help_text="Lưu ý của điều độ, phí cty chịu...")
 

@@ -1,0 +1,167 @@
+"""Tab «Quản lý Vendor» ở màn Điều vận: theo dõi cổng nhà xe, link nhà xe và link tài xế; thu hồi / đặt hạn dùng.
+
+Tài khoản và mật khẩu nhà xe đã có API riêng (`/api/vendor-portal-accounts/<id>/`), link nhà xe dùng
+`/api/vendor-allocations/<id>/`. Module này gom dữ liệu để theo dõi và thêm thao tác cho link tài xế `/q/<token>/`.
+"""
+import datetime
+
+from django.utils import timezone
+
+from apps.dispatch import vendor_service as svc
+from apps.dispatch.gss_messages import trip_token
+from apps.dispatch.models import AllocationStatus, BookingVendorAllocation
+from apps.master_data.models import Subcontractor, SubcontractorPortalAccount
+from core.features import has_feature
+from core.models import AuditLog
+from ._common import *  # noqa: F401,F403
+
+MAX_DRIVER_LINK_DAYS = 365
+_DONE_STEPS = ('EMPTY_RETURNED', 'CANCELLED')
+
+
+def _err(message, code=status.HTTP_400_BAD_REQUEST):
+    return Response({'success': False, 'message': message}, status=code)
+
+
+def _feature_off(request):
+    if not has_feature('vendor_portal', request):
+        return _err('Tính năng cổng nhà xe chưa được bật.', status.HTTP_403_FORBIDDEN)
+    return None
+
+
+def _iso(value):
+    return value.isoformat() if value else None
+
+
+def driver_link_state(trip, now=None):
+    """valid | expired (hết hạn hoặc đã thu hồi)."""
+    now = now or timezone.now()
+    return 'expired' if (trip.qr_expires_at and trip.qr_expires_at <= now) else 'valid'
+
+
+def serialize_driver_link(trip, request, now=None):
+    alloc = trip.vendor_allocation
+    sub = alloc.subcontractor if alloc else None
+    driver = (trip.subcontractor_driver_name or (trip.driver.full_name if trip.driver_id else '') or '')
+    return {
+        'trip_id': trip.id, 'trip_code': trip.trip_code, 'container_number': trip.container_number or '',
+        'booking_code': alloc.booking.booking_code if alloc else '',
+        'vendor_id': sub.id if sub else None, 'vendor': (sub.short_name or sub.name) if sub else '',
+        'driver_name': driver, 'driver_phone': trip.subcontractor_driver_phone or '',
+        'plate': trip.vehicle.license_plate if trip.vehicle_id else '',
+        'step_status': trip.step_status, 'step_label': trip.get_step_status_display(),
+        'link': request.build_absolute_uri(f'/q/{trip_token(trip)}/'),
+        'expires_at': _iso(trip.qr_expires_at), 'state': driver_link_state(trip, now),
+    }
+
+
+def _audit_driver_link(trip, event, user, extra=None):
+    ok = user is not None and getattr(user, 'is_authenticated', False)
+    AuditLog.objects.create(
+        actor=user if ok else None, actor_label=user.get_username() if ok else 'hệ thống', action='update',
+        model_label='dispatch.dispatchtrip', object_id=str(trip.pk),
+        object_repr=f'Link tài xế {trip.trip_code}'[:255], changes={'event': event, **(extra or {})}, company=trip.company)
+
+
+def _account_payload(acct, now):
+    if not acct:
+        return None
+    return {
+        'username': acct.username, 'is_active': acct.is_active, 'token_preview': acct.confirm_token_preview,
+        'locked': bool(acct.locked_until and acct.locked_until > now), 'last_login_at': _iso(acct.last_login_at),
+        'idle_timeout_minutes': acct.idle_timeout_minutes,
+    }
+
+
+class VendorAdminOverviewAPIView(APIView):
+    """GET: nhà xe + tài khoản cổng, link nhà xe (phiếu chia) và link tài xế để Điều vận theo dõi, thu hồi, đặt hạn."""
+    permission_classes = [IsDispatcher]
+
+    def get(self, request):
+        if (off := _feature_off(request)):
+            return off
+        now = timezone.now()
+        include_done = request.query_params.get('include_done') == '1'
+
+        allocs = list(BookingVendorAllocation.objects.filter(is_deleted=False)
+                      .exclude(status=AllocationStatus.REVOKED).select_related('booking', 'booking__customer', 'subcontractor')
+                      .order_by('-id')[:500])
+        accounts = {a.subcontractor_id: a for a in SubcontractorPortalAccount.objects.filter(is_deleted=False)}
+        sub_ids = {a.subcontractor_id for a in allocs} | set(accounts)
+        subs = Subcontractor.objects.filter(Q(pk__in=sub_ids) | Q(is_carrier=True, is_active=True), is_deleted=False).order_by('name')
+
+        trips_qs = (DispatchTrip.objects.filter(is_deleted=False, vendor_allocation__isnull=False)
+                    .exclude(step_status='CANCELLED')
+                    .select_related('vendor_allocation', 'vendor_allocation__booking', 'vendor_allocation__subcontractor', 'vehicle', 'driver')
+                    .order_by('-id'))
+        if not include_done:
+            trips_qs = trips_qs.exclude(step_status__in=_DONE_STEPS)
+        trips = list(trips_qs[:500])
+
+        links = []
+        for a in allocs:
+            s = svc.allocation_summary(a, request)
+            cust = a.booking.customer
+            links.append({**s, 'booking_id': a.booking_id, 'booking_code': a.booking.booking_code,
+                          'customer': (cust.short_name or cust.name) if cust else '',
+                          'state': 'expired' if s['expired'] else ('locked' if s['locked'] else 'valid')})
+
+        vendors = []
+        for s in subs:
+            mine = [l for l in links if l['subcontractor_id'] == s.id]
+            vendors.append({
+                'id': s.id, 'name': s.name, 'short_name': s.short_name or s.name, 'code': s.code or '',
+                'is_active': bool(s.is_active), 'account': _account_payload(accounts.get(s.id), now),
+                'links_valid': sum(1 for l in mine if l['state'] == 'valid'), 'links_total': len(mine),
+                'driver_links_valid': sum(1 for t in trips if t.vendor_allocation.subcontractor_id == s.id and driver_link_state(t, now) == 'valid'),
+            })
+        return Response({'success': True, 'data': {
+            'vendors': vendors, 'links': links,
+            'driver_links': [serialize_driver_link(t, request, now) for t in trips],
+            'default_link_days': svc.DEFAULT_LINK_DAYS, 'max_driver_link_days': MAX_DRIVER_LINK_DAYS}})
+
+
+class DriverLinkAdminAPIView(APIView):
+    """POST: thu hồi / cấp lại / đặt hạn dùng link tài xế của một chuyến.
+
+    action = revoke (link cũ chết ngay) · regenerate (+ days) · set_expiry (days; 0 hoặc trống = không giới hạn).
+    """
+    permission_classes = [IsDispatcher]
+
+    def post(self, request, trip_id):
+        if (off := _feature_off(request)):
+            return off
+        trip = (DispatchTrip.objects.select_related('vendor_allocation', 'vendor_allocation__booking', 'vendor_allocation__subcontractor', 'vehicle', 'driver')
+                .filter(pk=trip_id, is_deleted=False, vendor_allocation__isnull=False).first())
+        if not trip:
+            return _err('Không tìm thấy chuyến của nhà xe.', status.HTTP_404_NOT_FOUND)
+        action = request.data.get('action')
+        days = request.data.get('days')
+        try:
+            days = None if days in (None, '', 0, '0') else int(days)
+            if days is not None and not 1 <= days <= MAX_DRIVER_LINK_DAYS:
+                raise ValueError
+        except (TypeError, ValueError):
+            return _err(f'Số ngày hiệu lực phải từ 1 đến {MAX_DRIVER_LINK_DAYS}.')
+        now = timezone.now()
+        deadline = now + datetime.timedelta(days=days) if days else None
+
+        if action == 'revoke':
+            trip.qr_version += 1  # token cũ không còn khớp chữ ký
+            trip.qr_expires_at = now
+            message = 'Đã thu hồi link tài xế. Link và QR đã phát không còn dùng được.'
+            event, extra = 'DRIVER_LINK_REVOKE', {}
+        elif action == 'regenerate':
+            trip.qr_version += 1
+            trip.qr_expires_at = deadline
+            message = 'Đã cấp link tài xế mới, link cũ không còn dùng được.'
+            event, extra = 'DRIVER_LINK_REGRANT', {'days': days}
+        elif action == 'set_expiry':
+            trip.qr_expires_at = deadline
+            message = 'Đã đặt hạn dùng link tài xế.' if deadline else 'Link tài xế không giới hạn thời gian.'
+            event, extra = 'DRIVER_LINK_EXPIRY', {'days': days}
+        else:
+            return _err('Thiếu thao tác hợp lệ (revoke, regenerate, set_expiry).')
+        trip.save(update_fields=['qr_version', 'qr_expires_at', 'updated_at'])
+        _audit_driver_link(trip, event, request.user, extra)
+        return Response({'success': True, 'message': message, 'data': serialize_driver_link(trip, request, now)})

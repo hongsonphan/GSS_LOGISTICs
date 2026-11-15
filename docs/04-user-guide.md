@@ -694,6 +694,23 @@ Dùng khi kho / cảng yêu cầu chờ sau 0h mới được hạ cont:
 
 Từ **Điều vận** bấm **`Quyết Toán Đợt Tài Xế`** (hoặc mở `/settlements`) – xem hướng dẫn chi tiết ở C7.9.
 
+### C3.9. Bốn tab của màn Điều vận và quản lý Vendor
+
+Thanh tab Điều vận có 4 tab (tên chữ thường, không số đếm):
+
+| Tab | Hiển thị | Dùng để |
+|---|---|---|
+| **Lệnh điều độ** | Booking (BK...) chưa phân bổ hoặc phân bổ chưa hết | Theo dõi booking chưa gán nhà xe; bấm **`Xem`** để chia cont |
+| **Phân bổ & gán xe** | Mỗi dòng là một nhà xe được phân bổ trong một lệnh, kèm *đã gán xe/tổng cont* | Theo dõi nhà xe gán xe/tài chưa hết; bấm dòng hoặc **`Gán tiếp`** để mở lệnh, **`Link`** để sao chép link nhắc nhà xe. Tích *Hiện cả phiếu đã gán đủ* để xem hết |
+| **Theo dõi hành trình** | Xe đã nhận lệnh và đang hành trình. Ba chế độ: **Bảng container**, **Theo bước hành trình** (cột theo bước, giống Dashboard), **Phiếu VC** | Theo dõi xe đang chạy |
+| **Quản lý Vendor** | Ba mục: **Nhà xe & tài khoản**, **Link nhà xe**, **Link tài xế** | Cấp và theo dõi quyền vào cổng nhà xe |
+
+**Quản lý Vendor**
+1. **Nhà xe & tài khoản:** nhà xe chưa có tài khoản bấm **`Cấp tài khoản`** (tên đăng nhập, mật khẩu khởi tạo ≥ 6 ký tự, thời gian tự đăng xuất). Hệ thống hiện **token xác nhận một lần**, hãy sao chép gửi nhà xe. Các nút khác: **`Cấp token`** (token cũ mất hiệu lực), **`Sửa`**, **`Mở khóa`** (khi sai quá nhiều lần), **`Tắt` / `Bật`**. Bảng hiện trạng thái, lần đăng nhập gần nhất và số link còn hiệu lực.
+2. **Link nhà xe:** mỗi phiếu chia cont có hạn dùng; **`Sao chép`**, **`Cấp lại / đặt hạn`** (link cũ chết ngay), **`Khóa`**, **`Thu hồi`** (chỉ khi chưa sinh chuyến xe).
+3. **Link tài xế** (`/q/<mã>/`): xem link của từng chuyến đang chạy, bấm **`Đặt hạn`** (giữ nguyên link, tính từ bây giờ; 0 = không giới hạn), **`Cấp lại`** (link và QR cũ mất hiệu lực), **`Thu hồi`** (tài xế mở link sẽ thấy hết hạn). Tích *Gồm chuyến đã hạ rỗng* để xem cả chuyến cũ.
+Mọi thao tác đều ghi nhật ký kiểm toán.
+
 ## C4. Cổng tài xế trên điện thoại (Driver Portal)
 
 Tài xế **không cần cài app, không cần mật khẩu**: mở đường link điều độ gửi qua Zalo. Mỗi link chỉ dùng cho **một chuyến và một tài xế**; khi đổi tài xế, link cũ tự khóa; khi chuyến hoàn tất, link tự đóng sau một thời gian (có đồng hồ đếm ngược).

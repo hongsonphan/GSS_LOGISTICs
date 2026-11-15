@@ -62,6 +62,7 @@ GATED_PREFIXES = (
     ('/api/gss/', 'gss_dispatch'),
     ('/api/vendor/', 'vendor_portal'),
     ('/api/vendor-allocations/', 'vendor_portal'),
+    ('/api/vendor-admin/', 'vendor_portal'),
     ('/vendor/', 'vendor_portal'),
     ('/api/depot/', 'depot_yard'),
     ('/depot/', 'depot_yard'),

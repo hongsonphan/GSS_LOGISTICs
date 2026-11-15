@@ -3,6 +3,13 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-15 – Điều vận: 4 tab chữ thường, tab «Quản lý Vendor», hạn dùng và thu hồi link tài xế
+- **Tab:** `Lệnh điều độ` (chỉ booking chưa phân bổ hoặc phân bổ chưa hết) · `Phân bổ & gán xe` (mỗi dòng một nhà xe được phân bổ, tiến độ gán xe/tài, bấm để gán tiếp) · `Theo dõi hành trình` (bảng container chỉ xe đã nhận lệnh và đang chạy; thêm chế độ *Theo bước hành trình* và giữ *Phiếu VC*) · `Quản lý Vendor` (tài khoản/token nhà xe, link nhà xe, link tài xế). Bỏ số đếm trên tên tab.
+- **Link tài xế `/q/<token>/`:** thêm `DispatchTrip.qr_expires_at` (migration `dispatch.0003`); `qr_tracking.service.trip_by_token` từ chối link hết hạn. Điều vận đặt hạn, cấp lại (tăng `qr_version`) hoặc thu hồi; ghi `AuditLog`.
+- **API mới:** `GET /api/vendor-admin/overview/`, `POST /api/vendor-admin/driver-links/<trip_id>/` (action `revoke|regenerate|set_expiry`, `days` 0–365); tiền tố `/api/vendor-admin/` gắn tính năng `vendor_portal`. `GET /api/dispatch/vendor-containers/?status=ACTIVE` (đã nhận lệnh + đang hành trình).
+- **Migration mới:** web trên VPS tự `migrate` khi khởi động; stack local 8086 cần khởi động lại để áp dụng.
+- File: `apps/dispatch/api_views/vendor_admin.py`, `apps/dispatch/models.py`, `apps/qr_tracking/service.py`, `config/urls.py`, `core/features.py`, `templates/views/view_dispatch.html`, `static/js/src/app/dispatch/vendor-admin.js`, `dispatch-order-modal.js`, test `apps/dispatch/test_vendor_admin.py`.
+
 ## 2026-11-15 – Sửa chuẩn logic nút «Xem» Tab 2 Điều vận: mở đúng Phiếu Vận Chuyển (VC)
 - **Chuẩn hóa nút «Xem» cột Thao tác Tab 2 (Phân bổ & Gán xe):** Khắc phục lỗi nút Xem mở nhầm trang Lệnh Điều Động (openDispatchOrderPage). Nay nút «Xem» mở trực tiếp Chi tiết Phiếu Vận Chuyển (iewTripDetail(r.trip_code)); trường hợp container chưa được gán xe (chưa phát sinh VC), hệ thống bật modal xác nhận thông báo rõ tình trạng và hỏi người dùng có muốn mở Lệnh Điều Động để kiểm tra/phân bổ không.
 - **Tương tác linh hoạt:** Cột Lệnh Điều Động (dispatch_order_code) và cột Phiếu Vận Chuyển (	rip_code) nay đều là các liên kết bấm được (clickable), giúp người dùng xem nhanh từng chứng từ tương ứng chỉ với 1 click.

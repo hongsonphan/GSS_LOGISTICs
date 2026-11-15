@@ -157,3 +157,15 @@ Ký hiệu: ✔ đã có · ◐ một phần · ✘ chưa có. "UI mất" = máy
 
 ### Câu hỏi cần chốt cho yêu cầu Zalo 09/11
 Zalo không cho đọc tự do nhóm chat cá nhân; hướng khả thi phải qua Zalo OA/nhóm của OA do Zalo duyệt (cần xác minh điều kiện hiện hành với Zalo trước khi cam kết). Cần anh cho biết: (a) khách nhắn vào nhóm Zalo nào (nhóm thường hay OA), (b) muốn "kéo về" tin nhắn, ảnh hay chỉ trạng thái, (c) dữ liệu kéo về gắn vào B/L/chuyến tự động hay người xử lý gắn tay.
+
+## 9. Tab Điều vận và Quản lý Vendor (15/11/2026)
+
+Đã làm (xem CHANGELOG): 4 tab chữ thường, tab Quản lý Vendor, hạn dùng/thu hồi link tài xế (`qr_expires_at`, migration `dispatch.0003`). Test backend đạt.
+**Chưa kiểm:** chưa xem bằng trình duyệt trên stack 8086 (cần khởi động lại stack để áp migration, chờ anh đồng ý); chưa đo Visual Gate 1920/1440/1366.
+| # | Việc còn lại | Mức |
+|---|---|---|
+| V1 | Trang tài xế `/q/` hiện báo gì khi link hết hạn/thu hồi (hiện trả 404): cần thông báo rõ "link hết hạn, liên hệ điều vận" | Vừa |
+| V2 | Link nhà xe chưa có nút gửi email/Zalo trực tiếp từ tab Quản lý Vendor (đang sao chép tay) | Nhẹ |
+| V3 | Tab Phân bổ & gán xe lấy từ phiếu chia (`BookingVendorAllocation`); booking chưa phân bổ cho nhà xe nào vẫn ở tab Lệnh điều độ | Ghi nhận |
+| V4 | Chế độ "Theo bước hành trình" là bản gọn (6 cột); chưa có hình xe `GSSTruck` như Dashboard | Nhẹ |
+

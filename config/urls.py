@@ -42,6 +42,7 @@ from apps.dispatch.api_views import (
     VendorWorkspaceCatalogAPIView, VendorWorkspaceTrackingAPIView,
     VendorPortalAccountAdminAPIView,
     VendorContainersMonitoringAPIView, VendorPortalStepAPIView, VendorWorkspaceStepAPIView,
+    VendorAdminOverviewAPIView, DriverLinkAdminAPIView,
     BookingOrderStatusAPIView,
     BookingDocumentDeleteAPIView,
     CustomsAPIView,
@@ -232,6 +233,8 @@ urlpatterns = [
     path('api/vendor/portal/allocations/<int:alloc_id>/step/', VendorWorkspaceStepAPIView.as_view(), name='api-vendor-workspace-step'),
     path('api/vendor/<str:token>/step/', VendorPortalStepAPIView.as_view(), name='api-vendor-portal-step'),
     path('api/vendor/<str:token>/', VendorPortalAPIView.as_view(), name='api-vendor-portal'),
+    path('api/vendor-admin/overview/', VendorAdminOverviewAPIView.as_view(), name='api-vendor-admin-overview'),
+    path('api/vendor-admin/driver-links/<int:trip_id>/', DriverLinkAdminAPIView.as_view(), name='api-vendor-admin-driver-link'),
     path('api/dispatch/vendor-containers/', VendorContainersMonitoringAPIView.as_view(), name='api-dispatch-vendor-containers'),
     # GSS: điều vận Nhận–Giao–Hạ, chứng từ, kiện hàng lẻ, tem QR
     path('api/gss/bookings/', gss_booking_api.GssBookingListAPIView.as_view()),
