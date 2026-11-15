@@ -69,14 +69,23 @@ docker compose -p gss_logistics -f docker-compose.yml -f docker-compose.local.ym
   (mật khẩu ghi vào `gss_local_credentials.txt` trong container) – xem `docs/11-runbook.md`.
 - **Chỉ có MỘT cách chạy GSS: stack Docker ở trên.** Không dùng SQLite, không chạy `runserver` cổng khác với CSDL riêng.
 
-## Triển khai
+## Triển khai: local → GitHub → VPS
 
-- Repo này **chưa có remote GitHub**. Chỉ push khi người dùng yêu cầu; lúc đó ghi đè (xoá hết) nội dung cũ trên `github.com/hongsonphan/GSS_LOGISTICs`. Workflow `Deploy VPS`, `Uptime`, `Restore drill`, `ZAP` chỉ chạy tay khi đã có VPS/domain riêng.
-- Không push khi CI cục bộ ở trên chưa khớp.
+Ba chặng, đi tuần tự, **không bao giờ đảo thứ tự hoặc bỏ chặng**:
+
+1. **Local:** sửa, test, `python scripts/qa.py verify` xanh (`--full` khi chạm `core`, `master_data`, `billing`, `ledger`, RLS/quyền), build file tự sinh, commit. Mỗi yêu cầu một commit.
+2. **GitHub** (`origin` = `github.com/hongsonphan/GSS_LOGISTICs`, nhánh `master`): chỉ push khi người dùng yêu cầu. **Push thường, tuần tự, giữ nguyên lịch sử**: `git fetch origin`, xem `git log origin/master..HEAD` (chỉ có commit mới của mình, không có commit lạ), rồi `git push origin master`. Nếu bị từ chối (remote có commit mới): `git pull --rebase origin master`, chạy lại verify, push lại.
+   **Cấm** `git push --force` / `--force-with-lease`, xoá nhánh hoặc commit trên remote, trừ khi người dùng ra lệnh rõ cho đúng việc đó. CI (`ci.yml`) chạy sau mỗi push; CI đỏ thì sửa trước khi lên VPS.
+3. **VPS:** chỉ khi CI xanh và người dùng yêu cầu. Chạy workflow **`Deploy VPS`** bằng tay (GitHub → Actions → Run workflow). Trên VPS nó tự: kiểm tra cây làm việc sạch → lưu commit để quay về → `git merge --ff-only origin/master` → `scripts/deploy_vps.sh` (sao lưu CSDL + media, chạy thử trên bản sao CSDL, build, migrate, kiểm tra `/healthz/`, tự quay về commit cũ nếu web không lên) → kiểm tra `SITE_URL/login/` trả 200.
+   Không sửa tay mã trên VPS (workflow sẽ dừng nếu có thay đổi chưa commit). Secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` và biến `SITE_URL` đặt trong GitHub Settings, không ghi vào repo. Chi tiết: `docs/11-runbook.md` mục 7.
+   Workflow `Uptime`, `Restore drill`, `ZAP` cũng chỉ chạy tay khi người dùng yêu cầu.
+
+- Không push khi verify cục bộ chưa xanh. Không triển khai VPS khi chưa push lên GitHub (VPS chỉ lấy mã từ `origin/master`).
+- Migration mới: web trên VPS tự `migrate` khi khởi động; commit migration cùng model, và nhắc người dùng biết trước khi triển khai.
 
 ## Xác nhận trước khi làm
 
-Hỏi trước khi: commit/push, ghi lên CSDL stack 8086 hoặc khởi động lại stack khi có migration mới, `docker compose down -v`, xóa dữ liệu/file, sửa migration đã commit, `git reset/rebase/force-push`. Đọc/test trên Postgres tạm thì làm thẳng.
+Hỏi trước khi: commit/push/triển khai VPS, ghi lên CSDL stack 8086 hoặc khởi động lại stack khi có migration mới, `docker compose down -v`, xóa dữ liệu/file, sửa migration đã commit, `git reset/rebase/force-push`. Đọc/test trên Postgres tạm thì làm thẳng.
 
 ## Đội AI và skill (`.claude/`)
 
