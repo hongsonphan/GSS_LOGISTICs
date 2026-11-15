@@ -3,6 +3,21 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-15 – Viết lại HDSD toàn diện: bổ sung sơ đồ quy trình thao tác (workflow) cho từng phân hệ
+- **Tài liệu người dùng (`docs/04-user-guide.md` & `templates/help.html`):** Rà soát và viết lại toàn bộ sổ tay hướng dẫn sử dụng phiên bản v1.2.
+- **Quy trình thao tác dạng workflow:** Đầu mỗi phân hệ/tính năng (A4, B0, C1 đến C14) đều được bổ sung sơ đồ trực quan (Workflow Diagram dạng khối/mũi tên ASCII) và bảng quy trình chi tiết (Bước, Người thực hiện, Thao tác trên phần mềm, Dữ liệu đầu vào, Kết quả đầu ra, Ràng buộc & Điểm kiểm soát).
+- **Cập nhật tính năng mới đồng bộ:**
+  - *Dashboard Tổng quan (C1):* Bố cục 4 vùng, 6 thẻ KPI GSS, vùng hành trình xe co giãn sát đáy màn hình khi ẩn vùng dưới, ma trận nhà xe theo bước.
+  - *Sale & Booking (C2):* Quản lý B/L (MBL/HBL), nhập/dán container kiểm tra ISO 6346, chuẩn hóa VGM nguyên kg (`formatVgmKg`), quy tắc DEM/DET, thanh công cụ phân bổ công thái học Fitts's Law.
+  - *Điều vận (C3):* Chuẩn hóa 4 tab chữ thường (`Lệnh điều độ`, `Phân bổ & gán xe`, `Theo dõi hành trình`, `Quản lý Vendor`), nút Xem Tab 2 mở đúng Phiếu VC, 17 khóa bất biến bảo vệ chuyến xe, phân bổ Vendor & gửi email lệnh mẫu phiếu giao hàng HTML/PDF.
+  - *Cổng tài xế (C4):* Quy trình 7 mốc, camera watermark/GPS, E-POD ký tay cảm ứng, kê chi phí, hàng đợi ngoại tuyến Offline Sync Queue.
+  - *Cổng nhà xe Vendor Portal (C5):* Giao diện Topbar trắng sáng hiện đại, 4 thẻ KPI TMS, tự gán xe/tài và nhập Excel, hỗ trợ cập nhật mốc thay tài xế, tự khóa sau 7 ngày.
+  - *Public Tracking (C5.2):* Link tra cứu khách hàng 6 chặng không cần tài khoản, xem E-POD, bảo mật giá cước.
+  - *Hành chính & Nhân sự (C6):* Cảnh báo GPLX 30 ngày, hợp đồng lao động, chấm công, tính lương kết hợp Hybrid Payroll, xuất file Internet Banking.
+  - *Tài chính & Kế toán (C7):* Sổ quỹ S03a-DN, tạm ứng 2 cấp (Quỹ điều vận ➔ Tạm ứng chuyến), chốt sổ chi phí chuyến, bảng kê SOA 26 cột, tách riêng Debit Note chi hộ, quyết toán 3PL và quyết toán gom chuyến.
+  - *Xe & Bãi Depot (C8):* Cảnh báo đăng kiểm/bảo trì 30 ngày, quản lý bãi depot container, quét mã QR ra vào cổng bãi.
+- File: `docs/04-user-guide.md`, `templates/help.html`, `docs/CHANGELOG.md`.
+
 ## 2026-11-15 – Điều vận: 4 tab chữ thường, tab «Quản lý Vendor», hạn dùng và thu hồi link tài xế
 - **Tab:** `Lệnh điều độ` (chỉ booking chưa phân bổ hoặc phân bổ chưa hết) · `Phân bổ & gán xe` (mỗi dòng một nhà xe được phân bổ, tiến độ gán xe/tài, bấm để gán tiếp) · `Theo dõi hành trình` (bảng container chỉ xe đã nhận lệnh và đang chạy; thêm chế độ *Theo bước hành trình* và giữ *Phiếu VC*) · `Quản lý Vendor` (tài khoản/token nhà xe, link nhà xe, link tài xế). Bỏ số đếm trên tên tab.
 - **Link tài xế `/q/<token>/`:** thêm `DispatchTrip.qr_expires_at` (migration `dispatch.0003`); `qr_tracking.service.trip_by_token` từ chối link hết hạn. Điều vận đặt hạn, cấp lại (tăng `qr_version`) hoặc thu hồi; ghi `AuditLog`.
