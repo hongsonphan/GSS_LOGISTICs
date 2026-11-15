@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: ZAP baseline — trang công khai
-        uses: zaproxy/action-baseline@v0.14.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: "${{ vars.SITE_URL }}/login/"
           rules_file_name: ".zap/rules.tsv"
