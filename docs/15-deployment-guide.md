@@ -28,9 +28,13 @@ Hệ thống được thiết kế chạy theo mô hình Containerized kết h�
 
 ### Bước A2: Commit các thay đổi cục bộ
 ```bash
-git add .
-git commit -m "feat(gss): hoàn thiện tính năng điều vận, sale, master data và tài liệu chuẩn hoá"
+git status --short                       # xem đúng file thuộc yêu cầu này
+git add <từng file hoặc thư mục cần commit>   # KHÔNG dùng `git add .` / `git add -A` (dễ kéo theo khoá, .env, dữ liệu)
+git commit -m "feat(gss): mô tả thay đổi"
 ```
+Hook `.githooks/pre-commit` (bật bằng `git config core.hooksPath .githooks`) chặn commit nếu có `.env`, khoá SSH (`id_*`, `gss_deploy*`, `*.pem`), file dump/CSDL, hoặc nội dung chứa khoá riêng/token.
+
+> **Repo GSS đã tồn tại** (`github.com/hongsonphan/GSS_LOGISTICs`, nhánh `master`, remote `origin`). Chỉ làm A3 khi dựng một repo hoàn toàn mới. Luồng chuẩn: push thường, tuần tự, **cấm `--force`**.
 
 ### Bước A3: Tạo repository trên GitHub & liên kết Remote
 1. Truy cập [GitHub](https://github.com/new), tạo một repository mới:
@@ -55,8 +59,10 @@ Dự án đã có sẵn workflow `.github/workflows/deploy.yml` để deploy qua
 2. Thêm **Repository secrets**:
    - `VPS_HOST`: Địa chỉ IP máy chủ VPS (ví dụ: `103.x.x.x`).
    - `VPS_USER`: Tên user SSH trên VPS (mặc định là `ubuntu`).
-   - `VPS_SSH_KEY`: Toàn bộ nội dung Private Key SSH dùng để kết nối vào VPS (dạng `-----BEGIN OPENSSH PRIVATE KEY----- ...`).
-3. Thêm **Repository variables**:
+   - `VPS_SSH_KEY`: Toàn bộ nội dung khoá RIÊNG SSH **dành riêng cho GSS** (file nhiều dòng, dòng đầu và dòng cuối là cặp BEGIN/END của khoá OpenSSH; copy trọn cả file). Tạo bằng `ssh-keygen -t ed25519 -f ~/.ssh/gss_deploy`; khoá riêng giữ ở `~/.ssh/` của máy, **không bao giờ để trong thư mục repo**; chỉ khoá công khai (`.pub`) cài lên VPS.
+   - `VPS_HOST_KEY` (khuyến nghị): dòng host key của VPS để workflow không tin máy lạ. Lấy: `ssh-keyscan -t ed25519 <IP_VPS>` rồi đối chiếu vân tay (`ssh-keygen -lf`) với bảng điều khiển nhà cung cấp, dán kết quả vào secret.
+3. Settings -> **Environments** -> `production` -> bật **Required reviewers** (người duyệt trước khi chạy deploy).
+4. Thêm **Repository variables**:
    - `SITE_URL`: Tên miền chính thức của hệ thống (ví dụ: `https://gss.yourdomain.com`).
 
 ---
@@ -213,3 +219,26 @@ Khi có thay đổi mã nguồn mới:
   git pull origin master
   bash scripts/deploy_vps.sh
   ```
+
+---
+
+## 5. BẢO VỆ GITHUB (làm một lần trên giao diện, người chủ repo thực hiện)
+
+Mục tiêu: không ai (kể cả chính mình nhầm tay) ghi đè lịch sử, đẩy code chưa qua kiểm tra hoặc làm lộ bí mật.
+
+1. **Tài khoản:** bật xác thực hai bước (2FA) cho mọi tài khoản có quyền ghi repo; dùng khoá bảo mật hoặc ứng dụng OTP.
+2. **Settings -> Rules -> Rulesets** (hoặc Branches -> Branch protection) cho nhánh `master`:
+   - Chặn **force push** và **xoá nhánh** (Block force pushes, Restrict deletions).
+   - **Require status checks to pass**: chọn `test` và `secrets` (và `semgrep` nếu muốn chặn cả cảnh báo).
+   - (Tuỳ chọn khi có thêm người) Require a pull request before merging.
+3. **Settings -> Code security:** bật **Secret scanning** và **Push protection** (GitHub từ chối push có chứa token), **Dependabot alerts** và **Dependabot security updates**.
+4. **Settings -> Actions -> General:** *Workflow permissions* = Read repository contents; chỉ cho phép action do GitHub và nhà phát hành đã xác minh.
+5. **Settings -> Environments -> production:** Required reviewers (đã nêu ở A4); giới hạn *Deployment branches* = `master`.
+6. **Luân chuyển khoá:** đổi `VPS_SSH_KEY` (tạo cặp mới, cài `.pub` mới, xoá `.pub` cũ khỏi `authorized_keys`) khi nghi ngờ lộ hoặc 6-12 tháng một lần.
+
+## 6. LUỒNG CHUẨN local -> GitHub -> VPS
+
+1. **Local:** sửa -> `python scripts/qa.py verify` (`--full` khi chạm lõi) xanh -> build file tự sinh -> `git add <đúng file>` -> commit (hook kiểm tra bí mật + file tự sinh).
+2. **GitHub:** `git fetch origin` -> `git log origin/master..HEAD` -> `git push origin master` (không force). Đợi CI `test` và `secrets` xanh.
+3. **VPS:** GitHub -> Actions -> **Deploy VPS** -> Run workflow (nhánh `master`). Workflow tự kiểm tra CI của đúng commit, deploy đúng commit đó bằng fast-forward, sao lưu, chạy thử migration trên bản sao, cập nhật, kiểm tra `/login/`, tự quay về nếu lỗi.
+4. Không sửa tay trên VPS (workflow dừng nếu có file bị sửa). Không dùng lại `deploy.sh` / `update_all.sh` ở thư mục gốc (đã vô hiệu hoá).

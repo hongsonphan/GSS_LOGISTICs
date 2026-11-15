@@ -17,7 +17,6 @@
 | 2 | Dọn phần BIM cũ: tạm ứng tài xế, quỹ điều vận, quyết toán tài xế (đang khóa bằng cờ `fleet_internal`, khoảng 10 file) | `apps/billing/advance_*.py`, `settlement_voucher_views.py`, `static/js/src/app/accounting/**` | billing → ui-ux → qa-tester | Vừa |
 | 3 | Đổi `DispatchTrip` → `TransportJob`, bỏ máy 11 bước cũ (`core.workflows`, `TripStatus`) sau khi report/sổ cái chuyển sang máy 7 bước | `apps/dispatch/models.py`, `gss_workflow.py` (`LEGACY_STATUS`), `reports_api.py`, `apps/ledger/posting.py` | dispatch-ops → billing → report-designer | Vừa |
 | 4 | `StoredFile`/`DocumentLink` tách bảng; `CargoItem`/`Stop`/`DeliveryDrop` (GĐ4) | `apps/documents`, `apps/gss` | backend, dispatch-ops | Nhẹ |
-| 5 | `settings.py` rơi về SQLite khi thiếu `DB_HOST` – trái quy ước "chỉ PostgreSQL". Đề xuất: báo lỗi rõ thay vì tạo `db.sqlite3` | `config/settings.py:136-141` | backend | Vừa |
 | 6 | Phân loại 51 chỗ `.delete()` ngoài test: bảng phụ thì ghi chú, bảng pháp lý thì chuyển sang xóa mềm | `qa.py audit` mục bảo mật (vd. `apps/billing/settlement_voucher_views.py:509`) | security (rà) → backend/billing (sửa) | Vừa |
 | 7 | Template lệch thẻ `<div>` (mở 363/đóng 362) – kiểm có phải lỗi thật | `templates/views/view_trip_detail.html` | ui-ux | Vừa |
 | 8 | Badge/pill trong bảng – đổi sang chữ màu + icon | `reports-center.js:603`, `settlement-voucher.js:665`, `tasks-board.js:261`, `trip-cost-sheet.js:148`, `opening-balance.js:323`, `reports/finance/report-18.js:47` | ui-ux | Nhẹ |

@@ -134,6 +134,8 @@ if DB_HOST or 'postgresql' in DB_ENGINE:
         }
     }
 else:
+    if not DEBUG:
+        raise ImproperlyConfigured('Thiếu DB_HOST: production chỉ chạy PostgreSQL, không dùng SQLite.')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',

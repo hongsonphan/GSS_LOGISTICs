@@ -7,6 +7,14 @@ on:
     branches: ["**"]
   pull_request:
 
+# Quyền tối thiểu cho mọi job (job nào cần thêm thì khai riêng)
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -113,8 +121,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    # Lịch sử git cũ còn bí mật đã lộ (đã thay trong mã hiện tại): cảnh báo nhưng không chặn triển khai.
-    continue-on-error: true
+    # Lịch sử git đã làm lại sạch ngày 09/11/2026 (đã quét, không còn bí mật): phát hiện bí mật là CHẶN, không cho qua.
     steps:
       - uses: actions/checkout@v4
         with:

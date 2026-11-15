@@ -1,34 +1,7 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# GSS LOGISTICS — AUTOMATED PRODUCTION DEPLOYMENT & HEALTH CHECK SCRIPT
-# Hệ sinh thái GSS Ecosystem - Green Solutions Supply
-# ==============================================================================
-set -e
-
-echo "=== [1/6] KIỂM TRA MÔI TRƯỜNG & GIT REPO ==="
-git status
-
-echo "=== [2/6] KIỂM TRA FRONTEND: app.js KHỚP MÃ NGUỒN & CÚ PHÁP ==="
-python3 scripts/build_app_js.py --check
-if command -v node >/dev/null 2>&1; then
-    node --check static/js/app.js
-    echo "✓ Cú pháp JavaScript hợp lệ."
-else
-    echo "⚠ Bỏ qua kiểm tra cú pháp do môi trường chưa cài Node.js."
-fi
-
-echo "=== [3/6] CẬP NHẬT DATABASE MIGRATIONS ==="
-python manage.py migrate --noinput
-
-echo "=== [4/6] TẬP HỢP TÀI NGUYÊN TĨNH (COLLECTSTATIC) ==="
-python manage.py collectstatic --noinput
-
-echo "=== [5/6] CHẠY BỘ KIỂM THỬ HỒI QUY (REGRESSION SUITE) ==="
-python manage.py test --keepdb
-
-echo "=== [6/6] DỰNG LẠI SỔ CÁI TỪ CHỨNG TỪ ==="
-python manage.py rebuild_ledger
-
-echo "=============================================================================="
-echo "✓ HỆ THỐNG GSS LOGISTICS ĐÃ SẴN SÀNG VẬN HÀNH 100% CHUẨN PRODUCTION!"
-echo "=============================================================================="
+# ĐÃ VÔ HIỆU HOÁ (bảo mật). Script cũ này chạy migrate/restart thẳng trên CSDL thật, không sao lưu, không chạy thử, không quay về khi lỗi.
+# Cách triển khai DUY NHẤT: local -> GitHub (CI xanh) -> VPS, qua workflow "Deploy VPS" (GitHub > Actions > Run workflow),
+# hoặc trên VPS: cd /home/ubuntu/GSS_LOGISTICS && git fetch origin master && git merge --ff-only origin/master && bash scripts/deploy_vps.sh
+# Xem CLAUDE.md mục "Triển khai" và docs/15-deployment-guide.md.
+echo "Script này đã bị vô hiệu hoá. Dùng workflow 'Deploy VPS' hoặc scripts/deploy_vps.sh (xem docs/15-deployment-guide.md)." >&2
+exit 1

@@ -1,13 +1,23 @@
-# Triển khai GSS Logistics lên VPS. ĐANG KHOÁ: chỉ chạy tay (tab Actions) và cần khai báo VPS riêng của dự án GSS.
-# Muốn bật tự chạy sau CI xanh: thêm lại khối workflow_run bên dưới sau khi đã có VPS GSS riêng.
-# Cần thêm biến (Variables) SITE_URL, vd https://domain-cua-gss.vn
-# Cần khai báo trong GitHub > Settings > Secrets and variables > Actions:
-#   VPS_HOST (IP máy chủ của dự án GSS (KHÔNG dùng máy chủ GSS Logistics cũ)), VPS_USER (vd ubuntu), VPS_SSH_KEY (nội dung khoá riêng SSH)
+# Triển khai GSS Logistics lên VPS RIÊNG của dự án GSS. Chỉ chạy tay (tab Actions), chỉ từ nhánh master.
+# Luồng: local -> GitHub (CI xanh) -> VPS. Workflow này là chặng cuối.
+#
+# Khai báo trong GitHub > Settings > Secrets and variables > Actions:
+#   Secrets:   VPS_HOST (IP VPS của GSS, KHÔNG dùng máy chủ của dự án khác), VPS_USER (vd ubuntu), VPS_SSH_KEY (khoá RIÊNG dành riêng cho GSS)
+#              VPS_HOST_KEY (khuyến nghị): dòng host key của VPS, lấy bằng `ssh-keyscan -t ed25519 <IP>` rồi đối chiếu vân tay với nhà cung cấp
+#   Variables: SITE_URL, vd https://gss.ten-mien.vn
+# Khuyến nghị: Settings > Environments > production > Required reviewers (người duyệt trước khi chạy).
+#
+# Bảo vệ của workflow: chỉ master · CI (test + secrets) của ĐÚNG commit phải xanh · triển khai đúng commit đó (không "master mới nhất")
+#   · chỉ fast-forward (không ghi đè) · VPS có file sửa tay thì dừng · khoá SSH xoá sau khi chạy.
 # Trên VPS, scripts/deploy_vps.sh tự: sao lưu -> chạy thử trên bản sao CSDL -> cập nhật -> kiểm tra -> quay về nếu lỗi.
 name: Deploy VPS
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: read
 
 concurrency:
   group: deploy-production
@@ -15,9 +25,10 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 30
     steps:
       - name: Kiểm tra secrets
         env:
@@ -25,25 +36,58 @@ jobs:
           KEY: ${{ secrets.VPS_SSH_KEY }}
           SITE: ${{ vars.SITE_URL }}
         run: |
-          if [ -z "$HOST" ] || [ -z "$KEY" ] || [ -z "$SITE" ]; then echo "Chưa khai báo VPS_HOST / VPS_SSH_KEY / SITE_URL -> bỏ qua triển khai"; exit 1; fi
+          if [ -z "$HOST" ] || [ -z "$KEY" ] || [ -z "$SITE" ]; then echo "Chưa khai báo VPS_HOST / VPS_SSH_KEY / SITE_URL -> dừng"; exit 1; fi
+          case "$SITE" in https://*) ;; *) echo "SITE_URL phải bắt đầu bằng https://"; exit 1;; esac
 
-      - name: Cập nhật VPS
+      - name: CI của commit này phải xanh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, urllib.request
+          req = urllib.request.Request(
+              f"https://api.github.com/repos/{os.environ['REPO']}/commits/{os.environ['SHA']}/check-runs?per_page=100",
+              headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json"})
+          runs = json.load(urllib.request.urlopen(req))["check_runs"]
+          need = {"test", "secrets"}
+          state = {r["name"]: (r["status"], r["conclusion"]) for r in runs}
+          bad = [n for n in sorted(need) if state.get(n) != ("completed", "success")]
+          for n in sorted(need):
+              print(f"CI {n}: {state.get(n, 'không thấy')}")
+          if bad:
+              print(f"Dừng: CI chưa xanh cho commit {os.environ['SHA'][:7]} ({', '.join(bad)}). Đợi CI xong rồi chạy lại.")
+              sys.exit(1)
+          PY
+
+      - name: Cập nhật VPS (đúng commit đã qua CI)
         env:
           HOST: ${{ secrets.VPS_HOST }}
           USER: ${{ secrets.VPS_USER }}
           KEY: ${{ secrets.VPS_SSH_KEY }}
+          HOST_KEY: ${{ secrets.VPS_HOST_KEY }}
+          SHA: ${{ github.sha }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          ssh -i ~/.ssh/deploy_key "${USER:-ubuntu}@$HOST" 'bash -s' <<'REMOTE'
+          if [ -n "$HOST_KEY" ]; then
+            printf '%s\n' "$HOST_KEY" > ~/.ssh/known_hosts
+            SSH_OPTS="-o StrictHostKeyChecking=yes"
+          else
+            echo "::warning::Chưa có secret VPS_HOST_KEY: đang tin host key lần đầu (kém an toàn). Nên khai báo VPS_HOST_KEY."
+            ssh-keyscan -t ed25519 -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+            SSH_OPTS="-o StrictHostKeyChecking=yes"
+          fi
+          ssh $SSH_OPTS -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "${USER:-ubuntu}@$HOST" 'bash -s' -- "$SHA" <<'REMOTE'
           set -e
+          SHA="$1"
           cd /home/ubuntu/GSS_LOGISTICS
           git config --global --add safe.directory /home/ubuntu/GSS_LOGISTICS 2>/dev/null || true
           if [ -n "$(git status --porcelain --untracked-files=no)" ]; then echo "[VPS] Có thay đổi chưa commit trên VPS -> dừng"; git status --short; exit 3; fi
           git rev-parse HEAD > /home/ubuntu/GSS_LOGISTICS_rollback_commit.txt
           git fetch origin master
-          git merge --ff-only origin/master
+          git merge --ff-only "$SHA"
           bash scripts/deploy_vps.sh
           REMOTE
 
@@ -52,7 +96,11 @@ jobs:
           SITE: ${{ vars.SITE_URL }}
         run: |
           for i in 1 2 3 4 5 6; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' $SITE/login/) && [ "$code" = "200" ] && echo "login -> 200" && exit 0
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/login/") && [ "$code" = "200" ] && echo "login -> 200" && exit 0
             sleep 10
           done
           echo "Production không trả 200"; exit 1
+
+      - name: Xoá khoá SSH trên runner
+        if: ${{ always() }}
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts

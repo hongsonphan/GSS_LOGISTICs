@@ -2,6 +2,20 @@
 # Chặn commit nếu file tự sinh (app.js, tailwind.css) lệch mã nguồn -> tránh CI đỏ.
 # Cài một lần cho mỗi bản clone:  git config core.hooksPath .githooks
 staged=$(git diff --cached --name-only)
+
+# --- Chặn bí mật lọt vào commit (an toàn trước hết: kiểm tra TRƯỚC các bước build) ---
+bad_paths=$(echo "$staged" | grep -E '(^|/)(\.env($|\.)|\.ssh/|gss_local_credentials|id_(rsa|ed25519|ecdsa|dsa)|gss_deploy)|\.(pem|key|p12|pfx|dump|sqlite3?)$' | grep -vE '(^|/)\.env\.example$')
+if [ -n "$bad_paths" ]; then
+    echo "DỪNG COMMIT: có file bí mật/khoá/dữ liệu trong danh sách commit:"; echo "$bad_paths"
+    echo "Gỡ ra:  git restore --staged <file>   (và thêm vào .gitignore nếu chưa có)"; exit 1
+fi
+for f in $staged; do
+    [ -f "$f" ] || continue
+    case "$f" in static/js/app.js|templates/help.html|*.png|*.jpg|*.jpeg|*.webp|*.ico|*.woff*|*.pdf) continue;; esac
+    if git show ":$f" 2>/dev/null | grep -aEq 'BEGIN (OPENSSH|RSA|EC|DSA|PGP)? ?PRIVATE KEY|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|xox[baprs]-[A-Za-z0-9-]{10,}'; then
+        echo "DỪNG COMMIT: $f chứa khoá riêng hoặc token. Xoá nó khỏi file rồi commit lại."; exit 1
+    fi
+done
 PY=python3; "$PY" -c "" >/dev/null 2>&1 || PY=python
 
 if echo "$staged" | grep -qE '^static/js/(src/|app\.js)'; then

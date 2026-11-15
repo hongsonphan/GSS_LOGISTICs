@@ -30,3 +30,12 @@ test_screenshots/
 # Worktree / cấu hình Claude Code không thuộc image
 .claude/
 .coverage
+
+# Khoá SSH và bí mật cục bộ tuyệt đối không vào image
+.ssh/
+gss_deploy*
+id_ed25519*
+id_rsa*
+gss_local_credentials.txt
+.github/
+.githooks/

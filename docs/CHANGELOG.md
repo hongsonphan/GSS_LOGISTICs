@@ -3,6 +3,15 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-15 – Rà soát bảo mật toàn repo và dựng lại luồng local → GitHub → VPS cho riêng GSS
+- **Kết quả rà soát:** không có khoá/token/.env trong file đang theo dõi hay trong lịch sử git (đã quét toàn bộ lịch sử); `qa.py audit` phần bảo mật: bandit, pip-audit, check --deploy, eval/exec, SQL ghép chuỗi, TLS đều sạch.
+- **Chặn lộ khoá:** `.gitignore` thêm `.ssh/`, `gss_deploy*`, `id_*`, `*.pem`; `.dockerignore` loại khoá và `gss_local_credentials.txt` khỏi image; hook `.githooks/pre-commit` chặn commit có `.env`, khoá SSH, file dump/CSDL hoặc nội dung chứa khoá riêng/token (đã thử bằng file giả).
+- **CI:** quyền tối thiểu (`contents: read`), huỷ lượt chạy cũ cùng nhánh; job `secrets` (gitleaks) giờ **chặn** (trước đây chỉ cảnh báo vì lịch sử cũ lộ bí mật, lịch sử đã làm lại sạch). Thêm `.github/dependabot.yml` (pip, github-actions, docker hằng tuần).
+- **Deploy VPS (`deploy.yml`):** chỉ chạy từ `master`; bắt buộc CI `test` + `secrets` của đúng commit xanh; deploy đúng commit đó bằng fast-forward (không "master mới nhất"); ghim host key qua secret `VPS_HOST_KEY` (không có thì cảnh báo); xoá khoá SSH trên runner sau khi chạy; giới hạn 30 phút.
+- **Vô hiệu hoá** `deploy.sh` và `update_all.sh` ở thư mục gốc (chạy `migrate`/restart thẳng trên CSDL thật, không sao lưu, không quay về); cách duy nhất là workflow `Deploy VPS` hoặc `scripts/deploy_vps.sh`.
+- `config/settings.py`: production (DEBUG=False) thiếu `DB_HOST` thì báo lỗi, không rơi về SQLite nữa.
+- Tài liệu: `docs/15-deployment-guide.md` thêm mục 5 (bảo vệ GitHub: cấm force-push, status checks, secret scanning, 2FA, reviewers) và mục 6 (luồng chuẩn); `CLAUDE.md` cập nhật quy tắc.
+
 ## 2026-11-15 – Dashboard Tổng quan: bố cục 4 vùng, 6 thẻ, tab thông tin và cài đặt hiển thị từng vùng
 - **Bố cục mới theo mẫu BIM:** thanh đầu (Chào mừng · Góc nhìn · Kỳ xem · **Cài đặt hiển thị** · Làm mới) → **6 thẻ chỉ số** → **biểu đồ** (Tùy biến dữ liệu có sẵn) → **vùng tab thông tin** → **Công việc | Bản tin nội bộ**. Trang `/` dùng chung màn Dashboard của khung (`view_dashboard.html`); không còn nhóm màn GSS riêng «Tổng quan nhà xe» (`GROUPS` trong `static/js/gss/console.js` để trống).
 - **Giám đốc có 6 thẻ GSS theo thứ tự:** Kinh doanh · Vận hành chuyến · Khả dụng đội xe theo nhà xe (xe nhà xe đang lăn bánh) · Bãi Đắk Nông (tồn bãi, vào/ra hôm nay) · Cảnh báo DEM/DET · Tài chính & Quỹ. Thẻ Hải quan không còn trên Dashboard Giám đốc (chưa có dữ liệu GSS). Các góc nhìn khác giữ thẻ cũ và thêm thẻ «Cảnh báo DEM/DET» ở cuối.

@@ -45,3 +45,11 @@ gss_local_credentials.txt
 # Claude Code / AI Agents riêng máy
 .claude/
 .agents/
+
+# Khoa SSH / bi mat tuyet doi khong dua vao repo
+.ssh/
+gss_deploy
+gss_deploy.*
+*.pem
+id_ed25519*
+id_rsa*

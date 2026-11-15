@@ -2,7 +2,7 @@
 
 Phần mềm điều hành vận tải container của Green Solutions Smart. Mã nguồn đã được làm lại sạch ngày 09/11/2026 theo đặc tả §7.2: lịch sử git mới, không mang lịch sử cũ (bản sao lưu lịch sử cũ: `E:\Backup\gss_old_2026-11-09\`). Chỉ có MỘT thư mục dự án này.
 Đặc tả nghiệp vụ: `docs/01-spec-brd.md`; kế hoạch GĐ0: `docs/archive/2026-11-09-phase0-copy-trim-model.md`; sơ đồ dữ liệu: `docs/06-database.md`.
-Không đưa khoá SSH / secret / domain máy chủ vào repo. Bản vá thuộc lớp nền (bảo mật, phân quyền) ghi vào `PLATFORM_PATCHES.md`.
+Không đưa khoá SSH / secret / domain máy chủ vào repo (khoá riêng chỉ ở `~/.ssh/` của máy; `.gitignore`, hook `.githooks/pre-commit`, `.dockerignore` và CI gitleaks cùng chặn). Bản vá thuộc lớp nền (bảo mật, phân quyền) ghi vào `PLATFORM_PATCHES.md`.
 
 **Ưu tiên khi đánh đổi:** đúng dữ liệu B/L, chứng từ, tiền > cách ly dữ liệu giữa các công ty > không làm hỏng tính năng đang chạy > tốc độ viết code. Không đoán mò: thiếu dữ kiện nghiệp vụ thì dừng và hỏi.
 
@@ -77,6 +77,7 @@ Ba chặng, đi tuần tự, **không bao giờ đảo thứ tự hoặc bỏ ch
 2. **GitHub** (`origin` = `github.com/hongsonphan/GSS_LOGISTICs`, nhánh `master`): chỉ push khi người dùng yêu cầu. **Push thường, tuần tự, giữ nguyên lịch sử**: `git fetch origin`, xem `git log origin/master..HEAD` (chỉ có commit mới của mình, không có commit lạ), rồi `git push origin master`. Nếu bị từ chối (remote có commit mới): `git pull --rebase origin master`, chạy lại verify, push lại.
    **Cấm** `git push --force` / `--force-with-lease`, xoá nhánh hoặc commit trên remote, trừ khi người dùng ra lệnh rõ cho đúng việc đó. CI (`ci.yml`) chạy sau mỗi push; CI đỏ thì sửa trước khi lên VPS.
 3. **VPS:** chỉ khi CI xanh và người dùng yêu cầu. Chạy workflow **`Deploy VPS`** bằng tay (GitHub → Actions → Run workflow). Trên VPS nó tự: kiểm tra cây làm việc sạch → lưu commit để quay về → `git merge --ff-only origin/master` → `scripts/deploy_vps.sh` (sao lưu CSDL + media, chạy thử trên bản sao CSDL, build, migrate, kiểm tra `/healthz/`, tự quay về commit cũ nếu web không lên) → kiểm tra `SITE_URL/login/` trả 200.
+   Workflow chỉ chạy từ `master`, tự kiểm CI (`test`, `secrets`) của ĐÚNG commit rồi deploy đúng commit đó bằng fast-forward; `deploy.sh`/`update_all.sh` ở thư mục gốc đã vô hiệu hoá. Cài đặt bảo vệ GitHub (cấm force-push, secret scanning, 2FA): `docs/15-deployment-guide.md` mục 5.
    Không sửa tay mã trên VPS (workflow sẽ dừng nếu có thay đổi chưa commit). Secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` và biến `SITE_URL` đặt trong GitHub Settings, không ghi vào repo. Chi tiết: `docs/11-runbook.md` mục 7.
    Workflow `Uptime`, `Restore drill`, `ZAP` cũng chỉ chạy tay khi người dùng yêu cầu.
 
