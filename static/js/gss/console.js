@@ -19,9 +19,9 @@
   // Các file khác (booking.js, master.js) gọi GSSApp.register(...) để đăng ký màn hình.
   var screens = {}, current = '', pending = null;
   var NEEDS = { depot: 'depot_yard', scan: 'qr_tracking', pod: 'pod_templates', booking: 'sales' };
-  var GROUPS = {
-    'dashboard': [['dashboard', 'Tổng quan nhà xe'], ['lookup', 'Tra cứu B/L · cont']]
-  };
+  // Dashboard Tổng quan dùng bố cục chung của khung BIM (templates/views/view_dashboard.html + dashboard/layout-settings.js);
+  // "Theo dõi hành trình" (fleetTimeline) và "Tra cứu B/L · cont" được nhúng thành tab trong đó, nên không còn nhóm GSS riêng.
+  var GROUPS = {};
   function usable(t) { return !!screens[t] && (!NEEDS[t] || feats[NEEDS[t]] !== false); }
   function groupOf(t) { for (var g in GROUPS) if (GROUPS[g].some(function (x) { return x[0] === t; })) return g; return null; }
   function tabsOf(g) { return (GROUPS[g] || []).filter(function (x) { return usable(x[0]); }); }
@@ -699,7 +699,7 @@
   window.GSSApp = {
     screens: screens, go: go, show: show, enter: enter, hasTab: hasTab, view: view, feats: feats, current: function () { return current; },
     register: function (map) { Object.keys(map).forEach(function (k) { screens[k] = map[k]; }); },
-    openList: function (f) { openList(f); }, openTrip: function (c) { openTrip(c); },
+    openList: function (f) { openList(f); }, openTrip: function (c) { openTrip(c); }, fleetTimeline: function (host) { fleetTimeline(host); },
     ui: { field: field, input: input, btn: btn, ask: ask, openDrawer: openDrawer, loading: loading, fail: fail, noteBox: noteBox },
   };
 })();

@@ -696,3 +696,27 @@ class BookingApiTests(GssBase):
         self.assertIn('Điều vận & Vendor', html)
         self.assertNotIn('Dịch vụ Hải quan</span>', html)
         self.assertEqual(self.client.get('/dashboard/').status_code, 200)
+
+
+class DashboardDemDetCardTests(GssBase):
+    """Thẻ KPI của Dashboard tổng quan: Giám đốc có 6 thẻ GSS; "Cảnh báo DEM/DET" có ở mọi góc nhìn với số liệu thật."""
+
+    def test_director_cards_are_gss_cards_in_order(self):
+        t = self.trip()
+        DispatchTrip.objects.filter(pk=t.pk).update(dem_expiry_date=datetime.date.today() - datetime.timedelta(days=1))
+        self.client.force_login(self.staff)
+        cards = self.client.get('/api/dashboard/?period=7_days').json()['kpi_cards']
+        self.assertEqual([c['id'] for c in cards], ['pillar_sales_plan', 'pillar_dispatch', 'pillar_vendor_fleet', 'pillar_yard', 'pillar_demdet', 'pillar_financial'])
+        self.assertEqual([c['title'][:2] for c in cards], ['1.', '2.', '3.', '4.', '5.', '6.'])
+        demdet = cards[4]
+        self.assertEqual(demdet['metric_value'], '1 Cont')
+        self.assertIn("Quá hạn: <strong class='text-rose-600'>1</strong>", demdet['line_1'])
+        self.assertEqual(cards[2]['metric_value'], '0% (0/1 Xe)')  # xe của nhà xe, chưa chuyến nào qua bước nhận cont
+
+    def test_other_roles_keep_their_cards_and_get_demdet_last(self):
+        self.trip()
+        self.client.force_login(self.staff)
+        for role in ('ACCOUNTING', 'DISPATCH', 'SALES', 'FLEET', 'HR'):
+            cards = self.client.get(f'/api/dashboard/?period=7_days&view_as={role}').json()['kpi_cards']
+            self.assertEqual(cards[-1]['id'], 'pillar_demdet', role)
+            self.assertEqual(cards[-1]['metric_value'], '0 Cont', role)

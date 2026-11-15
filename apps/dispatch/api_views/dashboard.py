@@ -938,6 +938,65 @@ class DashboardBGDAPIView(APIView):
 
         current_role_info = ROLE_METADATA.get(active_role, ROLE_METADATA['DIRECTOR'])
 
+        # Thẻ cuối "Cảnh báo DEM/DET" (số liệu thật theo điều vận GSS) – luôn nằm cuối dãy thẻ của mọi vai trò
+        try:
+            from apps.dispatch import gss_dashboard as _gss_dash
+            snap = _gss_dash.kpi_snapshot()
+        except Exception:
+            snap = None
+        if snap is not None:
+            n_alert = snap['alert']
+            cards = list(current_role_info['cards'])
+            demdet_card = ({
+                'id': 'pillar_demdet',
+                'title': 'Cảnh Báo DEM/DET', 'badge_title': 'Cảnh Báo DEM/DET',
+                'metric_label': f"Cont Sắp / Quá Hạn (báo trước {snap['warn_days']} ngày)",
+                'metric_value': f"{n_alert} Cont",
+                'metric_color': 'text-rose-600' if n_alert else 'text-emerald-700',
+                'icon': 'ph-timer',
+                'theme': 'rose' if n_alert else 'emerald',
+                'line_1': f"Quá hạn: <strong class='text-rose-600'>{snap['overdue']}</strong> • Đang vận hành: <strong>{snap['running']}</strong> chuyến",
+                'line_2': f"Chờ nhập xe/tài: <strong class='text-amber-700'>{snap['pending']}</strong> cont",
+                'target_tab': 'dieu-van',
+                'action_label': 'Xử lý',
+            })
+            if active_role == 'DIRECTOR' and len(cards) >= 5:
+                # Giám đốc GSS: Kinh doanh · Vận hành chuyến · Khả dụng đội xe theo nhà xe · Bãi Đắk Nông · Cảnh báo DEM/DET · Tài chính
+                fl, yd = snap['fleet'], snap['yard']
+                fleet_card = {
+                    'id': 'pillar_vendor_fleet', 'icon': 'ph-steering-wheel', 'theme': 'blue', 'metric_color': 'text-blue-700',
+                    'metric_label': 'Tỷ Lệ Xe Nhà Xe Đang Lăn Bánh',
+                    'metric_value': f"{fl['pct']}% ({fl['running']}/{fl['plates']} Xe)",
+                    'line_1': f"<strong>{fl['drivers']}</strong> tài xế • <strong>{fl['vendors']}</strong> nhà xe tham gia",
+                    'line_2': 'Xe đã nhận cont, chưa hạ rỗng', 'target_tab': 'xe-bai', 'action_label': 'Phương tiện',
+                }
+                if yd is not None:
+                    yard_card = {
+                        'id': 'pillar_yard', 'icon': 'ph-warehouse', 'theme': 'emerald', 'metric_color': 'text-emerald-700',
+                        'metric_label': 'Tồn Bãi Hiện Tại', 'metric_value': f"{yd['in_yard']} Cont",
+                        'line_1': f"Hàng <strong>{yd['full']}</strong> • Rỗng <strong>{yd['empty']}</strong>",
+                        'line_2': f"Hôm nay vào <strong>{yd['in_today']}</strong> / ra <strong>{yd['out_today']}</strong>",
+                        'target_tab': 'xe-bai', 'action_label': 'Bãi cont',
+                    }
+                else:
+                    yard_card = None
+                ordered = [cards[1], cards[2], fleet_card, yard_card, demdet_card, cards[0]]
+                cards = [c for c in ordered if c]
+                import re as _re
+                for i, c in enumerate(cards, 1):
+                    base = _re.sub(r'^\d+\.\s*', '', c.get('badge_title') or c.get('title') or '')
+                    if c['id'] == 'pillar_vendor_fleet':
+                        base = 'Khả Dụng Đội Xe'
+                    elif c['id'] == 'pillar_yard':
+                        base = 'Bãi Đắk Nông'
+                    elif c['id'] == 'pillar_sales_plan':
+                        base = 'Kinh Doanh'
+                    c['title'] = c['badge_title'] = f'{i}. {base}'
+            else:
+                demdet_card['title'] = demdet_card['badge_title'] = f'{len(cards) + 1}. Cảnh Báo DEM/DET'
+                cards.append(demdet_card)
+            current_role_info = {**current_role_info, 'cards': cards}
+
         # --- 10. TRÍCH XUẤT WIDGET BẢN TIN CÔNG TY (COMPANY ANNOUNCEMENTS) ---
         user_dept = employee.department if employee else 'ALL'
         news_qs = CompanyPost.objects.filter(is_deleted=False)

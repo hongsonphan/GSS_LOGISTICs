@@ -15,12 +15,11 @@ function renderRoleKpiCards(cards) {
     const container = document.getElementById('dashboard-row-pillars');
     if (!container || !Array.isArray(cards) || cards.length === 0) return;
 
-    // Cân chỉnh lưới grid tự động theo số lượng thẻ: 5 thẻ -> xl:grid-cols-5, 4 thẻ -> xl:grid-cols-4
-    if (cards.length === 5) {
-        container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 2xl:gap-3.5 shrink-0 transition-all duration-300';
-    } else {
-        container.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5 2xl:gap-3.5 shrink-0 transition-all duration-300';
-    }
+    // Lọc bỏ thẻ người dùng đã ẩn (danh sách đầy đủ vẫn nằm ở bgdDataCache.kpi_cards cho bảng cài đặt)
+    const hiddenIds = new Set((typeof dashLayoutLoad === 'function' ? dashLayoutLoad().kpi.hidden : []) || []);
+    cards = cards.filter(c => !hiddenIds.has(c.id));
+    container.className = dashKpiGridClass(cards.length);
+    const valSize = cards.length >= 6 ? 'text-lg 2xl:text-xl' : 'text-xl 2xl:text-2xl';
 
     const themeColors = {
         emerald: { border: 'border-l-emerald-500', badge: 'text-emerald-800 bg-emerald-100/70 border-emerald-200', icon: 'bg-emerald-100/80 text-emerald-700', val: 'text-emerald-600', link: 'text-emerald-700' },
@@ -35,7 +34,7 @@ function renderRoleKpiCards(cards) {
     cards.forEach(card => {
         const t = themeColors[card.theme] || themeColors.teal;
         html += `
-        <div onclick="switchTab('${card.target_tab || 'dashboard'}')" class="bg-white p-3 2xl:p-4 rounded-xl border border-slate-200/90 shadow-xs border-l-[4px] ${t.border} cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem ${card.action_label || 'chi tiết'}">
+        <div data-card-id="${card.id || ''}" onclick="switchTab('${card.target_tab || 'dashboard'}')" class="bg-white p-3 2xl:p-4 rounded-xl border border-slate-200/90 shadow-xs border-l-[4px] ${t.border} cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem ${card.action_label || 'chi tiết'}">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[11px] 2xl:text-xs font-black uppercase tracking-wider ${t.badge} px-2 py-0.5 rounded border font-heading">
@@ -46,7 +45,7 @@ function renderRoleKpiCards(cards) {
                     </div>
                 </div>
                 <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">${card.metric_label || 'Chỉ số'}</p>
-                <p class="text-xl 2xl:text-2xl font-black ${card.metric_color || t.val} tabular-nums font-heading mt-0.5">${card.metric_value || '0'}</p>
+                <p class="${valSize} font-black ${card.metric_color || t.val} tabular-nums font-heading mt-0.5">${card.metric_value || '0'}</p>
             </div>
             
             <div class="space-y-1 mt-2 pt-2 border-t border-slate-100">
@@ -64,7 +63,7 @@ function renderRoleKpiCards(cards) {
         `;
     });
 
-    container.innerHTML = html;
+    container.innerHTML = html || '<div class="col-span-full text-center py-6 text-slate-400 text-xs bg-white rounded-xl border border-slate-200">Tất cả thẻ chỉ số đang được ẩn. Bật lại ở nút Hiển thị của vùng này.</div>';
 }
 
 function renderDashboardNews(announcements) {

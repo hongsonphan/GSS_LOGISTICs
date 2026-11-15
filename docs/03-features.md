@@ -111,6 +111,10 @@ Hệ thống Dashboard thông minh được thiết kế theo chuẩn quản tr�
    * *3. Hợp Đồng Lao Động:* Tình trạng tuân thủ pháp lý HĐLĐ, trích nộp BHXH/BHYT.
    * *4. Hạn Giấy Phép Lái Xe:* Số lượng bằng lái hạng C/FC của tài xế sắp hết hạn trong 30 ngày cần gia hạn.
 
+### 2.2b Bố cục 4 vùng & Cài đặt hiển thị (15/11/2026)
+- 4 vùng: **thẻ chỉ số (6 thẻ, thẻ 6 = Cảnh báo DEM/DET)** · **biểu đồ** · **tab thông tin** (Theo dõi hành trình · Danh sách chuyến · Cảnh báo DEM/DET · Chờ nhập xe/tài · Ma trận nhà xe · Tra cứu B/L·cont) · **Công việc | Bản tin**. Mã: `static/js/src/app/dashboard/layout-settings.js`.
+- Mỗi vùng có nút `Hiển thị`: ẩn/hiện, độ rộng Cố định hoặc Tự do kéo, chiều cao; nút **Cài đặt hiển thị** ở đầu trang bật/tắt cả 4 vùng. Lưu theo trình duyệt (`gss_dash_layout_v1`).
+
 ### 2.3 Hai Widget Tương Tác Cốt Lõi Trên Dashboard & Thanh Kéo Tỷ Lệ (Widget Resizer)
 Bố cục Hàng 3 được tối ưu hóa theo tần suất tác nghiệp hiện trường với thanh kéo tùy chỉnh kích thước và đồng bộ chiều cao tuyệt đối (độ chênh lệch 0.00px):
 - **Widget 1 (Bên Trái) — Quản Lý Công Việc Cần Xử Lý (My Actionable Tasks - Chiếm 62% Mặc Định):**

@@ -579,42 +579,7 @@ function initSidebarHoverPeek() {
 }
 window.initSidebarHoverPeek = initSidebarHoverPeek;
 
-function toggleDashboardCharts() {
-    const rowPillars = document.getElementById('dashboard-row-pillars');
-    const rowCharts = document.getElementById('dashboard-row-charts');
-    const iconToggle = document.getElementById('icon-toggle-charts');
-    const textToggle = document.getElementById('text-toggle-charts');
-    const iconTableExpand = document.getElementById('icon-table-expand');
-    const textTableExpand = document.getElementById('text-table-expand');
-
-    if (!rowPillars || !rowCharts) return;
-
-    const isHidden = rowPillars.classList.contains('hidden');
-
-    if (isHidden) {
-        // Hiện lại 2 hàng biểu đồ & trụ cột
-        rowPillars.classList.remove('hidden');
-        rowCharts.classList.remove('hidden');
-        if (iconToggle) iconToggle.className = 'ph ph-eye-slash text-base text-teal-700';
-        if (textToggle) textToggle.innerText = 'Ẩn Biểu Đồ';
-        if (iconTableExpand) iconTableExpand.className = 'ph ph-arrows-out-simple text-teal-700';
-        if (textTableExpand) textTableExpand.innerText = 'Toàn Màn Hình';
-        try {
-            localStorage.setItem('bim_dashboard_charts_collapsed', 'false');
-        } catch (e) {}
-    } else {
-        // Ẩn 2 hàng biểu đồ để bung toàn màn hình Bảng Kê Hiệu Suất P&L
-        rowPillars.classList.add('hidden');
-        rowCharts.classList.add('hidden');
-        if (iconToggle) iconToggle.className = 'ph ph-eye text-base text-teal-700';
-        if (textToggle) textToggle.innerText = 'Hiện Biểu Đồ';
-        if (iconTableExpand) iconTableExpand.className = 'ph ph-arrows-in-simple text-teal-700';
-        if (textTableExpand) textTableExpand.innerText = 'Thu Gọn Bảng';
-        try {
-            localStorage.setItem('bim_dashboard_charts_collapsed', 'true');
-        } catch (e) {}
-    }
-}
+// Ẩn/hiện biểu đồ & thẻ: xem dashboard/layout-settings.js (toggleDashboardCharts, cài đặt hiển thị từng vùng)
 
 // Khởi chạy khi DOM sẵn sàng
 
@@ -659,24 +624,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 150);
     });
 
-    // Khôi phục trạng thái ẩn biểu đồ từ localStorage
-    try {
-        if (localStorage.getItem('bim_dashboard_charts_collapsed') === 'true') {
-            const rowPillars = document.getElementById('dashboard-row-pillars');
-            const rowCharts = document.getElementById('dashboard-row-charts');
-            const iconToggle = document.getElementById('icon-toggle-charts');
-            const textToggle = document.getElementById('text-toggle-charts');
-            const iconTableExpand = document.getElementById('icon-table-expand');
-            const textTableExpand = document.getElementById('text-table-expand');
-            if (rowPillars) rowPillars.classList.add('hidden');
-            if (rowCharts) rowCharts.classList.add('hidden');
-            if (iconToggle) iconToggle.className = 'ph ph-eye text-base text-teal-700';
-            if (textToggle) textToggle.innerText = 'Hiện Biểu Đồ';
-            if (iconTableExpand) iconTableExpand.className = 'ph ph-arrows-in-simple text-teal-700';
-            if (textTableExpand) textTableExpand.innerText = 'Thu Gọn Bảng';
-        }
-    } catch (e) {}
-    
+    // Bố cục Dashboard (ẩn/hiện vùng, độ rộng...) được khôi phục trong initDashboardLayout()
+
     // Tải danh mục Master Data chuẩn bị sẵn cho tất cả modal form
     loadMasterDataFormOptions().then(() => populateMasterDataDropdowns());
 

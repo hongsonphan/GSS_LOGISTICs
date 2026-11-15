@@ -128,6 +128,9 @@ async function loadDashboardData(periodOverride) {
         renderDashboardNews(data.announcements || []);
         renderDashboardTasks(data.my_tasks || []);
         initWidgetResizer();
+        if (typeof initDashboardLayout === 'function') {
+            if (!window.__dashLayoutReady) { window.__dashLayoutReady = true; initDashboardLayout(); } else { applyDashboardLayout(); refreshDashJourney(); }
+        }
 
         // 4. Render Bảng P&L Chuyến Xe Hỗ Trợ Click Mở Chi Tiết Chuyến, Lọc & Sắp Xếp
         rawDashboardTripsPnl = data.trips_pnl || [];

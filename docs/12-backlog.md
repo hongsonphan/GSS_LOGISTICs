@@ -149,6 +149,7 @@ Ký hiệu: ✔ đã có · ◐ một phần · ✘ chưa có. "UI mất" = máy
    - ✔ Chọn mẫu phiếu giao hàng trên form Booking + màn «Quản lý mẫu» (tạo/sửa/xóa/xem trước/gán cho khách); đã thử trên trình duyệt với 2 mẫu cho 2 khách (Minh Phúc, Đắk Nông XNK).
    - ✔ Đính kèm bộ chứng từ nhập khẩu: giao diện và xoá mềm đã có.
    - ◐ **Còn lại:** thử SMTP thật; khối «Chia cont cho nhà xe» (`vendor-allocations.js`) đang nằm trong vùng ẩn của trang Booking (luồng thật ở màn Lệnh điều vận) — cần quyết định bỏ hay giữ; biển số đầu kéo được chuẩn hoá bỏ dấu chấm (51C-12345) nhưng rơ-moóc giữ nguyên (51R-456.78); truy cập thẳng `/sales` trả 404 (đi qua menu thì vào được).
+1b. **Dashboard Tổng quan (15/11/2026, chưa commit):** đã xong bố cục 4 vùng, cài đặt hiển thị, 6 thẻ GSS cho Giám đốc và tab Ma trận nhà xe. Còn lại: thẻ «Tài chính & Quỹ» vẫn tính từ dữ liệu BIM (chưa nối sổ cái GSS); các góc nhìn khác (Kế toán, Điều vận, Kinh doanh, Đội xe, Nhân sự) vẫn dùng thẻ BIM cũ.
 2. **Đợt 2 – Đa chặng (Bước 4):** giao diện chuỗi chặng Cát Lái → Sóng Thần → Đắk Nông → Nhà máy → Depot, mốc qua trạm và timeline trên Trip Card.
 3. **Đợt 3 – Đối soát (mục 4.6), tối giản:** lọc B/L ↔ số cont ↔ khách ↔ nhà xe trên chuyến hoàn tất, xuất bảng kê khách và nhà xe; Biểu giá/Chi hộ chỉ làm đến mức bảng kê cần; chốt X3.
 4. **Đợt 4 – Hoá đơn:** chọn engine OCR hoặc nhà cung cấp, nối tự tải XML/PDF.

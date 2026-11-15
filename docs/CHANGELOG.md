@@ -3,6 +3,14 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-15 – Dashboard Tổng quan: bố cục 4 vùng, 6 thẻ, tab thông tin và cài đặt hiển thị từng vùng
+- **Bố cục mới theo mẫu BIM:** thanh đầu (Chào mừng · Góc nhìn · Kỳ xem · **Cài đặt hiển thị** · Làm mới) → **6 thẻ chỉ số** → **biểu đồ** (Tùy biến dữ liệu có sẵn) → **vùng tab thông tin** → **Công việc | Bản tin nội bộ**. Trang `/` dùng chung màn Dashboard của khung (`view_dashboard.html`); không còn nhóm màn GSS riêng «Tổng quan nhà xe» (`GROUPS` trong `static/js/gss/console.js` để trống).
+- **Giám đốc có 6 thẻ GSS theo thứ tự:** Kinh doanh · Vận hành chuyến · Khả dụng đội xe theo nhà xe (xe nhà xe đang lăn bánh) · Bãi Đắk Nông (tồn bãi, vào/ra hôm nay) · Cảnh báo DEM/DET · Tài chính & Quỹ. Thẻ Hải quan không còn trên Dashboard Giám đốc (chưa có dữ liệu GSS). Các góc nhìn khác giữ thẻ cũ và thêm thẻ «Cảnh báo DEM/DET» ở cuối.
+- **Thẻ «Cảnh báo DEM/DET»:** số cont sắp/quá hạn, quá hạn, chuyến đang chạy, cont chờ nhập xe/tài (`gss_dashboard.kpi_snapshot()`); dòng DEM/DET của thẻ Hải quan không còn gõ cứng «0 cont quá hạn».
+- **Vùng tab thông tin:** Theo dõi hành trình (dùng lại `GSSApp.fleetTimeline`) · Danh sách chuyến (thanh tiến độ 7 bước, lộ trình, DEM/DET, lọc theo tiến độ) · Cảnh báo DEM/DET · Chờ nhập xe/tài · **Ma trận nhà xe** (bấm một con số mở đúng danh sách cont, có nút Bỏ lọc) · Tra cứu B/L · cont. Dùng API sẵn có `/api/gss/trips/` và `/api/gss/lookup/`; bấm dòng mở ngăn chi tiết chuyến GSS.
+- **Cài đặt hiển thị** (nút đầu trang + nút `Hiển thị` riêng từng vùng): ẩn/hiện vùng, từng thẻ, từng biểu đồ, từng khung Công việc/Bản tin, từng tab; độ rộng **Cố định** (preset tỷ lệ) hoặc **Tự do kéo**; chiều cao Thấp/Vừa/Cao/Tự kéo; Khôi phục mặc định. Lưu `localStorage` khóa `gss_dash_layout_v1` (theo trình duyệt). File mới `static/js/src/app/dashboard/layout-settings.js`.
+- Test mới: `DashboardDemDetCardTests` (số thẻ, số liệu, có ở mọi góc nhìn).
+
 ## 2026-11-15 – Rà soát Bước 1–3 theo kế hoạch GSS (BRD): gửi lệnh email và mẫu phiếu giao hàng
 - **Sửa lỗi «Lưu & Phát Lệnh» không gửi email (Bước 2):** ở màn Lệnh điều vận (`/dispatch/orders/<id>`), khi các nhà xe đã được giao cont theo từng cont, nút chỉ báo «phát hành thành công» mà không gửi email, và dừng sớm với thông báo «thêm ít nhất một nhà xe». Nay nút gửi email lệnh kèm link riêng cho từng nhà xe (`POST /api/bookings/<id>/send-orders/`, tuỳ chọn `subcontractor_ids`), báo rõ nhà xe nào gửi được, nhà xe nào thiếu email hoặc bị khóa.
 - Dùng lại link đang chạy của nhà xe (không làm hỏng link đã mở); email liệt kê số cont được giao (tối đa 60 số).

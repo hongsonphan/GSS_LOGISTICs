@@ -65,6 +65,31 @@ def trips_for(vendor_id=None, metric='all', *, search='', step=''):
     return qs
 
 
+def kpi_snapshot():
+    """Số liệu nhẹ cho thẻ KPI trên Dashboard tổng quan (không dựng cả ma trận nhà xe)."""
+    warn = _warn_days()
+    trips = gss_trips()
+    running = trips.exclude(step_status__in=['READY', 'EMPTY_RETURNED'])
+    alert_qs = trips.filter(metric_filter('alert', warn))
+    overdue = alert_qs.filter(Q(dem_expiry_date__lt=timezone.localdate()) | Q(det_expiry_date__lt=timezone.localdate())).count()
+    allocs = BookingVendorAllocation.objects.filter(is_deleted=False).exclude(status=AllocationStatus.REVOKED)
+    allocated = allocs.aggregate(n=Sum('allocated_containers'))['n'] or 0
+    plates = trips.exclude(vehicle__isnull=True).values('vehicle_id').distinct().count()
+    plates_running = running.exclude(vehicle__isnull=True).values('vehicle_id').distinct().count()
+    vendors = allocs.values('subcontractor_id').distinct().count()
+    drivers = trips.exclude(subcontractor_driver_name='').values('subcontractor_driver_name').distinct().count()
+    try:
+        from apps.depot_yard import service as depot
+        yard = depot.stats()
+    except Exception:
+        yard = None
+    return {'warn_days': warn, 'alert': alert_qs.count(), 'overdue': overdue, 'running': running.count(),
+            'total': trips.count(), 'pending': max(0, allocated - trips.count()),
+            'fleet': {'plates': plates, 'running': plates_running, 'pct': round(100 * plates_running / plates) if plates else 0,
+                      'drivers': drivers, 'vendors': vendors},
+            'yard': yard}
+
+
 def dashboard():
     warn = _warn_days()
     today = timezone.localdate()

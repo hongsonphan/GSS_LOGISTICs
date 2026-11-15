@@ -24,6 +24,7 @@ dashboard/dashboard.js
 dashboard/charts.js
 dashboard/pivot-builder.js
 dashboard/resizers.js
+dashboard/layout-settings.js
 # 3. Điều vận
 dispatch/trip-list.js
 dispatch/trip-detail.js

@@ -25,6 +25,7 @@ function initChartResizer() {
     let isDragging = false;
 
     resizer.addEventListener('mousedown', function(e) {
+        if (typeof dashLayoutMode === 'function' && dashLayoutMode('charts') === 'fixed') return;
         e.preventDefault();
         isDragging = true;
         document.body.style.cursor = 'col-resize';
@@ -90,7 +91,10 @@ function applyChartRatio(ratio) {
     const card2 = document.getElementById('dash-chart-card-2');
     if (!card1 || !card2) return;
 
-    if (window.innerWidth >= 1024) {
+    if (card1.classList.contains('hidden') || card2.classList.contains('hidden')) {
+        card1.style.width = '100%';
+        card2.style.width = '100%';
+    } else if (window.innerWidth >= 1024) {
         card1.style.width = `calc(${ratio}% - 8px)`;
         card2.style.width = `calc(${100 - ratio}% - 8px)`;
     } else {
@@ -127,6 +131,7 @@ function initWidgetResizer() {
     let isDragging = false;
 
     resizer.addEventListener('mousedown', function(e) {
+        if (typeof dashLayoutMode === 'function' && dashLayoutMode('widgets') === 'fixed') return;
         e.preventDefault();
         isDragging = true;
         document.body.style.cursor = 'col-resize';
@@ -182,7 +187,10 @@ function applyWidgetRatio(ratio) {
     const newsCard = document.getElementById('dash-widget-news-card');
     if (!tasksCard || !newsCard) return;
 
-    if (window.innerWidth >= 1024) {
+    if (tasksCard.classList.contains('hidden') || newsCard.classList.contains('hidden')) {
+        tasksCard.style.width = '100%';
+        newsCard.style.width = '100%';
+    } else if (window.innerWidth >= 1024) {
         tasksCard.style.width = `calc(${ratio}% - 8px)`;
         newsCard.style.width = `calc(${100 - ratio}% - 8px)`;
     } else {
