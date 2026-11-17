@@ -3,6 +3,32 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-17 – Chuẩn hóa Màn hình Điều Vận Theo Dõi Nhà Xe: Lộ Trình 1 Hàng, Thao Tác Bác Tài & Xe, Modal Danh Sách Container Thuộc Phiếu Chia
+- **1. Mở rộng cột "Lộ Trình Vận Chuyển" trên 1 dòng duy nhất (Hình 1):**
+  - Khắc phục triệt để tình trạng gãy dòng chật hẹp của tuyến đường 3 điểm: mở rộng cột lộ trình với `min-w-[440px] whitespace-nowrap`, đảm bảo chuỗi cả 3 địa điểm (ví dụ: `CẢNG CÁT LÁI ➔ KHO NHÀ MÁY ĐẮK NÔNG ➔ DEPOT TÂN CẢNG LONG BÌNH`) nằm trọn vẹn, ngay ngắn trên 1 dòng duy nhất.
+  - Thu gọn các cột khác vừa vặn (`w-32` cho Mã chuyến/Cont, `w-36` cho Khách hàng & Booking, `w-36` cho Xe & Tài xế, `min-w-[320px]` cho Ô trạng thái 7 bước hành trình).
+- **2. Tối ưu bảng Danh sách Tài xế (Dòng Bác tài):**
+  - Loại bỏ nút "Màn hình Tài xế" trên từng dòng Bác tài (do đã gắn trực tiếp vào các chuyến xe ở bảng dưới).
+  - Bổ sung 2 nút thao tác chuẩn công thái học:
+    - Nút `[ Xem ]`: Mở modal xem hồ sơ chi tiết Bác tài (Họ tên, SĐT, Nhà xe chủ quản, Phương tiện gán, Chuyến xe đang chạy, Trạng thái hoạt động).
+    - Nút `[ Zalo / Gọi ]`: Mở liên hệ nhanh qua Chat Zalo trực tiếp hoặc sao chép nhanh số điện thoại để Điều vận viên gọi điện.
+- **3. Tối ưu bảng Danh sách Đội xe & Phương tiện:**
+  - Đồng bộ 2 nút thao tác tiện ích:
+    - Nút `[ Xem ]`: Mở modal hồ sơ chi tiết phương tiện (Biển số xe, Loại phương tiện, Hãng sản xuất/Model, Tải trọng cho phép, Bác tài thường lái & SĐT, Nhà xe quản lý, Trạng thái vận hành).
+    - Nút `[ Lịch sử ]`: Mở modal xem toàn bộ danh sách các chuyến xe mà phương tiện này đã tham gia vận chuyển.
+- **4. Đổi mới theo dõi Lệnh Chưa Phân Bổ Xe - Modal Danh sách Container (Hình 2):**
+  - Xác lập đúng vai trò Màn hình Điều Vận theo dõi các lệnh đã chuyển cho Nhà xe (giám sát cont nào đã gán xe chạy, cont nào chưa gán xe chạy).
+  - Loại bỏ hoàn toàn nút "Gán tiếp" (không mở lại màn hình LDD.BK).
+  - Thay bằng nút `[ Xem Cont ]` mở Modal chuyên biệt **"Danh sách Container Phiếu Chia"** (`opts.extraWide`):
+    - Khối tóm tắt: Lệnh/Booking, Tên nhà xe, Tiến độ phân bổ (`X / Y cont`, cảnh báo số cont còn thiếu), nút Mở Cổng Nhà Xe để hỗ trợ thao tác hộ.
+    - Bảng chi tiết từng Container thuộc phiếu:
+      - Container đã gán xe: Badge xanh lá `[ Đã gán xe ]` kèm Biển số xe, Bác tài phụ trách, Mã chuyến và nút `[ Xem chuyến ]`.
+      - Container chưa gán xe: Badge màu cam nổi bật `[ Chưa gán xe (Chờ nhà xe) ]` hiển thị rõ tình trạng để Điều vận viên giám sát chặt chẽ.
+- **5. Kiểm thử & Bản dựng:**
+  - Kiểm thử thị giác Playwright: Chụp ảnh xác thực thành công toàn bộ giao diện, modal container, modal bác tài và modal phương tiện.
+  - QA Verify: Bộ kiểm thử `python scripts/qa.py verify` đạt kết quả tuyệt đối **7/7 PASS**.
+- File: `templates/views/view_vendor_detail.html`, `static/js/src/app/dispatch/vendor-admin.js`, `static/js/app.js`, `static/css/tailwind.css`, `docs/CHANGELOG.md`.
+
 ## 2026-11-17 – Ban hành Nguyên tắc Cốt lõi: Nghiêm cấm Agent tự ý thay đổi mật khẩu và tên người dùng
 - **1. Thiết lập nguyên tắc bất biến cho Agent (Core Safety Rule):**
   - Cập nhật quy tắc toàn cục `C:\Users\Jack\.gemini\config\AGENTS.md` (Mục 5: BẢO VỆ ĐỊNH DANH & BẢO MẬT TÀI KHOẢN).

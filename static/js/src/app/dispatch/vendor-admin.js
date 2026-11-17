@@ -67,7 +67,7 @@ function vaOpenModal(title, bodyHtml, okText, onOk, opts = {}) {
     root.id = 'va-modal-root';
     root.className = 'fixed inset-0 z-[90] bg-black/60 flex items-center justify-center p-4';
     root.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-sm w-full ${opts.wide ? 'max-w-lg' : 'max-w-md'} overflow-hidden border border-slate-200" role="dialog" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-sm w-full ${opts.extraWide ? 'max-w-4xl' : (opts.wide ? 'max-w-2xl' : 'max-w-md')} overflow-hidden border border-slate-200" role="dialog" aria-modal="true">
             <div class="px-5 py-3 bg-gradient-to-r from-teal-800 to-teal-950 text-white flex items-center justify-between">
                 <h3 class="text-sm font-bold font-heading">${vaEsc(title)}</h3>
                 <button type="button" onclick="vaCloseModal()" class="w-7 h-7 rounded-lg hover:bg-white/15 flex items-center justify-center cursor-pointer" title="Đóng"><i class="ph-bold ph-x"></i></button>
@@ -1772,11 +1772,14 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
                             <span class="px-2.5 py-1 rounded-full border text-[11px] font-bold ${stCls}">${vaEsc(status)}</span>
                         </td>
                         <td class="p-3 text-center">
-                            ${tCode ? `
-                                <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs" onclick="viewTripDetail('${vaEsc(tCode)}')" title="Xem chi tiết chuyến gần nhất">
-                                    <i class="ph-bold ph-eye"></i> Xem chuyến
+                            <div class="inline-flex items-center gap-1.5 justify-center">
+                                <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs inline-flex items-center gap-1" onclick="vaViewVehicleDetail('${vaEsc(plate)}', ${v.id})" title="Xem hồ sơ chi tiết phương tiện">
+                                    <i class="ph-bold ph-eye"></i> Xem
                                 </button>
-                            ` : '<span class="text-slate-300">---</span>'}
+                                <button type="button" class="${VA_BTN_GRAY} h-7 px-2 text-xs inline-flex items-center gap-1" onclick="vaViewVehicleTrips('${vaEsc(plate)}', ${v.id})" title="Xem lịch sử các chuyến xe đã vận chuyển">
+                                    <i class="ph-bold ph-clock-counter-clockwise"></i> Lịch sử
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -1825,14 +1828,12 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
                         </td>
                         <td class="p-3 text-center">
                             <div class="inline-flex items-center gap-1.5 justify-center">
-                                ${dLink ? `
-                                    <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs" onclick="vaOpenDriverScreenDirect('${vaEsc(dLink)}', '${vaEsc(tCode)}', 'popup')" title="Mở mô phỏng màn hình di động của Bác tài">
-                                        <i class="ph-bold ph-device-mobile"></i> Màn hình Tài xế
-                                    </button>
-                                    <button type="button" class="${VA_BTN_GRAY} h-7 px-2 text-xs" onclick="vaCopy('${vaEsc(dLink)}', 'Đã sao chép link tài xế.')" title="Sao chép link di động">
-                                        <i class="ph-bold ph-copy"></i>
-                                    </button>
-                                ` : '<span class="text-slate-400 italic">Không có link</span>'}
+                                <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs inline-flex items-center gap-1" onclick="vaViewDriverDetail('${vaEsc(dName)}', '${vaEsc(dPhone)}', ${v.id})" title="Xem hồ sơ chi tiết Bác tài">
+                                    <i class="ph-bold ph-eye"></i> Xem
+                                </button>
+                                <button type="button" class="${VA_BTN_GRAY} h-7 px-2 text-xs inline-flex items-center gap-1" onclick="vaContactDriverDirect('${vaEsc(dPhone)}', '${vaEsc(dName)}')" title="Liên hệ Zalo / Gọi điện thoại">
+                                    <i class="ph-bold ph-chat-teardrop-text"></i> Zalo / Gọi
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -1878,17 +1879,12 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
                         <td class="p-3">${st}</td>
                         <td class="p-3 text-center">
                             <div class="inline-flex items-center gap-1.5 justify-center">
-                                ${l.link ? `
-                                    <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs" onclick="window.open('${vaEsc(l.link)}', '_blank')" title="Mở trực tiếp Phiếu chia container trên Cổng Nhà Xe để gán hộ">
-                                        <i class="ph-bold ph-desktop"></i> Màn hình Vendor
-                                    </button>
-                                ` : ''}
-                                <button type="button" class="${VA_BTN_GRAY} h-7 px-2 text-xs" onclick="openDispatchOrderPage(${l.booking_id})" title="Mở trang lệnh để gán tiếp xe/tài">
-                                    <i class="ph-bold ph-plus-circle"></i> Gán tiếp
+                                <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs inline-flex items-center gap-1" onclick="vaViewUnallocatedContainersModal(${l.id})" title="Xem danh sách chi tiết các container thuộc phiếu chia này">
+                                    <i class="ph-bold ph-list-bullets"></i> Xem Cont
                                 </button>
                                 ${l.link ? `
-                                    <button type="button" class="${VA_BTN_GRAY} h-7 px-2 text-xs" onclick="vaCopy('${vaEsc(l.link)}', 'Đã sao chép link phiếu chia.')" title="Sao chép link">
-                                        <i class="ph-bold ph-copy"></i>
+                                    <button type="button" class="${VA_BTN_GRAY} h-7 px-2 text-xs inline-flex items-center gap-1" onclick="window.open('${vaEsc(l.link)}', '_blank')" title="Mở trực tiếp Cổng Nhà Xe của phiếu chia này để thao tác hộ">
+                                        <i class="ph-bold ph-desktop"></i> Màn hình Vendor
                                     </button>
                                 ` : ''}
                             </div>
@@ -1913,26 +1909,28 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
         if (allocatedTrips.length) {
             allocTripsBody.innerHTML = allocatedTrips.map(t => {
                 const routeParts = [t.pickup_place || 'Cảng nhận', t.delivery_place || 'Kho giao', t.empty_return_place || 'Depot rỗng'].filter(Boolean);
-                const routeStr = routeParts.map(p => vaEsc(p)).join(' <span class="text-teal-600 font-bold">➔</span> ');
+                const routeStr = routeParts.map(p => vaEsc(p)).join(' <span class="text-teal-600 font-bold mx-1">➔</span> ');
                 return `
                     <tr class="hover:bg-teal-50/20 transition-colors">
-                        <td class="p-3">
+                        <td class="p-3 shrink-0">
                             <div class="font-mono font-bold text-teal-900">${vaEsc(t.trip_code)}</div>
                             ${t.container_number ? `<div class="font-mono text-slate-700 text-xs mt-0.5"><span class="text-slate-400">Cont:</span> <b>${vaEsc(t.container_number)}</b></div>` : ''}
                         </td>
-                        <td class="p-3">
+                        <td class="p-3 shrink-0">
                             <div class="font-bold text-slate-900 text-xs">${vaEsc(t.customer || 'Khách hàng')}</div>
                             <div class="font-mono text-slate-500 text-[11px] mt-0.5">${vaEsc(t.booking_code || '---')}</div>
                         </td>
-                        <td class="p-3">
+                        <td class="p-3 shrink-0">
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 ${t.plate ? `<span class="bg-slate-100 font-mono font-bold text-slate-800 px-1.5 py-0.5 rounded border border-slate-200 text-xs">${vaEsc(t.plate)}</span>` : ''}
                                 <span class="font-bold text-slate-800 text-xs">${vaEsc(t.driver_name || 'Bác tài')}</span>
                             </div>
                             ${t.driver_phone ? `<div class="font-mono text-slate-500 text-[11px] mt-0.5">${vaEsc(t.driver_phone)}</div>` : ''}
                         </td>
-                        <td class="p-3 text-xs text-slate-700 leading-relaxed max-w-[240px]">
-                            ${routeStr}
+                        <td class="p-3 text-xs text-slate-800 font-medium whitespace-nowrap min-w-[440px]">
+                            <div class="flex items-center gap-1 whitespace-nowrap">
+                                ${routeStr}
+                            </div>
                         </td>
                         <td class="p-3 text-center">
                             ${vaRender7StepJourney(t.step_status, t.timestamps)}
@@ -1999,3 +1997,356 @@ function vaToggleShowTokenInDetail(plainToken) {
     }
 }
 window.vaToggleShowTokenInDetail = vaToggleShowTokenInDetail;
+
+
+// ---------- HÀM HỖ TRỢ XEM CHI TIẾT XE, TÀI XẾ & LIST CONTAINER THEO LỆNH ----------
+
+function vaViewVehicleDetail(plate, vendorId) {
+    const v = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+    const vList = (v && v.vehicles) || [];
+    const item = vList.find(x => (typeof x === 'object' ? x.plate : x) === plate) || { plate };
+    const plateStr = typeof item === 'object' ? (item.plate || plate) : plate;
+    const vType = typeof item === 'object' ? (item.vehicle_type || 'Đầu kéo Container') : 'Đầu kéo Container';
+    const brand = typeof item === 'object' ? (item.brand || '---') : '---';
+    const payload = typeof item === 'object' ? (item.payload || '---') : '---';
+    const dName = typeof item === 'object' ? (item.driver_name || '---') : '---';
+    const dPhone = typeof item === 'object' ? (item.driver_phone || '---') : '---';
+    const tCode = typeof item === 'object' ? (item.latest_trip_code || '') : '';
+    const status = typeof item === 'object' ? (item.status || 'Sẵn sàng') : 'Sẵn sàng';
+    const tripsCount = typeof item === 'object' ? (item.trips_count || 0) : 0;
+    const vendorName = v ? (v.short_name || v.name) : 'Nhà xe';
+
+    const body = `
+        <div class="space-y-4 text-xs">
+            <div class="p-4 bg-teal-50/70 border border-teal-200 rounded-2xl flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-teal-800 text-white flex items-center justify-center text-2xl font-bold shadow-2xs">
+                        <i class="ph-bold ph-truck"></i>
+                    </div>
+                    <div>
+                        <div class="font-mono font-black text-slate-900 text-base tracking-wide">${vaEsc(plateStr)}</div>
+                        <div class="font-semibold text-teal-800 text-xs">${vaEsc(vType)}</div>
+                    </div>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-white text-teal-900 border border-teal-200 shadow-2xs">${vaEsc(status)}</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Nhà xe quản lý:</div>
+                    <div class="font-bold text-slate-900 text-xs">${vaEsc(vendorName)}</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Hãng sản xuất / Model:</div>
+                    <div class="font-bold text-slate-900 text-xs">${vaEsc(brand)}</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Tải trọng cho phép:</div>
+                    <div class="font-bold text-slate-900 text-xs">${vaEsc(payload)}</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Tổng số chuyến vận chuyển:</div>
+                    <div class="font-bold text-teal-800 text-xs font-mono">${tripsCount} chuyến</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Bác tài thường lái:</div>
+                    <div class="font-bold text-slate-900 text-xs">${vaEsc(dName)}</div>
+                    ${dPhone !== '---' ? `<div class="font-mono text-slate-500 text-[11px] mt-0.5">${vaEsc(dPhone)}</div>` : ''}
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Chuyến xe gần nhất:</div>
+                    ${tCode ? `<button type="button" class="font-mono font-bold text-teal-800 hover:underline cursor-pointer text-xs" onclick="vaCloseModal(); viewTripDetail('${vaEsc(tCode)}')">${vaEsc(tCode)}</button>` : '<span class="text-slate-400 italic">Chưa có chuyến</span>'}
+                </div>
+            </div>
+        </div>
+    `;
+
+    vaOpenModal(`Hồ sơ Phương tiện: ${plateStr}`, body, null, null, { wide: true });
+}
+
+function vaViewVehicleTrips(plate, vendorId) {
+    const v = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+    const trips = ((v && v.allocated_trips) || (vaData && vaData.driver_links) || []).filter(t => (t.plate || '') === plate);
+    
+    let rowsHtml = '';
+    if (trips.length) {
+        rowsHtml = trips.map(t => `
+            <tr class="hover:bg-teal-50/20">
+                <td class="p-2.5 font-mono font-bold text-teal-900"><button type="button" class="hover:underline cursor-pointer" onclick="vaCloseModal(); viewTripDetail('${vaEsc(t.trip_code)}')">${vaEsc(t.trip_code)}</button></td>
+                <td class="p-2.5 font-mono text-slate-800">${vaEsc(t.container_number || '---')}</td>
+                <td class="p-2.5 text-slate-800 font-semibold">${vaEsc(t.customer || '---')}</td>
+                <td class="p-2.5 font-medium text-slate-800">${vaEsc(t.driver_name || 'Bác tài')}</td>
+                <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">${vaEsc(t.step_label || 'Đang vận hành')}</span></td>
+                <td class="p-2.5 text-center">
+                    <button type="button" class="${VA_BTN_TEAL} text-xs py-1" onclick="vaCloseModal(); viewTripDetail('${vaEsc(t.trip_code)}')"><i class="ph-bold ph-eye"></i> Xem</button>
+                </td>
+            </tr>
+        `).join('');
+    } else {
+        rowsHtml = '<tr><td colspan="6" class="p-5 text-center text-slate-400">Chưa ghi nhận lịch sử chuyến xe nào của phương tiện này.</td></tr>';
+    }
+
+    const body = `
+        <div class="space-y-3 text-xs">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                <div class="font-bold text-slate-800">Phương tiện: <span class="font-mono text-teal-900">${vaEsc(plate)}</span></div>
+                <div class="text-xs font-semibold text-slate-500">${trips.length} chuyến xe</div>
+            </div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
+                        <tr>
+                            <th class="p-2.5">Mã Chuyến</th>
+                            <th class="p-2.5">Số Container</th>
+                            <th class="p-2.5">Khách Hàng</th>
+                            <th class="p-2.5">Bác Tài Lái</th>
+                            <th class="p-2.5">Trạng Thái</th>
+                            <th class="p-2.5 text-center">Chi Tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white font-medium">
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    vaOpenModal(`Lịch sử Chuyến xe: ${plate}`, body, null, null, { wide: true });
+}
+
+function vaViewDriverDetail(name, phone, vendorId) {
+    const v = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+    const dList = (v && v.drivers) || [];
+    const dItem = dList.find(x => (x.driver_name || x.name) === name && (x.driver_phone || x.phone) === phone) || { name, phone };
+    const dName = dItem.driver_name || dItem.name || name;
+    const dPhone = dItem.driver_phone || dItem.phone || phone;
+    const tCode = dItem.trip_code || dItem.latest_trip_code || '';
+    const vPlate = dItem.plate || dItem.latest_plate || '';
+    const status = dItem.step_label || dItem.latest_status || 'Sẵn sàng';
+    const dLink = dItem.link || '';
+    const vendorName = v ? (v.short_name || v.name) : 'Nhà xe';
+    const cleanPhone = (dPhone || '').replace(/\D/g, '');
+
+    const body = `
+        <div class="space-y-4 text-xs">
+            <div class="p-4 bg-teal-50/70 border border-teal-200 rounded-2xl flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-teal-800 text-white flex items-center justify-center text-2xl font-bold shadow-2xs">
+                        <i class="ph-bold ph-steering-wheel"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-slate-900 text-base">${vaEsc(dName)}</div>
+                        <div class="font-mono font-semibold text-teal-800 text-xs">${vaEsc(dPhone)}</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    ${cleanPhone ? `
+                        <button type="button" class="h-8 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="window.open('https://zalo.me/${cleanPhone}', '_blank')">
+                            <i class="ph-bold ph-chat-teardrop-text"></i> Chat Zalo
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Nhà xe chủ quản:</div>
+                    <div class="font-bold text-slate-900 text-xs">${vaEsc(vendorName)}</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Số điện thoại liên lạc:</div>
+                    <div class="font-mono font-bold text-slate-900 text-xs">${vaEsc(dPhone)}</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Đầu kéo / Phương tiện gán:</div>
+                    <div class="font-mono font-bold text-teal-800 text-xs">${vaEsc(vPlate || 'Chưa gán xe')}</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Trạng thái công việc:</div>
+                    <div class="font-bold text-slate-800 text-xs">${vaEsc(status)}</div>
+                </div>
+                <div class="col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-semibold mb-0.5">Chuyến xe phụ trách gần nhất:</div>
+                    ${tCode ? `
+                        <div class="flex items-center justify-between mt-1">
+                            <button type="button" class="font-mono font-bold text-teal-800 hover:underline cursor-pointer text-xs" onclick="vaCloseModal(); viewTripDetail('${vaEsc(tCode)}')">${vaEsc(tCode)}</button>
+                            ${dLink ? `<button type="button" class="${VA_BTN_TEAL} text-xs py-1" onclick="vaOpenDriverScreenDirect('${vaEsc(dLink)}', '${vaEsc(tCode)}', 'popup')"><i class="ph-bold ph-device-mobile"></i> Màn hình Tài xế</button>` : ''}
+                        </div>
+                    ` : '<span class="text-slate-400 italic">Chưa có chuyến được gán</span>'}
+                </div>
+            </div>
+        </div>
+    `;
+
+    vaOpenModal(`Hồ sơ Bác tài: ${dName}`, body, null, null, { wide: true });
+}
+
+function vaContactDriverDirect(phone, name) {
+    const cleanPhone = (phone || '').replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone === '---') {
+        showToast('warning', `Bác tài ${name || ''} chưa có số điện thoại liên lạc.`);
+        return;
+    }
+    const body = `
+        <div class="space-y-4 text-xs">
+            <p class="text-slate-600">Liên hệ nhanh với Bác tài <strong>${vaEsc(name || 'Bác tài')}</strong> qua Số điện thoại hoặc Zalo:</p>
+            <div class="p-3 bg-slate-100 rounded-xl font-mono text-base font-bold text-slate-900 text-center select-all border border-slate-300">
+                ${vaEsc(phone)}
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button type="button" class="h-9 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs" onclick="window.open('https://zalo.me/${cleanPhone}', '_blank')">
+                    <i class="ph-bold ph-chat-teardrop-text text-sm"></i> Mở Chat Zalo
+                </button>
+                <button type="button" class="h-9 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs" onclick="vaCopy('${cleanPhone}', 'Đã sao chép số điện thoại.')">
+                    <i class="ph-bold ph-copy text-sm"></i> Sao chép SĐT
+                </button>
+            </div>
+        </div>
+    `;
+    vaOpenModal(`Liên hệ: ${name}`, body, null, null);
+}
+
+async function vaViewUnallocatedContainersModal(allocId) {
+    const l = vaFindAlloc(allocId);
+    const bookingCode = l ? (l.booking_code || '---') : '---';
+    const subName = l ? (l.subcontractor || 'Nhà xe') : 'Nhà xe';
+    
+    // Tải chi tiết các container thuộc allocation qua API /api/vendor-allocations/<id>/
+    const { ok, out } = await vaApi(`/api/vendor-allocations/${allocId}/`);
+    const allocData = ok && out && out.data ? out.data : (l || {});
+    const rows = allocData.rows || [];
+    const filled = allocData.filled || 0;
+    const total = allocData.allocated_containers || rows.length || 0;
+    const remaining = Math.max(0, total - filled);
+    const vendorLink = allocData.vendor_link || (l && l.link) || '';
+
+    let rowsHtml = '';
+    if (rows.length) {
+        rowsHtml = rows.map(r => {
+            const hasTrip = !!r.trip_id;
+            const cNum = r.container_number || '';
+            const seal = r.seal_number || '';
+            const plate = r.license_plate || '';
+            const dName = r.driver_name || '';
+            const dPhone = r.driver_phone || '';
+            const tCode = r.trip_code || '';
+            const statusLabel = r.step_status || 'Đang chờ điều xe';
+
+            let stBadge = '';
+            if (hasTrip) {
+                stBadge = `<div class="inline-flex items-center gap-1.5 text-xs text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <i class="ph-bold ph-check-circle"></i> Đã gán xe
+                </div>`;
+            } else {
+                stBadge = `<div class="inline-flex items-center gap-1.5 text-xs text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                    <i class="ph-bold ph-clock-countdown"></i> Chưa gán xe (Chờ nhà xe)
+                </div>`;
+            }
+
+            return `
+                <tr class="hover:bg-slate-50/80 transition-colors ${hasTrip ? '' : 'bg-amber-50/20'}">
+                    <td class="p-3 font-mono font-bold text-slate-500 text-center w-12">${r.line_no}</td>
+                    <td class="p-3">
+                        <div class="font-mono font-bold text-slate-900 text-xs">${cNum ? vaEsc(cNum) : '<span class="text-slate-400 italic">Theo lệnh B/L</span>'}</div>
+                        ${seal ? `<div class="font-mono text-slate-400 text-[11px] mt-0.5">Seal: ${vaEsc(seal)}</div>` : ''}
+                    </td>
+                    <td class="p-3">
+                        ${stBadge}
+                    </td>
+                    <td class="p-3">
+                        ${hasTrip ? `
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                ${plate ? `<span class="bg-slate-100 font-mono font-bold text-slate-800 px-1.5 py-0.5 rounded border border-slate-200 text-xs">${vaEsc(plate)}</span>` : ''}
+                                <span class="font-bold text-slate-800 text-xs">${vaEsc(dName || 'Bác tài')}</span>
+                            </div>
+                            ${dPhone ? `<div class="font-mono text-slate-500 text-[11px] mt-0.5">${vaEsc(dPhone)}</div>` : ''}
+                        ` : '<span class="text-amber-800 italic text-xs">Chưa có thông tin xe & tài xế</span>'}
+                    </td>
+                    <td class="p-3">
+                        ${hasTrip && tCode ? `
+                            <button type="button" class="font-mono font-bold text-teal-800 hover:underline cursor-pointer text-xs" onclick="vaCloseModal(); viewTripDetail('${vaEsc(tCode)}')">${vaEsc(tCode)}</button>
+                        ` : '<span class="text-slate-400">---</span>'}
+                    </td>
+                    <td class="p-3 text-center">
+                        ${hasTrip && tCode ? `
+                            <button type="button" class="${VA_BTN_TEAL} text-xs py-1" onclick="vaCloseModal(); viewTripDetail('${vaEsc(tCode)}')">
+                                <i class="ph-bold ph-eye"></i> Xem chuyến
+                            </button>
+                        ` : `
+                            <span class="text-[11px] text-slate-400 font-medium">Chờ nhà xe</span>
+                        `}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } else {
+        // Trường hợp chưa có chi tiết dòng container cụ thể
+        rowsHtml = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-medium">Phiếu chia ${total} container cho nhà xe ${vaEsc(subName)}. Hiện đã gán ${filled} cont, còn thiếu ${remaining} cont chưa được phân bổ xe.</td></tr>`;
+    }
+
+    const body = `
+        <div class="space-y-4 text-xs">
+            <!-- Header tóm tắt tiến độ -->
+            <div class="p-4 bg-gradient-to-r from-amber-50/80 via-white to-teal-50/80 border border-amber-200 rounded-2xl flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-800 text-sm">Lệnh / Booking:</span>
+                        <span class="font-mono font-bold text-teal-900 text-sm">${vaEsc(bookingCode)}</span>
+                        <span class="text-slate-400">|</span>
+                        <span class="font-bold text-slate-800 text-sm">Nhà xe:</span>
+                        <span class="font-bold text-slate-900 text-sm">${vaEsc(subName)}</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">
+                        Theo dõi tiến độ nhận lệnh và gán phương tiện của nhà xe cho từng container trong phiếu chia.
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-700">Tiến độ phân bổ:</div>
+                        <div class="text-xs font-bold text-teal-800">${filled} / ${total} cont <span class="text-amber-700">(${remaining > 0 ? 'Còn thiếu ' + remaining + ' cont' : 'Đã đủ xe'})</span></div>
+                    </div>
+                    ${vendorLink ? `
+                        <button type="button" class="h-8 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="window.open('${vaEsc(vendorLink)}', '_blank')" title="Mở Cổng Nhà Xe để gán hộ hoặc hỗ trợ">
+                            <i class="ph-bold ph-desktop"></i> Cổng Nhà Xe
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+
+            <!-- Bảng danh sách các container -->
+            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-[50vh] overflow-y-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200 sticky top-0 z-10">
+                        <tr>
+                            <th class="p-3 text-center w-12">STT</th>
+                            <th class="p-3">Số Container & Seal</th>
+                            <th class="p-3">Tình Trạng Phân Bổ</th>
+                            <th class="p-3">Xe & Bác Tài Phụ Trách</th>
+                            <th class="p-3">Mã Chuyến</th>
+                            <th class="p-3 text-center w-28">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white font-medium">
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                <div class="flex items-center gap-2">
+                    <i class="ph-bold ph-info text-amber-700 text-sm"></i>
+                    <span>Màn hình theo dõi nội bộ của Điều Vận GSS. Khi nhà xe cập nhật xe/tài trên Cổng Nhà Xe, dữ liệu sẽ tự động đồng bộ.</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    vaOpenModal(`Danh sách Container Phiếu Chia: ${bookingCode}`, body, null, null, { extraWide: true });
+}
+
+window.vaViewVehicleDetail = vaViewVehicleDetail;
+window.vaViewVehicleTrips = vaViewVehicleTrips;
+window.vaViewDriverDetail = vaViewDriverDetail;
+window.vaContactDriverDirect = vaContactDriverDirect;
+window.vaViewUnallocatedContainersModal = vaViewUnallocatedContainersModal;
