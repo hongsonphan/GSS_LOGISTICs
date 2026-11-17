@@ -13238,7 +13238,9 @@ function vaRenderAccounts(vendor) {
             st = vaState('text-amber-700', 'ph-user-minus', 'Chưa cấp tài khoản');
             acctCell = '<span class="text-slate-400">—</span>';
             tokenCell = '<span class="text-slate-400">—</span>';
-            actions = `<button type="button" class="${VA_BTN_TEAL}" onclick="vaAccountModal(${v.id})"><i class="ph ph-user-plus"></i> Cấp tài khoản</button>`;
+            actions = `
+                <button type="button" class="${VA_BTN_TEAL}" onclick="vaAccountModal(${v.id})"><i class="ph ph-user-plus"></i> Cấp tài khoản</button>
+                <button type="button" class="${VA_BTN_GRAY}" onclick="vaOpenVendorScreenByVendorId(${v.id})" title="Mở Cổng Nhà Xe để xem và thao tác hộ"><i class="ph ph-desktop"></i> Màn hình Vendor</button>`;
         } else {
             st = a.locked ? vaState('text-rose-700', 'ph-lock', 'Đang bị khóa (sai quá nhiều lần)')
                 : a.is_active ? vaState('text-emerald-700', 'ph-check-circle', 'Đang hoạt động')
@@ -13274,6 +13276,7 @@ function vaRenderAccounts(vendor) {
             tokenCell = `${tokDisplay}${expDisplay}`;
 
             actions = `
+                <button type="button" class="${VA_BTN_TEAL}" onclick="vaOpenVendorScreenByVendorId(${v.id})" title="Mở trực tiếp Cổng Nhà Xe để xem và thao tác hộ"><i class="ph ph-desktop"></i> Màn hình Vendor</button>
                 <button type="button" class="${VA_BTN_TEAL}" onclick="vaIssueTokenModal(${v.id})" title="Chủ động đặt mã token và hạn dùng"><i class="ph ph-key"></i> Đặt Token</button>
                 <button type="button" class="${VA_BTN_AMBER}" onclick="vaAccountModal(${v.id})" title="Sửa tên đăng nhập, mật khẩu, thời gian tự đăng xuất"><i class="ph ph-pencil-simple"></i> Sửa</button>
                 <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareVendorZaloModal(${v.id})" title="Xem mẫu tin nhắn gửi nhà xe qua Zalo"><i class="ph ph-chat-teardrop-text"></i> Zalo</button>
@@ -13306,6 +13309,7 @@ function vaRenderLinks(vendor) {
             <td class="p-2.5">${vaExpiry(l.expires_at, l.expired)}</td>
             <td class="p-2.5 text-xs text-slate-600">${l.last_opened_at ? vaFmt(l.last_opened_at) : 'Chưa mở'}</td>
             <td class="p-2.5 text-center"><div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                <button type="button" class="${VA_BTN_TEAL}" onclick="window.open('${vaEsc(l.link)}', '_blank')" title="Mở trực tiếp Cổng Nhà Xe của phiếu chia này để xem và thao tác hộ"><i class="ph ph-desktop"></i> Màn hình Vendor</button>
                 <button type="button" class="${VA_BTN_GRAY}" onclick="vaCopyAlloc(${l.id})"><i class="ph ph-copy"></i> Sao chép</button>
                 <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareAllocZalo(${l.id})" title="Sao chép tin nhắn Zalo gửi Nhà xe"><i class="ph ph-chat-teardrop-text"></i> Zalo</button>
                 <button type="button" class="${VA_BTN_TEAL}" onclick="vaRegenAlloc(${l.id})" title="Cấp link mới và đặt hạn, link cũ mất hiệu lực"><i class="ph ph-arrows-clockwise"></i> Cấp lại / đặt hạn</button>
@@ -13328,6 +13332,7 @@ function vaRenderDrivers(vendor) {
             <td class="p-2.5">${st}</td>
             <td class="p-2.5">${vaExpiry(d.expires_at, d.state !== 'valid')}</td>
             <td class="p-2.5 text-center"><div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                <button type="button" class="${VA_BTN_TEAL}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaOpenDriverScreenDirect('${vaEsc(d.link)}', '${vaEsc(d.trip_code)}')" title="Mở trực tiếp giao diện Bác tài để xem, hướng dẫn hoặc thao tác hộ"><i class="ph ph-device-mobile"></i> Mở giao diện Tài xế</button>
                 <button type="button" class="${VA_BTN_GRAY}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaCopyDriver(${d.trip_id})"><i class="ph ph-copy"></i> Sao chép</button>
                 <button type="button" class="${VA_BTN_GRAY}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaShareDriverZalo(${d.trip_id})" title="Sao chép tin nhắn Zalo điều lệnh gửi Bác tài"><i class="ph ph-chat-teardrop-text"></i> Zalo</button>
                 <button type="button" class="${VA_BTN_AMBER}" onclick="vaDriverExpiry(${d.trip_id})" title="Đặt hạn dùng, giữ nguyên link"><i class="ph ph-clock-countdown"></i> Đặt hạn</button>
@@ -13714,7 +13719,275 @@ window.vaIssueTokenModal = vaIssueTokenModal;
 window.vaShowTokenResult = vaShowTokenResult;
 window.vaShareVendorZaloModal = vaShareVendorZaloModal;
 window.vaShareAllocZalo = vaShareAllocZalo;
+
+// =============================================================
+// MỞ GIAO DIỆN VENDOR & TÀI XẾ (XEM & HƯỚNG DẪN / THAO TÁC HỘ)
+// =============================================================
+
+function vaOpenDriverScreenDirect(url, tripCode, mode = 'popup') {
+    if (!url) {
+        if (typeof showToast === 'function') showToast('warning', 'Không tìm thấy liên kết cho tài xế của chuyến này.');
+        return null;
+    }
+    if (mode === 'tab') {
+        return window.open(url, '_blank');
+    }
+    // Mở popup mô phỏng kích thước điện thoại di động (440x880) để Điều vận thao tác hoặc hướng dẫn chuẩn theo màn hình bác tài
+    const w = 440;
+    const h = 880;
+    const left = Math.max(0, Math.floor((window.screen.width - w) / 2));
+    const top = Math.max(0, Math.floor((window.screen.height - h) / 2));
+    const win = window.open(url, `DriverMobile_${(tripCode || 'Trip').replace(/[^a-zA-Z0-9_]/g, '_')}`, `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,resizable=yes`);
+    if (win) {
+        if (typeof showToast === 'function') showToast('info', `Đang mở giao diện điện thoại của Bác tài (${tripCode || 'Chuyến'}).`);
+    } else {
+        window.open(url, '_blank');
+    }
+    return win;
+}
+
+function vaOpenVendorScreenByVendorId(vendorId) {
+    if (!vaData || !vaData.vendors) {
+        window.open('/vendor/', '_blank');
+        return;
+    }
+    const v = vaData.vendors.find(x => x.id === vendorId);
+    if (!v) {
+        window.open('/vendor/', '_blank');
+        return;
+    }
+    // 1. Ưu tiên Magic Link tự điền Tên đăng nhập và Token
+    if (v.account && v.account.magic_link) {
+        window.open(v.account.magic_link, '_blank');
+        if (typeof showToast === 'function') showToast('success', `Đang mở Cổng Nhà Xe ${v.short_name} (đã điền sẵn tài khoản & token).`);
+        return;
+    }
+    // 2. Nếu có link chia cont hiệu lực
+    const alloc = (vaData.links || []).find(x => x.subcontractor_id === vendorId && x.link);
+    if (alloc && alloc.link) {
+        window.open(alloc.link, '_blank');
+        if (typeof showToast === 'function') showToast('success', `Đang mở Phiếu chia cont ${alloc.booking_code} của ${v.short_name}.`);
+        return;
+    }
+    // 3. Mở Cổng chung với tham số tài khoản
+    if (v.account && v.account.username) {
+        window.open(`/vendor/login/?u=${encodeURIComponent(v.account.username)}`, '_blank');
+        if (typeof showToast === 'function') showToast('info', `Đang mở Cổng Nhà Xe ${v.short_name}.`);
+        return;
+    }
+    // 4. Mở /vendor/ chung
+    window.open('/vendor/', '_blank');
+    if (typeof showToast === 'function') showToast('info', `Nhà xe ${v.short_name} chưa có tài khoản. Đang mở Cổng Nhà Xe chung /vendor/.`);
+}
+
+function vaQuickOpenVendorScreen() {
+    if (!vaData) {
+        window.open('/vendor/', '_blank');
+        return;
+    }
+    const sel = document.getElementById('va-filter-vendor');
+    const selectedVendorId = sel && sel.value ? parseInt(sel.value) : null;
+    if (selectedVendorId) {
+        vaOpenVendorScreenByVendorId(selectedVendorId);
+        return;
+    }
+    vaOpenVendorChooserModal();
+}
+
+function vaRenderVendorChooserRows(vendors) {
+    if (!vendors || !vendors.length) {
+        return '<div class="p-6 text-center text-slate-400">Không tìm thấy nhà xe nào.</div>';
+    }
+    return vendors.map(v => {
+        const a = v.account;
+        const hasAcct = a && a.is_active;
+        const plainTok = a && a.plain_token ? a.plain_token : '';
+        const magic = a && a.magic_link ? a.magic_link : '';
+        return `
+            <div class="p-3 flex items-center justify-between gap-3 hover:bg-teal-50/40 transition-colors va-vendor-chooser-item" data-search="${vaEsc((v.short_name + ' ' + v.name + ' ' + (v.code || '')).toLowerCase())}">
+                <div class="min-w-0 flex-1">
+                    <div class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                        <span>${vaEsc(v.short_name)}</span>
+                        ${v.code ? `<span class="font-mono text-[10px] text-slate-500 bg-slate-100 px-1 py-0.5 rounded">(${vaEsc(v.code)})</span>` : ''}
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                        ${hasAcct ? `<span class="text-emerald-700 font-semibold flex items-center gap-1"><i class="ph ph-check-circle text-xs"></i> Tài khoản: <b class="font-mono">${vaEsc(a.username)}</b></span>` : '<span class="text-amber-700 font-medium">Chưa cấp tài khoản</span>'}
+                        <span>·</span>
+                        <span>${v.links_valid} link hiệu lực</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" class="${VA_BTN_TEAL} h-8 px-2.5" onclick="vaOpenVendorScreenByVendorId(${v.id})" title="Mở trực tiếp Cổng Nhà Xe để xem và thao tác hộ">
+                        <i class="ph ph-arrow-square-out"></i> Mở Màn hình Vendor
+                    </button>
+                    ${magic ? `<button type="button" class="${VA_BTN_GRAY} h-8 px-2" onclick="vaCopy('${vaEsc(magic)}', 'Đã sao chép Magic Link.')" title="Sao chép Magic Link"><i class="ph ph-link"></i></button>` : ''}
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function vaFilterVendorChooserModal(query) {
+    const q = (query || '').trim().toLowerCase();
+    const items = document.querySelectorAll('.va-vendor-chooser-item');
+    items.forEach(el => {
+        const text = el.getAttribute('data-search') || '';
+        el.style.display = (!q || text.includes(q)) ? 'flex' : 'none';
+    });
+}
+
+function vaOpenVendorChooserModal() {
+    if (!vaData || !vaData.vendors) {
+        window.open('/vendor/', '_blank');
+        return;
+    }
+    const vendors = vaData.vendors || [];
+    const body = `
+        <div class="space-y-3.5 text-xs">
+            <div class="p-3 bg-teal-50 border border-teal-200 rounded-xl text-teal-900 flex items-start gap-2.5">
+                <i class="ph ph-desktop text-xl text-teal-700 shrink-0 mt-0.5"></i>
+                <div class="leading-relaxed">
+                    <strong class="font-bold">Màn hình Cổng Nhà Xe Đối Tác (Vendor Portal):</strong>
+                    Mở giao diện làm việc trực tiếp của nhà xe để xem đúng thông tin đối tác nhìn thấy, hướng dẫn thao tác hoặc khai báo / gán xe / đổi tài xế hộ đối tác.
+                </div>
+            </div>
+
+            <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
+                <div>
+                    <div class="font-bold text-slate-800 text-xs flex items-center gap-1.5"><i class="ph ph-globe text-teal-700"></i> Cổng Nhà Xe Chung (/vendor/)</div>
+                    <div class="text-[11px] text-slate-500">Trang chủ đối tác, tự nhập mã Token hoặc mã phiếu chia cont</div>
+                </div>
+                <button type="button" class="${VA_BTN_TEAL} h-8 px-3 shrink-0" onclick="window.open('/vendor/', '_blank')">
+                    <i class="ph ph-arrow-square-out"></i> Mở /vendor/
+                </button>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Tìm kiếm Nhà xe cần xem hoặc thao tác hộ:</label>
+                <div class="relative">
+                    <input id="va-vendor-modal-search" type="text" placeholder="Tìm tên nhà xe, mã nhà xe..." oninput="vaFilterVendorChooserModal(this.value)" class="w-full h-9 pl-8 pr-3 rounded-xl border border-slate-300 text-xs font-semibold focus:border-teal-600 outline-none">
+                    <i class="ph ph-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-sm"></i>
+                </div>
+            </div>
+
+            <div id="va-vendor-chooser-list" class="max-h-72 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl bg-white">
+                ${vaRenderVendorChooserRows(vendors)}
+            </div>
+        </div>`;
+
+    vaOpenModal('Màn hình Vendor - Xem & Hướng dẫn / Thao tác hộ', body, null, null, { wide: true });
+}
+
+function vaQuickOpenDriverScreen() {
+    if (!vaData || !vaData.driver_links) {
+        if (typeof showToast === 'function') showToast('warning', 'Chưa tải được dữ liệu link tài xế.');
+        return;
+    }
+    vaOpenDriverChooserModal();
+}
+
+function vaRenderDriverChooserRows(trips) {
+    if (!trips || !trips.length) {
+        return '<div class="p-8 text-center text-slate-400 font-medium">Chưa có chuyến xe nào của nhà xe đang chạy.</div>';
+    }
+    return trips.map(d => {
+        const isValid = d.state === 'valid';
+        const stCls = isValid ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200';
+        const stText = isValid ? 'Hiệu lực' : 'Hết hạn';
+        const searchStr = `${d.trip_code} ${d.container_number} ${d.driver_name} ${d.driver_phone} ${d.plate} ${d.vendor} ${d.step_label}`.toLowerCase();
+        return `
+            <div class="p-3 flex items-center justify-between gap-3 hover:bg-indigo-50/40 transition-colors va-driver-chooser-item" data-search="${vaEsc(searchStr)}" data-valid="${isValid ? '1' : '0'}">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-mono font-bold text-indigo-950 text-xs">${vaEsc(d.trip_code)}</span>
+                        ${d.container_number ? `<span class="font-mono font-bold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">${vaEsc(d.container_number)}</span>` : '<span class="text-slate-400 text-[11px]">(chưa có cont)</span>'}
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${stCls}">${stText}</span>
+                    </div>
+                    <div class="text-[11px] text-slate-700 mt-1 flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold text-slate-900"><i class="ph ph-user text-xs"></i> ${vaEsc(d.driver_name || 'Chưa gán tài')}</span>
+                        ${d.driver_phone ? `<span class="font-mono text-slate-600">${vaEsc(d.driver_phone)}</span>` : ''}
+                        ${d.plate ? `<span class="font-mono text-slate-600 bg-slate-50 px-1 rounded border border-slate-200">Xe: ${vaEsc(d.plate)}</span>` : ''}
+                        <span class="text-slate-500">· Nhà xe: <b>${vaEsc(d.vendor)}</b></span>
+                    </div>
+                    <div class="text-[11px] text-teal-800 font-semibold mt-0.5 flex items-center gap-1">
+                        <i class="ph ph-navigation-arrow text-xs"></i> Bước: ${vaEsc(d.step_label || d.step_status)}
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                    <button type="button" class="${VA_BTN_TEAL} h-8 px-2.5" ${isValid ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaOpenDriverScreenDirect('${vaEsc(d.link)}', '${vaEsc(d.trip_code)}', 'popup')" title="Mở dạng cửa sổ điện thoại di động (440x880) để thao tác hoặc hướng dẫn chuẩn">
+                        <i class="ph ph-device-mobile"></i> Màn hình Mobile
+                    </button>
+                    <button type="button" class="${VA_BTN_GRAY} h-8 px-2" ${isValid ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaOpenDriverScreenDirect('${vaEsc(d.link)}', '${vaEsc(d.trip_code)}', 'tab')" title="Mở trong tab mới">
+                        <i class="ph ph-arrow-square-out"></i>
+                    </button>
+                    <button type="button" class="${VA_BTN_GRAY} h-8 px-2" ${isValid ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaCopy('${vaEsc(d.link)}', 'Đã sao chép link tài xế.')" title="Sao chép link">
+                        <i class="ph ph-copy"></i>
+                    </button>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function vaFilterDriverChooserModal(query) {
+    const q = (query || '').trim().toLowerCase();
+    const chk = document.getElementById('va-driver-modal-valid-only');
+    const validOnly = chk ? chk.checked : true;
+    const items = document.querySelectorAll('.va-driver-chooser-item');
+    items.forEach(el => {
+        const text = el.getAttribute('data-search') || '';
+        const isValid = el.getAttribute('data-valid') === '1';
+        const matchSearch = !q || text.includes(q);
+        const matchValid = !validOnly || isValid;
+        el.style.display = (matchSearch && matchValid) ? 'flex' : 'none';
+    });
+}
+
+function vaOpenDriverChooserModal() {
+    const trips = (vaData && vaData.driver_links) || [];
+    const validCount = trips.filter(d => d.state === 'valid').length;
+
+    const body = `
+        <div class="space-y-3.5 text-xs">
+            <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-950 flex items-start gap-2.5">
+                <i class="ph ph-device-mobile text-xl text-indigo-700 shrink-0 mt-0.5"></i>
+                <div class="leading-relaxed">
+                    <strong class="font-bold">Giao diện Bác tài (Lệnh Điều Xe Di Động - /q/&lt;token&gt;/):</strong>
+                    Mở giao diện điện thoại của Bác tài để Điều vận trực tiếp xem tiến độ, hướng dẫn tài xế từng bước hoặc thao tác bấm nhận hàng, giao hàng, hạ rỗng, chụp ảnh EIR/POD hộ khi tài xế gặp khó khăn.
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Tìm chuyến xe / bác tài cần xem hoặc thao tác hộ:</label>
+                <div class="relative">
+                    <input id="va-driver-modal-search" type="text" placeholder="Tìm số cont, số xe, tên bác tài, SĐT, số chuyến, nhà xe..." oninput="vaFilterDriverChooserModal(this.value)" class="w-full h-9 pl-8 pr-3 rounded-xl border border-slate-300 text-xs font-semibold focus:border-indigo-600 outline-none">
+                    <i class="ph ph-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-sm"></i>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-500 mt-1">
+                    <span>Đang có <strong>${validCount}</strong> link tài xế đang hoạt động</span>
+                    <label class="inline-flex items-center gap-1 cursor-pointer font-medium">
+                        <input type="checkbox" id="va-driver-modal-valid-only" checked onchange="vaFilterDriverChooserModal(document.getElementById('va-driver-modal-search').value)"> Chỉ hiện link còn hiệu lực
+                    </label>
+                </div>
+            </div>
+
+            <div id="va-driver-chooser-list" class="max-h-80 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl bg-white">
+                ${vaRenderDriverChooserRows(trips)}
+            </div>
+        </div>`;
+
+    vaOpenModal('Mở Giao diện Tài xế - Xem & Hướng dẫn / Thao tác hộ', body, null, null, { wide: true });
+}
+
 window.vaShareDriverZalo = vaShareDriverZalo;
+window.vaOpenDriverScreenDirect = vaOpenDriverScreenDirect;
+window.vaOpenVendorScreenByVendorId = vaOpenVendorScreenByVendorId;
+window.vaQuickOpenVendorScreen = vaQuickOpenVendorScreen;
+window.vaOpenVendorChooserModal = vaOpenVendorChooserModal;
+window.vaRenderVendorChooserRows = vaRenderVendorChooserRows;
+window.vaFilterVendorChooserModal = vaFilterVendorChooserModal;
+window.vaQuickOpenDriverScreen = vaQuickOpenDriverScreen;
+window.vaOpenDriverChooserModal = vaOpenDriverChooserModal;
+window.vaRenderDriverChooserRows = vaRenderDriverChooserRows;
+window.vaFilterDriverChooserModal = vaFilterDriverChooserModal;
 
 // ---- src/app/dispatch/trip-expenses.js ----
 async function toggleSubcontractorTypePanels(typeVal) {

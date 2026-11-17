@@ -3,6 +3,13 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-17 – Bổ sung nút "Màn hình Vendor" và "Mở giao diện Tài xế" để xem và hướng dẫn hoặc thao tác hộ
+- **Tính năng Màn hình Vendor & Mở giao diện Tài xế trong Thẻ Vendor & Tài xế (Tab 4 Điều vận):**
+  - *Nút "Màn hình Vendor" (Cổng Nhà Xe Đối Tác):* Bố trí trên thanh công cụ Tab 4 và từng dòng Nhà xe/Phiếu chia. Khi bấm, hệ thống ưu tiên mở Cổng Nhà Xe của đúng đối tác (tự động điền Tên đăng nhập và Token qua Magic Link). Trường hợp chưa chọn nhà xe, mở modal tìm kiếm nhanh kèm nút mở trực tiếp cổng `/vendor/` hoặc phiếu chia cont.
+  - *Nút "Mở giao diện Tài xế" (Lệnh Điều Xe Di Động):* Bố trí trên thanh công cụ Tab 4 và từng dòng Chuyến xe. Khi bấm, hệ thống mở cửa sổ pop-up mô phỏng đúng kích thước smartphone di động (440x880) hoặc tab mới truy cập `/q/<token>/`. Điều vận có thể vừa gọi điện thoại hướng dẫn tài xế vừa theo dõi màn hình, hoặc bấm xác nhận các mốc chặng (nhận hàng, giao hàng, hạ rỗng, tải chứng từ EIR/POD) thao tác hộ khi tài xế gặp khó khăn.
+  - *Thiết kế UI/UX & Chuẩn Icon:* 100% icon sử dụng chuẩn outline Phosphor (`ph ph-desktop`, `ph ph-device-mobile`, `ph ph-arrow-square-out`), bố cục chuẩn chỉ, màu sắc hài hòa và phân cấp công thái học.
+- **Tài liệu & Bản dựng:** Cập nhật `docs/04-user-guide.md`, `templates/help.html`; biên dịch lại `static/js/app.js` (106 file nguồn) và `tailwind.css`.
+
 ## 2026-11-16 – Nâng cấp tính năng Cấp Token chủ động: tự đặt mã, tùy chọn thời hạn, Magic Link và mẫu tin Zalo 1-Click
 - **Cơ chế cấp Token chủ động cho Điều vận:**
   - *Tự đặt mã Token (Custom Token):* Điều vận có thể tự gõ mã Token theo quy ước riêng (ví dụ: `ANPHAT-2026`, `HP26`) hoặc bấm nút `Sinh mã` ngẫu nhiên.

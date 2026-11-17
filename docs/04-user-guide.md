@@ -466,7 +466,9 @@ Thanh tab Điều vận được thiết kế tinh gọn với 4 tab chữ thư�
    - Cột **Lệnh Điều Động** (`dispatch_order_code`) và cột **Phiếu Vận Chuyển** (`trip_code`) đều là liên kết bấm được (clickable).
    - Duy trì nguyên vẹn ngữ cảnh Tab 2 khi quay lại từ màn hình chi tiết chuyến.
 3. **Theo dõi hành trình:** Hiển thị toàn bộ các xe đã nhận lệnh và đang thực hiện hành trình. Hỗ trợ 3 chế độ xem: **Bảng container**, **Theo bước hành trình** (cột phân theo 7 mốc), và **Phiếu VC**.
-4. **Quản lý Vendor:** Nơi quản trị tài khoản, token và link bảo mật của đối tác nhà xe và lái xe với cơ chế **Chủ động 100%**:
+4. **Quản lý Vendor & Tài xế (Tab 4):** Nơi quản trị tài khoản, token và link bảo mật của đối tác nhà xe và lái xe với cơ chế **Chủ động 100%**:
+   - *Nút "Màn hình Vendor" (Xem & thao tác hộ):* Nằm trên thanh công cụ và từng dòng nhà xe/phiếu chia. Cho phép Điều vận 1-click mở trực tiếp Cổng Nhà Xe đối tác (tự động điền tài khoản & token qua Magic Link) để xem đúng những gì đối tác thấy, hướng dẫn sử dụng hoặc thao tác khai báo cont/xe/tài hộ nhà xe.
+   - *Nút "Mở giao diện Tài xế" (Xem & thao tác hộ):* Nằm trên thanh công cụ và từng dòng chuyến xe. Cho phép Điều vận mở cửa sổ di động chuẩn kích thước smartphone (440x880) của Bác tài (`/q/<token>/`) để vừa điện thoại hướng dẫn tài xế vừa theo dõi màn hình, hoặc bấm xác nhận mốc chặng, tải ảnh chứng từ thay cho tài xế trong trường hợp khẩn cấp.
    - *Cấp Token xác nhận chủ động:* Điều vận có thể tự gõ mã Token theo ý muốn (ví dụ: `ANPHAT-2026`, `HP26`) hoặc bấm `Sinh mã` ngẫu nhiên; chủ động đặt thời hạn hiệu lực (`Vô thời hạn`, `30 ngày`, `90 ngày`, `1 năm`, `7 ngày` hoặc chọn ngày cụ thể).
    - *Tra cứu & Sao chép lại:* Mã token được mã hóa an toàn hai chiều, Điều vận có thể bấm icon con mắt xem mã hoặc sao chép lại bất kỳ lúc nào mà không cần reset làm gián đoạn nhà xe.
    - *Magic Link (Đăng nhập 1-chạm):* Sao chép đường link đăng nhập tự động điền Tên đăng nhập và Token dạng `/vendor/login/?u=...&t=...`.
