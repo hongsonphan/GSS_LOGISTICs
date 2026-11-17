@@ -466,8 +466,11 @@ Thanh tab Điều vận được thiết kế tinh gọn với 4 tab chữ thư�
    - Cột **Lệnh Điều Động** (`dispatch_order_code`) và cột **Phiếu Vận Chuyển** (`trip_code`) đều là liên kết bấm được (clickable).
    - Duy trì nguyên vẹn ngữ cảnh Tab 2 khi quay lại từ màn hình chi tiết chuyến.
 3. **Theo dõi hành trình:** Hiển thị toàn bộ các xe đã nhận lệnh và đang thực hiện hành trình. Hỗ trợ 3 chế độ xem: **Bảng container**, **Theo bước hành trình** (cột phân theo 7 mốc), và **Phiếu VC**.
-4. **Quản lý Vendor:** Nơi quản trị tài khoản, token và link bảo mật của đối tác nhà xe và lái xe:
-   - *Nhà xe & tài khoản:* cấp tài khoản, mật khẩu khởi tạo, token một lần, mở khóa và tắt/bật tài khoản nhà xe.
+4. **Quản lý Vendor:** Nơi quản trị tài khoản, token và link bảo mật của đối tác nhà xe và lái xe với cơ chế **Chủ động 100%**:
+   - *Cấp Token xác nhận chủ động:* Điều vận có thể tự gõ mã Token theo ý muốn (ví dụ: `ANPHAT-2026`, `HP26`) hoặc bấm `Sinh mã` ngẫu nhiên; chủ động đặt thời hạn hiệu lực (`Vô thời hạn`, `30 ngày`, `90 ngày`, `1 năm`, `7 ngày` hoặc chọn ngày cụ thể).
+   - *Tra cứu & Sao chép lại:* Mã token được mã hóa an toàn hai chiều, Điều vận có thể bấm icon con mắt xem mã hoặc sao chép lại bất kỳ lúc nào mà không cần reset làm gián đoạn nhà xe.
+   - *Magic Link (Đăng nhập 1-chạm):* Sao chép đường link đăng nhập tự động điền Tên đăng nhập và Token dạng `/vendor/login/?u=...&t=...`.
+   - *Mẫu tin nhắn Zalo 1-Click:* Nút `Zalo` tự động soạn sẵn nội dung tin nhắn gửi nhà xe (tài khoản, token, magic link) và gửi bác tài (chuyến xe, số cont, link QR di động).
    - *Link nhà xe:* sao chép link, cấp lại đặt hạn, khóa link hoặc thu hồi phiếu chia cont.
    - *Link tài xế (`/q/<token>/`):* đặt thời hạn link (theo ngày), cấp lại làm mới QR code (vô hiệu link cũ), hoặc thu hồi link ngay lập tức.
 
@@ -565,7 +568,7 @@ Khi xe phải chờ tại kho hoặc cảng qua đêm: mở chuyến ➔ khối 
 
 | Bước | Người thực hiện | Thao tác trên phần mềm | Dữ liệu đầu vào | Kết quả đầu ra | Ràng buộc & Điểm kiểm soát |
 |---|---|---|---|---|---|
-| **1** | Điều phối GSS | Tab 4 Điều vận ➔ bấm **`Cấp tài khoản`** hoặc **`Link nhà xe`** | Thông tin nhà xe đối tác | Link truy cập bảo mật hoặc mã token một lần | Link có hạn dùng rõ ràng, ghi vết kiểm toán |
+| **1** | Điều phối GSS | Tab 4 Điều vận ➔ bấm **`Đặt Token`** hoặc **`Cấp tài khoản`** | Thông tin nhà xe đối tác | Chủ động tự đặt mã Token hoặc sinh mã, đặt hạn dùng (Vô thời hạn, 30/90/365 ngày), tạo Magic Link 1-chạm | Token được mã hóa an toàn, Điều vận xem và sao chép lại bất kỳ lúc nào, ghi vết kiểm toán |
 | **2** | Điều độ Nhà xe | Mở link trên máy tính/điện thoại | Đường dẫn được cấp | Truy cập giao diện Topbar trắng sáng hiện đại chuẩn GSS | Hiển thị đúng danh sách cont được GSS phân bổ |
 | **3** | Điều độ Nhà xe | Chọn cont ➔ Gán Đầu kéo, Rơ-moóc, Bác tài (hoặc bấm **`Nhập Excel`**) | Danh sách xe và tài xế của nhà xe | Container được gắn xe thực hiện | Không thấy giá cước bán của GSS hay thông tin bảo mật khách hàng |
 | **4** | Điều độ Nhà xe | Bấm nút **`Lệnh QR`** hoặc **`In Phiếu`** | Dữ liệu chuyến đã gán | Xuất phiếu vận chuyển hoặc gửi link QR cho tài xế của mình | Bác tài nhà xe thao tác trên Cổng tài xế chuẩn |

@@ -124,3 +124,59 @@ class VendorAdminTests(GssBase):
         rows = self.client.get('/api/dispatch/vendor-containers/?status=ACTIVE').json()['data']
         self.assertTrue(rows)
         self.assertTrue(all(r['status_code'] in ('ASSIGNED', 'IN_TRANSIT', 'EMPTY_RETURNING') for r in rows))
+
+    def test_proactive_token_issuance_and_magic_link(self):
+        self.login()
+        # 1. Điều vận chủ động đặt token theo ý muốn và hạn dùng 30 ngày
+        res = self.client.post(
+            f'/api/vendor-portal-accounts/{self.sub.id}/',
+            {
+                'username': 'nhaxe_proactive',
+                'password': 'Password#2026',
+                'confirm_token': 'ANPHAT-2026',
+                'token_expiry_preset': '30d',
+                'idle_timeout_minutes': 20,
+            },
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, 200, res.content)
+        data = res.json()['data']
+        self.assertEqual(data['plain_token'], 'ANPHAT-2026')
+        self.assertFalse(data['token_expired'])
+        self.assertIn('u=nhaxe_proactive', data['magic_link'])
+        self.assertIn('t=ANPHAT-2026', data['magic_link'])
+
+        # 2. Overview trả về thông tin token đã giải mã và magic link cho Điều vận
+        ov_res = self.client.get(OVERVIEW).json()['data']
+        v = next(x for x in ov_res['vendors'] if x['id'] == self.sub.id)
+        self.assertEqual(v['account']['plain_token'], 'ANPHAT-2026')
+        self.assertIn('t=ANPHAT-2026', v['account']['magic_link'])
+
+        # 3. Nhà xe đăng nhập bằng Token chủ động vừa cấp
+        self.client.logout()
+        login_res = self.client.post(
+            '/api/vendor/auth/login/',
+            {
+                'username': 'nhaxe_proactive',
+                'password': 'Password#2026',
+                'confirm_token': 'ANPHAT-2026',
+            },
+            content_type='application/json'
+        )
+        self.assertEqual(login_res.status_code, 200, login_res.content)
+
+        # 4. Kiểm tra khi token hết hạn thì bị chặn
+        acct = SubcontractorPortalAccount.objects.get(subcontractor=self.sub)
+        acct.token_expires_at = timezone.now() - datetime.timedelta(days=1)
+        acct.save(update_fields=['token_expires_at'])
+        self.client.logout()
+        fail_res = self.client.post(
+            '/api/vendor/auth/login/',
+            {
+                'username': 'nhaxe_proactive',
+                'password': 'Password#2026',
+                'confirm_token': 'ANPHAT-2026',
+            },
+            content_type='application/json'
+        )
+        self.assertIn(fail_res.status_code, (400, 401))

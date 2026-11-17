@@ -426,6 +426,8 @@ class SubcontractorPortalAccount(TimeStampedModel, SoftDeleteModel):
     password_hash = models.CharField(max_length=255, help_text="Mật khẩu đã băm (PBKDF2)")
     confirm_token_hash = models.CharField(max_length=64, blank=True, default='', db_index=True, help_text="SHA-256 của mã token xác nhận")
     confirm_token_preview = models.CharField(max_length=24, blank=True, default='', help_text="Gợi ý 4 ký tự cuối token")
+    confirm_token_cipher = models.TextField(blank=True, default='', help_text="Mã hóa Fernet để Điều vận xem và sao chép lại token")
+    token_expires_at = models.DateTimeField(null=True, blank=True, db_index=True, help_text="Thời điểm hết hạn Token xác nhận (None = Vô thời hạn)")
     idle_timeout_minutes = models.PositiveSmallIntegerField(default=15, help_text="Tự động đăng xuất sau N phút không thao tác")
     is_active = models.BooleanField(default=True, db_index=True)
     failed_attempts = models.PositiveSmallIntegerField(default=0)
@@ -451,21 +453,46 @@ class SubcontractorPortalAccount(TimeStampedModel, SoftDeleteModel):
             return False
         return check_password(str(raw_password), self.password_hash)
 
-    def set_confirm_token(self, raw_token):
+    def set_confirm_token(self, raw_token, expires_at=None):
         import hashlib
+        from core.security import encrypt_token
         clean = (raw_token or '').strip()
         if not clean:
             self.confirm_token_hash = ''
             self.confirm_token_preview = ''
+            self.confirm_token_cipher = ''
+            self.token_expires_at = None
             return
         self.confirm_token_hash = hashlib.sha256(clean.encode()).hexdigest()
         self.confirm_token_preview = f"••••{clean[-4:]}" if len(clean) >= 4 else '••••'
+        try:
+            self.confirm_token_cipher = encrypt_token(clean)
+        except Exception:
+            self.confirm_token_cipher = ''
+        if expires_at is not None:
+            self.token_expires_at = expires_at
+
+    def get_plain_token(self):
+        """Giải mã token để Điều vận xem hoặc sao chép lại (không bao giờ lộ ra ngoài API công khai)."""
+        if not self.confirm_token_cipher:
+            return ''
+        try:
+            from core.security import decrypt_token
+            return decrypt_token(self.confirm_token_cipher)
+        except Exception:
+            return ''
+
+    def is_token_expired(self):
+        from django.utils import timezone
+        return bool(self.token_expires_at and self.token_expires_at < timezone.now())
 
     def check_confirm_token(self, raw_token):
         import hashlib
         import secrets
         clean = (raw_token or '').strip()
         if not clean or not self.confirm_token_hash:
+            return False
+        if self.is_token_expired():
             return False
         candidate = hashlib.sha256(clean.encode()).hexdigest()
         return secrets.compare_digest(candidate, self.confirm_token_hash)

@@ -1278,8 +1278,11 @@ Khai báo số dư khởi tạo tại thời điểm bắt đầu đưa hệ th�
 </ul>
 </li>
 <li><strong class="font-bold text-slate-900">Theo dõi hành trình:</strong> Hiển thị toàn bộ các xe đã nhận lệnh và đang thực hiện hành trình. Hỗ trợ 3 chế độ xem: <strong class="font-bold text-slate-900">Bảng container</strong>, <strong class="font-bold text-slate-900">Theo bước hành trình</strong> (cột phân theo 7 mốc), và <strong class="font-bold text-slate-900">Phiếu VC</strong>.</li>
-<li><strong class="font-bold text-slate-900">Quản lý Vendor:</strong> Nơi quản trị tài khoản, token và link bảo mật của đối tác nhà xe và lái xe:<ul class="list-disc pl-5 space-y-1.5">
-<li><em>Nhà xe &amp; tài khoản:</em> cấp tài khoản, mật khẩu khởi tạo, token một lần, mở khóa và tắt/bật tài khoản nhà xe.</li>
+<li><strong class="font-bold text-slate-900">Quản lý Vendor:</strong> Nơi quản trị tài khoản, token và link bảo mật của đối tác nhà xe và lái xe với cơ chế <strong class="font-bold text-slate-900">Chủ động 100%</strong>:<ul class="list-disc pl-5 space-y-1.5">
+<li><em>Cấp Token xác nhận chủ động:</em> Điều vận có thể tự gõ mã Token theo ý muốn (ví dụ: <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">ANPHAT-2026</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">HP26</code>) hoặc bấm <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">Sinh mã</code> ngẫu nhiên; chủ động đặt thời hạn hiệu lực (<code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">Vô thời hạn</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">30 ngày</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">90 ngày</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">1 năm</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">7 ngày</code> hoặc chọn ngày cụ thể).</li>
+<li><em>Tra cứu &amp; Sao chép lại:</em> Mã token được mã hóa an toàn hai chiều, Điều vận có thể bấm icon con mắt xem mã hoặc sao chép lại bất kỳ lúc nào mà không cần reset làm gián đoạn nhà xe.</li>
+<li><em>Magic Link (Đăng nhập 1-chạm):</em> Sao chép đường link đăng nhập tự động điền Tên đăng nhập và Token dạng <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">/vendor/login/?u=...&amp;t=...</code>.</li>
+<li><em>Mẫu tin nhắn Zalo 1-Click:</em> Nút <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">Zalo</code> tự động soạn sẵn nội dung tin nhắn gửi nhà xe (tài khoản, token, magic link) và gửi bác tài (chuyến xe, số cont, link QR di động).</li>
 <li><em>Link nhà xe:</em> sao chép link, cấp lại đặt hạn, khóa link hoặc thu hồi phiếu chia cont.</li>
 <li><em>Link tài xế (<code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">/q/&lt;token&gt;/</code>):</em> đặt thời hạn link (theo ngày), cấp lại làm mới QR code (vô hiệu link cũ), hoặc thu hồi link ngay lập tức.</li>
 </ul>
@@ -1447,10 +1450,10 @@ Khai báo số dư khởi tạo tại thời điểm bắt đầu đưa hệ th�
 <tr>
 <td class="p-2.5 align-top"><strong class="font-bold text-slate-900">1</strong></td>
 <td class="p-2.5 align-top">Điều phối GSS</td>
-<td class="p-2.5 align-top">Tab 4 Điều vận ➔ bấm <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Cấp tài khoản</span> hoặc <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Link nhà xe</span></td>
+<td class="p-2.5 align-top">Tab 4 Điều vận ➔ bấm <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Đặt Token</span> hoặc <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Cấp tài khoản</span></td>
 <td class="p-2.5 align-top">Thông tin nhà xe đối tác</td>
-<td class="p-2.5 align-top">Link truy cập bảo mật hoặc mã token một lần</td>
-<td class="p-2.5 align-top">Link có hạn dùng rõ ràng, ghi vết kiểm toán</td>
+<td class="p-2.5 align-top">Chủ động tự đặt mã Token hoặc sinh mã, đặt hạn dùng (Vô thời hạn, 30/90/365 ngày), tạo Magic Link 1-chạm</td>
+<td class="p-2.5 align-top">Token được mã hóa an toàn, Điều vận xem và sao chép lại bất kỳ lúc nào, ghi vết kiểm toán</td>
 </tr>
 <tr>
 <td class="p-2.5 align-top"><strong class="font-bold text-slate-900">2</strong></td>

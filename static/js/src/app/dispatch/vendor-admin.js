@@ -347,18 +347,47 @@ function vaRenderAccounts(vendor) {
             st = vaState('text-amber-700', 'ph-user-minus', 'Chưa cấp tài khoản');
             acctCell = '<span class="text-slate-400">—</span>';
             tokenCell = '<span class="text-slate-400">—</span>';
-            actions = `<button type="button" class="${VA_BTN_TEAL}" onclick="vaAccountModal(${v.id})"><i class="ph-bold ph-user-plus"></i> Cấp tài khoản</button>`;
+            actions = `<button type="button" class="${VA_BTN_TEAL}" onclick="vaAccountModal(${v.id})"><i class="ph ph-user-plus"></i> Cấp tài khoản</button>`;
         } else {
             st = a.locked ? vaState('text-rose-700', 'ph-lock', 'Đang bị khóa (sai quá nhiều lần)')
                 : a.is_active ? vaState('text-emerald-700', 'ph-check-circle', 'Đang hoạt động')
                     : vaState('text-slate-600', 'ph-prohibit', 'Đã tắt');
             acctCell = `<span class="font-mono font-bold text-slate-800">${vaEsc(a.username)}</span><div class="text-xs text-slate-500">Tự đăng xuất sau ${a.idle_timeout_minutes} phút</div>`;
-            tokenCell = a.token_preview ? `<span class="font-mono text-slate-700">GSSV-••••${vaEsc(a.token_preview)}</span>` : '<span class="text-amber-700 font-bold">Chưa có token</span>';
+
+            let tokDisplay = '';
+            if (a.plain_token) {
+                tokDisplay = `
+                    <div class="flex items-center gap-1.5">
+                        <span id="va-tok-txt-${v.id}" class="font-mono font-bold text-slate-800 text-xs">••••••••</span>
+                        <button type="button" class="text-slate-400 hover:text-teal-700 p-0.5 rounded cursor-pointer transition-colors" onclick="vaToggleShowToken(${v.id})" title="Hiện/ẩn mã token"><i id="va-tok-eye-${v.id}" class="ph ph-eye text-sm"></i></button>
+                        <button type="button" class="text-slate-400 hover:text-teal-700 p-0.5 rounded cursor-pointer transition-colors" onclick="vaCopy('${vaEsc(a.plain_token)}', 'Đã sao chép mã token.')" title="Sao chép Token"><i class="ph ph-copy text-sm"></i></button>
+                        <button type="button" class="text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-1.5 py-0.5 rounded text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors" onclick="vaCopy('${vaEsc(a.magic_link)}', 'Đã sao chép Link đăng nhập nhanh (Magic Link).')" title="Sao chép Link đăng nhập 1-chạm"><i class="ph ph-link text-xs"></i> Link</button>
+                    </div>`;
+            } else if (a.token_preview) {
+                tokDisplay = `<span class="font-mono text-slate-600 text-xs">GSSV-••••${vaEsc(a.token_preview)}</span>`;
+            } else {
+                tokDisplay = '<span class="text-amber-700 font-bold text-xs">Chưa có token</span>';
+            }
+
+            let expDisplay = '';
+            if (a.token_expires_at) {
+                if (a.token_expired) {
+                    expDisplay = `<div class="text-[11px] text-rose-700 font-bold flex items-center gap-1 mt-0.5"><i class="ph ph-warning-circle"></i> Hết hạn (${vaFmt(a.token_expires_at)})</div>`;
+                } else {
+                    expDisplay = `<div class="text-[11px] text-teal-700 font-medium flex items-center gap-1 mt-0.5"><i class="ph ph-clock"></i> Hạn: ${vaFmt(a.token_expires_at)}</div>`;
+                }
+            } else if (a.plain_token || a.token_preview) {
+                expDisplay = `<div class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5"><i class="ph ph-shield-check text-emerald-600"></i> Vô thời hạn</div>`;
+            }
+
+            tokenCell = `${tokDisplay}${expDisplay}`;
+
             actions = `
-                <button type="button" class="${VA_BTN_TEAL}" onclick="vaIssueToken(${v.id})" title="Cấp token xác nhận mới, token cũ mất hiệu lực"><i class="ph-bold ph-key"></i> Cấp token</button>
-                <button type="button" class="${VA_BTN_AMBER}" onclick="vaAccountModal(${v.id})" title="Sửa tên đăng nhập, mật khẩu, thời gian tự đăng xuất"><i class="ph-bold ph-pencil-simple"></i> Sửa</button>
-                ${a.locked ? `<button type="button" class="${VA_BTN_GRAY}" onclick="vaAccountAction(${v.id}, {unlock: true}, 'Đã mở khóa tài khoản.')"><i class="ph-bold ph-lock-open"></i> Mở khóa</button>` : ''}
-                <button type="button" class="${a.is_active ? VA_BTN_ROSE : VA_BTN_GRAY}" onclick="vaToggleAccount(${v.id}, ${a.is_active ? 'false' : 'true'})">${a.is_active ? '<i class="ph-bold ph-prohibit"></i> Tắt' : '<i class="ph-bold ph-power"></i> Bật'}</button>`;
+                <button type="button" class="${VA_BTN_TEAL}" onclick="vaIssueTokenModal(${v.id})" title="Chủ động đặt mã token và hạn dùng"><i class="ph ph-key"></i> Đặt Token</button>
+                <button type="button" class="${VA_BTN_AMBER}" onclick="vaAccountModal(${v.id})" title="Sửa tên đăng nhập, mật khẩu, thời gian tự đăng xuất"><i class="ph ph-pencil-simple"></i> Sửa</button>
+                <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareVendorZaloModal(${v.id})" title="Xem mẫu tin nhắn gửi nhà xe qua Zalo"><i class="ph ph-chat-teardrop-text"></i> Zalo</button>
+                ${a.locked ? `<button type="button" class="${VA_BTN_GRAY}" onclick="vaAccountAction(${v.id}, {unlock: true}, 'Đã mở khóa tài khoản.')"><i class="ph ph-lock-open"></i> Mở khóa</button>` : ''}
+                <button type="button" class="${a.is_active ? VA_BTN_ROSE : VA_BTN_GRAY}" onclick="vaToggleAccount(${v.id}, ${a.is_active ? 'false' : 'true'})">${a.is_active ? '<i class="ph ph-prohibit"></i> Tắt' : '<i class="ph ph-power"></i> Bật'}</button>`;
         }
         return `<tr class="hover:bg-teal-50/30">
             <td class="p-2.5"><div class="font-bold text-slate-900">${vaEsc(v.short_name)}</div><div class="text-xs text-slate-500 font-mono">${vaEsc(v.code)}</div></td>
@@ -386,8 +415,9 @@ function vaRenderLinks(vendor) {
             <td class="p-2.5">${vaExpiry(l.expires_at, l.expired)}</td>
             <td class="p-2.5 text-xs text-slate-600">${l.last_opened_at ? vaFmt(l.last_opened_at) : 'Chưa mở'}</td>
             <td class="p-2.5 text-center"><div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
-                <button type="button" class="${VA_BTN_GRAY}" onclick="vaCopyAlloc(${l.id})"><i class="ph-bold ph-copy"></i> Sao chép</button>
-                <button type="button" class="${VA_BTN_TEAL}" onclick="vaRegenAlloc(${l.id})" title="Cấp link mới và đặt hạn, link cũ mất hiệu lực"><i class="ph-bold ph-arrows-clockwise"></i> Cấp lại / đặt hạn</button>
+                <button type="button" class="${VA_BTN_GRAY}" onclick="vaCopyAlloc(${l.id})"><i class="ph ph-copy"></i> Sao chép</button>
+                <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareAllocZalo(${l.id})" title="Sao chép tin nhắn Zalo gửi Nhà xe"><i class="ph ph-chat-teardrop-text"></i> Zalo</button>
+                <button type="button" class="${VA_BTN_TEAL}" onclick="vaRegenAlloc(${l.id})" title="Cấp link mới và đặt hạn, link cũ mất hiệu lực"><i class="ph ph-arrows-clockwise"></i> Cấp lại / đặt hạn</button>
                 <button type="button" class="${VA_BTN_AMBER}" onclick="vaLockAlloc(${l.id}, ${l.locked ? 'false' : 'true'})">${l.locked ? '<i class="ph-bold ph-lock-open"></i> Mở khóa' : '<i class="ph-bold ph-lock"></i> Khóa'}</button>
                 <button type="button" class="${VA_BTN_ROSE}" onclick="vaRevokeAlloc(${l.id})" title="Thu hồi phiếu (chỉ khi chưa sinh chuyến xe)"><i class="ph-bold ph-prohibit"></i> Thu hồi</button>
             </div></td>
@@ -407,8 +437,9 @@ function vaRenderDrivers(vendor) {
             <td class="p-2.5">${st}</td>
             <td class="p-2.5">${vaExpiry(d.expires_at, d.state !== 'valid')}</td>
             <td class="p-2.5 text-center"><div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
-                <button type="button" class="${VA_BTN_GRAY}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaCopyDriver(${d.trip_id})"><i class="ph-bold ph-copy"></i> Sao chép</button>
-                <button type="button" class="${VA_BTN_AMBER}" onclick="vaDriverExpiry(${d.trip_id})" title="Đặt hạn dùng, giữ nguyên link"><i class="ph-bold ph-clock-countdown"></i> Đặt hạn</button>
+                <button type="button" class="${VA_BTN_GRAY}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaCopyDriver(${d.trip_id})"><i class="ph ph-copy"></i> Sao chép</button>
+                <button type="button" class="${VA_BTN_GRAY}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaShareDriverZalo(${d.trip_id})" title="Sao chép tin nhắn Zalo điều lệnh gửi Bác tài"><i class="ph ph-chat-teardrop-text"></i> Zalo</button>
+                <button type="button" class="${VA_BTN_AMBER}" onclick="vaDriverExpiry(${d.trip_id})" title="Đặt hạn dùng, giữ nguyên link"><i class="ph ph-clock-countdown"></i> Đặt hạn</button>
                 <button type="button" class="${VA_BTN_TEAL}" onclick="vaDriverRegen(${d.trip_id})" title="Cấp link mới, link cũ mất hiệu lực"><i class="ph-bold ph-arrows-clockwise"></i> Cấp lại</button>
                 <button type="button" class="${VA_BTN_ROSE}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaDriverRevoke(${d.trip_id})"><i class="ph-bold ph-prohibit"></i> Thu hồi</button>
             </div></td>
@@ -510,13 +541,181 @@ async function vaReload() {
     if (currentDispatchTab === 'allocations') renderAllocationsTable();
 }
 
+const vaTokenVisibility = {};
+
+function vaToggleShowToken(vendorId) {
+    vaTokenVisibility[vendorId] = !vaTokenVisibility[vendorId];
+    const v = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+    if (!v || !v.account) return;
+    const txtEl = document.getElementById(`va-tok-txt-${vendorId}`);
+    const eyeEl = document.getElementById(`va-tok-eye-${vendorId}`);
+    if (!txtEl || !eyeEl) return;
+    const tok = v.account.plain_token || '';
+    if (vaTokenVisibility[vendorId]) {
+        txtEl.textContent = tok || '(chưa có)';
+        txtEl.classList.add('text-teal-900', 'bg-teal-50', 'px-1.5', 'py-0.5', 'rounded');
+        eyeEl.className = 'ph ph-eye-slash text-sm';
+        eyeEl.title = 'Ẩn mã token';
+    } else {
+        txtEl.textContent = '••••••••';
+        txtEl.classList.remove('text-teal-900', 'bg-teal-50', 'px-1.5', 'py-0.5', 'rounded');
+        eyeEl.className = 'ph ph-eye text-sm';
+        eyeEl.title = 'Hiện mã token';
+    }
+}
+
+function vaGenRandomToken(targetInputId = 'va-token-custom') {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let rand = '';
+    for (let i = 0; i < 6; i++) {
+        rand += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const token = 'GSS-' + rand;
+    const inp = document.getElementById(targetInputId);
+    if (inp) {
+        inp.value = token;
+        inp.classList.add('bg-amber-50');
+        setTimeout(() => inp.classList.remove('bg-amber-50'), 600);
+        inp.focus();
+    }
+    return token;
+}
+
+function vaShowTokenResult(vendorName, data) {
+    const tok = data.plain_token || data.issued_confirm_token || '';
+    const expText = data.token_expires_at ? vaFmt(data.token_expires_at) : 'Vô thời hạn (Không bao giờ hết hạn)';
+    const magic = data.magic_link || '';
+    const zaloMsg = `Kính gửi Quý đối tác vận tải ${vendorName},\nPhòng Điều Vận GSS gửi thông tin tài khoản truy cập Cổng Nhà Xe:\n- Tên đăng nhập: ${data.username}\n- Mã Token xác nhận: ${tok}\n- Hạn dùng token: ${expText}\n- Link đăng nhập nhanh (1-chạm tự điền): ${magic}\nQuý nhà xe vui lòng mở link trên để cập nhật xe/tài và theo dõi lệnh vận chuyển.\nTrân trọng!`;
+
+    const body = `
+        <div class="space-y-3.5 text-xs">
+            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 font-semibold flex items-center gap-2">
+                <i class="ph ph-check-circle text-lg text-emerald-600"></i>
+                <span>Token đã được lưu an toàn. Bạn có thể tra cứu và sao chép lại bất kỳ lúc nào!</span>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Mã Token xác nhận:</label>
+                <div class="flex items-center gap-2">
+                    <input id="va-res-tok" readonly value="${vaEsc(tok)}" class="flex-1 h-10 px-3.5 rounded-xl border border-slate-300 font-mono font-bold text-sm bg-slate-50 text-teal-900">
+                    <button type="button" class="${VA_BTN_TEAL} h-10 px-3" onclick="vaCopy(document.getElementById('va-res-tok').value, 'Đã sao chép token.')"><i class="ph ph-copy"></i> Sao chép</button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Thời hạn hiệu lực:</label>
+                <div class="h-9 px-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center font-semibold text-slate-800">
+                    <i class="ph ph-clock mr-1.5 text-teal-700"></i> ${vaEsc(expText)}
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Link đăng nhập 1-chạm (Magic Link):</label>
+                <div class="flex items-center gap-2">
+                    <input id="va-res-magic" readonly value="${vaEsc(magic)}" class="flex-1 h-10 px-3.5 rounded-xl border border-slate-300 font-mono text-xs bg-slate-50 text-slate-700">
+                    <button type="button" class="${VA_BTN_TEAL} h-10 px-3" onclick="vaCopy(document.getElementById('va-res-magic').value, 'Đã sao chép link đăng nhập nhanh.')"><i class="ph ph-link"></i> Sao chép Link</button>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1">Gửi link này cho Nhà xe: khi mở trang, Tên đăng nhập và Token sẽ được tự động điền sẵn.</p>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Mẫu tin nhắn Zalo gửi Nhà xe:</label>
+                <textarea id="va-res-zalo" readonly rows="4" class="w-full p-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-700 text-xs font-mono">${vaEsc(zaloMsg)}</textarea>
+                <div class="mt-1.5 flex justify-end">
+                    <button type="button" class="${VA_BTN_GRAY} h-9 px-3 font-semibold" onclick="vaCopy(document.getElementById('va-res-zalo').value, 'Đã sao chép toàn bộ tin nhắn Zalo.')"><i class="ph ph-chat-teardrop-text"></i> Sao chép tin nhắn Zalo</button>
+                </div>
+            </div>
+        </div>
+    `;
+    vaOpenModal(`Thông tin Token & Cổng: ${vendorName}`, body, null, null, { wide: true });
+}
+
+function vaIssueTokenModal(vendorId) {
+    const v = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+    if (!v) return;
+    const a = v.account;
+    const curTok = (a && a.plain_token) || '';
+    const curExp = (a && a.token_expires_at) || '';
+    const body = `
+        <div class="mb-3.5">
+            <label class="block text-xs font-bold text-slate-700 mb-1" for="va-token-custom">Mã Token xác nhận <span class="text-rose-600">*</span></label>
+            <div class="flex items-center gap-2">
+                <input id="va-token-custom" class="flex-1 h-10 px-3.5 rounded-xl border border-slate-300 font-mono font-bold text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-none uppercase" placeholder="Ví dụ: ANPHAT-2026 hoặc HP26" value="${vaEsc(curTok)}">
+                <button type="button" class="${VA_BTN_GRAY} h-10 px-3 whitespace-nowrap cursor-pointer" onclick="vaGenRandomToken('va-token-custom')" title="Hệ thống tự sinh mã ngẫu nhiên"><i class="ph ph-magic-wand"></i> Sinh mã</button>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Chủ động tự gõ mã theo ý muốn (ít nhất 4 ký tự) hoặc bấm <strong>Sinh mã</strong>.</p>
+            <p id="va-token-custom-err" class="text-xs font-bold text-rose-700 mt-1 hidden"></p>
+        </div>
+        <div class="mb-3">
+            <label class="block text-xs font-bold text-slate-700 mb-1" for="va-token-expiry">Thời hạn hiệu lực của Token</label>
+            <select id="va-token-expiry" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-none" onchange="const d = document.getElementById('va-token-date-box'); if (this.value==='custom') d.classList.remove('hidden'); else d.classList.add('hidden');">
+                <option value="never" ${!curExp ? 'selected' : ''}>Vô thời hạn (Khuyên dùng - Không bao giờ hết hạn)</option>
+                <option value="30d">30 ngày (1 tháng)</option>
+                <option value="90d">90 ngày (1 quý)</option>
+                <option value="365d">365 ngày (1 năm)</option>
+                <option value="7d">7 ngày (Ngắn hạn / Dự án)</option>
+                <option value="custom" ${curExp ? 'selected' : ''}>Tùy chọn ngày hết hạn cụ thể...</option>
+            </select>
+            <div id="va-token-date-box" class="${curExp ? '' : 'hidden'} mt-2">
+                <input id="va-token-custom-date" type="date" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-none" value="${curExp ? curExp.slice(0, 10) : ''}">
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Hết thời hạn này, nhà xe phải được gia hạn hoặc đổi token mới để truy cập.</p>
+        </div>
+    `;
+    vaOpenModal(`Cấp / Đổi Token xác nhận: ${v.short_name}`, body, 'Lưu & Kích hoạt Token', async () => {
+        const tokVal = document.getElementById('va-token-custom').value.trim();
+        const expPreset = document.getElementById('va-token-expiry').value;
+        const custDate = document.getElementById('va-token-custom-date').value;
+        const errEl = document.getElementById('va-token-custom-err');
+        errEl.classList.add('hidden');
+        if (tokVal.length < 4) {
+            errEl.textContent = 'Mã Token xác nhận phải có ít nhất 4 ký tự.';
+            errEl.classList.remove('hidden');
+            document.getElementById('va-token-custom').focus();
+            return false;
+        }
+        const payload = { confirm_token: tokVal, token_expiry_preset: expPreset };
+        if (expPreset === 'custom' && custDate) {
+            payload.token_expires_at = custDate;
+        }
+        const out = await vaAccountAction(vendorId, payload, 'Đã kích hoạt Token xác nhận mới.');
+        if (!out) return false;
+        vaCloseModal();
+        if (out.data) {
+            vaShowTokenResult(v.short_name, out.data);
+        }
+    });
+}
+
+function vaShareVendorZaloModal(vendorId) {
+    const v = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+    if (!v || !v.account) return;
+    vaShowTokenResult(v.short_name, {
+        username: v.account.username,
+        plain_token: v.account.plain_token || '',
+        token_expires_at: v.account.token_expires_at,
+        magic_link: v.account.magic_link || '',
+    });
+}
+
+function vaShareAllocZalo(allocId) {
+    const l = vaFindAlloc(allocId);
+    if (!l) return;
+    const expText = l.expires_at ? vaFmt(l.expires_at) : 'Không giới hạn';
+    const msg = `Kính gửi Quý đối tác vận tải ${l.subcontractor},\nPhòng Điều Vận GSS thông báo Lệnh điều động Booking ${l.booking_code}${l.customer ? ' (' + l.customer + ')' : ''}:\n- Số lượng: ${l.allocated_containers} cont\n- Link nhận lệnh & gán xe/tài: ${l.vendor_link || '—'}\n- Hạn link: ${expText}\nQuý nhà xe vui lòng mở link trên điện thoại hoặc máy tính để gán Đầu kéo/Moóc và Bác tài nhận lệnh.\nTrân trọng!`;
+    vaCopy(msg, 'Đã sao chép tin nhắn Zalo lệnh điều động cho nhà xe.');
+}
+
+function vaShareDriverZalo(tripId) {
+    const d = vaFindDriver(tripId);
+    if (!d) return;
+    const expText = d.expires_at ? vaFmt(d.expires_at) : 'Không giới hạn';
+    const msg = `LỆNH ĐIỀU ĐỘNG GSS - Bác tài: ${d.driver_name || 'Bác tài'}${d.driver_phone ? ' (' + d.driver_phone + ')' : ''}\n- Chuyến xe: ${d.trip_code} | Cont: ${d.container_number || 'Theo lệnh'}\n- Đầu kéo: ${d.plate || 'Theo lệnh'}\n- Link mở lệnh di động & cập nhật POD: ${d.link}\n- Hạn lệnh: ${expText}\nBác tài bấm link trên điện thoại khi đến cảng/kho lấy cont và giao hàng nhé!\nTrân trọng!`;
+    vaCopy(msg, 'Đã sao chép tin nhắn Zalo điều lệnh gửi Bác tài.');
+}
+
 function vaShowToken(vendorName, token) {
-    vaOpenModal(`Token xác nhận của ${vendorName}`, `
-        <p class="text-slate-600 text-sm mb-3">Token chỉ hiện <strong>một lần</strong>. Hãy sao chép và gửi cho nhà xe qua kênh an toàn.</p>
-        <div class="flex items-center gap-2">
-            <input id="va-token-out" readonly value="${vaEsc(token)}" class="flex-1 h-10 px-3.5 rounded-xl border border-slate-300 font-mono font-bold text-sm bg-slate-50">
-            <button type="button" class="${VA_BTN_TEAL} h-10" onclick="vaCopy(document.getElementById('va-token-out').value, 'Đã sao chép token.')"><i class="ph-bold ph-copy"></i> Sao chép</button>
-        </div>`, null, null);
+    vaShowTokenResult(vendorName, { issued_confirm_token: token });
 }
 
 async function vaAccountAction(vendorId, body, okMsg) {
@@ -536,11 +735,7 @@ async function vaToggleAccount(vendorId, active) {
 }
 
 async function vaIssueToken(vendorId) {
-    const v = vaData.vendors.find(x => x.id === vendorId);
-    const yes = await showConfirmModal({ type: 'warning', title: 'Cấp token xác nhận mới', message: `Token cũ của ${v ? v.short_name : 'nhà xe'} sẽ mất hiệu lực ngay. Token mới chỉ hiện một lần.`, confirmText: 'Cấp token mới' });
-    if (!yes) return;
-    const out = await vaAccountAction(vendorId, { regenerate_token: true }, 'Đã cấp token mới.');
-    if (out && out.data && out.data.issued_confirm_token) vaShowToken(v ? v.short_name : '', out.data.issued_confirm_token);
+    return vaIssueTokenModal(vendorId);
 }
 
 function vaAccountModal(vendorId) {
@@ -549,26 +744,54 @@ function vaAccountModal(vendorId) {
     const a = v.account;
     const field = (id, label, input, hint) => `<div class="mb-3"><label class="block text-xs font-bold text-slate-700 mb-1.5" for="${id}">${label}</label>${input}${hint ? `<p class="text-xs text-slate-500 mt-1">${hint}</p>` : ''}<p id="${id}-err" class="text-xs font-bold text-rose-700 mt-1 hidden"></p></div>`;
     const cls = 'w-full h-10 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-none';
+    const curTok = (a && a.plain_token) || '';
+    const curExp = (a && a.token_expires_at) || '';
     const body = `
         ${field('va-f-user', 'Tên đăng nhập <span class="text-rose-600">*</span>', `<input id="va-f-user" class="${cls}" autocomplete="off" value="${vaEsc(a ? a.username : (v.code || '').toLowerCase())}">`, 'Ít nhất 3 ký tự, không trùng nhà xe khác.')}
         ${field('va-f-pass', a ? 'Mật khẩu mới' : 'Mật khẩu khởi tạo <span class="text-rose-600">*</span>', `<input id="va-f-pass" type="password" class="${cls}" autocomplete="new-password">`, a ? 'Để trống nếu không đổi mật khẩu.' : 'Ít nhất 6 ký tự.')}
-        ${field('va-f-idle', 'Tự đăng xuất sau (phút)', `<input id="va-f-idle" type="number" min="1" max="480" class="${cls}" value="${a ? a.idle_timeout_minutes : 15}">`, 'Từ 1 đến 480 phút.')}
-        ${a ? '' : '<p class="text-xs text-slate-600">Khi cấp tài khoản mới, hệ thống sinh sẵn một token xác nhận và hiện cho bạn một lần.</p>'}`;
+        <div class="mb-3">
+            <label class="block text-xs font-bold text-slate-700 mb-1.5" for="va-f-tok">Mã Token xác nhận</label>
+            <div class="flex items-center gap-2">
+                <input id="va-f-tok" class="${cls} flex-1 font-mono uppercase" placeholder="Tự gõ hoặc bấm Sinh mã" value="${vaEsc(curTok)}">
+                <button type="button" class="${VA_BTN_GRAY} h-10 px-3 whitespace-nowrap cursor-pointer" onclick="vaGenRandomToken('va-f-tok')" title="Sinh mã ngẫu nhiên"><i class="ph ph-magic-wand"></i> Sinh mã</button>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Để trống nếu muốn giữ nguyên token hiện tại hoặc sinh tự động khi tạo mới.</p>
+            <p id="va-f-tok-err" class="text-xs font-bold text-rose-700 mt-1 hidden"></p>
+        </div>
+        <div class="mb-3">
+            <label class="block text-xs font-bold text-slate-700 mb-1.5" for="va-f-exp">Thời hạn Token</label>
+            <select id="va-f-exp" class="${cls}">
+                <option value="never" ${!curExp ? 'selected' : ''}>Vô thời hạn (Khuyên dùng - Không bao giờ hết hạn)</option>
+                <option value="30d">30 ngày</option>
+                <option value="90d">90 ngày</option>
+                <option value="365d">365 ngày (1 năm)</option>
+                <option value="7d">7 ngày</option>
+            </select>
+        </div>
+        ${field('va-f-idle', 'Tự đăng xuất sau (phút)', `<input id="va-f-idle" type="number" min="1" max="480" class="${cls}" value="${a ? a.idle_timeout_minutes : 15}">`, 'Từ 1 đến 480 phút.')}`;
     vaOpenModal(`${a ? 'Sửa' : 'Cấp'} tài khoản cổng: ${v.short_name}`, body, a ? 'Lưu thay đổi' : 'Cấp tài khoản', async () => {
         const user = document.getElementById('va-f-user').value.trim();
         const pass = document.getElementById('va-f-pass').value;
         const idle = Number(document.getElementById('va-f-idle').value || 15);
+        const tokInput = document.getElementById('va-f-tok').value.trim();
+        const expPreset = document.getElementById('va-f-exp').value;
         const showErr = (id, msg) => { const e = document.getElementById(id + '-err'); e.textContent = msg; e.classList.remove('hidden'); document.getElementById(id).focus(); };
-        ['va-f-user', 'va-f-pass', 'va-f-idle'].forEach(i => document.getElementById(i + '-err').classList.add('hidden'));
+        ['va-f-user', 'va-f-pass', 'va-f-tok', 'va-f-idle'].forEach(i => {
+            const el = document.getElementById(i + '-err');
+            if (el) el.classList.add('hidden');
+        });
         if (user.length < 3) { showErr('va-f-user', 'Tên đăng nhập phải có ít nhất 3 ký tự.'); return false; }
         if ((!a && pass.length < 6) || (a && pass && pass.length < 6)) { showErr('va-f-pass', 'Mật khẩu phải có ít nhất 6 ký tự.'); return false; }
+        if (tokInput && tokInput.length < 4) { showErr('va-f-tok', 'Mã Token phải có ít nhất 4 ký tự.'); return false; }
         if (!Number.isInteger(idle) || idle < 1 || idle > 480) { showErr('va-f-idle', 'Thời gian phải từ 1 đến 480 phút.'); return false; }
         const payload = { username: user, idle_timeout_minutes: idle };
         if (pass) payload.password = pass;
+        if (tokInput) payload.confirm_token = tokInput;
+        payload.token_expiry_preset = expPreset;
         const out = await vaAccountAction(vendorId, payload, a ? 'Đã lưu tài khoản.' : 'Đã cấp tài khoản cổng nhà xe.');
         if (!out) return false;
         vaCloseModal();
-        if (out.data && out.data.issued_confirm_token) vaShowToken(v.short_name, out.data.issued_confirm_token);
+        if (out.data) vaShowTokenResult(v.short_name, out.data);
     }, { wide: true });
 }
 
@@ -594,3 +817,10 @@ window.vaAccountModal = vaAccountModal;
 window.vaAccountAction = vaAccountAction;
 window.vaToggleAccount = vaToggleAccount;
 window.vaIssueToken = vaIssueToken;
+window.vaToggleShowToken = vaToggleShowToken;
+window.vaGenRandomToken = vaGenRandomToken;
+window.vaIssueTokenModal = vaIssueTokenModal;
+window.vaShowTokenResult = vaShowTokenResult;
+window.vaShareVendorZaloModal = vaShareVendorZaloModal;
+window.vaShareAllocZalo = vaShareAllocZalo;
+window.vaShareDriverZalo = vaShareDriverZalo;

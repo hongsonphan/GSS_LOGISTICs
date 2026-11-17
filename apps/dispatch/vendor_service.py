@@ -1478,18 +1478,62 @@ def provision_portal_account(subcontractor, data, user=None):
     if raw_pw not in (None, ''):
         acct.set_password(str(raw_pw))
 
+    # Xử lý thời hạn Token (Chủ động chọn ngày / preset / không giới hạn)
+    expires_at = None
+    expiry_specified = False
+    preset = d.get('token_expiry_preset')
+    days_val = d.get('token_days')
+    raw_exp = d.get('token_expires_at')
+    if preset:
+        expiry_specified = True
+        pr = str(preset).lower()
+        if pr == '7d':
+            expires_at = timezone.now() + timedelta(days=7)
+        elif pr == '30d':
+            expires_at = timezone.now() + timedelta(days=30)
+        elif pr == '90d':
+            expires_at = timezone.now() + timedelta(days=90)
+        elif pr == '365d':
+            expires_at = timezone.now() + timedelta(days=365)
+        elif pr in ('never', 'unlimited', 'infinite'):
+            expires_at = None
+    elif days_val not in (None, ''):
+        expiry_specified = True
+        try:
+            dv = int(days_val)
+            expires_at = timezone.now() + timedelta(days=dv) if dv > 0 else None
+        except (ValueError, TypeError):
+            pass
+    elif raw_exp is not None:
+        expiry_specified = True
+        if str(raw_exp).strip():
+            from django.utils.dateparse import parse_datetime, parse_date
+            dt = parse_datetime(str(raw_exp))
+            if not dt:
+                d_only = parse_date(str(raw_exp))
+                if d_only:
+                    from datetime import datetime as _dt
+                    dt = timezone.make_aware(_dt.combine(d_only, _dt.min.time()))
+            expires_at = dt
+        else:
+            expires_at = None
+
     issued_token = None
     if d.get('regenerate_token') or (creating and not d.get('confirm_token')):
         issued_token = 'GSSV-' + secrets.token_urlsafe(12).upper()
-        acct.set_confirm_token(issued_token)
+        acct.set_confirm_token(issued_token, expires_at=expires_at if expiry_specified else acct.token_expires_at)
     elif d.get('confirm_token'):
         issued_token = str(d.get('confirm_token')).strip()
-        if len(issued_token) < 6:
-            raise ValidationError('Mã Token xác nhận phải có ít nhất 6 ký tự.')
-        acct.set_confirm_token(issued_token)
+        if len(issued_token) < 4:
+            raise ValidationError('Mã Token xác nhận phải có ít nhất 4 ký tự.')
+        acct.set_confirm_token(issued_token, expires_at=expires_at if expiry_specified else acct.token_expires_at)
+    elif expiry_specified:
+        acct.token_expires_at = expires_at
 
     acct.notes = str(d.get('notes', acct.notes) or '')[:500]
     acct.save()
+
+    plain_token = acct.get_plain_token()
 
     from core.models import AuditLog
     ok_user = user is not None and getattr(user, 'is_authenticated', False)
@@ -1507,7 +1551,10 @@ def provision_portal_account(subcontractor, data, user=None):
         'has_account': True,
         'username': acct.username,
         'confirm_token_preview': acct.confirm_token_preview,
-        'issued_confirm_token': issued_token,
+        'plain_token': plain_token,
+        'issued_confirm_token': issued_token or plain_token,
+        'token_expires_at': acct.token_expires_at.isoformat() if acct.token_expires_at else None,
+        'token_expired': acct.is_token_expired(),
         'idle_timeout_minutes': acct.idle_timeout_minutes,
         'is_active': acct.is_active,
         'locked': bool(acct.locked_until and acct.locked_until > timezone.now()),

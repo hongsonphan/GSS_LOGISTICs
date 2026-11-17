@@ -63,12 +63,22 @@ def _audit_driver_link(trip, event, user, extra=None):
         object_repr=f'Link tài xế {trip.trip_code}'[:255], changes={'event': event, **(extra or {})}, company=trip.company)
 
 
-def _account_payload(acct, now):
+def _account_payload(acct, now, request=None):
     if not acct:
         return None
+    plain = acct.get_plain_token()
+    base = request.build_absolute_uri('/')[:-1] if request else ''
+    magic = f"{base}/vendor/login/?u={acct.username}&t={plain}" if plain else f"{base}/vendor/login/?u={acct.username}"
     return {
-        'username': acct.username, 'is_active': acct.is_active, 'token_preview': acct.confirm_token_preview,
-        'locked': bool(acct.locked_until and acct.locked_until > now), 'last_login_at': _iso(acct.last_login_at),
+        'username': acct.username,
+        'is_active': acct.is_active,
+        'token_preview': acct.confirm_token_preview,
+        'plain_token': plain,
+        'token_expires_at': _iso(acct.token_expires_at),
+        'token_expired': acct.is_token_expired(),
+        'magic_link': magic,
+        'locked': bool(acct.locked_until and acct.locked_until > now),
+        'last_login_at': _iso(acct.last_login_at),
         'idle_timeout_minutes': acct.idle_timeout_minutes,
     }
 
@@ -111,7 +121,7 @@ class VendorAdminOverviewAPIView(APIView):
             mine = [l for l in links if l['subcontractor_id'] == s.id]
             vendors.append({
                 'id': s.id, 'name': s.name, 'short_name': s.short_name or s.name, 'code': s.code or '',
-                'is_active': bool(s.is_active), 'account': _account_payload(accounts.get(s.id), now),
+                'is_active': bool(s.is_active), 'account': _account_payload(accounts.get(s.id), now, request),
                 'links_valid': sum(1 for l in mine if l['state'] == 'valid'), 'links_total': len(mine),
                 'driver_links_valid': sum(1 for t in trips if t.vendor_allocation.subcontractor_id == s.id and driver_link_state(t, now) == 'valid'),
             })

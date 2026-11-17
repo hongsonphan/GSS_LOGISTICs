@@ -648,10 +648,17 @@ class VendorPortalAccountAdminAPIView(APIView):
         acct = SubcontractorPortalAccount.objects.filter(subcontractor=sub, is_deleted=False).first()
         if not acct:
             return Response({'success': True, 'data': {'has_account': False, 'suggested_username': (sub.code or f'vendor{sub.id}').lower(), 'idle_timeout_minutes': 15}})
+        plain = acct.get_plain_token()
+        base_url = request.build_absolute_uri('/')[:-1]
+        magic_link = f"{base_url}/vendor/login/?u={acct.username}&t={plain}" if plain else f"{base_url}/vendor/login/?u={acct.username}"
         return Response({'success': True, 'data': {
             'has_account': True,
             'username': acct.username,
             'confirm_token_preview': acct.confirm_token_preview,
+            'plain_token': plain,
+            'token_expires_at': acct.token_expires_at.isoformat() if acct.token_expires_at else None,
+            'token_expired': acct.is_token_expired(),
+            'magic_link': magic_link,
             'idle_timeout_minutes': acct.idle_timeout_minutes,
             'is_active': acct.is_active,
             'locked': bool(acct.locked_until and acct.locked_until > timezone.now()),
@@ -666,6 +673,9 @@ class VendorPortalAccountAdminAPIView(APIView):
             data = svc.provision_portal_account(sub, request.data, user=request.user)
         except ValidationError as exc:
             return _err(_msg(exc))
+        base_url = request.build_absolute_uri('/')[:-1]
+        plain = data.get('plain_token') or ''
+        data['magic_link'] = f"{base_url}/vendor/login/?u={data.get('username')}&t={plain}" if plain else f"{base_url}/vendor/login/?u={data.get('username')}"
         return Response({'success': True, 'message': f'Đã cập nhật tài khoản Cổng Nhà Xe cho {sub.short_name or sub.name}.', 'data': data})
 
     put = post

@@ -116,3 +116,35 @@ def _revoked_check(self, validated_token):
 
 
 GracefulJWTAuthentication.get_user = _revoked_check
+
+
+# ----------------------------------------------------------------------------- Mã hóa 2 chiều Token Bảo mật (Fernet / AES)
+def _get_fernet():
+    import base64
+    import hashlib
+    from cryptography.fernet import Fernet
+    key = base64.urlsafe_b64encode(hashlib.sha256(settings.SECRET_KEY.encode()).digest())
+    return Fernet(key)
+
+
+def encrypt_token(plain_text: str) -> str:
+    """Mã hóa token bí mật để lưu DB và cho phép Điều vận giải mã tra cứu/sao chép lại."""
+    if not plain_text:
+        return ''
+    try:
+        f = _get_fernet()
+        return f.encrypt(plain_text.strip().encode('utf-8')).decode('utf-8')
+    except Exception:
+        return ''
+
+
+def decrypt_token(cipher_text: str) -> str:
+    """Giải mã token bí mật thành chuỗi ban đầu."""
+    if not cipher_text:
+        return ''
+    try:
+        f = _get_fernet()
+        return f.decrypt(cipher_text.strip().encode('utf-8')).decode('utf-8')
+    except Exception:
+        return ''
+

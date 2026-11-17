@@ -3,6 +3,18 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-16 – Nâng cấp tính năng Cấp Token chủ động: tự đặt mã, tùy chọn thời hạn, Magic Link và mẫu tin Zalo 1-Click
+- **Cơ chế cấp Token chủ động cho Điều vận:**
+  - *Tự đặt mã Token (Custom Token):* Điều vận có thể tự gõ mã Token theo quy ước riêng (ví dụ: `ANPHAT-2026`, `HP26`) hoặc bấm nút `Sinh mã` ngẫu nhiên.
+  - *Cấu hình thời hạn linh hoạt:* Chọn hạn dùng `Vô thời hạn`, `30 ngày`, `90 ngày`, `365 ngày`, `7 ngày` hoặc chọn ngày cụ thể; hệ thống tự động kiểm soát hiệu lực khi đăng nhập.
+  - *Tra cứu & Sao chép an toàn:* Token được mã hóa hai chiều bằng Fernet AES trong `SubcontractorPortalAccount` (`confirm_token_cipher`), Điều vận có quyền xem (icon mắt `ph ph-eye`) và sao chép lại bất kỳ lúc nào mà không cần reset mã.
+  - *Magic Link (Đăng nhập 1-chạm):* Đường link dạng `/vendor/login/?u=...&t=...` tự động điền Tên đăng nhập và Token trên Cổng Nhà Xe, đối tác chỉ cần gõ Mật khẩu.
+  - *Mẫu tin nhắn Zalo 1-Click:* Nút `Zalo` (icon outline chuẩn `ph ph-chat-teardrop-text`) soạn sẵn toàn bộ nội dung tin nhắn gửi nhà xe (thông tin tài khoản/token/link) và gửi bác tài (chuyến xe, số cont, link QR di động).
+- **Backend & Database:** Thêm `confirm_token_cipher`, `token_expires_at` vào model `SubcontractorPortalAccount` (migration `master_data.0006`); nâng cấp `provision_portal_account` và các API view `vendor.py`, `vendor_admin.py`.
+- **Frontend & UI/UX:** Nâng cấp modal `vaAccountModal`, modal `vaIssueTokenModal`, modal kết quả `vaShowTokenResult`, bảng tài khoản Tab 4 Điều vận, bảng chia cont Tab 2, bảng link tài xế Tab 4. Toàn bộ icon tuân thủ chuẩn icon outline Phosphor.
+- **Tài liệu & Kiểm thử:** Đồng bộ `docs/04-user-guide.md`, biên dịch lại `templates/help.html` và `tailwind.css`; bổ sung unit test `test_proactive_token_issuance_and_magic_link` trong `test_vendor_admin.py` (QA verify 7/7 PASS).
+- File: `apps/master_data/models.py`, `apps/master_data/migrations/0006_*.py`, `apps/dispatch/vendor_service.py`, `apps/dispatch/api_views/vendor.py`, `apps/dispatch/api_views/vendor_admin.py`, `apps/dispatch/test_vendor_admin.py`, `core/security.py`, `templates/vendor_portal.html`, `static/js/src/app/dispatch/vendor-admin.js`, `static/js/app.js`, `static/css/tailwind*.css`, `docs/04-user-guide.md`, `templates/help.html`, `docs/CHANGELOG.md`.
+
 ## 2026-11-15 – Viết lại HDSD toàn diện: bổ sung sơ đồ quy trình thao tác (workflow) cho từng phân hệ
 - **Tài liệu người dùng (`docs/04-user-guide.md` & `templates/help.html`):** Rà soát và viết lại toàn bộ sổ tay hướng dẫn sử dụng phiên bản v1.2.
 - **Quy trình thao tác dạng workflow:** Đầu mỗi phân hệ/tính năng (A4, B0, C1 đến C14) đều được bổ sung sơ đồ trực quan (Workflow Diagram dạng khối/mũi tên ASCII) và bảng quy trình chi tiết (Bước, Người thực hiện, Thao tác trên phần mềm, Dữ liệu đầu vào, Kết quả đầu ra, Ràng buộc & Điểm kiểm soát).

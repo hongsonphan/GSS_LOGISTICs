@@ -1169,9 +1169,17 @@
     document.getElementById('vendor-login-screen').classList.remove('hidden');
     const tokInp = document.getElementById('login-token');
     const tokBadge = document.getElementById('login-token-badge');
-    if (URL_TOKEN) {
-      tokInp.value = URL_TOKEN;
+    const qParams = new URLSearchParams(window.location.search);
+    const qUser = qParams.get('u');
+    const qToken = qParams.get('t') || qParams.get('token');
+    if (qUser) {
+      const uInp = document.getElementById('login-username');
+      if (uInp) uInp.value = qUser;
+    }
+    if (URL_TOKEN || qToken) {
+      tokInp.value = URL_TOKEN || qToken;
       tokBadge.classList.remove('hidden');
+      tokBadge.textContent = URL_TOKEN ? '(Đã nhận diện từ link lệnh)' : '(Đã tự động điền từ Link nhanh)';
     } else {
       tokBadge.classList.add('hidden');
     }
@@ -1179,7 +1187,15 @@
       document.getElementById('login-sub-hint').textContent = `Nhà xe: ${hint.subcontractor} · Vui lòng đăng nhập tài khoản để xác thực và mở lệnh ${hint.booking_code || ''}.`;
     }
     showLoginAlert(alertMsg, alertTone);
-    setTimeout(() => document.getElementById('login-username').focus(), 50);
+    setTimeout(() => {
+      const uInp = document.getElementById('login-username');
+      const pInp = document.getElementById('login-password');
+      if (uInp && uInp.value && (URL_TOKEN || qToken)) {
+        if (pInp) pInp.focus();
+      } else if (uInp && !uInp.value) {
+        uInp.focus();
+      }
+    }, 50);
   }
 
   window.toggleLoginPassword = function() {
