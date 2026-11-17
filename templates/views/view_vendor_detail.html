@@ -76,7 +76,7 @@
         <div class="max-w-[1720px] mx-auto space-y-5">
 
             <!-- HÀNG 1: HỒ SƠ PHÁP LÝ & TÀI KHOẢN BẢO MẬT (GRID 2 CỘT RỘNG RÃI) -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
 
                 <!-- THẺ 1: THÔNG TIN PHÁP LÝ & LIÊN HỆ ĐỐI TÁC -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 flex flex-col justify-between">
@@ -89,7 +89,7 @@
                             <span class="text-xs text-slate-400 font-semibold">Hồ sơ 3PL</span>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
                             <div class="bg-slate-50/70 p-3 rounded-xl border border-slate-100">
                                 <div class="text-slate-400 font-semibold mb-0.5">Tên doanh nghiệp đầy đủ:</div>
                                 <div class="font-bold text-slate-900 text-[13px]" id="vd-company-name">--</div>
@@ -104,7 +104,7 @@
                             </div>
                             <div class="bg-slate-50/70 p-3 rounded-xl border border-slate-100">
                                 <div class="text-slate-400 font-semibold mb-0.5">Bãi xe / Kho bãi trung chuyển:</div>
-                                <div class="font-medium text-slate-800" id="vd-yard-address">--</div>
+                                <div class="font-medium text-slate-800 truncate" id="vd-yard-address">--</div>
                             </div>
                             <div class="sm:col-span-2 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
                                 <div class="text-slate-400 font-semibold mb-0.5">Địa chỉ trụ sở chính:</div>
@@ -127,23 +127,23 @@
                     </div>
                 </div>
 
-                <!-- THẺ 2: TÀI KHOẢN & BẢO MẬT CỔNG NHÀ XE (USER | PASS | TOKEN) -->
+                <!-- THẺ 2: TÀI KHOẢN & BẢO MẬT CỔNG ĐỐI TÁC (PORTAL) - 4 HÀNG CÂN ĐỐI -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 flex flex-col justify-between">
                     <div>
-                        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 flex-wrap gap-2">
                             <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 font-heading">
                                 <i class="ph-bold ph-shield-check text-teal-700 text-lg"></i>
                                 <span>Tài Khoản &amp; Bảo Mật Cổng Đối Tác (Portal)</span>
                             </h3>
                             <div class="flex items-center gap-1.5" id="vd-account-actions-top">
                                 <button type="button" id="vd-btn-issue-token"
-                                    class="h-8 px-3 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors"
+                                    class="h-8 px-3 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
                                     title="Chủ động đặt mã Token hoặc sinh mã bảo mật cao GSS-[12 ký tự]">
                                     <i class="ph-bold ph-key"></i>
                                     <span>Đặt / Cấp Token</span>
                                 </button>
                                 <button type="button" id="vd-btn-config-account"
-                                    class="h-8 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors"
+                                    class="h-8 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
                                     title="Cấu hình tên đăng nhập, mật khẩu và thời gian tự đăng xuất">
                                     <i class="ph-bold ph-pencil-simple"></i>
                                     <span>Cấu hình User &amp; Pass</span>
@@ -151,103 +151,149 @@
                             </div>
                         </div>
 
-                        <!-- Khung thông tin tài khoản -->
+                        <!-- Khung thông tin tài khoản (Nạp động qua JS: 4 hàng User/Pass, Email/SĐT, Token, Magic Link) -->
                         <div id="vd-account-content">
-                            <!-- Nạp động qua JS: Trạng thái tài khoản, User, Pass, Token bảo mật GSS- -->
+                            <!-- Nạp động qua JS -->
                         </div>
                     </div>
 
                     <!-- Chú thích bảo mật chuẩn GSS -->
                     <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500">
                         <i class="ph-bold ph-info text-teal-700 text-sm shrink-0"></i>
-                        <span>Cơ chế bảo mật 3 lớp: Tên đăng nhập + Mật khẩu + Mã Token xác nhận 12 ký tự ngẫu nhiên (chống vét cạn).</span>
+                        <span>Cơ chế bảo mật 3 lớp độc lập: Tên đăng nhập + Mật khẩu + Token xác nhận ngẫu nhiên GSS-. Cô lập dữ liệu đối tác an toàn tuyệt đối.</span>
                     </div>
                 </div>
             </div>
 
-            <!-- HÀNG 2: ĐỘI XE & DANH SÁCH BÁC TÀI PHỤ TRÁCH -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5">
-                <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 flex-wrap gap-2">
-                    <div>
+            <!-- HÀNG 2: ĐỘI XE & TÀI XẾ (TÁCH 2 PHẦN RÕ RÀNG THEO HÌNH 2) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-5">
+
+                <!-- PHẦN 1: DANH SÁCH ĐỘI XE & PHƯƠNG TIỆN -->
+                <div>
+                    <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100 flex-wrap gap-2">
+                        <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 font-heading">
+                            <i class="ph-bold ph-truck text-teal-700 text-lg"></i>
+                            <span>Danh sách Đội xe &amp; Phương tiện:</span>
+                        </h3>
+                        <div id="vd-vehicles-stat-badge" class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                            0 Phương tiện
+                        </div>
+                    </div>
+                    <!-- Danh sách biển số xe & phương tiện -->
+                    <div class="p-3.5 bg-slate-50/70 rounded-xl border border-slate-100 min-h-[48px] flex items-center gap-2 flex-wrap" id="vd-vehicles-list">
+                        <span class="text-slate-400 italic text-xs">-- Chưa có phương tiện nào --</span>
+                    </div>
+                </div>
+
+                <!-- PHẦN 2: DANH SÁCH TÀI XẾ -->
+                <div>
+                    <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100 flex-wrap gap-2">
                         <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 font-heading">
                             <i class="ph-bold ph-steering-wheel text-teal-700 text-lg"></i>
-                            <span>Đội Phương Tiện &amp; Danh Sách Bác Tài Phụ Trách</span>
+                            <span>Danh sách Tài xế:</span>
                         </h3>
-                        <p class="text-xs text-slate-500 mt-0.5">
-                            Các phương tiện đầu kéo, rơ-moóc và tài xế của nhà xe tham gia vận chuyển hàng hóa cho GSS
-                        </p>
+                        <div id="vd-drivers-stat-badge" class="text-xs font-bold text-teal-800 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
+                            0 Bác tài
+                        </div>
                     </div>
-                    <div id="vd-driver-stat-badge" class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                        0 Bác tài · 0 Đầu kéo
-                    </div>
-                </div>
 
-                <!-- Danh sách biển số xe -->
-                <div class="mb-4 bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
-                    <div class="text-xs text-slate-500 font-bold mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="ph-bold ph-truck text-teal-700"></i>
-                        <span>Phương tiện đầu kéo / rơ-moóc đã ghi nhận:</span>
+                    <!-- Bảng danh sách Bác tài -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-100/90 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Họ Tên Bác Tài</th>
+                                    <th class="p-3">Số Điện Thoại</th>
+                                    <th class="p-3">Chuyến Xe Phụ Trách</th>
+                                    <th class="p-3">Phương Tiện / Cont</th>
+                                    <th class="p-3">Trạng Thái Chuyến</th>
+                                    <th class="p-3 text-center">Thao Tác Trực Tiếp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vd-drivers-table-body" class="divide-y divide-slate-100 bg-white font-medium">
+                                <!-- Nạp động qua JS -->
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="flex items-center gap-2 flex-wrap" id="vd-vehicles-list">
-                        <!-- Danh sách biển số xe -->
-                    </div>
-                </div>
-
-                <!-- Bảng danh sách Bác tài -->
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="w-full text-xs text-left">
-                        <thead class="bg-slate-100/90 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
-                            <tr>
-                                <th class="p-3">Họ Tên Bác Tài</th>
-                                <th class="p-3">Số Điện Thoại</th>
-                                <th class="p-3">Chuyến Xe Phụ Trách</th>
-                                <th class="p-3">Phương Tiện / Cont</th>
-                                <th class="p-3">Trạng Thái Chuyến</th>
-                                <th class="p-3 text-center">Thao Tác Trực Tiếp</th>
-                            </tr>
-                        </thead>
-                        <tbody id="vd-drivers-table-body" class="divide-y divide-slate-100 bg-white font-medium">
-                            <!-- Nạp động qua JS -->
-                        </tbody>
-                    </table>
                 </div>
             </div>
 
-            <!-- HÀNG 3: LỆNH ĐIỀU ĐỘNG & PHIẾU CHIA CONT (ALLOCATIONS) -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5">
-                <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 flex-wrap gap-2">
-                    <div>
-                        <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 font-heading">
-                            <i class="ph-bold ph-receipt text-teal-700 text-lg"></i>
-                            <span>Lệnh Điều Động Vận Tải &amp; Phiếu Chia Container</span>
-                        </h3>
-                        <p class="text-xs text-slate-500 mt-0.5">
-                            Toàn bộ các phiếu chia lệnh phân bổ container cho đối tác nhà xe này
-                        </p>
+            <!-- HÀNG 3: LỆNH ĐIỀU VẬN (TÁCH 2 PHÂN KHU: CHƯA PHÂN BỔ & ĐÃ PHÂN BỔ KÈM 7 NÚT TRẠNG THÁI) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-6">
+
+                <!-- PHÂN KHU A: CÁC LỆNH CHƯA PHÂN BỔ XE -->
+                <div>
+                    <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100 flex-wrap gap-2">
+                        <div>
+                            <h3 class="font-bold text-amber-900 text-sm uppercase tracking-wider flex items-center gap-2 font-heading">
+                                <i class="ph-bold ph-hourglass-medium text-amber-700 text-lg"></i>
+                                <span>Các lệnh Chưa phân bổ xe:</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                                Các phiếu chia / lệnh điều vận nhà xe đã nhận nhưng chưa gán xe hoặc còn thiếu xe/cont
+                            </p>
+                        </div>
+                        <div id="vd-unallocated-stat-badge" class="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+                            0 Lệnh chưa gán
+                        </div>
                     </div>
-                    <div id="vd-alloc-stat-badge" class="text-xs font-bold text-teal-800 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
-                        0 Phiếu chia cont
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-amber-50/70 text-amber-950 font-bold uppercase tracking-wider text-[11px] border-b border-amber-200">
+                                <tr>
+                                    <th class="p-3">Phiếu Chia Cont</th>
+                                    <th class="p-3">Lệnh Điều Động</th>
+                                    <th class="p-3">Khách Hàng &amp; Booking</th>
+                                    <th class="p-3">Tiến Độ Phân Bổ</th>
+                                    <th class="p-3">Hạn Link Phiếu</th>
+                                    <th class="p-3">Trạng Thái</th>
+                                    <th class="p-3 text-center">Thao Tác Cổng Nhà Xe</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vd-unallocated-table-body" class="divide-y divide-slate-100 bg-white font-medium">
+                                <!-- Nạp động qua JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="w-full text-xs text-left">
-                        <thead class="bg-slate-100/90 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
-                            <tr>
-                                <th class="p-3">Phiếu Chia Cont</th>
-                                <th class="p-3">Lệnh Điều Động</th>
-                                <th class="p-3">Khách Hàng &amp; Booking</th>
-                                <th class="p-3">Số Lượng Cont</th>
-                                <th class="p-3">Hạn Link Phiếu</th>
-                                <th class="p-3">Trạng Thái</th>
-                                <th class="p-3 text-center">Thao Tác Cổng Nhà Xe</th>
-                            </tr>
-                        </thead>
-                        <tbody id="vd-allocs-table-body" class="divide-y divide-slate-100 bg-white font-medium">
-                            <!-- Nạp động qua JS -->
-                        </tbody>
-                    </table>
+                <!-- PHÂN KHU B: CÁC LỆNH ĐÃ PHÂN BỔ & Ô TRẠNG THÁI 7 NÚT -->
+                <div>
+                    <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100 flex-wrap gap-2">
+                        <div>
+                            <h3 class="font-bold text-teal-900 text-sm uppercase tracking-wider flex items-center gap-2 font-heading">
+                                <i class="ph-bold ph-path text-teal-700 text-lg"></i>
+                                <span>Các lệnh đã phân bổ:</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                                Danh sách các chuyến xe đã gán xe &amp; tài xế, theo dõi tiến độ qua chuỗi mốc hành trình 7 bước
+                            </p>
+                        </div>
+                        <div id="vd-allocated-stat-badge" class="text-xs font-bold text-teal-800 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
+                            0 Chuyến đã phân bổ
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-xs text-left min-w-[960px]">
+                            <thead class="bg-slate-100/90 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3 w-32">Mã Chuyến / Cont</th>
+                                    <th class="p-3 w-36">Khách Hàng &amp; Booking</th>
+                                    <th class="p-3 w-40">Xe &amp; Tài Xế</th>
+                                    <th class="p-3 w-48">Lộ Trình Vận Chuyển</th>
+                                    <th class="p-3 text-center">Trạng Thái 7 Mốc Hành Trình</th>
+                                    <th class="p-3 text-center w-36">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vd-allocated-table-body" class="divide-y divide-slate-100 bg-white font-medium">
+                                <!-- Nạp động qua JS: Render bảng các chuyến với ô trạng thái 7 nút -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
             </div>
 
         </div>

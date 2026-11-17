@@ -3,6 +3,26 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-17 – Tối ưu hóa Thẻ Tài khoản Portal 4 hàng, Tách riêng Đội xe & Tài xế, và Nâng cấp Lệnh điều vận với Ô Trạng thái 7 nút hành trình
+- **1. Tối ưu Thẻ Tài khoản & Bảo mật Cổng Đối Tác (Portal) - 4 hàng cân đối, rộng rãi:**
+  - Thiết kế lại bố cục Thẻ 2 trong trang Chi tiết Nhà xe (iew_vendor_detail.html) giải quyết triệt để khoảng trống dư thừa, tạo cấu trúc 4 hàng đối xứng & thoáng đãng:
+    - *Hàng 1 (2 cột):* Tên đăng nhập (User) có nút sao chép và thời gian tự đăng xuất | Mật khẩu (Pass) có tag bảo mật và thời gian đăng nhập gần nhất.
+    - *Hàng 2 (2 cột):* Email nhận lệnh & OTP của đối tác | Số điện thoại liên hệ / Zalo trao đổi trực tiếp với Điều vận GSS.
+    - *Hàng 3 (Toàn bộ chiều rộng):* Mã Token xác nhận bảo mật cao GSS-[A-Za-z0-9]{12} (hiển thị rộng rãi trọn vẹn, nút mắt ẩn/hiện, nút sao chép, tag trạng thái Hợp lệ/Hết hạn và nút Đổi Token).
+    - *Hàng 4 (Toàn bộ chiều rộng):* Đường dẫn Magic Link đăng nhập 1-chạm (ô input readonly font mono đầy đủ, nút sao chép link và nút Mở Cổng Nhà Xe trực tiếp).
+  - *Kiến trúc tài khoản:* Độc lập hoàn toàn với uth.User trong Admin Người dùng nội bộ để đảm bảo an ninh thông tin, cô lập dữ liệu đối tác bên ngoài (multi-tenant) và giúp Điều vận viên chủ động 100%.
+- **2. Tách bạch rõ ràng Đội xe & Tài xế (Hình 2):**
+  - Khối *Danh sách Đội xe & Phương tiện:* Hiển thị trực quan toàn bộ biển số đầu kéo, rơ-moóc của nhà xe kèm badge tổng số phương tiện.
+  - Khối *Danh sách Tài xế:* Bảng chi tiết bác tài với Họ tên, Số điện thoại, Chuyến phụ trách, Phương tiện/Cont, Trạng thái chuyến và nút Màn hình Tài xế mở mô phỏng smartphone.
+- **3. Nâng cấp khối Lệnh Điều vận thành 2 phân khu & Bổ sung Ô Trạng thái 7 nút:**
+  - *Các lệnh Chưa phân bổ xe:* Lọc các phiếu chia / lệnh điều vận chưa gán đủ xe (illed < allocated_containers), thanh tiến trình % và cảnh báo số cont còn thiếu, kèm nút Màn hình Vendor mở phiếu chia gán hộ và nút Gán tiếp.
+  - *Các lệnh đã phân bổ:* Liệt kê toàn bộ các chuyến xe đã gán xe & tài xế, hiển thị rõ Mã chuyến, Cont, Khách hàng, Xe & Bác tài, Tuyến đường vận chuyển.
+  - *Ô Trạng thái 7 nút (7-Step Journey Stepper):* Chuỗi 7 nút mốc hành trình trực quan: 1. Sẵn sàng ➔ 2. Đến nhận ➔ 3. Nhận cont ➔ 4. Đến giao ➔ 5. Giao xong ➔ 6. Đi hạ rỗng ➔ 7. Hạ rỗng. Bước đã qua sáng xanh lá (completed), bước hiện tại sáng teal viền ring (active), bước chưa tới màu xám nhạt (pending), có tooltip hiển thị thời gian xác nhận chi tiết.
+- **4. Kiểm thử thị giác & Đồng bộ hệ thống:**
+  - Kiểm thử thị giác Playwright chụp ảnh thực tế đạt độ chuẩn xác 100% công thái học và thẩm mỹ.
+  - Bộ kiểm thử python scripts/qa.py verify đạt kết quả 7/7 PASS.
+- File: pps/dispatch/api_views/vendor_admin.py, 	emplates/views/view_vendor_detail.html, static/js/src/app/dispatch/vendor-admin.js, static/js/app.js, static/css/tailwind.css, docs/CHANGELOG.md.
+
 ## 2026-11-17 – Nâng cấp toàn diện Màn hình Quản lý Vendor: Chuẩn Token bảo mật cao GSS-[A-Za-z0-9]{12}, Bảng tinh giản và Trang Chi Tiết Nhà Xe Toàn Màn Hình (Full-Page View)
 - **1. Chuẩn Token Cổng Nhà Xe bảo mật cao:**
   - Token xác nhận của Cổng Đối Tác được cấu hình theo định dạng chuẩn: Tiền tố `GSS-` kết hợp chuỗi 12 ký tự ngẫu nhiên bao gồm chữ hoa, chữ thường và chữ số (ví dụ: `GSS-7aB9xK2mP4qL`), thay cho các mã cũ ngắn hoặc dễ suy đoán.

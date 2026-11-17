@@ -43,18 +43,35 @@ def serialize_driver_link(trip, request, now=None):
     alloc = trip.vendor_allocation
     sub = alloc.subcontractor if alloc else None
     driver = (trip.subcontractor_driver_name or (trip.driver.full_name if trip.driver_id else '') or '')
+    driver_phone = trip.subcontractor_driver_phone or (trip.driver.phone if trip.driver_id else '') or ''
+    cust = (alloc.booking.customer if alloc and alloc.booking else None) or getattr(trip, 'customer', None)
+    customer_name = (cust.short_name or cust.name) if cust else ''
+    pickup = trip.pickup_depot or trip.pickup_location or ''
+    delivery = trip.delivery_warehouse or trip.warehouse_location or ''
+    dropoff = trip.dropoff_depot or trip.dropoff_location or ''
     return {
         'trip_id': trip.id, 'trip_code': trip.trip_code, 'container_number': trip.container_number or '',
-        'booking_code': alloc.booking.booking_code if alloc else '',
+        'booking_code': alloc.booking.booking_code if alloc and alloc.booking else '',
+        'customer': customer_name,
         'vendor_id': sub.id if sub else None, 'vendor': (sub.short_name or sub.name) if sub else '',
-        'driver_name': driver, 'driver_phone': trip.subcontractor_driver_phone or '',
+        'driver_name': driver, 'driver_phone': driver_phone,
         'plate': trip.vehicle.license_plate if trip.vehicle_id else '',
+        'pickup_place': pickup,
+        'delivery_place': delivery,
+        'empty_return_place': dropoff,
         'step_status': trip.step_status, 'step_label': trip.get_step_status_display(),
+        'timestamps': {
+            'ready': _iso(trip.created_at),
+            'arrived_pickup': _iso(trip.arrived_pickup_at),
+            'loaded': _iso(trip.loaded_at),
+            'arrived_delivery': _iso(trip.arrived_delivery_at),
+            'unloaded': _iso(trip.unloaded_at),
+            'empty_returning': _iso(trip.empty_returning_at),
+            'empty_returned': _iso(trip.empty_returned_at),
+        },
         'link': request.build_absolute_uri(f'/q/{trip_token(trip)}/'),
         'expires_at': _iso(trip.qr_expires_at), 'state': driver_link_state(trip, now),
     }
-
-
 def _audit_driver_link(trip, event, user, extra=None):
     ok = user is not None and getattr(user, 'is_authenticated', False)
     AuditLog.objects.create(
@@ -156,6 +173,7 @@ class VendorAdminOverviewAPIView(APIView):
                 'driver_links_valid': sum(1 for t in sub_trips if driver_link_state(t, now) == 'valid'),
                 'vehicles': sorted(list(vehicles_set)),
                 'drivers': list(drivers_map.values()),
+                'allocated_trips': [serialize_driver_link(t, request, now) for t in sub_trips],
             })
         return Response({'success': True, 'data': {
             'vendors': vendors, 'links': links,
