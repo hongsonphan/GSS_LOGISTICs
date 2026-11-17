@@ -3,6 +3,22 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-17 – Phản Ứng Tức Thì (Reactive Update) Khi Đổi / Cấp Token Trong Chi Tiết Nhà Xe
+- **1. Đồng bộ tức thì Thẻ Tài Khoản & Bảo Mật Portal (Hình 2):**
+  - Khắc phục sự cố không cập nhật mã token trên giao diện sau khi bấm "Lưu & Kích hoạt Token":
+    - Cập nhật hàm `vaIssueTokenModal()` và `vaAccountModal()` trong `static/js/src/app/dispatch/vendor-admin.js`: Ngay khi nhận được phản hồi thành công từ API `/api/vendor-portal-accounts/<id>/`, hệ thống cập nhật tức thì dữ liệu tài khoản trong bộ nhớ cục bộ `vUpdated.account` (`plain_token`, `token_preview`, `magic_link`, `token_expires_at`).
+    - Tự động gọi lại `openVendorDetailPage(vendorId, false)` để render lại ngay lập tức Thẻ Tài khoản & Bảo Mật Portal.
+  - Cập nhật hàm `vaReload()`: Tự động kiểm tra trạng thái màn hình chi tiết nhà xe (`view-vendor-detail` đang hiển thị và có `currentActiveVendorId`) để nạp lại dữ liệu đồng bộ từ server mà không làm mất ngữ cảnh người dùng.
+- **2. Kết quả thị giác:**
+  - Ngay khi bấm "Lưu & Kích hoạt Token" trong modal Đổi Token (Hình 1), Thẻ tài khoản bên dưới (Hình 2) thay đổi tức thì:
+    - *Mã Token xác nhận (GSS- 12 số & ký tự):* Chuyển ngay sang mã token mới (gợi ý 4 ký tự cuối hoặc mã đầy đủ khi bấm Hiện).
+    - *Đường dẫn Magic Link:* Tự động cập nhật chuỗi token mới trong tham số `&t=GSS-...`.
+    - Trạng thái hiệu lực và hạn dùng cập nhật đồng bộ.
+- **3. Kiểm thử & Triển khai:**
+  - Kiểm thử tự động Playwright (`scripts/test_reactive_token.py`): Mô phỏng quy trình bấm Đổi Token ➔ Sinh mã ➔ Bấm Lưu & Kích hoạt, xác thực assertion mã mới xuất hiện chính xác trên cả modal kết quả và thẻ chi tiết (PASS).
+  - QA Verify: Đạt 7/7 PASS.
+- File: `static/js/src/app/dispatch/vendor-admin.js`, `static/js/app.js`, `docs/CHANGELOG.md`.
+
 ## 2026-11-17 – Chuẩn hóa Màn hình Điều Vận Theo Dõi Nhà Xe: Lộ Trình 1 Hàng, Thao Tác Bác Tài & Xe, Modal Danh Sách Container Thuộc Phiếu Chia
 - **1. Mở rộng cột "Lộ Trình Vận Chuyển" trên 1 dòng duy nhất (Hình 1):**
   - Khắc phục triệt để tình trạng gãy dòng chật hẹp của tuyến đường 3 điểm: mở rộng cột lộ trình với `min-w-[440px] whitespace-nowrap`, đảm bảo chuỗi cả 3 địa điểm (ví dụ: `CẢNG CÁT LÁI ➔ KHO NHÀ MÁY ĐẮK NÔNG ➔ DEPOT TÂN CẢNG LONG BÌNH`) nằm trọn vẹn, ngay ngắn trên 1 dòng duy nhất.

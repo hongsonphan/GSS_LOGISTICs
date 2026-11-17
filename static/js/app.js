@@ -12917,6 +12917,7 @@ document.addEventListener('keydown', function(e) {
 // tài khoản nhà xe: /api/vendor-portal-accounts/<id>/, link nhà xe: PATCH /api/vendor-allocations/<id>/.
 
 var vaData = null;
+var currentActiveVendorId = null;
 var vaSection = 'accounts';
 var vaLoading = false;
 window.currentJourneyMode = window.currentJourneyMode || 'table';
@@ -13429,6 +13430,12 @@ async function vaReload() {
     await loadVendorAdminData(true);
     if (currentDispatchTab === 'vendor-admin') renderVendorAdmin();
     if (currentDispatchTab === 'allocations') renderAllocationsTable();
+    const detailView = document.getElementById('view-vendor-detail');
+    if (detailView && !detailView.classList.contains('hidden-view') && currentActiveVendorId) {
+        if (typeof openVendorDetailPage === 'function') {
+            openVendorDetailPage(currentActiveVendorId, false);
+        }
+    }
 }
 
 const vaTokenVisibility = {};
@@ -13573,6 +13580,19 @@ function vaIssueTokenModal(vendorId) {
         if (!out) return false;
         vaCloseModal();
         if (out.data) {
+            const vUpdated = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+            if (vUpdated) {
+                if (!vUpdated.account) vUpdated.account = {};
+                if (out.data.plain_token) vUpdated.account.plain_token = out.data.plain_token;
+                if (out.data.confirm_token_preview) vUpdated.account.token_preview = out.data.confirm_token_preview;
+                if (out.data.magic_link) vUpdated.account.magic_link = out.data.magic_link;
+                if (out.data.token_expires_at !== undefined) vUpdated.account.token_expires_at = out.data.token_expires_at;
+                vUpdated.account.token_expired = false;
+            }
+            const detailView = document.getElementById('view-vendor-detail');
+            if (detailView && !detailView.classList.contains('hidden-view')) {
+                openVendorDetailPage(vendorId, false);
+            }
             vaShowTokenResult(v.short_name, out.data);
         }
     });
@@ -13682,7 +13702,22 @@ function vaAccountModal(vendorId) {
         const out = await vaAccountAction(vendorId, payload, a ? 'Đã lưu tài khoản.' : 'Đã cấp tài khoản cổng nhà xe.');
         if (!out) return false;
         vaCloseModal();
-        if (out.data) vaShowTokenResult(v.short_name, out.data);
+        if (out.data) {
+            const vUpdated = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+            if (vUpdated) {
+                if (!vUpdated.account) vUpdated.account = {};
+                if (out.data.username) vUpdated.account.username = out.data.username;
+                if (out.data.plain_token) vUpdated.account.plain_token = out.data.plain_token;
+                if (out.data.confirm_token_preview) vUpdated.account.token_preview = out.data.confirm_token_preview;
+                if (out.data.magic_link) vUpdated.account.magic_link = out.data.magic_link;
+                if (out.data.token_expires_at !== undefined) vUpdated.account.token_expires_at = out.data.token_expires_at;
+            }
+            const detailView = document.getElementById('view-vendor-detail');
+            if (detailView && !detailView.classList.contains('hidden-view')) {
+                openVendorDetailPage(vendorId, false);
+            }
+            vaShowTokenResult(v.short_name, out.data);
+        }
     }, { wide: true });
 }
 
@@ -14309,7 +14344,7 @@ window.vaMaskToken = vaMaskToken;
 // TRANG CHI TIẾT NHÀ XE & CỔNG ĐỐI TÁC (FULL-PAGE VIEW)
 // =============================================================
 
-let currentActiveVendorId = null;
+// currentActiveVendorId declared at top
 
 
 // 7 MỐC HÀNH TRÌNH CHUẨN GSS TMS
