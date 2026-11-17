@@ -441,7 +441,7 @@ function vaRenderDrivers(vendor) {
             <td class="p-2.5">${st}</td>
             <td class="p-2.5">${vaExpiry(d.expires_at, d.state !== 'valid')}</td>
             <td class="p-2.5 text-center"><div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
-                <button type="button" class="${VA_BTN_TEAL}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaOpenDriverScreenDirect('${vaEsc(d.link)}', '${vaEsc(d.trip_code)}')" title="Mở trực tiếp giao diện Bác tài để xem, hướng dẫn hoặc thao tác hộ"><i class="ph ph-device-mobile"></i> Mở giao diện Tài xế</button>
+                <button type="button" class="${VA_BTN_TEAL}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaOpenDriverScreenDirect('${vaEsc(d.link)}', '${vaEsc(d.trip_code)}')" title="Mở trực tiếp giao diện Bác tài để xem, hướng dẫn hoặc thao tác hộ"><i class="ph ph-device-mobile"></i> Màn hình Tài xế</button>
                 <button type="button" class="${VA_BTN_GRAY}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaCopyDriver(${d.trip_id})"><i class="ph ph-copy"></i> Sao chép</button>
                 <button type="button" class="${VA_BTN_GRAY}" ${d.state === 'valid' ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'} onclick="vaShareDriverZalo(${d.trip_id})" title="Sao chép tin nhắn Zalo điều lệnh gửi Bác tài"><i class="ph ph-chat-teardrop-text"></i> Zalo</button>
                 <button type="button" class="${VA_BTN_AMBER}" onclick="vaDriverExpiry(${d.trip_id})" title="Đặt hạn dùng, giữ nguyên link"><i class="ph ph-clock-countdown"></i> Đặt hạn</button>
@@ -1059,7 +1059,7 @@ function vaOpenDriverChooserModal() {
             <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-950 flex items-start gap-2.5">
                 <i class="ph ph-device-mobile text-xl text-indigo-700 shrink-0 mt-0.5"></i>
                 <div class="leading-relaxed">
-                    <strong class="font-bold">Giao diện Bác tài (Lệnh Điều Xe Di Động - /q/&lt;token&gt;/):</strong>
+                    <strong class="font-bold">Màn hình Tài xế (Lệnh Điều Xe Di Động - /q/&lt;token&gt;/):</strong>
                     Mở giao diện điện thoại của Bác tài để Điều vận trực tiếp xem tiến độ, hướng dẫn tài xế từng bước hoặc thao tác bấm nhận hàng, giao hàng, hạ rỗng, chụp ảnh EIR/POD hộ khi tài xế gặp khó khăn.
                 </div>
             </div>
@@ -1083,7 +1083,7 @@ function vaOpenDriverChooserModal() {
             </div>
         </div>`;
 
-    vaOpenModal('Mở Giao diện Tài xế - Xem & Hướng dẫn / Thao tác hộ', body, null, null, { wide: true });
+    vaOpenModal('Màn hình Tài xế - Xem & Hướng dẫn / Thao tác hộ', body, null, null, { wide: true });
 }
 
 window.vaShareDriverZalo = vaShareDriverZalo;
