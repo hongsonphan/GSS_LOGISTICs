@@ -168,20 +168,40 @@
             <!-- HÀNG 2: ĐỘI XE & TÀI XẾ (TÁCH 2 PHẦN RÕ RÀNG THEO HÌNH 2) -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-5">
 
-                <!-- PHẦN 1: DANH SÁCH ĐỘI XE & PHƯƠNG TIỆN -->
+                <!-- PHẦN 1: DANH SÁCH ĐỘI XE & PHƯƠNG TIỆN (MỖI XE/PHƯƠNG TIỆN LÀ 1 DÒNG) -->
                 <div>
                     <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100 flex-wrap gap-2">
-                        <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 font-heading">
-                            <i class="ph-bold ph-truck text-teal-700 text-lg"></i>
-                            <span>Danh sách Đội xe &amp; Phương tiện:</span>
-                        </h3>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 font-heading">
+                                <i class="ph-bold ph-truck text-teal-700 text-lg"></i>
+                                <span>Danh sách Đội xe &amp; Phương tiện:</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                                Chi tiết từng đầu kéo, rơ-moóc và phương tiện vận tải thuộc quyền quản lý của nhà xe
+                            </p>
+                        </div>
                         <div id="vd-vehicles-stat-badge" class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
                             0 Phương tiện
                         </div>
                     </div>
-                    <!-- Danh sách biển số xe & phương tiện -->
-                    <div class="p-3.5 bg-slate-50/70 rounded-xl border border-slate-100 min-h-[48px] flex items-center gap-2 flex-wrap" id="vd-vehicles-list">
-                        <span class="text-slate-400 italic text-xs">-- Chưa có phương tiện nào --</span>
+
+                    <!-- Bảng chi tiết mỗi phương tiện 1 dòng -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-100/90 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Biển Số Xe / BKS</th>
+                                    <th class="p-3">Loại Phương Tiện</th>
+                                    <th class="p-3">Bác Tài Thường Lái</th>
+                                    <th class="p-3">Chuyến Xe Gần Nhất</th>
+                                    <th class="p-3">Trạng Thái Phương Tiện</th>
+                                    <th class="p-3 text-center">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vd-vehicles-table-body" class="divide-y divide-slate-100 bg-white font-medium">
+                                <!-- Nạp động qua JS: Mỗi phương tiện 1 dòng -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 

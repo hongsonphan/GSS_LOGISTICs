@@ -1712,23 +1712,77 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
         }
     }
 
-    // HÀNG 2 - PHẦN 1: Danh sách Đội xe & Phương tiện
+    // HÀNG 2 - PHẦN 1: Danh sách Đội xe & Phương tiện (Mỗi xe 1 dòng)
     const vehStatBadge = document.getElementById('vd-vehicles-stat-badge');
     if (vehStatBadge) {
         vehStatBadge.innerText = `${vehicles.length} Phương tiện`;
     }
 
-    const vehList = document.getElementById('vd-vehicles-list');
-    if (vehList) {
+    const vehBody = document.getElementById('vd-vehicles-table-body');
+    if (vehBody) {
         if (vehicles.length) {
-            vehList.innerHTML = vehicles.map(p => `
-                <span class="font-mono font-bold text-slate-800 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs text-xs flex items-center gap-2">
-                    <i class="ph-bold ph-truck text-teal-700 text-sm"></i>
-                    <span>${vaEsc(p)}</span>
-                </span>
-            `).join('');
+            vehBody.innerHTML = vehicles.map(vItem => {
+                const plate = typeof vItem === 'object' ? (vItem.plate || '') : vItem;
+                const vType = typeof vItem === 'object' ? (vItem.vehicle_type || 'Đầu kéo Container') : 'Đầu kéo Container';
+                const brand = typeof vItem === 'object' ? (vItem.brand || '') : '';
+                const dName = typeof vItem === 'object' ? (vItem.driver_name || '') : '';
+                const dPhone = typeof vItem === 'object' ? (vItem.driver_phone || '') : '';
+                const tCode = typeof vItem === 'object' ? (vItem.latest_trip_code || '') : '';
+                const status = typeof vItem === 'object' ? (vItem.status || 'Sẵn sàng') : 'Sẵn sàng';
+                const tripsCount = typeof vItem === 'object' ? (vItem.trips_count || 0) : 0;
+                const payload = typeof vItem === 'object' ? (vItem.payload || '') : '';
+
+                let stCls = 'bg-slate-100 text-slate-600 border-slate-200';
+                if (status.includes('chạy') || status.includes('ACTIVE')) {
+                    stCls = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                } else if (status.includes('Sẵn sàng') || status.includes('IDLE')) {
+                    stCls = 'bg-blue-50 text-blue-800 border-blue-200';
+                }
+
+                return `
+                    <tr class="hover:bg-teal-50/30 transition-colors">
+                        <td class="p-3">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-slate-100 font-mono font-bold text-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 text-xs inline-flex items-center gap-1.5 shadow-2xs">
+                                    <i class="ph-bold ph-truck text-teal-700 text-sm"></i>
+                                    <span>${vaEsc(plate)}</span>
+                                </span>
+                                ${brand ? `<span class="text-xs text-slate-500 font-semibold">${vaEsc(brand)}</span>` : ''}
+                            </div>
+                        </td>
+                        <td class="p-3 text-slate-800">
+                            <div class="font-semibold text-xs">${vaEsc(vType)}</div>
+                            ${payload ? `<div class="text-[11px] text-slate-400 mt-0.5">Tải trọng: ${vaEsc(payload)}</div>` : ''}
+                        </td>
+                        <td class="p-3">
+                            ${dName ? `
+                                <div class="font-bold text-slate-900 text-xs">${vaEsc(dName)}</div>
+                                ${dPhone ? `<div class="font-mono text-slate-500 text-[11px] mt-0.5">${vaEsc(dPhone)}</div>` : ''}
+                            ` : '<span class="text-slate-400 italic text-xs">Chưa gán tài xế</span>'}
+                        </td>
+                        <td class="p-3">
+                            ${tCode ? `
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" class="font-mono font-bold text-teal-800 hover:underline cursor-pointer text-xs" onclick="viewTripDetail('${vaEsc(tCode)}')">${vaEsc(tCode)}</button>
+                                    ${tripsCount > 0 ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">${tripsCount} chuyến</span>` : ''}
+                                </div>
+                            ` : '<span class="text-slate-400 text-xs">Chưa có chuyến</span>'}
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-1 rounded-full border text-[11px] font-bold ${stCls}">${vaEsc(status)}</span>
+                        </td>
+                        <td class="p-3 text-center">
+                            ${tCode ? `
+                                <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs" onclick="viewTripDetail('${vaEsc(tCode)}')" title="Xem chi tiết chuyến gần nhất">
+                                    <i class="ph-bold ph-eye"></i> Xem chuyến
+                                </button>
+                            ` : '<span class="text-slate-300">---</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         } else {
-            vehList.innerHTML = '<span class="text-slate-400 italic text-xs">-- Chưa ghi nhận phương tiện nào của nhà xe này --</span>';
+            vehBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400 font-medium">Chưa có phương tiện nào ghi nhận thuộc quyền quản lý của nhà xe này.</td></tr>';
         }
     }
 

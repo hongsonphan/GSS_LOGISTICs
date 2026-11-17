@@ -10,6 +10,7 @@ from django.utils import timezone
 from apps.dispatch import vendor_service as svc
 from apps.dispatch.gss_messages import trip_token
 from apps.dispatch.models import AllocationStatus, BookingVendorAllocation
+from apps.fleet.models import Vehicle
 from apps.master_data.models import Subcontractor, SubcontractorPortalAccount
 from core.features import has_feature
 from core.models import AuditLog
@@ -133,18 +134,70 @@ class VendorAdminOverviewAPIView(APIView):
                           'customer': (cust.short_name or cust.name) if cust else '',
                           'state': 'expired' if s['expired'] else ('locked' if s['locked'] else 'valid')})
 
+        reg_vehicles = list(Vehicle.objects.filter(is_deleted=False).select_related('current_driver'))
+        reg_vehicles_by_sub = {}
+        for rv in reg_vehicles:
+            if rv.subcontractor_id:
+                reg_vehicles_by_sub.setdefault(rv.subcontractor_id, []).append(rv)
+
         vendors = []
         for s in subs:
             mine = [l for l in links if l['subcontractor_id'] == s.id]
             sub_trips = [t for t in trips if t.vendor_allocation and t.vendor_allocation.subcontractor_id == s.id]
             drivers_map = {}
-            vehicles_set = set()
+            vehicles_map = {}
+
+            # Nạp phương tiện đã đăng ký trong hồ sơ đội xe (Fleet)
+            for rv in reg_vehicles_by_sub.get(s.id, []):
+                p = (rv.license_plate or '').strip()
+                if p:
+                    d_cur = rv.current_driver
+                    vehicles_map[p] = {
+                        'plate': p,
+                        'vehicle_type': rv.get_vehicle_type_display(),
+                        'brand': rv.brand or '',
+                        'status': rv.get_status_display(),
+                        'payload': rv.display_payload or '',
+                        'driver_name': d_cur.full_name if d_cur else '',
+                        'driver_phone': d_cur.phone if d_cur else '',
+                        'latest_trip_id': None,
+                        'latest_trip_code': '',
+                        'latest_status': '',
+                        'trips_count': 0,
+                    }
+
             for t in sub_trips:
                 d_name = (t.subcontractor_driver_name or (t.driver.full_name if t.driver_id else '') or '').strip()
                 d_phone = (t.subcontractor_driver_phone or (t.driver.phone if t.driver_id else '') or '').strip()
                 v_plate = (t.vehicle.license_plate if t.vehicle_id else '').strip()
+                v_obj = t.vehicle
                 if v_plate:
-                    vehicles_set.add(v_plate)
+                    if v_plate not in vehicles_map:
+                        vehicles_map[v_plate] = {
+                            'plate': v_plate,
+                            'vehicle_type': v_obj.get_vehicle_type_display() if v_obj else 'Đầu kéo Container',
+                            'brand': v_obj.brand if v_obj else '',
+                            'status': 'Đang chạy chuyến' if t.step_status not in _DONE_STEPS else 'Sẵn sàng',
+                            'payload': (v_obj.display_payload if v_obj else '') or '',
+                            'driver_name': d_name,
+                            'driver_phone': d_phone,
+                            'latest_trip_id': t.id,
+                            'latest_trip_code': t.trip_code,
+                            'latest_status': t.step_status,
+                            'trips_count': 1,
+                        }
+                    else:
+                        vehicles_map[v_plate]['trips_count'] += 1
+                        if not vehicles_map[v_plate]['latest_trip_code']:
+                            vehicles_map[v_plate]['latest_trip_id'] = t.id
+                            vehicles_map[v_plate]['latest_trip_code'] = t.trip_code
+                            vehicles_map[v_plate]['latest_status'] = t.step_status
+                            if not vehicles_map[v_plate]['driver_name']:
+                                vehicles_map[v_plate]['driver_name'] = d_name
+                                vehicles_map[v_plate]['driver_phone'] = d_phone
+                            if t.step_status not in _DONE_STEPS:
+                                vehicles_map[v_plate]['status'] = 'Đang chạy chuyến'
+
                 if d_name:
                     k = (d_name, d_phone)
                     if k not in drivers_map:
@@ -171,7 +224,7 @@ class VendorAdminOverviewAPIView(APIView):
                 'links_valid': sum(1 for l in mine if l['state'] == 'valid'),
                 'links_total': len(mine),
                 'driver_links_valid': sum(1 for t in sub_trips if driver_link_state(t, now) == 'valid'),
-                'vehicles': sorted(list(vehicles_set)),
+                'vehicles': sorted(list(vehicles_map.values()), key=lambda x: x['plate']),
                 'drivers': list(drivers_map.values()),
                 'allocated_trips': [serialize_driver_link(t, request, now) for t in sub_trips],
             })

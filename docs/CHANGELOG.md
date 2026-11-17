@@ -3,6 +3,23 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-17 – Nâng cấp Bảng Chi Tiết Đội xe & Phương tiện (Mỗi phương tiện 1 dòng) trong Chi Tiết Nhà Xe
+- **1. Chuyển đổi Danh sách Đội xe & Phương tiện sang dạng Bảng Chi Tiết (Mỗi xe/phương tiện 1 dòng):**
+  - Thay thế khối hiển thị badge/chip nhỏ trước đây bằng bảng dữ liệu SaaS ERP hoàn chỉnh, đồng bộ hoàn hảo với bảng Danh sách Tài xế:
+    - *Biển Số Xe / BKS:* Badge font mono bo tròn kèm icon đầu kéo Phosphor `ph-truck` và nhãn thương hiệu xe (`Hyundai`, `Freightliner`, `Hino`...).
+    - *Loại Phương Tiện & Tải Trọng:* Phân loại `Đầu kéo Container`, `Rơ-moóc`, `Xe tải` kèm tải trọng thực tế (`30.000 kg`).
+    - *Bác Tài Thường Lái:* Hiển thị họ tên bác tài thường xuyên điều khiển phương tiện và số điện thoại liên hệ.
+    - *Chuyến Xe Gần Nhất:* Mã chuyến xe gần nhất của phương tiện kèm badge số chuyến đã vận chuyển (click xem chi tiết chuyến).
+    - *Trạng Thái Phương Tiện:* Phân loại trạng thái chuẩn: `Đang chạy chuyến` (xanh ngọc), `Sẵn sàng` / `Nằm bãi (Chờ việc)` (xanh dương), `Bảo trì` (cam).
+    - *Thao Tác:* Nút `[ Xem chuyến ]` mở trực tiếp chi tiết chuyến xe gần nhất.
+- **2. Mở rộng Backend API `VendorAdminOverviewAPIView`:**
+  - Kết hợp đồng thời phương tiện khai báo sẵn trong hồ sơ Đội xe (`Vehicle.objects.filter(subcontractor_id=s.id)`) và các phương tiện đã thực hiện chuyến xe (`sub_trips`).
+  - Trả về payload cấu trúc phương tiện đầy đủ (`plate`, `vehicle_type`, `brand`, `status`, `payload`, `driver_name`, `driver_phone`, `latest_trip_code`, `trips_count`).
+- **3. Kiểm thử & Đồng bộ:**
+  - Kiểm thử thị giác Playwright: Xác thực thực tế giao diện bảng phương tiện chi tiết, sắc nét, chuẩn công thái học.
+  - QA Verify: Đạt 7/7 PASS.
+- File: `apps/dispatch/api_views/vendor_admin.py`, `templates/views/view_vendor_detail.html`, `static/js/src/app/dispatch/vendor-admin.js`, `static/js/app.js`, `docs/CHANGELOG.md`.
+
 ## 2026-11-17 – Tối ưu hóa Thẻ Tài khoản Portal 4 hàng, Tách riêng Đội xe & Tài xế, và Nâng cấp Lệnh điều vận với Ô Trạng thái 7 nút hành trình
 - **1. Tối ưu Thẻ Tài khoản & Bảo mật Cổng Đối Tác (Portal) - 4 hàng cân đối, rộng rãi:**
   - Thiết kế lại bố cục Thẻ 2 trong trang Chi tiết Nhà xe (iew_vendor_detail.html) giải quyết triệt để khoảng trống dư thừa, tạo cấu trúc 4 hàng đối xứng & thoáng đãng:
