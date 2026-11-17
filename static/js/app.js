@@ -13131,55 +13131,23 @@ function setJourneyMode(mode) {
     }
 }
 
-const JOURNEY_COLUMNS = [
-    ['READY', 'Đã nhận lệnh', 'ph-file-text', 'text-slate-700'],
-    ['ARRIVED_AT_PICKUP', 'Đã đến nơi nhận', 'ph-map-pin', 'text-teal-700'],
-    ['LOADED_ON_VEHICLE', 'Đã nhận cont/hàng', 'ph-truck', 'text-indigo-700'],
-    ['ARRIVED_AT_DELIVERY', 'Đã đến nơi giao', 'ph-flag', 'text-indigo-700'],
-    ['UNLOADED', 'Đã giao xong', 'ph-package', 'text-amber-700'],
-    ['RETURNING_EMPTY', 'Đang đi hạ rỗng', 'ph-arrow-u-down-left', 'text-amber-700'],
-];
-
+// Ma trận Timeline hành trình xe container (dùng chung GSSApp.fleetTimeline với Dashboard)
 async function loadJourneyBoard() {
     const body = document.getElementById('jboard-body');
     if (!body) return;
-    body.innerHTML = '<div class="p-6 text-slate-400 text-sm">Đang tải hành trình...</div>';
-    try {
-        const res = await fetchWithAuth('/api/dispatch/vendor-containers/?status=ACTIVE');
-        const out = await res.json();
-        if (!res.ok || out.success === false) throw new Error(out.message || 'Không tải được hành trình.');
-        jboardRows = out.data || [];
-        renderJourneyBoard();
-    } catch (e) {
-        body.innerHTML = `<div class="p-6 text-rose-700 font-bold text-sm">${vaEsc(e.message)}</div>`;
+    body.innerHTML = '';
+    const host = document.createElement('div');
+    host.className = 'w-full';
+    body.appendChild(host);
+    if (window.GSSApp && typeof window.GSSApp.fleetTimeline === 'function') {
+        window.GSSApp.fleetTimeline(host);
+    } else {
+        body.innerHTML = '<div class="p-8 text-center text-slate-400 font-medium text-sm">Chưa tải được bản Theo dõi hành trình xe container (GSSApp.fleetTimeline).</div>';
     }
 }
 
 function renderJourneyBoard() {
-    const body = document.getElementById('jboard-body');
-    if (!body) return;
-    const q = ((document.getElementById('jboard-search') || {}).value || '').trim().toLowerCase();
-    const rows = jboardRows.filter(r => !q || [r.container_number, r.tractor_plate, r.driver_name, r.vendor_short, r.vendor_name, r.trip_code]
-        .some(x => String(x || '').toLowerCase().includes(q)));
-    if (!rows.length) {
-        body.innerHTML = '<div class="p-8 text-slate-400 font-medium text-sm">Chưa có xe nào đang hành trình.</div>';
-        return;
-    }
-    body.innerHTML = JOURNEY_COLUMNS.map(([step, label, icon, cls]) => {
-        const items = rows.filter(r => (r.step_status || 'READY') === step);
-        const cards = items.length ? items.map(r => `
-            <div class="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-teal-50/40 cursor-pointer" onclick="viewTripDetail('${vaEsc(r.trip_code)}')" title="Xem phiếu vận chuyển ${vaEsc(r.trip_code)}">
-                <div class="font-mono font-bold text-xs text-slate-900">${vaEsc(r.container_number)}</div>
-                <div class="text-xs font-bold text-teal-800 mt-0.5">${vaEsc(r.vendor_short || r.vendor_name)}</div>
-                <div class="text-xs text-slate-600 mt-0.5 font-mono">${vaEsc(r.tractor_plate && r.tractor_plate !== '--' ? r.tractor_plate : 'Chưa có biển số')}</div>
-                <div class="text-xs text-slate-600">${vaEsc(r.driver_name && r.driver_name !== '--' ? r.driver_name : 'Chưa gán tài')}</div>
-            </div>`).join('') : '<div class="text-xs text-slate-400 px-1 py-2">Không có</div>';
-        return `
-        <div class="w-60 shrink-0 rounded-xl bg-slate-50 border border-slate-200 p-2.5">
-            <div class="text-xs font-bold ${cls} flex items-center gap-1.5 mb-2 uppercase tracking-wider"><i class="ph-bold ${icon}"></i><span>${label}</span><span class="text-slate-500 tabular-nums">(${items.length})</span></div>
-            <div class="space-y-2">${cards}</div>
-        </div>`;
-    }).join('');
+    loadJourneyBoard();
 }
 
 // =============================================================
