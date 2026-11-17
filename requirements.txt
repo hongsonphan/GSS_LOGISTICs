@@ -1,5 +1,5 @@
 # Phiên bản cố định (đã kiểm thử). Nâng cấp: sửa số phiên bản, chạy toàn bộ test rồi mới commit.
-Django==5.2.18
+Django==6.1.3
 djangorestframework==3.18.3
 djangorestframework-simplejwt==5.5.1
 argon2-cffi==25.1.0
