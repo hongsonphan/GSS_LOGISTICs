@@ -3,6 +3,16 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-17 – Ban hành Nguyên tắc Cốt lõi: Nghiêm cấm Agent tự ý thay đổi mật khẩu và tên người dùng
+- **1. Thiết lập nguyên tắc bất biến cho Agent (Core Safety Rule):**
+  - Cập nhật quy tắc toàn cục `C:\Users\Jack\.gemini\config\AGENTS.md` (Mục 5: BẢO VỆ ĐỊNH DANH & BẢO MẬT TÀI KHOẢN).
+  - Cập nhật quy tắc nghiệp vụ backend `.agents/rules/backend-rules.md` (Mục 6: Bảo Vệ Định Danh & Tuyệt Đối Không Tự Ý Đổi Mật Khẩu, Tên Người Dùng).
+  - Cập nhật tài liệu an ninh kiến trúc `docs/08-security.md` (Mục IV: NGUYÊN TẮC QUẢN TRỊ ĐỊNH DANH & BẢO VỆ CREDENTIALS CỦA AGENT).
+- **2. Quy định thực thi nghiêm ngặt:**
+  - Agent AI tuyệt đối **KHÔNG ĐƯỢC TỰ Ý** đổi, đặt lại (reset) mật khẩu hoặc sửa đổi username của bất kỳ tài khoản người dùng nội bộ (`auth.User`), tài khoản quản trị hay tài khoản đối tác (`SubcontractorPortalAccount`) trên Local, QA hay Production trừ khi có lệnh rõ ràng, tường minh từ Người Dùng (USER).
+  - Khi gặp lỗi xác thực, Agent bắt buộc phải tra cứu và đối soát nguyên nhân gốc (mã băm, cookie, CSRF, audit log) để báo cáo trung thực, bảo toàn tuyệt đối thông tin định danh và tài khoản hiện hành.
+- File: `C:\Users\Jack\.gemini\config\AGENTS.md`, `.agents/rules/backend-rules.md`, `docs/08-security.md`, `docs/CHANGELOG.md`.
+
 ## 2026-11-17 – Nâng cấp Bảng Chi Tiết Đội xe & Phương tiện (Mỗi phương tiện 1 dòng) trong Chi Tiết Nhà Xe
 - **1. Chuyển đổi Danh sách Đội xe & Phương tiện sang dạng Bảng Chi Tiết (Mỗi xe/phương tiện 1 dòng):**
   - Thay thế khối hiển thị badge/chip nhỏ trước đây bằng bảng dữ liệu SaaS ERP hoàn chỉnh, đồng bộ hoàn hảo với bảng Danh sách Tài xế:

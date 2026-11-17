@@ -146,3 +146,13 @@ Hệ thống tích hợp quy trình CI/CD kiểm toán an ninh tự động:
 - **pip-audit:** Quét lỗ hổng đã công bố (CVE) trong các thư viện phụ thuộc Python.
 - **Gitleaks:** Quét tự động chống lộ lọt Secret Keys, Token hoặc mật khẩu vào Git repository.
 - **Uptime & SSL Monitoring:** Giám sát tính khả dụng dịch vụ và hạn chứng chỉ số định kỳ mỗi 15 phút.
+
+---
+
+## IV. NGUYÊN TẮC QUẢN TRỊ ĐỊNH DANH & BẢO VỆ CREDENTIALS CỦA AGENT
+
+1. **Nghiêm cấm tự ý thay đổi mật khẩu & tên người dùng:**
+   - Agent AI, lập trình viên và hệ thống tự động tuyệt đối **KHÔNG ĐƯỢC PHÉP TỰ Ý** thay đổi, ghi đè, đặt lại (reset) mật khẩu hoặc đổi tên đăng nhập (username) của bất kỳ tài khoản người dùng nội bộ, tài khoản quản trị viên (Admin) hay tài khoản đối tác (Nhà xe, Tài xế, Khách hàng) trong cơ sở dữ liệu (cả Local, Staging và Production).
+   - Mọi hành vi thay đổi mật khẩu hoặc định danh tài khoản chỉ được phép thực hiện khi có lệnh rõ ràng, đích danh và được phê duyệt từ Người Dùng (USER) hoặc chủ tài khoản.
+2. **Quy trình khi gặp sự cố xác thực (Authentication Failure):**
+   - Khi kiểm thử hoặc đăng nhập gặp lỗi xác thực không thành công, Agent bắt buộc phải tra cứu, đối chiếu mã băm, phân tích nhật ký kiểm toán (`AuditLog`), cookie, CSRF hoặc cấu hình để báo cáo trung thực hiện trạng cho Người Dùng; tuyệt đối không tự ý chạy script can thiệp reset hay thay đổi mật khẩu trong database.
