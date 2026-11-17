@@ -119,11 +119,43 @@ class VendorAdminOverviewAPIView(APIView):
         vendors = []
         for s in subs:
             mine = [l for l in links if l['subcontractor_id'] == s.id]
+            sub_trips = [t for t in trips if t.vendor_allocation and t.vendor_allocation.subcontractor_id == s.id]
+            drivers_map = {}
+            vehicles_set = set()
+            for t in sub_trips:
+                d_name = (t.subcontractor_driver_name or (t.driver.full_name if t.driver_id else '') or '').strip()
+                d_phone = (t.subcontractor_driver_phone or (t.driver.phone if t.driver_id else '') or '').strip()
+                v_plate = (t.vehicle.license_plate if t.vehicle_id else '').strip()
+                if v_plate:
+                    vehicles_set.add(v_plate)
+                if d_name:
+                    k = (d_name, d_phone)
+                    if k not in drivers_map:
+                        drivers_map[k] = {
+                            'name': d_name, 'phone': d_phone,
+                            'latest_trip_id': t.id, 'latest_trip_code': t.trip_code,
+                            'latest_plate': v_plate, 'latest_status': t.step_status,
+                            'link': request.build_absolute_uri(f'/q/{trip_token(t)}/'),
+                        }
+
             vendors.append({
                 'id': s.id, 'name': s.name, 'short_name': s.short_name or s.name, 'code': s.code or '',
-                'is_active': bool(s.is_active), 'account': _account_payload(accounts.get(s.id), now, request),
-                'links_valid': sum(1 for l in mine if l['state'] == 'valid'), 'links_total': len(mine),
-                'driver_links_valid': sum(1 for t in trips if t.vendor_allocation.subcontractor_id == s.id and driver_link_state(t, now) == 'valid'),
+                'tax_code': s.tax_code or '',
+                'address': s.address or '',
+                'phone': s.phone or '',
+                'company_email': s.company_email or '',
+                'contact_person': s.contact_person or '',
+                'contact_title': s.contact_title or '',
+                'contact_phone': s.contact_phone or '',
+                'contact_email': s.contact_email or '',
+                'yard_address': s.yard_address or '',
+                'is_active': bool(s.is_active),
+                'account': _account_payload(accounts.get(s.id), now, request),
+                'links_valid': sum(1 for l in mine if l['state'] == 'valid'),
+                'links_total': len(mine),
+                'driver_links_valid': sum(1 for t in sub_trips if driver_link_state(t, now) == 'valid'),
+                'vehicles': sorted(list(vehicles_set)),
+                'drivers': list(drivers_map.values()),
             })
         return Response({'success': True, 'data': {
             'vendors': vendors, 'links': links,

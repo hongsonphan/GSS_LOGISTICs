@@ -211,4 +211,21 @@ class VendorAdminTests(GssBase):
         self.assertIsNotNone(hint)
         self.assertTrue(hint.get('is_account_token'))
         self.assertEqual(hint.get('username'), 'hoangnam')
+    def test_secure_vendor_token_format(self):
+        """Token sinh ra phải có format GSS- + 12 ký tự ngẫu nhiên hoa thường số."""
+        from apps.dispatch.vendor_service import generate_secure_vendor_token, provision_portal_account
+        import re
+        tok = generate_secure_vendor_token()
+        self.assertTrue(re.match(r'^GSS-[A-Za-z0-9]{12}$', tok), f"Token không đúng định dạng GSS- 12 ký tự: {tok}")
+
+        # Tự động cấp tài khoản khi không truyền token sẽ dùng format này
+        self.login()
+        res = self.client.post(
+            f'/api/vendor-portal-accounts/{self.sub.id}/',
+            {'username': 'test_sec_user', 'password': 'SecPassword#2026', 'regenerate_token': True},
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, 200)
+        issued = res.json()['data']['issued_confirm_token']
+        self.assertTrue(re.match(r'^GSS-[A-Za-z0-9]{12}$', issued), f"Issued token không đúng chuẩn GSS- 12 ký tự: {issued}")
 

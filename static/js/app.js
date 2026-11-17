@@ -13242,21 +13242,27 @@ function vaRenderAccounts(vendor) {
 
             tokenCell = `${tokDisplay}${expDisplay}`;
 
+            const isLocked = a.locked || !a.is_active;
             actions = `
-                <button type="button" class="${VA_BTN_TEAL}" onclick="vaIssueTokenModal(${v.id})" title="Chủ động đặt mã token và hạn dùng"><i class="ph ph-key"></i> Đặt Token</button>
-                <button type="button" class="${VA_BTN_AMBER}" onclick="vaAccountModal(${v.id})" title="Sửa tên đăng nhập, mật khẩu, thời gian tự đăng xuất"><i class="ph ph-pencil-simple"></i> Sửa</button>
-                <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareVendorZaloModal(${v.id})" title="Xem mẫu tin nhắn gửi nhà xe qua Zalo"><i class="ph ph-chat-teardrop-text"></i> Zalo</button>
-                ${a.locked ? `<button type="button" class="${VA_BTN_GRAY}" onclick="vaAccountAction(${v.id}, {unlock: true}, 'Đã mở khóa tài khoản.')"><i class="ph ph-lock-open"></i> Mở khóa</button>` : ''}
-                <button type="button" class="${a.is_active ? VA_BTN_ROSE : VA_BTN_GRAY}" onclick="vaToggleAccount(${v.id}, ${a.is_active ? 'false' : 'true'})">${a.is_active ? '<i class="ph ph-prohibit"></i> Tắt' : '<i class="ph ph-power"></i> Bật'}</button>`;
+                <button type="button" class="${VA_BTN_TEAL}" onclick="vaOpenVendorDetailModal(${v.id})" title="Xem chi tiết nhà xe, tài khoản, token, xe & tài xế"><i class="ph ph-eye"></i> Xem</button>
+                ${isLocked 
+                    ? `<button type="button" class="${VA_BTN_GRAY}" onclick="vaToggleLockAccount(${v.id}, false)" title="Mở khóa tài khoản Portal"><i class="ph ph-lock-open"></i> Mở khóa</button>`
+                    : `<button type="button" class="${VA_BTN_ROSE}" onclick="vaToggleLockAccount(${v.id}, true)" title="Khóa tài khoản Portal"><i class="ph ph-lock"></i> Khóa</button>`
+                }`;
+        }
+        if (!a) {
+            actions = `
+                <button type="button" class="${VA_BTN_TEAL}" onclick="vaOpenVendorDetailModal(${v.id})" title="Xem chi tiết nhà xe, cấp tài khoản & cấu hình token"><i class="ph ph-eye"></i> Xem</button>
+                <button type="button" class="${VA_BTN_GRAY} opacity-40 cursor-not-allowed" disabled title="Nhà xe chưa có tài khoản"><i class="ph ph-lock"></i> Khóa</button>`;
         }
         return `<tr class="hover:bg-teal-50/30">
-            <td class="p-2.5"><div class="font-bold text-slate-900">${vaEsc(v.short_name)}</div><div class="text-xs text-slate-500 font-mono">${vaEsc(v.code)}</div></td>
+            <td class="p-2.5"><div class="font-bold text-slate-900">${vaEsc(v.short_name || v.name)}</div><div class="text-xs text-slate-500 font-mono">${vaEsc(v.code)}${v.tax_code ? ' · MST: ' + vaEsc(v.tax_code) : ''}</div></td>
             <td class="p-2.5">${acctCell}</td>
             <td class="p-2.5">${tokenCell}</td>
             <td class="p-2.5">${st}</td>
             <td class="p-2.5 text-xs text-slate-600">${a && a.last_login_at ? vaFmt(a.last_login_at) : 'Chưa đăng nhập'}</td>
             <td class="p-2.5 text-xs tabular-nums"><strong>${v.links_valid}</strong> / ${v.links_total} link nhà xe<div class="text-slate-600"><strong>${v.driver_links_valid}</strong> link tài xế</div></td>
-            <td class="p-2.5 text-center"><div class="inline-flex items-center gap-1.5 flex-wrap justify-center">${actions}</div></td>
+            <td class="p-2.5 text-center"><div class="inline-flex items-center gap-1.5 flex-nowrap justify-center">${actions}</div></td>
         </tr>`;
     }).join('');
     return vaTable(['Nhà xe', 'Tài khoản', 'Token xác nhận', 'Trạng thái', 'Đăng nhập gần nhất', 'Link hiệu lực', 'Thao tác'], rows, 'Chưa có nhà xe nào.');
@@ -13427,9 +13433,10 @@ function vaToggleShowToken(vendorId) {
 }
 
 function vaGenRandomToken(targetInputId = 'va-token-custom') {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    // Chuỗi 12 ký tự ngẫu nhiên gồm số, ký tự Hoa, thường: đảm bảo bảo mật cao
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let rand = '';
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 12; i++) {
         rand += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     const token = 'GSS-' + rand;
@@ -13502,7 +13509,7 @@ function vaIssueTokenModal(vendorId) {
         <div class="mb-3.5">
             <label class="block text-xs font-bold text-slate-700 mb-1" for="va-token-custom">Mã Token xác nhận <span class="text-rose-600">*</span></label>
             <div class="flex items-center gap-2">
-                <input id="va-token-custom" class="flex-1 h-10 px-3.5 rounded-xl border border-slate-300 font-mono font-bold text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-none uppercase" placeholder="Ví dụ: ANPHAT-2026 hoặc HP26" value="${vaEsc(curTok)}">
+                <input id="va-token-custom" class="flex-1 h-10 px-3.5 rounded-xl border border-slate-300 font-mono font-bold text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-none uppercase" placeholder="Ví dụ: GSS-k8N2pA9xL3vQ hoặc bấm Sinh mã" value="${vaEsc(curTok)}">
                 <button type="button" class="${VA_BTN_GRAY} h-10 px-3 whitespace-nowrap cursor-pointer" onclick="vaGenRandomToken('va-token-custom')" title="Hệ thống tự sinh mã ngẫu nhiên"><i class="ph ph-magic-wand"></i> Sinh mã</button>
             </div>
             <p class="text-[11px] text-slate-500 mt-1">Chủ động tự gõ mã theo ý muốn (ít nhất 4 ký tự) hoặc bấm <strong>Sinh mã</strong>.</p>
@@ -13675,6 +13682,310 @@ window.vaCopyDriver = vaCopyDriver;
 window.vaDriverExpiry = vaDriverExpiry;
 window.vaDriverRegen = vaDriverRegen;
 window.vaDriverRevoke = vaDriverRevoke;
+
+async function vaToggleLockAccount(vendorId, shouldLock) {
+    const v = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+    const vName = v ? (v.short_name || v.name) : 'nhà xe';
+    if (shouldLock) {
+        const yes = await showConfirmModal({
+            type: 'danger',
+            title: `Khóa tài khoản Cổng Nhà Xe: ${vName}`,
+            message: `Nhà xe sẽ bị khóa và không thể đăng nhập hoặc nhận lệnh qua Cổng Nhà Xe cho đến khi được mở khóa lại. Bạn có chắc chắn muốn khóa?`,
+            confirmText: 'Khóa tài khoản'
+        });
+        if (!yes) return;
+        await vaAccountAction(vendorId, { is_active: false }, `Đã khóa tài khoản Cổng Nhà Xe của ${vName}.`);
+    } else {
+        await vaAccountAction(vendorId, { is_active: true, unlock: true }, `Đã mở khóa tài khoản Cổng Nhà Xe của ${vName}.`);
+    }
+}
+
+function vaOpenVendorDetailModal(vendorId) {
+    const v = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+    if (!v) {
+        showToast('danger', 'Không tìm thấy thông tin nhà xe.');
+        return;
+    }
+    const a = v.account;
+    const isLocked = a && (a.locked || !a.is_active);
+    const hasAcct = !!a;
+    const tok = a ? (a.plain_token || a.token_preview || '') : '';
+    const expText = a && a.token_expires_at ? vaFmt(a.token_expires_at) : 'Vô thời hạn (Không hết hạn)';
+    const magic = a && a.magic_link ? a.magic_link : '';
+    const allocs = (vaData && vaData.links || []).filter(l => l.subcontractor_id === vendorId);
+    const dLinks = (vaData && vaData.driver_links || []).filter(d => d.vendor_id === vendorId);
+    const drivers = v.drivers || [];
+    const vehicles = v.vehicles || [];
+
+    // Trạng thái badge
+    let stBadge = '<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1"><i class="ph ph-user-minus"></i> Chưa cấp tài khoản</span>';
+    if (hasAcct) {
+        if (a.locked) {
+            stBadge = '<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 inline-flex items-center gap-1"><i class="ph ph-lock"></i> Đang bị khóa</span>';
+        } else if (!a.is_active) {
+            stBadge = '<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 inline-flex items-center gap-1"><i class="ph ph-prohibit"></i> Đã tắt</span>';
+        } else {
+            stBadge = '<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1"><i class="ph ph-check-circle"></i> Đang hoạt động</span>';
+        }
+    }
+
+    // Danh sách xe dạng chip
+    let vehHtml = '<span class="text-slate-400 text-xs">Chưa có thông tin xe gán</span>';
+    if (vehicles.length) {
+        vehHtml = vehicles.map(p => `<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-mono text-xs font-bold border border-slate-200">${vaEsc(p)}</span>`).join(' ');
+    }
+
+    // Danh sách tài xế
+    let drvHtml = '<div class="text-slate-400 text-xs py-2">Chưa có thông tin tài xế gán chuyến</div>';
+    if (drivers.length) {
+        drvHtml = `
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <tr>
+                            <th class="p-2">Họ & Tên Bác tài</th>
+                            <th class="p-2">Điện thoại</th>
+                            <th class="p-2">Chuyến xe / Xe</th>
+                            <th class="p-2">Trạng thái</th>
+                            <th class="p-2 text-right">Màn hình Tài xế</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        ${drivers.map(d => `
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2 font-bold text-slate-900">${vaEsc(d.name)}</td>
+                                <td class="p-2 font-mono text-slate-700">${vaEsc(d.phone || '—')}</td>
+                                <td class="p-2"><span class="font-mono text-teal-800 font-bold">${vaEsc(d.latest_trip_code || '—')}</span> ${d.latest_plate ? '· ' + vaEsc(d.latest_plate) : ''}</td>
+                                <td class="p-2"><span class="text-[11px] font-semibold text-slate-600">${vaEsc(d.latest_status || '—')}</span></td>
+                                <td class="p-2 text-right">
+                                    <button type="button" class="${VA_BTN_TEAL} text-xs py-1" onclick="vaOpenDriverScreenDirect('${vaEsc(d.link)}', '${vaEsc(d.latest_trip_code)}')" title="Mở Màn hình Tài xế (Lệnh di động)"><i class="ph ph-device-mobile"></i> Màn hình Tài xế</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+    }
+
+    // Danh sách lệnh / phiếu chia cont
+    let allocHtml = '<div class="text-slate-400 text-xs py-2">Chưa có lệnh điều vận nào cho nhà xe này</div>';
+    if (allocs.length) {
+        allocHtml = `
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <tr>
+                            <th class="p-2">Booking / Lệnh</th>
+                            <th class="p-2">Số lượng Cont</th>
+                            <th class="p-2">Trạng thái Link</th>
+                            <th class="p-2">Hạn dùng</th>
+                            <th class="p-2 text-right">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        ${allocs.map(l => `
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2 font-mono font-bold text-teal-900">${vaEsc(l.booking_code)}</td>
+                                <td class="p-2 font-semibold">${l.filled} / ${l.allocated_containers} cont</td>
+                                <td class="p-2">${l.state === 'valid' ? '<span class="text-emerald-700 font-bold">Còn hiệu lực</span>' : '<span class="text-rose-700 font-bold">Hết hạn/Khóa</span>'}</td>
+                                <td class="p-2 text-slate-600">${vaExpiry(l.expires_at, l.expired)}</td>
+                                <td class="p-2 text-right">
+                                    <button type="button" class="${VA_BTN_TEAL} text-xs py-1" onclick="window.open('${vaEsc(l.link)}', '_blank')" title="Mở Cổng Nhà Xe cho lệnh này"><i class="ph ph-desktop"></i> Màn hình Vendor</button>
+                                    <button type="button" class="${VA_BTN_GRAY} text-xs py-1" onclick="vaCopyAlloc(${l.id})"><i class="ph ph-copy"></i> Copy</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+    }
+
+    const bodyHtml = `
+        <div class="space-y-4 text-xs">
+            <!-- 1. THANH TÁC VỤ NHANH TRÊN ĐẦU MODAL -->
+            <div class="p-3 bg-gradient-to-r from-teal-50 via-slate-50 to-indigo-50 border border-teal-200 rounded-2xl flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-700">Tác vụ nhanh:</span>
+                    <button type="button" class="h-8 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors" onclick="vaOpenVendorScreenByVendorId(${v.id})" title="Mở trực tiếp Cổng Nhà Xe của ${vaEsc(v.short_name)} (đã tự điền Tên đăng nhập và Token)">
+                        <i class="ph ph-desktop text-sm"></i>
+                        <span>Màn hình Vendor</span>
+                    </button>
+                    <button type="button" class="h-8 px-3 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors" onclick="vaQuickOpenDriverForVendor(${v.id})" title="Mở Màn hình Tài xế của chuyến xe đang thực hiện">
+                        <i class="ph ph-device-mobile text-sm"></i>
+                        <span>Màn hình Tài xế</span>
+                    </button>
+                    ${hasAcct ? `<button type="button" class="h-8 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors" onclick="vaShareVendorZaloModal(${v.id})" title="Mẫu tin nhắn Zalo gửi thông tin tài khoản & Token">
+                        <i class="ph ph-chat-teardrop-text text-teal-700 text-sm"></i>
+                        <span>Gửi Zalo</span>
+                    </button>` : ''}
+                </div>
+                <div class="flex items-center gap-2">
+                    ${hasAcct ? (isLocked 
+                        ? `<button type="button" class="h-8 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold inline-flex items-center gap-1.5 cursor-pointer" onclick="vaToggleLockAccount(${v.id}, false)"><i class="ph ph-lock-open text-emerald-700"></i> Mở khóa tài khoản</button>`
+                        : `<button type="button" class="h-8 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-800 font-bold inline-flex items-center gap-1.5 cursor-pointer" onclick="vaToggleLockAccount(${v.id}, true)"><i class="ph ph-lock text-rose-700"></i> Khóa tài khoản</button>`)
+                        : `<button type="button" class="h-8 px-3 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-800 font-bold inline-flex items-center gap-1.5 cursor-pointer" onclick="vaAccountModal(${v.id})"><i class="ph ph-user-plus"></i> Cấp tài khoản ngay</button>`}
+                </div>
+            </div>
+
+            <!-- 2. THÔNG TIN PHÁP LÝ & LIÊN HỆ -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="ph ph-identification-card text-teal-700 text-sm"></i>
+                        <span>Thông tin pháp lý & Liên hệ Nhà xe</span>
+                    </h4>
+                    <span class="font-mono text-slate-500 font-bold">Mã: ${vaEsc(v.code)}</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                    <div>
+                        <div class="text-slate-400 font-semibold mb-0.5">Tên doanh nghiệp:</div>
+                        <div class="font-bold text-slate-900">${vaEsc(v.name)}</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 font-semibold mb-0.5">Tên viết tắt / Thương hiệu:</div>
+                        <div class="font-bold text-teal-900">${vaEsc(v.short_name || v.name)}</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 font-semibold mb-0.5">Mã số thuế (MST):</div>
+                        <div class="font-mono font-bold text-slate-900">${vaEsc(v.tax_code || 'Chưa cập nhật')}</div>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="text-slate-400 font-semibold mb-0.5">Địa chỉ trụ sở:</div>
+                        <div class="text-slate-800">${vaEsc(v.address || 'Chưa cập nhật')}</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 font-semibold mb-0.5">Bãi xe / Kho bãi:</div>
+                        <div class="text-slate-800">${vaEsc(v.yard_address || 'Chưa cập nhật')}</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 font-semibold mb-0.5">Người liên hệ / Chức vụ:</div>
+                        <div class="font-bold text-slate-800">${vaEsc(v.contact_person || '—')} ${v.contact_title ? '(' + vaEsc(v.contact_title) + ')' : ''}</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 font-semibold mb-0.5">Điện thoại liên hệ:</div>
+                        <div class="font-mono font-bold text-teal-800">${vaEsc(v.contact_phone || v.phone || '—')}</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 font-semibold mb-0.5">Email nhận lệnh & HĐĐT:</div>
+                        <div class="text-slate-800">${vaEsc(v.contact_email || v.company_email || '—')}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. TÀI KHOẢN & BẢO MẬT CỔNG NHÀ XE (USER | PASS | TOKEN) -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100 flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="ph ph-shield-check text-teal-700 text-sm"></i>
+                            <span>Tài khoản & Bảo mật Cổng Nhà Xe (User | Pass | Token)</span>
+                        </h4>
+                        ${stBadge}
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        ${hasAcct ? `
+                            <button type="button" class="${VA_BTN_TEAL}" onclick="vaIssueTokenModal(${v.id})" title="Sinh mã token GSS- 12 ký tự ngẫu nhiên hoặc cấu hình hạn dùng"><i class="ph ph-key"></i> Đặt / Cấp Token</button>
+                            <button type="button" class="${VA_BTN_AMBER}" onclick="vaAccountModal(${v.id})" title="Cấu hình User, đổi mật khẩu, thời gian tự đăng xuất"><i class="ph ph-pencil-simple"></i> Cấu hình User & Pass</button>
+                        ` : `
+                            <button type="button" class="${VA_BTN_TEAL}" onclick="vaAccountModal(${v.id})" title="Cấp tài khoản mới"><i class="ph ph-user-plus"></i> Cấp tài khoản mới</button>
+                        `}
+                    </div>
+                </div>
+
+                ${hasAcct ? `
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs">
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <div class="text-slate-500 font-semibold mb-1">Tên đăng nhập (User):</div>
+                            <div class="font-mono font-black text-sm text-teal-900">${vaEsc(a.username)}</div>
+                            <div class="text-[11px] text-slate-500 mt-1">Tự đăng xuất sau: <strong>${a.idle_timeout_minutes} phút</strong></div>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <div class="text-slate-500 font-semibold mb-1">Mật khẩu (Pass):</div>
+                            <div class="font-mono font-bold text-slate-700">••••••••••••</div>
+                            <div class="text-[11px] text-slate-500 mt-1">Đăng nhập gần nhất: <strong>${a.last_login_at ? vaFmt(a.last_login_at) : 'Chưa đăng nhập'}</strong></div>
+                        </div>
+
+                        <div class="p-3 bg-teal-50/70 border border-teal-200 rounded-xl">
+                            <div class="text-teal-900 font-semibold mb-1 flex items-center justify-between">
+                                <span>Mã Token xác nhận:</span>
+                                <span class="text-[11px] font-bold text-teal-700">${a.token_expired ? '<span class="text-rose-700">Đã hết hạn</span>' : (a.token_expires_at ? 'Có thời hạn' : 'Vô thời hạn')}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 mt-1">
+                                <span id="va-tok-detail-txt" class="font-mono font-bold text-xs text-slate-900">••••••••••••</span>
+                                <button type="button" class="text-slate-400 hover:text-teal-700 p-1 rounded" onclick="
+                                    const t = document.getElementById('va-tok-detail-txt');
+                                    const ico = document.getElementById('va-tok-detail-eye');
+                                    if (t.textContent === '••••••••••••') { t.textContent = '${vaEsc(a.plain_token || a.token_preview)}'; ico.className = 'ph ph-eye-slash text-sm'; }
+                                    else { t.textContent = '••••••••••••'; ico.className = 'ph ph-eye text-sm'; }
+                                " title="Hiện/ẩn Token"><i id="va-tok-detail-eye" class="ph ph-eye text-sm"></i></button>
+                                <button type="button" class="text-slate-400 hover:text-teal-700 p-1 rounded" onclick="vaCopy('${vaEsc(a.plain_token)}', 'Đã sao chép mã Token.')" title="Sao chép Token"><i class="ph ph-copy text-sm"></i></button>
+                                <button type="button" class="text-teal-700 hover:text-teal-900 bg-white border border-teal-300 px-2 py-0.5 rounded text-[11px] font-bold inline-flex items-center gap-1" onclick="vaCopy('${vaEsc(a.magic_link)}', 'Đã sao chép Magic Link 1-chạm.')" title="Sao chép link đăng nhập tự điền"><i class="ph ph-link"></i> Magic Link</button>
+                            </div>
+                            <div class="text-[11px] text-slate-600 mt-1.5">Hạn dùng: <strong>${vaEsc(expText)}</strong></div>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 flex items-center justify-between">
+                        <div>
+                            <div class="font-bold">Nhà xe này chưa được cấp tài khoản Cổng Đối Tác.</div>
+                            <div class="text-xs text-amber-800 mt-0.5">Bấm nút "Cấp tài khoản mới" để tạo Tên đăng nhập, mật khẩu và sinh mã Token bảo mật cao.</div>
+                        </div>
+                        <button type="button" class="h-9 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="vaAccountModal(${v.id})">
+                            <i class="ph ph-user-plus"></i>
+                            <span>Cấp tài khoản ngay</span>
+                        </button>
+                    </div>
+                `}
+            </div>
+
+            <!-- 4. ĐỘI XE & TÀI XẾ CỦA NHÀ XE -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="ph ph-truck text-teal-700 text-sm"></i>
+                        <span>Đội Xe & Danh sách Bác tài (${drivers.length} tài xế)</span>
+                    </h4>
+                </div>
+                <div class="mb-3">
+                    <div class="text-slate-500 font-semibold mb-1">Phương tiện đầu kéo / rơ-moóc đã hoạt động:</div>
+                    <div class="flex items-center gap-1.5 flex-wrap">${vehHtml}</div>
+                </div>
+                <div>
+                    <div class="text-slate-500 font-semibold mb-1.5">Danh sách Bác tài phụ trách:</div>
+                    ${drvHtml}
+                </div>
+            </div>
+
+            <!-- 5. LỆNH ĐIỀU ĐỘNG & PHIẾU CHIA CONT -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="ph ph-receipt text-teal-700 text-sm"></i>
+                        <span>Lệnh điều động & Phiếu chia cont (${allocs.length} lệnh)</span>
+                    </h4>
+                </div>
+                ${allocHtml}
+            </div>
+        </div>
+    `;
+
+    vaOpenModal(`Chi tiết Nhà Xe: ${v.short_name || v.name}`, bodyHtml, null, null, { wide: true });
+}
+
+function vaQuickOpenDriverForVendor(vendorId) {
+    const v = (vaData && vaData.vendors || []).find(x => x.id === vendorId);
+    if (!v) return;
+    const dLinks = (vaData && vaData.driver_links || []).filter(d => d.vendor_id === vendorId);
+    if (!dLinks.length) {
+        showToast('warning', `Nhà xe ${v.short_name || v.name} hiện chưa có chuyến xe nào đang hoạt động.`);
+        return;
+    }
+    // Mở chuyến xe gần nhất
+    const latest = dLinks[0];
+    vaOpenDriverScreenDirect(latest.link, latest.trip_code);
+}
+
 window.vaAccountModal = vaAccountModal;
 window.vaAccountAction = vaAccountAction;
 window.vaToggleAccount = vaToggleAccount;
@@ -13954,6 +14265,10 @@ window.vaQuickOpenDriverScreen = vaQuickOpenDriverScreen;
 window.vaOpenDriverChooserModal = vaOpenDriverChooserModal;
 window.vaRenderDriverChooserRows = vaRenderDriverChooserRows;
 window.vaFilterDriverChooserModal = vaFilterDriverChooserModal;
+
+window.vaOpenVendorDetailModal = vaOpenVendorDetailModal;
+window.vaToggleLockAccount = vaToggleLockAccount;
+window.vaQuickOpenDriverForVendor = vaQuickOpenDriverForVendor;
 
 // ---- src/app/dispatch/trip-expenses.js ----
 async function toggleSubcontractorTypePanels(typeVal) {

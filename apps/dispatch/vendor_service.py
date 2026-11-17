@@ -10,6 +10,13 @@ Quy tắc chính (xem docs/GSS_RESTRUCTURE_PLAN.md §2.2):
 import hashlib
 import re
 import secrets
+import string
+
+
+def generate_secure_vendor_token():
+    """Sinh mã Token xác nhận bảo mật cao: GSS- + 12 ký tự ngẫu nhiên (chữ Hoa, chữ thường, số)."""
+    chars = string.ascii_letters + string.digits
+    return 'GSS-' + ''.join(secrets.choice(chars) for _ in range(12))
 import time
 from datetime import timedelta
 
@@ -1520,7 +1527,7 @@ def provision_portal_account(subcontractor, data, user=None):
 
     issued_token = None
     if d.get('regenerate_token') or (creating and not d.get('confirm_token')):
-        issued_token = 'GSSV-' + secrets.token_urlsafe(12).upper()
+        issued_token = generate_secure_vendor_token()
         acct.set_confirm_token(issued_token, expires_at=expires_at if expiry_specified else acct.token_expires_at)
     elif d.get('confirm_token'):
         issued_token = str(d.get('confirm_token')).strip()

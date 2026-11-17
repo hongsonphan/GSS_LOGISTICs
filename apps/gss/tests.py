@@ -382,7 +382,7 @@ class VendorPortalTests(Base):
         })
         self.assertEqual(prov.status_code, 200, prov.content)
         confirm_token = prov.json()['data']['issued_confirm_token']
-        self.assertTrue(len(confirm_token) >= 20)
+        self.assertTrue(confirm_token.startswith("GSS-") and len(confirm_token) == 16)
         self.client.logout()
 
         # 3. Khi đã bật tài khoản Portal, truy cập token cũ hoặc workspace khi chưa login -> 401

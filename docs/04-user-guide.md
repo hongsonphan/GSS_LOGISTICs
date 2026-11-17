@@ -466,15 +466,22 @@ Thanh tab Điều vận được thiết kế tinh gọn với 4 tab chữ thư�
    - Cột **Lệnh Điều Động** (`dispatch_order_code`) và cột **Phiếu Vận Chuyển** (`trip_code`) đều là liên kết bấm được (clickable).
    - Duy trì nguyên vẹn ngữ cảnh Tab 2 khi quay lại từ màn hình chi tiết chuyến.
 3. **Theo dõi hành trình:** Hiển thị toàn bộ các xe đã nhận lệnh và đang thực hiện hành trình. Hỗ trợ 3 chế độ xem: **Bảng container**, **Theo bước hành trình** (Ma trận Timeline đường ray 7 mốc với icon xe container chuyển động theo tỷ lệ % tiến độ, gom nhóm theo Nhà xe, bộ lọc tìm kiếm và chip trạng thái thời gian thực - dùng chung thiết kế với Dashboard), và **Phiếu VC**.
-4. **Quản lý Vendor (Tab 4):** Nơi quản trị tài khoản, token và link bảo mật của đối tác nhà xe và lái xe với cơ chế **Chủ động 100%**:
-   - *Nút "Màn hình Vendor" (Xem & thao tác hộ):* Nằm trên thanh công cụ và từng dòng nhà xe/phiếu chia. Cho phép Điều vận 1-click mở trực tiếp Cổng Nhà Xe đối tác (tự động điền tài khoản & token qua Magic Link) để xem đúng những gì đối tác thấy, hướng dẫn sử dụng hoặc thao tác khai báo cont/xe/tài hộ nhà xe.
-   - *Nút "Màn hình Tài xế" (Xem & thao tác hộ):* Nằm trên thanh công cụ và từng dòng chuyến xe. Cho phép Điều vận mở cửa sổ di động chuẩn kích thước smartphone (440x880) của Bác tài (`/q/<token>/`) để vừa điện thoại hướng dẫn tài xế vừa theo dõi màn hình, hoặc bấm xác nhận mốc chặng, tải ảnh chứng từ thay cho tài xế trong trường hợp khẩn cấp.
-   - *Cấp Token xác nhận chủ động:* Điều vận có thể tự gõ mã Token theo ý muốn (ví dụ: `ANPHAT-2026`, `HP26`) hoặc bấm `Sinh mã` ngẫu nhiên; chủ động đặt thời hạn hiệu lực (`Vô thời hạn`, `30 ngày`, `90 ngày`, `1 năm`, `7 ngày` hoặc chọn ngày cụ thể).
-   - *Tra cứu & Sao chép lại:* Mã token được mã hóa an toàn hai chiều, Điều vận có thể bấm icon con mắt xem mã hoặc sao chép lại bất kỳ lúc nào mà không cần reset làm gián đoạn nhà xe.
-   - *Magic Link (Đăng nhập 1-chạm):* Sao chép đường link đăng nhập tự động điền Tên đăng nhập và Token dạng `/vendor/login/?u=...&t=...`.
-   - *Mẫu tin nhắn Zalo 1-Click:* Nút `Zalo` tự động soạn sẵn nội dung tin nhắn gửi nhà xe (tài khoản, token, magic link) và gửi bác tài (chuyến xe, số cont, link QR di động).
-   - *Link nhà xe:* sao chép link, cấp lại đặt hạn, khóa link hoặc thu hồi phiếu chia cont.
-   - *Link tài xế (`/q/<token>/`):* đặt thời hạn link (theo ngày), cấp lại làm mới QR code (vô hiệu link cũ), hoặc thu hồi link ngay lập tức.
+4. **Quản lý Vendor (Tab 4):** Trung tâm quản trị quan hệ đối tác nhà xe (3PL) và đội ngũ tài xế với thiết kế tinh gọn, bảo mật cao và cơ chế **Chủ động 100%**:
+   - **Giao diện ngoài bảng cực kỳ tinh giản:**
+     - Thanh tab con chỉ gồm 3 chế độ xem chính: *Nhà xe & tài khoản*, *Link nhà xe*, *Link tài xế*. Bỏ toàn bộ các nút mở màn hình rườm rà ngoài thanh Tab.
+     - Cột Thao tác trên từng dòng nhà xe chỉ có đúng 2 nút: **`[ Xem ]`** (outline xanh ngọc, icon `ph ph-eye`) và **`[ Khóa ]`** / **`[ Mở khóa ]`** (outline đỏ/hồng, icon `ph ph-lock`). Không bày biện các nút cấu hình phức tạp ra ngoài bảng nhằm giữ không gian làm việc thoáng đãng, chuyên nghiệp.
+   - **Modal Chi tiết Nhà xe toàn diện (Khi bấm nút "Xem"):** Mở không gian quản trị tập trung của nhà xe với 5 phân khu rõ ràng:
+     1. *Thanh tác vụ nhanh (Header Quick Actions):*
+        - **`Màn hình Vendor`:** 1-Click mở Cổng Nhà Xe đối tác (tự động điền tài khoản & token qua Magic Link) để Điều vận vừa gọi hướng dẫn đối tác vừa xem trực tiếp hoặc thao tác gán xe/tài hộ.
+        - **`Màn hình Tài xế`:** Mở giao diện di động chuẩn smartphone (440×880) mô phỏng ứng dụng của Bác tài (`/q/<token>/`) để hỗ trợ tài xế xác nhận mốc chặng, tải ảnh chứng từ POD/EIR khi gặp khó khăn ngoài đường.
+        - **`Gửi Zalo`:** Soạn sẵn toàn bộ nội dung tin nhắn gửi đối tác nhà xe (thông tin đăng nhập, token, magic link 1-chạm) và gửi bác tài (thông tin chuyến cont, link QR).
+        - **`Khóa / Mở khóa tài khoản`:** Khóa tức thì quyền đăng nhập Cổng Đối Tác khi có tranh chấp hoặc mở khóa khi đã giải quyết xong.
+     2. *Thông tin pháp lý & liên hệ:* Hiển thị đầy đủ Tên doanh nghiệp, Tên viết tắt, Mã số thuế (MST), Địa chỉ trụ sở, Bãi xe / Kho bãi trung chuyển, Người liên hệ & Chức vụ, Điện thoại liên hệ, Email nhận lệnh & Hóa đơn điện tử.
+     3. *Tài khoản & Bảo mật Cổng Nhà Xe (User | Pass | Token):*
+        - **Chuẩn Token bảo mật cao:** Mã Token xác nhận được sinh tự động theo chuẩn tiền tố `GSS-` kết hợp chuỗi 12 ký tự ngẫu nhiên gồm số, ký tự HOA và ký tự thường (ví dụ: `GSS-7aB9xK2mP4qL`), chống đoán mò hoặc tấn công vét cạn (brute-force).
+        - **Công cụ tra cứu & cấp phát:** Nút **`Đặt / Cấp Token`** (chủ động tự gõ mã hoặc sinh mã bảo mật cao, chọn thời hạn vô thời hạn/có thời hạn), nút **`Cấu hình User & Pass`**, nút con mắt bật/tắt xem Token, nút sao chép Token và nút sao chép **Magic Link** (link đăng nhập 1-chạm).
+     4. *Đội xe & Danh sách Bác tài phụ trách:* Thống kê toàn bộ phương tiện đầu kéo, rơ-moóc đã hoạt động của nhà xe kèm bảng danh sách Bác tài và nút **"Màn hình Tài xế"** trực tiếp cho từng bác tài.
+     5. *Lệnh điều động & Phiếu chia cont:* Liệt kê toàn bộ các lệnh điều vận, mã phiếu chia container kèm nút **"Màn hình Vendor"** tương ứng.
 
 ### C3.2. Mười bảy (17) Khóa Bất Biến Bảo Vệ Hành Trình Xe
 

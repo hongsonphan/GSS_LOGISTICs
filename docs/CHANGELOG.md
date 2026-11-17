@@ -3,6 +3,26 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-17 – Nâng cấp toàn diện Màn hình và tính năng Quản lý Vendor: Chuẩn Token bảo mật cao GSS-[A-Za-z0-9]{12}, Bảng tinh giản và Modal Chi tiết Nhà xe
+- **1. Chuẩn Token Cổng Nhà Xe bảo mật cao:**
+  - Token xác nhận của Cổng Đối Tác được cấu hình theo định dạng chuẩn: Tiền tố `GSS-` kết hợp chuỗi 12 ký tự ngẫu nhiên bao gồm chữ hoa, chữ thường và chữ số (ví dụ: `GSS-7aB9xK2mP4qL`), thay cho các mã cũ ngắn hoặc dễ suy đoán.
+  - Cập nhật hàm backend `generate_secure_vendor_token()` trong `apps/dispatch/vendor_service.py` và hàm frontend `vaGenRandomToken()` trong `static/js/src/app/dispatch/vendor-admin.js`.
+  - Toàn bộ token được mã hóa hai chiều đối xứng Fernet AES trong database, hỗ trợ tra cứu ẩn/hiện mắt và sao chép an toàn.
+- **2. Tinh giản tối đa Bảng Quản lý Vendor (Tab 4 Điều vận):**
+  - *Loại bỏ các nút ngoài thanh Tab con:* Bỏ 2 nút "Màn hình Vendor" và "Màn hình Tài xế" ngoài thanh Tab bar để tránh trùng lặp và làm rối thanh điều hướng.
+  - *Cột Thao tác ngoài bảng chỉ gồm 2 nút:* Giữ lại duy nhất **`[ Xem ]`** (outline xanh ngọc, icon con mắt `ph ph-eye`) và **`[ Khóa / Mở khóa ]`** (outline hồng đỏ, icon `ph ph-lock`), loại bỏ toàn bộ các nút rườm rà ngoài bảng.
+- **3. Modal Chi tiết Nhà xe đa năng, tập trung & trực quan:**
+  - Khi bấm nút **`[ Xem ]`** trên bất kỳ dòng nhà xe nào, hệ thống mở Modal Chi tiết Nhà xe toàn diện:
+    - *Thanh tác vụ nhanh (Header Quick Actions):* Nút `Màn hình Vendor`, `Màn hình Tài xế`, `Gửi Zalo`, `Khóa / Mở khóa tài khoản`.
+    - *Thông tin pháp lý & liên hệ:* Tên doanh nghiệp, MST, địa chỉ trụ sở, bãi xe/kho bãi, người liên hệ & chức vụ, SĐT, email nhận lệnh.
+    - *Tài khoản & bảo mật Cổng Nhà xe (User | Pass | Token):* Tên đăng nhập, mật khẩu, Token `GSS-[A-Za-z0-9]{12}`, nút ẩn/hiện, copy, Magic Link đăng nhập 1-chạm, nút `Đặt / Cấp Token` và `Cấu hình User & Pass`.
+    - *Đội xe & Bác tài:* Danh sách biển số xe đầu kéo / rơ-moóc hoạt động và danh sách Bác tài kèm nút "Màn hình Tài xế" mở trực tiếp từng chuyến.
+    - *Lệnh điều động & Phiếu chia cont:* Liệt kê toàn bộ phiếu chia container kèm nút "Màn hình Vendor" trực tiếp.
+- **4. Kiểm thử thị giác (Visual Testing) & QA:**
+  - Kiểm thử thị giác tự động bằng Playwright: Xác thực thực tế giao diện bảng tinh gọn và Modal chi tiết hiển thị đầy đủ, không trùng lặp, chuẩn tỷ lệ và công thái học.
+  - Bộ kiểm thử QA Verify đạt 7/7 PASS (100% kiểm tra cú pháp, migration, django check, bảo mật, và toàn bộ suite test).
+- File: `apps/dispatch/vendor_service.py`, `apps/dispatch/api_views/vendor_admin.py`, `apps/dispatch/test_vendor_admin.py`, `apps/gss/tests.py`, `templates/views/view_dispatch.html`, `static/js/src/app/dispatch/vendor-admin.js`, `static/js/app.js`, `static/css/tailwind.css`, `docs/04-user-guide.md`, `docs/CHANGELOG.md`.
+
 ## 2026-11-17 – Khắc phục triệt để lỗi 404 khi Refresh, tối ưu cột Thao tác Vendor và sửa lỗi xác thực Magic Link Cổng Nhà Xe
 - **1. Tinh gọn cột Thao tác bảng Quản lý Tài khoản Nhà xe (Tab 4 Điều vận):**
   - *Bỏ nút "Màn hình Vendor" trong cột Thao tác:* Loại bỏ nút "Màn hình Vendor" trên từng dòng bảng tài khoản nhà xe (cả trường hợp đã có và chưa có tài khoản) để tránh trùng lặp dư thừa, vì trên thanh công cụ (Toolbar) ở trên đã có nút "Màn hình Vendor" mở bộ chọn nhanh hoặc mở trực tiếp nhà xe được chọn.
