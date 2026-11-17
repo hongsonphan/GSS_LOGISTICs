@@ -3,6 +3,14 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-17 – Quy Định Cổng Chạy Local 8086 và Khắc Cốt Ghi Tâm Không Dùng Cổng 8000
+- **1. Quy định chuẩn hóa môi trường Local:**
+  - Cổng Web Local duy nhất: **`8086`** (`http://127.0.0.1:8086/`) tương ứng container Docker `gss_logistics_web`.
+  - Cổng PostgreSQL Local: **`5436`** (`gss_logistics_postgres`).
+  - Cổng PostgreSQL QA Test: **`5438`** (`gss_qa_pg`).
+  - Cấm tuyệt đối chạy cổng 8000 nhằm tránh xung đột với các stack BIM Logistics (`8085`), Paperless (`8080`) hoặc BIM ERP.
+  - Cập nhật quy tắc vào `.agents/rules/backend-rules.md` (Mục 7) và `docs/11-runbook.md`.
+
 ## 2026-11-17 – Phản Ứng Tức Thì (Reactive Update) Khi Đổi / Cấp Token Trong Chi Tiết Nhà Xe
 - **1. Đồng bộ tức thì Thẻ Tài Khoản & Bảo Mật Portal (Hình 2):**
   - Khắc phục sự cố không cập nhật mã token trên giao diện sau khi bấm "Lưu & Kích hoạt Token":

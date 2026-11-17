@@ -2,6 +2,9 @@
 
 ## 1. Chạy local – MỘT cách duy nhất (Docker: web 8086 + PostgreSQL 5436 + Redis)
 
+> [!IMPORTANT]
+> **Quy định cổng Local:** Hệ thống GSS TMS trên môi trường Local hoạt động duy nhất tại cổng **`8086`** (`http://127.0.0.1:8086/`), PostgreSQL cổng **`5436`** (`gss_logistics_postgres`). Tuyệt đối không sử dụng cổng `8000` mặc định để tránh xung đột với các service và stack khác trên máy (BIM Logistics cổng `8085`, Paperless cổng `8080`, BIM ERP, v.v.). Khi chạy dev server độc lập ngoài Docker (nếu cần), luôn chỉ định rõ: `cmd /c "set DB_PORT=5436 && python manage.py runserver 0.0.0.0:8086 --noreload"`.
+
 ```bash
 # cần file .env (DB_PASSWORD, DB_NAME=gss_logistics_db, DB_USER=gss_logistics_user) – mẫu .env.example
 docker compose -p gss_logistics -f docker-compose.yml -f docker-compose.local.yml up -d --build
