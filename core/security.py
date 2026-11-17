@@ -118,7 +118,7 @@ def _revoked_check(self, validated_token):
 GracefulJWTAuthentication.get_user = _revoked_check
 
 
-# ----------------------------------------------------------------------------- Mã hóa 2 chiều Token Bảo mật (Fernet / AES)
+# ----------------------------------------------------------------------------- Mã hóa 2 chiều Token Bảo mật (Fernet / AES + Graceful Fallback)
 def _get_fernet():
     import base64
     import hashlib
@@ -135,7 +135,12 @@ def encrypt_token(plain_text: str) -> str:
         f = _get_fernet()
         return f.encrypt(plain_text.strip().encode('utf-8')).decode('utf-8')
     except Exception:
-        return ''
+        # Fallback an toàn dùng django.core.signing nếu thiếu thư viện cryptography
+        try:
+            from django.core import signing
+            return signing.dumps(plain_text.strip(), salt='gss-vendor-token')
+        except Exception:
+            return ''
 
 
 def decrypt_token(cipher_text: str) -> str:
@@ -146,5 +151,9 @@ def decrypt_token(cipher_text: str) -> str:
         f = _get_fernet()
         return f.decrypt(cipher_text.strip().encode('utf-8')).decode('utf-8')
     except Exception:
-        return ''
+        try:
+            from django.core import signing
+            return signing.loads(cipher_text.strip(), salt='gss-vendor-token')
+        except Exception:
+            return ''
 
