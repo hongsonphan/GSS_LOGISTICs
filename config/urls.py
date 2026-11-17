@@ -123,6 +123,9 @@ urlpatterns = [
     path('dispatch/orders/<str:order_id>', index_view, name='spa-dispatch-order'),
     path('dispatch/orders/', index_view, name='spa-dispatch-orders-slash'),
     path('dispatch/orders', index_view, name='spa-dispatch-orders'),
+    # Quản lý Vendor & Chi tiết Nhà Xe (Deep-link SPA: /dispatch/vendors/<vendor_id>)
+    path('dispatch/vendors/<str:vendor_id>/', index_view, name='spa-dispatch-vendor-slash'),
+    path('dispatch/vendors/<str:vendor_id>', index_view, name='spa-dispatch-vendor'),
     path('settlements/', index_view, name='spa-settlements'),
     path('settlements', index_view, name='spa-settlements-noslash'),
     path('quyet-toan/', index_view, name='spa-quyet-toan'),

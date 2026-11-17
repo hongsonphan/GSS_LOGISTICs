@@ -3,7 +3,7 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
-## 2026-11-17 – Nâng cấp toàn diện Màn hình và tính năng Quản lý Vendor: Chuẩn Token bảo mật cao GSS-[A-Za-z0-9]{12}, Bảng tinh giản và Modal Chi tiết Nhà xe
+## 2026-11-17 – Nâng cấp toàn diện Màn hình Quản lý Vendor: Chuẩn Token bảo mật cao GSS-[A-Za-z0-9]{12}, Bảng tinh giản và Trang Chi Tiết Nhà Xe Toàn Màn Hình (Full-Page View)
 - **1. Chuẩn Token Cổng Nhà Xe bảo mật cao:**
   - Token xác nhận của Cổng Đối Tác được cấu hình theo định dạng chuẩn: Tiền tố `GSS-` kết hợp chuỗi 12 ký tự ngẫu nhiên bao gồm chữ hoa, chữ thường và chữ số (ví dụ: `GSS-7aB9xK2mP4qL`), thay cho các mã cũ ngắn hoặc dễ suy đoán.
   - Cập nhật hàm backend `generate_secure_vendor_token()` trong `apps/dispatch/vendor_service.py` và hàm frontend `vaGenRandomToken()` trong `static/js/src/app/dispatch/vendor-admin.js`.
@@ -11,8 +11,8 @@ Nhật ký của hệ thống trước đó không chuyển sang repo này.
 - **2. Tinh giản tối đa Bảng Quản lý Vendor (Tab 4 Điều vận):**
   - *Loại bỏ các nút ngoài thanh Tab con:* Bỏ 2 nút "Màn hình Vendor" và "Màn hình Tài xế" ngoài thanh Tab bar để tránh trùng lặp và làm rối thanh điều hướng.
   - *Cột Thao tác ngoài bảng chỉ gồm 2 nút:* Giữ lại duy nhất **`[ Xem ]`** (outline xanh ngọc, icon con mắt `ph ph-eye`) và **`[ Khóa / Mở khóa ]`** (outline hồng đỏ, icon `ph ph-lock`), loại bỏ toàn bộ các nút rườm rà ngoài bảng.
-- **3. Modal Chi tiết Nhà xe đa năng, tập trung & trực quan:**
-  - Khi bấm nút **`[ Xem ]`** trên bất kỳ dòng nhà xe nào, hệ thống mở Modal Chi tiết Nhà xe toàn diện:
+- **3. Trang Chi Tiết Nhà Xe Toàn Màn Hình (Dedicated Full-Page View, không dùng modal), tập trung & trực quan:**
+  - Khi bấm nút **`[ Xem ]`** trên bất kỳ dòng nhà xe nào, hệ thống chuyển sang Trang Chi Tiết Nhà Xe toàn màn hình (/dispatch/vendors/<id>) không giới hạn tầm nhìn người dùng:
     - *Thanh tác vụ nhanh (Header Quick Actions):* Nút `Màn hình Vendor`, `Màn hình Tài xế`, `Gửi Zalo`, `Khóa / Mở khóa tài khoản`.
     - *Thông tin pháp lý & liên hệ:* Tên doanh nghiệp, MST, địa chỉ trụ sở, bãi xe/kho bãi, người liên hệ & chức vụ, SĐT, email nhận lệnh.
     - *Tài khoản & bảo mật Cổng Nhà xe (User | Pass | Token):* Tên đăng nhập, mật khẩu, Token `GSS-[A-Za-z0-9]{12}`, nút ẩn/hiện, copy, Magic Link đăng nhập 1-chạm, nút `Đặt / Cấp Token` và `Cấu hình User & Pass`.

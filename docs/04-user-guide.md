@@ -470,7 +470,7 @@ Thanh tab Điều vận được thiết kế tinh gọn với 4 tab chữ thư�
    - **Giao diện ngoài bảng cực kỳ tinh giản:**
      - Thanh tab con chỉ gồm 3 chế độ xem chính: *Nhà xe & tài khoản*, *Link nhà xe*, *Link tài xế*. Bỏ toàn bộ các nút mở màn hình rườm rà ngoài thanh Tab.
      - Cột Thao tác trên từng dòng nhà xe chỉ có đúng 2 nút: **`[ Xem ]`** (outline xanh ngọc, icon `ph ph-eye`) và **`[ Khóa ]`** / **`[ Mở khóa ]`** (outline đỏ/hồng, icon `ph ph-lock`). Không bày biện các nút cấu hình phức tạp ra ngoài bảng nhằm giữ không gian làm việc thoáng đãng, chuyên nghiệp.
-   - **Modal Chi tiết Nhà xe toàn diện (Khi bấm nút "Xem"):** Mở không gian quản trị tập trung của nhà xe với 5 phân khu rõ ràng:
+   - **Trang Chi Tiết Nhà Xe Toàn Màn Hình (Full-Page Dedicated View - Khi bấm nút "Xem"):** Mở không gian quản trị chuyên biệt, rộng rãi toàn màn hình (không dùng modal gây giới hạn tầm nhìn người dùng) với đường dẫn URL chuẩn Semantic (`/dispatch/vendors/<vendor_id>`) và nút `← Quay Lại Quản Lý Vendor`:
      1. *Thanh tác vụ nhanh (Header Quick Actions):*
         - **`Màn hình Vendor`:** 1-Click mở Cổng Nhà Xe đối tác (tự động điền tài khoản & token qua Magic Link) để Điều vận vừa gọi hướng dẫn đối tác vừa xem trực tiếp hoặc thao tác gán xe/tài hộ.
         - **`Màn hình Tài xế`:** Mở giao diện di động chuẩn smartphone (440×880) mô phỏng ứng dụng của Bác tài (`/q/<token>/`) để hỗ trợ tài xế xác nhận mốc chặng, tải ảnh chứng từ POD/EIR khi gặp khó khăn ngoài đường.

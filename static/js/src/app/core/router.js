@@ -198,6 +198,8 @@ function switchTab(tabId, updateHistory = true) {
     if (voucherDetailView) voucherDetailView.classList.add('hidden-view');
     const soaDetailView = document.getElementById('view-customer-ar-statement');
     if (soaDetailView) soaDetailView.classList.add('hidden-view');
+    const vendorDetailView = document.getElementById('view-vendor-detail');
+    if (vendorDetailView) vendorDetailView.classList.add('hidden-view');
 
     // Tự động đóng tất cả các popup modal nổi khi chuyển đổi phân hệ (chỉ dùng class 'hidden' chuẩn modal, không gắn 'hidden-view' để tránh lỗi display:none !important)
     if (typeof closeDispatchOrderModal === 'function') closeDispatchOrderModal();
@@ -324,6 +326,20 @@ function resolveInitialRoute() {
     // 0. Kiểm tra URL trang chi tiết bản tin: /news/<hashid> (đã được Django render trên base.html)
     const newsDetailMatch = pathname.match(/^\/news\/([a-zA-Z0-9_-]+)/);
     if (newsDetailMatch && newsDetailMatch[1]) {
+        return;
+    }
+
+    // 0.8. Kiểm tra deep-link Chi tiết Nhà xe trang riêng: /dispatch/vendors/<id>
+    const vendorMatch = pathname.match(/^\/dispatch\/vendors\/([a-zA-Z0-9_-]+)/);
+    if (vendorMatch && vendorMatch[1]) {
+        const vendorId = vendorMatch[1];
+        switchTab('dieu-van', false);
+        if (typeof openVendorDetailPage === 'function') {
+            openVendorDetailPage(vendorId, false);
+        }
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: 'vendor-detail', vendorId }, '', window.location.pathname);
+        }
         return;
     }
 
@@ -497,6 +513,12 @@ window.addEventListener('popstate', (event) => {
     // Trang riêng có xử lý đầy đủ trong resolveInitialRoute (tạo phiếu thu/chi, tờ khai, hồ sơ nhân sự, hợp đồng)
     if (/^\/(accounting\/vouchers\/new|customs\/declarations\/|personnel\/employees\/)/.test(pathname)) {
         resolveInitialRoute();
+        return;
+    }
+    const vendorDetailMatch = pathname.match(/^\/dispatch\/vendors\/([a-zA-Z0-9_-]+)/);
+    if (vendorDetailMatch && vendorDetailMatch[1]) {
+        switchTab('dieu-van', false);
+        if (typeof openVendorDetailPage === 'function') openVendorDetailPage(vendorDetailMatch[1], false);
         return;
     }
     const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/);

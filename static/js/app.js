@@ -4508,6 +4508,8 @@ function switchTab(tabId, updateHistory = true) {
     if (voucherDetailView) voucherDetailView.classList.add('hidden-view');
     const soaDetailView = document.getElementById('view-customer-ar-statement');
     if (soaDetailView) soaDetailView.classList.add('hidden-view');
+    const vendorDetailView = document.getElementById('view-vendor-detail');
+    if (vendorDetailView) vendorDetailView.classList.add('hidden-view');
 
     // Tự động đóng tất cả các popup modal nổi khi chuyển đổi phân hệ (chỉ dùng class 'hidden' chuẩn modal, không gắn 'hidden-view' để tránh lỗi display:none !important)
     if (typeof closeDispatchOrderModal === 'function') closeDispatchOrderModal();
@@ -4634,6 +4636,20 @@ function resolveInitialRoute() {
     // 0. Kiểm tra URL trang chi tiết bản tin: /news/<hashid> (đã được Django render trên base.html)
     const newsDetailMatch = pathname.match(/^\/news\/([a-zA-Z0-9_-]+)/);
     if (newsDetailMatch && newsDetailMatch[1]) {
+        return;
+    }
+
+    // 0.8. Kiểm tra deep-link Chi tiết Nhà xe trang riêng: /dispatch/vendors/<id>
+    const vendorMatch = pathname.match(/^\/dispatch\/vendors\/([a-zA-Z0-9_-]+)/);
+    if (vendorMatch && vendorMatch[1]) {
+        const vendorId = vendorMatch[1];
+        switchTab('dieu-van', false);
+        if (typeof openVendorDetailPage === 'function') {
+            openVendorDetailPage(vendorId, false);
+        }
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: 'vendor-detail', vendorId }, '', window.location.pathname);
+        }
         return;
     }
 
@@ -4807,6 +4823,12 @@ window.addEventListener('popstate', (event) => {
     // Trang riêng có xử lý đầy đủ trong resolveInitialRoute (tạo phiếu thu/chi, tờ khai, hồ sơ nhân sự, hợp đồng)
     if (/^\/(accounting\/vouchers\/new|customs\/declarations\/|personnel\/employees\/)/.test(pathname)) {
         resolveInitialRoute();
+        return;
+    }
+    const vendorDetailMatch = pathname.match(/^\/dispatch\/vendors\/([a-zA-Z0-9_-]+)/);
+    if (vendorDetailMatch && vendorDetailMatch[1]) {
+        switchTab('dieu-van', false);
+        if (typeof openVendorDetailPage === 'function') openVendorDetailPage(vendorDetailMatch[1], false);
         return;
     }
     const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/);
@@ -13244,7 +13266,7 @@ function vaRenderAccounts(vendor) {
 
             const isLocked = a.locked || !a.is_active;
             actions = `
-                <button type="button" class="${VA_BTN_TEAL}" onclick="vaOpenVendorDetailModal(${v.id})" title="Xem chi tiết nhà xe, tài khoản, token, xe & tài xế"><i class="ph ph-eye"></i> Xem</button>
+                <button type="button" class="${VA_BTN_TEAL}" onclick="openVendorDetailPage(${v.id})" title="Xem chi tiết nhà xe, tài khoản, token, xe & tài xế"><i class="ph ph-eye"></i> Xem</button>
                 ${isLocked 
                     ? `<button type="button" class="${VA_BTN_GRAY}" onclick="vaToggleLockAccount(${v.id}, false)" title="Mở khóa tài khoản Portal"><i class="ph ph-lock-open"></i> Mở khóa</button>`
                     : `<button type="button" class="${VA_BTN_ROSE}" onclick="vaToggleLockAccount(${v.id}, true)" title="Khóa tài khoản Portal"><i class="ph ph-lock"></i> Khóa</button>`
@@ -13252,7 +13274,7 @@ function vaRenderAccounts(vendor) {
         }
         if (!a) {
             actions = `
-                <button type="button" class="${VA_BTN_TEAL}" onclick="vaOpenVendorDetailModal(${v.id})" title="Xem chi tiết nhà xe, cấp tài khoản & cấu hình token"><i class="ph ph-eye"></i> Xem</button>
+                <button type="button" class="${VA_BTN_TEAL}" onclick="openVendorDetailPage(${v.id})" title="Xem chi tiết nhà xe, cấp tài khoản & cấu hình token"><i class="ph ph-eye"></i> Xem</button>
                 <button type="button" class="${VA_BTN_GRAY} opacity-40 cursor-not-allowed" disabled title="Nhà xe chưa có tài khoản"><i class="ph ph-lock"></i> Khóa</button>`;
         }
         return `<tr class="hover:bg-teal-50/30">
@@ -14266,9 +14288,355 @@ window.vaOpenDriverChooserModal = vaOpenDriverChooserModal;
 window.vaRenderDriverChooserRows = vaRenderDriverChooserRows;
 window.vaFilterDriverChooserModal = vaFilterDriverChooserModal;
 
-window.vaOpenVendorDetailModal = vaOpenVendorDetailModal;
+window.openVendorDetailPage = openVendorDetailPage;
+window.backToVendorAdmin = backToVendorAdmin;
+window.vaOpenVendorDetailModal = openVendorDetailPage;
 window.vaToggleLockAccount = vaToggleLockAccount;
 window.vaQuickOpenDriverForVendor = vaQuickOpenDriverForVendor;
+
+
+// =============================================================
+
+function vaMaskToken(tok) {
+    if (!tok) return '••••••••••••';
+    if (tok.startsWith('GSS-') && tok.length > 8) {
+        return 'GSS-••••••••' + tok.slice(-4);
+    }
+    return '••••••••••••';
+}
+window.vaMaskToken = vaMaskToken;
+
+// TRANG CHI TIẾT NHÀ XE & CỔNG ĐỐI TÁC (FULL-PAGE VIEW)
+// =============================================================
+
+let currentActiveVendorId = null;
+
+async function openVendorDetailPage(vendorId, updateHistory = true) {
+    currentActiveVendorId = vendorId;
+    
+    // Đảm bảo dữ liệu vendor-admin đã được tải
+    if (!vaData || !vaData.vendors || !vaData.vendors.length) {
+        try {
+            await loadVendorAdminTab(false);
+        } catch (e) {
+            console.error('Lỗi khi tải dữ liệu vendor:', e);
+        }
+    }
+
+    const v = (vaData && vaData.vendors || []).find(x => String(x.id) === String(vendorId) || String(x.code) === String(vendorId));
+    if (!v) {
+        if (typeof showToast === 'function') showToast('error', 'Không tìm thấy thông tin nhà xe được yêu cầu.');
+        return;
+    }
+
+    // 1. Cập nhật Semantic URL: /dispatch/vendors/<id>
+    if (updateHistory && window.history && window.history.pushState) {
+        const vPath = `/dispatch/vendors/${v.id}`;
+        if (window.location.pathname !== vPath) {
+            window.history.pushState({ view: 'vendor-detail', vendorId: v.id }, '', vPath);
+        }
+    }
+
+    // 2. Ẩn tất cả view khác, kích hoạt view-vendor-detail
+    document.querySelectorAll('.view').forEach(el => el.classList.add('hidden-view'));
+    const detailView = document.getElementById('view-vendor-detail');
+    if (detailView) {
+        detailView.classList.remove('hidden-view');
+    }
+
+    // 3. Chuẩn bị dữ liệu tài khoản, lái xe, phương tiện, lệnh điều vận
+    const a = v.account;
+    const isLocked = a && (a.locked || !a.is_active);
+    const hasAccount = !!a;
+    const drivers = v.drivers || [];
+    const vehicles = v.vehicles || [];
+    const allocs = (vaData && vaData.links || []).filter(l => l.subcontractor_id === v.id);
+
+    // Gán thông tin Header Topbar
+    const setText = (id, val, defaultVal = '--') => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = (val !== undefined && val !== null && val !== '') ? val : defaultVal;
+    };
+
+    setText('vd-header-code', v.code || '3PL');
+    setText('vd-header-name', v.short_name || v.name);
+    setText('vd-header-tax', v.tax_code);
+    setText('vd-header-contact', v.contact_person);
+    setText('vd-header-phone', v.contact_phone || v.phone);
+    setText('vd-header-address', v.yard_address || v.address);
+
+    // Badge trạng thái Header
+    const stBadge = document.getElementById('vd-header-status-badge');
+    if (stBadge) {
+        if (!hasAccount) {
+            stBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-amber-50 text-amber-800 border-amber-200';
+            stBadge.innerText = 'Chưa cấp tài khoản';
+        } else if (isLocked) {
+            stBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-rose-50 text-rose-800 border-rose-200';
+            stBadge.innerText = 'Đang bị khóa';
+        } else {
+            stBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-200';
+            stBadge.innerText = 'Đang hoạt động';
+        }
+    }
+
+    // Nút Quick Actions trên Topbar
+    const btnOpenVendor = document.getElementById('vd-btn-open-vendor');
+    if (btnOpenVendor) {
+        btnOpenVendor.onclick = () => vaOpenVendorScreenByVendorId(v.id);
+    }
+    const btnOpenDriver = document.getElementById('vd-btn-open-driver');
+    if (btnOpenDriver) {
+        btnOpenDriver.onclick = () => vaQuickOpenDriverForVendor(v.id);
+    }
+    const btnShareZalo = document.getElementById('vd-btn-share-zalo');
+    if (btnShareZalo) {
+        btnShareZalo.onclick = () => vaShareVendorZaloModal(v.id);
+    }
+    const btnToggleLock = document.getElementById('vd-btn-toggle-lock');
+    const lblLock = document.getElementById('vd-lock-btn-label');
+    if (btnToggleLock) {
+        if (!hasAccount) {
+            btnToggleLock.disabled = true;
+            btnToggleLock.classList.add('opacity-40', 'cursor-not-allowed');
+            if (lblLock) lblLock.innerText = 'Chưa có tài khoản';
+        } else {
+            btnToggleLock.disabled = false;
+            btnToggleLock.classList.remove('opacity-40', 'cursor-not-allowed');
+            btnToggleLock.onclick = async () => {
+                await vaToggleLockAccount(v.id, !isLocked);
+                openVendorDetailPage(v.id, false);
+            };
+            if (lblLock) lblLock.innerText = isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản';
+        }
+    }
+
+    // THẺ 1: Thông tin pháp lý & liên hệ
+    setText('vd-company-name', v.name);
+    setText('vd-short-name', v.short_name);
+    setText('vd-tax-code', v.tax_code);
+    setText('vd-yard-address', v.yard_address);
+    setText('vd-office-address', v.address);
+    setText('vd-contact-person', v.contact_person);
+    setText('vd-contact-title', v.contact_title ? `Chức vụ: ${v.contact_title}` : '');
+    setText('vd-contact-phone', v.contact_phone || v.phone);
+    setText('vd-company-email', v.company_email);
+
+    // THẺ 2: Tài khoản & Bảo mật Cổng Nhà xe
+    const btnIssueToken = document.getElementById('vd-btn-issue-token');
+    if (btnIssueToken) {
+        btnIssueToken.onclick = () => vaIssueTokenModal(v.id);
+    }
+    const btnConfigAccount = document.getElementById('vd-btn-config-account');
+    if (btnConfigAccount) {
+        btnConfigAccount.onclick = () => vaAccountModal(v.id);
+    }
+
+    const acctContent = document.getElementById('vd-account-content');
+    if (acctContent) {
+        if (hasAccount) {
+            const expText = a.token_expires_at
+                ? (a.token_expired ? `Đã hết hạn vào ${vaFmt(a.token_expires_at)}` : `Hiệu lực đến ${vaFmt(a.token_expires_at)}`)
+                : 'Vô thời hạn (Không hết hạn)';
+            acctContent.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div class="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200">
+                        <div class="text-slate-500 font-semibold text-xs mb-1">Tên đăng nhập (User):</div>
+                        <div class="font-mono font-bold text-slate-900 text-sm flex items-center justify-between">
+                            <span>${vaEsc(a.username)}</span>
+                            <button type="button" class="text-slate-400 hover:text-teal-700 p-1" onclick="vaCopy('${vaEsc(a.username)}', 'Đã sao chép Username.')" title="Sao chép"><i class="ph ph-copy"></i></button>
+                        </div>
+                        <div class="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1"><i class="ph ph-clock"></i> Tự đăng xuất sau: <b>${a.idle_timeout_minutes || 15} phút</b></div>
+                    </div>
+
+                    <div class="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200">
+                        <div class="text-slate-500 font-semibold text-xs mb-1">Mật khẩu (Pass):</div>
+                        <div class="font-mono font-bold text-slate-700 text-sm tracking-widest flex items-center justify-between">
+                            <span>••••••••••••</span>
+                            <span class="text-[10px] text-teal-800 font-sans font-bold bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">Bảo mật</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500 mt-1.5">Đăng nhập gần nhất: <b>${a.last_login_at ? vaFmt(a.last_login_at) : 'Chưa đăng nhập'}</b></div>
+                    </div>
+
+                    <div class="bg-teal-50/70 p-3.5 rounded-xl border border-teal-200">
+                        <div class="text-teal-900 font-bold text-xs mb-1 flex items-center justify-between">
+                            <span>Mã Token xác nhận:</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${a.token_expired ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}">${a.token_expired ? 'Hết hạn' : 'Hợp lệ'}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 mt-1">
+                            <span id="va-tok-detail-text" class="font-mono font-bold text-slate-800 bg-white px-2 py-1 rounded border border-teal-300 text-xs tracking-wider flex-1 truncate">
+                                ${vaMaskToken(a.plain_token || a.token_preview)}
+                            </span>
+                            <button type="button" class="text-slate-500 hover:text-teal-800 p-1 rounded bg-white border border-slate-200" onclick="vaToggleShowTokenInDetail('${vaEsc(a.plain_token)}')" title="Hiện/ẩn Token"><i id="va-tok-detail-eye" class="ph ph-eye text-sm"></i></button>
+                            <button type="button" class="text-slate-500 hover:text-teal-800 p-1 rounded bg-white border border-slate-200" onclick="vaCopy('${vaEsc(a.plain_token)}', 'Đã sao chép mã Token.')" title="Sao chép Token"><i class="ph ph-copy text-sm"></i></button>
+                            <button type="button" class="text-teal-800 hover:text-teal-950 bg-white border border-teal-300 px-2 py-1 rounded text-[11px] font-bold inline-flex items-center gap-1" onclick="vaCopy('${vaEsc(a.magic_link)}', 'Đã sao chép Magic Link 1-chạm.')" title="Sao chép link đăng nhập tự điền"><i class="ph ph-link"></i> Magic Link</button>
+                        </div>
+                        <div class="text-[11px] text-slate-600 mt-1.5">Hạn dùng: <strong>${vaEsc(expText)}</strong></div>
+                    </div>
+                </div>
+            `;
+        } else {
+            acctContent.innerHTML = `
+                <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                        <div class="font-bold text-sm">Nhà xe này chưa được cấp tài khoản Cổng Đối Tác.</div>
+                        <div class="text-xs text-amber-800 mt-0.5">Bấm nút "Cấp tài khoản mới" để tạo Tên đăng nhập, mật khẩu và sinh mã Token bảo mật cao GSS-[12 ký tự].</div>
+                    </div>
+                    <button type="button" class="h-9 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs text-xs" onclick="vaAccountModal(${v.id})">
+                        <i class="ph-bold ph-user-plus"></i>
+                        <span>Cấp tài khoản ngay</span>
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // THẺ 3: Đội phương tiện & Danh sách Bác tài
+    const statBadge = document.getElementById('vd-driver-stat-badge');
+    if (statBadge) {
+        statBadge.innerText = `${drivers.length} Bác tài · ${vehicles.length} Phương tiện`;
+    }
+
+    const vehList = document.getElementById('vd-vehicles-list');
+    if (vehList) {
+        if (vehicles.length) {
+            vehList.innerHTML = vehicles.map(p => `
+                <span class="font-mono font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs text-xs flex items-center gap-1">
+                    <i class="ph-bold ph-truck text-teal-700"></i> ${vaEsc(p)}
+                </span>
+            `).join('');
+        } else {
+            vehList.innerHTML = '<span class="text-slate-400 italic text-xs">Chưa có phương tiện nào ghi nhận vận chuyển.</span>';
+        }
+    }
+
+    const drvBody = document.getElementById('vd-drivers-table-body');
+    if (drvBody) {
+        if (drivers.length) {
+            drvBody.innerHTML = drivers.map(d => {
+                const isValid = d.state === 'valid';
+                const stCls = isValid ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200';
+                return `
+                    <tr class="hover:bg-teal-50/30 transition-colors">
+                        <td class="p-3">
+                            <div class="font-bold text-slate-900">${vaEsc(d.driver_name)}</div>
+                        </td>
+                        <td class="p-3 font-mono font-semibold text-slate-700">
+                            ${vaEsc(d.driver_phone || '---')}
+                        </td>
+                        <td class="p-3">
+                            ${d.trip_code ? `<button type="button" class="font-mono font-bold text-teal-800 hover:underline cursor-pointer" onclick="viewTripDetail('${vaEsc(d.trip_code)}')">${vaEsc(d.trip_code)}</button>` : '<span class="text-slate-400">---</span>'}
+                        </td>
+                        <td class="p-3 font-mono">
+                            ${d.plate ? `<span class="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 font-bold mr-1">${vaEsc(d.plate)}</span>` : ''}
+                            ${d.container_number ? `<span class="text-slate-800 font-bold">${vaEsc(d.container_number)}</span>` : ''}
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded border text-[11px] font-bold ${stCls}">${vaEsc(d.step_label || 'Đang vận hành')}</span>
+                        </td>
+                        <td class="p-3 text-center">
+                            <div class="inline-flex items-center gap-1.5 justify-center">
+                                ${d.link ? `
+                                    <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs" onclick="vaOpenDriverScreenDirect('${vaEsc(d.link)}', '${vaEsc(d.trip_code)}', 'popup')" title="Mở mô phỏng màn hình di động của Bác tài">
+                                        <i class="ph-bold ph-device-mobile"></i> Màn hình Tài xế
+                                    </button>
+                                    <button type="button" class="${VA_BTN_GRAY} h-7 px-2 text-xs" onclick="vaCopy('${vaEsc(d.link)}', 'Đã sao chép link tài xế.')" title="Sao chép link di động">
+                                        <i class="ph-bold ph-copy"></i>
+                                    </button>
+                                ` : '<span class="text-slate-400 italic">Không có link</span>'}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            drvBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Chưa có thông tin Bác tài nào cho nhà xe này.</td></tr>';
+        }
+    }
+
+    // THẺ 4: Lệnh điều động & Phiếu chia container
+    const allocBadge = document.getElementById('vd-alloc-stat-badge');
+    if (allocBadge) {
+        allocBadge.innerText = `${allocs.length} Phiếu chia cont`;
+    }
+
+    const allocBody = document.getElementById('vd-allocs-table-body');
+    if (allocBody) {
+        if (allocs.length) {
+            allocBody.innerHTML = allocs.map(l => {
+                const st = l.expired ? vaState('text-rose-700', 'ph-clock-countdown', 'Hết hạn')
+                    : l.locked ? vaState('text-slate-600', 'ph-lock', 'Đã khóa')
+                        : vaState('text-emerald-700', 'ph-check-circle', 'Còn hiệu lực');
+                return `
+                    <tr class="hover:bg-teal-50/30 transition-colors">
+                        <td class="p-3 font-mono font-bold text-teal-900">${vaEsc(l.booking_code)}</td>
+                        <td class="p-3 font-mono font-bold text-slate-800">${vaEsc(l.dispatch_order_code || '---')}</td>
+                        <td class="p-3 font-medium text-slate-800">${vaEsc(l.customer_name || 'Khách hàng')}</td>
+                        <td class="p-3 tabular-nums font-bold text-slate-900">${l.filled} / ${l.allocated_containers} cont</td>
+                        <td class="p-3">${vaExpiry(l.expires_at, l.expired)}</td>
+                        <td class="p-3">${st}</td>
+                        <td class="p-3 text-center">
+                            <div class="inline-flex items-center gap-1.5 justify-center">
+                                ${l.link ? `
+                                    <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs" onclick="window.open('${vaEsc(l.link)}', '_blank')" title="Mở trực tiếp Phiếu chia container trên Cổng Nhà Xe">
+                                        <i class="ph-bold ph-desktop"></i> Màn hình Vendor
+                                    </button>
+                                    <button type="button" class="${VA_BTN_GRAY} h-7 px-2 text-xs" onclick="vaCopy('${vaEsc(l.link)}', 'Đã sao chép link phiếu chia.')" title="Sao chép link">
+                                        <i class="ph-bold ph-copy"></i>
+                                    </button>
+                                ` : '<span class="text-slate-400 italic">Không có link</span>'}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            allocBody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Chưa có lệnh điều động hoặc phiếu chia container nào cho nhà xe này.</td></tr>';
+        }
+    }
+}
+
+function backToVendorAdmin() {
+    // Ẩn view-vendor-detail
+    const detailView = document.getElementById('view-vendor-detail');
+    if (detailView) {
+        detailView.classList.add('hidden-view');
+    }
+
+    // Hiển thị view Điều Vận và chuyển sang Tab 4 (Quản lý Vendor)
+    if (typeof switchTab === 'function') {
+        switchTab('dieu-van', false);
+    }
+    if (typeof switchDispatchViewTab === 'function') {
+        switchDispatchViewTab('vendor-admin');
+    }
+
+    // Cập nhật URL sạch: /dispatch
+    if (window.history && window.history.pushState) {
+        window.history.pushState({ view: 'dispatch', tab: 'vendor-admin' }, '', '/dispatch');
+    }
+}
+
+window.openVendorDetailPage = openVendorDetailPage;
+window.backToVendorAdmin = backToVendorAdmin;
+
+
+function vaToggleShowTokenInDetail(plainToken) {
+    const el = document.getElementById('va-tok-detail-text');
+    const eye = document.getElementById('va-tok-detail-eye');
+    if (!el) return;
+    const isMasked = el.getAttribute('data-shown') !== '1';
+    if (isMasked) {
+        el.innerText = plainToken || '---';
+        el.setAttribute('data-shown', '1');
+        if (eye) eye.className = 'ph ph-eye-slash text-sm text-teal-700';
+    } else {
+        el.innerText = vaMaskToken(plainToken);
+        el.setAttribute('data-shown', '0');
+        if (eye) eye.className = 'ph ph-eye text-sm';
+    }
+}
+window.vaToggleShowTokenInDetail = vaToggleShowTokenInDetail;
 
 // ---- src/app/dispatch/trip-expenses.js ----
 async function toggleSubcontractorTypePanels(typeVal) {
