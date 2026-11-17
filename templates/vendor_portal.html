@@ -885,10 +885,12 @@
 <script>
 (() => {
   const URL_TOKEN = (function() {
-    const t = "{{ initial_token|default:''|escapejs }}";
-    if (t) return t;
+    const t = ("{{ initial_token|default:''|escapejs }}").trim();
+    if (t && t.toLowerCase() !== 'login') return t;
     const m = window.location.pathname.match(/\/vendor\/([^\/]+)\/?$/);
-    return (m && m[1]) ? decodeURIComponent(m[1]) : '';
+    const val = (m && m[1]) ? decodeURIComponent(m[1]).trim() : '';
+    if (val && val.toLowerCase() !== 'login') return val;
+    return '';
   })();
 
   const STEPS = [
@@ -1183,8 +1185,16 @@
     } else {
       tokBadge.classList.add('hidden');
     }
+    if (hint && hint.username && !qUser) {
+      const uInp = document.getElementById('login-username');
+      if (uInp && !uInp.value) uInp.value = hint.username;
+    }
     if (hint && hint.subcontractor) {
-      document.getElementById('login-sub-hint').textContent = `Nhà xe: ${hint.subcontractor} · Vui lòng đăng nhập tài khoản để xác thực và mở lệnh ${hint.booking_code || ''}.`;
+      if (hint.is_account_token) {
+        document.getElementById('login-sub-hint').textContent = `Nhà xe: ${hint.subcontractor} · Mã xác nhận hợp lệ. Vui lòng nhập mật khẩu để vào bàn làm việc.`;
+      } else {
+        document.getElementById('login-sub-hint').textContent = `Nhà xe: ${hint.subcontractor} · Vui lòng đăng nhập tài khoản để xác thực và mở lệnh ${hint.booking_code || ''}.`;
+      }
     }
     showLoginAlert(alertMsg, alertTone);
     setTimeout(() => {
@@ -1332,7 +1342,9 @@
   async function bootstrapPortal() {
     showBootScreen(true);
     try {
-      const qs = URL_TOKEN ? `?token=${encodeURIComponent(URL_TOKEN)}` : '';
+      const qParams = new URLSearchParams(window.location.search);
+      const effectiveToken = URL_TOKEN || qParams.get('token') || qParams.get('t') || '';
+      const qs = effectiveToken ? `?token=${encodeURIComponent(effectiveToken)}` : '';
       const res = await fetch('/api/vendor/auth/status/' + qs, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
       const json = await res.json();
 
@@ -1366,7 +1378,7 @@
         return;
       }
 
-      if (URL_TOKEN && json.token_hint && !json.token_hint.requires_auth) {
+      if (URL_TOKEN && json.token_hint && !json.token_hint.requires_auth && !json.token_hint.is_account_token) {
         // Legacy Token mode (nhà xe chưa kích hoạt tài khoản Portal) -> mở trực tiếp để tương thích ngược
         await enterLegacyTokenMode();
         return;

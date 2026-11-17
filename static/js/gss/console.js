@@ -71,7 +71,12 @@
     var card = el('section', 'card stack fleet'); host.append(card);
     var head = el('div', 'row between'), ttl = el('div'), cnt = el('div', 'small mut');
     ttl.append(el('h2', null, 'Theo dõi hành trình xe container'), el('div', 'small mut', 'Tiến trình 7 mốc: Sẵn sàng ➔ Nhận cont ➔ Giao hàng ➔ Hạ rỗng. Bấm vào một xe để xem chi tiết chuyến.'));
-    head.append(ttl, cnt); card.append(head);
+    var rightHead = el('div', 'row');
+    rightHead.style.alignItems = 'center';
+    rightHead.style.gap = '8px';
+    var refBtn = btn('↻ Làm mới', 'sec sm', function () { loadData(); });
+    rightHead.append(cnt, refBtn);
+    head.append(ttl, rightHead); card.append(head);
     var bar = el('div', 'row fleet-bar'), q = input('Tìm biển số, mã chuyến, số cont, tài xế, nhà xe, khách…', fleetState.q); q.style.flex = '1'; q.style.minWidth = '220px';
     var sort = el('select', 'in'); sort.style.width = 'auto';
     [['vendor', 'Sắp xếp: Nhà xe'], ['progress_desc', 'Tiến độ: Cao ➔ Thấp'], ['progress_asc', 'Tiến độ: Thấp ➔ Cao'], ['plate', 'Biển số: A ➔ Z']].forEach(function (o) { sort.append(new Option(o[1], o[0])); });
@@ -161,10 +166,15 @@
     }
     q.oninput = function () { fleetState.q = q.value; draw(); };
     sort.onchange = function () { fleetState.sort = sort.value; draw(); };
+    function loadData() {
+      cnt.textContent = 'Đang tải…';
+      A('/api/gss/trips/?metric=all').then(function (j) {
+        rows = (j.results || []).filter(function (r) { return r.step !== 'CANCELLED'; }); drawChips(); draw();
+      }).catch(function (e) { cnt.textContent = 'Lỗi tải'; G.clear(list).append(el('div', 'err', e.message)); });
+    }
     list.append(el('div', 'empty', 'Đang tải…'));
-    A('/api/gss/trips/?metric=all').then(function (j) {
-      rows = (j.results || []).filter(function (r) { return r.step !== 'CANCELLED'; }); drawChips(); draw();
-    }).catch(function (e) { G.clear(list).append(el('div', 'err', e.message)); });
+    loadData();
+    return { reload: loadData };
   }
 
   // ---------------- 1. Tổng quan ----------------
@@ -326,6 +336,7 @@
     var acts = el('div', 'row');
     if (feats.pod_templates) acts.append(btn('In biên bản giao hàng', 'sec sm', function () { window.open('/api/gss/trips/' + t.trip_code + '/pod/', '_blank', 'noopener'); }));
     if (feats.qr_tracking) acts.append(btn('In tem QR', 'sec sm', function () { window.open('/api/gss/trips/' + t.trip_code + '/labels/', '_blank', 'noopener'); }));
+    if (typeof window.viewTripDetail === 'function') acts.append(btn('Mở phiếu vận chuyển', 'sec sm', function () { window.viewTripDetail(t.trip_code); }));
     h.append(g, pills, acts); body.append(h);
     if (t.destination_notes) body.append(noteBox('Lưu ý điểm đến', t.destination_notes));
     if (t.road_restrictions) body.append(noteBox('Cấm đường / giờ cấm tải', t.road_restrictions));

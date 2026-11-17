@@ -113,7 +113,9 @@ urlpatterns = [
 
     # Clean Semantic Routes cho Web SPA (Tiêu chuẩn UI/UX & Quản trị Quốc tế)
     path('dashboard/', index_view, name='spa-dashboard'),
+    path('dashboard', index_view, name='spa-dashboard-noslash'),
     path('dispatch/', index_view, name='spa-dispatch'),
+    path('dispatch', index_view, name='spa-dispatch-noslash'),
     path('dispatch/trips/<str:trip_hash>/', index_view, name='spa-dispatch-trip-slash'),
     path('dispatch/trips/<str:trip_hash>', index_view, name='spa-dispatch-trip'),
     # Lệnh Điều Động & Phân bổ Vendor (Deep-link SPA: /dispatch/orders/<order_id>)
@@ -126,16 +128,21 @@ urlpatterns = [
     path('quyet-toan/', index_view, name='spa-quyet-toan'),
     path('quyet-toan', index_view, name='spa-quyet-toan-noslash'),
     path('sales/', index_view, name='spa-sales'),
+    path('sales', index_view, name='spa-sales-noslash'),
     path('sales/quotations/<str:quote_hash>/', index_view, name='spa-sales-quotation-slash'),
     path('sales/quotations/<str:quote_hash>', index_view, name='spa-sales-quotation'),
     path('sales/bookings/<str:booking_id>/', index_view, name='spa-sales-booking-slash'),
     path('sales/bookings/<str:booking_id>', index_view, name='spa-sales-booking'),
     path('fleet/', index_view, name='spa-fleet'),
+    path('fleet', index_view, name='spa-fleet-noslash'),
     path('hr/', index_view, name='spa-hr'),
+    path('hr', index_view, name='spa-hr-noslash'),
     path('accounting/', index_view, name='spa-accounting'),
+    path('accounting', index_view, name='spa-accounting-noslash'),
     path('accounting/vouchers/<str:voucher_id>/', index_view, name='spa-accounting-voucher-slash'),
     path('accounting/vouchers/<str:voucher_id>', index_view, name='spa-accounting-voucher'),
     path('customs/', index_view, name='spa-customs'),
+    path('customs', index_view, name='spa-customs-noslash'),
     # Trang riêng (tải lại / mở link trực tiếp không bị 404): tờ khai, hồ sơ nhân sự, hợp đồng lao động
     path('customs/declarations/<str:declaration_id>/', index_view, name='spa-customs-declaration-slash'),
     path('customs/declarations/<str:declaration_id>', index_view, name='spa-customs-declaration'),
@@ -144,10 +151,13 @@ urlpatterns = [
     path('personnel/contracts/<str:contract_id>/', index_view, name='spa-personnel-contract-slash'),
     path('personnel/contracts/<str:contract_id>', index_view, name='spa-personnel-contract'),
     path('reports/', index_view, name='spa-reports'),
+    path('reports', index_view, name='spa-reports-noslash'),
     path('settings/', index_view, name='spa-settings'),
+    path('settings', index_view, name='spa-settings-noslash'),
     path('master-data/', index_view, name='spa-master-data'),
     path('master-data', index_view, name='spa-master-data-noslash'),
     path('danh-muc/', index_view, name='spa-danhmuc'),
+    path('danh-muc', index_view, name='spa-danhmuc-noslash'),
     # Trang Chi Tiết Bản Tin & Xem Trước Tệp Đính Kèm (PDF, Word, Excel) — Chuẩn HashID Bảo Mật IDOR
     path('news/<str:post_identifier>/', news_detail_page_view, name='news-detail-page'),
     path('news/<str:post_identifier>', news_detail_page_view, name='news-detail-page-noslash'),
@@ -166,8 +176,13 @@ urlpatterns = [
 
     # Cổng Khai Báo Phương Tiện Dành Cho Nhà Xe Đối Tác (Vendor Portal)
     path('vendor/', vendor_portal_view, name='vendor-portal-home'),
+    path('vendor', vendor_portal_view, name='vendor-portal-home-noslash'),
+    path('vendor/login/', vendor_portal_view, name='vendor-portal-login'),
+    path('vendor/login', vendor_portal_view, name='vendor-portal-login-noslash'),
     path('vendor/<str:token>/', vendor_portal_view, name='vendor-portal'),
+    path('vendor/<str:token>', vendor_portal_view, name='vendor-portal-noslash'),
     path('q/<str:token>/', qr_trip_page_view, name='qr-trip-page'),
+    path('q/<str:token>', qr_trip_page_view, name='qr-trip-page-noslash'),
 
     # Cổng Tra Cứu Vận Đơn Công Khai Cho Khách Hàng (Public Tracking Portal)
     path('tracking/<str:trip_hash>/', public_tracking_view, name='public-tracking'),

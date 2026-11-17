@@ -377,26 +377,13 @@
     <!-- TAB 3: THANH CHẾ ĐỘ XEM (bảng | theo bước | phiếu VC) -->
     <div id="dispatch-journey-modebar" class="hidden items-center gap-2 mb-2 flex-wrap shrink-0">
         <button type="button" id="jmode-table" onclick="setJourneyMode('table')" class="h-8 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer bg-teal-50/90 text-teal-900 border-teal-600"><i class="ph-bold ph-table"></i> Bảng container</button>
-        <button type="button" id="jmode-board" onclick="setJourneyMode('board')" class="h-8 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer bg-white text-slate-700 border-slate-200"><i class="ph-bold ph-kanban"></i> Theo bước hành trình</button>
-        <button type="button" id="jmode-trips" onclick="setJourneyMode('trips')" class="h-8 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer bg-white text-slate-700 border-slate-200"><i class="ph-bold ph-receipt"></i> Phiếu VC</button>
+        <button type="button" id="jmode-board" onclick="setJourneyMode('board')" class="h-8 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer bg-white text-slate-700 border-slate-200"><i class="ph ph-chart-line"></i> Theo bước hành trình</button>
+        <button type="button" id="jmode-trips" onclick="setJourneyMode('trips')" class="h-8 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer bg-white text-slate-700 border-slate-200"><i class="ph ph-receipt"></i> Phiếu VC</button>
     </div>
 
-    <!-- TAB 3 (chế độ theo bước): cột theo các bước, giống vùng Theo dõi hành trình ở Dashboard -->
-    <div id="dispatch-journey-board-view" class="erp-table-container flex-1 overflow-hidden hidden flex-col shadow-sm mb-4">
-        <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between text-xs flex-wrap gap-2">
-            <div class="flex items-center gap-2 text-slate-700 font-semibold">
-                <i class="ph-bold ph-kanban text-teal-700 text-sm"></i>
-                <span>Theo bước hành trình: <strong>xe đã nhận lệnh và đang chạy</strong></span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="relative">
-                    <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                    <input type="search" id="jboard-search" oninput="renderJourneyBoard()" placeholder="Tìm cont, biển số, tài xế, nhà xe..." class="h-8 w-60 pl-7 pr-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800">
-                </div>
-                <button type="button" onclick="loadJourneyBoard()" class="h-8 px-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer"><i class="ph-bold ph-arrow-counter-clockwise"></i> Làm mới</button>
-            </div>
-        </div>
-        <div id="jboard-body" class="flex-1 overflow-auto p-3 flex gap-3 items-start"></div>
+    <!-- TAB 3 (chế độ theo bước): Timeline ma trận hành trình xe container (dùng chung với Dashboard) -->
+    <div id="dispatch-journey-board-view" class="gss-scope flex-1 overflow-auto hidden flex-col mb-4 bg-white rounded-2xl border border-slate-200 p-2 sm:p-4">
+        <div id="jboard-body" class="w-full"></div>
     </div>
 
     <!-- TAB 4: QUẢN LÝ VENDOR -->

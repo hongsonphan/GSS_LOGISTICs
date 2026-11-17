@@ -128,7 +128,7 @@ def verify(fast=False, full=False):
     else:
         targets = [] if full else TEST_APPS_DEFAULT
         label = "toàn bộ dự án" if full else " ".join(targets)
-        step(f"Test: {label}", [PY, "manage.py", "test", "--noinput", *targets], env)
+        step(f"Test: {label}", [PY, "manage.py", "test", "--noinput", "--keepdb", *targets], env)
 
 
 # ------------------------------------------------------------------ audit

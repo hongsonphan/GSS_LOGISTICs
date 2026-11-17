@@ -180,3 +180,35 @@ class VendorAdminTests(GssBase):
             content_type='application/json'
         )
         self.assertIn(fail_res.status_code, (400, 401))
+    def test_vendor_login_route_and_magic_link_auth_status(self):
+        """Xác thực fix lỗi: /vendor/login/ không truyền token='login' và /api/vendor/auth/status/ nhận diện đúng account token."""
+        from apps.master_data.models import SubcontractorPortalAccount
+        acct = SubcontractorPortalAccount.objects.create(
+            subcontractor=self.sub,
+            username='hoangnam',
+            is_active=True,
+        )
+        acct.set_password('Secret#123')
+        acct.set_confirm_token('GSS-YCZ8OE')
+        acct.save()
+
+        # 1. Truy cập /vendor/login/ không bị lỗi và context initial_token là rỗng
+        self.client.logout()
+        resp = self.client.get('/vendor/login/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context['initial_token'], '')
+
+        # 2. Status khi truyền token=login không bị 404
+        st_login = self.client.get('/api/vendor/auth/status/?token=login')
+        self.assertEqual(st_login.status_code, 200)
+        self.assertFalse(st_login.json().get('token_invalid', False))
+
+        # 3. Status khi truyền token của SubcontractorPortalAccount (GSS-YCZ8OE) không bị 404 mà nhận diện đúng
+        st_tok = self.client.get('/api/vendor/auth/status/?token=GSS-YCZ8OE')
+        self.assertEqual(st_tok.status_code, 200)
+        self.assertFalse(st_tok.json().get('token_invalid', False))
+        hint = st_tok.json().get('token_hint')
+        self.assertIsNotNone(hint)
+        self.assertTrue(hint.get('is_account_token'))
+        self.assertEqual(hint.get('username'), 'hoangnam')
+

@@ -348,8 +348,7 @@ function vaRenderAccounts(vendor) {
             acctCell = '<span class="text-slate-400">—</span>';
             tokenCell = '<span class="text-slate-400">—</span>';
             actions = `
-                <button type="button" class="${VA_BTN_TEAL}" onclick="vaAccountModal(${v.id})"><i class="ph ph-user-plus"></i> Cấp tài khoản</button>
-                <button type="button" class="${VA_BTN_GRAY}" onclick="vaOpenVendorScreenByVendorId(${v.id})" title="Mở Cổng Nhà Xe để xem và thao tác hộ"><i class="ph ph-desktop"></i> Màn hình Vendor</button>`;
+                <button type="button" class="${VA_BTN_TEAL}" onclick="vaAccountModal(${v.id})"><i class="ph ph-user-plus"></i> Cấp tài khoản</button>`;
         } else {
             st = a.locked ? vaState('text-rose-700', 'ph-lock', 'Đang bị khóa (sai quá nhiều lần)')
                 : a.is_active ? vaState('text-emerald-700', 'ph-check-circle', 'Đang hoạt động')
@@ -385,7 +384,6 @@ function vaRenderAccounts(vendor) {
             tokenCell = `${tokDisplay}${expDisplay}`;
 
             actions = `
-                <button type="button" class="${VA_BTN_TEAL}" onclick="vaOpenVendorScreenByVendorId(${v.id})" title="Mở trực tiếp Cổng Nhà Xe để xem và thao tác hộ"><i class="ph ph-desktop"></i> Màn hình Vendor</button>
                 <button type="button" class="${VA_BTN_TEAL}" onclick="vaIssueTokenModal(${v.id})" title="Chủ động đặt mã token và hạn dùng"><i class="ph ph-key"></i> Đặt Token</button>
                 <button type="button" class="${VA_BTN_AMBER}" onclick="vaAccountModal(${v.id})" title="Sửa tên đăng nhập, mật khẩu, thời gian tự đăng xuất"><i class="ph ph-pencil-simple"></i> Sửa</button>
                 <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareVendorZaloModal(${v.id})" title="Xem mẫu tin nhắn gửi nhà xe qua Zalo"><i class="ph ph-chat-teardrop-text"></i> Zalo</button>

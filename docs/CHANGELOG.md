@@ -3,6 +3,37 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-17 – Khắc phục triệt để lỗi 404 khi Refresh, tối ưu cột Thao tác Vendor và sửa lỗi xác thực Magic Link Cổng Nhà Xe
+- **1. Tinh gọn cột Thao tác bảng Quản lý Tài khoản Nhà xe (Tab 4 Điều vận):**
+  - *Bỏ nút "Màn hình Vendor" trong cột Thao tác:* Loại bỏ nút "Màn hình Vendor" trên từng dòng bảng tài khoản nhà xe (cả trường hợp đã có và chưa có tài khoản) để tránh trùng lặp dư thừa, vì trên thanh công cụ (Toolbar) ở trên đã có nút "Màn hình Vendor" mở bộ chọn nhanh hoặc mở trực tiếp nhà xe được chọn.
+  - *Cột Thao tác trực quan & tập trung:* Chỉ giữ lại các thao tác cốt lõi: `[ Cấp tài khoản ]` (khi chưa có) hoặc `[ Đặt Token ] [ Sửa ] [ Zalo ] [ Mở khóa ] [ Bật/Tắt ]` (khi đã có).
+- **2. Xử lý triệt để lỗi 404 khi Refresh / tải lại trang (F5):**
+  - *Bổ sung đầy đủ URL Patterns không có dấu gạch chéo cuối (No-slash routes):* Bổ sung các route `dashboard`, `dispatch`, `sales`, `fleet`, `hr`, `accounting`, `customs`, `reports`, `settings`, `danh-muc`, `vendor`, `vendor/login`, `vendor/<str:token>`, `q/<str:token>` trong `config/urls.py`.
+  - *Tương thích hoàn hảo với SPA pushState và Nginx Reverse Proxy:* Khi người dùng nhấn F5 hoặc mở trực tiếp đường dẫn Clean Semantic Routes (ví dụ `https://gss.bim.info.vn/dispatch`), hệ thống phục vụ trực tiếp `index_view` mà không bị lỗi 404 hay redirect 301.
+- **3. Khắc phục triệt để lỗi Magic Link & xác thực Token Cổng Nhà Xe:**
+  - *Tách biệt rõ ràng route `/vendor/login/`:* Cấu hình đường dẫn riêng trong `config/urls.py` và loại trừ chuỗi `'login'` trong `apps/dispatch/vendor_views.py` để không truyền nhầm `initial_token='login'` xuống template.
+  - *Nâng cấp logic nhận diện Token trong `VendorPortalAuthStatusAPIView`:* Không coi từ khóa `'login'` là allocation token. Đặc biệt, bổ sung cơ chế kiểm tra chéo: nếu token gửi lên không phải là phiếu chia lệnh booking mà là mã xác nhận tài khoản (`SubcontractorPortalAccount.confirm_token`, ví dụ `GSS-YCZ8OE`), API không trả về 404 `token_invalid` mà trả về `200 OK` kèm `token_hint` chứa tên đăng nhập và tên nhà xe.
+  - *Tự động điền thông tin đăng nhập trên `vendor_portal.html`:* Khi đối tác mở Magic Link `https://gss.bim.info.vn/vendor/login/?u=hoangnam&t=GSS-YCZ8OE` (hoặc mở trực tiếp từ tin Zalo), hệ thống tự động điền Tên đăng nhập và Mã Token, hiển thị gợi ý xác nhận hợp lệ và tự động focus vào ô Mật khẩu.
+- **4. Kiểm thử & Bản dựng:**
+  - Bổ sung unit test `test_vendor_login_route_and_magic_link_auth_status` trong `apps/dispatch/test_vendor_admin.py` (toàn bộ suite test Vendor PASS 100%).
+  - Biên dịch lại `static/js/app.js` và `static/css/tailwind.css`; toàn bộ QA verify đạt kết quả ĐẠT.
+- File: `config/urls.py`, `apps/dispatch/vendor_views.py`, `apps/dispatch/api_views/vendor.py`, `apps/dispatch/test_vendor_admin.py`, `templates/vendor_portal.html`, `static/js/src/app/dispatch/vendor-admin.js`, `static/js/app.js`, `docs/CHANGELOG.md`.
+
+## 2026-11-17 – Dùng chung giao diện Ma trận Timeline 7 mốc xe container cho Màn hình Theo dõi hành trình Điều vận
+- **Đồng bộ thiết kế Ma trận Timeline hành trình xe container (Dùng chung với Dashboard):**
+  - *Thay thế giao diện Kanban 6 cột cũ:* Màn hình Theo dõi hành trình (chế độ "Theo bước hành trình" trong Tab 3 Điều vận) chính thức chuyển sang dùng chung component Ma trận Timeline đường ray 7 mốc (`GSSApp.fleetTimeline`) đang hoạt động trên Dashboard.
+  - *Tính năng trực quan & Thời gian thực:*
+    - Đường ray tiến độ 7 mốc: Sẵn sàng ➔ Đến nơi nhận ➔ Đã nhận cont ➔ Đến nơi giao ➔ Giao xong ➔ Đi hạ rỗng ➔ Hạ rỗng.
+    - Đánh dấu sao các điểm thực tế quan trọng: ★ NƠI NHẬN (Cảng/Kho bốc), ★ NƠI GIAO (Nhà máy/Kho khách), ★ NƠI HẠ RỖNG (Depot/ICD).
+    - Biểu tượng xe tải container SVG (`GSSTruck`) hiển thị biển số đầu kéo chạy mượt mà theo % tiến độ.
+    - Gom nhóm trực quan theo Nhà xe kèm tổng số chuyến và lộ trình rút gọn.
+    - Thanh công cụ đầy đủ: Ô tìm kiếm đa năng (biển số, mã chuyến, số cont, tài xế, nhà xe, khách hàng), Dropdown sắp xếp (Nhà xe, Tiến độ Cao➔Thấp, Tiến độ Thấp➔Cao, Biển số A➔Z), các Chip lọc nhanh (Tất cả, Đang chạy, Đã hạ rỗng, theo từng Nhà xe), và nút `↻ Làm mới` dữ liệu tức thì.
+    - Bấm vào bất kỳ chuyến xe nào để mở Drawer thao tác nhanh (xem chi tiết, đổi bước, xem chứng từ/ảnh thực tế, in phiếu POD/QR, mở phiếu vận chuyển toàn diện).
+- **Kiến trúc & Tái sử dụng (Reusability):**
+  - Tái sử dụng 100% component và style `.gss-scope .fleet-*` từ `static/js/gss/console.js` và `static/css/gss.css`, loại bỏ hoàn toàn mã nguồn trùng lặp.
+  - Tích hợp liên kết `Mở phiếu vận chuyển` (`window.viewTripDetail`) ngay trong Drawer chi tiết của Timeline.
+- **Tài liệu & Bản dựng:** Cập nhật `docs/04-user-guide.md`, `docs/CHANGELOG.md`, `templates/views/view_dispatch.html`, `static/js/src/app/dispatch/vendor-admin.js`, biên dịch `static/js/app.js` và `tailwind.css`.
+
 ## 2026-11-17 – Bổ sung nút "Màn hình Vendor" và "Màn hình Tài xế" để xem và hướng dẫn hoặc thao tác hộ
 - **Tính năng Màn hình Vendor & Màn hình Tài xế trong tab Quản lý Vendor (Tab 4 Điều vận):**
   - *Nút "Màn hình Vendor" (Cổng Nhà Xe Đối Tác):* Bố trí trên thanh công cụ Tab 4 và từng dòng Nhà xe/Phiếu chia. Khi bấm, hệ thống ưu tiên mở Cổng Nhà Xe của đúng đối tác (tự động điền Tên đăng nhập và Token qua Magic Link). Trường hợp chưa chọn nhà xe, mở modal tìm kiếm nhanh kèm nút mở trực tiếp cổng `/vendor/` hoặc phiếu chia cont.

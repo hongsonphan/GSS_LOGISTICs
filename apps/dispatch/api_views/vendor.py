@@ -393,23 +393,40 @@ class VendorPortalAuthStatusAPIView(_VendorPublicAPIView):
         pair, st = svc.vendor_session_state(request, touch=False)
         token = (request.query_params.get('token') or '').strip()
         alloc_hint = None
-        if token:
+        if token and token.lower() != 'login':
             alloc = svc.allocation_by_token(token)
-            if not alloc or svc.lifecycle(alloc)['closed']:
-                return _no_store({
-                    'success': False, 'token_invalid': True,
-                    'authenticated': bool(pair), 'idle_expired': st == 'idle_expired',
-                    'message': 'Liên kết lệnh điều vận không tồn tại, đã thu hồi hoặc đã hết hạn lưu trữ.',
-                }, http_status=status.HTTP_404_NOT_FOUND)
-            req_auth = svc.subcontractor_requires_portal_auth(alloc.subcontractor)
-            alloc_hint = {
-                'alloc_id': alloc.id,
-                'booking_code': alloc.booking.booking_code,
-                'subcontractor': alloc.subcontractor.short_name or alloc.subcontractor.name,
-                'subcontractor_code': alloc.subcontractor.code or '',
-                'requires_auth': req_auth,
-                'wrong_account': bool(pair and pair[0].subcontractor_id != alloc.subcontractor_id),
-            }
+            if alloc and not svc.lifecycle(alloc)['closed']:
+                req_auth = svc.subcontractor_requires_portal_auth(alloc.subcontractor)
+                alloc_hint = {
+                    'alloc_id': alloc.id,
+                    'booking_code': alloc.booking.booking_code,
+                    'subcontractor': alloc.subcontractor.short_name or alloc.subcontractor.name,
+                    'subcontractor_code': alloc.subcontractor.code or '',
+                    'requires_auth': req_auth,
+                    'wrong_account': bool(pair and pair[0].subcontractor_id != alloc.subcontractor_id),
+                }
+            else:
+                from apps.master_data.models import SubcontractorPortalAccount
+                matched_acct = None
+                for a in SubcontractorPortalAccount.objects.filter(is_deleted=False, is_active=True).select_related('subcontractor'):
+                    if a.check_confirm_token(token):
+                        matched_acct = a
+                        break
+                if matched_acct:
+                    alloc_hint = {
+                        'is_account_token': True,
+                        'username': matched_acct.username,
+                        'subcontractor': matched_acct.subcontractor.short_name or matched_acct.subcontractor.name,
+                        'subcontractor_code': matched_acct.subcontractor.code or '',
+                        'requires_auth': True,
+                        'wrong_account': bool(pair and pair[0].subcontractor_id != matched_acct.subcontractor_id),
+                    }
+                else:
+                    return _no_store({
+                        'success': False, 'token_invalid': True,
+                        'authenticated': bool(pair), 'idle_expired': st == 'idle_expired',
+                        'message': 'Liên kết lệnh điều vận không tồn tại, đã thu hồi hoặc đã hết hạn lưu trữ.',
+                    }, http_status=status.HTTP_404_NOT_FOUND)
         sess_data = None
         if pair:
             acct, _sess, rem = pair
