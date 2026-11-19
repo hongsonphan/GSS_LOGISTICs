@@ -13302,7 +13302,7 @@ function renderAllocationsTable() {
         else st = vaState('text-amber-700', 'ph-arrows-split', `Gán chưa hết (còn ${left})`);
         const route = `<div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5" title="${vaEsc(l.pickup_location || '')} -> ${vaEsc(l.delivery_location || '')} -> ${vaEsc(l.dropoff_location || '')}"><span class="text-teal-700 font-bold" title="1. Lấy cont">${vaEsc(l.pickup_location || 'Cảng/Depot')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-blue-900 font-bold" title="2. Kho đóng/trả">${vaEsc(l.delivery_location || 'Kho khách')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Hạ rỗng">${vaEsc(l.dropoff_location || 'Depot rỗng')}</span></div>`;
         return `
-        <tr class="hover:bg-teal-50/30 cursor-pointer" onclick="vaViewUnallocatedContainersModal(${l.id})" title="Bấm để xem danh sách Container thuộc phiếu chia này">
+        <tr class="hover:bg-teal-50/30 cursor-pointer" onclick="openDispatchOrderPage(${l.booking_id})" title="Bấm để mở Lệnh điều động & phân bổ cho booking này">
             <td class="p-2.5 text-center text-slate-400 font-mono text-xs">${i + 1}</td>
             <td class="p-2.5"><div class="font-mono font-bold text-teal-900 text-xs">${vaEsc(l.booking_code)}</div><div class="text-xs text-slate-600">${vaEsc(l.customer)}</div></td>
             <td class="p-2.5 font-bold text-slate-800">${vaEsc(l.subcontractor)}</td>
@@ -13316,9 +13316,9 @@ function renderAllocationsTable() {
             <td class="p-2.5 text-xs">${vaExpiry(l.expires_at, l.expired)}</td>
             <td class="p-2.5 text-center whitespace-nowrap" onclick="event.stopPropagation()">
                 <div class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
-                    <!-- 1. Xem Cont (Hành động chính) -->
-                    <button type="button" class="${VA_BTN_TEAL}" onclick="event.stopPropagation(); vaViewUnallocatedContainersModal(${l.id})" title="Xem danh sách container thuộc phiếu chia này (cont đã gán, cont chưa gán)">
-                        <i class="ph-bold ph-list-magnifying-glass"></i> Xem Cont
+                    <!-- 1. Lệnh đã gán (Hành động chính mở toàn màn hình) -->
+                    <button type="button" class="${VA_BTN_TEAL}" onclick="event.stopPropagation(); openDispatchOrderPage(${l.booking_id})" title="Mở Lệnh điều động & phân bổ của booking này">
+                        <i class="ph-bold ph-clipboard-text"></i> Lệnh đã gán
                     </button>
                     <!-- 2. Gửi Điều Vận qua Zalo -->
                     <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareVendorBatchZalo(${l.id})" title="Gửi danh sách link lệnh cho Điều vận Nhà xe qua Zalo">
@@ -15229,8 +15229,8 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
                         <td class="p-3">${st}</td>
                         <td class="p-3 text-center">
                             <div class="inline-flex items-center gap-1.5 justify-center">
-                                <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs inline-flex items-center gap-1" onclick="vaViewUnallocatedContainersModal(${l.id})" title="Xem danh sách chi tiết các container thuộc phiếu chia này">
-                                    <i class="ph-bold ph-list-bullets"></i> Xem Cont
+                                <button type="button" class="${VA_BTN_TEAL} h-7 px-2.5 text-xs inline-flex items-center gap-1" onclick="openDispatchOrderPage(${l.booking_id})" title="Mở Lệnh điều động & phân bổ của booking này">
+                                    <i class="ph-bold ph-clipboard-text"></i> Lệnh đã gán
                                 </button>
                                 ${l.link ? `
                                     <button type="button" class="${VA_BTN_GRAY} h-7 px-2 text-xs inline-flex items-center gap-1" onclick="window.open('${vaEsc(l.link)}', '_blank')" title="Mở trực tiếp Cổng Nhà Xe của phiếu chia này để thao tác hộ">

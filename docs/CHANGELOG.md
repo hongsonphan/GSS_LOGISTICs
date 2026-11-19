@@ -3,6 +3,15 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Chuyển Đổi Mở Toàn Màn Hình Lệnh Đã Gán (Thay Cho Modal Xem Cont) Ở Bảng Phân Bổ
+- **Yêu cầu:** Tại màn hình Phân bổ & gán xe (Điều Vận), khi bấm vào nút thao tác hoặc click vào dòng dữ liệu thì mở thẳng ra toàn màn hình Lệnh Phân Bổ / Điều Động chứ không phải dạng popup modal nhỏ. Đồng thời đổi tên nhãn "Xem Cont" thành "Lệnh đã gán" cho chuẩn nghiệp vụ điều vận.
+- **Thực hiện chi tiết:**
+  - **Đổi nhãn thao tác:** Thay đổi nhãn nút từ `Xem Cont` thành **`Lệnh đã gán`** kèm icon biểu tượng văn bản/lệnh (`ph-clipboard-text`) tại cả Tab 2 ("Phân bổ & gán xe") và Tab 4 ("Quản lý Vendor" - danh sách link nhà xe).
+  - **Mở giao diện toàn màn hình:**
+    - Thay thế hàm mở modal `vaViewUnallocatedContainersModal(allocId)` bằng hàm điều hướng mở toàn màn hình `openDispatchOrderPage(l.booking_id)` trên toàn bộ dòng `<tr>` và nút bấm `Lệnh đã gán`.
+    - Giao diện mở ra chính là View Lập Lệnh & Điều Phối Vận Tải (`#view-dispatch-order`), nạp đầy đủ thông tin booking, lộ trình, danh sách container và trạng thái gán xe/nhà xe tương ứng, có sẵn nút "Quay lại" điều hướng mượt mà.
+  - **Rebuild bundle:** Chạy script `python scripts/build_app_js.py` để cập nhật đồng bộ vào `static/js/app.js`.
+
 ## 2026-11-20 – Loại Bỏ Dòng Container Đã Điều Chuyển (Moved Rows) Khỏi File Excel Cổng Nhà Xe
 - **Hiện tượng:** Khi xuất Excel từ Cổng Nhà Xe, file Excel xuất hiện dòng số 3 bị rỗng Nơi giao hàng, rỗng Số chì, và số cont `EGSU2809351` bị trùng lặp ở cả Dòng 3 và Dòng 16.
 - **Nguyên nhân:**
