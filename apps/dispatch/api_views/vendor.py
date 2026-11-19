@@ -710,7 +710,7 @@ class VendorContainersMonitoringAPIView(APIView):
         from django.db.models import Q
 
         qs = (
-            BookingContainer.objects.filter(is_deleted=False)
+            BookingContainer.objects.filter(is_deleted=False, booking__is_deleted=False)
             .select_related(
                 'booking', 'booking__customer', 'allocation', 'allocation__subcontractor',
                 'trip', 'trip__vehicle', 'trip__trailer', 'trip__driver'

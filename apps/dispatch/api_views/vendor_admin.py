@@ -111,7 +111,7 @@ class VendorAdminOverviewAPIView(APIView):
         now = timezone.now()
         include_done = request.query_params.get('include_done') == '1'
 
-        allocs = list(BookingVendorAllocation.objects.filter(is_deleted=False)
+        allocs = list(BookingVendorAllocation.objects.filter(is_deleted=False, booking__is_deleted=False)
                       .exclude(status=AllocationStatus.REVOKED).select_related('booking', 'booking__customer', 'subcontractor')
                       .order_by('-id')[:500])
         accounts = {a.subcontractor_id: a for a in SubcontractorPortalAccount.objects.filter(is_deleted=False)}

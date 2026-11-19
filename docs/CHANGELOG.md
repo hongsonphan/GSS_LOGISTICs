@@ -3,6 +3,14 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Đồng Bộ Xóa Mềm Phân Bổ Nhà Xe & Container Khi Xóa Đơn Hàng Booking
+- **Vấn đề:** Khi xóa đơn hàng BookingOrder, các bản ghi phân bổ BookingVendorAllocation và BookingContainer không được đồng bộ đánh dấu xóa mềm (is_deleted=True), khiến các phân bổ của booking đã bị xóa vẫn xuất hiện trên Tab 2 (Phân bổ & gán xe) và Tab 3.
+- **Xử lý:**
+  - *Backend pps/dispatch/api_views/bookings.py:* Cập nhật \BookingOrderDetailAPIView.delete\ tự động xóa mềm toàn bộ phân bổ (\.allocations.update(is_deleted=True)\) và container (\.containers.update(is_deleted=True)\) trực thuộc booking.
+  - *Backend pps/dispatch/api_views/vendor_admin.py:* Thêm bộ lọc bắt buộc \ooking__is_deleted=False\ trong \VendorAdminOverviewAPIView\ ngăn chặn triệt để dữ liệu mồ côi.
+  - *Backend pps/dispatch/api_views/vendor.py:* Thêm bộ lọc \ooking__is_deleted=False\ trong \VendorContainersMonitoringAPIView\.
+  - *Dọn dẹp CSDL:* Đã xóa sạch 3 phân bổ rác trên hệ thống theo yêu cầu người dùng (allocations 14, 15, 16 của BK.2611.002 và BK.2611.001).
+
 ## 2026-11-19 – Fix Chuyển Hướng /admin (Loại bỏ catch-all 404 cản trở APPEND_SLASH)
 - **Vấn đề:** Khi truy cập \gss.bim.info.vn/admin\ (không có dấu \/\ cuối), hệ thống trả về trang 404 do bị chặn bởi pattern \
 e_path(r'^.*$', custom_404_view)\ ở cuối \urls.py\, vô hiệu hóa cơ chế tự động \APPEND_SLASH\ của Django.
