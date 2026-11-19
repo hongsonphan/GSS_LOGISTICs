@@ -251,8 +251,15 @@
             </button>
 
         </div>
-        <div class="text-xs text-slate-500 font-medium self-end md:self-center">
-            Phân hệ: <strong class="text-slate-800">Điều Vận & Phân Bổ Vendor (GSS TMS)</strong>
+        <div class="text-xs text-slate-500 font-medium self-end md:self-center flex items-center gap-3">
+            <span class="hidden sm:inline">Phân hệ: <strong class="text-slate-800">Điều Vận & Phân Bổ Vendor (GSS TMS)</strong></span>
+            <!-- Nút Toàn Màn Hình Điều Vận -->
+            <button type="button" id="btn-fullscreen-dispatch" onclick="toggleDispatchFullscreen()"
+                class="px-3.5 py-1.5 bg-white hover:bg-indigo-50 hover:text-indigo-800 text-slate-700 border border-slate-300 hover:border-indigo-400 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Mở rộng phân hệ Điều vận toàn màn hình để theo dõi danh sách chuyến xe và container">
+                <i id="btn-fullscreen-dispatch-icon" class="ph-bold ph-corners-out text-sm text-indigo-600"></i>
+                <span id="btn-fullscreen-dispatch-text">Toàn Màn Hình</span>
+            </button>
         </div>
     </div>
 
@@ -279,6 +286,9 @@
                 </div>
                 <button type="button" onclick="loadDispatchOrdersTab()" class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer">
                     <i class="ph-bold ph-arrow-counter-clockwise"></i> Làm mới
+                </button>
+                <button type="button" onclick="toggleDispatchFullscreen()" class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer" title="Toàn màn hình">
+                    <i class="ph-bold ph-corners-out text-indigo-600"></i> <span class="hidden md:inline">Toàn Màn Hình</span>
                 </button>
                 <button type="button" onclick="openDispatchOrderModal()" class="btn-bim-primary px-3.5 py-1.5 text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 cursor-pointer">
                     <i class="ph-bold ph-plus-circle"></i> + Lập Lệnh Mới
@@ -468,9 +478,9 @@
                 </select>
             </div>
 
-            <!-- 3. Tìm kiếm từ khóa đa năng -->
-            <div class="md:col-span-2">
-                <div class="relative">
+            <!-- 3. Tìm kiếm từ khóa đa năng & Toàn màn hình -->
+            <div class="md:col-span-2 flex items-center gap-2">
+                <div class="relative flex-1">
                     <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                     <input type="text" id="filter-vc-search" oninput="debounceVendorContainersSearch()" placeholder="Tìm số cont, số seal, biển số xe, tên tài xế, mã LDD..."
                         class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
@@ -478,6 +488,12 @@
                         <i class="ph-bold ph-x text-xs"></i>
                     </button>
                 </div>
+                <button type="button" onclick="toggleDispatchFullscreen()" 
+                    class="h-8 px-2.5 bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-800 border border-slate-200 hover:border-indigo-300 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Mở rộng toàn màn hình bảng container hành trình">
+                    <i class="ph-bold ph-corners-out text-xs text-indigo-600"></i>
+                    <span class="hidden md:inline">Toàn Màn Hình</span>
+                </button>
             </div>
         </div>
 

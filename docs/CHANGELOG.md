@@ -3,6 +3,26 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Nâng Cấp Chế Độ Toàn Màn Hình Doanh Nghiệp (Booking & Điều Vận)
+- **Vấn đề:** 
+  1. Nút "Toàn Màn Hình" tại Bảng danh sách container Booking (`view_booking_detail.html`) không hiển thị toàn màn hình chuẩn do thiếu lớp CSS toàn màn hình chuyên biệt (lớp `z-[80]` không tồn tại trong Tailwind build và bị giới hạn bởi stacking context).
+  2. Phân hệ Điều Vận (`view_dispatch.html`) chưa có nút "Toàn Màn Hình" để điều độ viên và chuyên viên mở rộng bảng theo dõi container/chuyến xe khi làm việc trên màn hình lớn.
+- **Xử lý toàn diện:**
+  - *CSS Toàn Màn Hình Doanh Nghiệp (`static/css/main.css`):*
+    + Xây dựng lớp `.gss-fullscreen-mode` với thuộc tính `position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 999999 !important; overflow: hidden !important;`, đảm bảo giải phóng toàn bộ giới hạn hiển thị, vượt lên trên mọi thanh công cụ, sidebar và modal.
+    + Bổ sung định kiểu `:fullscreen` và `:-webkit-full-screen` chuẩn W3C đảm bảo màu nền sạch `#ffffff` và chiều cao tối đa.
+  - *Module Booking (`static/js/src/app/sales/booking-page/containers.js`):*
+    + Tái cấu trúc hàm `toggleFullscreenContainersTable(force)` sử dụng `.gss-fullscreen-mode` kết hợp Native Fullscreen API (`section.requestFullscreen()` và `document.exitFullscreen()`).
+    + Tự động co giãn bảng dữ liệu container (`tableWrap.style.maxHeight = 'calc(100vh - 200px)'`) tận dụng 100% không gian màn hình.
+    + Bổ sung bộ lắng nghe sự kiện `fullscreenchange`, `webkitfullscreenchange` và phím `Esc` để tự động khôi phục giao diện mượt mà khi người dùng nhấn Esc.
+  - *Module Điều Vận (`templates/views/view_dispatch.html` & `static/js/src/app/dispatch/dispatch-order-modal.js`):*
+    + Bổ sung nút "Toàn Màn Hình" đồng bộ chuẩn công thái học trên Thanh Tab chính của Điều Vận (hiện diện xuyên suốt tất cả 4 Tab).
+    + Bổ sung nút "Toàn Màn Hình" tiện lợi trên thanh công cụ Tab 1 (Lệnh điều độ) và Tab 3 (Theo dõi hành trình container).
+    + Triển khai hàm `toggleDispatchFullscreen(force)` mở rộng toàn bộ bảng Điều Vận (`#view-dieu-van`) ra toàn màn hình, kết hợp Native Fullscreen API và tự động đồng bộ khi bấm phím `Esc`.
+  - *Biên dịch và kiểm tra:*
+    + Build lại `static/js/app.js` qua `python scripts/build_app_js.py` (khớp 106 file nguồn).
+    + Chạy `python manage.py check` xác nhận 0 lỗi.
+
 ## 2026-11-19 – Đồng Bộ Xóa Mềm Phân Bổ Nhà Xe & Container Khi Xóa Đơn Hàng Booking
 - **Vấn đề:** Khi xóa đơn hàng BookingOrder, các bản ghi phân bổ BookingVendorAllocation và BookingContainer không được đồng bộ đánh dấu xóa mềm (is_deleted=True), khiến các phân bổ của booking đã bị xóa vẫn xuất hiện trên Tab 2 (Phân bổ & gán xe) và Tab 3.
 - **Xử lý:**

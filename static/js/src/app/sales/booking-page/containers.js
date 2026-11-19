@@ -1422,46 +1422,81 @@ window.doUnassignBulkContainers = doUnassignBulkContainers;
 // =========================================================================
 // CHẾ ĐỘ TOÀN MÀN HÌNH (FULLSCREEN) CHO BẢNG CONTAINER (HỖ TRỢ 100+ CONT)
 // =========================================================================
-function toggleFullscreenContainersTable() {
+function toggleFullscreenContainersTable(force) {
     const section = document.getElementById('fullpage-booking-containers-section');
     const btnIcon = document.getElementById('btn-fullscreen-containers-icon');
     const btnText = document.getElementById('btn-fullscreen-containers-text');
     const tableWrap = document.getElementById('fullpage-booking-containers-table-wrap');
     if (!section) return;
 
-    isContTableFullscreen = !isContTableFullscreen;
+    if (typeof force === 'boolean') {
+        isContTableFullscreen = force;
+    } else {
+        isContTableFullscreen = !isContTableFullscreen;
+    }
     window.isContTableFullscreen = isContTableFullscreen;
 
     if (isContTableFullscreen) {
-        section.classList.add('fixed', 'inset-0', 'z-[80]', 'bg-white', 'p-6', 'overflow-hidden', 'flex', 'flex-col', 'm-0', 'rounded-none', 'shadow-2xl');
-        section.style.height = '100vh';
-        section.style.maxHeight = '100vh';
+        section.classList.add('gss-fullscreen-mode');
         document.body.classList.add('overflow-hidden');
         if (btnIcon) btnIcon.className = 'ph-bold ph-corners-in text-sm text-teal-700';
         if (btnText) btnText.innerText = 'Thu Gọn (Esc)';
         if (tableWrap) {
             tableWrap.classList.remove('max-h-[640px]');
-            tableWrap.classList.add('flex-1', 'overflow-y-auto', 'max-h-[calc(100vh-210px)]');
+            tableWrap.classList.add('flex-1', 'overflow-y-auto');
+            tableWrap.style.maxHeight = 'calc(100vh - 200px)';
+        }
+        // Kích hoạt Native Fullscreen API nếu có
+        try {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (section.requestFullscreen) {
+                    section.requestFullscreen().catch(() => {});
+                } else if (section.webkitRequestFullscreen) {
+                    section.webkitRequestFullscreen();
+                }
+            }
+        } catch (e) {
+            console.warn('Native fullscreen error:', e);
         }
         showToast('info', 'Đã mở rộng toàn màn hình. Nhấn phím Esc hoặc nút Thu Gọn để trở lại.');
     } else {
-        section.classList.remove('fixed', 'inset-0', 'z-[80]', 'z-50', 'bg-white', 'p-6', 'overflow-hidden', 'm-0', 'rounded-none', 'shadow-2xl');
-        section.style.height = '';
-        section.style.maxHeight = '';
+        section.classList.remove('gss-fullscreen-mode');
         document.body.classList.remove('overflow-hidden');
         if (btnIcon) btnIcon.className = 'ph-bold ph-corners-out text-sm text-teal-600';
         if (btnText) btnText.innerText = 'Toàn Màn Hình';
         if (tableWrap) {
-            tableWrap.classList.remove('flex-1', 'max-h-[calc(100vh-210px)]');
+            tableWrap.classList.remove('flex-1');
             tableWrap.classList.add('max-h-[640px]');
+            tableWrap.style.maxHeight = '';
+        }
+        // Thoát native fullscreen nếu đang bật
+        try {
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(() => {});
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        } catch (e) {
+            console.warn('Native exit fullscreen error:', e);
         }
     }
 }
 window.toggleFullscreenContainersTable = toggleFullscreenContainersTable;
 
+function onContainersFullscreenChange() {
+    const isNativeFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    if (!isNativeFs && isContTableFullscreen) {
+        toggleFullscreenContainersTable(false);
+    }
+}
+document.addEventListener('fullscreenchange', onContainersFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onContainersFullscreenChange);
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && isContTableFullscreen) {
-        toggleFullscreenContainersTable();
+        toggleFullscreenContainersTable(false);
     }
 });
 

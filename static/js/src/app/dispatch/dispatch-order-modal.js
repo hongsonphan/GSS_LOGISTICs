@@ -667,6 +667,83 @@ function switchDispatchViewTab(tab) {
     }
 }
 
+// =========================================================================
+// CHẾ ĐỘ TOÀN MÀN HÌNH (FULLSCREEN) CHO PHÂN HỆ ĐIỀU VẬN (GSS TMS)
+// =========================================================================
+let isDispatchFullscreen = false;
+window.isDispatchFullscreen = false;
+
+function toggleDispatchFullscreen(force) {
+    const dispatchView = document.getElementById('view-dieu-van');
+    const btnIcon = document.getElementById('btn-fullscreen-dispatch-icon');
+    const btnText = document.getElementById('btn-fullscreen-dispatch-text');
+    if (!dispatchView) return;
+
+    if (typeof force === 'boolean') {
+        isDispatchFullscreen = force;
+    } else {
+        isDispatchFullscreen = !isDispatchFullscreen;
+    }
+    window.isDispatchFullscreen = isDispatchFullscreen;
+
+    if (isDispatchFullscreen) {
+        dispatchView.classList.add('gss-fullscreen-mode');
+        document.body.classList.add('overflow-hidden');
+        if (btnIcon) btnIcon.className = 'ph-bold ph-corners-in text-sm text-indigo-700';
+        if (btnText) btnText.innerText = 'Thu Gọn (Esc)';
+
+        // Kích hoạt Native Fullscreen API nếu có
+        try {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (dispatchView.requestFullscreen) {
+                    dispatchView.requestFullscreen().catch(() => {});
+                } else if (dispatchView.webkitRequestFullscreen) {
+                    dispatchView.webkitRequestFullscreen();
+                }
+            }
+        } catch (e) {
+            console.warn('Dispatch native fullscreen error:', e);
+        }
+        if (typeof showToast === 'function') {
+            showToast('info', 'Đã mở rộng Điều Vận toàn màn hình. Nhấn phím Esc hoặc nút Thu Gọn để trở lại.');
+        }
+    } else {
+        dispatchView.classList.remove('gss-fullscreen-mode');
+        document.body.classList.remove('overflow-hidden');
+        if (btnIcon) btnIcon.className = 'ph-bold ph-corners-out text-sm text-indigo-600';
+        if (btnText) btnText.innerText = 'Toàn Màn Hình';
+
+        // Thoát native fullscreen nếu đang bật
+        try {
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(() => {});
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        } catch (e) {
+            console.warn('Dispatch exit native fullscreen error:', e);
+        }
+    }
+}
+window.toggleDispatchFullscreen = toggleDispatchFullscreen;
+
+function onDispatchFullscreenChange() {
+    const isNativeFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    if (!isNativeFs && isDispatchFullscreen) {
+        toggleDispatchFullscreen(false);
+    }
+}
+document.addEventListener('fullscreenchange', onDispatchFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onDispatchFullscreenChange);
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isDispatchFullscreen) {
+        toggleDispatchFullscreen(false);
+    }
+});
+
 function filterOrderGroup(group) {
     currentOrderGroup = group || 'ALL';
     const btnAll = document.getElementById('filter-order-mode-all');
