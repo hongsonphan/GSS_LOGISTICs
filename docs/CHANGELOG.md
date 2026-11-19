@@ -3,6 +3,26 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Tối Ưu Bố Trí Cột Thao Tác & Hợp Nhất Nút Excel (Điều Vận - Tab Phân Bổ & Gán Xe)
+- **Vấn đề trước khi sửa:**
+  - Trong bảng phân bổ điều xe (`view_dispatch.html` - Tab 2), cột "THAO TÁC" chứa 5 nút bấm rời rạc (`Xem Cont`, `Gửi ĐV`, `Excel`, `Nhập`, `Link`).
+  - Do chiều rộng cột hạn chế (`w-44` ~ 176px), các nút bị bẻ thành 4 hàng xếp chồng lên nhau, đẩy chiều cao mỗi hàng trong bảng lên tới ~160px. Giao diện bị kéo dài, lãng phí không gian màn hình và thiếu tính hài hòa.
+- **Phân tích chức năng các nút:**
+  1. `Xem Cont` (`vaViewUnallocatedContainersModal`): Xem danh sách container chi tiết của phiếu phân bổ, hỗ trợ điều phối viên gán xe/tài nhanh.
+  2. `Gửi ĐV` (`vaShareVendorBatchZalo`): Gửi Lệnh điều vận tổng cho ĐV nhà xe qua Zalo.
+  3. `Excel` (Xuất) (`vaExportAllocExcel`): Xuất file Excel mẫu `.xlsx` danh sách cont phân bổ gửi cho nhà xe điền xe/tài.
+  4. `Nhập` (Nhập) (`vaTriggerAllocExcelUpload`): Tải file Excel nhà xe đã điền lên hệ thống để cập nhật hàng loạt xe/tài.
+  5. `Link` (`vaCopyAlloc`): Sao chép đường dẫn Cổng Nhà Xe vào clipboard để gửi nhanh.
+- **Giải pháp xử lý:**
+  - **Hợp nhất cụm Excel:** Gom 2 nút `Excel` (Xuất) và `Nhập` thành 1 nút dropdown duy nhất `Excel ▾` gồm menu hành động: *Xuất file mẫu* và *Nhập file Excel*. Dropdown có menu overlay z-index cao, tự động đóng khi nhấp ngoài.
+  - **Bố trí 1 hàng ngang duy nhất (Single-line Action Bar):** Đặt cả 4 nút (`Xem Cont`, `Gửi ĐV`, `Excel ▾`, `Link`) trên 1 hàng ngang với `whitespace-nowrap inline-flex gap-1.5`. Mở rộng `min-w-[320px]` cho cột.
+  - **Giảm 72% chiều cao dòng:** Chiều cao ô thao tác giảm từ ~160px xuống còn 45px, bảng dữ liệu cân đối, trực quan và chuyên nghiệp.
+  - **Kiểm thử thị giác bằng Playwright:** Tự động mở Tab Phân bổ điều xe, kiểm tra hiển thị 1 dòng (`tdHeight: 45px`, `tdWidth: 366px`) và kiểm tra tương tác click mở dropdown menu `Excel` thành công.
+- **Tệp thay đổi:**
+  - `templates/views/view_dispatch.html`: Cập nhật tiêu đề bảng `min-w-[320px]`.
+  - `static/js/src/app/dispatch/vendor-admin.js`: Tái cấu trúc `renderAllocationsTable`, thêm dropdown Excel hợp nhất và logic toggle.
+  - `static/js/app.js`: Rebuild bundle hoàn chỉnh.
+
 ## 2026-11-19 – Rà soát tính năng 17–19/11 (vai trò tester)
 - Giả lập vòng đời Booking → phân bổ nhà xe → chuyến → hủy/xóa bằng test mới `apps/dispatch/test_regression_lifecycle.py` (7 kịch bản: hủy chuyến READY trả lại số cont/dòng phân bổ; cấm hủy khi xe đã chạy; xóa Booking bị chặn khi còn chuyến, xóa mềm kèm phân bổ/cont và vô hiệu link nhà xe; xóa cont thu gọn phiếu; 404/redirect `/admin`; nhãn 7 bước theo loại hàng). Đều đạt, không phát hiện lỗi nghiệp vụ.
 - Sửa: tab «Quản lý Vendor» – nút/dòng "Xem Cont" gọi hàm không tồn tại `vaOpenUnallocatedContsModal` (bấm không có phản hồi) → nối đúng `vaViewUnallocatedContainersModal`; bấm nút trong dòng không còn mở modal hai lần.

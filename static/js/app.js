@@ -13281,13 +13281,34 @@ function renderAllocationsTable() {
             </td>
             <td class="p-2.5">${st}</td>
             <td class="p-2.5 text-xs">${vaExpiry(l.expires_at, l.expired)}</td>
-            <td class="p-2.5 text-center" onclick="event.stopPropagation()">
-                <div class="inline-flex items-center gap-1 flex-wrap justify-center">
-                    <button type="button" class="${VA_BTN_TEAL}" onclick="event.stopPropagation(); vaViewUnallocatedContainersModal(${l.id})" title="Xem danh sách container thuộc phiếu chia này (cont đã gán, cont chưa gán)"><i class="ph-bold ph-list-magnifying-glass"></i> Xem Cont</button>
-                    <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareVendorBatchZalo(${l.id})" title="Gửi danh sách link lệnh cho Điều vận Nhà xe qua Zalo"><i class="ph-bold ph-paper-plane-tilt text-teal-700"></i> Gửi ĐV</button>
-                    <button type="button" class="${VA_BTN_GRAY}" onclick="vaExportAllocExcel(${l.id})" title="Xuất file Excel gán xe cho nhà xe này"><i class="ph-bold ph-file-arrow-down text-indigo-700"></i> Excel</button>
-                    <button type="button" class="${VA_BTN_GRAY}" onclick="vaTriggerAllocExcelUpload(${l.id})" title="Nhập file Excel gán xe từ nhà xe"><i class="ph-bold ph-file-arrow-up text-emerald-700"></i> Nhập</button>
-                    <button type="button" class="${VA_BTN_GRAY}" onclick="vaCopyAlloc(${l.id})" title="Sao chép link nhà xe để nhắc gán xe"><i class="ph-bold ph-copy"></i> Link</button>
+            <td class="p-2.5 text-center whitespace-nowrap" onclick="event.stopPropagation()">
+                <div class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
+                    <!-- 1. Xem Cont (Hành động chính) -->
+                    <button type="button" class="${VA_BTN_TEAL}" onclick="event.stopPropagation(); vaViewUnallocatedContainersModal(${l.id})" title="Xem danh sách container thuộc phiếu chia này (cont đã gán, cont chưa gán)">
+                        <i class="ph-bold ph-list-magnifying-glass"></i> Xem Cont
+                    </button>
+                    <!-- 2. Gửi Điều Vận qua Zalo -->
+                    <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareVendorBatchZalo(${l.id})" title="Gửi danh sách link lệnh cho Điều vận Nhà xe qua Zalo">
+                        <i class="ph-bold ph-paper-plane-tilt text-teal-700"></i> Gửi ĐV
+                    </button>
+                    <!-- 3. Gom Nhập/Xuất Excel vào 1 nút Dropdown gọn gàng -->
+                    <div class="relative inline-block text-left" onclick="event.stopPropagation()">
+                        <button type="button" class="${VA_BTN_GRAY}" onclick="vaToggleAllocExcelMenu(event, ${l.id})" title="Nhập hoặc Xuất Excel gán xe">
+                            <i class="ph-bold ph-file-xls text-emerald-700"></i> Excel <i class="ph-bold ph-caret-down text-[10px] text-slate-400"></i>
+                        </button>
+                        <div id="alloc-excel-menu-${l.id}" class="alloc-excel-dropdown hidden absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-50 text-left">
+                            <button type="button" onclick="closeAllAllocExcelDropdowns(); vaExportAllocExcel(${l.id})" class="w-full px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium">
+                                <i class="ph-bold ph-file-arrow-down text-indigo-700 text-sm"></i> Xuất file mẫu
+                            </button>
+                            <button type="button" onclick="closeAllAllocExcelDropdowns(); vaTriggerAllocExcelUpload(${l.id})" class="w-full px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium border-t border-slate-100">
+                                <i class="ph-bold ph-file-arrow-up text-emerald-700 text-sm"></i> Nhập file Excel
+                            </button>
+                        </div>
+                    </div>
+                    <!-- 4. Sao chép link Nhà xe -->
+                    <button type="button" class="${VA_BTN_GRAY}" onclick="vaCopyAlloc(${l.id})" title="Sao chép link nhà xe để nhắc gán xe">
+                        <i class="ph-bold ph-copy"></i> Link
+                    </button>
                 </div>
             </td>
         </tr>`;
@@ -15714,6 +15735,45 @@ function vaTriggerAllocExcelUpload(allocId) {
     inp.click();
 }
 window.vaTriggerAllocExcelUpload = vaTriggerAllocExcelUpload;
+
+// =============================================================
+// DROPDOWN QUẢN LÝ EXCEL CHO PHIẾU PHÂN BỔ NHÀ XE
+// =============================================================
+function vaToggleAllocExcelMenu(event, allocId) {
+    if (event) event.stopPropagation();
+    const currentMenu = document.getElementById(`alloc-excel-menu-${allocId}`);
+    if (!currentMenu) return;
+    const isOpen = !currentMenu.classList.contains('hidden');
+    
+    closeAllAllocExcelDropdowns();
+    
+    if (!isOpen) {
+        const btn = event.currentTarget;
+        if (btn) {
+            const rect = btn.getBoundingClientRect();
+            if (rect.bottom + 90 > window.innerHeight) {
+                currentMenu.classList.add('bottom-full', 'mb-1');
+                currentMenu.classList.remove('mt-1');
+            } else {
+                currentMenu.classList.remove('bottom-full', 'mb-1');
+                currentMenu.classList.add('mt-1');
+            }
+        }
+        currentMenu.classList.remove('hidden');
+    }
+}
+window.vaToggleAllocExcelMenu = vaToggleAllocExcelMenu;
+
+function closeAllAllocExcelDropdowns() {
+    document.querySelectorAll('.alloc-excel-dropdown').forEach(m => m.classList.add('hidden'));
+}
+window.closeAllAllocExcelDropdowns = closeAllAllocExcelDropdowns;
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.alloc-excel-dropdown')) {
+        closeAllAllocExcelDropdowns();
+    }
+});
 
 // ---- src/app/dispatch/trip-expenses.js ----
 async function toggleSubcontractorTypePanels(typeVal) {
