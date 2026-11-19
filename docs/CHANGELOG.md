@@ -3,6 +3,29 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Đồng Bộ & Chuẩn Hóa Tính Năng Xuất/Nhập Excel (Export Import) Ở Các Màn Hình Gán Xe
+- **Yêu cầu:** Ở các màn hình gán xe, cho phép kết xuất dữ liệu container ra file Excel để bổ sung thông tin (đầu kéo, rơ-moóc, tài xế, SĐT, seal, ghi chú) rồi import trở lại hệ thống.
+- **Thực hiện chi tiết:**
+  1. **Cổng Nhà Xe (`templates/vendor_portal.html`):**
+     - Bổ sung nút **"Xuất Excel"** trực tiếp trên thanh công cụ của bảng `Danh Sách Container Được Giao & Gán Xe`, đặt cạnh nút **"Nhập Từ Excel"** và nút **"Thêm Xe / Tài Xế Mới"**.
+     - Cài đặt hàm `exportVendorExcel()` kết xuất file Excel `.xlsx` chứa toàn bộ danh sách container của lệnh này (gồm các thông tin đã có, các dòng chưa gán để trống các cột xe/tài).
+     - Nâng cấp modal `#modal-vendor-excel`: Chuẩn hóa 2 bước rõ ràng (*Bước 1: Kết Xuất Dữ Liệu Ra Excel*, *Bước 2: Chọn File Đã Điền Để Nạp Lên Hệ Thống*).
+     - Nâng cấp thông báo sau khi nạp: Hiển thị rõ số dòng cập nhật thành công và chi tiết từng dòng lỗi (nếu có).
+  2. **Chuẩn hóa Định Dạng & Đọc Ghi Excel Backend (`apps/gss/vendor_excel.py`, `apps/dispatch/vendor_service.py`):**
+     - Thêm thiết lập Text format `@` cho các cột văn bản (`Số Container`, `Số Chì (Seal)`, `Biển Số Đầu Kéo`, `Biển Số Rơ-moóc`, `SĐT Tài Xế`) để ngăn Excel tự động format số.
+     - Xử lý làm sạch ô cell khi đọc: Bỏ `.0` nếu openpyxl trả về kiểu float, tự động bù số `0` ở đầu cho số điện thoại 9 chữ số bị Excel cắt mất số 0 đầu.
+     - Hàm `_clean_row` trong `vendor_service.py` tự động nhận diện và khôi phục SĐT chuẩn 10 số.
+  3. **Màn hình Lập Lệnh Điều Động Vận Tải (`static/js/src/app/dispatch/dispatch-order-modal.js`):**
+     - Sửa hàm `mdoDownloadExcelTemplate()` trỏ đúng endpoint `/api/gss/bookings/${mdoCurrentBooking.id}/allocation-template/` thay cho URL chết 404 trước đây.
+     - Cài đặt hoàn chỉnh hàm `mdoUploadExcel(file)` gọi API `/api/gss/bookings/<id>/allocation-import/` (kiểm tra) và `/api/gss/bookings/<id>/allocation-import/commit/` (ghi nhận phân bổ container).
+  4. **Màn hình Phân Bổ & Quản Lý Vendor (`static/js/src/app/dispatch/vendor-admin.js`):**
+     - Bổ sung bộ đôi nút **"Xuất Excel"** và **"Nhập Excel"** trực tiếp trên Header Modal xem chi tiết container phiếu chia (`vaViewUnallocatedContainersModal`).
+     - Đổi nhãn menu dropdown Excel ở cột thao tác thành *Xuất Excel gán xe (.xlsx)* và *Nhập Excel gán xe (.xlsx)*.
+  5. **Kiểm thử tự động & QA:**
+     - Viết test case `test_vendor_portal_excel_export_and_import` trong `apps/dispatch/test_vendor.py` kiểm tra chu trình khép kín: Export Excel -> Đọc file -> Điền xe/tài xế (với SĐT 9 số) -> Import file -> Tự động chuẩn hóa thành SĐT 10 số có số 0 đầu -> Tạo chuyến xe VC thành công.
+     - Chạy `python scripts/qa.py verify` và `python scripts/qa.py audit` đạt 100% (PASS=23, FAIL=0).
+     - Rebuild bundle `static/js/app.js` đồng bộ.
+
 ## 2026-11-19 – Tối Ưu Bố Trí Cột Thao Tác & Hợp Nhất Nút Excel (Điều Vận - Tab Phân Bổ & Gán Xe)
 - **Vấn đề trước khi sửa:**
   - Trong bảng phân bổ điều xe (`view_dispatch.html` - Tab 2), cột "THAO TÁC" chứa 5 nút bấm rời rạc (`Xem Cont`, `Gửi ĐV`, `Excel`, `Nhập`, `Link`).

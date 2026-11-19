@@ -61,6 +61,7 @@ def _style(ws):
         c.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
 
     center_headers = {'STT', 'Loại Cont', 'Số Chì (Seal)', 'SĐT Tài Xế'}
+    text_headers = {'Số Container', 'Loại Cont', 'Nơi Giao Hàng', 'Số Chì (Seal)', 'Biển Số Đầu Kéo', 'Biển Số Rơ-moóc', 'Họ Tên Tài Xế', 'SĐT Tài Xế', 'Ghi Chú'}
     for r_idx in range(2, ws.max_row + 1):
         ws.row_dimensions[r_idx].height = 22
         for col_idx, cell in enumerate(ws[r_idx], start=1):
@@ -71,6 +72,8 @@ def _style(ws):
                 horizontal='center' if hdr in center_headers else 'left',
                 vertical='center',
             )
+            if hdr in text_headers:
+                cell.number_format = '@'
 
     ws.freeze_panes = 'A2'
     for col in ws.columns:
@@ -120,9 +123,19 @@ def read_rows(alloc, fileobj):
             line = int(vals[0])
         except (TypeError, ValueError):
             raise ValidationError(f'Dòng {i}: cột STT phải là số.')
-        cell = lambda k: '' if vals[k] is None else str(vals[k]).strip()
-        rows.append({'line_no': line, 'container_number': cell(1), 'seal_number': cell(4), 'tractor_plate': cell(5),
-                     'trailer_plate': cell(6), 'driver_name': cell(7), 'driver_phone': cell(8), 'vendor_note': cell(9)})
+        def _cell(k):
+            v = vals[k]
+            if v is None:
+                return ''
+            if isinstance(v, float) and v.is_integer():
+                v = int(v)
+            return str(v).strip()
+
+        d_phone = _cell(8)
+        if len(d_phone) == 9 and d_phone.isdigit() and d_phone[0] in '35789':
+            d_phone = '0' + d_phone
+        rows.append({'line_no': line, 'container_number': _cell(1), 'seal_number': _cell(4), 'tractor_plate': _cell(5),
+                     'trailer_plate': _cell(6), 'driver_name': _cell(7), 'driver_phone': d_phone, 'vendor_note': _cell(9)})
         if len(rows) > 300:
             raise ValidationError('File quá nhiều dòng.')
     if not rows:

@@ -232,10 +232,10 @@ function renderAllocationsTable() {
                         </button>
                         <div id="alloc-excel-menu-${l.id}" class="alloc-excel-dropdown hidden absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-50 text-left">
                             <button type="button" onclick="closeAllAllocExcelDropdowns(); vaExportAllocExcel(${l.id})" class="w-full px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium">
-                                <i class="ph-bold ph-file-arrow-down text-indigo-700 text-sm"></i> Xuất file mẫu
+                                <i class="ph-bold ph-file-arrow-down text-indigo-700 text-sm"></i> Xuất Excel gán xe (.xlsx)
                             </button>
                             <button type="button" onclick="closeAllAllocExcelDropdowns(); vaTriggerAllocExcelUpload(${l.id})" class="w-full px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium border-t border-slate-100">
-                                <i class="ph-bold ph-file-arrow-up text-emerald-700 text-sm"></i> Nhập file Excel
+                                <i class="ph-bold ph-file-arrow-up text-emerald-700 text-sm"></i> Nhập Excel gán xe (.xlsx)
                             </button>
                         </div>
                     </div>
@@ -2557,8 +2557,14 @@ async function vaViewUnallocatedContainersModal(allocId) {
                         <div class="text-xs font-bold text-slate-700">Tiến độ phân bổ:</div>
                         <div class="text-xs font-bold text-teal-800">${filled} / ${total} cont <span class="text-amber-700">(${remaining > 0 ? 'Còn thiếu ' + remaining + ' cont' : 'Đã đủ xe'})</span></div>
                     </div>
+                    <button type="button" class="h-8 px-3 rounded-xl bg-white hover:bg-teal-50 border border-teal-600 text-teal-800 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="vaExportAllocExcel(${allocId})" title="Kết xuất danh sách container ra file Excel để bổ sung xe và tài xế">
+                        <i class="ph-bold ph-download-simple text-sm text-teal-700"></i> Xuất Excel
+                    </button>
+                    <button type="button" class="h-8 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="vaTriggerAllocExcelUpload(${allocId})" title="Nạp file Excel đã điền thông tin xe & tài xế lên hệ thống">
+                        <i class="ph-bold ph-upload-simple text-sm"></i> Nhập Excel
+                    </button>
                     ${vendorLink ? `
-                        <button type="button" class="h-8 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="window.open('${vaEsc(vendorLink)}', '_blank')" title="Mở Cổng Nhà Xe để gán hộ hoặc hỗ trợ">
+                        <button type="button" class="h-8 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="window.open('${vaEsc(vendorLink)}', '_blank')" title="Mở Cổng Nhà Xe để gán hộ hoặc hỗ trợ">
                             <i class="ph-bold ph-desktop"></i> Cổng Nhà Xe
                         </button>
                     ` : ''}

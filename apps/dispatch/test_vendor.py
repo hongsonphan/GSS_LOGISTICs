@@ -310,3 +310,45 @@ class VendorApiTests(VendorBase):
         self.assertEqual(self.booking.road_restrictions, 'Cầu yếu')
         bad = self.client.put(f'/api/bookings/{self.booking.pk}/', {'dem_start_date': '02/11/2026'}, content_type='application/json')
         self.assertEqual(bad.status_code, 400)
+
+    def test_vendor_portal_excel_export_and_import(self):
+        import io
+        import openpyxl
+        token = self._create()['link'].rstrip('/').split('/')[-1]
+        self.client.logout()
+
+        # 1. Export Excel qua token cổng nhà xe
+        res = self.client.get(f'/api/vendor/{token}/excel/')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+        # 2. Đọc file Excel kiểm tra cấu trúc
+        wb = openpyxl.load_workbook(io.BytesIO(res.content))
+        ws = wb.worksheets[0]
+        self.assertEqual(ws.cell(row=1, column=1).value, 'STT')
+        self.assertEqual(ws.cell(row=1, column=6).value, 'Biển Số Đầu Kéo')
+        self.assertEqual(ws.cell(row=1, column=9).value, 'SĐT Tài Xế')
+
+        # Điền thông tin xe và tài xế bổ sung (thử nghiệm SĐT 9 số không có 0 đầu)
+        ws.cell(row=2, column=6, value='59C-99999')
+        ws.cell(row=2, column=7, value='59R-11111')
+        ws.cell(row=2, column=8, value='Bác Tài GSS')
+        ws.cell(row=2, column=9, value='987654321')
+
+        out = io.BytesIO()
+        wb.save(out)
+        out.seek(0)
+
+        # 3. Import lại file Excel đã điền thông tin
+        post_res = self.client.post(f'/api/vendor/{token}/excel/', {'file': out}, format='multipart')
+        self.assertEqual(post_res.status_code, 200)
+        data = post_res.json()
+        self.assertTrue(data.get('success'))
+        self.assertEqual(data.get('saved'), 1)
+
+        # 4. Kiểm tra chuyến xe được tạo với SĐT chuẩn hoá có số 0
+        from apps.dispatch.models import DispatchTrip
+        trip = DispatchTrip.objects.filter(vendor_line_no=1, vehicle__license_plate='59C-99999').first()
+        self.assertIsNotNone(trip)
+        self.assertEqual(trip.subcontractor_driver_phone, '0987654321')
+        self.assertEqual(trip.subcontractor_driver_name, 'Bác Tài GSS')

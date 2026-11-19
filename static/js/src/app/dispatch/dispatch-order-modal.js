@@ -568,21 +568,54 @@ async function submitDispatchOrderAllocation() {
 
 
 function mdoDownloadExcelTemplate() {
-
-    window.open('/api/vendor-allocations/template/excel/', '_blank');
-
+    if (!mdoCurrentBooking || !mdoCurrentBooking.id) {
+        showToast('warning', 'Vui lòng chọn Booking trước khi kết xuất file Excel phân bổ.');
+        return;
+    }
+    window.location.href = `/api/gss/bookings/${mdoCurrentBooking.id}/allocation-template/`;
+    showToast('info', 'Đang tải file Excel phân bổ container...', 'Xuất Excel');
 }
 
-
-
-function mdoUploadExcel(file) {
-
+async function mdoUploadExcel(file) {
     if (!file) return;
-
-    showToast('info', `Đang đọc file Excel: ${file.name}...`);
-
-    // Upload Excel xử lý phân bổ
-
+    if (!mdoCurrentBooking || !mdoCurrentBooking.id) {
+        showToast('warning', 'Vui lòng chọn Booking trước khi nhập file Excel phân bổ.');
+        return;
+    }
+    showToast('info', `Đang đọc và kiểm tra file Excel: ${file.name}...`, 'Nhập Excel');
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${mdoCurrentBooking.id}/allocation-import/`, {
+            method: 'POST',
+            body: fd
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Lỗi kiểm tra file Excel');
+        const preview = json.data;
+        if (preview.errors > 0) {
+            showToast('danger', `File Excel có ${preview.errors} dòng lỗi. Vui lòng kiểm tra lại file.`, 'Lỗi File Excel');
+            return;
+        }
+        if (!preview.token || !preview.changes) {
+            showToast('info', 'File Excel không có thay đổi phân bổ nào mới.', 'Không Có Thay Đổi');
+            return;
+        }
+        const commitRes = await fetchWithAuth(`/api/gss/bookings/${mdoCurrentBooking.id}/allocation-import/commit/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: preview.token, reason: 'Nhập Excel phân bổ từ màn hình Lệnh điều động' })
+        });
+        const commitJson = await commitRes.json();
+        if (!commitRes.ok) throw new Error(commitJson.message || 'Lỗi ghi nhận phân bổ');
+        showToast('success', commitJson.message || `Đã cập nhật phân bổ thành công ${preview.changes} container!`, 'Nhập Excel Thành Công');
+        onDispatchOrderBookingChanged(mdoCurrentBooking.id);
+    } catch (e) {
+        showToast('danger', e.message || 'Lỗi xử lý file Excel', 'Lỗi Nhập Excel');
+    } finally {
+        const inp = document.getElementById('mdo-excel-input');
+        if (inp) inp.value = '';
+    }
 }
 
 

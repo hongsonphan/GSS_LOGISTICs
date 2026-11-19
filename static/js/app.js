@@ -11672,21 +11672,54 @@ async function submitDispatchOrderAllocation() {
 
 
 function mdoDownloadExcelTemplate() {
-
-    window.open('/api/vendor-allocations/template/excel/', '_blank');
-
+    if (!mdoCurrentBooking || !mdoCurrentBooking.id) {
+        showToast('warning', 'Vui lòng chọn Booking trước khi kết xuất file Excel phân bổ.');
+        return;
+    }
+    window.location.href = `/api/gss/bookings/${mdoCurrentBooking.id}/allocation-template/`;
+    showToast('info', 'Đang tải file Excel phân bổ container...', 'Xuất Excel');
 }
 
-
-
-function mdoUploadExcel(file) {
-
+async function mdoUploadExcel(file) {
     if (!file) return;
-
-    showToast('info', `Đang đọc file Excel: ${file.name}...`);
-
-    // Upload Excel xử lý phân bổ
-
+    if (!mdoCurrentBooking || !mdoCurrentBooking.id) {
+        showToast('warning', 'Vui lòng chọn Booking trước khi nhập file Excel phân bổ.');
+        return;
+    }
+    showToast('info', `Đang đọc và kiểm tra file Excel: ${file.name}...`, 'Nhập Excel');
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${mdoCurrentBooking.id}/allocation-import/`, {
+            method: 'POST',
+            body: fd
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Lỗi kiểm tra file Excel');
+        const preview = json.data;
+        if (preview.errors > 0) {
+            showToast('danger', `File Excel có ${preview.errors} dòng lỗi. Vui lòng kiểm tra lại file.`, 'Lỗi File Excel');
+            return;
+        }
+        if (!preview.token || !preview.changes) {
+            showToast('info', 'File Excel không có thay đổi phân bổ nào mới.', 'Không Có Thay Đổi');
+            return;
+        }
+        const commitRes = await fetchWithAuth(`/api/gss/bookings/${mdoCurrentBooking.id}/allocation-import/commit/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: preview.token, reason: 'Nhập Excel phân bổ từ màn hình Lệnh điều động' })
+        });
+        const commitJson = await commitRes.json();
+        if (!commitRes.ok) throw new Error(commitJson.message || 'Lỗi ghi nhận phân bổ');
+        showToast('success', commitJson.message || `Đã cập nhật phân bổ thành công ${preview.changes} container!`, 'Nhập Excel Thành Công');
+        onDispatchOrderBookingChanged(mdoCurrentBooking.id);
+    } catch (e) {
+        showToast('danger', e.message || 'Lỗi xử lý file Excel', 'Lỗi Nhập Excel');
+    } finally {
+        const inp = document.getElementById('mdo-excel-input');
+        if (inp) inp.value = '';
+    }
 }
 
 
@@ -13298,10 +13331,10 @@ function renderAllocationsTable() {
                         </button>
                         <div id="alloc-excel-menu-${l.id}" class="alloc-excel-dropdown hidden absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-50 text-left">
                             <button type="button" onclick="closeAllAllocExcelDropdowns(); vaExportAllocExcel(${l.id})" class="w-full px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium">
-                                <i class="ph-bold ph-file-arrow-down text-indigo-700 text-sm"></i> Xuất file mẫu
+                                <i class="ph-bold ph-file-arrow-down text-indigo-700 text-sm"></i> Xuất Excel gán xe (.xlsx)
                             </button>
                             <button type="button" onclick="closeAllAllocExcelDropdowns(); vaTriggerAllocExcelUpload(${l.id})" class="w-full px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium border-t border-slate-100">
-                                <i class="ph-bold ph-file-arrow-up text-emerald-700 text-sm"></i> Nhập file Excel
+                                <i class="ph-bold ph-file-arrow-up text-emerald-700 text-sm"></i> Nhập Excel gán xe (.xlsx)
                             </button>
                         </div>
                     </div>
@@ -15623,8 +15656,14 @@ async function vaViewUnallocatedContainersModal(allocId) {
                         <div class="text-xs font-bold text-slate-700">Tiến độ phân bổ:</div>
                         <div class="text-xs font-bold text-teal-800">${filled} / ${total} cont <span class="text-amber-700">(${remaining > 0 ? 'Còn thiếu ' + remaining + ' cont' : 'Đã đủ xe'})</span></div>
                     </div>
+                    <button type="button" class="h-8 px-3 rounded-xl bg-white hover:bg-teal-50 border border-teal-600 text-teal-800 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="vaExportAllocExcel(${allocId})" title="Kết xuất danh sách container ra file Excel để bổ sung xe và tài xế">
+                        <i class="ph-bold ph-download-simple text-sm text-teal-700"></i> Xuất Excel
+                    </button>
+                    <button type="button" class="h-8 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="vaTriggerAllocExcelUpload(${allocId})" title="Nạp file Excel đã điền thông tin xe & tài xế lên hệ thống">
+                        <i class="ph-bold ph-upload-simple text-sm"></i> Nhập Excel
+                    </button>
                     ${vendorLink ? `
-                        <button type="button" class="h-8 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="window.open('${vaEsc(vendorLink)}', '_blank')" title="Mở Cổng Nhà Xe để gán hộ hoặc hỗ trợ">
+                        <button type="button" class="h-8 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="window.open('${vaEsc(vendorLink)}', '_blank')" title="Mở Cổng Nhà Xe để gán hộ hoặc hỗ trợ">
                             <i class="ph-bold ph-desktop"></i> Cổng Nhà Xe
                         </button>
                     ` : ''}

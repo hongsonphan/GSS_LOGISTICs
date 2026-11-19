@@ -226,6 +226,9 @@ def _clean_row(raw):
     row['seal_number'] = row['seal_number'].upper()
     row['tractor_plate'] = _norm_plate(row['tractor_plate'])
     row['trailer_plate'] = _norm_plate(row['trailer_plate'])
+    p = row.get('driver_phone') or ''
+    if len(p) == 9 and p.isdigit() and p[0] in '35789':
+        row['driver_phone'] = '0' + p
     row['driver_name'] = row['driver_name'][:100]
     row['vendor_note'] = row['vendor_note'][:255]
     return row
