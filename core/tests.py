@@ -221,7 +221,7 @@ class GssLogisticsCoreTestCase(TestCase):
         response = self.client.get('/login/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Đăng nhập hệ thống')
-        self.assertContains(response, 'GSS LOGISTICS')
+        self.assertContains(response, 'GIẢI PHÁP XANH')
 
     def test_login_post_success_and_logout(self):
         """Kiểm tra đăng nhập thành công cấp Session và JWT token."""

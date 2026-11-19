@@ -130,9 +130,17 @@ class VendorAdminOverviewAPIView(APIView):
         for a in allocs:
             s = svc.allocation_summary(a, request)
             cust = a.booking.customer
-            links.append({**s, 'booking_id': a.booking_id, 'booking_code': a.booking.booking_code,
-                          'customer': (cust.short_name or cust.name) if cust else '',
-                          'state': 'expired' if s['expired'] else ('locked' if s['locked'] else 'valid')})
+            b = a.booking
+            links.append({
+                **s,
+                'booking_id': a.booking_id,
+                'booking_code': b.booking_code,
+                'customer': (cust.short_name or cust.name) if cust else '',
+                'pickup_location': b.pickup_location or 'Cảng/Depot',
+                'delivery_location': b.delivery_location or 'Kho khách',
+                'dropoff_location': b.dropoff_location or 'Depot hạ rỗng',
+                'state': 'expired' if s['expired'] else ('locked' if s['locked'] else 'valid')
+            })
 
         reg_vehicles = list(Vehicle.objects.filter(is_deleted=False).select_related('current_driver'))
         reg_vehicles_by_sub = {}
@@ -278,3 +286,59 @@ class DriverLinkAdminAPIView(APIView):
         trip.save(update_fields=['qr_version', 'qr_expires_at', 'updated_at'])
         _audit_driver_link(trip, event, request.user, extra)
         return Response({'success': True, 'message': message, 'data': serialize_driver_link(trip, request, now)})
+
+
+class VendorAllocationExcelAdminAPIView(APIView):
+    """Điều vận xuất Excel hoặc nạp file Excel gán xe / tài xế / seal của phiếu phân bổ."""
+    permission_classes = [IsDispatcher]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def get(self, request, pk):
+        from apps.gss import vendor_excel
+        alloc = BookingVendorAllocation.objects.filter(pk=pk, is_deleted=False).first()
+        if not alloc:
+            return _err('Không tìm thấy phiếu phân bổ.', status.HTTP_404_NOT_FOUND)
+        return vendor_excel.template_response(alloc, svc.rows_for(alloc))
+
+    def post(self, request, pk):
+        from apps.gss import vendor_excel
+        alloc = BookingVendorAllocation.objects.filter(pk=pk, is_deleted=False).first()
+        if not alloc:
+            return _err('Không tìm thấy phiếu phân bổ.', status.HTTP_404_NOT_FOUND)
+        f = request.FILES.get('file')
+        if not f or f.size > 2 * 1024 * 1024:
+            return _err('Chọn file Excel (.xlsx) dưới 2MB.')
+        try:
+            rows = vendor_excel.read_rows(alloc, f)
+            out = svc.submit_rows(alloc, rows, source='dispatcher', user=request.user)
+        except ValidationError as exc:
+            return _err(' '.join(exc.messages), status.HTTP_409_CONFLICT)
+        alloc.refresh_from_db()
+        return Response({'success': True, 'message': f'Đã cập nhật thành công {out.get("saved", 0)} dòng từ Excel.', 'data': out})
+
+
+class VendorAllocationBatchMessageAPIView(APIView):
+    """Tạo bản tin tổng hợp danh sách link lệnh điều xe gửi Điều vận nhà xe qua Zalo / Email."""
+    permission_classes = [IsDispatcher]
+
+    def get(self, request, pk):
+        from apps.dispatch import gss_messages as msg
+        from apps.dispatch.api_views.gss import base_url
+        alloc = BookingVendorAllocation.objects.select_related('booking', 'subcontractor').filter(pk=pk, is_deleted=False).first()
+        if not alloc:
+            return _err('Không tìm thấy phiếu phân bổ.', status.HTTP_404_NOT_FOUND)
+        sub = alloc.subcontractor
+        message = msg.compose_vendor_batch_message(alloc, base_url(request))
+        phone = (getattr(sub, 'phone', '') or '') if sub else ''
+        email = (getattr(sub, 'email', '') or '') if sub else ''
+        return Response({
+            'success': True,
+            'data': {
+                'allocation_id': alloc.id,
+                'vendor_name': (sub.short_name or sub.name) if sub else '',
+                'vendor_phone': phone,
+                'vendor_email': email,
+                'zalo_url': msg.zalo_url(phone) if phone else '',
+                'message': message,
+            }
+        })

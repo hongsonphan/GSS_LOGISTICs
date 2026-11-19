@@ -451,23 +451,24 @@ function renderDispatchTable(trips) {
                     <span class="text-slate-300 font-mono text-xs select-none">-</span>
                 `}
             </td>
-            <td data-col-key="expense" class="px-3 py-2 border-r border-slate-200/70">
-                <div class="text-[12px] font-bold text-slate-800 flex items-center space-x-1 truncate" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup)} ➔ 2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse)} ➔ 3. Nơi trả cont: ${escapeHtml(trip.dropoff || 'Trả cont')}">
-                    <span class="text-teal-700 truncate max-w-[90px]" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup)}">${escapeHtml(trip.pickup)}</span>
-                    <i class="ph ph-caret-right text-slate-300 text-xs shrink-0"></i>
-                    <span class="text-blue-900 truncate max-w-[90px]" title="2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse)}">${escapeHtml(trip.warehouse)}</span>
-                    <i class="ph ph-caret-right text-slate-300 text-xs shrink-0"></i>
-                    <span class="text-amber-800 truncate max-w-[90px]" title="3. Nơi trả cont: ${escapeHtml(trip.dropoff || 'Trả cont')}">${escapeHtml(trip.dropoff || 'Trả cont')}</span>
+            <td data-col-key="expense" class="px-3 py-2 border-r border-slate-200/70 min-w-[440px] whitespace-nowrap">
+                <div class="font-medium text-slate-800 text-xs flex items-center gap-1.5 whitespace-nowrap" title="1. Nơi lấy cont: ${escapeHtml(trip.pickup)} ➔ 2. Kho đóng/trả hàng: ${escapeHtml(trip.warehouse)} ➔ 3. Nơi trả cont: ${escapeHtml(trip.dropoff || 'Depot rỗng')}">
+                    <span class="text-teal-700 font-bold" title="1. Nơi lấy cont">${escapeHtml(trip.pickup)}</span>
+                    <span class="text-slate-400 font-bold">&rarr;</span>
+                    <span class="text-blue-900 font-bold" title="2. Kho đóng / trả hàng">${escapeHtml(trip.warehouse)}</span>
+                    <span class="text-slate-400 font-bold">&rarr;</span>
+                    <span class="text-amber-800 font-bold" title="3. Nơi trả cont rỗng">${escapeHtml(trip.dropoff || 'Depot rỗng')}</span>
                 </div>
-                <div class="mt-0.5 flex items-center space-x-2 text-[11.5px]">
+                <div class="mt-1 flex items-center space-x-2 text-[11.5px]">
                     <span class="text-[11px] font-bold ${typeColor}">${displayShipmentType}</span>
+                    <span class="text-slate-400">·</span>
                     <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
                 </div>
             </td>
-            <td data-col-key="status" class="px-3 py-2 text-left whitespace-nowrap border-r border-slate-200/70">
-                <span class="text-xs ${statusCls}">
-                    ${escapeHtml(trip.status_label)}
-                </span>
+            <td data-col-key="status" class="px-3 py-2 text-left whitespace-nowrap border-r border-slate-200/70 min-w-[340px]">
+                ${(typeof vaRender7StepJourney === 'function' && (trip.step_status || trip.status_raw))
+                    ? vaRender7StepJourney(trip.step_status || trip.status_raw, trip.timestamps)
+                    : `<span class="text-xs ${statusCls}">${escapeHtml(trip.status_label)}</span>`}
                 ${trip.status === 'DISPATCHED' ? `
                     <div class="mt-0.5 text-[11px] font-medium">
                         ${trip.acceptance_sla_status === 'DECLINED' || trip.declined_at ? `

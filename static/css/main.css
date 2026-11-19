@@ -276,7 +276,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .app-sidebar-header {
     background-color: var(--sidebar-header-bg);
     border-bottom: 1px solid var(--sidebar-border);
-    padding: 1rem 1.25rem;
+    padding: 1rem 0.75rem 1rem 1.25rem;
 }
 
 .sidebar-item-main {

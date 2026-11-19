@@ -3,6 +3,96 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Đồng Nhất & Mở Rộng Không Gian Giao Diện Toàn Ứng Dụng (Spacious Full-Width UI/UX)
+- **1. Đồng nhất chuẩn hiển thị Lộ trình vận chuyển 3 điểm trên 1 hàng ngang duy nhất:**
+  - Quy chuẩn toàn diện cho tất cả các bảng dữ liệu: Cột lộ trình đạt chuẩn độ rộng `min-w-[440px] whitespace-nowrap`, hiển thị đủ 3 mốc nghiệp vụ TMS (`Lấy cont ➔ Kho đóng/trả hàng ➔ Hạ rỗng`) nối bằng mũi tên xanh teal, loại bỏ hoàn toàn tình trạng ngắt dòng 3–4 tầng gây phình vỡ bảng hoặc cắt cụt chữ (`truncate`).
+  - Áp dụng đồng bộ cho:
+    + *Phân hệ Điều Vận (`view_dispatch.html`, `dispatch-order-modal.js`, `trip-list.js`, `vendor-admin.js`):* Bảng Lệnh điều động (Tab 1), Bảng Phân bổ & gán xe (Tab 2), Bảng Container & Tiến độ (Tab 3), Bảng Phiếu vận chuyển (Tab 4).
+    + *Phân hệ Bán Hàng (`view_sales.html`, `sales-lists.js`, `booking-page/page.js`):* Bảng Đơn hàng (Bookings), Bảng Báo giá (Quotations), Bảng danh sách chuyến xe trong Chi tiết đơn hàng.
+    + *Phân hệ Kế Toán (`view_accounting.html`, `trip-costs.js`, `subcontractor.js`):* Bảng đối soát P&L chuyến xe và Bảng quyết toán thầu phụ/xe bạn, mở rộng cột lộ trình và khách hàng `min-w-[380px] whitespace-nowrap` kèm icon vị trí rõ nét.
+- **2. Mở rộng không gian hiển thị (Full-Width / Spacious Container Layout):**
+  - Mở rộng các màn hình chi tiết chuyên biệt từ các khung co cụm chật chội (`max-w-4xl`, `max-w-5xl`, `max-w-7xl`) thành layout thoáng đãng chuẩn Enterprise TMS `max-w-[1720px] mx-auto` / `max-w-[1600px]`:
+    + *`templates/views/view_quotation_detail.html`:* Mở rộng từ `max-w-7xl` lên `max-w-[1720px] mx-auto` đồng nhất với `view_booking_detail` và `view_vendor_detail`.
+    + *`templates/views/view_cash_voucher_detail.html`:* Mở rộng từ `max-w-5xl` lên `max-w-[1600px] mx-auto`.
+    + *`templates/views/view_employee_form.html`:* Mở rộng từ `max-w-4xl` lên `max-w-[1600px] mx-auto`.
+- **3. Chuẩn hóa chuỗi 7 bước hành trình & Kanban Board TMS:**
+  - Bổ sung chuỗi con nhộng 7 bước trực quan (`vaRender7StepJourney` với `min-w-[340px]`) tại cột trạng thái của tất cả các bảng container và chuyến xe.
+  - Tái cấu trúc Tab Theo bước hành trình thành bảng Kanban 7 cột tương ứng 7 bước của chuỗi TMS, hiển thị đầy đủ thẻ xe, tài xế, cont, lộ trình và nút Xem phiếu VC trực tiếp.
+- **4. Công thái học cột Thao tác trên toàn bộ hệ thống:**
+  - *Màn hình Quản lý Nhà xe & Phân bổ:* Nút tại bảng Lệnh chưa phân bổ chuyển thành nút `[ Xem Cont ]` mở modal danh sách container chưa gán, giúp Điều vận theo dõi rõ ràng, phân định với màn hình LDD.
+  - *Màn hình Đội Xe & Phương Tiện (`view_fleet.html`, `fleet.js`):* Nâng cấp cột Thao tác cho cả bảng Đầu kéo & Xe tải và bảng Rơ-moóc thành nút `[ Xem ]` chuẩn công thái học (`h-7 px-2.5 font-bold inline-flex items-center gap-1 font-heading border border-teal-200`) mở xem và quản lý phương tiện.
+- **5. Kiểm thử & Bản dựng:**
+  - Biên dịch toàn bộ bundle `static/js/app.js` (106 files) và `static/css/tailwind.css`.
+  - Kiểm thử QA Verify toàn diện: `PASS=7, FAIL=0, WARN=0, KẾT LUẬN: ĐẠT`.
+  - Kiểm thử thị giác thực tế bằng Playwright Chromium trên local cổng 8086 đã xác thực ảnh chụp màn hình hoàn chỉnh.
+- File: `templates/views/view_dispatch.html`, `templates/views/view_sales.html`, `templates/views/view_accounting.html`, `templates/views/view_quotation_detail.html`, `templates/views/view_cash_voucher_detail.html`, `templates/views/view_employee_form.html`, `static/js/src/app/dispatch/*.js`, `static/js/src/app/sales/*.js`, `static/js/src/app/accounting/*.js`, `static/js/src/app/fleet/fleet.js`, `docs/CHANGELOG.md`.
+
+## 2026-11-19 – Bảo mật CSDL và sao lưu/khôi phục (docs/16, Đợt A + B một phần)
+- **Nhật ký bất biến thật ở tầng CSDL:** trigger chặn UPDATE/DELETE `core_auditlog`, `core_trackingeventlog` (`core/immutability.py`, dựng lại sau mỗi `migrate`). Chỉ cho `actor_id`/`company_id` về NULL (khoá ngoại SET_NULL); xoá chỉ khi giao dịch đặt `gss.allow_log_purge='on'`.
+- **Vai trò `gss_rls` mất quyền TRUNCATE** (`core/rls.py`); `rls.apply` chạy được với user không phải superuser (chỉ cấp tư cách thành viên khi chưa có).
+- **`scripts/db_harden.sh` (mới):** tạo user ứng dụng thường `gss_app`, chuyển chủ sở hữu CSDL/bảng sang đó; `docker-compose.yml` dùng `APP_DB_USER`/`APP_DB_PASSWORD` nếu có. Đã kiểm: migrate lại + 193 test `core` đạt với user không phải superuser. **Chưa áp lên stack 8086/VPS.**
+- **Sao lưu:** `backup_vps.sh` thêm checksum sha256, kiểm dump đủ dòng kết thúc, quyền file 600, chế độ `BACKUP_MODE=db` (cron 4 giờ/lần, RPO ≤ 4 giờ), bản mã hoá `age` + `rclone` ra ngoài máy chủ (cấu hình qua `OFFSITE_REMOTE`, `BACKUP_AGE_RECIPIENT`; chưa đặt thì cảnh báo). **Chưa cấu hình nơi lưu ngoài, chưa thử với rclone/age thật.**
+- **Khôi phục/diễn tập:** `restore_vps.sh` kiểm checksum, giải mã `.age`, khôi phục theo chủ sở hữu `APP_DB_USER`; `restore_drill.sh` kiểm thêm sổ cái cân Nợ/Có, bảng kê chốt có dòng, policy RLS/trigger, checksum, giải nén mẫu media, đo thời gian khôi phục; sửa bảng `customers_customer` (đã là proxy) → `master_data_party`.
+- **`deploy_vps.sh`:** ghi điểm khôi phục CSDL trước migrate (`GSS_LOGISTICS_rollback_db.txt`) kèm lệnh quay CSDL; preflight theo user ứng dụng.
+- **Chưa làm (xem docs/16 mục 5):** RLS không còn fail-open và `company` NOT NULL (cần sửa trang token), đổi đường `/admin/` và 2FA, WAL/PITR.
+- File: `core/immutability.py`, `core/test_immutability.py`, `core/rls.py`, `core/apps.py`, `scripts/*.sh`, `docker-compose.yml`, `.env.example`, `PLATFORM_PATCHES.md`, `docs/16-data-security-dr.md`.
+
+## 2026-11-19 – Tối ưu hóa giao diện Chi tiết Nhà xe: Bung rộng sát viền công thái học & Tinh gọn chuỗi 7 mốc hành trình
+- **1. Bung rộng toàn màn hình sát viền chuẩn công thái học ERP:**
+  - Loại bỏ giới hạn `max-w-[1720px] mx-auto` trong `templates/views/view_vendor_detail.html`, mở rộng 100% chiều ngang (`w-full`), tinh chỉnh padding 2 bên thành `px-4 sm:px-6` đồng bộ với thanh tiêu đề Topbar.
+  - Các bảng danh sách lệnh điều động và phân bổ container (Phân khu A chưa gán xe và Phân khu B đã phân bổ) bung rộng sát 2 bên viền màn hình tương tự như bảng Báo giá cước của phân hệ Kinh doanh, loại bỏ hoàn toàn khoảng trống thừa 2 bên, giải phóng không gian cho cột Lộ trình và Chuỗi mốc hành trình.
+- **2. Tinh gọn hiển thị chuỗi 7 mốc hành trình (Hài hòa chuẩn):**
+  - Loại bỏ hoàn toàn các số thứ tự `1, 2, 3, 4, 5, 6, 7` trên từng mốc trong hàm `vaRender7StepJourney` (`static/js/src/app/dispatch/vendor-admin.js`), chỉ hiển thị tên mốc ngắn gọn: `Sẵn sàng`, `Đến nhận`, `Nhận cont`, `Đến giao`, `Giao xong`, `Đi hạ rỗng`, `Hạ rỗng`.
+  - *Mốc đã hoàn thành (`isPassed`):* Nền xanh lá `bg-emerald-600` với biểu tượng tích check `✓` trắng nhỏ gọn, font bán đậm.
+  - *Mốc đang chạy (`isCurrent`):* Nền teal đậm `bg-teal-700` với viền ring sáng `ring-teal-400` và chấm tròn trắng nhấp nháy (`animate-pulse`), tạo điểm nhấn thị giác rõ ràng về vị trí xe.
+  - *Mốc chưa tới:* Nhãn chữ xám `bg-slate-50 text-slate-500` thanh lịch, không bị số thứ tự gây choán diện tích.
+  - Đường ray nối `h-[2px]` kết nối liền mạch, tổng thể 7 mốc hiển thị gọn gàng, đẹp mắt trên 1 hàng ngang chuẩn mực.
+- **3. Kiểm thử & Bản dựng:** Biên dịch lại `static/js/app.js` và `tailwind.css`; toàn bộ 6/6 bài kiểm tra `scripts/qa.py verify --fast` đạt ĐẠT.
+- File: `templates/views/view_vendor_detail.html`, `static/js/src/app/dispatch/vendor-admin.js`, `static/js/app.js`, `static/css/tailwind*.css`, `docs/CHANGELOG.md`.
+
+## 2026-11-18 – Nâng Cấp Hệ Thống Toàn Diện Theo 12 Phân Hệ Nghiệp Vụ (GPX Logistics)
+- **1. Import & Export Phân Bổ Xe (Round-Trip Excel):**
+  - Bổ sung API `VendorAllocationExcelAdminAPIView` (`/api/vendor-allocations/<id>/excel/` GET & POST) cho phép xuất Excel danh sách container phân bổ và import file Excel đã điền biển số xe/tài xế để ghi đè cập nhật vào CSDL.
+  - Trên giao diện `vendor-admin.js`, thêm nút `[ Xuất Excel ]` và `[ Nạp Excel ]` trên từng thẻ phiếu chia.
+- **2. Danh Mục Loại Container & ISO Seeding:**
+  - Idempotent migration `0007_seed_iso_container_types.py` nạp sẵn 10 loại chuẩn ISO Logistics: `20GP`, `40GP`, `40HC`, `45HQ`, `20RF`, `40RF`, `20FR`, `40FR`, `20OT`, `40OT`.
+  - Hỗ trợ thêm mới/quản lý loại cont linh hoạt thông qua danh mục hệ thống.
+- **3. Gán Mặc Định Đầu Kéo, Rơ-moóc & Tài Xế:**
+  - Thêm trường `default_trailer` vào model `Vehicle` (`apps/fleet/models.py`) liên kết trực tiếp với `Trailer`.
+  - `MasterDataFormOptionsAPIView` xuất `default_trailer_id` và `default_trailer_plate`.
+  - Giao diện `trip-actions.js` tự động điền Rơ-moóc và Tài xế mặc định ngay khi chọn Đầu kéo, đồng thời cho phép hiệu chỉnh tự do.
+- **4. Chuẩn Hóa 7 Bước Vận Hành Theo Loại Hàng (Shipment Type):**
+  - Giữ nguyên 7 bước máy trạng thái cốt lõi ở tầng backend (`apps/dispatch/gss_workflow.py`), bổ sung lớp ánh xạ trực quan `step_labels_for(shipment_type)`.
+  - Hàng Nhập: Đến cảng nhận ➔ Đến kho ➔ Đã giao ➔ Hạ rỗng.
+  - Hàng Xuất: Lấy Cont Rỗng ➔ Đến Nhà máy ➔ Đã đóng hàng ➔ Đã hạ Cont.
+  - Hàng Nội địa: Đã nhận ➔ Đã giao.
+- **5. Xử Lý Xe Kéo 2 Container (Twin Container):**
+  - Đã tích hợp tính năng ghép cặp cont 20ft (`is_twin_container`). Bổ sung thông báo trực quan chuyên biệt trên màn hình tài xế khi xe kéo 2 cont để xử lý độc lập từng bước/chứng từ.
+- **6. Giao Diện Tài Xế & Chụp Ảnh Chứng Từ Phân Loại Trực Tiếp:**
+  - Thiết kế lại các nút chụp chứng từ trực tiếp theo hành động (`EIR Nhận`, `POD Giao Nhận`, `EIR Hạ`, `Seal`), tài xế bấm nút tương ứng hệ thống tự động gắn thẻ chứng từ mà không cần chọn phân loại thủ công.
+- **7. Loại Bỏ Hoàn Toàn Kê Khai Chi Phí (Turnkey Vendor Model):**
+  - Đóng endpoint `/api/qr/t/<token>/claims/` (trả về 403 Forbidden).
+  - Gỡ bỏ hoàn toàn giao diện `claimCard()` trên màn hình tài xế mobile và portal nhà xe.
+- **8. Tìm Kiếm & Lọc Đa Tiêu Chí:**
+  - Bổ sung thanh tìm kiếm tại Tab Lệnh Điều Vận (Tab 1) và Tab Theo Dõi Nhà Xe (Tab 2), lọc tức thì theo: Số B/L, Số Container, Số Chì (Seal), Mã Lệnh Điều Động.
+- **9. Chế Độ Toàn Màn Hình (Fullscreen Modals):**
+  - Thêm nút Fullscreen toggle (`btn-edit-trip-fullscreen`) trên modal phân bổ và chỉnh sửa chuyến xe (`modal_edit_trip.html`).
+- **10. Ghi Chú Chuyến Đi & Tích Hợp Tin Nhắn:**
+  - Bổ sung trường `special_notes` do điều vận nhập trên lệnh chuyến, tự động tích hợp vào nội dung tin nhắn gửi cho tài xế.
+- **11. Tin Nhắn Riêng Biệt & Gửi Hàng Loạt Cho Điều Vận Vendor:**
+  - Chuẩn hóa cấu trúc tin nhắn gửi tài xế theo đúng format: `GIẢI PHÁP XANH`, `VC: ...`, `Số B/L - Cont - Seal: ...`, `SDT KHO: ...`, `Ghi chú: ...`.
+  - Bổ sung API `VendorAllocationBatchMessageAPIView` (`/api/vendor-allocations/<id>/batch-message/`) và nút `[ Gửi Zalo Nhà Xe ]` trên giao diện, tạo sẵn bản tin tổng hợp danh sách link kèm nút mở chat Zalo gửi thẳng cho Điều vận nhà xe.
+- **12. Tách Rõ Ràng Hai Cột DEM (Bãi Cảng) & DET (Vỏ Hãng Tàu):**
+  - Tách riêng biệt `dem_expiry` (Hạn DEM - Bãi Cảng) và `det_expiry` (Hạn DET - Vỏ Cont) trên header bảng, logic đọc Excel và hiển thị chi tiết.
+- **13. Kiểm Thử & Xác Nhận Hệ Thống:**
+  - Thêm test suite tự động `apps/dispatch/test_upgrade_features.py` kiểm thử 100% các tính năng nâng cấp (PASS).
+  - Bộ kiểm tra cục bộ `python scripts/qa.py verify` đạt kết quả tuyệt đối **PASS=7, FAIL=0, WARN=0**.
+
+## 2026-11-18 – Nhận Diện Thương Hiệu GIẢI PHÁP XANH (Logo + Tên) Đồng Bộ
+- Logo chính thức "Giải Pháp Xanh": `static/images/logo_lockup.png` (nền tối, logo viền trắng + `GIẢI PHÁP XANH` / `LOGISTICS` dàn đều), `logo_lockup_light.png` (nền sáng), `logo_outline.png`, `logo_clean.png`, `gss_logo.svg` (logo in), favicon + `apple-touch-icon` (`static/images/brand/`).
+- Áp dụng: sidebar, đăng nhập, trang tài khoản, 403/404/500, cổng nhà xe (+ trang chủ), trang tài xế QR, trang tra cứu của khách; đổi tên hiển thị sang GIẢI PHÁP XANH (tiêu đề, footer, tin nhắn lệnh điều xe/tra cứu). Nút thu gọn sidebar dời sang phải để không che logo.
+- Chưa đổi: dữ liệu hồ sơ công ty (`short_name` mặc định "Green Solutions Supply Co., Ltd.", tên pháp lý tiếng Anh trên báo giá) và `templates/help.html` (sinh từ `scripts/build_help_page.py`).
+
 ## 2026-11-17 – Quy Định Cổng Chạy Local 8086 và Khắc Cốt Ghi Tâm Không Dùng Cổng 8000
 - **1. Quy định chuẩn hóa môi trường Local:**
   - Cổng Web Local duy nhất: **`8086`** (`http://127.0.0.1:8086/`) tương ứng container Docker `gss_logistics_web`.

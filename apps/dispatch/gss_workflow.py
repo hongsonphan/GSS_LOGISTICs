@@ -35,6 +35,44 @@ MAX_FILES_PER_STAGE = 10
 VENDOR_EDITABLE_STEPS = {'READY', 'ARRIVED_AT_PICKUP'}
 
 
+def step_labels_for(shipment_type):
+    """Chuẩn hóa nhãn các mốc trạng thái trực quan theo loại hàng (Nhập / Xuất / Nội địa)."""
+    st = str(shipment_type or 'IMPORT').upper()
+    if st == 'EXPORT':
+        return {
+            'READY': 'Đã Phát Lệnh',
+            'ARRIVED_AT_PICKUP': 'Đến bãi lấy cont',
+            'LOADED_ON_VEHICLE': 'Lấy Cont Rỗng',
+            'ARRIVED_AT_DELIVERY': 'Đến Nhà máy',
+            'UNLOADED': 'Đã đóng hàng',
+            'RETURNING_EMPTY': 'Đang đi hạ cont',
+            'EMPTY_RETURNED': 'Đã hạ Cont',
+            'CANCELLED': 'Đã hủy',
+        }
+    elif st == 'DOMESTIC':
+        return {
+            'READY': 'Đã Phát Lệnh',
+            'ARRIVED_AT_PICKUP': 'Đến nơi nhận',
+            'LOADED_ON_VEHICLE': 'Đã nhận',
+            'ARRIVED_AT_DELIVERY': 'Đến nơi giao',
+            'UNLOADED': 'Đã giao',
+            'RETURNING_EMPTY': 'Đang hoàn tất',
+            'EMPTY_RETURNED': 'Đã hoàn tất',
+            'CANCELLED': 'Đã hủy',
+        }
+    else:  # IMPORT
+        return {
+            'READY': 'Đã Phát Lệnh',
+            'ARRIVED_AT_PICKUP': 'Đến cảng nhận',
+            'LOADED_ON_VEHICLE': 'Đã nhận cont cảng',
+            'ARRIVED_AT_DELIVERY': 'Đến kho',
+            'UNLOADED': 'Đã giao',
+            'RETURNING_EMPTY': 'Đang đi hạ rỗng',
+            'EMPTY_RETURNED': 'Hạ rỗng',
+            'CANCELLED': 'Đã hủy',
+        }
+
+
 def stage_file_count(trip, stage):
     from apps.documents.models import TripDocument
     return TripDocument.objects.filter(trip=trip, workflow_stage=stage, is_deleted=False).exclude(file_path='').count()
@@ -54,8 +92,9 @@ def available_action(trip):
         return None
     stage = EVIDENCE_STAGE.get(nxt)
     have = stage_file_count(trip, stage) if stage else None
+    labels = step_labels_for(getattr(trip, 'shipment_type', 'IMPORT'))
     return {
-        'to': nxt, 'label': STEP_LABELS[nxt], 'needs_files': bool(stage), 'stage': stage,
+        'to': nxt, 'label': labels.get(nxt, STEP_LABELS.get(nxt, nxt)), 'needs_files': bool(stage), 'stage': stage,
         'files': have, 'ready': (not stage) or have >= 1,
         'needs_container_number': nxt == 'LOADED_ON_VEHICLE' and not trip.container_number,
         'allows_swap': nxt == 'EMPTY_RETURNED',

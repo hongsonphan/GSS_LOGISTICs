@@ -189,7 +189,7 @@ function showChatRoomsList() {
     document.getElementById('chat-btn-back-rooms').classList.add('hidden');
 
     document.getElementById('chat-header-title').textContent = 'Trò Chuyện Nội Bộ';
-    document.getElementById('chat-header-subtitle').textContent = 'Văn phòng Green Solutions Supply';
+    document.getElementById('chat-header-subtitle').textContent = 'Văn phòng Giải Pháp Xanh';
 
     loadChatRooms();
 }

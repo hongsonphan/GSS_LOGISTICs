@@ -176,11 +176,20 @@ function renderAllocationsTable() {
     let rows = vaData.links.filter(l => !vendor || String(l.subcontractor_id) === vendor);
     const total = rows.length;
     if (!showAll) rows = rows.filter(l => l.filled < l.allocated_containers);
+    const searchVal = ((document.getElementById('alloc-search-input') || {}).value || '').toLowerCase().trim();
+    if (searchVal) {
+        rows = rows.filter(l => {
+            const bcode = (l.booking_code || '').toLowerCase();
+            const sub = (l.subcontractor || '').toLowerCase();
+            const cust = (l.customer || '').toLowerCase();
+            return bcode.includes(searchVal) || sub.includes(searchVal) || cust.includes(searchVal);
+        });
+    }
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
     set('alloc-shown-count', rows.length);
     set('alloc-total-count', total);
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400 font-medium">Mọi phiếu phân bổ đã gán đủ xe/tài. Không có việc cần gán tiếp.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Mọi phiếu phân bổ đã gán đủ xe/tài. Không có việc cần gán tiếp.</td></tr>';
         return;
     }
     tbody.innerHTML = rows.map((l, i) => {
@@ -192,11 +201,13 @@ function renderAllocationsTable() {
         else if (left <= 0) st = vaState('text-emerald-700', 'ph-check-circle', 'Đã gán đủ');
         else if (l.filled === 0) st = vaState('text-rose-700', 'ph-hourglass-medium', `Chưa gán xe nào (còn ${left})`);
         else st = vaState('text-amber-700', 'ph-arrows-split', `Gán chưa hết (còn ${left})`);
+        const route = `<div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5" title="${vaEsc(l.pickup_location || '')} -> ${vaEsc(l.delivery_location || '')} -> ${vaEsc(l.dropoff_location || '')}"><span class="text-teal-700 font-bold" title="1. Lấy cont">${vaEsc(l.pickup_location || 'Cảng/Depot')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-blue-900 font-bold" title="2. Kho đóng/trả">${vaEsc(l.delivery_location || 'Kho khách')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Hạ rỗng">${vaEsc(l.dropoff_location || 'Depot rỗng')}</span></div>`;
         return `
-        <tr class="hover:bg-teal-50/30 cursor-pointer" onclick="openDispatchOrderPage(${l.booking_id})" title="Bấm để mở lệnh và gán tiếp">
+        <tr class="hover:bg-teal-50/30 cursor-pointer" onclick="vaOpenUnallocatedContsModal(${l.booking_id}, ${l.id})" title="Bấm để xem danh sách Container thuộc phiếu chia này">
             <td class="p-2.5 text-center text-slate-400 font-mono text-xs">${i + 1}</td>
             <td class="p-2.5"><div class="font-mono font-bold text-teal-900 text-xs">${vaEsc(l.booking_code)}</div><div class="text-xs text-slate-600">${vaEsc(l.customer)}</div></td>
             <td class="p-2.5 font-bold text-slate-800">${vaEsc(l.subcontractor)}</td>
+            <td class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
             <td class="p-2.5 text-right font-bold tabular-nums">${l.allocated_containers}</td>
             <td class="p-2.5">
                 <div class="text-xs font-bold text-slate-800 tabular-nums">${l.filled} / ${l.allocated_containers} cont đã gán xe</div>
@@ -205,8 +216,11 @@ function renderAllocationsTable() {
             <td class="p-2.5">${st}</td>
             <td class="p-2.5 text-xs">${vaExpiry(l.expires_at, l.expired)}</td>
             <td class="p-2.5 text-center" onclick="event.stopPropagation()">
-                <div class="inline-flex items-center gap-1.5">
-                    <button type="button" class="${VA_BTN_TEAL}" onclick="openDispatchOrderPage(${l.booking_id})" title="Mở lệnh để gán tiếp xe/tài"><i class="ph-bold ph-plus-circle"></i> Gán tiếp</button>
+                <div class="inline-flex items-center gap-1 flex-wrap justify-center">
+                    <button type="button" class="${VA_BTN_TEAL}" onclick="vaOpenUnallocatedContsModal(${l.booking_id}, ${l.id})" title="Xem danh sách container thuộc phiếu chia này (cont đã gán, cont chưa gán)"><i class="ph-bold ph-list-magnifying-glass"></i> Xem Cont</button>
+                    <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareVendorBatchZalo(${l.id})" title="Gửi danh sách link lệnh cho Điều vận Nhà xe qua Zalo"><i class="ph-bold ph-paper-plane-tilt text-teal-700"></i> Gửi ĐV</button>
+                    <button type="button" class="${VA_BTN_GRAY}" onclick="vaExportAllocExcel(${l.id})" title="Xuất file Excel gán xe cho nhà xe này"><i class="ph-bold ph-file-arrow-down text-indigo-700"></i> Excel</button>
+                    <button type="button" class="${VA_BTN_GRAY}" onclick="vaTriggerAllocExcelUpload(${l.id})" title="Nhập file Excel gán xe từ nhà xe"><i class="ph-bold ph-file-arrow-up text-emerald-700"></i> Nhập</button>
                     <button type="button" class="${VA_BTN_GRAY}" onclick="vaCopyAlloc(${l.id})" title="Sao chép link nhà xe để nhắc gán xe"><i class="ph-bold ph-copy"></i> Link</button>
                 </div>
             </td>
@@ -241,23 +255,204 @@ function setJourneyMode(mode) {
     }
 }
 
-// Ma trận Timeline hành trình xe container (dùng chung GSSApp.fleetTimeline với Dashboard)
-async function loadJourneyBoard() {
+// =============================================================
+// TAB 3: THEO DÕI HÀNH TRÌNH (chế độ theo bước - KANBAN 7 BƯỚC CHUẨN GSS)
+// =============================================================
+var jboardSearchQuery = '';
+var jboardFilterVendorId = '';
+
+async function loadJourneyBoard(force) {
     const body = document.getElementById('jboard-body');
     if (!body) return;
-    body.innerHTML = '';
-    const host = document.createElement('div');
-    host.className = 'w-full';
-    body.appendChild(host);
-    if (window.GSSApp && typeof window.GSSApp.fleetTimeline === 'function') {
-        window.GSSApp.fleetTimeline(host);
-    } else {
-        body.innerHTML = '<div class="p-8 text-center text-slate-400 font-medium text-sm">Chưa tải được bản Theo dõi hành trình xe container (GSSApp.fleetTimeline).</div>';
+    body.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">Đang tải ma trận hành trình xe...</div>';
+
+    try {
+        const res = await fetchWithAuth('/api/dispatch/vendor-containers/?status=ACTIVE');
+        if (!res.ok) throw new Error('Không thể nạp dữ liệu hành trình');
+        const resData = await res.json();
+        jboardRows = resData.data || [];
+        renderJourneyKanbanBoard();
+    } catch (e) {
+        body.innerHTML = `<div class="p-8 text-center text-rose-600 font-bold text-sm">Lỗi tải hành trình: ${vaEsc(e.message)}</div>`;
     }
 }
 
+function renderJourneyKanbanBoard() {
+    const body = document.getElementById('jboard-body');
+    if (!body) return;
+
+    let items = jboardRows || [];
+    if (jboardFilterVendorId) {
+        items = items.filter(x => String(x.vendor_id) === String(jboardFilterVendorId));
+    }
+    if (jboardSearchQuery) {
+        const q = jboardSearchQuery.toLowerCase().trim();
+        items = items.filter(x => {
+            const cont = (x.container_number || '').toLowerCase();
+            const plate = (x.tractor_plate || '').toLowerCase();
+            const drv = (x.driver_name || '').toLowerCase();
+            const vname = (x.vendor_name || x.vendor_short || '').toLowerCase();
+            const bcode = (x.booking_code || x.dispatch_order_code || '').toLowerCase();
+            return cont.includes(q) || plate.includes(q) || drv.includes(q) || vname.includes(q) || bcode.includes(q);
+        });
+    }
+
+    const COLUMNS = [
+        { key: 'READY', label: '1. Sẵn sàng / Nhận lệnh', badgeBg: 'bg-blue-100 text-blue-900 border-blue-200', icon: 'ph-newspaper' },
+        { key: 'ARRIVED_AT_PICKUP', label: '2. Đã đến nơi nhận', badgeBg: 'bg-teal-100 text-teal-900 border-teal-200', icon: 'ph-map-pin' },
+        { key: 'LOADED_ON_VEHICLE', label: '3. Nhận cont / hàng', badgeBg: 'bg-indigo-100 text-indigo-900 border-indigo-200', icon: 'ph-truck' },
+        { key: 'ARRIVED_AT_DELIVERY', label: '4. Đã đến nơi giao', badgeBg: 'bg-sky-100 text-sky-900 border-sky-200', icon: 'ph-warehouse' },
+        { key: 'UNLOADED', label: '5. Đã giao xong / Hạ xe', badgeBg: 'bg-amber-100 text-amber-900 border-amber-200', icon: 'ph-check-circle' },
+        { key: 'RETURNING_EMPTY', label: '6. Đang đi hạ rỗng', badgeBg: 'bg-purple-100 text-purple-900 border-purple-200', icon: 'ph-arrows-clockwise' },
+        { key: 'EMPTY_RETURNED', label: '7. Đã hạ rỗng (Xong)', badgeBg: 'bg-emerald-100 text-emerald-900 border-emerald-200', icon: 'ph-seal-check' }
+    ];
+
+    const colsMap = {};
+    COLUMNS.forEach(c => colsMap[c.key] = []);
+
+    items.forEach(it => {
+        let st = it.step_status || 'READY';
+        if (st === 'ASSIGNED' || st === 'DRAFT') st = 'READY';
+        if (st === 'CONTAINER_PICKED' || st === 'IN_TRANSIT' || st === 'TRANSIT') st = 'LOADED_ON_VEHICLE';
+        if (st === 'AT_WAREHOUSE') st = 'ARRIVED_AT_DELIVERY';
+        if (st === 'DELIVERED') st = 'UNLOADED';
+        if (st === 'EMPTY_RETURNING') st = 'RETURNING_EMPTY';
+        if (st === 'COMPLETED') st = 'EMPTY_RETURNED';
+
+        if (colsMap[st]) colsMap[st].push(it);
+        else colsMap['READY'].push(it);
+    });
+
+    const vendorMap = new Map();
+    (jboardRows || []).forEach(x => {
+        if (x.vendor_id && !vendorMap.has(x.vendor_id)) {
+            vendorMap.set(x.vendor_id, x.vendor_short || x.vendor_name);
+        }
+    });
+    let vendorOpts = '<option value="">-- Tất cả nhà xe --</option>';
+    vendorMap.forEach((vname, vid) => {
+        vendorOpts += `<option value="${vid}" ${String(vid) === String(jboardFilterVendorId) ? 'selected' : ''}>${vaEsc(vname)}</option>`;
+    });
+
+    body.innerHTML = `
+        <div class="space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 flex-wrap gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-teal-600 animate-pulse"></span>
+                    <h3 class="font-bold text-slate-800 text-sm font-heading flex items-center gap-2">
+                        <i class="ph-bold ph-chart-line text-teal-700"></i>
+                        <span>Theo bước hành trình: xe đã nhận lệnh và đang chạy</span>
+                    </h3>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 font-mono">
+                        ${items.length} container / chuyến đang theo dõi
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap text-xs">
+                    <div class="relative min-w-[240px]">
+                        <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="jboard-search-input" value="${vaEsc(jboardSearchQuery)}"
+                               placeholder="Tìm cont, biển số, tài xế, nhà xe..."
+                               oninput="jboardSearchQuery = this.value; renderJourneyKanbanBoard();"
+                               class="w-full h-8 pl-8 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white focus:border-teal-600 outline-none">
+                    </div>
+                    <select id="jboard-filter-vendor" onchange="jboardFilterVendorId = this.value; renderJourneyKanbanBoard();"
+                            class="h-8 px-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:border-teal-600 outline-none">
+                        ${vendorOpts}
+                    </select>
+                    <button type="button" onclick="loadJourneyBoard(true)" class="h-8 px-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-bold shadow-2xs flex items-center gap-1.5 cursor-pointer">
+                        <i class="ph-bold ph-arrow-counter-clockwise text-teal-600"></i>
+                        <span>Làm mới</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 overflow-x-auto pb-4">
+                ${COLUMNS.map(col => {
+                    const colItems = colsMap[col.key] || [];
+                    return `
+                        <div class="bg-slate-100/70 rounded-2xl border border-slate-200/90 p-3 flex flex-col min-h-[480px]">
+                            <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-200">
+                                <span class="text-xs font-black text-slate-800 font-heading uppercase tracking-wider flex items-center gap-1">
+                                    <i class="ph-bold ${col.icon} text-teal-700"></i>
+                                    <span>${col.label}</span>
+                                </span>
+                                <span class="px-2 py-0.5 rounded-full text-xs font-black border font-mono ${col.badgeBg}">
+                                    ${colItems.length}
+                                </span>
+                            </div>
+
+                            <div class="space-y-2.5 flex-1 overflow-y-auto max-h-[680px] pr-0.5">
+                                ${colItems.length === 0 ? `
+                                    <div class="py-12 text-center text-slate-400 text-xs italic font-medium">Không có</div>
+                                ` : colItems.map(it => {
+                                    const tripCode = it.trip_code || '';
+                                    return `
+                                        <div class="bg-white rounded-xl border border-slate-200/90 p-3 shadow-2xs hover:shadow-sm hover:border-teal-400 transition-all cursor-pointer group"
+                                             onclick="${tripCode ? `viewTripDetail('${tripCode}')` : `openDispatchOrderPage(${it.booking_id})`}"
+                                             title="Bấm để xem chi tiết ${tripCode ? 'Phiếu VC ' + tripCode : 'Lệnh điều động'}">
+                                            
+                                            <div class="flex items-center justify-between gap-1 pb-1 border-b border-slate-100">
+                                                <strong class="font-mono text-xs font-black text-slate-900 group-hover:text-teal-700 transition-colors select-all">
+                                                    ${vaEsc(it.container_number)}
+                                                </strong>
+                                                <span class="text-[10.5px] font-bold font-mono px-1.5 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200">
+                                                    ${vaEsc(it.container_type || '40HC')}
+                                                </span>
+                                            </div>
+
+                                            <div class="mt-1.5 flex items-center justify-between text-xs">
+                                                <span class="font-bold text-teal-900 truncate max-w-[140px]" title="${vaEsc(it.vendor_name)}">
+                                                    <i class="ph-bold ph-buildings text-[11px] text-teal-600"></i> ${vaEsc(it.vendor_short || it.vendor_name)}
+                                                </span>
+                                                <span class="font-mono text-[10.5px] font-semibold text-slate-500">${vaEsc(it.dispatch_order_code || '')}</span>
+                                            </div>
+
+                                            <div class="mt-1 text-xs text-slate-700 font-medium">
+                                                <div class="flex items-center gap-1 font-mono font-bold text-slate-800">
+                                                    <i class="ph-bold ph-truck text-slate-400"></i>
+                                                    <span>${vaEsc(it.tractor_plate || '--')}</span>
+                                                </div>
+                                                <div class="flex items-center justify-between text-[11px] text-slate-500 mt-0.5">
+                                                    <span class="truncate max-w-[120px] font-semibold text-slate-700">${vaEsc(it.driver_name || '--')}</span>
+                                                    ${it.driver_phone && it.driver_phone !== '--' ? `
+                                                        <a href="tel:${vaEsc(it.driver_phone)}" onclick="event.stopPropagation()" class="text-teal-700 font-mono hover:underline flex items-center gap-0.5">
+                                                            <i class="ph-bold ph-phone text-[10px]"></i> ${vaEsc(it.driver_phone)}
+                                                        </a>
+                                                    ` : ''}
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-1.5 pt-1.5 border-t border-slate-100 text-[10.5px] text-slate-500 font-medium truncate flex items-center gap-1"
+                                                 title="${vaEsc(it.pickup_location)} -> ${vaEsc(it.delivery_location)} -> ${vaEsc(it.dropoff_location || 'Depot')}">
+                                                <span class="text-teal-700 truncate max-w-[80px]">${vaEsc(it.pickup_location)}</span>
+                                                <span class="text-slate-400 font-bold">&rarr;</span>
+                                                <span class="text-blue-900 truncate max-w-[80px]">${vaEsc(it.delivery_location)}</span>
+                                            </div>
+
+                                            <div class="mt-2 flex items-center justify-between pt-1 text-[11px]">
+                                                ${tripCode ? `
+                                                    <span class="font-mono font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200 text-[10px]">
+                                                        ${tripCode}
+                                                    </span>
+                                                ` : `<span class="text-amber-700 font-semibold text-[10px]">Chờ VC</span>`}
+                                                <span class="text-slate-400 group-hover:text-teal-700 font-bold flex items-center gap-0.5 transition-colors">
+                                                    <span>Xem</span> <i class="ph-bold ph-arrow-right"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
 function renderJourneyBoard() {
-    loadJourneyBoard();
+    renderJourneyKanbanBoard();
 }
 
 // =============================================================
@@ -1434,16 +1629,16 @@ window.vaMaskToken = vaMaskToken;
 // currentActiveVendorId declared at top
 
 
-// 7 MỐC HÀNH TRÌNH CHUẨN GSS TMS
+// 7 MỐC HÀNH TRÌNH CHUẨN GSS TMS (BỎ SỐ THỨ TỰ, GỌN ĐẸP HÀI HÒA)
 function vaRender7StepJourney(stepStatus, timestamps) {
     const STEPS = [
-        { key: 'READY', num: 1, label: 'Sẵn sàng', timeKey: 'ready' },
-        { key: 'ARRIVED_AT_PICKUP', num: 2, label: 'Đến nhận', timeKey: 'arrived_pickup' },
-        { key: 'LOADED_ON_VEHICLE', num: 3, label: 'Nhận cont', timeKey: 'loaded' },
-        { key: 'ARRIVED_AT_DELIVERY', num: 4, label: 'Đến giao', timeKey: 'arrived_delivery' },
-        { key: 'UNLOADED', num: 5, label: 'Giao xong', timeKey: 'unloaded' },
-        { key: 'RETURNING_EMPTY', num: 6, label: 'Đi hạ rỗng', timeKey: 'empty_returning' },
-        { key: 'EMPTY_RETURNED', num: 7, label: 'Hạ rỗng', timeKey: 'empty_returned' },
+        { key: 'READY', label: 'Sẵn sàng', timeKey: 'ready' },
+        { key: 'ARRIVED_AT_PICKUP', label: 'Đến nhận', timeKey: 'arrived_pickup' },
+        { key: 'LOADED_ON_VEHICLE', label: 'Nhận cont', timeKey: 'loaded' },
+        { key: 'ARRIVED_AT_DELIVERY', label: 'Đến giao', timeKey: 'arrived_delivery' },
+        { key: 'UNLOADED', label: 'Giao xong', timeKey: 'unloaded' },
+        { key: 'RETURNING_EMPTY', label: 'Đi hạ rỗng', timeKey: 'empty_returning' },
+        { key: 'EMPTY_RETURNED', label: 'Hạ rỗng', timeKey: 'empty_returned' },
     ];
 
     if (stepStatus === 'CANCELLED') {
@@ -1451,13 +1646,13 @@ function vaRender7StepJourney(stepStatus, timestamps) {
     }
 
     const keyIndexMap = {
-        'READY': 0,
-        'ARRIVED_AT_PICKUP': 1,
-        'LOADED_ON_VEHICLE': 2,
-        'ARRIVED_AT_DELIVERY': 3,
-        'UNLOADED': 4,
-        'RETURNING_EMPTY': 5,
-        'EMPTY_RETURNED': 6,
+        'READY': 0, 'DRAFT': 0, 'ASSIGNED': 0,
+        'ARRIVED_AT_PICKUP': 1, 'ACCEPTED': 1,
+        'LOADED_ON_VEHICLE': 2, 'CONTAINER_PICKED': 2, 'IN_TRANSIT': 2, 'TRANSIT': 2,
+        'ARRIVED_AT_DELIVERY': 3, 'AT_WAREHOUSE': 3,
+        'UNLOADED': 4, 'DELIVERED': 4,
+        'RETURNING_EMPTY': 5, 'EMPTY_RETURNING': 5,
+        'EMPTY_RETURNED': 6, 'COMPLETED': 6
     };
 
     const currentIdx = keyIndexMap[stepStatus] !== undefined ? keyIndexMap[stepStatus] : 0;
@@ -1469,31 +1664,31 @@ function vaRender7StepJourney(stepStatus, timestamps) {
                 const isPassed = isFinished || idx < currentIdx;
                 const isCurrent = !isFinished && idx === currentIdx;
                 const timeVal = timestamps && timestamps[s.timeKey] ? vaFmt(timestamps[s.timeKey]) : '';
-                const tooltip = `${s.num}. ${s.label}${timeVal ? ' (' + timeVal + ')' : ''}`;
+                const tooltip = `${s.label}${timeVal ? ' (' + timeVal + ')' : ''}`;
 
                 let btnCls;
-                let numBadge;
+                let dotOrIcon;
                 if (isPassed) {
-                    btnCls = 'bg-emerald-600 text-white border-emerald-600 shadow-2xs';
-                    numBadge = '<i class="ph-bold ph-check text-[10px]"></i>';
+                    btnCls = 'bg-emerald-600 text-white border-emerald-600 shadow-2xs font-semibold';
+                    dotOrIcon = '<i class="ph-bold ph-check text-[10px]"></i>';
                 } else if (isCurrent) {
-                    btnCls = 'bg-teal-700 text-white border-teal-600 ring-2 ring-teal-400 font-black shadow-xs';
-                    numBadge = `<span class="text-[10px]">${s.num}</span>`;
+                    btnCls = 'bg-teal-700 text-white border-teal-700 ring-2 ring-teal-400 font-bold shadow-xs';
+                    dotOrIcon = '<span class="w-1.5 h-1.5 rounded-full bg-white shrink-0 animate-pulse"></span>';
                 } else {
-                    btnCls = 'bg-slate-100 text-slate-400 border-slate-200';
-                    numBadge = `<span class="text-[10px]">${s.num}</span>`;
+                    btnCls = 'bg-slate-50 text-slate-500 border-slate-200 font-medium hover:bg-slate-100/70';
+                    dotOrIcon = '';
                 }
 
                 const connector = idx < STEPS.length - 1 ? `
-                    <div class="w-2 sm:w-2.5 h-0.5 ${isPassed ? 'bg-emerald-500' : 'bg-slate-200'} shrink-0"></div>
+                    <div class="w-2 sm:w-2.5 h-[2px] ${isPassed ? 'bg-emerald-500' : 'bg-slate-200'} shrink-0"></div>
                 ` : '';
 
                 return `
                     <div class="flex items-center">
-                        <button type="button" class="h-6 px-1.5 sm:px-2 rounded-lg border text-[11px] font-bold inline-flex items-center gap-1 transition-all cursor-default ${btnCls}"
+                        <button type="button" class="h-6 px-2 rounded-lg border text-[11px] inline-flex items-center gap-1 transition-all cursor-default ${btnCls}"
                             title="${tooltip}">
-                            ${numBadge}
-                            <span class="hidden md:inline whitespace-nowrap text-[10.5px]">${s.label}</span>
+                            ${dotOrIcon}
+                            <span class="whitespace-nowrap">${s.label}</span>
                         </button>
                         ${connector}
                     </div>
@@ -2385,3 +2580,71 @@ window.vaViewVehicleTrips = vaViewVehicleTrips;
 window.vaViewDriverDetail = vaViewDriverDetail;
 window.vaContactDriverDirect = vaContactDriverDirect;
 window.vaViewUnallocatedContainersModal = vaViewUnallocatedContainersModal;
+
+// -------------------------------------------------------------
+// XUẤT / NHẬP EXCEL & GỬI TIN NHẮN TỔNG HỢP CHO ĐIỀU VẬN VENDOR
+// -------------------------------------------------------------
+async function vaShareVendorBatchZalo(allocId) {
+    try {
+        const res = await fetchWithAuth(`/api/vendor-allocations/${allocId}/batch-message/`);
+        if (!res.ok) throw new Error('Không thể lấy nội dung tin nhắn gửi nhà xe');
+        const json = await res.json();
+        const data = json.data || {};
+        const msg = data.message || '';
+        
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(msg);
+        }
+        
+        if (data.zalo_url) {
+            showToast('success', `Đã sao chép danh sách link lệnh! Đang mở Zalo Điều vận ${data.vendor_name} (${data.vendor_phone}). Hãy dán (Ctrl+V) để gửi ngay.`, 'Mở Zalo Điều Vận');
+            window.open(data.zalo_url, '_blank');
+        } else {
+            showToast('success', `Đã sao chép toàn bộ danh sách link lệnh cho Nhà xe ${data.vendor_name} vào bộ nhớ tạm!`, 'Đã Sao Chép Danh Sách Link');
+        }
+    } catch (e) {
+        showToast('danger', e.message || 'Lỗi gửi tin nhắn cho Điều vận Vendor');
+    }
+}
+window.vaShareVendorBatchZalo = vaShareVendorBatchZalo;
+
+function vaExportAllocExcel(allocId) {
+    window.location.href = `/api/vendor-allocations/${allocId}/excel/`;
+    showToast('info', 'Đang tải file Excel danh sách gán xe...', 'Xuất Excel');
+}
+window.vaExportAllocExcel = vaExportAllocExcel;
+
+function vaTriggerAllocExcelUpload(allocId) {
+    let inp = document.getElementById('va-temp-excel-file-inp');
+    if (!inp) {
+        inp = document.createElement('input');
+        inp.id = 'va-temp-excel-file-inp';
+        inp.type = 'file';
+        inp.accept = '.xlsx,.xls';
+        inp.className = 'hidden';
+        document.body.appendChild(inp);
+    }
+    inp.onchange = async function() {
+        const file = inp.files && inp.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        showToast('info', 'Đang kiểm tra và nhập file Excel...', 'Nhập Excel');
+        try {
+            const res = await fetchWithAuth(`/api/vendor-allocations/${allocId}/excel/`, {
+                method: 'POST',
+                body: fd
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.message || json.error || 'Lỗi khi nhập file Excel');
+            showToast('success', json.message || `Đã cập nhật thành công ${json.saved || 0} dòng từ Excel!`, 'Nhập Excel Thành Công');
+            loadVendorAdminTab(true);
+        } catch (e) {
+            showToast('danger', e.message, 'Lỗi Nhập Excel');
+        } finally {
+            inp.value = '';
+        }
+    };
+    inp.click();
+}
+window.vaTriggerAllocExcelUpload = vaTriggerAllocExcelUpload;

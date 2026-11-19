@@ -93,7 +93,12 @@ class Vehicle(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     status = models.CharField(max_length=20, choices=VehicleStatus.choices, default=VehicleStatus.IDLE)
     
     current_driver = models.ForeignKey(
-        'personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_vehicles'
+        'personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_vehicles',
+        help_text='Tài xế mặc định của đầu kéo'
+    )
+    default_trailer = models.ForeignKey(
+        'fleet.Trailer', on_delete=models.SET_NULL, null=True, blank=True, related_name='default_for_vehicles',
+        help_text='Rơ-moóc mặc định đi cùng đầu kéo'
     )
     last_maintenance_date = models.DateField(null=True, blank=True)
     next_maintenance_date = models.DateField(null=True, blank=True)

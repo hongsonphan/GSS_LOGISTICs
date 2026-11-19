@@ -6,9 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
-<link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
-<link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=3.0">
-<title>Cổng Điều Phối &amp; Theo Dõi Nhà Xe · GSS TMS</title>
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/brand/favicon-32.png' %}?v=4.0">
+  <link rel="apple-touch-icon" href="{% static 'images/brand/apple-touch-icon.png' %}?v=4.0">
+<link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=4.0">
+<title>Cổng Điều Phối &amp; Theo Dõi Nhà Xe · Giải Pháp Xanh</title>
 <!-- Phosphor Icons -->
 <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/regular/style.css' %}"/>
 <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/fill/style.css' %}"/>
@@ -213,7 +214,7 @@
 <div id="portal-boot-screen" class="min-h-screen flex items-center justify-center p-6">
   <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-8 py-10 text-center max-w-md w-full space-y-3">
     <i class="ph-bold ph-spinner ph-spin text-3xl text-teal-700 block"></i>
-    <div class="text-sm font-bold text-slate-700">Đang khởi tạo Cổng Nhà Xe GSS...</div>
+    <div class="text-sm font-bold text-slate-700">Đang khởi tạo Cổng Nhà Xe Giải Pháp Xanh...</div>
     <div class="text-xs text-slate-400">Đang kiểm tra phiên làm việc và bảo mật</div>
   </div>
 </div>
@@ -327,11 +328,11 @@
         <i class="ph-bold ph-list text-lg"></i>
       </button>
       <a href="/vendor/" class="hidden sm:flex items-center gap-2.5 shrink-0 group" title="Về trang chủ Cổng Nhà Xe">
-        <img src="{% static 'images/logo_clean.png' %}" alt="GSS" class="h-9 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-sm">
+        <img src="{% static 'images/logo_lockup_light.png' %}" alt="Giải Pháp Xanh Logistics" class="h-9 w-auto object-contain shrink-0 group-hover:scale-[1.02] transition-transform">
       </a>
       <div class="min-w-0 flex flex-col justify-center">
         <div class="flex items-center gap-2">
-          <span class="text-[11px] font-extrabold uppercase tracking-wider text-teal-600 font-heading truncate leading-tight" id="h-company">GSS SMART LOGISTICS</span>
+          <span class="hidden" id="h-company">GIẢI PHÁP XANH</span>
           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 shrink-0 font-heading">CỔNG NHÀ XE</span>
         </div>
         <h1 class="text-sm sm:text-base md:text-lg font-black text-slate-900 tracking-tight font-heading truncate mt-0.5 leading-tight" id="h-subcontractor">Đang kết nối...</h1>
@@ -3050,7 +3051,7 @@
     const det = row.det_expiry || '--';
 
     return [
-      `🚚 GSS TMS - LỆNH ĐIỀU XE ${tripCode}`,
+      `🚚 GIẢI PHÁP XANH - LỆNH ĐIỀU XE ${tripCode}`,
       `📦 Cont: ${contNo} (${contType}) | Seal: ${sealNo}`,
       `🚛 Xe: ${tractor} | Rơ-moóc: ${trailer}`,
       `👤 Tài xế: ${driver} (${phone})`,

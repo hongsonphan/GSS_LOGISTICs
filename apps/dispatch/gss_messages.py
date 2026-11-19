@@ -23,21 +23,77 @@ def _fmt_date(d):
 
 
 def compose_message(trip, base_url):
-    """Bản tin chuẩn gửi tài xế: chuyến, lộ trình, hạn DEM/DET, lưu ý điểm đến & cấm đường, link kèm QR."""
-    notes = effective_notes(trip.booking_order) if trip.booking_order_id else {'destination_notes': '', 'road_restrictions': ''}
+    """Bản tin chuẩn GIẢI PHÁP XANH gửi tài xế: VC, Số B/L - Cont - Seal, SDT KHO, Ghi chú, Lộ trình, Link."""
+    b = trip.booking_order
+    bl_no = (b.hbl_number or b.mbl_number or b.booking_number or '') if b else (trip.bill_of_lading_number or '')
+    cont_no = trip.container_number or '(chưa có cont)'
+    seal_no = '' if trip.seal_number in ('', '-', None) else trip.seal_number
+    
+    # SĐT Kho / Nơi giao
+    sdt_kho = ''
+    if trip.warehouse_loc and hasattr(trip.warehouse_loc, 'contact_phone') and trip.warehouse_loc.contact_phone:
+        sdt_kho = trip.warehouse_loc.contact_phone
+    elif hasattr(trip, 'destination_contact_phone') and trip.destination_contact_phone:
+        sdt_kho = trip.destination_contact_phone
+    elif b and hasattr(b, 'customer') and b.customer and b.customer.phone:
+        sdt_kho = b.customer.phone
+
     lines = [
-        f'LỆNH ĐIỀU XE {trip.trip_code}',
-        f'Cont: {trip.container_number or "(chưa có số)"} · Loại: {trip.container_type or "—"} · Seal: {"" if trip.seal_number in ("", "-") else trip.seal_number or "—"}',
-        f'Nhận: {trip.pickup_location or "—"}',
-        f'Giao: {trip.warehouse_location or "—"}',
-        f'Hạ rỗng: {trip.dropoff_location or "—"}',
-        f'Hạn DEM: {_fmt_date(trip.dem_expiry_date)} · Hạn DET: {_fmt_date(trip.det_expiry_date)}',
+        'GIẢI PHÁP XANH',
+        f'VC: {trip.trip_code}',
+        f'Số B/L - Cont - Seal: {bl_no or "—"} - {cont_no} - {seal_no or "—"}',
+        f'SDT KHO: {sdt_kho or "—"}',
     ]
-    if notes['destination_notes']:
-        lines.append(f'LƯU Ý ĐIỂM ĐẾN: {notes["destination_notes"]}')
-    if notes['road_restrictions']:
-        lines.append(f'CẤM ĐƯỜNG / GIỜ CẤM TẢI: {notes["road_restrictions"]}')
-    lines.append(f'Mở lệnh, cập nhật bước và gửi chứng từ tại: {trip_link(trip, base_url)}')
+
+    # Ghi chú Điều vận
+    notes = (trip.special_notes or trip.cargo_notes or '').strip()
+    if notes:
+        lines.append(f'Ghi chú: {notes}')
+
+    eff_notes = effective_notes(b) if b else {'destination_notes': '', 'road_restrictions': ''}
+    if eff_notes.get('destination_notes'):
+        lines.append(f'Lưu ý điểm đến: {eff_notes["destination_notes"]}')
+    if eff_notes.get('road_restrictions'):
+        lines.append(f'Cấm đường: {eff_notes["road_restrictions"]}')
+
+    lines.append(f'Lộ trình: {trip.pickup_location or "—"} -> {trip.warehouse_location or "—"} -> {trip.dropoff_location or "—"}')
+    if trip.dem_expiry_date or trip.det_expiry_date:
+        lines.append(f'Hạn DEM: {_fmt_date(trip.dem_expiry_date)} · Hạn DET: {_fmt_date(trip.det_expiry_date)}')
+
+    lines.append(f'Mở lệnh & nộp chứng từ tại: {trip_link(trip, base_url)}')
+    return '\n'.join(lines)
+
+
+def compose_vendor_batch_message(alloc, base_url):
+    """Soạn tin nhắn tổng hợp danh sách link lệnh điều xe gửi trực tiếp cho Điều Vận của Vendor (nhà xe)."""
+    vendor_name = (alloc.subcontractor.short_name or alloc.subcontractor.name) if alloc.subcontractor else 'Quý Đối Tác'
+    b = alloc.booking
+    bl_no = (b.hbl_number or b.mbl_number or b.booking_number or '') if b else ''
+    
+    trips = list(alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').order_by('vendor_line_no', 'id'))
+    
+    lines = [
+        f'GIẢI PHÁP XANH LOGISTICS — DANH SÁCH LỆNH ĐIỀU XE',
+        f'Kính gửi: Điều vận Nhà xe {vendor_name}',
+        f'Lệnh điều động: {alloc.booking.booking_code if b else "—"} | Số B/L: {bl_no or "—"}',
+        f'Tổng số lượng: {len(trips)}/{alloc.allocated_containers} Container đã gán xe',
+        '----------------------------------------',
+    ]
+    
+    for idx, t in enumerate(trips, start=1):
+        c_no = t.container_number or '(Chưa có số cont)'
+        s_no = '' if t.seal_number in ('', '-', None) else t.seal_number
+        d_name = t.subcontractor_driver_name or (t.driver.full_name if t.driver else 'Chưa gán tài')
+        d_phone = t.subcontractor_driver_phone or ''
+        v_plate = getattr(t, 'subcontractor_truck', '') or (t.vehicle.license_plate if getattr(t, 'vehicle_id', None) else 'Chưa gán xe')
+        link = trip_link(t, base_url)
+        lines.append(f'{idx}. VC: {t.trip_code} | Cont: {c_no} | Seal: {s_no or "—"}')
+        lines.append(f'   Xe: {v_plate} | Tài xế: {d_name} ({d_phone or "—"})')
+        lines.append(f'   Link lệnh tài xế: {link}')
+        lines.append('')
+        
+    lines.append('Quý Điều vận vui lòng chuyển tiếp link đến các bác tài hoặc quản lý trực tiếp.')
+    lines.append('Trân trọng cảm ơn sự phối hợp của Quý Nhà Xe!')
     return '\n'.join(lines)
 
 

@@ -86,6 +86,12 @@ Không có `send` thì chỉ ghi nhận đã gửi tay (`MANUAL`) như trước.
 
 - Sao lưu hằng ngày: `scripts/backup_vps.sh` (cron `0 2 * * *`; CSDL + media, giữ 14 ngày). Diễn tập khôi phục: `scripts/restore_drill.sh`
   (đối chiếu cả bảng GSS: phiếu chia cont, lượt ra vào bãi, nhật ký quét QR).
+- **Bản sao ngoài máy chủ (mã hoá):** cài `age`, `rclone`; `rclone config` tạo remote; tạo khoá `age-keygen -o gss-backup.key` (khoá riêng cất ở nơi KHÁC VPS, mất khoá = không giải mã được); ghi `/home/ubuntu/backups/.backup.env`:
+  `OFFSITE_REMOTE=remote:gss-backups` và `BACKUP_AGE_RECIPIENT=age1…` (khoá công khai). Chưa đặt thì `backup_vps.sh` cảnh báo mỗi lần chạy.
+  Khôi phục từ bản ngoài: tải `db_*.sql.gz.age` + `.sha256` về, `BACKUP_AGE_IDENTITY=/đường/dẫn/gss-backup.key bash scripts/restore_vps.sh db_….sql.gz.age`.
+- **Bản chỉ CSDL mỗi 4 giờ:** `deploy_vps.sh` cài thêm cron `BACKUP_MODE=db` (RPO ≤ 4 giờ). Mục tiêu đề xuất: RPO ≤ 15 phút cần WAL/PITR (chưa làm), RTO ≤ 4 giờ (đo lại trên VPS bằng `restore_drill.sh`).
+- **Hạ quyền CSDL (một lần, cần anh đồng ý, xem `docs/16`):** `APP_DB_PASSWORD='…' bash scripts/db_harden.sh`, rồi đặt `APP_DB_USER=gss_app` + `APP_DB_PASSWORD` trong `.env` và `docker compose up -d web`. Khôi phục sau đó đặt `APP_DB_USER=gss_app` khi chạy `restore_vps.sh`.
+- **Quay CSDL sau migration lỗi:** `deploy_vps.sh` ghi bản sao lưu trước migrate vào `../GSS_LOGISTICS_rollback_db.txt`; chỉ quay khi dữ liệu bị hỏng (mất dữ liệu nhập sau mốc đó).
 - Khôi phục thật: `bash scripts/restore_vps.sh [db_….sql.gz] [media_….tar.gz]` — tự sao lưu `pre_restore_*` trước, khôi phục vào CSDL tạm
   rồi mới thay CSDL đang chạy (lỗi giữa chừng thì CSDL hiện tại giữ nguyên), phải gõ tên CSDL để xác nhận.
 - Triển khai lần đầu trên VPS mới: cài Docker; clone repo vào `/home/ubuntu/GSS_LOGISTICS`; tạo `.env` (`DB_PASSWORD`, `SECRET_KEY`, `ALLOWED_HOSTS`,

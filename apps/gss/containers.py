@@ -108,6 +108,7 @@ def parse_xlsx(fileobj):
     col_deliv = -1
     col_drop = -1
     col_dem = -1
+    col_det = -1
     col_truck = -1
     col_driver = -1
     col_notes = -1
@@ -129,6 +130,10 @@ def parse_xlsx(fileobj):
                 col_deliv = c_idx
             elif any(k in cell for k in ['trả', 'rỗng', 'depot']):
                 col_drop = c_idx
+            elif 'dem' in cell and 'det' not in cell:
+                col_dem = c_idx
+            elif 'det' in cell and 'dem' not in cell:
+                col_det = c_idx
             elif any(k in cell for k in ['dem', 'det', 'hạn lệnh', 'han lenh']):
                 col_dem = c_idx
             elif any(k in cell for k in ['đầu kéo', 'dau keo', 'biển số', 'bien so', 'số xe', 'so xe', 'truck', 'plate']):
@@ -173,6 +178,7 @@ def parse_xlsx(fileobj):
         raw_deliv = str(vals[col_deliv] if col_deliv != -1 and col_deliv < len(vals) and vals[col_deliv] is not None else '').strip()
         raw_drop = str(vals[col_drop] if col_drop != -1 and col_drop < len(vals) and vals[col_drop] is not None else '').strip()
         raw_dem = str(vals[col_dem] if col_dem != -1 and col_dem < len(vals) and vals[col_dem] is not None else '').strip()
+        raw_det = str(vals[col_det] if col_det != -1 and col_det < len(vals) and vals[col_det] is not None else '').strip()
 
         rows.append({
             'source_line': i + 1,
@@ -184,7 +190,9 @@ def parse_xlsx(fileobj):
             'driver_name': raw_driver,
             'delivery_address': raw_deliv,
             'dropoff_loc': raw_drop,
-            'dem_det': raw_dem
+            'dem_det': raw_dem,
+            'dem_expiry': raw_dem,
+            'det_expiry': raw_det,
         })
 
     return rows
@@ -206,6 +214,8 @@ def validate_rows(booking, rows):
                'delivery_address': str(r.get('delivery_address') or r.get('delivery_loc') or '').strip(),
                'dropoff_loc': str(r.get('dropoff_loc') or '').strip(),
                'dem_det': str(r.get('dem_det') or '').strip(),
+               'dem_expiry': str(r.get('dem_expiry') or r.get('dem_det') or '').strip(),
+               'det_expiry': str(r.get('det_expiry') or '').strip(),
                'errors': [], 'warnings': [], 'action': 'CREATE'}
         if not _CONT_TOKEN.match(cn):
             res['errors'].append('Số cont phải đúng chuẩn 4 chữ cái + 7 chữ số (VD: MSCU1234565).')
@@ -274,12 +284,17 @@ def import_containers(booking, rows, *, user=None, commit=True, skip_invalid=Fal
         if r.get('delivery_address'):
             c.delivery_address = r['delivery_address']
 
-        # 2. Hạn lệnh DEM / DET
-        dem_raw = r.get('dem_det')
+        # 2. Hạn lệnh DEM / DET (Tách biệt 2 trường độc lập)
+        dem_raw = r.get('dem_expiry') or r.get('dem_det')
+        det_raw = r.get('det_expiry')
         parsed_dem = _parse_date_safe(dem_raw)
+        parsed_det = _parse_date_safe(det_raw)
         if parsed_dem:
             c.dem_expiry_override = parsed_dem
-            c.det_expiry_override = parsed_dem
+            if not parsed_det and not det_raw:
+                c.det_expiry_override = parsed_dem
+        if parsed_det:
+            c.det_expiry_override = parsed_det
 
         # 3. Đầu kéo, tài xế và hạn lệnh vào notes
         note_parts = []

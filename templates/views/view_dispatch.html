@@ -270,20 +270,19 @@
 
             </div>
 
-            <div class="flex items-center gap-2">
-
+            <div class="flex items-center gap-2 flex-wrap">
+                <div class="relative min-w-[220px]">
+                    <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-2 text-slate-400"></i>
+                    <input type="text" id="dispatch-orders-search" placeholder="Tìm Số B/L, Cont, Seal, Mã lệnh..." 
+                           class="w-full h-8 pl-8 pr-7 text-xs bg-white border border-slate-200 rounded-lg focus:border-teal-600 focus:outline-none"
+                           oninput="if(typeof onDispatchOrdersSearch==='function')onDispatchOrdersSearch(this.value)">
+                </div>
                 <button type="button" onclick="loadDispatchOrdersTab()" class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer">
-
                     <i class="ph-bold ph-arrow-counter-clockwise"></i> Làm mới
-
                 </button>
-
                 <button type="button" onclick="openDispatchOrderModal()" class="btn-bim-primary px-3.5 py-1.5 text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 cursor-pointer">
-
                     <i class="ph-bold ph-plus-circle"></i> + Lập Lệnh Mới
-
                 </button>
-
             </div>
 
         </div>
@@ -302,13 +301,14 @@
 
                         <th class="p-2.5 min-w-[200px]">Khách Hàng / Chủ Hàng</th>
 
-                        <th class="p-2.5 min-w-[260px]">Lộ Trình 3 Điểm</th>
+                        <th class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>
 
                         <th class="p-2.5 w-32 text-center">Quy Cách & Số Cont</th>
 
                         <th class="p-2.5 min-w-[200px]">Phân Bổ Nhà Xe (Vendor)</th>
 
-                        <th class="p-2.5 w-28 text-center">Hạn DEM / DET</th>
+                        <th class="p-2.5 w-24 text-center">Hạn DEM (Bãi)</th>
+                        <th class="p-2.5 w-24 text-center">Hạn DET (Vỏ)</th>
 
                         <th class="p-2.5 w-32 text-center">Trạng Thái</th>
 
@@ -320,7 +320,7 @@
 
                 <tbody id="dispatch-orders-tbody" class="divide-y divide-slate-100 bg-white">
 
-                    <tr><td colspan="9" class="p-6 text-center text-slate-400">Đang tải danh sách Lệnh Điều Động...</td></tr>
+                    <tr><td colspan="10" class="p-6 text-center text-slate-400">Đang tải danh sách Lệnh Điều Động...</td></tr>
 
                 </tbody>
 
@@ -341,6 +341,11 @@
                 <span>Phân bổ & gán xe: <strong>nhà xe đã nhận cont nhưng chưa gán hết xe/tài</strong></span>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
+                <div class="relative min-w-[200px]">
+                    <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-2 text-slate-400 text-xs"></i>
+                    <input type="text" id="alloc-search-input" placeholder="Tìm B/L, Cont, Seal, Lệnh..." oninput="renderAllocationsTable()"
+                           class="w-full h-8 pl-8 pr-6 text-xs bg-white border border-slate-200 rounded-lg focus:border-teal-600 focus:outline-none">
+                </div>
                 <span class="text-xs font-bold text-slate-600">Hiển thị: <strong id="alloc-shown-count">0</strong> / <span id="alloc-total-count">0</span> phiếu</span>
                 <select id="alloc-filter-vendor" onchange="renderAllocationsTable()" class="h-8 px-2.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
                     <option value="">Tất cả nhà xe</option>
@@ -360,6 +365,7 @@
                         <th class="p-2.5 w-10 text-center">#</th>
                         <th class="p-2.5 min-w-[170px]">Lệnh / khách hàng</th>
                         <th class="p-2.5 min-w-[160px]">Nhà xe được phân bổ</th>
+                        <th class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>
                         <th class="p-2.5 w-28 text-right">Số cont giao</th>
                         <th class="p-2.5 min-w-[200px]">Đã gán xe / tài</th>
                         <th class="p-2.5 min-w-[150px]">Trạng thái</th>
@@ -368,7 +374,7 @@
                     </tr>
                 </thead>
                 <tbody id="dispatch-allocations-tbody" class="divide-y divide-slate-100 bg-white">
-                    <tr><td colspan="8" class="p-6 text-center text-slate-400">Đang tải danh sách phân bổ...</td></tr>
+                    <tr><td colspan="9" class="p-6 text-center text-slate-400">Đang tải danh sách phân bổ...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -487,13 +493,14 @@
                         <th class="p-2.5 min-w-[130px] text-center">Phiếu Vận Chuyển (VC)</th>
                         <th class="p-2.5 min-w-[160px]">Đầu Kéo & Rơ-moóc</th>
                         <th class="p-2.5 min-w-[170px]">Tài Xế & Số ĐT</th>
-                        <th class="p-2.5 min-w-[180px] text-center">Tình Trạng (Đã chạy chưa?)</th>
+                        <th class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>
+                        <th class="p-2.5 min-w-[340px] text-center">Trạng Thái 7 Bước Hành Trình</th>
                         <th class="p-2.5 w-24 text-center">Hạn Free</th>
-                        <th class="p-2.5 w-32 text-center">Thao Tác</th>
+                        <th class="p-2.5 w-36 text-center">Thao Tác</th>
                     </tr>
                 </thead>
                 <tbody id="dispatch-vendor-containers-tbody" class="divide-y divide-slate-100 bg-white">
-                    <tr><td colspan="10" class="p-6 text-center text-slate-400">Đang tải danh sách Container & Tiến độ Vendor...</td></tr>
+                    <tr><td colspan="11" class="p-6 text-center text-slate-400">Đang tải danh sách Container & Tiến độ Vendor...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -851,7 +858,7 @@
 
                         <!-- 7. Tuyến 3 Điểm Chuẩn & Chi phí -->
 
-                        <th data-col-key="expense" data-col-name="Lộ Trình (Lấy ➔ Kho ➔ Trả)" onclick="toggleDispatchSort('expense')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Lộ trình 3 điểm chuẩn và Chi phí">
+                        <th data-col-key="expense" data-col-name="Lộ Trình (Lấy ➔ Kho ➔ Trả)" onclick="toggleDispatchSort(\'expense\')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors min-w-[440px] whitespace-nowrap" title="Lộ trình 3 điểm chuẩn và Chi phí">
 
                             <div class="flex items-center gap-1.5">
 
@@ -867,7 +874,7 @@
 
                         <!-- 8. Trạng thái (Có sắp xếp) -->
 
-                        <th data-col-key="status" data-col-name="Trạng thái" onclick="toggleDispatchSort('status')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-left" title="Click để sắp xếp theo Trạng Thái">
+                        <th data-col-key="status" data-col-name="Trạng thái" onclick="toggleDispatchSort(\'status\')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-left min-w-[340px]" title="Click để sắp xếp theo Trạng Thái">
 
                             <div class="flex items-center justify-start gap-1.5">
 

@@ -3,7 +3,7 @@ from .models import Vehicle, Trailer
 
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-    list_display = ('license_plate', 'vehicle_type', 'ownership_type', 'subcontractor', 'brand', 'payload_capacity_kg', 'registration_expiry', 'status', 'current_driver')
+    list_display = ('license_plate', 'vehicle_type', 'ownership_type', 'subcontractor', 'brand', 'payload_capacity_kg', 'registration_expiry', 'status', 'current_driver', 'default_trailer')
     list_filter = ('vehicle_type', 'ownership_type', 'subcontractor', 'status', 'is_deleted')
     search_fields = ('license_plate', 'brand', 'subcontractor__name', 'current_driver__full_name')
 

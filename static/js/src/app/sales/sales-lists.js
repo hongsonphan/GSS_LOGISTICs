@@ -390,11 +390,12 @@ function renderBookingsTable(bookings) {
                 </div>
                 <div>${statusBadge}</div>
             </td>
-            <td data-col-key="route" class="p-3.5">
-                <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
-                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy cont:</strong> ${cleanLoc(b.pickup)}</p>
-                    <p class="truncate text-slate-900 font-bold"><strong class="text-blue-900 font-bold">2. Kho đóng/trả:</strong> ${cleanLoc(b.delivery)}</p>
-                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-amber-800 font-bold">3. Trả cont:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
+            <td data-col-key="route" class="p-3.5 min-w-[440px] whitespace-nowrap">
+                <div class="font-medium text-slate-800 text-xs flex items-center gap-1.5 whitespace-nowrap">
+                    <span class="text-teal-700 font-bold" title="1. Nơi lấy cont">${cleanLoc(b.pickup)}</span>
+                    <span class="text-slate-400 font-bold">&rarr;</span>
+                    <span class="text-blue-900 font-bold" title="2. Kho đóng / trả hàng">${cleanLoc(b.delivery)}</span>
+                    ${b.dropoff ? `<span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Depot trả cont rỗng">${cleanLoc(b.dropoff)}</span>` : ''}
                 </div>
             </td>
             <td data-col-key="closing_time" class="p-3.5 font-mono">

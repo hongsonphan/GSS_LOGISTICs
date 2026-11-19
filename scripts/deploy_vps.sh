@@ -36,6 +36,11 @@ grep -q '^SITE_URL=' .env || printf 'SITE_URL=https://gss-logistics.example.com\
 
 step "2/7 Sao lưu CSDL và media trước khi cập nhật"
 bash scripts/backup_vps.sh
+# Điểm khôi phục TRƯỚC migrate: quay lại mã không quay lại CSDL, nên ghi bản này để quay CSDL bằng tay khi migration lỗi nặng
+PRE_MIGRATE_DB="$(ls -1t /home/ubuntu/backups/db_*.sql.gz | head -1)"
+echo "$PRE_MIGRATE_DB" > "$(dirname "$APP_DIR")/GSS_LOGISTICS_rollback_db.txt"
+echo "Điểm khôi phục CSDL trước migrate: $PRE_MIGRATE_DB"
+echo "(Nếu cần quay CSDL: bash scripts/restore_vps.sh $PRE_MIGRATE_DB  — chỉ khi migration đã làm hỏng dữ liệu; dữ liệu nhập sau mốc này sẽ mất)"
 
 step "2b/7 Build image mới và CHẠY THỬ trên bản sao CSDL production (chưa đụng dữ liệu thật)"
 $DC build web
@@ -43,8 +48,15 @@ $DC build web
 $DC up -d redis
 PG="$DC exec -T db"
 $PG dropdb -U gss_logistics_user --if-exists gss_preflight
-$PG createdb -U gss_logistics_user gss_preflight
-$PG sh -c 'pg_dump -U gss_logistics_user -d gss_logistics_db --no-owner | psql -q -U gss_logistics_user -d gss_preflight' >/dev/null
+# Nếu web chạy bằng user thường (scripts/db_harden.sh): bản sao phải do user đó sở hữu, như CSDL thật
+APP_USER="$(env_get APP_DB_USER)"
+if [ -n "$APP_USER" ]; then
+    $PG createdb -U gss_logistics_user -O "$APP_USER" gss_preflight
+    $PG sh -c "(echo 'SET ROLE $APP_USER;'; pg_dump -U gss_logistics_user -d gss_logistics_db --no-owner) | psql -q -U gss_logistics_user -d gss_preflight" >/dev/null
+else
+    $PG createdb -U gss_logistics_user gss_preflight
+    $PG sh -c 'pg_dump -U gss_logistics_user -d gss_logistics_db --no-owner | psql -q -U gss_logistics_user -d gss_preflight' >/dev/null
+fi
 # media gắn CHỈ ĐỌC trong lần chạy thử: dù có lỗi mã nào cũng không thể xóa/ghi file thật
 mkdir -p media
 MEDIA_BEFORE="$(find media -type f | wc -l)"
@@ -126,5 +138,7 @@ $DC exec -T web python manage.py rebuild_ledger
 
 step "7/7 Lịch sao lưu hằng ngày (2h sáng)"
 CRON_LINE="0 2 * * * $APP_DIR/scripts/backup_vps.sh >> /home/ubuntu/backups/backup.log 2>&1"
-( crontab -l 2>/dev/null | grep -v 'scripts/backup_vps.sh' ; echo "$CRON_LINE" ) | crontab -
+# Thêm bản chỉ CSDL mỗi 4 giờ (RPO <= 4 giờ thay vì 24 giờ; docs/16 mục 4)
+CRON_DB="15 6,10,14,18,22 * * * BACKUP_MODE=db $APP_DIR/scripts/backup_vps.sh >> /home/ubuntu/backups/backup.log 2>&1"
+( crontab -l 2>/dev/null | grep -v 'scripts/backup_vps.sh' ; echo "$CRON_LINE"; echo "$CRON_DB" ) | crontab -
 echo "HOÀN TẤT: $(git rev-parse --short HEAD) đang chạy, /healthz/ OK"

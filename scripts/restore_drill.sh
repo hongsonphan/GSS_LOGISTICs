@@ -34,7 +34,7 @@ fi
 echo "Khôi phục xong trong $(( $(date +%s) - START )) giây"
 
 printf "%-34s %10s %10s\n" "Bảng" "Sao lưu" "Đang chạy"
-for T in dispatch_dispatchtrip dispatch_bookingvendorallocation depot_yard_depotcontainermovement qr_tracking_qrscanlog billing_tripexpense billing_cashtransaction customers_customer customers_quotation \
+for T in dispatch_dispatchtrip dispatch_bookingvendorallocation depot_yard_depotcontainermovement qr_tracking_qrscanlog billing_tripexpense billing_cashtransaction master_data_party customers_quotation \
          personnel_employee fleet_vehicle ledger_journalentry auth_user; do
     B=$(echo "SELECT count(*) FROM $T;" | $PSQL -d "$DRILL_DB" -t -A 2>/dev/null || echo "?")
     L=$(echo "SELECT count(*) FROM $T;" | $PSQL -d "$DB_NAME" -t -A 2>/dev/null || echo "?")
@@ -46,9 +46,39 @@ done
 MIG=$(echo "SELECT count(*) FROM django_migrations;" | $PSQL -d "$DRILL_DB" -t -A)
 echo "Số migration trong bản sao lưu: $MIG"
 
+# Tính toàn vẹn dữ liệu, không chỉ đếm dòng (docs/16, B5)
+UNBAL=$(echo "SELECT count(*) FROM (SELECT entry_id FROM ledger_journalline GROUP BY entry_id HAVING sum(debit) <> sum(credit)) x;" | $PSQL -d "$DRILL_DB" -t -A 2>/dev/null || echo "?")
+echo "Bút toán không cân Nợ/Có trong bản sao lưu: $UNBAL"
+{ [ "$UNBAL" = "0" ]; } || { echo "  -> SAI: sổ cái không cân hoặc không đọc được"; STATUS=1; }
+STMT_BAD=$(echo "SELECT count(*) FROM gss_statement s WHERE s.status = 'LOCKED' AND NOT s.is_deleted AND NOT EXISTS (SELECT 1 FROM gss_statementline l WHERE l.statement_id = s.id);" | $PSQL -d "$DRILL_DB" -t -A 2>/dev/null || echo "?")
+echo "Bảng kê đã chốt nhưng không có dòng nào: $STMT_BAD"
+{ [ "$STMT_BAD" = "0" ]; } || { echo "  -> BẤT THƯỜNG hoặc không kiểm được: xem lại bảng kê"; STATUS=1; }
+RLS_TBL=$(echo "SELECT count(*) FROM pg_policies WHERE policyname = 'gss_tenant_isolation';" | $PSQL -d "$DRILL_DB" -t -A)
+TRG=$(echo "SELECT count(*) FROM pg_trigger WHERE tgname = 'gss_append_only';" | $PSQL -d "$DRILL_DB" -t -A)
+echo "Policy RLS: $RLS_TBL · trigger nhật ký bất biến: $TRG (hai thứ này được dựng lại khi web chạy migrate)"
+# Checksum do backup_vps.sh ghi
+if [ -f "$LATEST_DB.sha256" ]; then
+    if ( cd "$BACKUP_DIR" && sha256sum -c "$(basename "$LATEST_DB").sha256" >/dev/null 2>&1 ); then echo "Checksum CSDL: khớp"; else echo "LỖI: sai checksum CSDL"; STATUS=1; fi
+else
+    echo "CẢNH BÁO: bản sao lưu CSDL chưa có checksum (.sha256)"; [ "$STATUS" = 0 ] && STATUS=2
+fi
+if [ -f "$BACKUP_DIR/.last_ok" ]; then
+    LAST_AGE=$(( ( $(date +%s) - $(cat "$BACKUP_DIR/.last_ok") ) / 3600 ))
+    echo "Lần sao lưu thành công gần nhất (kể cả bản chỉ CSDL): ${LAST_AGE} giờ trước"
+    [ "$LAST_AGE" -le 30 ] || { echo "CẢNH BÁO: quá 30 giờ không có lần sao lưu thành công"; [ "$STATUS" = 0 ] && STATUS=2; }
+fi
+echo "THỜI GIAN KHÔI PHỤC CSDL (RTO thực đo được, chỉ phần CSDL): $(( $(date +%s) - START )) giây"
+
 if [ -n "$LATEST_MEDIA" ]; then
     if tar -tzf "$LATEST_MEDIA" >/dev/null 2>&1; then
         echo "Media: $(basename "$LATEST_MEDIA") đọc được, $(tar -tzf "$LATEST_MEDIA" | grep -vc '/$') tệp"
+        # Giải nén thử 3 tệp mẫu, kiểm tra không rỗng
+        SAMPLE_DIR="$(mktemp -d)"; trap 'rm -rf "$SAMPLE_DIR"; cleanup' EXIT
+        tar -tzf "$LATEST_MEDIA" | grep -v '/$' | head -3 | while read -r M; do
+            tar -xzf "$LATEST_MEDIA" -C "$SAMPLE_DIR" "$M" 2>/dev/null
+            [ -s "$SAMPLE_DIR/$M" ] || echo "LỖI: tệp mẫu rỗng/không giải nén được: $M"
+        done | tee /tmp/restore_drill_media.err
+        [ ! -s /tmp/restore_drill_media.err ] || STATUS=1
     else
         echo "LỖI: tệp media nén hỏng"; STATUS=1
     fi

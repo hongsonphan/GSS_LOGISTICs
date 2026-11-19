@@ -338,9 +338,9 @@ function renderFleetTable(vehicles) {
                 <span class="text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(v.status)}</span>
             </td>
             <td class="p-4 text-center">
-                <div class="flex items-center justify-center space-x-1">
-                    <button type="button" onclick="editFleetVehicle(${v.id})" class="p-1.5 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer" title="Chỉnh sửa thông tin phương tiện">
-                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                <div class="flex items-center justify-center gap-1.5">
+                    <button type="button" onclick="editFleetVehicle(${v.id})" class="h-7 px-2.5 text-[11px] font-bold text-teal-800 hover:text-teal-950 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200 inline-flex items-center gap-1 cursor-pointer font-heading" title="Xem chi tiết & quản lý phương tiện">
+                        <i class="ph-bold ph-eye text-xs"></i><span>Xem</span>
                     </button>
                 </div>
             </td>
@@ -553,9 +553,9 @@ function renderTrailerTable(trailers) {
                 <span class="text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(t.status || '—')}</span>
             </td>
             <td class="p-4 text-center">
-                <div class="flex items-center justify-center space-x-1">
-                    <button type="button" onclick="editFleetTrailer(${t.id})" class="p-1.5 text-slate-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer" title="Chỉnh sửa thông tin rơ-moóc">
-                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                <div class="flex items-center justify-center gap-1.5">
+                    <button type="button" onclick="editFleetTrailer(${t.id})" class="h-7 px-2.5 text-[11px] font-bold text-indigo-800 hover:text-indigo-950 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200 inline-flex items-center gap-1 cursor-pointer font-heading" title="Xem chi tiết & quản lý rơ-moóc">
+                        <i class="ph-bold ph-eye text-xs"></i><span>Xem</span>
                     </button>
                 </div>
             </td>

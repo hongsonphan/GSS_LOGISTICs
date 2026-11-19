@@ -1290,7 +1290,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
 
-                                ${t.pickup_location || '-'} ➔ ${t.delivery_location || '-'}
+                                <div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5"><span class="text-slate-900">${t.pickup_location || '-'}</span><i class="ph-bold ph-arrow-right text-teal-600 text-[11px]"></i><span class="text-slate-900">${t.delivery_location || '-'}</span>${t.dropoff_location ? `<i class="ph-bold ph-arrow-right text-teal-600 text-[11px]"></i><span class="text-slate-900">${t.dropoff_location}</span>` : ''}</div>
 
 
 

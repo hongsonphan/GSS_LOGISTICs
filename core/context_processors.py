@@ -37,7 +37,7 @@ def _menu(user):
 
 
 def brand(request):
-    """Tên thương hiệu hiển thị ở trang đăng nhập/tiêu đề: gói GSS dùng tên công ty đã khai báo, gói khác giữ GSS LOGISTICS."""
+    """Tên thương hiệu hiển thị ở trang đăng nhập/tiêu đề: gói GSS dùng tên công ty đã khai báo, gói khác dùng GIẢI PHÁP XANH."""
     try:
         from apps.master_data.models import CompanyProfile
         co = CompanyProfile.get_default_company()
@@ -45,4 +45,4 @@ def brand(request):
             return {'brand_name': (co.short_name or co.company_name).upper(), 'brand_gss': True}
     except Exception:  # chưa migrate / DB chưa sẵn sàng: dùng nhận diện mặc định
         pass
-    return {'brand_name': 'GSS LOGISTICS', 'brand_gss': False}
+    return {'brand_name': 'GIẢI PHÁP XANH', 'brand_gss': False}

@@ -683,11 +683,29 @@ function filterOrderGroup(group) {
     renderDispatchOrdersTable();
 }
 
+let dispatchOrdersSearchQuery = '';
+function onDispatchOrdersSearch(val) {
+    dispatchOrdersSearchQuery = val || '';
+    renderDispatchOrdersTable();
+}
+window.onDispatchOrdersSearch = onDispatchOrdersSearch;
+
 function renderDispatchOrdersTable() {
     const tbody = document.getElementById('dispatch-orders-tbody');
     if (!tbody) return;
 
     let filtered = allDispatchBookings || [];
+    if (dispatchOrdersSearchQuery) {
+        const q = dispatchOrdersSearchQuery.toLowerCase().trim();
+        filtered = filtered.filter(b => {
+            const code = (b.booking_code || '').toLowerCase();
+            const bl = (b.booking_number || '').toLowerCase();
+            const cust = (b.customer_name || b.customer || '').toLowerCase();
+            const route = `${b.pickup_location || ''} ${b.delivery_location || ''} ${b.dropoff_location || ''}`.toLowerCase();
+            const conts = (b.container_list || '').toLowerCase();
+            return code.includes(q) || bl.includes(q) || cust.includes(q) || route.includes(q) || conts.includes(q);
+        });
+    }
     if (currentOrderGroup === 'PENDING') {
         filtered = filtered.filter(b => !Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= (Number(b.total_containers) || 1)) || ((Number(b.dispatched_containers) || 0) >= (Number(b.total_containers) || 1))));
     } else if (currentOrderGroup === 'DISPATCHED') {
@@ -695,7 +713,7 @@ function renderDispatchOrdersTable() {
     }
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không còn booking nào chưa phân bổ hoặc phân bổ chưa hết.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không còn booking nào chưa phân bổ hoặc phân bổ chưa hết.</td></tr>`;
         return;
     }
 
@@ -718,7 +736,7 @@ function renderDispatchOrdersTable() {
 
         const bl = b.booking_number ? `<span class="text-slate-500 font-mono text-[11px] block">B/L: ${b.booking_number}</span>` : '';
         const cust = b.customer_name || b.customer || 'Khách hàng';
-        const route = `<div class="truncate max-w-xs" title="${b.pickup_location || ''} -> ${b.delivery_location || ''} -> ${b.dropoff_location || ''}">${b.pickup_location || 'Cảng/Depot'} &rarr; ${b.delivery_location || 'Kho khách'} &rarr; ${b.dropoff_location || 'Depot'}</div>`;
+        const route = `<div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5" title="${b.pickup_location || ''} -> ${b.delivery_location || ''} -> ${b.dropoff_location || ''}"><span class="text-teal-700 font-bold" title="1. Lấy cont">${b.pickup_location || 'Cảng/Depot'}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-blue-900 font-bold" title="2. Kho đóng/trả">${b.delivery_location || 'Kho khách'}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Hạ rỗng">${b.dropoff_location || 'Depot'}</span></div>`;
         const conts = `<strong class="text-teal-700 font-bold">${total}</strong> <span class="text-slate-500 text-[11px]">Cont (${b.container_size || '40HC'})</span>`;
 
         let allocProgress = '';
@@ -747,10 +765,11 @@ function renderDispatchOrdersTable() {
                 ${bl}
             </td>
             <td class="p-2.5 font-bold text-slate-800">${cust}</td>
-            <td class="p-2.5 text-slate-700 text-xs">${route}</td>
+            <td class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
             <td class="p-2.5 text-center">${conts}</td>
             <td class="p-2.5">${allocProgress}</td>
-            <td class="p-2.5 text-center">${demDet}</td>
+            <td class="p-2.5 text-center font-mono text-[11px] font-bold text-amber-700">${b.free_time_demurrage || 7}d</td>
+            <td class="p-2.5 text-center font-mono text-[11px] font-bold text-sky-700">${b.free_time_detention || 7}d</td>
             <td class="p-2.5 text-center">
                 <span class="inline-flex items-center gap-1 text-xs font-bold ${statusColor}">
                     <i class="ph-bold ${statusIcon}"></i>
@@ -807,7 +826,7 @@ async function loadDispatchOrdersTab() {
 
         renderDispatchOrdersTable();
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-rose-500 font-bold">Lỗi khi tải Lệnh Điều Động: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-rose-500 font-bold">Lỗi khi tải Lệnh Điều Động: ${e.message}</td></tr>`;
     }
 }
 
@@ -900,9 +919,6 @@ async function loadVendorContainersTab() {
                         <i class="ph-bold ph-arrow-square-out text-[11px] text-teal-600"></i>
                     </button>
                     <div class="text-xs text-slate-700 font-semibold truncate max-w-[180px]" title="${escapeHtml(r.customer_name)}">${escapeHtml(r.customer_name)}</div>
-                    <div class="text-[11px] text-slate-500 truncate max-w-[180px]" title="${escapeHtml(r.pickup_location)} -> ${escapeHtml(r.delivery_location)} -> ${escapeHtml(r.dropoff_location)}">
-                        ${escapeHtml(r.pickup_location)} &rarr; ${escapeHtml(r.delivery_location)}
-                    </div>
                 </div>
             `;
 
@@ -1052,6 +1068,19 @@ async function loadVendorContainersTab() {
             }
             actions += `</div>`;
 
+            const routeDisplay = `
+                <div class="font-medium text-slate-800 text-xs whitespace-nowrap flex items-center gap-1.5" title="${escapeHtml(r.pickup_location)} -> ${escapeHtml(r.delivery_location)} -> ${escapeHtml(r.dropoff_location || 'Depot')}">
+                    <span class="text-teal-700 font-bold" title="1. Nơi lấy cont">${escapeHtml(r.pickup_location || 'Cảng/Depot')}</span>
+                    <span class="text-slate-400 font-bold">&rarr;</span>
+                    <span class="text-blue-900 font-bold" title="2. Kho đóng / trả hàng">${escapeHtml(r.delivery_location || 'Kho khách')}</span>
+                    <span class="text-slate-400 font-bold">&rarr;</span>
+                    <span class="text-amber-800 font-bold" title="3. Depot trả cont rỗng">${escapeHtml(r.dropoff_location || 'Depot rỗng')}</span>
+                </div>
+            `;
+            const journey7Step = (typeof vaRender7StepJourney === 'function') 
+                ? vaRender7StepJourney(r.step_status || r.status_code, r.timestamps) 
+                : statusBadge;
+
             html += `
                 <tr class="hover:bg-teal-50/30 transition-colors">
                     <td class="p-2.5 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
@@ -1061,7 +1090,8 @@ async function loadVendorContainersTab() {
                     <td class="p-2.5 text-center">${vcDisplay}</td>
                     <td class="p-2.5">${vehicleDisplay}</td>
                     <td class="p-2.5">${driverDisplay}</td>
-                    <td class="p-2.5 text-center">${statusBadge}</td>
+                    <td class="p-2.5 min-w-[440px] whitespace-nowrap">${routeDisplay}</td>
+                    <td class="p-2.5 min-w-[340px] text-center">${journey7Step}</td>
                     <td class="p-2.5 text-center">${freeTime}</td>
                     <td class="p-2.5 text-center">${actions}</td>
                 </tr>

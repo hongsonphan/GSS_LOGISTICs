@@ -4,9 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tra Cứu Vận Đơn: {{ trip.trip_code }} - GSS Logistics</title>
-  <link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
-  <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=3.0">
+  <title>Tra Cứu Vận Đơn: {{ trip.trip_code }} - Giải Pháp Xanh Logistics</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/brand/favicon-32.png' %}?v=4.0">
+  <link rel="apple-touch-icon" href="{% static 'images/brand/apple-touch-icon.png' %}?v=4.0">
+  <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=4.0">
   
   <!-- Phosphor Icons -->
   <link rel="stylesheet" type="text/css" href="{% static 'vendor/phosphor/regular/style.css' %}"/>
@@ -27,13 +28,8 @@
   <header class="bg-gradient-to-r from-teal-800 to-teal-900 text-white shadow-md">
     <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-teal-700/80 border border-teal-500 flex items-center justify-center font-black text-white text-xl shadow-xs">
-          B
-        </div>
-        <div>
-          <div class="text-[11px] uppercase tracking-wider text-teal-300 font-bold">GSS LOGISTICS PLATFORM</div>
-          <h1 class="text-base sm:text-lg font-black text-white tracking-tight">Tra Cứu Vận Đơn & Container</h1>
-        </div>
+        <img src="{% static 'images/logo_lockup.png' %}" alt="Giải Pháp Xanh Logistics" class="h-10 w-auto shrink-0">
+        <h1 class="text-base sm:text-lg font-black text-white tracking-tight border-l border-teal-600 pl-3">Tra Cứu Vận Đơn &amp; Container</h1>
       </div>
       <div class="text-right">
         <button type="button" onclick="copyTrackingLink()" class="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs">
@@ -197,7 +193,7 @@
 
     <!-- FOOTER HỖ TRỢ -->
     <div class="text-center text-xs text-slate-400 pt-3 space-y-1">
-      <p>© 2026 GSS Logistics Platform. Hệ thống Giám sát Vận tải Container Toàn Diện.</p>
+      <p>© 2026 Giải Pháp Xanh Logistics. Hệ thống Giám sát Vận tải Container Toàn Diện.</p>
       <p>Cần hỗ trợ tra cứu? Vui lòng liên hệ đơn vị vận chuyển của bạn.</p>
     </div>
 

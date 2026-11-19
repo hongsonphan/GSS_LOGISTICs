@@ -69,7 +69,7 @@ class TripQrInfoAPIView(_TokenView):
         notes = effective_notes(trip.booking_order) if trip.booking_order_id else {'destination_notes': '', 'road_restrictions': ''}
         resp = Response({'success': True, 'data': {
             **row, **notes, 'action': wf.available_action(trip), 'counts': att.counts(trip), 'max_files': wf.MAX_FILES_PER_STAGE,
-            'steps': [{'key': s, 'label': wf.STEP_LABELS[s]} for s in wf.STEPS], 'locked': trip.step_status in LOCKED_FOR_DRIVER,
+            'steps': [{'key': s, 'label': wf.step_labels_for(getattr(trip, 'shipment_type', 'IMPORT')).get(s, wf.STEP_LABELS[s])} for s in wf.STEPS], 'step_label': wf.step_labels_for(getattr(trip, 'shipment_type', 'IMPORT')).get(trip.step_status, wf.STEP_LABELS.get(trip.step_status, trip.get_step_status_display())), 'locked': trip.step_status in LOCKED_FOR_DRIVER,
             'packages': [qr.serialize(p) for p in trip.packages.filter(is_deleted=False)], 'package_summary': qr.summary(trip),
             'staff': bool(request.user and request.user.is_authenticated), **_driver_extras(trip)}})
         resp['Cache-Control'] = 'no-store'
@@ -145,16 +145,11 @@ def _capture_meta(request):
 
 
 def _driver_extras(trip):
-    """Dữ liệu thêm cho trang tài xế: khoản chi hộ được khai, các khoản đã khai, trạm/bãi để bấm mốc, khung giờ nhận hàng."""
+    """Dữ liệu thêm cho trang tài xế (bỏ kê chi phí do thuê trọn gói Vendor)."""
     from apps.depot_yard.models import Yard
-    from apps.gss.models import ChargeCode
-    codes = [{'id': c.id, 'code': c.code, 'name': c.name} for c in ChargeCode.objects.filter(is_deleted=False, is_active=True)
-             .exclude(kind='FREIGHT').order_by('kind', 'code')]
-    claims = [{'id': c.id, 'charge': c.charge_code.name, 'amount': str(c.amount), 'status': c.status, 'status_label': c.get_status_display(),
-               'at': c.created_at.isoformat()} for c in trip.cost_claims.filter(is_deleted=False).select_related('charge_code')]
     places = [y.name for y in Yard.objects.filter(is_deleted=False, is_active=True).order_by('name')]
     loc = trip.warehouse_loc
-    return {'claim_codes': codes, 'claims': claims, 'checkpoint_places': places,
+    return {'claim_codes': [], 'claims': [], 'checkpoint_places': places,
             'delivery_opening_hours': (loc.opening_hours if loc else '') or '',
             'street_turn': bool(trip.is_street_turn)}
 
@@ -163,19 +158,7 @@ class TripQrClaimAPIView(_TokenView):
     """Tài xế khai chi phí chi hộ / phát sinh kèm ảnh hoá đơn (bắt buộc ảnh)."""
 
     def post(self, request, token):
-        from apps.gss import claims as cl
-        from apps.gss.models import ChargeCode
-        trip = self.trip(request, token)
-        if trip.step_status == 'CANCELLED':
-            return _err('Chuyến đã huỷ.', status.HTTP_409_CONFLICT)
-        code = ChargeCode.objects.filter(pk=request.data.get('charge_code_id'), is_deleted=False, is_active=True).exclude(kind='FREIGHT').first()
-        try:
-            claim = cl.submit_claim(trip, charge_code=code, amount=request.data.get('amount'), description=request.data.get('description') or '',
-                                    photo=request.FILES.get('photo'), user=request.user, label=_actor(request))
-        except ValidationError as exc:
-            return _err(' '.join(exc.messages))
-        qr.log_scan('TRIP', trip.pk, 'CLAIM', detail=f'{claim.charge_code.code} {claim.amount}', actor_label=_actor(request), ip=_ip(request))
-        return Response({'success': True, 'message': 'Đã gửi khai chi phí, chờ kế toán duyệt.', **_driver_extras(trip)}, status=status.HTTP_201_CREATED)
+        return _err('Dự án áp dụng hình thức thuê trọn gói Vendor, tính năng kê chi phí hiện trường đã được đóng.', status.HTTP_403_FORBIDDEN)
 
 
 class TripQrCheckpointAPIView(_TokenView):

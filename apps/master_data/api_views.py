@@ -166,6 +166,8 @@ class MasterDataFormOptionsAPIView(APIView):
                 'subcontractor_name': (v.subcontractor.short_name or v.subcontractor.name) if v.subcontractor else '',
                 'driver_id': v.current_driver_id,
                 'driver_name': (v.current_driver.nickname or v.current_driver.full_name) if v.current_driver else '',
+                'default_trailer_id': v.default_trailer_id,
+                'default_trailer_plate': v.default_trailer.license_plate if v.default_trailer else '',
                 'label': f"{v.license_plate} ({v.get_vehicle_type_display()})" if v.ownership_type == VehicleOwnership.OWNED else f"{v.license_plate} ({v.get_vehicle_type_display()} - {v.subcontractor.short_name if v.subcontractor else '3PL'})"
             }
             for v in Vehicle.objects.all().order_by('license_plate')
@@ -825,7 +827,7 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         ownership = request.GET.get('ownership', '').strip()
-        qs = Vehicle.objects.select_related('current_driver', 'subcontractor').all()
+        qs = Vehicle.objects.select_related('current_driver', 'default_trailer', 'subcontractor').all()
         if q:
             qs = qs.filter(Q(license_plate__icontains=q) | Q(brand__icontains=q))
         if ownership and ownership != 'ALL':
@@ -849,6 +851,8 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
                 'next_maintenance_date': v.next_maintenance_date.strftime('%d/%m/%Y') if v.next_maintenance_date else '-',
                 'current_driver_id': v.current_driver_id,
                 'driver_name': (v.current_driver.nickname or v.current_driver.full_name) if v.current_driver else '-',
+                'default_trailer_id': v.default_trailer_id,
+                'default_trailer_plate': v.default_trailer.license_plate if v.default_trailer else '-',
                 'subcontractor_id': v.subcontractor_id,
                 'subcontractor_name': (v.subcontractor.short_name or v.subcontractor.name) if v.subcontractor else '-',
                 'status': v.status,
@@ -900,6 +904,8 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
 
         driver_id = data.get('current_driver_id')
         driver = Employee.objects.filter(id=driver_id).first() if driver_id else None
+        trailer_id = data.get('default_trailer_id')
+        default_trl = Trailer.objects.filter(id=trailer_id).first() if trailer_id else None
         subcontractor_id = data.get('subcontractor_id')
         subcontractor = Subcontractor.objects.filter(id=subcontractor_id).first() if subcontractor_id else None
         ownership = data.get('ownership_type', VehicleOwnership.OWNED)
@@ -918,6 +924,7 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
             insurance_expiry=ins_expiry,
             next_maintenance_date=maint_date,
             current_driver=driver,
+            default_trailer=default_trl,
             status=data.get('status', VehicleStatus.IDLE),
         )
         return Response({'success': True, 'message': f'Đã thêm xe [{veh.license_plate}] thành công!', 'id': veh.id}, status=status.HTTP_201_CREATED)
@@ -940,6 +947,9 @@ class VehicleMasterDetailAPIView(MasterDataBaseAPIView):
         if 'current_driver_id' in data:
             d_id = data['current_driver_id']
             veh.current_driver = Employee.objects.filter(id=d_id).first() if d_id else None
+        if 'default_trailer_id' in data:
+            tr_id = data['default_trailer_id']
+            veh.default_trailer = Trailer.objects.filter(id=tr_id).first() if tr_id else None
         if 'subcontractor_id' in data:
             s_id = data['subcontractor_id']
             veh.subcontractor = Subcontractor.objects.filter(id=s_id).first() if s_id else None

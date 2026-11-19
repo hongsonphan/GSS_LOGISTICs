@@ -21,6 +21,24 @@ MEDIA_FILE="${2:-}"
 [ -n "$DB_FILE" ] || { echo "LỖI: không tìm thấy bản sao lưu CSDL"; exit 1; }
 [ -f "$DB_FILE" ] || DB_FILE="$BACKUP_DIR/$DB_FILE"
 [ -f "$DB_FILE" ] || { echo "LỖI: không có file $DB_FILE"; exit 1; }
+# Bản mã hoá (.age) tải về từ nơi lưu ngoài máy chủ: giải mã bằng khoá riêng (BACKUP_AGE_IDENTITY=đường dẫn file khoá)
+decrypt_if_age() {
+    case "$1" in
+        *.age)
+            [ -n "${BACKUP_AGE_IDENTITY:-}" ] || { echo "LỖI: $1 là bản mã hoá, đặt BACKUP_AGE_IDENTITY=<file khoá riêng age>" >&2; exit 1; }
+            [ ! -f "$1.sha256" ] || ( cd "$(dirname "$1")" && sha256sum -c "$(basename "$1").sha256" >/dev/null ) \
+                || { echo "LỖI: sai checksum $1" >&2; exit 1; }
+            local out="${1%.age}"; age -d -i "$BACKUP_AGE_IDENTITY" -o "$out" "$1" || { echo "LỖI: giải mã thất bại" >&2; exit 1; }
+            echo "$out";;
+        *) echo "$1";;
+    esac
+}
+DB_FILE="$(decrypt_if_age "$DB_FILE")"
+# Checksum đi kèm (do backup_vps.sh ghi): sai thì dừng, không khôi phục từ file có thể hỏng
+if [ -f "$DB_FILE.sha256" ]; then
+    ( cd "$(dirname "$DB_FILE")" && sha256sum -c "$(basename "$DB_FILE").sha256" >/dev/null ) \
+        || { echo "LỖI: sai checksum $DB_FILE - file sao lưu đã bị hỏng/sửa"; exit 1; }
+fi
 gunzip -t "$DB_FILE" || { echo "LỖI: file sao lưu hỏng"; exit 1; }
 
 echo "Sẽ GHI ĐÈ CSDL '$DB_NAME' bằng $(basename "$DB_FILE")${MEDIA_FILE:+ và media bằng $MEDIA_FILE}."
@@ -39,8 +57,16 @@ $DOCKER stop "$WEB_CONTAINER" >/dev/null 2>&1 || true
 
 echo "3/5 Khôi phục CSDL"
 echo "DROP DATABASE IF EXISTS ${DB_NAME}_restoring;" | $PSQL -d postgres
-echo "CREATE DATABASE ${DB_NAME}_restoring;" | $PSQL -d postgres
-if gunzip -c "$DB_FILE" | $PSQL -d "${DB_NAME}_restoring" >/dev/null; then
+# APP_DB_USER (đã chạy scripts/db_harden.sh): CSDL và đối tượng phải thuộc user ứng dụng, không phải superuser
+APP_DB_USER="${APP_DB_USER:-}"
+if [ -n "$APP_DB_USER" ]; then
+    echo "CREATE DATABASE ${DB_NAME}_restoring OWNER $APP_DB_USER;" | $PSQL -d postgres
+    RESTORE_PREFIX="SET ROLE $APP_DB_USER;"
+else
+    echo "CREATE DATABASE ${DB_NAME}_restoring;" | $PSQL -d postgres
+    RESTORE_PREFIX=""
+fi
+if { [ -z "$RESTORE_PREFIX" ] || echo "$RESTORE_PREFIX"; gunzip -c "$DB_FILE"; } | $PSQL -d "${DB_NAME}_restoring" >/dev/null; then
     echo "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname IN ('$DB_NAME') AND pid <> pg_backend_pid();" | $PSQL -d postgres >/dev/null
     echo "DROP DATABASE $DB_NAME;" | $PSQL -d postgres
     echo "ALTER DATABASE ${DB_NAME}_restoring RENAME TO $DB_NAME;" | $PSQL -d postgres

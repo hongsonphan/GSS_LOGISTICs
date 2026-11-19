@@ -123,9 +123,12 @@ function renderAccountingTable(list) {
             <td class="p-3.5 whitespace-nowrap text-center text-xs font-semibold text-slate-700">
                 ${escapeHtml(item.loading_date || '-')}
             </td>
-            <td class="p-3.5">
-                <p class="font-bold text-slate-900 text-sm max-w-[190px] truncate" title="${item.customer_name}">${item.customer_name}</p>
-                <p class="text-[13px] text-slate-600 font-medium mt-0.5 truncate max-w-[210px]" title="${item.route}">${item.route}</p>
+            <td class="p-3.5 whitespace-nowrap min-w-[380px]">
+                <p class="font-bold text-slate-900 text-sm" title="${escapeHtml(item.customer_name)}">${escapeHtml(item.customer_name)}</p>
+                <div class="text-xs text-slate-700 font-medium mt-1 flex items-center gap-1.5" title="${escapeHtml(item.route)}">
+                    <i class="ph-bold ph-map-pin text-teal-600 text-xs shrink-0"></i>
+                    <span>${escapeHtml(item.route || '-')}</span>
+                </div>
             </td>
             <td class="p-3.5">
                 <p class="font-bold text-slate-900 text-sm">${item.driver_name}</p>

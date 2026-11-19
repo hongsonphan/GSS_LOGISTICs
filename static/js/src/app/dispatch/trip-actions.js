@@ -348,6 +348,14 @@ async function openModalEditTrip(tripCode = null) {
             vehSel.innerHTML = '<option value="">-- Chọn Đầu kéo/ Xe tải --</option>' +
                 vehicles.map(v => `<option value="${v.id}">${escapeHtml(v.label || v.plate)}</option>`).join('');
             if (curVal) vehSel.value = curVal;
+            vehSel.onchange = function() {
+                const vId = Number(vehSel.value);
+                const chosen = vehicles.find(v => v.id === vId);
+                if (chosen) {
+                    if (chosen.driver_id && drvSel) drvSel.value = chosen.driver_id;
+                    if (chosen.default_trailer_id && trlSel) trlSel.value = chosen.default_trailer_id;
+                }
+            };
         }
 
         const trlSel = document.getElementById('edit-inp-trailer');
@@ -689,3 +697,22 @@ async function deleteOrCancelTrip(tripCode = null) {
     }
 }
 window.deleteOrCancelTrip = deleteOrCancelTrip;
+
+function toggleEditTripFullscreen() {
+    const modal = document.getElementById('modal-edit-trip');
+    if (!modal) return;
+    const dialog = modal.querySelector('.bg-white');
+    const icon = document.getElementById('icon-edit-trip-fullscreen');
+    if (!dialog) return;
+    const isFull = dialog.classList.toggle('edit-trip-fullscreen');
+    if (isFull) {
+        dialog.classList.remove('max-w-4xl', 'max-h-[95vh]', 'rounded-2xl');
+        dialog.classList.add('w-screen', 'h-screen', 'max-w-none', 'max-h-screen', 'rounded-none');
+        if (icon) icon.className = 'ph-bold ph-corners-in text-base';
+    } else {
+        dialog.classList.add('max-w-4xl', 'max-h-[95vh]', 'rounded-2xl');
+        dialog.classList.remove('w-screen', 'h-screen', 'max-w-none', 'max-h-screen', 'rounded-none');
+        if (icon) icon.className = 'ph-bold ph-corners-out text-base';
+    }
+}
+window.toggleEditTripFullscreen = toggleEditTripFullscreen;

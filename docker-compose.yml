@@ -35,8 +35,10 @@ services:
     environment:
       DB_ENGINE: django.db.backends.postgresql
       DB_NAME: gss_logistics_db
-      DB_USER: gss_logistics_user
-      DB_PASSWORD: ${DB_PASSWORD:?Khai bao DB_PASSWORD trong file .env}
+      # Web chạy bằng user thường nếu đã chạy scripts/db_harden.sh và đặt APP_DB_USER/APP_DB_PASSWORD trong .env;
+      # chưa đặt thì dùng như cũ (superuser của image). Superuser chỉ dành cho sao lưu/khôi phục (docs/16, S1).
+      DB_USER: ${APP_DB_USER:-gss_logistics_user}
+      DB_PASSWORD: ${APP_DB_PASSWORD:-${DB_PASSWORD:?Khai bao DB_PASSWORD trong file .env}}
       DB_HOST: db
       DB_PORT: 5432
       DJANGO_SETTINGS_MODULE: config.settings

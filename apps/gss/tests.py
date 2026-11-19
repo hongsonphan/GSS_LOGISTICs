@@ -607,12 +607,10 @@ class ClaimsInvoiceStatementTests(Base):
     def test_driver_claim_requires_photo_then_review_and_invoice(self):
         self.client.logout()
         url = f'/api/qr/t/{self.token}/claims/'
-        self.assertEqual(self.client.post(url, {'charge_code_id': self.nang.id, 'amount': '500000'}).status_code, 400)
-        r = self.client.post(url, {'charge_code_id': self.nang.id, 'amount': '500000', 'description': 'Nâng Cát Lái', 'photo': png()})
-        self.assertEqual(r.status_code, 201, r.content)
-        self.assertTrue(self.client.get(f'/api/qr/t/{self.token}/').json()['data']['claims'])
+        # Bỏ hoàn toàn phần Kê chi phí khỏi màn hình của Tài xế và Vendor
+        self.assertEqual(self.client.post(url, {'charge_code_id': self.nang.id, 'amount': '500000'}).status_code, 403)
         self.client.force_login(self.staff)
-        claim = CostClaim.objects.get()
+        claim = cl.submit_claim(self.t, charge_code=self.nang, amount=500000, user=self.staff)
         qr_text = 'https://hoadon.example.vn/tracuu?mst=0312345678&khhdon=1C26TAA&shdon=0001234&matracuu=ABC'
         inv = self.api('post', f'/api/gss/claims/{claim.id}/invoice/', {'qr': qr_text, 'total_amount': '540000', 'buyer_name': 'Công ty khác'})
         self.assertEqual(inv.status_code, 201, inv.content)

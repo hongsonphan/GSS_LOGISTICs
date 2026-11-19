@@ -200,9 +200,12 @@ function renderSubcontractorTable(list) {
                 <td>
                     <div class="font-semibold text-slate-800">${escapeHtml(item.driver_name)}</div>
                 </td>
-                <td>
-                    <div class="font-bold text-slate-800 truncate max-w-[160px]" title="${escapeHtml(item.customer_name)}">${escapeHtml(item.customer_name)}</div>
-                    <div class="text-[11px] text-slate-500">${escapeHtml(item.route_name)}</div>
+                <td class="whitespace-nowrap min-w-[380px]">
+                    <div class="font-bold text-slate-900 text-xs" title="${escapeHtml(item.customer_name)}">${escapeHtml(item.customer_name)}</div>
+                    <div class="text-xs text-slate-700 font-medium mt-0.5 flex items-center gap-1.5" title="${escapeHtml(item.route_name)}">
+                        <i class="ph-bold ph-map-pin text-teal-600 text-xs shrink-0"></i>
+                        <span>${escapeHtml(item.route_name || '-')}</span>
+                    </div>
                 </td>
                 <td class="text-right font-bold text-slate-700 tabular-nums">
                     ${formatMoneyVND(item.cached_revenue)}

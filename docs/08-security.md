@@ -8,6 +8,20 @@
 
 ---
 
+## 0. HIỆN TRẠNG THẬT CỦA GSS TMS (19/11/2026) – đọc trước mục I
+
+Mục I bên dưới là **bộ chuẩn mục tiêu kế thừa từ hệ BIM cũ**; một số mục (JWT/blacklist, Hashids, `TripDocument`, Cloudflare WAF) **không áp dụng nguyên văn** cho GSS TMS. Thực tế đang chạy và đã có test:
+
+- **Cách ly công ty hai lớp:** lọc ORM (`TENANT_ENFORCE`) + Row-Level Security (`core/rls.py`, vai trò `gss_rls`, `core/test_rls.py`).
+- **Link công khai:** `public_id` UUIDv7, token băm có hạn/thu hồi (nhà xe, tài xế `driver_token`, khách `tracking_token`), QR ký HMAC có `qr_version`.
+- **Nhật ký bất biến ở tầng CSDL (mới 19/11):** trigger chặn sửa/xoá `AuditLog`, `TrackingEventLog` (`core/immutability.py`); vai trò ứng dụng không có `TRUNCATE`.
+- **Tài khoản CSDL ứng dụng:** `scripts/db_harden.sh` hạ web xuống user không phải superuser (chưa áp lên stack 8086/VPS tại thời điểm này).
+- **Sao lưu/khôi phục:** xem `docs/11-runbook.md` mục 7 (checksum, bản mã hoá ngoài máy chủ, cron 4 giờ, drill kiểm sổ cái).
+- **Còn hở (chưa làm):** RLS còn fail-open với trang token/lệnh quản trị; `company` còn cho NULL; `/admin/` đường mặc định, chưa 2FA; chưa WAL/PITR; chưa có nơi lưu bản sao ngoài máy chủ được cấu hình. Danh sách đầy đủ, mức độ và kịch bản tấn công: **`docs/16-data-security-dr.md`**.
+- Chi tiết kỹ thuật trong mục I phải được đối chiếu với mã (`config/settings.py`) trước khi dựa vào; ví dụ `X_FRAME_OPTIONS` hiện là `SAMEORIGIN`, thời hạn lưu sao lưu là 14 ngày tại chỗ + 60 ngày bản ngoài.
+
+---
+
 ## I. 20 TIÊU CHUẨN AN NINH CHUỖI CUNG ỨNG (20 SECURITY ESSENTIALS)
 
 ### 1. Hash Mật Khẩu Tài Xế & Nhân Viên (Password Hashing)

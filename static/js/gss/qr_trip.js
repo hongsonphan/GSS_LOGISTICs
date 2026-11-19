@@ -27,6 +27,11 @@
     document.getElementById('t-title').textContent = 'Lệnh ' + s.trip_code;
 
     // 1. Lưu ý quan trọng nhất đặt lên đầu
+    if (s.is_twin_container) {
+      var twinMsg = 'Chuyến xe kéo 2 Container (2x20ft): ' + (s.container_number || 'Cont 1') + ' và ' + (s.container_number_2 || 'Cont 2') + '. Bác tài lưu ý chụp đủ chứng từ giao nhận riêng biệt cho từng container tương ứng.';
+      frag.append(note('LƯU Ý XE KÉO 2 CONT (2x20')', twinMsg));
+    }
+    if (s.special_notes) frag.append(note('Ghi chú Điều vận', s.special_notes));
     if (s.destination_notes) frag.append(note('Lưu ý điểm đến', s.destination_notes));
     if (s.road_restrictions) frag.append(note('Cấm đường / giờ cấm tải', s.road_restrictions));
     if (s.delivery_opening_hours) frag.append(note('Giờ nhận hàng tại nơi giao', s.delivery_opening_hours));
@@ -56,9 +61,8 @@
 
     // 5. Hàng lẻ có seal
     if (s.packages && s.packages.length) frag.append(packagesCard());
-    // 6. Qua trạm / bãi và khai chi phí chi hộ
+    // 6. Qua trạm / bãi (Đã bỏ kê chi phí do thuê trọn gói Vendor)
     if (!s.locked && s.step !== 'READY') frag.append(checkpointCard());
-    if (s.step !== 'CANCELLED' && s.claim_codes && s.claim_codes.length) frag.append(claimCard());
     G.clear(main).append(frag);
   }
 
@@ -70,15 +74,63 @@
       l.htmlFor = i.id = 'f-cont'; w.append(l, i); card.append(w); fields.container_number = i;
     }
     if (a.needs_files) {
-      var stageName = { PICKUP: 'Nhận cont/hàng', DELIVERY: 'Giao hàng', EMPTY_RETURN: 'Hạ rỗng' }[a.stage];
-      card.append(el('div', 'small b', 'Bắt buộc có chứng từ chặng "' + stageName + '" (tối thiểu 1, tối đa ' + state.max_files + ' file)'));
-      var up = G.uploader({ have: state.counts[a.stage] || 0, max: state.max_files, cameraOnly: !state.staff, onUpload: function (files) {
-        var fd = stamp(new FormData(), state.staff ? 'staff_upload' : 'camera'); fd.append('stage', a.stage); files.forEach(function (f) { fd.append('files', f, f.name); });
-        return G.api('/api/qr/t/' + encodeURIComponent(token) + '/attachments/', { method: 'POST', body: fd }).then(function (j) {
-          state.counts = j.counts; state.action = j.action; G.toast('Đã tải chứng từ lên', 'ok'); render();
-        });
-      } });
-      card.append(up);
+      var stageDocs = {
+        PICKUP: [
+          { key: 'EIR', label: '📷 Chụp EIR Nhận Cont (Bắt buộc)' },
+          { key: 'SEAL', label: '📷 Chụp Ảnh Số Seal Cont (Bắt buộc)' }
+        ],
+        DELIVERY: [
+          { key: 'POD', label: '📷 Chụp Biên Bản Giao Hàng / POD Có Chữ Ký (Bắt buộc)' }
+        ],
+        EMPTY_RETURN: [
+          { key: 'EIR', label: '📷 Chụp EIR Hạ Rỗng / Hạ Cont (Bắt buộc)' }
+        ]
+      };
+      var docs = stageDocs[a.stage] || [{ key: 'DOC', label: '📷 Chụp Chứng Từ Bắt Buộc' }];
+      var stageTitle = { PICKUP: 'Nhận cont / hàng', DELIVERY: 'Giao hàng tại kho', EMPTY_RETURN: 'Hạ rỗng / hạ bãi' }[a.stage] || '';
+      var box = el('div', 'stack');
+      box.style.background = '#f8fafc';
+      box.style.padding = '12px';
+      box.style.borderRadius = '12px';
+      box.style.border = '1px solid #e2e8f0';
+      box.append(el('div', 'b small', 'Chứng từ bắt buộc cho chặng: ' + stageTitle));
+      var count = state.counts[a.stage] || 0;
+      box.append(el('div', 'small ' + (count > 0 ? 'okmsg' : 'err'), count > 0 ? ('✓ Đã tải ' + count + ' chứng từ hợp lệ') : '⚠ Bác tài cần chụp chứng từ để mở nút xác nhận bước'));
+
+      var btnGrid = el('div', 'stack');
+      docs.forEach(function (docItem) {
+        var docBtn = el('button', 'btn sec', docItem.label);
+        docBtn.type = 'button';
+        docBtn.style.textAlign = 'left';
+        docBtn.style.padding = '10px 14px';
+        docBtn.style.fontSize = '13px';
+        var fileInp = el('input');
+        fileInp.type = 'file';
+        fileInp.accept = 'image/*';
+        fileInp.setAttribute('capture', 'environment');
+        fileInp.className = 'hidden';
+        fileInp.onchange = function () {
+          var files = Array.from(fileInp.files || []);
+          if (!files.length) return;
+          var fd = stamp(new FormData(), state.staff ? 'staff_upload' : 'camera');
+          fd.append('stage', a.stage);
+          fd.append('document_type', docItem.key);
+          files.forEach(function (f) { fd.append('files', f, f.name); });
+          docBtn.disabled = true;
+          docBtn.textContent = 'Đang tải ảnh lên…';
+          G.api('/api/qr/t/' + encodeURIComponent(token) + '/attachments/', { method: 'POST', body: fd }).then(function (j) {
+            state.counts = j.counts; state.action = j.action; G.toast('Đã tải lên ' + docItem.label, 'ok'); render();
+          }).catch(function (e) {
+            G.toast(e.message || 'Lỗi tải ảnh', 'bad');
+            docBtn.disabled = false;
+            docBtn.textContent = docItem.label;
+          });
+        };
+        docBtn.onclick = function () { fileInp.click(); };
+        btnGrid.append(docBtn, fileInp);
+      });
+      box.append(btnGrid);
+      card.append(box);
     }
     var swap = null;
     if (a.allows_swap) {
@@ -187,32 +239,7 @@
     return card;
   }
 
-  function claimCard() {
-    var s = state, card = el('section', 'card stack');
-    card.append(el('h2', null, 'Khai chi phí chi hộ (nâng/hạ, phát sinh)'));
-    (s.claims || []).forEach(function (c) {
-      card.append(el('div', 'small', G.fmtDT(c.at) + ' · ' + c.charge + ' · ' + Number(c.amount).toLocaleString('vi-VN') + ' đ · ' + c.status_label));
-    });
-    var code = el('select', 'in'); code.setAttribute('aria-label', 'Khoản chi');
-    s.claim_codes.forEach(function (c) { code.append(new Option(c.name, c.id)); });
-    var amt = el('input', 'in'); amt.type = 'number'; amt.inputMode = 'numeric'; amt.min = 0; amt.placeholder = 'Số tiền (đ)'; amt.setAttribute('aria-label', 'Số tiền');
-    var desc = el('input', 'in'); desc.placeholder = 'Ghi chú (nơi nâng/hạ, số hoá đơn…)'; desc.setAttribute('aria-label', 'Ghi chú');
-    var cam = el('input'); cam.type = 'file'; cam.accept = 'image/*'; cam.setAttribute('capture', 'environment'); cam.className = 'hidden';
-    var photo = null, preview = el('div', 'small mut', 'Chưa chụp ảnh hoá đơn');
-    cam.onchange = function () { var f = cam.files[0]; if (!f) return; G.compress(f).then(function (x) { photo = x; preview.textContent = 'Đã chụp ảnh hoá đơn ✓'; preview.className = 'small okmsg'; }); };
-    var shot = el('button', 'btn sec', 'Chụp ảnh hoá đơn'); shot.type = 'button'; shot.onclick = function () { cam.click(); };
-    var send = el('button', 'btn big', 'Gửi khai chi phí'); send.type = 'button';
-    send.onclick = function () {
-      if (!photo) { G.toast('Phải chụp ảnh hoá đơn/biên lai.', 'bad'); return; }
-      if (!(Number(amt.value) > 0)) { G.toast('Nhập số tiền.', 'bad'); return; }
-      var fd = stamp(new FormData(), 'camera'); fd.append('charge_code_id', code.value); fd.append('amount', amt.value); fd.append('description', desc.value); fd.append('photo', photo, photo.name || 'hoadon.jpg');
-      send.disabled = true;
-      G.api(API + 'claims/', { method: 'POST', body: fd }).then(function (j) { G.toast(j.message, 'ok'); return load(); })
-        .catch(function (e) { G.toast(!e.status && !navigator.onLine ? 'Mất sóng – thử gửi lại khi có mạng.' : e.message, 'bad'); send.disabled = false; });
-    };
-    card.append(code, amt, desc, shot, cam, preview, send);
-    return card;
-  }
+  // Phần Kê chi phí đã gỡ bỏ hoàn toàn theo nghiệp vụ thuê trọn gói Vendor
 
   load();
 })();

@@ -59,11 +59,17 @@ def apply(using='default'):
         if c.fetchone() is None:
             c.execute(f'CREATE ROLE {q(role)} NOLOGIN NOSUPERUSER NOBYPASSRLS NOINHERIT')
         c.execute(f'GRANT USAGE ON SCHEMA public TO {q(role)}')
-        c.execute(f'GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA public TO {q(role)}')
+        c.execute(f'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO {q(role)}')
+        # TRUNCATE bỏ qua RLS và trigger dòng: vai trò ứng dụng không được giữ (bản cũ có cấp -> thu hồi)
+        c.execute(f'REVOKE TRUNCATE ON ALL TABLES IN SCHEMA public FROM {q(role)}')
         c.execute(f'GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO {q(role)}')
         c.execute("SELECT rolsuper FROM pg_roles WHERE rolname = current_user")
         if not c.fetchone()[0]:
-            c.execute(f'GRANT {q(role)} TO current_user')
+            # Người dùng thường cần là thành viên để SET ROLE. Vai trò có thể do superuser tạo sẵn
+            # (scripts/db_harden.sh đã cấp tư cách thành viên) -> không có quyền cấp lại, chỉ cấp khi chưa là thành viên.
+            c.execute("SELECT pg_has_role(current_user, %s, 'MEMBER')", [role])
+            if not c.fetchone()[0]:
+                c.execute(f'GRANT {q(role)} TO current_user')
         cond = ("company_id IS NULL OR company_id = "
                 "coalesce(nullif(current_setting('app.company_id', true), '')::bigint, company_id)")
         for table in tables:
