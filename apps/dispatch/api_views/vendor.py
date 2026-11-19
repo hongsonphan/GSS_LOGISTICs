@@ -744,6 +744,9 @@ class VendorContainersMonitoringAPIView(APIView):
             alloc = c.allocation
             sub = alloc.subcontractor if alloc else None
             t = c.trip
+            # Chốt chặn phòng thủ: Chuyến xe đã bị xóa hoặc hủy thì không còn hiệu lực trên Container
+            if t and (t.is_deleted or t.status == 'CANCELLED' or t.step_status == 'CANCELLED'):
+                t = None
 
             if not alloc or not sub:
                 st_code = 'UNASSIGNED'

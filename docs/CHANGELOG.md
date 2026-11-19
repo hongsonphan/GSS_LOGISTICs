@@ -3,6 +3,19 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Sửa Triệt Để Lỗi Chuyến VC Đã Xóa Vẫn Còn Hiển Thị Trên Theo Dõi Hành Trình
+- **Nguyên nhân gốc rễ:**
+  - Khi xóa chuyến xe (DELETE /api/trips/<code_or_id>/), trường step_status không được cập nhật thành CANCELLED mà vẫn giữ READY.
+  - BookingContainer liên kết (	rip_id) không được giải phóng (	rip=None), khiến container vẫn trỏ tới bản ghi chuyến xe đã xóa mềm (is_deleted=True).
+  - API giám sát container (VendorContainersMonitoringAPIView) thiếu kiểm tra trạng thái xóa/hủy của c.trip, dẫn tới việc chuyến xe bị xóa vẫn được tính vào nhóm ASSIGNED và lọt vào bộ lọc status=ACTIVE trên Tab 3 Theo dõi hành trình.
+  - Phía giao diện (	rip-actions.js:deleteOrCancelTrip) sau khi xóa chỉ làm mới bảng chuyến xe cũ (loadTripsData) mà không kích hoạt làm mới bảng Container (loadVendorContainersTab) hay Kanban board (loadJourneyBoard).
+- **Xử lý toàn diện & Chốt chặn phòng thủ:**
+  - *Backend pps/dispatch/api_views/trips.py:* Cập nhật TripDetailAPIView.delete đồng bộ 	rip.step_status = 'CANCELLED', giải phóng BookingContainer.objects.filter(trip=trip).update(trip=None), xóa mềm TripContainer, và dọn dòng nháp phân bổ (lloc.draft_rows) kèm làm mới tiến độ booking.
+  - *Backend pps/dispatch/api_views/trips.py:* Cập nhật TripListCreateAPIView lọc bắt buộc ilter(is_deleted=False) loại trừ chuyến đã xóa khỏi danh sách.
+  - *Backend pps/dispatch/api_views/vendor.py:* Thêm chốt chặn phòng thủ trong VendorContainersMonitoringAPIView: nếu 	.is_deleted hoặc 	.status == 'CANCELLED' hoặc 	.step_status == 'CANCELLED' thì ép 	 = None, tự động chuyển trạng thái container thành WAITING_VEHICLE (hoặc UNASSIGNED) và loại ngay khỏi bộ lọc ACTIVE.
+  - *Frontend static/js/src/app/dispatch/trip-actions.js:* Kích hoạt tự động làm mới toàn bộ các tab Điều vận (loadVendorContainersTab, loadJourneyBoard, loadDispatchOrdersTab, loadAllocationsTab) ngay khi xóa chuyến thành công.
+  - *Kiểm thử tự động:* Bổ sung unit test 	est_delete_trip_clears_booking_container_and_active_monitoring trong pps/dispatch/test_vendor_admin.py bao quát cả trường hợp API chuẩn và trường hợp CSDL cũ.
+
 ## 2026-11-19 – Đồng Nhất & Mở Rộng Không Gian Giao Diện Toàn Ứng Dụng (Spacious Full-Width UI/UX)
 - **1. Đồng nhất chuẩn hiển thị Lộ trình vận chuyển 3 điểm trên 1 hàng ngang duy nhất:**
   - Quy chuẩn toàn diện cho tất cả các bảng dữ liệu: Cột lộ trình đạt chuẩn độ rộng `min-w-[440px] whitespace-nowrap`, hiển thị đủ 3 mốc nghiệp vụ TMS (`Lấy cont ➔ Kho đóng/trả hàng ➔ Hạ rỗng`) nối bằng mũi tên xanh teal, loại bỏ hoàn toàn tình trạng ngắt dòng 3–4 tầng gây phình vỡ bảng hoặc cắt cụt chữ (`truncate`).

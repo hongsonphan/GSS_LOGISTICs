@@ -8,7 +8,7 @@ class TripListCreateAPIView(APIView):
         query = request.GET.get('q', '').strip()
         status_filter = request.GET.get('status', '').strip()
 
-        trips_qs = DispatchTrip.objects.select_related(
+        trips_qs = DispatchTrip.objects.filter(is_deleted=False).select_related(
             'customer', 'vehicle', 'driver', 'trailer', 'subcontractor', 'dropoff_vehicle', 'dropoff_driver'
         ).prefetch_related('customs_declarations').order_by('-created_at')
 
@@ -1314,10 +1314,27 @@ class TripDetailAPIView(APIView):
         reason = request.data.get('reason') or request.GET.get('reason') or 'Điều độ viên hủy lệnh điều động'
         trip.is_deleted = True
         trip.status = TripStatus.CANCELLED
-        trip.save(update_fields=['is_deleted', 'status', 'updated_at'])
+        trip.step_status = 'CANCELLED'
+        trip.save(update_fields=['is_deleted', 'status', 'step_status', 'updated_at'])
 
         # Đồng bộ xóa mềm chứng từ hình ảnh đính kèm (EIR, POD...)
         trip.documents.filter(is_deleted=False).update(is_deleted=True)
+
+        # Giải phóng liên kết Container và dọn dẹp phân bổ Vendor
+        from apps.gss.models import BookingContainer
+        BookingContainer.objects.filter(trip=trip).update(trip=None, updated_at=timezone.now())
+
+        if trip.vendor_allocation:
+            alloc = trip.vendor_allocation
+            if trip.vendor_line_no and alloc.draft_rows:
+                drafts = dict(alloc.draft_rows)
+                drafts.pop(str(trip.vendor_line_no), None)
+                alloc.draft_rows = drafts
+                alloc.save(update_fields=['draft_rows', 'updated_at'])
+            from apps.dispatch.vendor_service import refresh_status, sync_booking_progress
+            refresh_status(alloc)
+            if trip.booking_order:
+                sync_booking_progress(trip.booking_order)
 
         from core.models import TrackingEventLog
         actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.dispatcher

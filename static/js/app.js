@@ -11054,6 +11054,18 @@ async function deleteOrCancelTrip(tripCode = null) {
             if (typeof loadTripsData === 'function') {
                 await loadTripsData();
             }
+            if (typeof loadVendorContainersTab === 'function') {
+                loadVendorContainersTab();
+            }
+            if (typeof loadJourneyBoard === 'function') {
+                loadJourneyBoard();
+            }
+            if (typeof loadDispatchOrdersTab === 'function') {
+                loadDispatchOrdersTab();
+            }
+            if (typeof loadAllocationsTab === 'function') {
+                loadAllocationsTab();
+            }
         } else {
             showToast('danger', data.error || data.message || 'Không thể xóa phiếu điều độ này!');
         }

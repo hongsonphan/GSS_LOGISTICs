@@ -125,6 +125,33 @@ class VendorAdminTests(GssBase):
         self.assertTrue(rows)
         self.assertTrue(all(r['status_code'] in ('ASSIGNED', 'IN_TRANSIT', 'EMPTY_RETURNING') for r in rows))
 
+    def test_delete_trip_clears_booking_container_and_active_monitoring(self):
+        from apps.gss.models import BookingContainer
+        t = self.trip()
+        bc = BookingContainer.objects.create(booking=self.booking, line_no=2, container_number='TEMU9999999',
+                                             allocation=self.alloc, alloc_line_no=1, trip=t)
+        self.login()
+        # Xóa chuyến xe qua API DELETE
+        del_res = self.client.delete(f'/api/trips/{t.trip_code}/', data={'cascade': True}, content_type='application/json')
+        self.assertEqual(del_res.status_code, 200)
+
+        t.refresh_from_db()
+        self.assertTrue(t.is_deleted)
+        self.assertEqual(t.status, 'CANCELLED')
+        self.assertEqual(t.step_status, 'CANCELLED')
+
+        bc.refresh_from_db()
+        self.assertIsNone(bc.trip)
+
+        # Kiểm tra API Tab 3 không còn trả về chuyến vừa xóa
+        rows = self.client.get('/api/dispatch/vendor-containers/?status=ACTIVE').json()['data']
+        self.assertFalse(any(r.get('trip_code') == t.trip_code for r in rows))
+
+        # Giả lập CSDL cũ (BookingContainer vẫn trỏ đến trip đã xóa)
+        BookingContainer.objects.filter(pk=bc.pk).update(trip=t)
+        rows_defensive = self.client.get('/api/dispatch/vendor-containers/?status=ACTIVE').json()['data']
+        self.assertFalse(any(r.get('trip_code') == t.trip_code for r in rows_defensive))
+
     def test_proactive_token_issuance_and_magic_link(self):
         self.login()
         # 1. Điều vận chủ động đặt token theo ý muốn và hạn dùng 30 ngày
