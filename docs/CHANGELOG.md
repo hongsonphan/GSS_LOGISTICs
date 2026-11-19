@@ -3,6 +3,10 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Sửa Lỗi 500 Khi Xóa Booking (CI Đỏ #61–#63)
+- **Vấn đề:** `DELETE /api/bookings/<id>/` trả 500 vì `BookingOrderDetailAPIView.delete` gọi `b.allocations`, trong khi quan hệ ngược của `BookingVendorAllocation.booking` tên là `vendor_allocations`. Test `core.tests.GssLogisticsCoreTestCase.test_simulation_sales_and_booking_full_flow` đỏ.
+- **Xử lý:** `apps/dispatch/api_views/bookings.py` đổi sang `b.vendor_allocations`; vẫn chỉ xóa mềm phân bổ và container của booking.
+
 ## 2026-11-19 – Chuẩn Hoá Logic Đếm Container Phân Bổ Nhà Xe (Khắc Phục Lỗi Đội Số Lượng Cont Khi Điều Chuyển)
 - **Vấn đề:**
   - Khi một Booking có danh sách container cụ thể (Container Mode), người dùng điều chuyển cont giữa các nhà xe (ví dụ từ Nhà xe A sang Nhà xe B).

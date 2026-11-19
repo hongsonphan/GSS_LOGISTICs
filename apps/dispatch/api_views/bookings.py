@@ -312,7 +312,7 @@ class BookingOrderDetailAPIView(APIView):
         b.is_deleted = True
         b.save(update_fields=['is_deleted'])
         # Đồng bộ xóa mềm toàn bộ phân bổ nhà xe và container trực thuộc booking
-        b.allocations.filter(is_deleted=False).update(is_deleted=True)
+        b.vendor_allocations.filter(is_deleted=False).update(is_deleted=True)
         b.containers.filter(is_deleted=False).update(is_deleted=True)
         return Response({
             'success': True,
