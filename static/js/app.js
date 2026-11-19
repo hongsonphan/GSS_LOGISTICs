@@ -4430,6 +4430,12 @@ function canOpenTab(tabId) {
 }
 
 function switchTab(tabId, updateHistory = true) {
+    if (typeof isDispatchFullscreen !== 'undefined' && isDispatchFullscreen) {
+        if (typeof toggleDispatchFullscreen === 'function') toggleDispatchFullscreen(false);
+    }
+    if (typeof isContTableFullscreen !== 'undefined' && isContTableFullscreen) {
+        if (typeof toggleFullscreenContainersTable === 'function') toggleFullscreenContainersTable(false);
+    }
     if (!tabId) tabId = 'dashboard';
     if (!canOpenTab(tabId)) {
         if (typeof showToast === 'function') showToast('danger', 'Bạn không có quyền vào phân hệ này. Liên hệ Ban Giám Đốc để được cấp quyền.');
@@ -24222,7 +24228,12 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
 
-            form.querySelectorAll('button:not(#btn-fullpage-edit-booking-bottom):not(#btn-fullpage-delete-booking-bottom):not(#btn-fullpage-print-booking-bottom):not([onclick*="backToBookings"]):not([onclick*="viewTripDetail"]):not([onclick*="openPodTemplateManager"])').forEach(el => el.disabled = true);
+            form.querySelectorAll('button:not(#btn-fullpage-edit-booking-bottom):not(#btn-fullpage-delete-booking-bottom):not(#btn-fullpage-print-booking-bottom):not(#btn-fullscreen-containers):not(#cont-table-search-clear):not([onclick*="toggleFullscreenContainersTable"]):not([onclick*="printDispatchOrderSlip"]):not([onclick*="resetContTableFilters"]):not([onclick*="backToBookings"]):not([onclick*="viewTripDetail"]):not([onclick*="openPodTemplateManager"])').forEach(el => el.disabled = true);
+            // Đảm bảo các công cụ tra cứu & toàn màn hình của bảng container luôn khả dụng để xem
+            const btnFs = document.getElementById('btn-fullscreen-containers'); if (btnFs) btnFs.disabled = false;
+            const cSearch = document.getElementById('cont-table-search-input'); if (cSearch) cSearch.disabled = false;
+            const cVendor = document.getElementById('cont-table-filter-vendor'); if (cVendor) cVendor.disabled = false;
+            const cSort = document.getElementById('cont-table-sort-select'); if (cSort) cSort.disabled = false;
 
 
 

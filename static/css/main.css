@@ -1820,7 +1820,12 @@ body:has([id^="modal-"].fixed.inset-0:not(.hidden):not(.hidden-view)) #chat-bubb
    CHẾ ĐỘ TOÀN MÀN HÌNH DOANH NGHIỆP (ENTERPRISE FULLSCREEN MODE)
    Áp dụng cho Bảng Container Booking & Phân hệ Điều Vận (GSS TMS)
    ========================================================================= */
-.gss-fullscreen-mode {
+.view.hidden-view,
+.hidden-view {
+    display: none !important;
+}
+
+.gss-fullscreen-mode:not(.hidden):not(.hidden-view) {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -1842,7 +1847,7 @@ body:has([id^="modal-"].fixed.inset-0:not(.hidden):not(.hidden-view)) #chat-bubb
     overflow: hidden !important;
 }
 
-#view-dieu-van.gss-fullscreen-mode {
+#view-dieu-van.gss-fullscreen-mode:not(.hidden-view) {
     background-color: #f8fafc !important;
     padding: 1rem 1.25rem !important;
 }

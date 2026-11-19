@@ -3,6 +3,19 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Kiểm Thử Thị Giác Playwright & Mở Khóa Nút Toàn Màn Hình Booking
+- **Kiểm thử thị giác bằng Playwright (Visual Regression & DOM Inspection):**
+  - Chạy mô phỏng tương tác người dùng thực tế với độ phân giải `1920x1080` trên cả phân hệ Điều Vận và Booking Detail.
+  - *Kết quả phân tích lỗi:*
+    1. **Nút Toàn Màn Hình bị khóa (`disabled = true`):** Khi xem chi tiết đơn hàng Booking (`viewBookingDetail`), hàm khóa form chế độ xem đã vô tình khóa toàn bộ nút trong form bao gồm `#btn-fullscreen-containers`, hộp tìm kiếm `#cont-table-search-input` và dropdown lọc `#cont-table-filter-vendor`. Do nút bị disabled, trình duyệt chặn hoàn toàn sự kiện `click`, khiến người dùng bấm vào không có phản hồi.
+    2. **Xung đột hiển thị CSS (`hidden-view` vs `.gss-fullscreen-mode`):** Khắc phục tình trạng lớp `.gss-fullscreen-mode` ghi đè `display: flex !important` lên các view đang ẩn bằng bộ chọn an toàn `.gss-fullscreen-mode:not(.hidden):not(.hidden-view)`.
+    3. **Bộ nhớ đệm trình duyệt (Cache Busting):** Tăng chuỗi phiên bản `main.css?v=2.9.87` trong `templates/base.html` để người dùng nhận ngay lớp CSS toàn màn hình mới mà không cần thao tác xóa cache thủ công.
+  - *Xử lý triệt để:*
+    + Cập nhật `static/js/src/app/sales/booking-page/page.js`: Mở khóa vĩnh viễn nút `#btn-fullscreen-containers` và các bộ lọc tìm kiếm container khi xem đơn hàng.
+    + Cập nhật `static/js/src/app/core/router.js`: Tự động tắt trạng thái toàn màn hình khi người dùng chuyển phân hệ làm việc.
+    + Cập nhật `static/css/main.css`: Quy định chặt chẽ `.view.hidden-view { display: none !important; }`.
+    + Kiểm thử thị giác bằng Playwright xác nhận thành công: Toàn bộ bảng container của Booking và bảng Điều Vận mở rộng hoàn hảo `width: 1920px, height: 1080px, zIndex: 999999` che kín toàn bộ màn hình, hiển thị đầy đủ thông tin và cuộn mượt mà.
+
 ## 2026-11-19 – Sửa Lỗi 500 Khi Xóa Booking (CI Đỏ #61–#63)
 - **Vấn đề:** `DELETE /api/bookings/<id>/` trả 500 vì `BookingOrderDetailAPIView.delete` gọi `b.allocations`, trong khi quan hệ ngược của `BookingVendorAllocation.booking` tên là `vendor_allocations`. Test `core.tests.GssLogisticsCoreTestCase.test_simulation_sales_and_booking_full_flow` đỏ.
 - **Xử lý:** `apps/dispatch/api_views/bookings.py` đổi sang `b.vendor_allocations`; vẫn chỉ xóa mềm phân bổ và container của booking.
