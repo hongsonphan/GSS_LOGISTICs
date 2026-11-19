@@ -104,6 +104,7 @@ urlpatterns = [
     path('healthz/', healthz, name='healthz'),
     path('api/schema/', SpectacularAPIView.as_view(permission_classes=[IsAdminUser]), name='api-schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='api-schema', permission_classes=[IsAdminUser]), name='api-docs'),
+    path('admin', RedirectView.as_view(url='/admin/', permanent=True)),
     path('admin/login/', account_views.admin_login_redirect, name='admin-login-redirect'),
     path('admin/', admin.site.urls),
     
@@ -358,9 +359,5 @@ if settings.DEBUG:
 handler404 = 'core.exceptions.custom_404_view'
 handler500 = 'core.exceptions.custom_500_view'
 
-# Chặn lộ lọt thông tin hệ thống (Information Disclosure): Bắt mọi URL không tồn tại
-# và hiển thị trang 404 bảo mật của GSS TMS thay vì trang vàng kỹ thuật của Django.
-from core.exceptions import custom_404_view
-urlpatterns += [
-    re_path(r'^.*$', custom_404_view, name='catchall-404'),
-]
+# Handler chuẩn quốc tế cho mã lỗi 404 & 500 (hiển thị trang bảo mật GSS TMS)
+# Không dùng catch-all re_path để đảm bảo APPEND_SLASH của CommonMiddleware hoạt động chuẩn xác.

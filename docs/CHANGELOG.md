@@ -3,6 +3,15 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Fix Chuyển Hướng /admin (Loại bỏ catch-all 404 cản trở APPEND_SLASH)
+- **Vấn đề:** Khi truy cập \gss.bim.info.vn/admin\ (không có dấu \/\ cuối), hệ thống trả về trang 404 do bị chặn bởi pattern \
+e_path(r'^.*$', custom_404_view)\ ở cuối \urls.py\, vô hiệu hóa cơ chế tự động \APPEND_SLASH\ của Django.
+- **Xử lý:**
+  - Bổ sung \path('admin', RedirectView.as_view(url='/admin/', permanent=True))\ chuyển hướng 301 tự động vào \dmin/\.
+  - Loại bỏ catch-all pattern \
+e_path(r'^.*$')\, dựa hoàn toàn vào \handler404 = 'core.exceptions.custom_404_view'\ chuẩn Django, đảm bảo an toàn bảo mật và giữ nguyên chức năng \APPEND_SLASH\ cho toàn hệ thống.
+  - Xóa dứt điểm chuyến xe \VC.2611.003\ theo yêu cầu người dùng, giải phóng container và đồng bộ lại tiến độ điều độ booking.
+
 ## 2026-11-19 – Sửa Triệt Để Lỗi Chuyến VC Đã Xóa Vẫn Còn Hiển Thị Trên Theo Dõi Hành Trình
 - **Nguyên nhân gốc rễ:**
   - Khi xóa chuyến xe (DELETE /api/trips/<code_or_id>/), trường step_status không được cập nhật thành CANCELLED mà vẫn giữ READY.
