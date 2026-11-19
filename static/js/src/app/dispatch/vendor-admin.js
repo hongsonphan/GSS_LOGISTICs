@@ -203,7 +203,7 @@ function renderAllocationsTable() {
         else st = vaState('text-amber-700', 'ph-arrows-split', `Gán chưa hết (còn ${left})`);
         const route = `<div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5" title="${vaEsc(l.pickup_location || '')} -> ${vaEsc(l.delivery_location || '')} -> ${vaEsc(l.dropoff_location || '')}"><span class="text-teal-700 font-bold" title="1. Lấy cont">${vaEsc(l.pickup_location || 'Cảng/Depot')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-blue-900 font-bold" title="2. Kho đóng/trả">${vaEsc(l.delivery_location || 'Kho khách')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Hạ rỗng">${vaEsc(l.dropoff_location || 'Depot rỗng')}</span></div>`;
         return `
-        <tr class="hover:bg-teal-50/30 cursor-pointer" onclick="vaOpenUnallocatedContsModal(${l.booking_id}, ${l.id})" title="Bấm để xem danh sách Container thuộc phiếu chia này">
+        <tr class="hover:bg-teal-50/30 cursor-pointer" onclick="vaViewUnallocatedContainersModal(${l.id})" title="Bấm để xem danh sách Container thuộc phiếu chia này">
             <td class="p-2.5 text-center text-slate-400 font-mono text-xs">${i + 1}</td>
             <td class="p-2.5"><div class="font-mono font-bold text-teal-900 text-xs">${vaEsc(l.booking_code)}</div><div class="text-xs text-slate-600">${vaEsc(l.customer)}</div></td>
             <td class="p-2.5 font-bold text-slate-800">${vaEsc(l.subcontractor)}</td>
@@ -217,7 +217,7 @@ function renderAllocationsTable() {
             <td class="p-2.5 text-xs">${vaExpiry(l.expires_at, l.expired)}</td>
             <td class="p-2.5 text-center" onclick="event.stopPropagation()">
                 <div class="inline-flex items-center gap-1 flex-wrap justify-center">
-                    <button type="button" class="${VA_BTN_TEAL}" onclick="vaOpenUnallocatedContsModal(${l.booking_id}, ${l.id})" title="Xem danh sách container thuộc phiếu chia này (cont đã gán, cont chưa gán)"><i class="ph-bold ph-list-magnifying-glass"></i> Xem Cont</button>
+                    <button type="button" class="${VA_BTN_TEAL}" onclick="event.stopPropagation(); vaViewUnallocatedContainersModal(${l.id})" title="Xem danh sách container thuộc phiếu chia này (cont đã gán, cont chưa gán)"><i class="ph-bold ph-list-magnifying-glass"></i> Xem Cont</button>
                     <button type="button" class="${VA_BTN_GRAY}" onclick="vaShareVendorBatchZalo(${l.id})" title="Gửi danh sách link lệnh cho Điều vận Nhà xe qua Zalo"><i class="ph-bold ph-paper-plane-tilt text-teal-700"></i> Gửi ĐV</button>
                     <button type="button" class="${VA_BTN_GRAY}" onclick="vaExportAllocExcel(${l.id})" title="Xuất file Excel gán xe cho nhà xe này"><i class="ph-bold ph-file-arrow-down text-indigo-700"></i> Excel</button>
                     <button type="button" class="${VA_BTN_GRAY}" onclick="vaTriggerAllocExcelUpload(${l.id})" title="Nhập file Excel gán xe từ nhà xe"><i class="ph-bold ph-file-arrow-up text-emerald-700"></i> Nhập</button>

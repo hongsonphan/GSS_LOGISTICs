@@ -66,8 +66,8 @@ def apply(using='default'):
             c.execute("SELECT to_regclass(%s)", [f'public.{table}'])
             if c.fetchone()[0] is None:
                 continue
-            c.execute(f'DROP TRIGGER IF EXISTS {TRIGGER} ON {table}')
-            c.execute(f"CREATE TRIGGER {TRIGGER} BEFORE UPDATE OR DELETE ON {table} "
+            c.execute(f'DROP TRIGGER IF EXISTS {TRIGGER} ON {conn.ops.quote_name(table)}')
+            c.execute(f"CREATE TRIGGER {TRIGGER} BEFORE UPDATE OR DELETE ON {conn.ops.quote_name(table)} "
                       f"FOR EACH ROW EXECUTE FUNCTION {FUNCTION}(%s)", [','.join(nullable)])
             done.append(table)
     return done

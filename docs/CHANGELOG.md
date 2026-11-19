@@ -3,6 +3,12 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Rà soát tính năng 17–19/11 (vai trò tester)
+- Giả lập vòng đời Booking → phân bổ nhà xe → chuyến → hủy/xóa bằng test mới `apps/dispatch/test_regression_lifecycle.py` (7 kịch bản: hủy chuyến READY trả lại số cont/dòng phân bổ; cấm hủy khi xe đã chạy; xóa Booking bị chặn khi còn chuyến, xóa mềm kèm phân bổ/cont và vô hiệu link nhà xe; xóa cont thu gọn phiếu; 404/redirect `/admin`; nhãn 7 bước theo loại hàng). Đều đạt, không phát hiện lỗi nghiệp vụ.
+- Sửa: tab «Quản lý Vendor» – nút/dòng "Xem Cont" gọi hàm không tồn tại `vaOpenUnallocatedContsModal` (bấm không có phản hồi) → nối đúng `vaViewUnallocatedContainersModal`; bấm nút trong dòng không còn mở modal hai lần.
+- Sửa: cổng nhà xe bỏ số đếm trên tên tab Xe đầu kéo/Rơ-moóc/Tài xế (quy ước 10-ui-ux-guidelines 2.6).
+- Sửa: `core/immutability.py` quote tên bảng khi tạo trigger (bộ quét SQL báo FAIL; tên bảng vốn là hằng số nên chưa có rủi ro thực).
+
 ## 2026-11-19 – Kiểm Thử Thị Giác Playwright & Mở Khóa Nút Toàn Màn Hình Booking
 - **Kiểm thử thị giác bằng Playwright (Visual Regression & DOM Inspection):**
   - Chạy mô phỏng tương tác người dùng thực tế với độ phân giải `1920x1080` trên cả phân hệ Điều Vận và Booking Detail.
