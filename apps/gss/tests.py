@@ -833,3 +833,34 @@ class WorkflowPhasesTests(Base):
         rel = dc.storage_rel_path(t, 'PICKUP', 1, timezone.now(), 'img.jpg', key='abcd1234')
         self.assertTrue(rel.startswith('Storage/'))
         self.assertIn('/Chung_Tu_Hanh_Trinh/', rel)
+
+    def test_reassign_container_does_not_inflate_total_allocated_containers(self):
+        """Khi chuyen cont giua cac nha xe, allocated_total va allocation_summary phai giu dung so luong thuc te."""
+        from apps.dispatch import vendor_service as vs
+        from apps.gss.models import BookingContainer
+        from apps.dispatch.models import BookingVendorAllocation
+
+        c = self.import_conts(C1, C2)
+        # 2 cont C1 va C2 ban dau chia cho sub
+        self.assign([c[C1].id, c[C2].id], self.sub)
+        alloc1 = BookingContainer.objects.get(container_number=C1).allocation
+        self.assertEqual(vs.allocated_total(self.booking), 2)
+        s1 = vs.allocation_summary(alloc1)
+        self.assertEqual(s1['allocated_containers'], 2)
+
+        # Chuyen C1 sang sub2
+        self.assign([c[C1].id], self.sub2)
+        alloc2 = BookingContainer.objects.get(container_number=C1).allocation
+        alloc1.refresh_from_db()
+        alloc2.refresh_from_db()
+
+        # Tong so cont duoc phan bo van phai la 2 (khong bi doi thanh 3)
+        self.assertEqual(vs.allocated_total(self.booking), 2)
+
+        s1_after = vs.allocation_summary(alloc1)
+        s2_after = vs.allocation_summary(alloc2)
+        # alloc1 con 1 cont thuc te, alloc2 nhan 1 cont thuc te
+        self.assertEqual(s1_after['allocated_containers'], 1)
+        self.assertEqual(s2_after['allocated_containers'], 1)
+        self.assertEqual(s1_after['allocated_containers'] + s2_after['allocated_containers'], 2)
+

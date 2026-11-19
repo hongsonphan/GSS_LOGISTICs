@@ -344,9 +344,12 @@ def remove_container(container, *, user=None, reason=''):
         if container.trip.step_status != 'READY':
             raise ValidationError(f'Container {container.container_number} đã bắt đầu hành trình ({container.trip.get_step_status_display()}), không thể xóa khỏi danh sách.')
         raise ValidationError(f'Container {container.container_number} đã phát lệnh điều độ ({container.trip.trip_code}), hãy hủy chuyến điều độ trước khi xóa.')
+    old_alloc = container.allocation
     container.allocation, container.alloc_line_no = None, None
     container.save(update_fields=['allocation', 'alloc_line_no', 'updated_at'])
     container.delete()
+    if old_alloc is not None:
+        _resize_to_lines(old_alloc)
     sync_booking_total(container.booking)
     _audit(container.booking, 'update', user, {'container_removed': container.container_number, 'reason': reason})
 

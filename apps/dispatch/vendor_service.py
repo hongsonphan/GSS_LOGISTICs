@@ -70,7 +70,9 @@ def lifecycle(alloc):
     from apps.master_data.models import CompanyProfile
     trips = list(alloc.trips.filter(is_deleted=False).values_list('step_status', 'empty_returned_at', 'updated_at'))
     active = [t for t in trips if t[0] != 'CANCELLED']
-    finished = bool(active) and len(active) >= alloc.allocated_containers and all(t[0] == 'EMPTY_RETURNED' for t in active)
+    is_cmode = container_mode(alloc.booking)
+    target = alloc.containers.filter(is_deleted=False).count() if is_cmode else alloc.allocated_containers
+    finished = bool(active) and len(active) >= target and all(t[0] == 'EMPTY_RETURNED' for t in active)
     finished_at = max((t[1] or t[2] for t in active), default=None) if finished else None
     days = CompanyProfile.get_default_company().vendor_readonly_days
     closed = bool(finished_at and finished_at + timedelta(days=days) < timezone.now())
@@ -94,6 +96,12 @@ def is_expired(alloc):
 
 # ---------- chia cont ----------
 def allocated_total(booking, exclude_pk=None):
+    if container_mode(booking):
+        from apps.gss.models import BookingContainer
+        qs = BookingContainer.objects.filter(booking=booking, is_deleted=False, allocation__isnull=False).exclude(allocation__status=AllocationStatus.REVOKED)
+        if exclude_pk:
+            qs = qs.exclude(allocation_id=exclude_pk)
+        return qs.count()
     qs = BookingVendorAllocation.objects.filter(booking=booking, is_deleted=False).exclude(status=AllocationStatus.REVOKED)
     if exclude_pk:
         qs = qs.exclude(pk=exclude_pk)
@@ -177,9 +185,11 @@ def refresh_status(alloc):
     if alloc.status == AllocationStatus.REVOKED:
         return alloc.status
     filled = alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').count()
+    is_cmode = container_mode(alloc.booking)
+    target = alloc.containers.filter(is_deleted=False).count() if is_cmode else alloc.allocated_containers
     if alloc.locked_at:
         new = AllocationStatus.LOCKED
-    elif filled >= alloc.allocated_containers:
+    elif target > 0 and filled >= target:
         new = AllocationStatus.SUBMITTED
     elif filled or alloc.draft_rows:
         new = AllocationStatus.PARTIAL
@@ -670,10 +680,14 @@ def allocation_summary(alloc, request=None):
     filled = alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').count()
     raw = (alloc.draft_rows or {}).get('_raw_token')
     vendor_link = request.build_absolute_uri(f'/vendor/{raw}/') if (request and raw) else ''
+    is_cmode = container_mode(alloc.booking)
+    active_cnt = alloc.containers.filter(is_deleted=False).count() if is_cmode else alloc.allocated_containers
     return {
         'id': alloc.id, 'subcontractor_id': alloc.subcontractor_id,
         'subcontractor': alloc.subcontractor.short_name or alloc.subcontractor.name,
-        'allocated_containers': alloc.allocated_containers, 'filled': filled,
+        'allocated_containers': active_cnt,
+        'max_line_no': alloc.allocated_containers,
+        'filled': filled,
         'draft': len(alloc.draft_rows or {}), 'status': alloc.status, 'status_label': alloc.get_status_display(),
         'expires_at': alloc.expires_at.isoformat() if alloc.expires_at else None, 'expired': is_expired(alloc),
         'locked': bool(alloc.locked_at), 'container_mode': container_mode(alloc.booking),

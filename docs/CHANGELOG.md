@@ -3,6 +3,28 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-19 – Chuẩn Hoá Logic Đếm Container Phân Bổ Nhà Xe (Khắc Phục Lỗi Đội Số Lượng Cont Khi Điều Chuyển)
+- **Vấn đề:**
+  - Khi một Booking có danh sách container cụ thể (Container Mode), người dùng điều chuyển cont giữa các nhà xe (ví dụ từ Nhà xe A sang Nhà xe B).
+  - Nhà xe B được gán số dòng tiếp theo (`Max(alloc_line_no) + 1`), làm số dòng của Nhà xe B tăng lên.
+  - Tuy nhiên, ở Nhà xe A, hệ thống giữ nguyên dòng cũ ở trạng thái "Đã chuyển cho nhà xe khác" và hàm `_resize_to_lines` tính `allocated_containers` theo `Max(alloc_line_no)`. Do đó, số lượng cont trên phiếu của Nhà xe A không giảm tương ứng mà vẫn giữ dung lượng cũ.
+  - Kết quả: Booking có 20 cont nhưng tổng số cont phân bổ hiển thị trên bảng Điều vận Tab 2 và Modal Lệnh điều động bị đội lên thành 21 hoặc 22 cont (ví dụ: Nhà xe 1 hiện 16 cont, Nhà xe 2 hiện 6 cont, tổng 22 cont), và thanh tiến độ không bao giờ đạt 100% do có slot bị khóa chuyển đi.
+- **Xử lý toàn diện:**
+  - *Backend `apps/dispatch/vendor_service.py`:*
+    + `allocated_total(booking)`: Khi ở chế độ Container Mode, đếm số lượng container thực tế đang liên kết với các phiếu chưa bị thu hồi (`BookingContainer.objects.filter(..., allocation__isnull=False).count()`), không cộng dồn `allocated_containers` để tránh tính trùng slot đã chuyển.
+    + `allocation_summary(alloc)`: Thuộc tính `allocated_containers` trả về số cont thực tế nhà xe đang chịu trách nhiệm (`active_cnt = alloc.containers.count()`), đồng thời bổ sung `max_line_no` lưu dung lượng dòng tối đa cho Cổng Nhà Xe.
+    + `refresh_status(alloc)` & `lifecycle(alloc)`: Căn cứ chỉ tiêu hoàn thành (`target`) theo số cont thực tế của nhà xe, đảm bảo phiếu đạt trạng thái `SUBMITTED` ("Đã gán đủ") và `finished` ("Hoàn tất") khi gán đủ các cont đang giữ.
+  - *Backend `apps/dispatch/gss_messages.py`:*
+    + Cập nhật `compose_vendor_batch_message`: Báo đúng số lượng container thực tế nhà xe cần điều phối trong tin nhắn Zalo gửi điều vận vendor.
+  - *Backend `apps/gss/containers.py`:*
+    + Bổ sung tự động resize lại phiếu cũ (`_resize_to_lines(old_alloc)`) khi một container bị xóa khỏi booking (`remove_container`).
+  - *Frontend `static/js/src/app/dispatch/dispatch-order-modal.js`:*
+    + Cập nhật `mdoRenderVendorCards`: Đọc an toàn `a.containers` khi ở container mode để hiển thị đúng số lượng cont của từng thẻ nhà xe và thống kê `allocatedTotal` không bị lệch so với `totalConts`.
+  - *Biên dịch & Kiểm thử:*
+    + Biên dịch lại `static/js/app.js` (106 file nguồn).
+    + Bổ sung unit test `test_reassign_container_does_not_inflate_total_allocated_containers` trong `apps/gss/tests.py`.
+    + Chạy bộ kiểm định `scripts/qa.py verify` đạt 100% (7/7 PASS).
+
 ## 2026-11-19 – Nâng Cấp Chế Độ Toàn Màn Hình Doanh Nghiệp (Booking & Điều Vận)
 - **Vấn đề:** 
   1. Nút "Toàn Màn Hình" tại Bảng danh sách container Booking (`view_booking_detail.html`) không hiển thị toàn màn hình chuẩn do thiếu lớp CSS toàn màn hình chuyên biệt (lớp `z-[80]` không tồn tại trong Tailwind build và bị giới hạn bởi stacking context).

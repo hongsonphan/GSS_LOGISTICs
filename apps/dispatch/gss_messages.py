@@ -6,7 +6,7 @@ from html.parser import HTMLParser
 from django.utils import timezone
 
 from apps.dispatch.models import DriverNotificationLog
-from apps.dispatch.vendor_service import effective_notes
+from apps.dispatch.vendor_service import effective_notes, container_mode
 from core import qr_tokens
 
 
@@ -72,11 +72,13 @@ def compose_vendor_batch_message(alloc, base_url):
     
     trips = list(alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').order_by('vendor_line_no', 'id'))
     
+    is_cmode = container_mode(b) if b else False
+    target = alloc.containers.filter(is_deleted=False).count() if is_cmode else alloc.allocated_containers
     lines = [
         f'GIẢI PHÁP XANH LOGISTICS — DANH SÁCH LỆNH ĐIỀU XE',
         f'Kính gửi: Điều vận Nhà xe {vendor_name}',
         f'Lệnh điều động: {alloc.booking.booking_code if b else "—"} | Số B/L: {bl_no or "—"}',
-        f'Tổng số lượng: {len(trips)}/{alloc.allocated_containers} Container đã gán xe',
+        f'Tổng số lượng: {len(trips)}/{target} Container đã gán xe',
         '----------------------------------------',
     ]
     

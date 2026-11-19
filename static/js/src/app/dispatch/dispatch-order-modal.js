@@ -1777,11 +1777,11 @@ function mdoRenderVendorCards(allocations, totalConts = 0) {
 
     let allocatedTotal = 0;
     const cardsHtml = allocations.map(a => {
-        allocatedTotal += Number(a.allocated_containers) || 0;
+        const count = (a.container_mode && a.containers !== undefined) ? Number(a.containers) : (Number(a.allocated_containers) || 0);
+        allocatedTotal += count;
         const subName = escapeHtml(a.subcontractor || 'Nhà xe');
         const link = a.vendor_link || `${window.location.origin}/vendor/${a.token || ''}/`;
         const filled = Number(a.filled) || 0;
-        const count = Number(a.allocated_containers) || 0;
         const isFilledAll = count > 0 && filled >= count;
         const statusText = isFilledAll 
             ? `<span class="text-emerald-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle"></i> Đã gán đủ (${filled}/${count} xe)</span>`
