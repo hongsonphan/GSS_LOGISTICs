@@ -3,6 +3,16 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Loại Bỏ Dòng Container Đã Điều Chuyển (Moved Rows) Khỏi File Excel Cổng Nhà Xe
+- **Hiện tượng:** Khi xuất Excel từ Cổng Nhà Xe, file Excel xuất hiện dòng số 3 bị rỗng Nơi giao hàng, rỗng Số chì, và số cont `EGSU2809351` bị trùng lặp ở cả Dòng 3 và Dòng 16.
+- **Nguyên nhân:**
+  - Vị trí dòng số 3 là container cũ từng được điều phối nhưng sau đó điều phối viên đã điều chuyển lại sang dòng số 16 (kèm số seal `EMCEEW6325` và điểm giao `KCN NHÂN CƠ`). Dòng 3 vì vậy mang trạng thái `moved = True` ("Đã chuyển cho nhà xe khác hoặc chuyển dòng").
+  - Trên giao diện Web Cổng Nhà Xe, hệ thống đã lọc `(state.rows || []).filter(r => !r.moved)` nên chỉ hiển thị đúng 15 container (dòng số 3 bị ẩn).
+  - Tuy nhiên hàm xuất Excel (`apps/gss/vendor_excel.py`) trước đó duyệt qua toàn bộ $1..N$ dòng mà chưa loại trừ cờ `moved`, khiến dòng số 3 bị lọt vào file Excel xuất ra.
+- **Xử lý:**
+  - Cập nhật `apps/gss/vendor_excel.py` (hàm `template_response`): Thêm điều kiện `if r.get('moved'): continue`.
+  - Kết quả: File Excel xuất ra đồng bộ 100% với giao diện Web (chỉ xuất đúng 15 container thực tế đang chờ gán xe, không còn dòng số 3 bị rỗng và không bị trùng lặp số cont).
+
 ## 2026-11-19 – Đồng Bộ & Chuẩn Hóa Tính Năng Xuất/Nhập Excel (Export Import) Ở Các Màn Hình Gán Xe
 - **Yêu cầu:** Ở các màn hình gán xe, cho phép kết xuất dữ liệu container ra file Excel để bổ sung thông tin (đầu kéo, rơ-moóc, tài xế, SĐT, seal, ghi chú) rồi import trở lại hệ thống.
 - **Thực hiện chi tiết:**

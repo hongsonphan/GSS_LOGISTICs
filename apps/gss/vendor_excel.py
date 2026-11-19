@@ -100,6 +100,8 @@ def template_response(alloc, rows):
     ws.title = 'Xe - tài xế'
     ws.append(VENDOR_COLS)
     for r in rows:
+        if r.get('moved'):
+            continue
         ws.append([r['line_no'], excel_safe(r['container_number']), excel_safe(r.get('container_type', '')), excel_safe(r.get('delivery', '')),
                    excel_safe(r['seal_number']), excel_safe(r['tractor_plate']), excel_safe(r['trailer_plate']), excel_safe(r['driver_name']),
                    excel_safe(r['driver_phone']), excel_safe(r['vendor_note'])])
