@@ -3,6 +3,19 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Bổ Sung Nút "Toàn Màn Hình" Cho Bảng Container Cổng Nhà Xe (Vendor Portal)
+- **Bối cảnh & Yêu cầu:** Tại giao diện Cổng Nhà Xe (`vendor_portal.html`), khi danh sách container lớn cần gán nhiều xe/tài xế, bảng hiển thị bị giới hạn chiều cao gây khó khăn khi thao tác cuộn và chọn xe/tài. Người dùng yêu cầu bổ sung nút "Toàn màn hình" để mở rộng không gian làm việc.
+- **Thực hiện chi tiết:**
+  - **Nút thao tác:** Bổ sung nút `[ Toàn Màn Hình ]` (icon `ph-corners-out`) ngay cạnh nút `[ Nhập Excel ]` trên thanh tiêu đề bảng container.
+  - **Trải nghiệm Fullscreen:**
+    - Khi bấm mở: Thẻ section container mở rộng toàn bộ viewport (`fixed inset-0 z-[70] bg-white p-4 lg:p-6 overflow-hidden flex flex-col m-0 rounded-none shadow-2xl h-screen max-h-screen`), bảng container tự co giãn chiếm trọn chiều cao còn lại (`flex-1 max-h-[calc(100vh-180px)]`), khóa cuộn trang (`document.body.classList.add('overflow-hidden')`).
+    - Nút tự động chuyển trạng thái thành `[ Thu Gọn (Esc) ]` với icon `ph-corners-in`.
+    - Lắng nghe phím `Escape` để thoát fullscreen tiện lợi và nhanh chóng.
+    - Bảo toàn trạng thái Toàn màn hình khi người dùng tìm kiếm, lọc trạng thái, sắp xếp hoặc cập nhật gán xe.
+    - Điều chỉnh z-index của các Modal liên quan (`modal-quick-add`, `modal-vendor-excel`, `modal-driver-qr-dispatch`, `modal-vendor-row-view`) lên `z-[100]` và thanh lưu nổi `sticky-bar` lên `z-[85]` đảm bảo luôn nổi lên trên cùng khi thao tác trong chế độ Toàn màn hình.
+  - **Build giao diện:** Rebuild Tailwind CSS tự động nhận diện các class mới.
+
+
 ## 2026-11-20 – Thống Nhất 1 Từ "Nhập Excel" Cho Toàn Bộ Hệ Thống
 - **Yêu cầu & Mục tiêu:** Thống nhất chuẩn xác một cụm từ duy nhất **"Nhập Excel"** cho toàn bộ các nút thao tác nhập dữ liệu bảng tính trên tất cả các phân hệ và thanh công cụ.
 - **Phạm vi áp dụng:**
