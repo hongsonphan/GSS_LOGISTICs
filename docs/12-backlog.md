@@ -23,6 +23,11 @@
 | 9 | Tài liệu kế thừa còn mô tả hệ thống cũ (v4.7.x, máy 11 bước, lệnh test `apps.dispatch --keepdb`, tiêu đề "BIM LOGISTICS"): `docs/14-ai-team.md`, `docs/README.md`, `docs/02-operational-workflow.md`, `docs/03-features.md`, `docs/10-ui-ux-guidelines.md`. Quy tắc làm việc hiện hành nằm ở `CLAUDE.md` + `14-ai-team.md` | `docs/` | docs | Nhẹ |
 | 10 | Chạy `bandit`, `pip-audit` cục bộ (máy hiện chưa cài → `qa.py` báo SKIP; CI có chạy) | `pip install bandit pip-audit` | qa-tester | Nhẹ |
 | 11 | Chạy thử đội AI với 2–3 lệnh thật, chỉnh prompt agent theo kết quả | `.claude/agents/*.md` | Team Leader | Nhẹ |
+| 12 | Xem trình duyệt bằng tài khoản HẠN CHẾ (chỉ Sổ quỹ, chỉ một tab Cài đặt) ở 375px / 768px / desktop: mới kiểm bằng tài khoản quản trị (cây ma trận, tab Nhật ký) và test API | `templates/views/view_accounting.html`, `static/js/src/app/core/access.js` | qa-tester + ui-ux | Vừa |
+| 13 | `core/access.js` của GSS còn nới hơn BIM: thiếu `window.BIM_ACCESS` thì cho phép (máy chủ vẫn chặn), nút trong modal chưa ẩn theo quyền; chuyển bản siết của BIM sang (cả `MODAL_MODULE`, thao tác `save`) | `static/js/src/app/core/access.js` | frontend | Vừa |
+| 14 | Chưa tách thêm dòng quyền như BIM (`sales_booking`, `dispatch_expense`, `dispatch_docs`, `hr_contract`…) vì GSS chưa có tab tương ứng; làm khi GSS có màn riêng | `core/access.py` `_ROWS` | backend | Nhẹ |
+| 15 | Nhật ký hoạt động: Xem = toàn bộ nhật ký công ty (chưa lọc theo bộ phận); không ghi thay đổi qua `QuerySet.update()` / `bulk_create`; FK hiện ID chưa hiện tên; chưa có chính sách lưu / dọn `AuditLog`, `LoginEvent` (bảng bất biến, dọn cần `gss.allow_log_purge`) | `core/audit_views.py`, `core/audit.py` | backend + người dùng | Vừa |
+| 16 | VPS CHƯA nhận hai thay đổi 20/11 (Nhật ký hoạt động, Phân quyền theo tab): chạy workflow `Deploy VPS` tay sau khi CI xanh; migration `core/0004` tự chạy; sau deploy mở trang Phân quyền đối chiếu quyền từng người (quyền cũ tự mở rộng, không đổi quyền hiệu lực) | GitHub Actions | người dùng | Nặng |
 
 ## 3. Nhật ký phiên
 

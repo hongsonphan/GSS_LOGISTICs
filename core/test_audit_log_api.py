@@ -1,4 +1,6 @@
 """Trang Nhật ký hoạt động: quyền (chỉ Giám đốc / Admin mặc định, trưởng được cấp qua ma trận), lọc, xuất CSV, che dữ liệu nhạy cảm."""
+import importlib
+
 from django.test import SimpleTestCase, TestCase
 
 from apps.customers.models import Customer
@@ -6,6 +8,8 @@ from apps.personnel.models import EmployeeRole
 from core import access
 from core.models import AuditLog, LoginEvent, UserAccessOverride, get_default_company
 from core.test_access import make_user
+
+migration = importlib.import_module('core.migrations.0004_audit_log_permission')
 
 
 class AuditLogMatrixTests(SimpleTestCase):
@@ -19,6 +23,15 @@ class AuditLogMatrixTests(SimpleTestCase):
             self.assertEqual(access.default_group_grants(key)['audit_log'], ['view', 'export'], key)
         for key in ('sales', 'hr', 'accounting', 'dispatch', 'operations', 'customs', 'driver'):
             self.assertNotIn('audit_log', access.default_group_grants(key), key)
+
+
+class AuditLogMigrationTests(SimpleTestCase):
+    def test_migration_grant_idempotent(self):
+        out, changed = migration.grant({'dashboard': ['view']})
+        self.assertTrue(changed)
+        self.assertEqual(out['audit_log'], ['view', 'export'])
+        self.assertEqual(migration.grant(out), (out, False))
+        self.assertEqual(migration.grant(None), (None, False))
 
 
 class AuditLogApiTests(TestCase):
