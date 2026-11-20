@@ -41740,6 +41740,7 @@ const accessUI = {
     userQ: '',
     uDraft: null,            // {groups: Set, allow: Set, deny: Set, note}
     container: null,
+    collapsed: new Set(),    // id mục (sec) / nhóm con (sec/sub) đang thu gọn
 };
 
 const _acEsc = (s) => (typeof escapeHtml === 'function' ? escapeHtml(s == null ? '' : String(s)) : String(s == null ? '' : s));
@@ -41778,6 +41779,8 @@ async function renderAccessMatrixPage(container) {
 window.renderAccessMatrixPage = renderAccessMatrixPage;
 
 function _acSetData(data) {
+    // modules[].actions có thể là chuỗi hoặc {key,label}: chuẩn hoá về mảng khoá
+    (data.modules || []).forEach(m => { m.actions = (m.actions || []).map(a => (a && typeof a === 'object') ? a.key : a); });
     accessUI.data = data;
     if (!data.groups.some(g => g.key === accessUI.group)) accessUI.group = data.groups[0].key;
     if (!data.roles.some(r => r.key === accessUI.role)) accessUI.role = data.roles[0].key;
@@ -41837,40 +41840,188 @@ async function switchAccessView(view) {
 }
 window.switchAccessView = switchAccessView;
 
-// ---------------------------------------------------------------- Bảng ma trận dùng chung
-function _accessTable(cellFn, rowToggle) {
+// ---------------------------------------------------------------- Bảng ma trận dùng chung (hàng = cây theo sidebar)
+// Mô hình cây: [{key,label,icon,mods}] theo thứ tự sidebar; trong mục, tab xếp đúng thứ tự API, đổi sub_section thì thêm dòng nhóm con.
+// Thiếu section/sections (API cũ) => trả null và bảng hiện danh sách phẳng.
+function _acTreeModel() {
     const d = accessUI.data;
-    const head = d.actions.map(a => `<th class="text-center" data-col-key="${a.key}">${_acEsc(a.label)}</th>`).join('');
-    // Ma trận hiển thị theo đúng cây sidebar: mỗi phân hệ một dòng tiêu đề, mỗi tab một dòng quyền (nhóm con cho Báo cáo)
-    const colSpan = 1 + d.actions.length;
-    let lastSection = null, lastSub = null;
-    const rows = d.modules.map(m => {
-        let head = '';
-        if (m.section !== lastSection) {
-            const sec = (d.sections || []).find(x => x.key === m.section) || {};
-            head += `<tr data-section="${_acEsc(m.section)}"><td colspan="${colSpan}" class="bg-slate-100 text-slate-700 font-black text-xs uppercase tracking-wide"><i class="ph-bold ${_acEsc(sec.icon || 'ph-folder')} mr-1.5"></i>${_acEsc(m.section_label || m.section)}</td></tr>`;
-            lastSection = m.section; lastSub = null;
-        }
-        if (m.sub_section && m.sub_section !== lastSub) {
-            head += `<tr><td colspan="${colSpan}" class="bg-slate-50 text-slate-500 font-bold text-[11px] uppercase tracking-wide pl-6">${_acEsc(m.sub_section_label || m.sub_section)}</td></tr>`;
-        }
-        lastSub = m.sub_section || null;
+    if (!Array.isArray(d.sections) || !d.sections.length || !d.modules.some(m => m.section)) return null;
+    const known = new Set(d.sections.map(s => s.key));
+    const secs = d.sections.map(s => ({ ...s, mods: d.modules.filter(m => m.section === s.key) }));
+    const orphan = d.modules.filter(m => !known.has(m.section));
+    if (orphan.length) secs.push({ key: '_other', label: 'Khác', icon: 'ph-dots-three', sub_sections: [], mods: orphan });
+    return secs.filter(s => s.mods.length);
+}
+
+function _accessTable(cellFn, ui) {
+    ui = ui || {};
+    const d = accessUI.data;
+    const nCols = d.actions.length + 1;
+    const head = d.actions.map(a => `<th class="text-center" data-col-key="${a.key}">${_acEsc(a.label)}${ui.colToggle ? `<div class="mt-0.5">${ui.colToggle(a.key)}</div>` : ''}</th>`).join('');
+
+    const tabRow = (m, sec, sub, pad) => {
         const cells = d.actions.map(a => m.actions.includes(a.key)
             ? `<td class="text-center">${cellFn(m.key, a.key)}</td>`
-            : `<td class="text-center text-slate-300">—</td>`).join('');
-        const screens = (m.screens || []).length ? `<div class="text-[11px] text-slate-400 font-medium leading-snug">Điều khiển: ${_acEsc(m.screens.join(' · '))}</div>` : '';
-        return `${head}<tr>
-            <td class="min-w-[220px] whitespace-normal">
-              <div class="flex items-start gap-2">
-                ${rowToggle ? rowToggle(m.key) : ''}
-                <div><div class="font-bold text-slate-800">${_acEsc(m.label)}</div>
-                <div class="text-[11px] text-slate-500 font-medium leading-snug">${_acEsc(m.description)}</div>${screens}</div>
+            : `<td></td>`).join('');
+        const screens = (m.screens || []).filter(Boolean).join(' · ') || m.description || '';
+        return `<tr data-kind="row" data-sec="${_acEsc(sec)}" data-sub="${_acEsc(sub)}">
+            <td class="min-w-[240px] whitespace-normal">
+              <div class="flex items-start gap-2 ${pad}">
+                ${ui.rowToggle ? ui.rowToggle(m.key) : ''}
+                <div class="min-w-0"><div class="text-[13px] font-semibold text-slate-800">${_acEsc(m.label)}</div>
+                ${screens ? `<div class="text-[11px] text-slate-400 font-medium leading-snug">${_acEsc(screens)}</div>` : ''}</div>
               </div>
             </td>${cells}</tr>`;
-    }).join('');
+    };
+    const headRow = (kind, sec, sub, id, cls, pad, icon, label, mods) => `<tr data-kind="${kind}" data-sec="${_acEsc(sec)}" data-sub="${_acEsc(sub)}" class="${cls} cursor-pointer" tabindex="0" role="button" aria-expanded="true"
+          onclick="toggleAccessCollapse('${_acEsc(id)}')" onkeydown="accessCollapseKey(event,'${_acEsc(id)}')">
+        <td colspan="${nCols}"><div class="flex items-center gap-2 ${pad}">
+          <i class="ph-bold ph-caret-down ac-caret text-slate-500 text-xs w-3"></i>
+          ${ui.groupToggle ? ui.groupToggle(mods, kind === 'section' ? `toggleAccessSection('${_acEsc(sec)}', this.checked)` : `toggleAccessSub('${_acEsc(sec)}', '${_acEsc(sub)}', this.checked)`, label) : ''}
+          ${icon ? `<i class="ph-bold ${_acEsc(icon)} text-teal-700"></i>` : ''}
+          <span class="${kind === 'section' ? 'text-[13px] font-black font-heading text-slate-900' : 'text-xs font-bold font-heading text-slate-700'}">${_acEsc(label)}</span>
+        </div></td></tr>`;
+
+    let rows;
+    const secs = _acTreeModel();
+    if (!secs) {
+        rows = d.modules.map(m => tabRow(m, '', '', '')).join('');
+    } else {
+        rows = secs.map(s => {
+            let out = headRow('section', s.key, '', s.key, 'bg-slate-100 hover:bg-slate-200/70', '', s.icon, s.label, s.mods);
+            let last = '';
+            s.mods.forEach(m => {
+                const sub = m.sub_section || '';
+                if (sub !== last) {
+                    last = sub;
+                    if (sub) {
+                        const lab = ((s.sub_sections || []).find(x => x.key === sub) || {}).label || sub;
+                        out += headRow('sub', s.key, sub, `${s.key}/${sub}`, 'bg-slate-50 hover:bg-slate-100', 'pl-5', '', lab, s.mods.filter(x => (x.sub_section || '') === sub));
+                    }
+                }
+                out += tabRow(m, s.key, sub, sub ? 'pl-10' : 'pl-5');
+            });
+            return out;
+        }).join('');
+    }
     return `<div class="overflow-x-auto"><table class="erp-table" data-table-title="Ma trận phân quyền" data-m-keep>
-        <thead><tr><th data-col-key="module">Phân hệ › Tab</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+        <thead><tr><th data-col-key="module">Mục / Tab</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+
+// Sau mỗi lần vẽ: trạng thái indeterminate của hộp tick cả mục / hàng và thu gọn / mở rộng
+function _acApplyCollapse(root) {
+    if (!root) return;
+    const set = accessUI.collapsed;
+    root.querySelectorAll('tr[data-kind]').forEach(tr => {
+        const kind = tr.dataset.kind, sec = tr.dataset.sec, sub = tr.dataset.sub || '';
+        if (kind !== 'row') {
+            const closed = set.has(kind === 'section' ? sec : `${sec}/${sub}`);
+            tr.setAttribute('aria-expanded', String(!closed));
+            const c = tr.querySelector('.ac-caret');
+            if (c) { c.classList.toggle('ph-caret-down', !closed); c.classList.toggle('ph-caret-right', closed); }
+        }
+        const hide = (kind !== 'section' && set.has(sec)) || (kind === 'row' && !!sub && set.has(`${sec}/${sub}`));
+        tr.classList.toggle('hidden', hide);
+    });
+}
+function _acPostRender() {
+    const root = document.getElementById('access-body');
+    if (!root) return;
+    root.querySelectorAll('input[data-ind]').forEach(i => { i.indeterminate = true; });
+    _acApplyCollapse(root);
+}
+function toggleAccessCollapse(id) {
+    const s = accessUI.collapsed;
+    if (s.has(id)) s.delete(id); else s.add(id);
+    _acApplyCollapse(document.getElementById('access-body'));
+}
+function accessCollapseKey(e, id) {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleAccessCollapse(id); }
+}
+
+// ---------------------------------------------------------------- Chọn nhanh cả hàng / cả cột (dùng chung 3 tầng)
+function _acRoleEff() {
+    const p = accessUI.pDraft;
+    const base = _acFlat((_acGroup(p.group) || {}).grants);
+    return { base, eff: new Set([...base, ...p.add].filter(k => !p.remove.has(k))) };
+}
+// Người đang có quyền k hay không (theo bản nháp): bị chặn riêng thì không; còn lại có nếu từ chức danh / nhóm kiêm nhiệm / cho thêm riêng
+function _acUserHas(u, ud, k) {
+    if (ud.deny.has(k)) return false;
+    const src = _userSources(u, ud);
+    return src.roleSet.has(k) || !!src.extra[k] || ud.allow.has(k);
+}
+function _acIsOnFn() {
+    const v = accessUI.view;
+    if (v === 'groups') return (k) => accessUI.gDraft.has(k);
+    if (v === 'roles') { const { eff } = _acRoleEff(); return (k) => eff.has(k); }
+    const u = _userObj(); const ud = accessUI.uDraft;
+    return (k) => _acUserHas(u, ud, k);
+}
+function _acBulkUi(editable) {
+    if (!editable) return {};
+    const d = accessUI.data;
+    const isOn = _acIsOnFn();
+    const cb = (st, title, handler, extra) => `<input type="checkbox" class="${extra || ''} w-4 h-4 accent-teal-700 cursor-pointer shrink-0" title="${title}" aria-label="${title}" ${st.all ? 'checked' : ''} ${st.some ? 'data-ind="1"' : ''}
+        onclick="event.stopPropagation()" onchange="${handler}">`;
+    // Trạng thái một tập phân hệ: all = mọi ô áp dụng đều bật; some = bật một phần (indeterminate)
+    const stateOf = (mods) => {
+        let on = 0, tot = 0;
+        mods.forEach(m => m.actions.forEach(a => { tot++; if (isOn(`${m.key}:${a}`)) on++; }));
+        return { all: tot > 0 && on === tot, some: on > 0 && on < tot };
+    };
+    return {
+        rowToggle: (m) => cb(stateOf([d.modules.find(x => x.key === m)]), `Bật/tắt cả hàng ${_acEsc(_acModLabel(m))}`, `toggleAccessRow('${m}', this.checked)`, 'mt-0.5'),
+        colToggle: (a) => cb({ all: d.modules.filter(m => m.actions.includes(a)).every(m => isOn(`${m.key}:${a}`)), some: false }, `Bật/tắt cả cột ${_acEsc(_acActLabel(a))}`, `toggleAccessCol('${a}', this.checked)`),
+        groupToggle: (mods, handler, label) => cb(stateOf(mods), `Bật/tắt cả mục ${_acEsc(label)}`, handler),
+    };
+}
+// Đặt quyền của một người cho ô (phân hệ, thao tác): bật thao tác thì phải có Xem; tắt Xem thì mất cả phân hệ
+function _acUserSet(u, ud, m, a, on) {
+    const src = _userSources(u, ud);
+    const k = `${m}:${a}`;
+    const inherited = src.roleSet.has(k) || !!src.extra[k];
+    if (on) {
+        ud.deny.delete(k);
+        if (!inherited) ud.allow.add(k);
+        if (a !== 'view') _acUserSet(u, ud, m, 'view', true);
+    } else {
+        ud.allow.delete(k);
+        if (inherited) ud.deny.add(k);
+        if (a === 'view') _acModActions(m).forEach(x => { if (x !== 'view') _acUserSet(u, ud, m, x, false); });
+    }
+}
+function _acBulk(pairs, on) {
+    if (!accessUI.data.can_edit) return;
+    const v = accessUI.view;
+    if (v === 'groups') {
+        pairs.forEach(([m, a]) => _acToggle(accessUI.gDraft, m, a, on));
+        _acKeepLocked(); renderAccessGroups();
+    } else if (v === 'roles') {
+        const p = accessUI.pDraft;
+        const { base, eff } = _acRoleEff();
+        pairs.forEach(([m, a]) => _acToggle(eff, m, a, on));
+        p.add = new Set([...eff].filter(k => !base.has(k)));
+        p.remove = new Set([...base].filter(k => !eff.has(k)));
+        renderAccessRoles();
+    } else {
+        const u = _userObj(); const ud = accessUI.uDraft;
+        if (!u || !ud || u.is_superuser) return;
+        pairs.forEach(([m, a]) => _acUserSet(u, ud, m, a, on));
+        renderAccessLookup();
+    }
+}
+function toggleAccessSection(sec, on) {
+    const s = (_acTreeModel() || []).find(x => x.key === sec);
+    if (s) _acBulk(s.mods.flatMap(m => m.actions.map(a => [m.key, a])), on);
+}
+function toggleAccessSub(sec, sub, on) {
+    const s = (_acTreeModel() || []).find(x => x.key === sec);
+    if (s) _acBulk(s.mods.filter(m => (m.sub_section || '') === sub).flatMap(m => m.actions.map(a => [m.key, a])), on);
+}
+function toggleAccessRow(m, on) { _acBulk(_acModActions(m).map(a => [m, a]), on); }
+function toggleAccessCol(a, on) { _acBulk(accessUI.data.modules.filter(m => m.actions.includes(a)).map(m => [m.key, a]), on); }
 
 const _acChip = (cls, icon, label) => `<span class="inline-flex items-center gap-1"><span class="w-5 h-5 rounded ${cls} inline-flex items-center justify-center"><i class="ph-bold ${icon} text-[11px]"></i></span>${label}</span>`;
 const _AC_LEGEND = {
@@ -41926,11 +42077,10 @@ function renderAccessGroups() {
             <input type="checkbox" class="w-4 h-4 accent-teal-700" ${on ? 'checked' : ''} ${(!d.can_edit || isLocked) ? 'disabled' : ''}
               onchange="toggleAccessGroupCell('${m}','${a}',this.checked)" aria-label="${_acEsc(_acModLabel(m))} — ${_acEsc(_acActLabel(a))}"></label>`;
     };
-    const rowToggle = (m) => d.can_edit ? `<input type="checkbox" class="mt-1 w-4 h-4 accent-teal-700" title="Bật/tắt cả hàng" aria-label="Cả hàng ${_acEsc(_acModLabel(m))}"
-        ${d.modules.find(x => x.key === m).actions.every(a => draft.has(`${m}:${a}`)) ? 'checked' : ''}
-        onchange="toggleAccessGroupRow('${m}', this.checked)">` : '';
+    const ui = _acBulkUi(d.can_edit);
     const dirty = !_acEq(draft, saved);
-    const nMods = new Set([...draft].map(k => k.split(':')[0])).size;
+    const modKeys = new Set(d.modules.map(m => m.key));
+    const nMods = new Set([...draft].map(k => k.split(':')[0]).filter(k => modKeys.has(k))).size;
 
     document.getElementById('access-body').innerHTML = `
       <div class="space-y-4">
@@ -41940,7 +42090,7 @@ function renderAccessGroups() {
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <div class="text-sm font-black font-heading text-slate-900 flex items-center gap-2"><i class="ph-bold ${_acEsc(g.icon)} text-teal-700"></i>Nhóm ${_acEsc(g.label)}</div>
-                <div class="text-xs text-slate-500 font-medium">${_acEsc(g.description)} · được vào ${nMods}/${d.modules.length} phân hệ</div>
+                <div class="text-xs text-slate-500 font-medium">${_acEsc(g.description)} · được vào ${nMods}/${d.modules.length} tab</div>
               </div>
               <div class="text-[11px] text-slate-500 flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-100 ring-1 ring-amber-300"></span>Chưa lưu</div>
             </div>
@@ -41951,7 +42101,7 @@ function renderAccessGroups() {
               ${members.map(u => `<button type="button" onclick="openAccessUser(${u.id})" class="px-2 py-0.5 rounded-full bg-white ring-1 ring-slate-200 hover:bg-teal-50 text-slate-700 font-semibold">${_acEsc(u.name)}${u.is_superuser ? ' <span class="text-slate-500">(quản trị)</span>' : (u.position_group !== g.key ? ' <span class="text-indigo-700">(kiêm)</span>' : '')}</button>`).join('') || '<span class="text-slate-400">chưa có</span>'}
             </div>
           </div>
-          ${_accessTable(cell, rowToggle)}
+          ${_accessTable(cell, ui)}
           ${d.can_edit ? `<div class="px-4 py-3 border-t border-slate-100 bg-slate-50/60 flex flex-wrap items-center justify-between gap-2">
               <p class="text-xs text-slate-500 font-medium">Áp dụng ngay cho mọi chức danh và người thuộc nhóm (trừ phần chức danh / cá nhân đã bớt).</p>
               <div class="flex items-center gap-2">
@@ -41961,6 +42111,7 @@ function renderAccessGroups() {
               </div></div>` : ''}
         </div>
       </div>`;
+    _acPostRender();
 }
 
 async function selectAccessGroup(key) {
@@ -41970,11 +42121,7 @@ async function selectAccessGroup(key) {
     renderAccessGroups();
 }
 function toggleAccessGroupCell(m, a, on) { _acToggle(accessUI.gDraft, m, a, on); _acKeepLocked(); renderAccessGroups(); }
-function toggleAccessGroupRow(m, on) {
-    const mod = accessUI.data.modules.find(x => x.key === m);
-    mod.actions.forEach(a => (on ? accessUI.gDraft.add(`${m}:${a}`) : accessUI.gDraft.delete(`${m}:${a}`)));
-    _acKeepLocked(); renderAccessGroups();
-}
+function toggleAccessGroupRow(m, on) { toggleAccessRow(m, on); }
 function _acKeepLocked() { _acFlat(_acGroup(accessUI.group).locked).forEach(k => accessUI.gDraft.add(k)); }
 async function saveAccessGroup() {
     const g = _acGroup(accessUI.group);
@@ -42027,6 +42174,7 @@ function renderAccessRoles() {
         }).join('')}</div>`).join('');
 
     const editable = d.can_edit;
+    const ui = _acBulkUi(editable);
     const cell = (m, a) => {
         const k = `${m}:${a}`;
         let state = 'none', title = 'Không có quyền';
@@ -42059,9 +42207,9 @@ function renderAccessRoles() {
             ${(p.add.size || p.remove.size) ? `<div class="flex flex-wrap gap-1 text-[11px] font-semibold">${diffList(p.add, 'bg-emerald-100 text-emerald-800', '+')} ${diffList(p.remove, 'bg-rose-100 text-rose-700', '−')}</div>`
                 : `<div class="text-[11px] text-slate-500">Đang dùng đúng quyền của nhóm ${_acEsc(_acGroupLabel(p.group))}.</div>`}
           </div>
-          ${_accessTable(cell)}
+          ${_accessTable(cell, ui)}
           ${editable ? `<div class="px-4 py-3 border-t border-slate-100 bg-slate-50/60 flex flex-wrap items-center justify-between gap-2">
-              <p class="text-xs text-slate-500 font-medium">Bấm vào ô: quyền của nhóm ⇄ Bớt; quyền nhóm không có ⇄ Thêm.</p>
+              <p class="text-xs text-slate-500 font-medium">Bấm vào ô: quyền của nhóm ⇄ Bớt; quyền nhóm không có ⇄ Thêm. Hộp đầu hàng / đầu cột: bật hoặc tắt cả hàng / cả cột.</p>
               <div class="flex items-center gap-2">
                 ${role.customized ? `<button type="button" onclick="resetAccessRole()" class="${_acBtn}">Về mặc định</button>` : ''}
                 <button type="button" onclick="cancelAccessDraft()" ${dirty ? '' : 'disabled'} class="${_acBtn}">Huỷ thay đổi</button>
@@ -42069,6 +42217,7 @@ function renderAccessRoles() {
               </div></div>` : ''}
         </div>
       </div>`;
+    _acPostRender();
 }
 
 async function selectAccessRole(role) {
@@ -42141,11 +42290,12 @@ function renderAccessLookup() {
     const u = _userObj();
 
     const list = found.map(x => {
-        const nMods = Object.keys(x.effective || {}).length;
+        const modKeys = new Set(d.modules.map(m => m.key));
+        const nMods = Object.keys(x.effective || {}).filter(k => modKeys.has(k)).length;
         const nEx = (x.groups || []).length + _acFlat(x.allow).size + _acFlat(x.deny).size;
         return `<button type="button" onclick="selectAccessUser(${x.id})" class="w-full text-left px-3 py-2 rounded-xl ${x.id === accessUI.userId ? 'bg-teal-50 ring-1 ring-teal-200' : 'hover:bg-slate-50'}">
             <div class="flex items-center justify-between gap-2"><span class="text-[13px] font-bold text-slate-800 truncate">${_acEsc(x.name)}</span>
-              <span class="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">${x.is_superuser ? 'toàn quyền' : `${nMods} phân hệ`}</span></div>
+              <span class="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">${x.is_superuser ? 'toàn quyền' : `${nMods} tab`}</span></div>
             <div class="text-[11px] text-slate-500 truncate">${_acEsc(x.username)} · ${_acEsc(x.role_label)}${nEx ? ` · <span class="text-indigo-700">${nEx} ngoại lệ</span>` : ''}</div></button>`;
     }).join('') || '<div class="p-4 text-xs text-slate-400">Không tìm thấy người dùng</div>';
 
@@ -42170,6 +42320,7 @@ function renderAccessLookup() {
           <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">${detail}</div>
         </div>
       </div>`;
+    _acPostRender();
     if (hadFocus) { const i = document.getElementById('access-user-search'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
 }
 
@@ -42177,7 +42328,9 @@ function _accessUserDetail(u) {
     const d = accessUI.data;
     if (!accessUI.uDraft) accessUI.uDraft = { groups: new Set(u.groups || []), allow: _acFlat(u.allow), deny: _acFlat(u.deny), note: u.note || '' };
     const ud = accessUI.uDraft;
-    const editable = d.can_edit && u.has_employee && !u.is_superuser;
+    // Tài khoản không có hồ sơ nhân viên vẫn sửa được (nhóm kiêm nhiệm + cho thêm / chặn); chỉ quản trị hệ thống là chỉ xem
+    const editable = d.can_edit && !u.is_superuser;
+    const ui = _acBulkUi(editable);
     const src = _userSources(u, ud);
     const eff = new Set(u.is_superuser ? d.modules.flatMap(m => m.actions.map(a => `${m.key}:${a}`)) : []);
     if (!u.is_superuser) {
@@ -42185,7 +42338,6 @@ function _accessUserDetail(u) {
         Object.keys(src.extra).forEach(k => eff.add(k));
         ud.allow.forEach(k => eff.add(k));
         ud.deny.forEach(k => eff.delete(k));
-        if (!u.has_employee) _acFlat(u.effective).forEach(k => eff.add(k));
     }
     const cell = (m, a) => {
         const k = `${m}:${a}`; const label = `${_acModLabel(m)} — ${_acActLabel(a)}`;
@@ -42195,7 +42347,6 @@ function _accessUserDetail(u) {
         else if (src.roleSet.has(k)) { state = src.roleAdd.has(k) ? 'add' : 'group'; title = src.roleAdd.has(k) ? `Chức danh ${u.role_label} được thêm` : `Theo nhóm ${_acGroupLabel(src.role.group)}`; }
         else if (src.extra[k]) { state = 'extra'; title = `Nhóm kiêm nhiệm ${_acGroupLabel(src.extra[k])}`; }
         else if (ud.allow.has(k)) { state = 'add'; title = 'Cho thêm riêng người này'; }
-        else if (!u.has_employee && eff.has(k)) { state = 'group'; title = 'Theo quy tắc cũ (chưa có hồ sơ NV)'; }
         return _acCellBtn(state, `${label}: ${title}`, editable ? `cycleAccessUserCell('${m}','${a}')` : '');
     };
     const mods = d.modules.filter(m => eff.has(`${m.key}:view`));
@@ -42216,15 +42367,15 @@ function _accessUserDetail(u) {
               · Nhóm: <b>${u.is_superuser ? 'Quản trị hệ thống' : _acEsc([u.position_group, ...(u.groups || []).filter(g => g !== u.position_group)].filter(Boolean).map(_acGroupLabel).join(' + ') || 'Không thuộc nhóm')}</b>
               ${u.is_active ? '' : ' · <span class="text-rose-600 font-bold">đã khoá</span>'}</div>
           </div>
-          <div class="text-xs font-bold text-slate-600">Được vào <span class="text-teal-800">${mods.length}/${d.modules.length}</span> phân hệ</div>
+          <div class="text-xs font-bold text-slate-600">Được vào <span class="text-teal-800">${mods.length}/${d.modules.length}</span> tab</div>
         </div>
         <div class="flex flex-wrap gap-1 text-[11px]">${mods.map(m => `<span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-900 font-semibold ring-1 ring-teal-100">${_acEsc(m.label)}</span>`).join('') || '<span class="text-rose-600 font-bold">Không vào được phân hệ nào</span>'}</div>
         ${u.is_superuser ? '<div class="px-3 py-2 rounded-xl bg-slate-50 text-xs text-slate-600 font-medium">Tài khoản quản trị hệ thống luôn đủ quyền.</div>' : ''}
-        ${!u.has_employee && !u.is_superuser ? '<div class="px-3 py-2 rounded-xl bg-amber-50 text-xs text-amber-900 font-medium">Tài khoản chưa gắn hồ sơ nhân viên nên dùng quy tắc cũ. Gắn hồ sơ nhân viên để áp dụng phân quyền theo nhóm.</div>' : ''}
-        ${u.has_employee && !u.is_superuser ? `<div class="flex flex-wrap items-center gap-1.5"><span class="text-[11px] font-black uppercase tracking-wider text-slate-500 mr-1">Kiêm thêm nhóm</span>${groupChips}</div>` : ''}
+        ${!u.has_employee && !u.is_superuser ? '<div class="px-3 py-2 rounded-xl bg-amber-50 text-xs text-amber-900 font-medium">Tài khoản chưa gắn hồ sơ nhân viên nên không có chức danh: chưa được cấp quyền nào cho đến khi bạn chọn nhóm kiêm nhiệm hoặc cho thêm quyền bên dưới.</div>' : ''}
+        ${!u.is_superuser ? `<div class="flex flex-wrap items-center gap-1.5"><span class="text-[11px] font-black uppercase tracking-wider text-slate-500 mr-1">Kiêm thêm nhóm</span>${groupChips}</div>` : ''}
         <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-600">${_AC_LEGEND.group}${_AC_LEGEND.extra}${_AC_LEGEND.add}${_AC_LEGEND.remove}</div>
       </div>
-      ${_accessTable(cell)}
+      ${_accessTable(cell, ui)}
       ${editable ? `<div class="px-4 py-3 border-t border-slate-100 bg-slate-50/60 space-y-2">
           <input type="text" value="${_acEsc(ud.note)}" oninput="accessUI.uDraft.note=this.value; renderAccessUserButtons()" maxlength="255"
             placeholder="Lý do (vd. Kiêm nhiệm thủ quỹ từ 11/2026)" aria-label="Lý do ngoại lệ"
@@ -42311,22 +42462,9 @@ function toggleAccessUserGroup(key, on) {
 }
 function cycleAccessUserCell(m, a) {
     const u = _userObj(); const ud = accessUI.uDraft;
-    const src = _userSources(u, ud);
-    const k = `${m}:${a}`;
-    const inherited = src.roleSet.has(k) || !!src.extra[k];
+    if (!u || !ud || u.is_superuser || !accessUI.data.can_edit) return;
     // Quyền có sẵn (chức danh / nhóm kiêm nhiệm): có ⇄ Chặn. Chưa có: chưa có ⇄ Cho thêm.
-    if (inherited) { if (ud.deny.has(k)) ud.deny.delete(k); else ud.deny.add(k); ud.allow.delete(k); }
-    else {
-        if (ud.allow.has(k)) {
-            ud.allow.delete(k);
-            if (a === 'view') _acModActions(m).forEach(x => ud.allow.delete(`${m}:${x}`));
-        } else {
-            ud.allow.add(k);
-            if (a !== 'view' && !src.roleSet.has(`${m}:view`) && !src.extra[`${m}:view`]) ud.allow.add(`${m}:view`);
-            ud.deny.delete(`${m}:view`);
-        }
-        ud.deny.delete(k);
-    }
+    _acUserSet(u, ud, m, a, !_acUserHas(u, ud, `${m}:${a}`));
     renderAccessLookup();
 }
 const _acModActions = (m) => (accessUI.data.modules.find(x => x.key === m) || { actions: [] }).actions;
@@ -42343,7 +42481,7 @@ async function clearAccessUser() {
 
 Object.assign(window, {
     accessUI, renderAccessGroups, renderAccessRoles, renderAccessLookup, renderAccessUserButtons, cancelAccessDraft,
-    selectAccessGroup, toggleAccessGroupCell, toggleAccessGroupRow, saveAccessGroup, resetAccessGroup,
+    selectAccessGroup, toggleAccessGroupCell, toggleAccessGroupRow, toggleAccessRow, toggleAccessCol, toggleAccessSection, toggleAccessSub, toggleAccessCollapse, accessCollapseKey, saveAccessGroup, resetAccessGroup,
     selectAccessRole, openAccessRole, changeAccessRoleGroup, cycleAccessRoleCell, saveAccessRole, resetAccessRole,
     searchAccessUser, selectAccessUser, openAccessUser, toggleAccessUserGroup, cycleAccessUserCell, saveAccessUser, clearAccessUser, sendAccessReset,
 });
