@@ -671,7 +671,7 @@ function renderStagedBookingContainers() {
             <tr>
                 <td colspan="13" class="p-8 text-center text-slate-400 italic">
                     <i class="ph-bold ph-tray text-2xl mb-1 block"></i>
-                    Chưa có danh sách container cho B/L này. Bấm nút <strong>"+ Thêm Dòng"</strong> hoặc <strong>"Nhập Từ Excel"</strong> để nạp danh sách container.
+                    Chưa có danh sách container cho B/L này. Bấm nút <strong>"+ Thêm Dòng"</strong> hoặc <strong>"Nhập Excel"</strong> để nạp danh sách container.
                 </td>
             </tr>
         `;
@@ -1045,7 +1045,7 @@ function renderSavedBookingContainers() {
             <tr>
                 <td colspan="14" class="p-10 text-center text-slate-400 italic">
                     <i class="ph-bold ph-tray text-3xl mb-2 block text-slate-300"></i>
-                    Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Từ Excel"</strong> hoặc <strong>"+ Thêm Dòng"</strong> ở trên để nạp danh sách container.
+                    Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Excel"</strong> hoặc <strong>"+ Thêm Dòng"</strong> ở trên để nạp danh sách container.
                 </td>
             </tr>
         `;
@@ -1320,7 +1320,7 @@ async function doAssignBulkContainers() {
     if (!bookingId) {
         // CHẾ ĐỘ TẠO MỚI (STAGED):
         if (!stagedBookingContainers || stagedBookingContainers.length === 0) {
-            showToast('warning', 'Chưa có container nào trong bảng. Bấm "+ Thêm Dòng" hoặc "Nhập Từ Excel" trước.');
+            showToast('warning', 'Chưa có container nào trong bảng. Bấm "+ Thêm Dòng" hoặc "Nhập Excel" trước.');
             return;
         }
 

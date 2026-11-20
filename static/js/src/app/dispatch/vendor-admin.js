@@ -235,7 +235,7 @@ function renderAllocationsTable() {
                                 <i class="ph-bold ph-file-arrow-down text-indigo-700 text-sm"></i> Xuất Excel gán xe (.xlsx)
                             </button>
                             <button type="button" onclick="closeAllAllocExcelDropdowns(); vaTriggerAllocExcelUpload(${l.id})" class="w-full px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium border-t border-slate-100">
-                                <i class="ph-bold ph-file-arrow-up text-emerald-700 text-sm"></i> Nhập Excel gán xe (.xlsx)
+                                <i class="ph-bold ph-file-arrow-up text-emerald-700 text-sm"></i> Nhập Excel (.xlsx)
                             </button>
                         </div>
                     </div>

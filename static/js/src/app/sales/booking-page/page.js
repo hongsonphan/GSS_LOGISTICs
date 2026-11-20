@@ -407,7 +407,7 @@ async function openCreateBookingPage(updateHistory = true) {
 
                         <i class="ph-bold ph-tray text-2xl mb-1 block"></i>
 
-                        Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Cont (Excel / Dán)"</strong> ở trên để nạp danh sách 100 container.
+                        Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Excel"</strong> ở trên để nạp danh sách container.
 
                     </td>
 

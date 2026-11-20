@@ -4421,7 +4421,7 @@ function resetTopbarStandardMode(tabId) {
 // Phân hệ cần có quyền Xem (một trong các phân hệ) để mở trang; mở thẳng bằng đường dẫn cũng bị chặn
 const TAB_ACCESS_MODULES = {
     'dieu-van': ['dispatch'], 'kinh-doanh': ['sales'], 'xe-bai': ['fleet'], 'nhan-su': ['hr'],
-    'ke-toan': ['accounting', 'advances', 'ledger'], 'quyet-toan': ['accounting'], 'hai-quan': ['customs'],
+    'ke-toan': ['accounting'], 'quyet-toan': ['acc_driver_settle'], 'hai-quan': ['customs'],
     'bao-cao': ['reports_any'], 'cai-dat': ['settings', 'admin'], 'nhat-ky': ['audit_log']
 };
 
@@ -5349,14 +5349,16 @@ window.addEventListener('popstate', (event) => {
     window.canAccess = canAccess;
 
     const VIEW_MODULE = {
-        'view-dieu-van': 'dispatch', 'view-trip-detail': 'dispatch', 'view-create-trip': 'dispatch', 'view-quyet-toan': 'accounting', 'view-settlement-voucher': 'accounting',
+        'view-dieu-van': 'dispatch', 'view-trip-detail': 'dispatch', 'view-create-trip': 'dispatch', 'view-quyet-toan': 'acc_driver_settle', 'view-settlement-voucher': 'acc_voucher',
         'view-kinh-doanh': 'sales', 'view-quotation-detail': 'sales', 'view-booking-detail': 'sales',
         'view-xe-bai': 'fleet', 'view-hai-quan': 'customs', 'view-customs-form': 'customs',
         'view-nhan-su': 'hr', 'view-employee-form': 'hr',
-        'view-ke-toan': 'accounting', 'view-cash-voucher-detail': 'accounting', 'view-cai-dat': 'settings', 'view-nhat-ky': 'audit_log',
+        'view-ke-toan': 'accounting', 'view-cash-voucher-detail': 'acc_cashbook', 'view-customer-ar-statement': 'acc_customer_settle', 'view-cai-dat': 'settings', 'view-nhat-ky': 'audit_log',
     };
     const SUBTAB_MODULE = {
-        'subtab-acct-driver-advances': 'advances', 'subtab-acct-dispatcher-funds': 'advances', 'subtab-acct-ledger': 'ledger',
+        'subtab-acct-cashbook': 'acc_cashbook', 'subtab-acct-driver-advances': 'advances', 'subtab-acct-dispatcher-funds': 'advances',
+        'subtab-acct-reimbursables': 'acc_reimburse', 'subtab-acct-settlements': 'acc_driver_settle', 'subtab-acct-customer-settlements': 'acc_customer_settle',
+        'subtab-acct-subcontractors': 'acc_3pl', 'subtab-acct-vouchers': 'acc_voucher', 'subtab-acct-ledger': 'ledger', 'subtab-acct-bot-audit': 'acc_bot',
     };
     const RULES = [
         [/^\s*(open\w*Create\w*|openCreate\w*|create\w*Page|openNew\w*|openAdd\w*|add(Trip|Vehicle|Trailer|Employee|Customer|Booking|Quotation)\w*)\s*\(/, 'create'],
@@ -13380,7 +13382,7 @@ function renderAllocationsTable() {
                                 <i class="ph-bold ph-file-arrow-down text-indigo-700 text-sm"></i> Xuất Excel gán xe (.xlsx)
                             </button>
                             <button type="button" onclick="closeAllAllocExcelDropdowns(); vaTriggerAllocExcelUpload(${l.id})" class="w-full px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium border-t border-slate-100">
-                                <i class="ph-bold ph-file-arrow-up text-emerald-700 text-sm"></i> Nhập Excel gán xe (.xlsx)
+                                <i class="ph-bold ph-file-arrow-up text-emerald-700 text-sm"></i> Nhập Excel (.xlsx)
                             </button>
                         </div>
                     </div>
@@ -23838,7 +23840,7 @@ async function openCreateBookingPage(updateHistory = true) {
 
                         <i class="ph-bold ph-tray text-2xl mb-1 block"></i>
 
-                        Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Cont (Excel / Dán)"</strong> ở trên để nạp danh sách 100 container.
+                        Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Excel"</strong> ở trên để nạp danh sách container.
 
                     </td>
 
@@ -26551,7 +26553,7 @@ function renderStagedBookingContainers() {
             <tr>
                 <td colspan="13" class="p-8 text-center text-slate-400 italic">
                     <i class="ph-bold ph-tray text-2xl mb-1 block"></i>
-                    Chưa có danh sách container cho B/L này. Bấm nút <strong>"+ Thêm Dòng"</strong> hoặc <strong>"Nhập Từ Excel"</strong> để nạp danh sách container.
+                    Chưa có danh sách container cho B/L này. Bấm nút <strong>"+ Thêm Dòng"</strong> hoặc <strong>"Nhập Excel"</strong> để nạp danh sách container.
                 </td>
             </tr>
         `;
@@ -26925,7 +26927,7 @@ function renderSavedBookingContainers() {
             <tr>
                 <td colspan="14" class="p-10 text-center text-slate-400 italic">
                     <i class="ph-bold ph-tray text-3xl mb-2 block text-slate-300"></i>
-                    Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Từ Excel"</strong> hoặc <strong>"+ Thêm Dòng"</strong> ở trên để nạp danh sách container.
+                    Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Excel"</strong> hoặc <strong>"+ Thêm Dòng"</strong> ở trên để nạp danh sách container.
                 </td>
             </tr>
         `;
@@ -27200,7 +27202,7 @@ async function doAssignBulkContainers() {
     if (!bookingId) {
         // CHẾ ĐỘ TẠO MỚI (STAGED):
         if (!stagedBookingContainers || stagedBookingContainers.length === 0) {
-            showToast('warning', 'Chưa có container nào trong bảng. Bấm "+ Thêm Dòng" hoặc "Nhập Từ Excel" trước.');
+            showToast('warning', 'Chưa có container nào trong bảng. Bấm "+ Thêm Dòng" hoặc "Nhập Excel" trước.');
             return;
         }
 
@@ -37600,10 +37602,10 @@ const MASTER_DATA_GROUPS = {
 // Mỗi tab thuộc một dòng quyền "Cài đặt · ..." trong trang Phân quyền (khớp core/access.py CFG_TAB_MODULE)
 const MASTER_DATA_TAB_MODULE = {
     company: 'cfg_company', roles_permissions: 'admin', audit_log: 'audit_log',
-    opening_balance: 'cfg_finance', account_settings: 'cfg_finance', expenses: 'cfg_finance', driver_tariffs: 'cfg_finance', allowances: 'cfg_finance',
-    customers: 'cfg_partners', tariffs: 'cfg_partners', subcontractors: 'cfg_partners',
-    locations: 'cfg_network', shipping_lines: 'cfg_network',
-    vehicles: 'cfg_fleet', trailers: 'cfg_fleet', containers: 'cfg_fleet'
+    opening_balance: 'cfg_opening', account_settings: 'cfg_accounts', expenses: 'cfg_expenses', driver_tariffs: 'cfg_driver_tariffs', allowances: 'cfg_allowances',
+    customers: 'cfg_customers', tariffs: 'cfg_tariffs', subcontractors: 'cfg_subcontractors',
+    locations: 'cfg_locations', shipping_lines: 'cfg_shipping_lines',
+    vehicles: 'cfg_vehicles', trailers: 'cfg_trailers', containers: 'cfg_containers'
 };
 
 // Trang Cài đặt đang mở (không dựa vào biến toàn cục currentTab vì biến đó không tồn tại)
@@ -41839,21 +41841,35 @@ window.switchAccessView = switchAccessView;
 function _accessTable(cellFn, rowToggle) {
     const d = accessUI.data;
     const head = d.actions.map(a => `<th class="text-center" data-col-key="${a.key}">${_acEsc(a.label)}</th>`).join('');
+    // Ma trận hiển thị theo đúng cây sidebar: mỗi phân hệ một dòng tiêu đề, mỗi tab một dòng quyền (nhóm con cho Báo cáo)
+    const colSpan = 1 + d.actions.length;
+    let lastSection = null, lastSub = null;
     const rows = d.modules.map(m => {
+        let head = '';
+        if (m.section !== lastSection) {
+            const sec = (d.sections || []).find(x => x.key === m.section) || {};
+            head += `<tr data-section="${_acEsc(m.section)}"><td colspan="${colSpan}" class="bg-slate-100 text-slate-700 font-black text-xs uppercase tracking-wide"><i class="ph-bold ${_acEsc(sec.icon || 'ph-folder')} mr-1.5"></i>${_acEsc(m.section_label || m.section)}</td></tr>`;
+            lastSection = m.section; lastSub = null;
+        }
+        if (m.sub_section && m.sub_section !== lastSub) {
+            head += `<tr><td colspan="${colSpan}" class="bg-slate-50 text-slate-500 font-bold text-[11px] uppercase tracking-wide pl-6">${_acEsc(m.sub_section_label || m.sub_section)}</td></tr>`;
+        }
+        lastSub = m.sub_section || null;
         const cells = d.actions.map(a => m.actions.includes(a.key)
             ? `<td class="text-center">${cellFn(m.key, a.key)}</td>`
             : `<td class="text-center text-slate-300">—</td>`).join('');
-        return `<tr>
+        const screens = (m.screens || []).length ? `<div class="text-[11px] text-slate-400 font-medium leading-snug">Điều khiển: ${_acEsc(m.screens.join(' · '))}</div>` : '';
+        return `${head}<tr>
             <td class="min-w-[220px] whitespace-normal">
               <div class="flex items-start gap-2">
                 ${rowToggle ? rowToggle(m.key) : ''}
                 <div><div class="font-bold text-slate-800">${_acEsc(m.label)}</div>
-                <div class="text-[11px] text-slate-500 font-medium leading-snug">${_acEsc(m.description)}</div></div>
+                <div class="text-[11px] text-slate-500 font-medium leading-snug">${_acEsc(m.description)}</div>${screens}</div>
               </div>
             </td>${cells}</tr>`;
     }).join('');
     return `<div class="overflow-x-auto"><table class="erp-table" data-table-title="Ma trận phân quyền" data-m-keep>
-        <thead><tr><th data-col-key="module">Phân hệ</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+        <thead><tr><th data-col-key="module">Phân hệ › Tab</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 const _acChip = (cls, icon, label) => `<span class="inline-flex items-center gap-1"><span class="w-5 h-5 rounded ${cls} inline-flex items-center justify-center"><i class="ph-bold ${icon} text-[11px]"></i></span>${label}</span>`;

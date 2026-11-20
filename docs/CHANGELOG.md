@@ -3,6 +3,26 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Thống Nhất 1 Từ "Nhập Excel" Cho Toàn Bộ Hệ Thống
+- **Yêu cầu & Mục tiêu:** Thống nhất chuẩn xác một cụm từ duy nhất **"Nhập Excel"** cho toàn bộ các nút thao tác nhập dữ liệu bảng tính trên tất cả các phân hệ và thanh công cụ.
+- **Phạm vi áp dụng:**
+  - **Cổng Nhà Xe (`templates/vendor_portal.html`):** Đổi nhãn nút từ `Nhập Từ Excel` thành chuẩn `Nhập Excel`.
+  - **Chi Tiết Đơn Hàng / Booking (`templates/views/view_booking_detail.html`):** Đổi nút nạp container từ `Nhập Từ Excel` thành `Nhập Excel`. Cập nhật các câu hướng dẫn trống bảng cont.
+  - **Màn Hình Lập Lệnh & Điều Phối (`templates/views/view_dispatch_order.html` & `modal_dispatch_order.html`):** Đổi nút `+ Nhập Cont (Dán / Excel)` thành chuẩn `Nhập Excel`.
+  - **Mã Nguồn Quản Lý Container (`static/js/src/app/sales/booking-page/`):** Cập nhật toàn bộ các thông báo toast và dòng nhắc người dùng (`renderStagedBookingContainers`, `renderSavedBookingContainers`, `doAssignBulkContainers`, `openCreateBookingPage`) từ "Nhập Từ Excel" / "Nhập Cont (Excel / Dán)" sang chuẩn "Nhập Excel".
+  - **Quản Lý Vendor (`static/js/src/app/dispatch/vendor-admin.js`):** Đổi mục menu phân bổ xe sang `Nhập Excel (.xlsx)`.
+  - **Tài Liệu Hướng Dẫn Sử Dụng (`templates/help.html`):** Đồng bộ các mục hướng dẫn thao tác nhập container sang nhãn chuẩn `Nhập Excel`.
+  - Rebuild gói `static/js/app.js` (108 modules).
+
+
+## 2026-11-20 – Phân Quyền Theo Tab: Ma Trận Theo Cây Sidebar (chuyển từ BIM Logistics sang GSS)
+- **Ma trận Vai Trò & Phân Quyền hiển thị theo đúng sidebar:** mỗi phân hệ một dòng tiêu đề, mỗi **tab** một dòng quyền (nhóm con cho Báo cáo), kèm danh sách màn / nút mà dòng đó điều khiển. API `GET /api/access/matrix/` thêm `sections`, và mỗi `modules[]` có `section`, `section_label`, `sub_section`, `sub_section_label`, `screens` (khóa cũ `key`, `label`, `description`, `actions` giữ nguyên).
+- **Tài chính & Kế toán tách theo tab:** `acc_cashbook` (Sổ quỹ), `acc_dispatcher_fund` (Quỹ điều vận: duyệt / tất toán), `acc_reimburse` (Chi hộ), `acc_driver_settle` (Quyết toán chuyến & tài xế), `acc_customer_settle` (SOA khách), `acc_3pl`, `acc_voucher` (Phiếu quyết toán), `acc_bot` (Vé BOT), `acc_gss` (cước / claim / hóa đơn / bảng kê theo vận đơn GSS); `advances` (Tạm ứng tài xế, lập phiếu quỹ) và `ledger` (Sổ sách) giữ nguyên. Khóa `accounting` cũ chỉ còn là khóa **dẫn xuất** (có quyền ở một tab kế toán bất kỳ ➔ vào được màn Kế toán); khóa dẫn xuất `finance` (tương đương `accounting` cũ) điều khiển xem số liệu tài chính tổng hợp.
+- **Cài đặt tách theo tab:** 13 dòng `cfg_opening`, `cfg_accounts`, `cfg_expenses`, `cfg_driver_tariffs`, `cfg_allowances`, `cfg_customers`, `cfg_tariffs`, `cfg_subcontractors`, `cfg_locations`, `cfg_shipping_lines`, `cfg_vehicles`, `cfg_trailers`, `cfg_containers` (thay 4 dòng gộp `cfg_finance` / `cfg_partners` / `cfg_network` / `cfg_fleet`); `cfg_company`, `admin`, `audit_log` giữ riêng.
+- **Không ai mất / thêm quyền:** quyền đã lưu theo khóa cũ (nhóm, chức danh, ngoại lệ cá nhân) tự mở rộng sang các khóa mới khi đọc (`LEGACY_EXPAND`); nhóm mặc định và chức danh mặc định (Kế toán, Điều vận, nhân viên hành chính kế toán, trợ lý điều độ) cho kết quả quyền hiệu lực như trước. Không cần migration dữ liệu; lưu lại từ trang Phân quyền sẽ ghi bằng khóa mới.
+- **Endpoint chuyển sang khóa tab:** sổ quỹ (`acc_cashbook`; chi tiết phiếu: `advances` hoặc `acc_cashbook`), khoản chi hộ, đối tác 3PL, vé BOT, phiếu quyết toán, quyết toán chuyến (`settle-expenses`, `unsettle-expenses`, bảng quyết toán GSS), duyệt quỹ điều vận, SOA / đối chiếu công nợ khách (`advances` hoặc `acc_customer_settle`), màn GSS (`acc_gss`). Nút bấm / tab trên màn Kế toán ẩn theo đúng khóa tab.
+- **Giữ nguyên:** URL, khóa JSON cũ, `AccessGroup` / `RoleAccess` / `UserAccessOverride` (không đổi model), quyền Duyệt tách riêng, ba tầng Nhóm ➔ Chức danh ➔ Người. Test: `core/test_access_tabs.py`.
+
 ## 2026-11-20 – Nhật Ký Hoạt Động (chuyển từ BIM Logistics sang GSS)
 - **Tính năng mới:** tab **Cài đặt ➔ Khai Báo Ban Đầu ➔ Nhật Ký Hoạt Động** (cũng mở từ menu người dùng, địa chỉ `/audit-log`): xem ai đã tạo / sửa / đổi trạng thái / xóa dữ liệu nào lúc nào (trước ➔ sau từng trường) và nhật ký đăng nhập. Chỉ đọc; bảng chữ thuần, tên tab không số đếm.
 - **Bộ lọc:** tìm kiếm, người, loại phiếu, hành động, từ / đến ngày; **Xuất CSV** (tối đa 5000 dòng, cần quyền Xuất). Giá trị trường nhạy cảm (password / token / secret / otp) che `***`.
