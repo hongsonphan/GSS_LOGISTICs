@@ -1,0 +1,8 @@
+# Người duyệt mặc định cho mọi thay đổi
+*                      @hongsonphan
+# Vùng rủi ro cao: tiền, phân quyền, cách ly công ty, triển khai
+/apps/billing/         @hongsonphan
+/apps/ledger/          @hongsonphan
+/core/                 @hongsonphan
+/.github/workflows/    @hongsonphan
+/scripts/deploy_vps.sh @hongsonphan

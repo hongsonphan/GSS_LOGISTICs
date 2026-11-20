@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Báo lỗ hổng bảo mật
+    url: https://github.com/hongsonphan/GSS_LOGISTICs/security/advisories/new
+    about: Không mở Issue công khai cho lỗ hổng bảo mật.

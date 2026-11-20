@@ -1,0 +1,8 @@
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+extend-exclude = ["staticfiles", "media", "scratch", "*/migrations/*"]
+
+[tool.ruff.lint]
+# CI đang chặn E9,F63,F7,F82. Nâng dần các nhóm khác sau khi dọn mã hiện có.
+select = ["E9", "F63", "F7", "F82"]

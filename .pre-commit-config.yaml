@@ -1,0 +1,12 @@
+# Tuỳ chọn: pip install pre-commit && pre-commit install
+# (hook bắt buộc của dự án vẫn là .githooks/pre-commit: git config core.hooksPath .githooks)
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--select, "E9,F63,F7,F82"]
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
