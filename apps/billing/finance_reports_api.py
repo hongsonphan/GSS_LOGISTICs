@@ -12,7 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
 
 from core.security import GracefulJWTAuthentication
-from core.permissions import check_can_edit_or_delete, IsAccountant, IsDispatcherOrAccountant
+from core.permissions import (CanBotAudit, CanCashbook, CanCashbookDetail, CanReimburse, CanThreePL, check_can_edit_or_delete,
+                              IsAccountant)
 from apps.billing.models import (
     TripExpense,
     ReimbursementStatus,
@@ -38,7 +39,7 @@ class CustomerReimbursablesAPIView(APIView):
     cho phép gom nhóm xuất Debit Note và chốt hoàn tiền 1-chạm.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanReimburse]
 
     def get(self, request):
         status_filter = request.GET.get('reimbursement_status', 'ALL')
@@ -278,7 +279,7 @@ class CashBookAPIView(APIView):
     Hạch toán minh bạch dòng tiền Tiền mặt và Ngân hàng.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanCashbook]
 
     def get(self, request):
         method_filter = request.GET.get('payment_method', 'ALL')
@@ -445,7 +446,7 @@ class CashBookDetailAPIView(APIView):
     API Chi Tiết Phiếu Thu / Phiếu Chi (Xem & In Chứng Từ Mẫu 01-TT / 02-TT).
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsDispatcherOrAccountant]
+    permission_classes = [CanCashbookDetail]
 
     def get(self, request, pk):
         try:
@@ -596,7 +597,7 @@ class SubcontractorSettlementsAPIView(APIView):
     Theo dõi cước thuê xe ngoài, tạm ứng chi phí và công nợ còn phải thanh toán cho thầu phụ.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanThreePL]
     access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}  # chốt/duyệt (ma trận phân quyền)
 
     def get(self, request):
@@ -996,7 +997,7 @@ class BotTollAuditAPIView(APIView):
     Đối chiếu chi phí vé BOT thực tế tài xế nộp/quét OCR với định mức trong bảng giá cước RouteTariff.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanBotAudit]
 
     def get(self, request):
         from_date = request.GET.get('from_date')

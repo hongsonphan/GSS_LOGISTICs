@@ -4,7 +4,7 @@ from django.test import SimpleTestCase, TestCase
 from apps.customers.models import Customer
 from apps.personnel.models import EmployeeRole
 from core import access
-from core.models import AccessGroup, AuditLog, LoginEvent, UserAccessOverride, get_default_company
+from core.models import AuditLog, LoginEvent, UserAccessOverride, get_default_company
 from core.test_access import make_user
 
 

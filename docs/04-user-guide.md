@@ -268,7 +268,7 @@ Mỗi tài khoản gắn với một nhân sự có **Phòng ban** và **Chức 
 
 1. Tìm dòng của nhân viên.
 2. Đổi **nhóm vai trò**: bấm **`Hiệu Chỉnh Thông Tin`** ➔ chọn nhóm vai trò (Giám Đốc, Kế toán, Điều vận, Kinh doanh, Quản lý xe...) ➔ **`Lưu`**.
-3. Cần phân quyền chi tiết từng chức năng: bấm **`Phân Quyền`** ➔ bật/tắt từng quyền (Xem, Thêm, Sửa, Xóa, Duyệt, Báo cáo) ➔ **`Lưu Phân Quyền`**.
+3. Cần phân quyền chi tiết từng chức năng: bấm **`Phân Quyền`** ➔ bật/tắt từng quyền (Xem, Thêm, Sửa, Xóa, Duyệt, Xuất) ➔ **`Lưu Phân Quyền`**. Bảng quyền xếp theo đúng menu bên trái: mỗi phân hệ một dòng tiêu đề, mỗi **tab** một dòng (ví dụ Tài chính & Kế toán có dòng riêng cho Sổ quỹ, Quyết toán chuyến, Đối tác 3PL, Phiếu quyết toán...; Cài đặt có dòng riêng cho từng danh mục); dưới mỗi dòng ghi rõ màn hình / nút mà dòng đó điều khiển. Có thể cấp cho một người chỉ đúng một tab (ví dụ chỉ **Sổ quỹ thu - chi**).
 4. Người dùng tải lại trang (F5) để kích hoạt quyền mới.
 
 ## B3. Khoản Mục Chi

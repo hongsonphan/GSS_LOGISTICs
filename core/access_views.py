@@ -78,8 +78,7 @@ def _payload(request):
                       'default_group': d_group, 'default_add': d_add, 'default_remove': d_remove,
                       'customized': key in saved_roles, 'grants': access.role_grants(company, key)})
     return {
-        'modules': [{'key': k, 'label': lbl, 'description': d, 'actions': acts} for k, lbl, d, acts in access.MODULES],
-        'actions': [{'key': k, 'label': lbl} for k, lbl in access.ACTIONS],
+        **access.matrix_payload(),
         'groups': groups, 'roles': roles, 'users': rows,
         'can_edit': access.can(request.user, 'admin', 'edit'),
     }

@@ -43,61 +43,184 @@ REPORTS = [
 ]
 REPORT_KEYS = [f'rpt_{r[0]}' for r in REPORTS]
 REPORT_CATEGORY = {f'rpt_{r[0]}': r[3] for r in REPORTS}
-# Phân hệ tổng hợp (không hiện trong ma trận, tự tính từ quyền từng báo cáo) để các chỗ kiểm tra cũ vẫn dùng được:
+# Phân hệ tổng hợp (không hiện trong ma trận, tự tính từ quyền từng dòng) để các chỗ kiểm tra cũ vẫn dùng được:
 #   reports_any: xem được ít nhất một báo cáo; reports_fin: xem được Lãi lỗ hoặc Doanh thu khách (số liệu lãi lỗ);
-#   reports_ops: xem được ít nhất một báo cáo vận hành; settings: xem được ít nhất một tab Cài đặt.
-CFG_KEYS = ['cfg_company', 'cfg_finance', 'cfg_partners', 'cfg_network', 'cfg_fleet']
+#   reports_ops: xem được ít nhất một báo cáo vận hành; settings: xem được ít nhất một tab Cài đặt (kể cả Nhật ký hoạt động);
+#   accounting: có quyền ở ít nhất một tab Tài chính & Kế toán (dùng cho menu, cổng trang);
+#   finance: có quyền ở ít nhất một tab TÀI CHÍNH (tương đương quyền "accounting" cũ), dùng cho can_view_finance.
+ACTION_LABELS = dict(ACTIONS)
+
+# Dòng Tài chính & Kế toán tách ra từ khoá 'accounting' cũ (quyền hiệu lực không đổi cho ai nhờ LEGACY_EXPAND)
+ACC_FROM_ACCOUNTING = ['acc_cashbook', 'acc_dispatcher_fund', 'acc_reimburse', 'acc_driver_settle', 'acc_customer_settle', 'acc_3pl',
+                       'acc_voucher', 'acc_bot', 'acc_gss']
+ACC_GATE_KEYS = list(ACC_FROM_ACCOUNTING)                       # nguồn của khoá dẫn xuất 'finance'
+ACC_ANY_KEYS = ACC_FROM_ACCOUNTING + ['advances', 'ledger']     # nguồn của khoá dẫn xuất 'accounting' (menu, cổng trang)
+# Tab Cài đặt tách từ 4 khoá cũ (cfg_finance / cfg_partners / cfg_network / cfg_fleet)
+CFG_FINANCE_KEYS = ['cfg_opening', 'cfg_accounts', 'cfg_expenses', 'cfg_driver_tariffs', 'cfg_allowances']
+CFG_PARTNER_KEYS = ['cfg_customers', 'cfg_tariffs', 'cfg_subcontractors']
+CFG_NETWORK_KEYS = ['cfg_locations', 'cfg_shipping_lines']
+CFG_FLEET_KEYS = ['cfg_vehicles', 'cfg_trailers', 'cfg_containers']
+CFG_DATA_KEYS = CFG_FINANCE_KEYS + CFG_PARTNER_KEYS + CFG_NETWORK_KEYS + CFG_FLEET_KEYS
+CFG_KEYS = ['cfg_company'] + CFG_DATA_KEYS
 # Dòng quyền của trang Cài đặt tính cả Nhật ký hoạt động (chỉ Xem / Xuất): có quyền này thì vào được trang Cài đặt
 SETTINGS_KEYS = CFG_KEYS + ['audit_log']
-# Tab của trang Cài đặt -> phân hệ quyền (roles_permissions thuộc Quản trị hệ thống)
+# Tab của trang Cài đặt -> phân hệ quyền (roles_permissions thuộc Quản trị hệ thống); mỗi tab một khoá
 CFG_TAB_MODULE = {
     'company': 'cfg_company', 'roles_permissions': 'admin', 'audit_log': 'audit_log',
-    'opening_balance': 'cfg_finance', 'account_settings': 'cfg_finance', 'expenses': 'cfg_finance', 'driver_tariffs': 'cfg_finance', 'allowances': 'cfg_finance',
-    'customers': 'cfg_partners', 'tariffs': 'cfg_partners', 'subcontractors': 'cfg_partners',
-    'locations': 'cfg_network', 'shipping_lines': 'cfg_network',
-    'vehicles': 'cfg_fleet', 'trailers': 'cfg_fleet', 'containers': 'cfg_fleet',
+    'opening_balance': 'cfg_opening', 'account_settings': 'cfg_accounts', 'expenses': 'cfg_expenses',
+    'driver_tariffs': 'cfg_driver_tariffs', 'allowances': 'cfg_allowances',
+    'customers': 'cfg_customers', 'tariffs': 'cfg_tariffs', 'subcontractors': 'cfg_subcontractors',
+    'locations': 'cfg_locations', 'shipping_lines': 'cfg_shipping_lines',
+    'vehicles': 'cfg_vehicles', 'trailers': 'cfg_trailers', 'containers': 'cfg_containers',
 }
 DERIVED_MODULES = {
     'reports_any': lambda keys: any(k in REPORT_CATEGORY for k in keys),
     'reports_fin': lambda keys: bool(keys & {'rpt_pnl', 'rpt_customer_rev'}),
     'reports_ops': lambda keys: any(REPORT_CATEGORY.get(k) == 'ops' for k in keys),
     'settings': lambda keys: bool(keys & set(SETTINGS_KEYS)),   # vào được trang Cài đặt: xem được ít nhất một tab
+    'accounting': lambda keys: bool(keys & set(ACC_ANY_KEYS)),
+    'finance': lambda keys: bool(keys & set(ACC_GATE_KEYS)),
 }
-# Khoá phân hệ báo cáo cũ (trước khi tách từng báo cáo) -> các báo cáo tương ứng; dữ liệu đã lưu theo khoá cũ vẫn đọc được
+DERIVED_LABELS = {
+    'reports_any': 'Báo cáo & Thống kê', 'reports_fin': 'Báo cáo tài chính', 'reports_ops': 'Báo cáo vận hành',
+    'settings': 'Cài đặt', 'accounting': 'Tài chính & Kế toán', 'finance': 'Tài chính & Kế toán',
+}
+# Khoá cũ (đã bỏ khỏi ma trận) -> các khoá thay thế; dữ liệu đã lưu theo khoá cũ vẫn đọc được và được mở rộng khi đọc
 LEGACY_EXPAND = {
     'reports_fin': [k for k in REPORT_KEYS if REPORT_CATEGORY[k] == 'fin'],
     'reports_ops': [k for k in REPORT_KEYS if REPORT_CATEGORY[k] == 'ops'],
+    'accounting': ACC_FROM_ACCOUNTING,
+    'cfg_finance': CFG_FINANCE_KEYS, 'cfg_partners': CFG_PARTNER_KEYS, 'cfg_network': CFG_NETWORK_KEYS, 'cfg_fleet': CFG_FLEET_KEYS,
 }
 
-# (khoá, tên, mô tả, thao tác áp dụng)
-MODULES = [
-    ('dashboard', 'Tổng quan', 'Trang Dashboard và số liệu tổng hợp theo vai trò', ['view']),
-    ('sales', 'Kinh doanh', 'Báo giá, booking, khách hàng, công nợ khách', ['view', 'create', 'edit', 'delete', 'approve', 'export']),
-    ('dispatch', 'Điều vận & Vendor', 'Chuyến xe, lệnh điều động, mốc thời gian, chứng từ chuyến', ['view', 'create', 'edit', 'delete', 'approve', 'export']),
-    ('depot', 'Bãi depot (Thủ bãi)', 'Gate-in/Gate-out container, ảnh hiện trạng, tồn bãi, xuất Excel bãi', ['view', 'create', 'edit', 'export']),
-    ('fleet', 'Bãi & Phương Tiện', 'Đầu kéo, rơ-moóc, bảo dưỡng, hạn đăng kiểm', ['view', 'create', 'edit', 'delete', 'export']),
-    ('customs', 'Hải quan', 'Tờ khai VNACCS, phân luồng, thông quan', ['view', 'create', 'edit', 'delete', 'export']),
-    ('accounting', 'Tài chính & Kế toán', 'Sổ quỹ thu chi, quyết toán chuyến, chi hộ, đối tác 3PL, vé BOT', ['view', 'create', 'edit', 'delete', 'approve', 'export']),
-    ('advances', 'Tạm ứng & Quỹ điều vận', 'Cấp và quyết toán tạm ứng tài xế, quỹ ứng điều vận', ['view', 'create', 'edit', 'delete', 'approve', 'export']),
-    ('pricing', 'Biểu giá', 'Khoản phí, bảng giá bán theo khách / mua theo nhà xe, duyệt và phiên bản giá', ['view', 'create', 'edit', 'delete', 'approve', 'export']),
-    ('ledger', 'Sổ sách kế toán', 'Cân đối tài khoản, nhật ký chung, sổ cái, ánh xạ tài khoản', ['view', 'edit', 'export']),
-    ('hr', 'Nhân sự', 'Hồ sơ nhân viên (CCCD, ngân hàng, địa chỉ), tài khoản đăng nhập', ['view', 'create', 'edit', 'delete', 'export']),
-    *[(f'rpt_{k}', f'Báo cáo · {label}', desc, ['view', 'export']) for k, label, desc, _c in REPORTS],
-    ('master_data', 'Danh mục (đọc)', 'Chọn khách hàng, địa điểm, xe, loại chi phí... trong các biểu mẫu (chỉ đọc; sửa danh mục theo các dòng Cài đặt bên dưới)', ['view']),
-    ('cfg_company', 'Cài đặt · Khai báo ban đầu', 'Tab Khai báo ban đầu: thông tin công ty, mã số thuế, tham số hệ thống', ['view', 'edit']),
-    ('cfg_finance', 'Cài đặt · Tài chính & Quản trị', 'Số dư đầu kỳ, khoản mục chi phí, biểu giá lương tài xế, phụ cấp', ['view', 'create', 'edit', 'delete', 'export']),
-    ('cfg_partners', 'Cài đặt · Khách hàng & Đối tác', 'Khách hàng, biểu giá cước, nhà thầu phụ 3PL', ['view', 'create', 'edit', 'delete', 'export']),
-    ('cfg_network', 'Cài đặt · Mạng lưới & Địa điểm', 'Cảng, kho, bãi, tuyến, hãng tàu', ['view', 'create', 'edit', 'delete', 'export']),
-    ('cfg_fleet', 'Cài đặt · Phương tiện & Thiết bị', 'Đầu kéo, rơ-moóc, loại container', ['view', 'create', 'edit', 'delete', 'export']),
-    ('audit_log', 'Cài đặt · Nhật ký hoạt động', 'Xem ai tạo / sửa / xoá / duyệt gì, lúc nào và lịch sử đăng nhập (chỉ đọc); Xuất = tải CSV. Mặc định chỉ Admin và Giám đốc', ['view', 'export']),
-    ('admin', 'Quản trị hệ thống', 'Phân quyền, tài khoản người dùng, thông tin công ty', ['view', 'edit']),
+A_ALL = ['view', 'create', 'edit', 'delete', 'approve', 'export']
+A_CRUD = ['view', 'create', 'edit', 'delete', 'export']
+
+# Cây theo đúng sidebar: (khoá, nhãn, biểu tượng phosphor, [(khoá nhóm con, nhãn)])
+SECTIONS = [
+    ('dashboard', 'Tổng quan', 'ph-squares-four', []),
+    ('sales', 'Sale & Booking', 'ph-handshake', []),
+    ('dispatch', 'Điều vận & Vendor', 'ph-truck', []),
+    ('depot', 'Bãi depot (Thủ bãi)', 'ph-warehouse', []),
+    ('fleet', 'Bãi & Phương Tiện', 'ph-garage', []),
+    ('hr', 'Nhân sự', 'ph-users', []),
+    ('accounting', 'Tài chính & Kế toán', 'ph-calculator', []),
+    ('customs', 'Hải quan', 'ph-file-text', []),
+    ('reports', 'Báo cáo & Thống kê', 'ph-chart-bar', [
+        ('fin', 'Tài chính & quản trị'), ('ops', 'Vận hành'), ('sales', 'Kinh doanh & khách hàng')]),
+    ('settings', 'Cài đặt', 'ph-gear', []),
 ]
+SECTION_KEYS = [s[0] for s in SECTIONS]
+SECTION_LABELS = {s[0]: s[1] for s in SECTIONS}
+
+_RPT_ROWS = [
+    ('reports', f'rpt_{r[0]}', r[1], r[2], ['view', 'export'], ['Xem báo cáo', 'Xuất Excel / In'], r[3]) for r in REPORTS
+]
+
+# (phân hệ sidebar, khoá, nhãn tab, mô tả, thao tác áp dụng, màn / nút do tab điều khiển, nhóm con)
+# Màn / nút mở từ tab KHÔNG có khoá riêng: quyền do hàng tab quyết định.
+_ROWS = [
+    ('dashboard', 'dashboard', 'Tổng quan', 'Trang Dashboard và số liệu tổng hợp theo vai trò', ['view'],
+     ['Dashboard theo vai trò', 'Thẻ chỉ số và biểu đồ'], ''),
+
+    ('sales', 'sales', 'Báo giá, Booking & Khách hàng', 'Báo giá, booking, khách hàng, công nợ khách', A_ALL,
+     ['Tạo / sửa báo giá', 'Đổi trạng thái báo giá (Duyệt / Ký kết)', 'Tạo / sửa booking', 'In báo giá', 'Xoá báo giá / booking'], ''),
+    ('sales', 'pricing', 'Biểu giá', 'Khoản phí, bảng giá bán theo khách / mua theo nhà xe, duyệt và phiên bản giá', A_ALL,
+     ['Bảng giá bán', 'Bảng giá mua nhà xe', 'Duyệt / chốt phiên bản giá'], ''),
+
+    ('dispatch', 'dispatch', 'Chuyến xe, lệnh điều động & Vendor', 'Chuyến xe, lệnh điều động, mốc thời gian, chứng từ chuyến (Duyệt: các bước chốt của điều vận)', A_ALL,
+     ['Tạo chuyến', 'Chi tiết chuyến', 'Sửa chuyến', 'Đổi trạng thái chuyến', 'Điều xe - tài xế', 'Lệnh điều động / lệnh vận chuyển nhà xe', 'Chứng từ, chi phí chuyến'], ''),
+
+    ('depot', 'depot', 'Bãi depot (Thủ bãi)', 'Gate-in/Gate-out container, ảnh hiện trạng, tồn bãi, xuất Excel bãi', ['view', 'create', 'edit', 'export'],
+     ['Gate-in / Gate-out', 'Ảnh hiện trạng', 'Tồn bãi', 'Xuất Excel bãi'], ''),
+
+    ('fleet', 'fleet', 'Đầu kéo, rơ-moóc & bảo dưỡng', 'Đầu kéo, rơ-moóc, bảo dưỡng, hạn đăng kiểm', A_CRUD,
+     ['Thêm / sửa xe, rơ-moóc', 'Chi tiết xe', 'Cảnh báo đăng kiểm, bảo hiểm, bảo dưỡng'], ''),
+
+    ('hr', 'hr', 'Hồ sơ nhân sự & tài khoản', 'Hồ sơ nhân viên (CCCD, ngân hàng, địa chỉ), tài khoản đăng nhập', A_CRUD,
+     ['Thêm / sửa hồ sơ', 'Chi tiết nhân viên', 'Nhập / xuất danh sách nhân sự', 'Tài khoản đăng nhập'], ''),
+
+    ('accounting', 'acc_cashbook', 'Sổ quỹ thu - chi', 'Phiếu thu, phiếu chi, sổ quỹ tiền mặt / ngân hàng', A_ALL,
+     ['Tạo phiếu thu / chi', 'Chi tiết phiếu', 'Sửa / xoá phiếu', 'In phiếu', 'Xuất sổ quỹ'], ''),
+    ('accounting', 'advances', 'Tạm ứng tài xế & lập phiếu quỹ điều vận', 'Cấp và quyết toán tạm ứng tài xế, lập phiếu quỹ điều vận, quyết toán gom tài xế', A_ALL,
+     ['Tạo tạm ứng', 'Chi tiết tạm ứng', 'Quyết toán / hoàn ứng', 'Lập phiếu quỹ điều vận', 'Quyết toán gom tài xế'], ''),
+    ('accounting', 'acc_dispatcher_fund', 'Quỹ điều vận (duyệt / tất toán)', 'Duyệt xuất quỹ, từ chối, tất toán quỹ ứng điều vận', A_ALL,
+     ['Duyệt / từ chối phiếu quỹ', 'Tất toán quỹ', 'In phiếu quỹ'], ''),
+    ('accounting', 'acc_reimburse', 'Khoản chi hộ', 'Khoản chi hộ khách hàng cần thu hồi', A_ALL,
+     ['Danh sách chi hộ', 'Đánh dấu đã thu hồi', 'Xuất bảng kê chi hộ'], ''),
+    ('accounting', 'acc_driver_settle', 'Quyết toán chuyến & tài xế', 'Đối soát, chốt sổ chi phí chuyến, duyệt khoản chi', A_ALL,
+     ['Đối soát chi phí chuyến', 'Chốt / mở sổ chi phí chuyến', 'Duyệt / từ chối khoản chi', 'Bảng quyết toán GSS'], ''),
+    ('accounting', 'acc_customer_settle', 'Quyết toán khách hàng (SOA)', 'Đối chiếu công nợ khách hàng, bảng kê SOA theo tháng', A_ALL,
+     ['Đối chiếu công nợ khách', 'Bảng kê SOA hàng tháng', 'Xuất Excel SOA'], ''),
+    ('accounting', 'acc_3pl', 'Đối tác 3PL', 'Quyết toán cước trả đối tác vận tải thầu phụ', A_ALL,
+     ['Bảng quyết toán 3PL', 'Chốt quyết toán 3PL', 'Xuất bảng quyết toán'], ''),
+    ('accounting', 'acc_voucher', 'Phiếu quyết toán', 'Phiếu quyết toán tài xế, đối tác 3PL, khách hàng', A_ALL,
+     ['Lập phiếu quyết toán', 'Chi tiết phiếu', 'Duyệt / mở lại phiếu', 'Chốt thanh toán / bù trừ', 'In phiếu quyết toán'], ''),
+    ('accounting', 'ledger', 'Sổ sách kế toán', 'Cân đối tài khoản, nhật ký chung, sổ cái, ánh xạ tài khoản', ['view', 'edit', 'export'],
+     ['Cân đối tài khoản', 'Nhật ký chung', 'Sổ cái theo tài khoản', 'Xuất Excel theo mẫu'], ''),
+    ('accounting', 'acc_bot', 'Vé BOT tuyến', 'Đối soát vé BOT theo tuyến', A_ALL,
+     ['Đối soát vé BOT', 'Xuất bảng đối soát'], ''),
+    ('accounting', 'acc_gss', 'Vận đơn GSS: cước, claim, hoá đơn, bảng kê', 'Phụ phí / claim / hoá đơn / bảng kê đối chiếu theo vận đơn (màn GSS)', A_ALL,
+     ['Cước và chi phí theo chuyến', 'Claim', 'Hoá đơn', 'Bảng kê đối chiếu'], ''),
+
+    ('customs', 'customs', 'Tờ khai hải quan', 'Tờ khai VNACCS, phân luồng, thông quan', A_CRUD,
+     ['Tạo tờ khai', 'Chi tiết tờ khai', 'Đổi luồng / nộp thuế', 'Thông quan', 'In tờ khai'], ''),
+
+    *_RPT_ROWS,
+
+    ('settings', 'cfg_company', 'Khai báo ban đầu (thông tin công ty)', 'Thông tin công ty, mã số thuế, tham số hệ thống', ['view', 'edit'],
+     ['Sửa thông tin công ty'], ''),
+    ('settings', 'admin', 'Vai trò & phân quyền', 'Phân quyền Nhóm - Chức danh - Người, tài khoản người dùng, thông tin công ty', ['view', 'edit'],
+     ['Ma trận phân quyền', 'Tài khoản người dùng'], ''),
+    ('settings', 'audit_log', 'Nhật ký hoạt động', 'Xem ai tạo / sửa / xoá / duyệt gì, lúc nào và lịch sử đăng nhập (chỉ đọc); Xuất = tải CSV. Mặc định chỉ Admin và Giám đốc', ['view', 'export'],
+     ['Nhật ký thay đổi dữ liệu', 'Nhật ký đăng nhập', 'Lọc theo người / loại phiếu / ngày', 'Xuất CSV'], ''),
+    ('settings', 'cfg_opening', 'Số dư ban đầu', 'Số dư đầu kỳ các tài khoản', A_CRUD, ['Thêm / sửa số dư', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_accounts', 'Cài đặt tài khoản', 'Chế độ kế toán, ánh xạ nghiệp vụ - tài khoản sổ cái', A_CRUD,
+     ['Đổi chế độ kế toán', 'Ánh xạ tài khoản', 'Hạch toán lại'], ''),
+    ('settings', 'cfg_expenses', 'Khoản mục chi', 'Danh mục khoản mục chi phí', A_CRUD, ['Thêm / sửa khoản mục', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_driver_tariffs', 'Biểu phí lương chuyến', 'Biểu giá lương chuyến của tài xế', A_CRUD, ['Thêm / sửa biểu phí', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_allowances', 'Phụ cấp & kiểm hóa', 'Danh mục phụ cấp, phí kiểm hóa', A_CRUD, ['Thêm / sửa phụ cấp', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_customers', 'Khách hàng', 'Danh mục khách hàng', A_CRUD, ['Thêm / sửa khách hàng', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_tariffs', 'Biểu cước khách', 'Biểu giá cước theo khách hàng, tuyến', A_CRUD, ['Thêm / sửa biểu cước', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_subcontractors', 'Thầu phụ & nhà cung cấp', 'Nhà thầu phụ 3PL, xe và tài xế thầu phụ', A_CRUD,
+     ['Thêm / sửa thầu phụ', 'Xe thầu phụ', 'Tài xế thầu phụ', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_locations', 'Cảng & kho bãi', 'Cảng, ICD, kho, bãi, địa điểm', A_CRUD, ['Thêm / sửa địa điểm', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_shipping_lines', 'Hãng tàu', 'Danh mục hãng tàu', A_CRUD, ['Thêm / sửa hãng tàu', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_vehicles', 'Đầu kéo & xe', 'Danh mục đầu kéo và xe tải (dữ liệu gốc)', A_CRUD, ['Thêm / sửa xe', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_trailers', 'Rơ-moóc', 'Danh mục rơ-moóc (dữ liệu gốc)', A_CRUD, ['Thêm / sửa rơ-moóc', 'Nhập / xuất Excel'], ''),
+    ('settings', 'cfg_containers', 'Quy cách cont & xe', 'Loại container, quy cách xe', A_CRUD, ['Thêm / sửa quy cách', 'Nhập / xuất Excel'], ''),
+    ('settings', 'master_data', 'Đọc danh mục (chọn trong biểu mẫu)',
+     'Chọn khách hàng, địa điểm, xe, loại chi phí... trong các biểu mẫu (chỉ đọc; sửa danh mục theo các dòng Cài đặt)', ['view'],
+     ['Danh sách chọn trong biểu mẫu'], ''),
+]
+
+# (khoá, tên, mô tả, thao tác áp dụng) - tên là nhãn TAB trên giao diện; phân hệ sidebar nằm ở MODULE_META
+MODULES = [(r[1], r[2], r[3], list(r[4])) for r in _ROWS]
+MODULE_META = {r[1]: {'section': r[0], 'sub_section': r[6], 'screens': list(r[5])} for r in _ROWS}
 MODULE_KEYS = [m[0] for m in MODULES]
 MODULE_ACTIONS = {m[0]: m[3] for m in MODULES}
 MODULE_ACTIONS.update({k: ['view', 'export'] for k in DERIVED_MODULES})  # chỉ để tra cứu, không nằm trong MODULE_KEYS
 
 ALL = 'view create edit delete approve export'
 VIEW = 'view export'
+
+
+def matrix_payload():
+    """Dữ liệu cho trang Phân quyền: modules (cây theo sidebar + tab), sections, actions."""
+    subs = {s[0]: dict(s[3]) for s in SECTIONS}
+    modules = []
+    for key, label, desc, acts in MODULES:
+        meta = MODULE_META[key]
+        modules.append({
+            'key': key, 'label': label, 'description': desc,
+            'actions': [a for a in ACTION_KEYS if a in acts],
+            'section': meta['section'], 'section_label': SECTION_LABELS[meta['section']],
+            'sub_section': meta['sub_section'], 'sub_section_label': subs.get(meta['section'], {}).get(meta['sub_section'], ''),
+            'screens': list(meta['screens']),
+        })
+    sections = [{'key': k, 'label': lbl, 'icon': icon, 'sub_sections': [{'key': sk, 'label': sl} for sk, sl in sub]}
+                for k, lbl, icon, sub in SECTIONS]
+    return {'modules': modules, 'sections': sections, 'actions': [{'key': k, 'label': lbl} for k, lbl in ACTIONS]}
 
 
 def _expand_legacy(grants):
@@ -115,6 +238,10 @@ def _m(**mods):
 
 
 # ----------------------------------------------------------------------------- Nhóm quyền (mặc định)
+# Bộ dòng dùng chung cho các nhóm mặc định (khớp quyền hiệu lực trước khi tách dòng)
+ACC_ALL = {k: ALL for k in ACC_FROM_ACCOUNTING}          # tất cả tab tách từ 'accounting' cũ
+CFG_ALL = {k: ALL for k in CFG_DATA_KEYS}                # tất cả tab Cài đặt dữ liệu
+
 # (khoá, tên, mô tả, biểu tượng, quyền đầy đủ của nhóm)
 GROUPS = [
     ('admin', 'Admin', 'Quản trị hệ thống: toàn quyền, cấu hình, phân quyền, tài khoản', 'ph-shield-star',
@@ -127,11 +254,13 @@ GROUPS = [
     ('hr', 'Nhân sự', 'Hồ sơ nhân viên và tài khoản đăng nhập', 'ph-users-three',
      _m(dashboard='view', hr=ALL, master_data='view')),
     ('accounting', 'Kế toán', 'Sổ quỹ, quyết toán, tạm ứng, sổ sách, lương, báo cáo tài chính', 'ph-calculator',
-     _m(dashboard='view', accounting=ALL, pricing=ALL, advances=ALL, ledger=ALL, hr='view export', reports_fin=VIEW,
-        reports_ops=VIEW, sales=VIEW, dispatch=VIEW, master_data='view', cfg_company='view', cfg_finance=ALL, cfg_partners=ALL, cfg_network=ALL, cfg_fleet=ALL, rpt_crm_quotations=VIEW, rpt_active_bookings=VIEW)),
+     _m(dashboard='view', **ACC_ALL, pricing=ALL, advances=ALL, ledger=ALL, hr='view export', reports_fin=VIEW,
+        reports_ops=VIEW, sales=VIEW, dispatch=VIEW, master_data='view', cfg_company='view', **CFG_ALL,
+        rpt_crm_quotations=VIEW, rpt_active_bookings=VIEW)),
     ('dispatch', 'Điều vận & Vendor', 'Chuyến xe, lệnh điều động, tạm ứng tài xế, quỹ điều vận', 'ph-truck',
      _m(dashboard='view', dispatch=ALL, depot=ALL, advances=ALL, fleet='view create edit export', customs='view', sales=VIEW,
-        reports_ops=VIEW, master_data='view', cfg_company='view', cfg_finance=ALL, cfg_partners=ALL, cfg_network=ALL, cfg_fleet=ALL, rpt_crm_quotations=VIEW, rpt_active_bookings=VIEW, rpt_driver_advances=VIEW)),
+        reports_ops=VIEW, master_data='view', cfg_company='view', **CFG_ALL,
+        rpt_crm_quotations=VIEW, rpt_active_bookings=VIEW, rpt_driver_advances=VIEW)),
     ('operations', 'Vận hành', 'Đội xe, rơ-moóc, bảo dưỡng, đăng kiểm, bãi xe', 'ph-wrench',
      _m(dashboard='view', fleet=ALL, depot=ALL, dispatch=VIEW, reports_ops=VIEW, master_data='view')),
     ('customs', 'Hải quan', 'Tờ khai VNACCS, phân luồng, thông quan', 'ph-stamp',
@@ -189,11 +318,11 @@ POSITIONS = {
     'DIRECTOR': ('director', {}, {}),
     'LEAD_ADMIN_ACC': ('accounting', {}, {}),
     'ACCOUNTANT': ('accounting', {}, {}),
-    'STAFF_ADMIN_ACC': ('accounting', {}, _m(accounting='delete approve', advances='delete approve', ledger='edit',
-                                              cfg_finance='delete', cfg_partners='delete', cfg_network='delete', cfg_fleet='delete')),
+    'STAFF_ADMIN_ACC': ('accounting', {}, _m(**{k: 'delete approve' for k in ACC_FROM_ACCOUNTING}, advances='delete approve', ledger='edit',
+                                              **{k: 'delete' for k in CFG_DATA_KEYS})),
     'LEAD_DISPATCH': ('dispatch', {}, {}),
     'DISPATCHER': ('dispatch', {}, {}),
-    'DISPATCH_ASST': ('dispatch', {}, _m(dispatch='delete approve', advances='delete approve', cfg_finance='delete', cfg_partners='delete', cfg_network='delete', cfg_fleet='delete')),
+    'DISPATCH_ASST': ('dispatch', {}, _m(dispatch='delete approve', advances='delete approve', **{k: 'delete' for k in CFG_DATA_KEYS})),
     'YARD_KEEPER': ('yard', {}, {}),
     'DRIVER': ('', _m(dashboard='view', master_data='view'), {}),
     'LEAD_SALES': ('sales', {}, {}),
@@ -286,7 +415,7 @@ def _from_set(pairs):
 def _with_derived(grants):
     for name, test in DERIVED_MODULES.items():
         acts = [act for act in ('view', 'export')
-                if test({m for m, acts_ in grants.items() if m in REPORT_CATEGORY or m in SETTINGS_KEYS if act in acts_})]
+                if test({m for m, acts_ in grants.items() if act in acts_ and m in MODULE_KEYS})]
         if acts:
             grants[name] = acts
     return grants
@@ -358,7 +487,12 @@ def request_allowed(request, module, view=None):
 
 
 def denied_message(module, action):
-    mod = dict((m[0], m[1]) for m in MODULES).get(module, module)
+    labels = dict((m[0], m[1]) for m in MODULES)
+    if module in labels:
+        meta = MODULE_META.get(module, {})
+        mod = f"{SECTION_LABELS.get(meta.get('section'), '')} › {labels[module]}".strip(' ›')
+    else:
+        mod = DERIVED_LABELS.get(module, module)
     act = dict(ACTIONS).get(action, action)
     return f'Bạn không có quyền "{act}" trong phân hệ {mod}. Liên hệ Ban Giám đốc để được cấp quyền.'
 
@@ -372,7 +506,7 @@ def can(user, module, action='view'):
 
 def can_view_finance(user):
     """Số liệu tài chính tổng hợp (quỹ, doanh thu, lãi lỗ): Báo cáo tài chính / Kế toán."""
-    return bool(can(user, 'reports_fin', 'view') or can(user, 'accounting', 'view'))
+    return bool(can(user, 'reports_fin', 'view') or can(user, 'finance', 'view'))
 
 
 def can_view_trip_finance(user):

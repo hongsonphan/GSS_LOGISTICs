@@ -47,7 +47,6 @@ def any_module_view(*modules, name='AnyModuleView'):
 
 IsAdminOrDirector = module_permission('admin', 'IsAdminOrDirector')
 IsDispatcher = module_permission('dispatch', 'IsDispatcher')
-IsAccountant = module_permission('accounting', 'IsAccountant')
 IsSalesOrDirector = module_permission('sales', 'IsSalesOrDirector')
 IsDispatcherOrAccountant = module_permission('advances', 'IsDispatcherOrAccountant')
 IsCustomsOrDirector = module_permission('customs', 'IsCustomsOrDirector')
@@ -140,7 +139,7 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
         if request.user and request.user.is_authenticated:
             # Xem chi tiết (SAFE_METHODS): người có quyền Xem ở phân hệ liên quan; tài xế chỉ xem chuyến của chính mình
             if request.method in permissions.SAFE_METHODS:
-                if any(access.allowed(request.user, m, 'view') for m in ('dispatch', 'accounting', 'sales', 'customs', 'fleet')):
+                if any(access.allowed(request.user, m, 'view') for m in ('dispatch', 'finance', 'sales', 'customs', 'fleet')):
                     return True
                 emp = getattr(request.user, 'employee', None)
                 return bool(emp and emp.pk in (getattr(obj, 'driver_id', None), getattr(obj, 'dropoff_driver_id', None)))
@@ -295,5 +294,16 @@ def any_module(*modules, name='AnyModulePermission'):
 
 IsPricing = module_permission('pricing', 'IsPricing')
 IsBookingStaff = any_module('sales', 'dispatch', name='IsBookingStaff')
-IsFinanceStaff = any_module('accounting', name='IsFinanceStaff')
-IsTripFinance = any_module('accounting', 'dispatch', name='IsTripFinance')
+# Tài chính & Kế toán: mỗi tab một khoá (core/access.py ACC_FROM_ACCOUNTING); khoá 'accounting' chỉ là khoá dẫn xuất cho menu / cổng
+IsAccountant = any_module(*access.ACC_FROM_ACCOUNTING, name='IsAccountant')               # chung: có quyền ở một tab kế toán bất kỳ
+CanCashbook = module_permission('acc_cashbook', 'CanCashbook')                              # Sổ quỹ thu - chi
+CanCashbookDetail = any_module('advances', 'acc_cashbook', name='CanCashbookDetail')        # Chi tiết phiếu thu / chi (cả phiếu tạm ứng)
+CanDispatcherFundApprove = module_permission('acc_dispatcher_fund', 'CanDispatcherFundApprove')   # Duyệt / tất toán quỹ điều vận
+CanReimburse = module_permission('acc_reimburse', 'CanReimburse')                           # Khoản chi hộ
+CanDriverSettle = module_permission('acc_driver_settle', 'CanDriverSettle')                 # Quyết toán chuyến & tài xế
+CanCustomerSettle = any_module('advances', 'acc_customer_settle', name='CanCustomerSettle')   # Đối chiếu công nợ / SOA khách
+CanThreePL = module_permission('acc_3pl', 'CanThreePL')                                     # Đối tác 3PL
+CanSettlementVoucher = module_permission('acc_voucher', 'CanSettlementVoucher')             # Phiếu quyết toán
+CanBotAudit = module_permission('acc_bot', 'CanBotAudit')                                   # Vé BOT tuyến
+IsFinanceStaff = any_module('acc_gss', name='IsFinanceStaff')                               # Vận đơn GSS: claim, hoá đơn, bảng kê
+IsTripFinance = any_module('acc_gss', 'dispatch', name='IsTripFinance')

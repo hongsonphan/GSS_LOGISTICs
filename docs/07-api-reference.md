@@ -560,6 +560,12 @@ Trả về toàn bộ dữ liệu cho màn hình đối soát kế toán: KPI + 
 
 ---
 
+## 14b. PHÂN QUYỀN (`/api/access/`)
+
+`GET /api/access/matrix/` (quyền `admin`:view) trả `{modules, sections, actions, groups, roles, users, can_edit}`. `modules[]`: `{key, label, description, actions:[view|create|edit|delete|approve|export], section, section_label, sub_section, sub_section_label, screens:[...]}` (mỗi tab sidebar một dòng; 54 dòng). `sections[]`: `{key, label, icon, sub_sections:[{key,label}]}`. `GET /api/access/me/` trả quyền hiệu lực gồm cả khóa dẫn xuất `accounting`, `finance`, `settings`, `reports_any`.
+
+---
+
 ## 15. NHẬT KÝ HOẠT ĐỘNG (chỉ đọc)
 
 Quyền: dòng `audit_log` của ma trận (GET = Xem; `?export=csv` = Xuất). Chỉ trả dữ liệu của công ty người xem.

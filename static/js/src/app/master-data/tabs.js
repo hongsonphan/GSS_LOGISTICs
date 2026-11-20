@@ -35,10 +35,10 @@ const MASTER_DATA_GROUPS = {
 // Mỗi tab thuộc một dòng quyền "Cài đặt · ..." trong trang Phân quyền (khớp core/access.py CFG_TAB_MODULE)
 const MASTER_DATA_TAB_MODULE = {
     company: 'cfg_company', roles_permissions: 'admin', audit_log: 'audit_log',
-    opening_balance: 'cfg_finance', account_settings: 'cfg_finance', expenses: 'cfg_finance', driver_tariffs: 'cfg_finance', allowances: 'cfg_finance',
-    customers: 'cfg_partners', tariffs: 'cfg_partners', subcontractors: 'cfg_partners',
-    locations: 'cfg_network', shipping_lines: 'cfg_network',
-    vehicles: 'cfg_fleet', trailers: 'cfg_fleet', containers: 'cfg_fleet'
+    opening_balance: 'cfg_opening', account_settings: 'cfg_accounts', expenses: 'cfg_expenses', driver_tariffs: 'cfg_driver_tariffs', allowances: 'cfg_allowances',
+    customers: 'cfg_customers', tariffs: 'cfg_tariffs', subcontractors: 'cfg_subcontractors',
+    locations: 'cfg_locations', shipping_lines: 'cfg_shipping_lines',
+    vehicles: 'cfg_vehicles', trailers: 'cfg_trailers', containers: 'cfg_containers'
 };
 
 // Trang Cài đặt đang mở (không dựa vào biến toàn cục currentTab vì biến đó không tồn tại)

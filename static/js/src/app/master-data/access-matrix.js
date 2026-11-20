@@ -117,21 +117,35 @@ window.switchAccessView = switchAccessView;
 function _accessTable(cellFn, rowToggle) {
     const d = accessUI.data;
     const head = d.actions.map(a => `<th class="text-center" data-col-key="${a.key}">${_acEsc(a.label)}</th>`).join('');
+    // Ma trận hiển thị theo đúng cây sidebar: mỗi phân hệ một dòng tiêu đề, mỗi tab một dòng quyền (nhóm con cho Báo cáo)
+    const colSpan = 1 + d.actions.length;
+    let lastSection = null, lastSub = null;
     const rows = d.modules.map(m => {
+        let head = '';
+        if (m.section !== lastSection) {
+            const sec = (d.sections || []).find(x => x.key === m.section) || {};
+            head += `<tr data-section="${_acEsc(m.section)}"><td colspan="${colSpan}" class="bg-slate-100 text-slate-700 font-black text-xs uppercase tracking-wide"><i class="ph-bold ${_acEsc(sec.icon || 'ph-folder')} mr-1.5"></i>${_acEsc(m.section_label || m.section)}</td></tr>`;
+            lastSection = m.section; lastSub = null;
+        }
+        if (m.sub_section && m.sub_section !== lastSub) {
+            head += `<tr><td colspan="${colSpan}" class="bg-slate-50 text-slate-500 font-bold text-[11px] uppercase tracking-wide pl-6">${_acEsc(m.sub_section_label || m.sub_section)}</td></tr>`;
+        }
+        lastSub = m.sub_section || null;
         const cells = d.actions.map(a => m.actions.includes(a.key)
             ? `<td class="text-center">${cellFn(m.key, a.key)}</td>`
             : `<td class="text-center text-slate-300">—</td>`).join('');
-        return `<tr>
+        const screens = (m.screens || []).length ? `<div class="text-[11px] text-slate-400 font-medium leading-snug">Điều khiển: ${_acEsc(m.screens.join(' · '))}</div>` : '';
+        return `${head}<tr>
             <td class="min-w-[220px] whitespace-normal">
               <div class="flex items-start gap-2">
                 ${rowToggle ? rowToggle(m.key) : ''}
                 <div><div class="font-bold text-slate-800">${_acEsc(m.label)}</div>
-                <div class="text-[11px] text-slate-500 font-medium leading-snug">${_acEsc(m.description)}</div></div>
+                <div class="text-[11px] text-slate-500 font-medium leading-snug">${_acEsc(m.description)}</div>${screens}</div>
               </div>
             </td>${cells}</tr>`;
     }).join('');
     return `<div class="overflow-x-auto"><table class="erp-table" data-table-title="Ma trận phân quyền" data-m-keep>
-        <thead><tr><th data-col-key="module">Phân hệ</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+        <thead><tr><th data-col-key="module">Phân hệ › Tab</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 const _acChip = (cls, icon, label) => `<span class="inline-flex items-center gap-1"><span class="w-5 h-5 rounded ${cls} inline-flex items-center justify-center"><i class="ph-bold ${icon} text-[11px]"></i></span>${label}</span>`;

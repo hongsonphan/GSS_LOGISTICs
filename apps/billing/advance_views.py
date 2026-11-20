@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
 
 from core.security import GracefulJWTAuthentication
-from core.permissions import check_can_edit_or_delete, IsAccountant, IsDispatcher, IsDispatcherOrAccountant
+from core.permissions import CanCustomerSettle, CanDispatcherFundApprove, check_can_edit_or_delete, IsDispatcher, IsDispatcherOrAccountant
 from apps.billing.models import (
     DispatcherAdvanceFund,
     DriverTripAdvance,
@@ -291,7 +291,7 @@ class DispatcherFundCreateAPIView(APIView):
 class DispatcherFundActionAPIView(APIView):
     """API Phê duyệt hoặc Quyết toán hoàn ứng Quỹ Điều Vận."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanDispatcherFundApprove]
 
     def post(self, request, pk):
         action = request.data.get('action') # approve, settle, reject
@@ -1251,7 +1251,7 @@ class CustomerARReconciliationAPIView(APIView):
     - Chỉ cho phép chốt đối soát các chuyến xe ĐÃ HOÀN THÀNH (status=COMPLETED)
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsDispatcherOrAccountant]
+    permission_classes = [CanCustomerSettle]
     access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}  # chốt/duyệt (ma trận phân quyền)
 
     def get(self, request):

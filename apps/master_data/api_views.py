@@ -51,8 +51,8 @@ class MasterDataSummaryAPIView(APIView):
             }
         })
 
-_PARTNER_DATA_MODULES = ('sales', 'dispatch', 'accounting', 'customs')
-_FLEET_DATA_MODULES = ('sales', 'dispatch', 'accounting', 'customs', 'fleet')
+_PARTNER_DATA_MODULES = ('sales', 'dispatch', 'finance', 'customs')
+_FLEET_DATA_MODULES = ('sales', 'dispatch', 'finance', 'customs', 'fleet')
 
 
 def _can_read_any(user, modules):
@@ -2544,7 +2544,7 @@ for _cls in (CustomerMasterListCreateAPIView, CustomerMasterDetailAPIView, Tarif
 for _cls in (SubcontractorListCreateAPIView, SubcontractorDetailAPIView, SubcontractorNextCodeAPIView, SubcontractorFleetAPIView,
              SubcontractorVehicleListCreateAPIView, SubcontractorVehicleDetailAPIView,
              SubcontractorDriverListCreateAPIView, SubcontractorDriverDetailAPIView):
-    _cls.read_modules = ('dispatch', 'accounting', 'sales')
+    _cls.read_modules = ('dispatch', 'finance', 'sales')
 for _cls in (VehicleMasterListCreateAPIView, VehicleMasterDetailAPIView, TrailerMasterListCreateAPIView, TrailerMasterDetailAPIView):
     _cls.read_modules = _FLEET_DATA_MODULES
 

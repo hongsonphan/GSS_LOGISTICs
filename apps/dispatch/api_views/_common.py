@@ -28,6 +28,7 @@ from core.permissions import (
     IsAdminOrDirector,
     IsDispatcher,
     IsAccountant,
+    CanDriverSettle,
     IsDriver,
     IsSalesOrDirector,
     IsCustomsOrDirector,

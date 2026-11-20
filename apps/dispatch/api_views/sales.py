@@ -55,7 +55,7 @@ def _opt_date(value):
 
 class BookingActiveAPIView(APIView):
     """API lấy danh sách các Booking đang hoạt động để Điều độ viên chọn kế thừa khi tạo lệnh."""
-    permission_classes = [any_module_view('sales', 'dispatch', 'accounting')]
+    permission_classes = [any_module_view('sales', 'dispatch', 'finance')]
     def get(self, request):
         # Sắp xếp phiếu mới tạo nhất lên trên đầu (mới nhất theo ngày tạo và id)
         bookings = BookingOrder.objects.select_related('customer').filter(
@@ -110,7 +110,7 @@ class BookingPriceLookupAPIView(APIView):
     2. Biểu cước khách hàng (RouteTariff)
     3. Chuyến xe gần nhất của khách hàng trên cùng tuyến
     """
-    permission_classes = [any_module_view('sales', 'dispatch', 'accounting')]
+    permission_classes = [any_module_view('sales', 'dispatch', 'finance')]
 
     def get(self, request):
         customer_param = request.GET.get('customer') or request.GET.get('customer_id') or ''

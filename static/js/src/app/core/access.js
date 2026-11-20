@@ -16,14 +16,16 @@
     window.canAccess = canAccess;
 
     const VIEW_MODULE = {
-        'view-dieu-van': 'dispatch', 'view-trip-detail': 'dispatch', 'view-create-trip': 'dispatch', 'view-quyet-toan': 'accounting', 'view-settlement-voucher': 'accounting',
+        'view-dieu-van': 'dispatch', 'view-trip-detail': 'dispatch', 'view-create-trip': 'dispatch', 'view-quyet-toan': 'acc_driver_settle', 'view-settlement-voucher': 'acc_voucher',
         'view-kinh-doanh': 'sales', 'view-quotation-detail': 'sales', 'view-booking-detail': 'sales',
         'view-xe-bai': 'fleet', 'view-hai-quan': 'customs', 'view-customs-form': 'customs',
         'view-nhan-su': 'hr', 'view-employee-form': 'hr',
-        'view-ke-toan': 'accounting', 'view-cash-voucher-detail': 'accounting', 'view-cai-dat': 'settings', 'view-nhat-ky': 'audit_log',
+        'view-ke-toan': 'accounting', 'view-cash-voucher-detail': 'acc_cashbook', 'view-customer-ar-statement': 'acc_customer_settle', 'view-cai-dat': 'settings', 'view-nhat-ky': 'audit_log',
     };
     const SUBTAB_MODULE = {
-        'subtab-acct-driver-advances': 'advances', 'subtab-acct-dispatcher-funds': 'advances', 'subtab-acct-ledger': 'ledger',
+        'subtab-acct-cashbook': 'acc_cashbook', 'subtab-acct-driver-advances': 'advances', 'subtab-acct-dispatcher-funds': 'advances',
+        'subtab-acct-reimbursables': 'acc_reimburse', 'subtab-acct-settlements': 'acc_driver_settle', 'subtab-acct-customer-settlements': 'acc_customer_settle',
+        'subtab-acct-subcontractors': 'acc_3pl', 'subtab-acct-vouchers': 'acc_voucher', 'subtab-acct-ledger': 'ledger', 'subtab-acct-bot-audit': 'acc_bot',
     };
     const RULES = [
         [/^\s*(open\w*Create\w*|openCreate\w*|create\w*Page|openNew\w*|openAdd\w*|add(Trip|Vehicle|Trailer|Employee|Customer|Booking|Quotation)\w*)\s*\(/, 'create'],

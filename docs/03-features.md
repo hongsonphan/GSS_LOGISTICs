@@ -626,6 +626,11 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 | Permission classes theo role | ✅ `IsAdminOrDirector`, `IsDriver`, `IsDispatcher`... |
 | Driver Token rotate khi đổi tài xế | ✅ `revoked_driver_tokens` |
 
+### 15.1 Phân quyền theo tab (20/11/2026)
+- **Ma trận Xem / Tạo / Sửa / Xóa / Duyệt / Xuất** theo 3 tầng (Nhóm ➔ Chức danh ➔ Người); trang Phân quyền hiển thị theo cây sidebar: mỗi phân hệ một tiêu đề, mỗi tab một dòng quyền (54 dòng; Báo cáo có 3 nhóm con), kèm danh sách màn / nút do dòng đó điều khiển.
+- **Tài chính & Kế toán** tách theo tab (`acc_cashbook`, `acc_dispatcher_fund`, `acc_reimburse`, `acc_driver_settle`, `acc_customer_settle`, `acc_3pl`, `acc_voucher`, `acc_bot`, `acc_gss`, cộng `advances`, `ledger`); **Cài đặt** tách 13 tab (`cfg_*`). `accounting` và `finance` là khóa dẫn xuất (menu / cổng trang, xem số liệu tài chính).
+- Quyền đã lưu theo khóa cũ tự mở rộng khi đọc; quyền hiệu lực của người dùng hiện có không đổi. Dòng `audit_log` xem mục 13.11.
+
 ---
 
 ## 16. Chi tiết UI — Bảng Điều vận (view_dispatch.html)

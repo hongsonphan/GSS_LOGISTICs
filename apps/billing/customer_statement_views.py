@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
 
 from core.security import GracefulJWTAuthentication
-from core.permissions import IsDispatcherOrAccountant
+from core.permissions import CanCustomerSettle
 from apps.customers.models import Customer
 from apps.billing.customer_statement_service import (
     get_customer_monthly_statement_data,
@@ -22,7 +22,7 @@ class CustomerMonthlyStatementAPIView(APIView):
     Trích xuất đầy đủ 26 cột theo chuẩn kế toán vận tải Triển Võ Logistics.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsDispatcherOrAccountant]
+    permission_classes = [CanCustomerSettle]
 
     def get(self, request):
         customer_id = request.GET.get('customer_id')
@@ -72,7 +72,7 @@ class CustomerMonthlyStatementExportExcelAPIView(APIView):
     Khớp 100% định dạng 26 cột, 2 tầng tiêu đề, công thức và chữ ký 2 bên.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsDispatcherOrAccountant]
+    permission_classes = [CanCustomerSettle]
 
     def get(self, request):
         customer_id = request.GET.get('customer_id')

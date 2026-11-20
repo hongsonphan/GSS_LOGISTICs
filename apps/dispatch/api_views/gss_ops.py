@@ -11,7 +11,7 @@ from apps.dispatch import gss_trips
 from apps.dispatch.api_views.gss import annotated, err, trip_row, vmsg
 from apps.dispatch.models import DispatchTrip
 from core.features import has_feature
-from core.permissions import IsAccountant, any_module_view
+from core.permissions import CanDriverSettle, any_module_view
 from ._common import *  # noqa: F401,F403
 
 XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -66,7 +66,7 @@ class GssTripExportAPIView(APIView):
 
 
 class _SettlementBase(APIView):
-    permission_classes = [IsAccountant]
+    permission_classes = [CanDriverSettle]
     access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}
 
     def initial(self, request, *args, **kwargs):

@@ -253,7 +253,7 @@ class TripExpenseDetailAPIView(APIView):
         from core import access
         user = request.user
         return bool(user and user.is_authenticated and (
-            access.can(user, 'accounting', 'approve') or access.can(user, 'dispatch', 'approve')))
+            access.can(user, 'acc_driver_settle', 'approve') or access.can(user, 'dispatch', 'approve')))
 
     def put(self, request, trip_code, expense_id):
         trip = get_trip_by_code_or_hash(trip_code)
@@ -397,7 +397,7 @@ class TripExpenseDetailAPIView(APIView):
 
 class TripSettleExpensesAPIView(APIView):
     """API Kế toán Chốt sổ Chi Phí Chuyến Xe (Khóa cứng không thể sửa/xóa)."""
-    permission_classes = [IsAccountant]
+    permission_classes = [CanDriverSettle]
     access_actions = {'POST': 'approve', 'PUT': 'approve', 'PATCH': 'approve'}  # chốt/duyệt (ma trận phân quyền)
 
     def post(self, request, trip_code):
@@ -443,7 +443,7 @@ class TripSettleExpensesAPIView(APIView):
 
 class TripUnsettleExpensesAPIView(APIView):
     """API Mở khóa Sổ Kế Toán (Dành cho Kế toán trưởng / Quản trị viên)."""
-    permission_classes = [IsAccountant]
+    permission_classes = [CanDriverSettle]
 
     def post(self, request, trip_code):
         trip = get_trip_by_code_or_hash(trip_code)

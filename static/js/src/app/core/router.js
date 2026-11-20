@@ -111,7 +111,7 @@ function resetTopbarStandardMode(tabId) {
 // Phân hệ cần có quyền Xem (một trong các phân hệ) để mở trang; mở thẳng bằng đường dẫn cũng bị chặn
 const TAB_ACCESS_MODULES = {
     'dieu-van': ['dispatch'], 'kinh-doanh': ['sales'], 'xe-bai': ['fleet'], 'nhan-su': ['hr'],
-    'ke-toan': ['accounting', 'advances', 'ledger'], 'quyet-toan': ['accounting'], 'hai-quan': ['customs'],
+    'ke-toan': ['accounting'], 'quyet-toan': ['acc_driver_settle'], 'hai-quan': ['customs'],
     'bao-cao': ['reports_any'], 'cai-dat': ['settings', 'admin'], 'nhat-ky': ['audit_log']
 };
 

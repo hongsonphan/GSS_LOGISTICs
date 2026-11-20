@@ -82,7 +82,7 @@
             <button type="button" data-acct-group-btn="books" onclick="switchAccountingGroup('books')" class="acct-group-btn h-8 px-3.5 rounded-lg text-xs md:text-sm font-black font-heading flex items-center gap-1.5 transition-all cursor-pointer"><i class="ph-bold ph-books"></i><span>Sổ sách & Kiểm soát</span></button>
         </div>
         <div class="flex flex-wrap items-center gap-1.5 w-full min-w-0" id="acct-subtab-row">
-            <button id="acct-tab-btn-1" data-acct-subtab="acct-cashbook" data-access="accounting" onclick="switchAccountingSubTab('acct-cashbook')"
+            <button id="acct-tab-btn-1" data-acct-subtab="acct-cashbook" data-access="acc_cashbook" onclick="switchAccountingSubTab('acct-cashbook')"
                 class="acct-subtab-btn active h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-emerald-600 bg-emerald-50/70 text-emerald-900 shadow-2xs box-border whitespace-nowrap">
                 <i class="ph-bold ph-bank text-base text-emerald-600"></i>
                 <span>Sổ Quỹ Thu - Chi</span>
@@ -100,37 +100,37 @@
                 <span>Quỹ Điều Vận</span>
             </button>
 
-            <button id="acct-tab-btn-4" data-feature="fleet_internal" data-acct-subtab="acct-settlements" data-access="accounting" onclick="switchAccountingSubTab('acct-settlements')"
+            <button id="acct-tab-btn-4" data-feature="fleet_internal" data-acct-subtab="acct-settlements" data-access="acc_driver_settle" onclick="switchAccountingSubTab('acct-settlements')"
                 class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
                 <i class="ph-bold ph-receipt text-base text-slate-500"></i>
                 <span>Tài Xế</span>
             </button>
 
-            <button id="acct-tab-btn-customer-settlements" data-acct-subtab="acct-customer-settlements" data-access="accounting" onclick="switchAccountingSubTab('acct-customer-settlements')"
+            <button id="acct-tab-btn-customer-settlements" data-acct-subtab="acct-customer-settlements" data-access="acc_customer_settle" onclick="switchAccountingSubTab('acct-customer-settlements')"
                 class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
                 <i class="ph-bold ph-user-check text-base text-slate-500"></i>
                 <span>Khách Hàng</span>
             </button>
 
-            <button id="acct-tab-btn-5" data-acct-subtab="acct-reimbursables" data-access="accounting" onclick="switchAccountingSubTab('acct-reimbursables')"
+            <button id="acct-tab-btn-5" data-acct-subtab="acct-reimbursables" data-access="acc_reimburse" onclick="switchAccountingSubTab('acct-reimbursables')"
                 class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
                 <i class="ph-bold ph-file-text text-base text-slate-500"></i>
                 <span>Khoản Chi Hộ</span>
             </button>
 
-            <button id="acct-tab-btn-6" data-acct-subtab="acct-subcontractors" data-access="accounting" onclick="switchAccountingSubTab('acct-subcontractors')"
+            <button id="acct-tab-btn-6" data-acct-subtab="acct-subcontractors" data-access="acc_3pl" onclick="switchAccountingSubTab('acct-subcontractors')"
                 class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
                 <i class="ph-bold ph-truck text-base text-slate-500"></i>
                 <span>Đối Tác 3PL</span>
             </button>
 
-            <button id="acct-tab-btn-vouchers" data-feature="fleet_internal" data-acct-subtab="acct-vouchers" data-access="accounting" onclick="switchAccountingSubTab('acct-vouchers')"
+            <button id="acct-tab-btn-vouchers" data-feature="fleet_internal" data-acct-subtab="acct-vouchers" data-access="acc_voucher" onclick="switchAccountingSubTab('acct-vouchers')"
                 class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
                 <i class="ph-bold ph-files text-base text-slate-500"></i>
                 <span>Phiếu Quyết Toán</span>
             </button>
 
-            <button id="acct-tab-btn-7" data-acct-subtab="acct-bot-audit" data-access="accounting" onclick="switchAccountingSubTab('acct-bot-audit')"
+            <button id="acct-tab-btn-7" data-acct-subtab="acct-bot-audit" data-access="acc_bot" onclick="switchAccountingSubTab('acct-bot-audit')"
                 class="acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap">
                 <i class="ph-bold ph-barcode text-base text-slate-500"></i>
                 <span>Vé BOT Tuyến</span>

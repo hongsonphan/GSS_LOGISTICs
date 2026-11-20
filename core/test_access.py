@@ -40,7 +40,7 @@ class AccessMatrixTests(TestCase):
     # ---- quyền chức danh mặc định
     def test_defaults(self):
         self.assertTrue(access.allowed(self.dispatcher, 'dispatch', 'create'))
-        self.assertFalse(access.allowed(self.dispatcher, 'accounting', 'view'))
+        self.assertFalse(access.allowed(self.dispatcher, 'finance', 'view'))
         self.assertTrue(access.allowed(self.accountant, 'ledger', 'view'))
         self.assertEqual(access.effective_grants(self.driver), {'dashboard': ['view'], 'master_data': ['view']})
         self.assertEqual(self.get(self.dispatcher, '/api/trips/').status_code, 200)

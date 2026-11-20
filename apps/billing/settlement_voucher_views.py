@@ -21,7 +21,7 @@ from apps.billing.models import (
     SettlementVoucher, SettlementVoucherLog, SettlementVoucherPayment, TransactionType, VoucherPartyType, VoucherStatus,
 )
 from apps.dispatch.models import DispatchTrip, TripStatus
-from core.permissions import CanViewSettlementVoucherReport, IsAccountant
+from core.permissions import CanSettlementVoucher, CanViewSettlementVoucherReport
 from core.security import GracefulJWTAuthentication
 from core.sequences import next_code
 
@@ -344,7 +344,7 @@ def _already_settled(party_type, trip):
 
 class SettlementVoucherListCreateAPIView(APIView):
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanSettlementVoucher]
     access_actions = {'POST': 'create'}
 
     def get(self, request):
@@ -421,7 +421,7 @@ class SettlementVoucherListCreateAPIView(APIView):
 
 class SettlementVoucherDetailAPIView(APIView):
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanSettlementVoucher]
     access_actions = {'PUT': 'edit', 'PATCH': 'edit', 'DELETE': 'delete'}
 
     def _get(self, pk):
@@ -513,7 +513,7 @@ class SettlementVoucherDetailAPIView(APIView):
 class SettlementVoucherApproveAPIView(APIView):
     """Bước 2 - DUYỆT: đối tượng đã xác nhận bảng kê và nội bộ đồng ý -> số liệu chốt, lên công nợ. Chưa phát sinh tiền."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanSettlementVoucher]
     access_actions = {'POST': 'approve'}
 
     @transaction.atomic
@@ -586,7 +586,7 @@ class SettlementVoucherApproveAPIView(APIView):
 class SettlementVoucherSettleAPIView(APIView):
     """Bước 3 - QUYẾT TOÁN: ghi nhận từng lần thu/chi hoặc cấn trừ cho đến hết số tiền của phiếu (cho phép thanh toán từng phần)."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanSettlementVoucher]
     access_actions = {'POST': 'approve'}
 
     @transaction.atomic
@@ -630,7 +630,7 @@ class SettlementVoucherSettleAPIView(APIView):
 class SettlementVoucherOffsetAPIView(APIView):
     """Cấn trừ giữa hai phiếu đã duyệt của cùng một đối tượng, ngược chiều (vd công ty phải thu và phải trả cùng tài xế / đối tác)."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanSettlementVoucher]
     access_actions = {'GET': 'approve', 'POST': 'approve'}
 
     @staticmethod
@@ -681,7 +681,7 @@ class SettlementVoucherOffsetAPIView(APIView):
 class SettlementVoucherUnsettleAPIView(APIView):
     """Hủy quyết toán: hủy mọi lần thanh toán / cấn trừ, hủy phiếu Thu/Chi đã phát sinh, phiếu về Đã duyệt."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanSettlementVoucher]
     access_actions = {'POST': 'approve'}
 
     @transaction.atomic
@@ -716,7 +716,7 @@ class SettlementVoucherUnsettleAPIView(APIView):
 class SettlementVoucherReopenAPIView(APIView):
     """Mở lại đối soát (Đã duyệt -> Đối soát) để sửa/xóa: gỡ khóa chuyến và bỏ xác nhận của đối tượng."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [CanSettlementVoucher]
     access_actions = {'POST': 'approve'}
 
     @transaction.atomic

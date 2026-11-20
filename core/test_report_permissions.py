@@ -80,7 +80,7 @@ class MultipleGroupTests(TestCase):
         self.assertFalse(access.allowed(user, 'dispatch', 'create'))
         UserAccessOverride.objects.create(user=user, company=get_default_company(), groups=['dispatch', 'customs'])
         user = User.objects.get(pk=user.pk)
-        self.assertTrue(access.allowed(user, 'accounting', 'approve'))   # nhóm chính (Kế toán)
+        self.assertTrue(access.allowed(user, 'acc_voucher', 'approve'))   # nhóm chính (Kế toán)
         self.assertTrue(access.allowed(user, 'dispatch', 'create'))      # nhóm kiêm nhiệm 1
         self.assertTrue(access.allowed(user, 'customs', 'create'))       # nhóm kiêm nhiệm 2
 
@@ -130,11 +130,11 @@ class RealDatabaseGroupTests(TestCase):
         self.assertEqual(names, {'Kinh Doanh (Sales)', 'Điều Vận', 'Tài chính & Kế toán'})
         target = User.objects.get(pk=target.pk)
         self.assertTrue(access.allowed(target, 'dispatch', 'create'))
-        self.assertTrue(access.allowed(target, 'accounting', 'approve'))
+        self.assertTrue(access.allowed(target, 'acc_voucher', 'approve'))
         res = self.api.put(f'/api/access/users/{target.pk}/', {'groups': ['dispatch']}, format='json')
         names = set(User.objects.get(pk=target.pk).groups.values_list('name', flat=True))
         self.assertEqual(names, {'Kinh Doanh (Sales)', 'Điều Vận'})
-        self.assertFalse(access.allowed(User.objects.get(pk=target.pk), 'accounting', 'approve'))
+        self.assertFalse(access.allowed(User.objects.get(pk=target.pk), 'acc_voucher', 'approve'))
 
     def test_membership_set_in_django_admin_counts(self):
         from django.contrib.auth.models import Group
