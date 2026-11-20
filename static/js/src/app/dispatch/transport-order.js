@@ -81,7 +81,7 @@ function renderTransportOrderView(data) {
     const remaining = Math.max(0, total - filled);
 
     // 1. Header Bar
-    const lvcCode = data.transport_order_code || `LVC.${(data.booking_code || '').replace('BK.', '')} - ${data.subcontractor}`;
+    const lvcCode = data.allocation_code || data.transport_order_code || (data.booking_code ? `DD.001.${data.booking_code}` : 'DD.--');
     setText('to-header-code', lvcCode);
     setText('to-header-vendor', data.subcontractor);
     setText('to-header-customer', data.customer);
