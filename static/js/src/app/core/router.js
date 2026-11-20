@@ -200,6 +200,8 @@ function switchTab(tabId, updateHistory = true) {
     if (detailView) detailView.classList.add('hidden-view');
     const dispatchOrderView = document.getElementById('view-dispatch-order');
     if (dispatchOrderView) dispatchOrderView.classList.add('hidden-view');
+    const transportOrderView = document.getElementById('view-transport-order');
+    if (transportOrderView) transportOrderView.classList.add('hidden-view');
     const voucherDetailView = document.getElementById('view-cash-voucher-detail');
     if (voucherDetailView) voucherDetailView.classList.add('hidden-view');
     const soaDetailView = document.getElementById('view-customer-ar-statement');
@@ -345,6 +347,17 @@ function resolveInitialRoute() {
         }
         if (window.history && window.history.replaceState) {
             window.history.replaceState({ view: 'vendor-detail', vendorId }, '', window.location.pathname);
+        }
+        return;
+    }
+
+    // 0.85. Kiểm tra deep-link Lệnh Vận Chuyển Nhà Xe: ?view=transport-order&allocId=<id>
+    const urlParamsObj = new URLSearchParams(window.location.search);
+    if (urlParamsObj.get('view') === 'transport-order' && urlParamsObj.get('allocId')) {
+        const toAllocId = urlParamsObj.get('allocId');
+        switchTab('dieu-van', false);
+        if (typeof openTransportOrderPage === 'function') {
+            openTransportOrderPage(toAllocId, false);
         }
         return;
     }

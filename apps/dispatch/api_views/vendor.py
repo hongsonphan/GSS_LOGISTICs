@@ -124,8 +124,7 @@ class VendorAllocationDetailAPIView(APIView):
     permission_classes = [IsDispatcher]
 
     def _alloc(self, pk):
-        a = BookingVendorAllocation.objects.select_related('booking', 'booking__delivery_loc', 'subcontractor') \
-            .filter(pk=pk, is_deleted=False).first()
+        a = BookingVendorAllocation.objects.select_related('booking', 'booking__customer', 'booking__delivery_loc', 'subcontractor').filter(pk=pk, is_deleted=False).first()
         if not a:
             raise Http404
         return a

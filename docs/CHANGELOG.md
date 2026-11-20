@@ -3,6 +3,30 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Phân Hệ Lệnh Vận Chuyển Nhà Xe (LVC Dedicated Full-Page View)
+- **Bối cảnh & Yêu cầu:**
+  - Đổi nút "Lệnh đã gán" thành **"Lệnh Vận chuyển"** tại bảng danh sách phân bổ xe (Tab 2 và Tab 4).
+  - Khi bấm vào nút (hoặc bấm vào dòng dữ liệu của nhà xe), mở giao diện toàn màn hình hiển thị đúng các container được phân bổ cho riêng Nhà xe đó (thay vì mở lại Lệnh Điều Độ tổng của cả booking).
+  - Bổ sung khối Hạn định thời gian hiển thị đầy đủ 2 dòng thông tin: **Hạn DEM** (Lưu bãi cảng) và **Hạn DET** (Lưu vỏ container) cùng giờ cắt máng/SI.
+  - Gom tính năng Excel thành một nút **"Nhập Excel"** duy nhất, mở modal chuẩn 2 bước: Bước 1 tải file mẫu danh sách container, Bước 2 chọn file đã điền xe/tài để nạp lên hệ thống.
+- **Thực hiện chi tiết:**
+  1. **Đặt tên & Mã định danh:** Đặt tên chứng từ là **`LỆNH VẬN CHUYỂN`** với mã cấu trúc `LVC.<Booking_Code> - <Tên_Nhà_Xe>` (ví dụ: `LVC.2611.003 - HOA LƯ`), phân biệt rõ ràng giữa Lệnh Điều Độ cấp booking và Lệnh Vận Chuyển cấp nhà xe.
+  2. **Giao diện toàn màn hình (`templates/views/view_transport_order.html`):**
+     - Top Header Bar: Nút `← Quay Lại Điều Vận`, tiêu đề mã LVC, badge tiến độ gán xe, cụm công cụ In Lệnh, Nhập Excel, Gửi Zalo ĐV, Mở Cổng Nhà Xe.
+     - Khối thông tin 3 cột: Lộ trình vận chuyển 3 điểm, Thông tin hàng hóa/B/L/Hãng tàu, và Hạn định DEM/DET đầy đủ 2 dòng riêng biệt.
+     - 4 Card KPI tiến độ: Tổng cont giao, Chờ gán xe/tài, Đang trên tuyến, Đã hoàn tất.
+     - Bảng danh sách chi tiết container: Chỉ lọc đúng các container thuộc phiếu chia của nhà xe, hiển thị mã chuyến VC (có link mở chi tiết chuyến), số cont, loại, seal, điểm giao, xe đầu kéo, rơ-moóc, tài xế, SĐT, trạng thái và các nút thao tác.
+  3. **Modal Nhập Excel chuẩn 2 bước (`#modal-to-excel`):**
+     - Bước 1: Nút kết xuất dữ liệu ra file Excel mẫu `.xlsx` của riêng phiếu chia này.
+     - Bước 2: Vùng chọn file đã điền và nút "Nạp Dữ Liệu Lên Hệ Thống".
+  4. **Backend API (`apps/dispatch/vendor_service.py`, `apps/dispatch/api_views/vendor.py`):**
+     - Mở rộng hàm `allocation_summary` trả về đầy đủ: `transport_order_code`, `booking_code`, `customer`, `bill_of_lading`, `shipping_line`, `pickup_location`, `delivery_location`, `dropoff_location`, `cargo_name`, `container_type`, `si_cutoff`, `closing_time`, `free_time_demurrage`, `free_time_detention`, `dem_expiry`, `det_expiry`.
+     - Tối ưu truy vấn `select_related` tránh N+1 queries.
+  5. **Mã frontend module (`static/js/src/app/dispatch/transport-order.js`):**
+     - Cài đặt các hàm điều hướng, nạp dữ liệu, render view, modal excel, print, share zalo.
+     - Thêm vào `manifest.txt`, tích hợp vào `router.js` và cập nhật các bảng danh sách gọi `openTransportOrderPage(l.id)`.
+     - Rebuild bundle `static/js/app.js` (107 file module).
+
 ## 2026-11-20 – Chuyển Đổi Mở Toàn Màn Hình Lệnh Đã Gán (Thay Cho Modal Xem Cont) Ở Bảng Phân Bổ
 - **Yêu cầu:** Tại màn hình Phân bổ & gán xe (Điều Vận), khi bấm vào nút thao tác hoặc click vào dòng dữ liệu thì mở thẳng ra toàn màn hình Lệnh Phân Bổ / Điều Động chứ không phải dạng popup modal nhỏ. Đồng thời đổi tên nhãn "Xem Cont" thành "Lệnh đã gán" cho chuẩn nghiệp vụ điều vận.
 - **Thực hiện chi tiết:**

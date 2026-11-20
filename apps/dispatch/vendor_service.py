@@ -685,9 +685,39 @@ def allocation_summary(alloc, request=None):
     vendor_link = request.build_absolute_uri(f'/vendor/{raw}/') if (request and raw) else ''
     is_cmode = container_mode(alloc.booking)
     active_cnt = alloc.containers.filter(is_deleted=False).count() if is_cmode else alloc.allocated_containers
+
+    b = alloc.booking
+    cust = getattr(b, 'customer', None) if b else None
+    ship_line = getattr(b, 'shipping_line', '') if b else ''
+    if hasattr(ship_line, 'name'):
+        ship_line = ship_line.name
+    ship_line = str(ship_line or '')
+
+    bl = getattr(b, 'bill_of_lading', None) if b else None
+    if bl and hasattr(bl, 'bl_number'):
+        bl_str = bl.bl_number or ''
+    else:
+        bl_str = getattr(b, 'hbl_number', '') or getattr(b, 'mbl_number', '') or getattr(b, 'booking_number', '') or ''
+
+    dem_val = getattr(b, 'dem_expiry', None) if b else None
+    det_val = getattr(b, 'det_expiry', None) if b else None
+    dem_exp = dem_val() if callable(dem_val) else dem_val
+    det_exp = det_val() if callable(det_val) else det_val
+    sub_name = (alloc.subcontractor.short_name or alloc.subcontractor.name) if alloc.subcontractor else 'Nhà xe'
+    b_code = (b.booking_code if b else '') or ''
+    lvc_code = f"LVC.{b_code.replace('BK.', '')} - {sub_name}" if b_code else f"LVC.{alloc.id} - {sub_name}"
+
+    closing_val = getattr(b, 'closing_time', '') or ''
+    closing_str = closing_val.strftime('%d/%m/%Y %H:%M') if hasattr(closing_val, 'strftime') else str(closing_val or '')
+
+    dem_str = dem_exp.strftime('%d/%m/%Y') if hasattr(dem_exp, 'strftime') else (str(dem_exp) if dem_exp else '')
+    det_str = det_exp.strftime('%d/%m/%Y') if hasattr(det_exp, 'strftime') else (str(det_exp) if det_exp else '')
+    cargo_str = getattr(b, 'commodity', '') or getattr(b, 'cargo_name', '') or ''
+    c_size = getattr(b, 'container_size', '') or getattr(b, 'container_type', '20GP') or '20GP'
+
     return {
         'id': alloc.id, 'subcontractor_id': alloc.subcontractor_id,
-        'subcontractor': alloc.subcontractor.short_name or alloc.subcontractor.name,
+        'subcontractor': sub_name,
         'allocated_containers': active_cnt,
         'max_line_no': alloc.allocated_containers,
         'filled': filled,
@@ -698,6 +728,24 @@ def allocation_summary(alloc, request=None):
         'last_opened_at': alloc.last_opened_at.isoformat() if alloc.last_opened_at else None,
         'last_submitted_at': alloc.last_submitted_at.isoformat() if alloc.last_submitted_at else None,
         'vendor_link': vendor_link,
+        'booking_id': b.id if b else None,
+        'booking_code': b_code,
+        'transport_order_code': lvc_code,
+        'customer': cust.name if cust else (getattr(b, 'customer_name', '') or ''),
+        'customer_code': getattr(cust, 'code', '') if cust else '',
+        'bill_of_lading': bl_str,
+        'shipping_line': ship_line,
+        'pickup_location': getattr(b, 'pickup_location', '') or '',
+        'delivery_location': getattr(b, 'delivery_location', '') or '',
+        'dropoff_location': getattr(b, 'dropoff_location', '') or '',
+        'cargo_name': cargo_str,
+        'container_type': c_size,
+        'si_cutoff': getattr(b, 'si_cutoff', '') or '',
+        'closing_time': closing_str,
+        'free_time_demurrage': getattr(b, 'free_time_demurrage', 7) if b else 7,
+        'free_time_detention': getattr(b, 'free_time_detention', 7) if b else 7,
+        'dem_expiry': dem_str,
+        'det_expiry': det_str,
     }
 
 

@@ -32,6 +32,7 @@ dispatch/trip-cost-sheet.js
 dispatch/trip-actions.js
 dispatch/dispatch-order-modal.js
 dispatch/vendor-admin.js
+dispatch/transport-order.js
 dispatch/trip-expenses.js
 dispatch/driver-simulator.js
 dispatch/create-trip/page.js
