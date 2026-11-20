@@ -3,6 +3,33 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Tối Ưu Giao Diện Vendor Portal: Giới Hạn Scroll Hành Trình, Bỏ Badge Danh Mục & Chuẩn Hóa Cỡ Chữ UI/UX
+- **Bối cảnh & Yêu cầu người dùng:**
+  - **Màn hình Theo Dõi Hành Trình (Hình 1):** Khung bảng bị tràn quá mép dưới màn hình (do tính toán `max-h-[calc(100vh-250px)]` trong khi phần trên đã chiếm ~380px), khiến các dòng cuối cùng (cont 15) bị che khuất và bắt sự kiện cuộn làm người dùng không thể thấy hết nội dung.
+  - **Màn hình Xe, Rơ-moóc, Tài xế (Hình 3):** Quá nhiều badge màu sắc (badge đen biển số, badge xanh bằng lái GPLX, badge pill trạng thái) gây rối mắt, cần loại bỏ badge theo đúng nguyên tắc ERP clean.
+  - **Cỡ chữ Vendor Portal:** Cỡ chữ quá nhỏ so với app chính (nhiều nơi dùng `text-[10px]`, `text-[11px]`), cần nâng lên chuẩn 12–13px theo tài liệu `docs/10-ui-ux-guidelines.md`.
+- **Thay đổi kỹ thuật & Giao diện (`templates/vendor_portal.html`, `static/css/tailwind.css`):**
+  1. **Khung Theo Dõi Hành Trình:**
+     - Điều chỉnh chiều cao giới hạn khung danh sách hành trình: đổi `max-h-[calc(100vh-250px)]` thành `max-h-[calc(100vh-430px)] min-h-[340px] p-2 pb-14 space-y-2`.
+     - Thêm `pb-14` đệm đáy khung để khi cuộn xuống dòng cuối cùng (cont 15), dòng xe cuối cùng luôn nổi trọn vẹn và thoáng đãng trên nền bảng, không bị cấn thanh cuộn hay mép viền.
+     - Nâng cỡ chữ tiêu đề 7 mốc và lộ trình: `.vfleet-head` (12.5px font-bold uppercase), `.vfleet-lbl` (12px), `.vfleet-group` (12.5px), biển số/mã chuyến `text-xs font-mono font-black`, số cont `text-[13px] font-mono font-black`.
+  2. **Bỏ Badge Màn Hình Xe, Rơ-moóc, Tài Xế:**
+     - Chuẩn hóa hàm `makeStatusBadge`: Bỏ hoàn toàn thẻ badge bọc pill có nền và viền (`px-2.5 py-1 rounded-full bg-... border`), thay bằng chữ màu kết hợp **status dot semantic** (`<span class="inline-flex items-center gap-1.5 font-bold text-... text-xs"><span class="w-2 h-2 rounded-full bg-... shrink-0"></span> ${label}</span>`) theo Quy tắc 2.6 trong UI/UX Guidelines.
+     - Biển số xe & Rơ-moóc: Bỏ badge nền đen/tím đậm, thay bằng font mono đen đậm chuẩn ERP: `<span class="font-mono font-black text-slate-900 text-sm tracking-wide">`.
+     - Quy cách Rơ-moóc: Bỏ badge viền xanh, chuyển thành text thông thường `<span class="font-semibold text-slate-800 text-[13px]">`.
+     - Bằng lái (GPLX): Bỏ badge xanh `[Hạng FC]`, chuyển thành text trực quan `<span class="font-bold text-slate-900 text-[13px]">Hạng FC</span> (<span class="font-mono text-slate-500 text-xs">...</span>)`.
+     - Tài xế: Bỏ subtitle thừa `Tài xế vận tải Cont`, nâng tên tài xế lên `text-sm font-black text-slate-900`.
+  3. **Đồng Bộ Cỡ Chữ Chuẩn UI/UX (Guidelines Mục 2.3, 8 & 17):**
+     - Nâng cỡ chữ bảng container gán xe: `table.erp-table` từ `text-xs` lên `text-[13px] tabular-nums`.
+     - Số container: `text-[13px] font-mono font-black text-slate-900`.
+     - Các ô select phương tiện, tài xế và input: nâng lên `text-[13px] h-8.5`.
+     - Topbar & Sidebar: Thay thế triệt để các nhãn `text-[10px]`, `text-[11px]` thành `text-xs` hoặc `text-[13px]`.
+     - Build lại CSS Tailwind đồng bộ: `static/css/tailwind.css`.
+- **Kiểm thử & Xác nhận:**
+  - `python scripts/build_app_js.py`: Thành công.
+  - `python scripts/build_css.py`: Thành công.
+  - `python scripts/qa.py verify --fast`: PASS=6/6, FAIL=0, KẾT LUẬN: ĐẠT.
+
 ## 2026-11-20 – Chuẩn Hóa Quy Tắc Đặt Mã Chứng Từ & Màn Hình Quản Lý (BG, BK, DD, VC)
 - **Bối cảnh & Thống nhất nghiệp vụ:**
   - Chuẩn hóa toàn bộ hệ thống mã chứng từ theo chuỗi giá trị vận hành 5 tầng:

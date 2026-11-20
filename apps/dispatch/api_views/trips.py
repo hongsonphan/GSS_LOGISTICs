@@ -176,7 +176,7 @@ class TripListCreateAPIView(APIView):
                 'is_overnight_detention': t.is_overnight_detention,
                 'overnight_wait_hours': float(t.overnight_wait_hours or 0),
                 'cutoff': t.cutoff_time or '-',
-                'startTime': t.created_at.strftime('%d/%m/%Y %H:%M'),
+                'startTime': timezone.localtime(t.created_at).strftime('%d/%m/%Y %H:%M') if t.created_at else '',
                 'notes': t.special_notes or '',
                 'revenue': t.cached_revenue,
                 'expense': t.cached_expense,
@@ -370,7 +370,7 @@ class TripListCreateAPIView(APIView):
         if not customer and customer_name:
             import secrets
             rand_suffix = ''.join(secrets.choice('0123456789') for _ in range(4))
-            code_cand = f"KH_{timezone.now().strftime('%m%d')}_{rand_suffix}"
+            code_cand = f"KH_{timezone.localtime().strftime('%m%d')}_{rand_suffix}"
             customer = Customer.objects.create(name=customer_name, code=code_cand)
 
         if not customer:
@@ -628,7 +628,7 @@ class TripListCreateAPIView(APIView):
 
         # Default Timeline items
         timeline_steps = [
-            {'step': 1, 'title': 'Điều độ phát lệnh Zalo', 'done': True, 'active': False, 'time': timezone.now().strftime('%H:%M %d/%m')},
+            {'step': 1, 'title': 'Điều độ phát lệnh Zalo', 'done': True, 'active': False, 'time': timezone.localtime().strftime('%H:%M %d/%m')},
             {'step': 2, 'title': 'Tài xế nhận lệnh trên App', 'done': False, 'active': True, 'time': 'Đang chờ'},
             {'step': 3, 'title': f"Lấy cont tại {trip.pickup_location}", 'done': False, 'active': False, 'time': ''},
             {'step': 4, 'title': f"Vận chuyển đến {trip.warehouse_location}", 'done': False, 'active': False, 'time': ''},
@@ -739,7 +739,7 @@ class TripDetailAPIView(APIView):
                 'amount': exp.amount,
                 'status': exp.status,
                 'status_label': exp.get_status_display(),
-                'time': exp.created_at.strftime('%H:%M %d/%m'),
+                'time': timezone.localtime(exp.created_at).strftime('%H:%M %d/%m') if exp.created_at else '',
                 'invoice_issuer': exp.invoice_issuer or '',
                 'invoice_number': exp.invoice_number or '',
                 'invoice_lookup_code': exp.invoice_lookup_code or '',
@@ -811,7 +811,7 @@ class TripDetailAPIView(APIView):
                 'name': doc.title or doc.get_document_type_display(),
                 'file_url': (f"/media/{doc.file_path}" if doc.file_path and not doc.file_path.startswith('/media/') else (doc.file_path or '')),
                 'details': doc.ocr_raw_text or (f"Cont: {doc.extracted_container_no}" if doc.extracted_container_no else f"Chứng từ hợp lệ chuyến xe {trip.trip_code}"),
-                'time': doc.created_at.strftime('%H:%M %d/%m'),
+                'time': timezone.localtime(doc.created_at).strftime('%H:%M %d/%m') if doc.created_at else '',
                 'is_verified': doc.is_verified,
             }
             for doc in documents
@@ -970,7 +970,7 @@ class TripDetailAPIView(APIView):
             'cost_sheet': cost_sheet,
             'documents': documents_data,
             'is_expenses_settled': trip.is_expenses_settled,
-            'settled_at': trip.settled_at.strftime('%H:%M %d/%m/%Y') if trip.settled_at else '',
+            'settled_at': timezone.localtime(trip.settled_at).strftime('%H:%M %d/%m/%Y') if trip.settled_at else '',
             'settled_by': (trip.settled_by.nickname or trip.settled_by.full_name) if trip.settled_by else '',
             'financials': {
                 'revenue': revenue,
@@ -1231,7 +1231,7 @@ class TripDetailAPIView(APIView):
             pass
 
         # Ghi log mốc thời gian vào Timeline nếu có
-        now_str = timezone.now().strftime('%H:%M %d/%m')
+        now_str = timezone.localtime().strftime('%H:%M %d/%m')
         if data.get('actual_dropoff_time'):
             step_title = f"Hạ bãi thực tế tại {trip.dropoff_location}: {trip.actual_dropoff_time}"
             if not trip.timeline_items.filter(title__icontains='Hạ bãi thực tế').exists():

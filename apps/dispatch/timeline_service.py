@@ -426,7 +426,7 @@ def get_derived_7_milestones(trip: DispatchTrip):
     actual_in = (
         find_time_by_keywords('đã đến cổng kho', 'check-in cổng', 'vào cổng kho')
         or (trip.actual_gate_in_time if trip.actual_gate_in_time and trip.actual_gate_in_time != '-' else None)
-        or (trip.actual_gate_in_at.strftime('%H:%M %d/%m') if trip.actual_gate_in_at else None)
+        or (format_vietnam_time(trip.actual_gate_in_at) if trip.actual_gate_in_at else None)
         or '-'
     )
 
@@ -442,7 +442,7 @@ def get_derived_7_milestones(trip: DispatchTrip):
     actual_out = (
         find_time_by_keywords('kéo cont rời kho', 'đã đóng/trút hàng xong', 'rời kho', 'chuẩn bị hạ bãi', 'vận chuyển về bãi hạ')
         or (trip.actual_gate_out_time if trip.actual_gate_out_time and trip.actual_gate_out_time != '-' else None)
-        or (trip.actual_gate_out_at.strftime('%H:%M %d/%m') if trip.actual_gate_out_at else None)
+        or (format_vietnam_time(trip.actual_gate_out_at) if trip.actual_gate_out_at else None)
         or '-'
     )
 
@@ -457,7 +457,7 @@ def get_derived_7_milestones(trip: DispatchTrip):
     actual_dropoff = (
         find_time_by_keywords('cẩu hạ cont', 'hạ bãi thực tế', 'hạ cont thành công', 'hạ bãi rỗng', 'đã hạ cont')
         or (trip.actual_dropoff_time if trip.actual_dropoff_time and trip.actual_dropoff_time != '-' else None)
-        or (trip.actual_dropoff_at.strftime('%H:%M %d/%m') if trip.actual_dropoff_at else None)
+        or (format_vietnam_time(trip.actual_dropoff_at) if trip.actual_dropoff_at else None)
         or '-'
     )
 
@@ -523,17 +523,17 @@ def build_customer_milestones(trip: DispatchTrip):
     vehicle_plate = trip.vehicle.license_plate if trip.vehicle else ''
     cont_no = trip.container_number or 'Container'
 
-    date_str = trip.loading_date.strftime('%d/%m') if trip.loading_date else (trip.created_at.strftime('%d/%m') if trip.created_at else '')
-    t_create = trip.created_at.strftime('%H:%M %d/%m') if trip.created_at else f"08:00 {date_str}"
-    t_gate_in = trip.actual_gate_in_at.strftime('%H:%M %d/%m') if trip.actual_gate_in_at else (trip.actual_gate_in_time or '')
-    t_gate_out = trip.actual_gate_out_at.strftime('%H:%M %d/%m') if trip.actual_gate_out_at else (trip.actual_gate_out_time or '')
+    date_str = trip.loading_date.strftime('%d/%m') if trip.loading_date else (format_vietnam_time(trip.created_at, '%d/%m') if trip.created_at else '')
+    t_create = format_vietnam_time(trip.created_at, '%H:%M %d/%m') if trip.created_at else f"08:00 {date_str}"
+    t_gate_in = format_vietnam_time(trip.actual_gate_in_at, '%H:%M %d/%m') if trip.actual_gate_in_at else (trip.actual_gate_in_time or '')
+    t_gate_out = format_vietnam_time(trip.actual_gate_out_at, '%H:%M %d/%m') if trip.actual_gate_out_at else (trip.actual_gate_out_time or '')
 
     # Lấy map thời gian từ các mốc timeline nếu có
     t_map = {item.step_number: item.time_display for item in trip.timeline_items.all()}
 
     # Kiểm tra chứng từ POD
     pod_doc = trip.documents.filter(is_deleted=False, document_type=DocumentType.POD).order_by('-created_at').first()
-    t_pod = pod_doc.created_at.strftime('%H:%M %d/%m') if (pod_doc and pod_doc.created_at) else t_gate_out
+    t_pod = format_vietnam_time(pod_doc.created_at, '%H:%M %d/%m') if (pod_doc and pod_doc.created_at) else t_gate_out
 
     # TH1: HÀNG XUẤT (EXPORT) - Xe cấp cont rỗng đến kho khách đóng hàng rồi chở hạ cảng/bãi
     if trip.shipment_type == ShipmentType.EXPORT:
@@ -701,7 +701,7 @@ def build_customer_milestones(trip: DispatchTrip):
 
         m3_done = trip.status in [TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT, TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
         m3_active = trip.status in [TripStatus.DISPATCHED, TripStatus.ACCEPTED]
-        m3_time = (t_map.get(4) or (trip.actual_start_time.strftime('%H:%M %d/%m') if trip.actual_start_time else '')) if m3_done else ''
+        m3_time = (t_map.get(4) or (format_vietnam_time(trip.actual_start_time, '%H:%M %d/%m') if trip.actual_start_time else '')) if m3_done else ''
 
         m4_done = trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
         m4_active = trip.status in [TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT]

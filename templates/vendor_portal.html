@@ -97,11 +97,11 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    padding: 8px 14px;
+    padding: 10px 14px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    font: 800 11px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font: 800 12.5px/1.3 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #334155;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
@@ -137,7 +137,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     text-align: center;
-    font: 700 10.5px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font: 600 12px/1.25 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #0f172a;
   }
   .vfleet-lbl.hd {
@@ -145,7 +145,7 @@
     max-width: none;
     white-space: nowrap;
     text-align: center;
-    font-size: 11px;
+    font-size: 12.5px;
     line-height: 1.25;
     font-weight: 800;
     color: #1e293b;
@@ -157,12 +157,12 @@
     gap: 10px;
     align-items: center;
     justify-content: space-between;
-    padding: 7px 14px;
+    padding: 8px 14px;
     margin-top: 10px;
     background: #f1f5f9;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
-    font-size: 11.5px;
+    font-size: 12.5px;
     flex-wrap: wrap;
   }
   .vfleet-row {
@@ -337,7 +337,7 @@
       <div class="min-w-0 flex flex-col justify-center">
         <div class="flex items-center gap-2">
           <span class="hidden" id="h-company">GIẢI PHÁP XANH</span>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 shrink-0 font-heading">CỔNG NHÀ XE</span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 shrink-0 font-heading">CỔNG NHÀ XE</span>
         </div>
         <h1 class="text-sm sm:text-base md:text-lg font-black text-slate-900 tracking-tight font-heading truncate mt-0.5 leading-tight" id="h-subcontractor">Đang kết nối...</h1>
       </div>
@@ -369,16 +369,16 @@
     <aside id="portal-sidebar" class="vendor-sidebar fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] w-64 shrink-0 z-30 transform -translate-x-full lg:translate-x-0 transition-transform flex flex-col justify-between overflow-y-auto select-none">
       <div class="p-3.5 space-y-5">
         <div class="space-y-1">
-          <div class="px-2.5 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2 font-heading">Chức Năng Portal</div>
-          <button type="button" id="nav-tab-assign" onclick="switchPortalTab('assign')" class="vendor-sidebar-item active w-full text-xs flex items-center justify-between gap-2.5 cursor-pointer">
+          <div class="px-2.5 text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2 font-heading">Chức Năng Portal</div>
+          <button type="button" id="nav-tab-assign" onclick="switchPortalTab('assign')" class="vendor-sidebar-item active w-full text-[13px] flex items-center justify-between gap-2.5 cursor-pointer">
             <span class="flex items-center gap-2.5"><i class="ph ph-clipboard-text text-xl text-teal-300"></i> <span class="tracking-wide">Gán Xe &amp; Điều Hành</span></span>
             <span id="nav-badge-assign" class="text-xs font-mono font-bold text-teal-300 tabular-nums"></span>
           </button>
-          <button type="button" id="nav-tab-tracking" onclick="switchPortalTab('tracking')" class="vendor-sidebar-item w-full text-xs flex items-center justify-between gap-2.5 cursor-pointer">
+          <button type="button" id="nav-tab-tracking" onclick="switchPortalTab('tracking')" class="vendor-sidebar-item w-full text-[13px] flex items-center justify-between gap-2.5 cursor-pointer">
             <span class="flex items-center gap-2.5"><i class="ph ph-navigation-arrow text-xl text-slate-400"></i> <span class="tracking-wide">Theo Dõi Hành Trình</span></span>
             <span id="nav-badge-tracking" class="text-xs font-mono font-bold text-sky-300 tabular-nums"></span>
           </button>
-          <button type="button" id="nav-tab-fleet" onclick="switchPortalTab('fleet')" class="vendor-sidebar-item w-full text-xs flex items-center justify-between gap-2.5 cursor-pointer">
+          <button type="button" id="nav-tab-fleet" onclick="switchPortalTab('fleet')" class="vendor-sidebar-item w-full text-[13px] flex items-center justify-between gap-2.5 cursor-pointer">
             <span class="flex items-center gap-2.5"><i class="ph ph-truck text-xl text-slate-400"></i> <span class="tracking-wide">Đội Xe &amp; Tài Xế</span></span>
             <span id="nav-badge-fleet" class="text-xs font-mono font-bold text-slate-400 tabular-nums"></span>
           </button>
@@ -386,7 +386,7 @@
 
         <div id="sidebar-allocs-wrap" class="space-y-2">
           <div class="px-2.5 flex items-center justify-between">
-            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 font-heading">Lệnh Được Giao</span>
+            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-400 font-heading">Lệnh Được Giao</span>
             <span class="text-xs font-mono font-bold text-slate-400 tabular-nums" id="sidebar-allocs-count"></span>
           </div>
           <div id="sidebar-allocs-list" class="space-y-1.5 max-h-[42vh] overflow-y-auto pr-0.5"></div>
@@ -1560,11 +1560,11 @@
             <button type="button" onclick="selectWorkspaceAlloc(${a.alloc_id})"
               class="vendor-alloc-card ${isSel ? 'active ' : ''}w-full text-left p-2.5 rounded-lg cursor-pointer">
               <div class="flex items-center justify-between gap-1">
-                <span class="font-mono font-bold text-xs ${isSel ? 'text-white' : 'text-slate-100'} truncate">${escapeHtml(a.booking_code)}</span>
-                <span class="text-[10px] font-bold ${statusCls} shrink-0 tabular-nums">${escapeHtml(statusTxt)}</span>
+                <span class="font-mono font-black text-[13px] ${isSel ? 'text-white' : 'text-slate-100'} truncate">${escapeHtml(a.booking_code)}</span>
+                <span class="text-xs font-bold ${statusCls} shrink-0 tabular-nums">${escapeHtml(statusTxt)}</span>
               </div>
-              <div class="text-[11px] text-slate-300 truncate mt-0.5">B/L: ${escapeHtml(a.bl_number || '--')}</div>
-              <div class="text-[10px] text-slate-400 truncate mt-0.5">${escapeHtml(a.delivery_location || a.pickup_location || '')}</div>
+              <div class="text-xs text-slate-300 truncate mt-0.5">B/L: ${escapeHtml(a.bl_number || '--')}</div>
+              <div class="text-xs text-slate-400 truncate mt-0.5">${escapeHtml(a.delivery_location || a.pickup_location || '')}</div>
             </button>
           `;
         }).join('');
@@ -1759,70 +1759,70 @@
 
       return `
         <tr id="row-container-${row.line_no}" class="hover:bg-teal-50/30 transition-colors ${isModified ? 'bg-amber-50/40' : ''}">
-          <td class="p-2.5 text-center font-bold text-slate-500 tabular-nums">${row.line_no}</td>
+          <td class="p-2.5 text-center font-bold text-slate-500 tabular-nums text-[13px]">${row.line_no}</td>
           <td class="p-2.5">
             <div class="flex items-center gap-1.5">
               ${row.container_locked
-                ? `<div class="leading-tight"><div class="font-bold text-teal-800 whitespace-nowrap tabular-nums ${(curData.is_twin_container && curData.container_number_2) ? 'text-[11px]' : ''}">${escapeHtml(curData.container_number || '--')}</div>${(curData.is_twin_container && curData.container_number_2) ? `<div class="text-[11px] font-bold text-indigo-700 whitespace-nowrap tabular-nums">+ ${escapeHtml(curData.container_number_2)}</div>` : ''}</div>`
-                : `<input type="text" value="${escapeHtml(curData.container_number || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="ABCD1234567" oninput="this.value = this.value.toUpperCase(); updateRowField(${row.line_no}, 'container_number', this.value);" class="h-8 w-[114px] px-2 font-bold uppercase rounded-lg border text-xs tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">`}
-              ${is20 && isRowUnlocked ? `<button type="button" onclick="showPair20Options(${row.line_no})" class="h-6 px-1.5 rounded border border-teal-300 bg-teal-50 text-teal-700 font-bold text-xs hover:bg-teal-100 cursor-pointer shrink-0" title="Ghép đôi cont 20ft (Kẹp 20)">Kẹp 20</button>` : ''}
+                ? `<div class="leading-tight"><div class="font-mono font-black text-slate-900 text-[13px] whitespace-nowrap tabular-nums ${(curData.is_twin_container && curData.container_number_2) ? 'text-xs' : ''}">${escapeHtml(curData.container_number || '--')}</div>${(curData.is_twin_container && curData.container_number_2) ? `<div class="text-xs font-bold text-indigo-700 whitespace-nowrap tabular-nums">+ ${escapeHtml(curData.container_number_2)}</div>` : ''}</div>`
+                : `<input type="text" value="${escapeHtml(curData.container_number || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="ABCD1234567" oninput="this.value = this.value.toUpperCase(); updateRowField(${row.line_no}, 'container_number', this.value);" class="h-8.5 w-[120px] px-2 font-mono font-black uppercase rounded-lg border text-[13px] tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">`}
+              ${is20 && isRowUnlocked ? `<button type="button" onclick="showPair20Options(${row.line_no})" class="h-6.5 px-2 rounded border border-teal-300 bg-teal-50 text-teal-700 font-bold text-xs hover:bg-teal-100 cursor-pointer shrink-0" title="Ghép đôi cont 20ft (Kẹp 20)">Kẹp 20</button>` : ''}
             </div>
           </td>
-          <td class="p-2.5 text-center font-bold text-slate-700 tabular-nums">${escapeHtml(row.container_type || '40HC')}</td>
+          <td class="p-2.5 text-center font-bold text-slate-700 tabular-nums text-[13px]">${escapeHtml(row.container_type || '40HC')}</td>
           <td class="p-2.5">
-            <input type="text" value="${escapeHtml(curData.seal_number || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="Seal..." oninput="this.value = this.value.toUpperCase(); updateRowField(${row.line_no}, 'seal_number', this.value);" class="h-8 w-[88px] px-2 uppercase rounded-lg border text-xs tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">
+            <input type="text" value="${escapeHtml(curData.seal_number || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="Seal..." oninput="this.value = this.value.toUpperCase(); updateRowField(${row.line_no}, 'seal_number', this.value);" class="h-8.5 w-[96px] px-2 uppercase font-mono rounded-lg border text-[13px] tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">
           </td>
-          <td class="p-2.5 max-w-[135px]">
-            <div class="truncate text-slate-700 font-medium text-xs" title="${escapeHtml(deliveryTxt)}">${escapeHtml(deliveryTxt)}</div>
+          <td class="p-2.5 max-w-[145px]">
+            <div class="truncate text-slate-700 font-medium text-[13px]" title="${escapeHtml(deliveryTxt)}">${escapeHtml(deliveryTxt)}</div>
           </td>
           <td class="p-2">
             <div class="flex items-center gap-1">
-              <select aria-label="Đầu kéo dòng ${row.line_no}" ${!isRowUnlocked ? 'disabled' : ''} onchange="updateRowField(${row.line_no}, 'tractor_plate', this.value);" class="h-8 w-[108px] px-1.5 font-bold uppercase rounded-lg border text-xs tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">
+              <select aria-label="Đầu kéo dòng ${row.line_no}" ${!isRowUnlocked ? 'disabled' : ''} onchange="updateRowField(${row.line_no}, 'tractor_plate', this.value);" class="h-8.5 w-[114px] px-1.5 font-mono font-bold uppercase rounded-lg border text-[13px] tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">
                 ${buildPlateOptions(catalog.tractors, curData.tractor_plate, 'Đầu kéo')}
               </select>
-              ${isRowUnlocked ? `<button type="button" onclick="openQuickAddModal('tractor', ${row.line_no})" title="Thêm mới đầu kéo" class="h-8 w-6 shrink-0 rounded-lg border border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-teal-700 flex items-center justify-center cursor-pointer"><i class="ph-bold ph-plus text-xs"></i></button>` : ''}
+              ${isRowUnlocked ? `<button type="button" onclick="openQuickAddModal('tractor', ${row.line_no})" title="Thêm mới đầu kéo" class="h-8.5 w-6.5 shrink-0 rounded-lg border border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-teal-700 flex items-center justify-center cursor-pointer"><i class="ph-bold ph-plus text-xs"></i></button>` : ''}
             </div>
           </td>
           <td class="p-2">
             <div class="flex items-center gap-1">
-              <select aria-label="Rơ-moóc dòng ${row.line_no}" ${!isRowUnlocked ? 'disabled' : ''} onchange="updateRowField(${row.line_no}, 'trailer_plate', this.value);" class="h-8 w-[102px] px-1.5 font-bold uppercase rounded-lg border text-xs tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">
+              <select aria-label="Rơ-moóc dòng ${row.line_no}" ${!isRowUnlocked ? 'disabled' : ''} onchange="updateRowField(${row.line_no}, 'trailer_plate', this.value);" class="h-8.5 w-[108px] px-1.5 font-mono font-bold uppercase rounded-lg border text-[13px] tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">
                 ${buildPlateOptions(catalog.trailers, curData.trailer_plate, 'Rơ-moóc')}
               </select>
-              ${isRowUnlocked ? `<button type="button" onclick="openQuickAddModal('trailer', ${row.line_no})" title="Thêm mới rơ-moóc" class="h-8 w-6 shrink-0 rounded-lg border border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-teal-700 flex items-center justify-center cursor-pointer"><i class="ph-bold ph-plus text-xs"></i></button>` : ''}
+              ${isRowUnlocked ? `<button type="button" onclick="openQuickAddModal('trailer', ${row.line_no})" title="Thêm mới rơ-moóc" class="h-8.5 w-6.5 shrink-0 rounded-lg border border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-teal-700 flex items-center justify-center cursor-pointer"><i class="ph-bold ph-plus text-xs"></i></button>` : ''}
             </div>
           </td>
           <td class="p-2">
             <div class="flex items-center gap-1">
-              <select aria-label="Tài xế dòng ${row.line_no}" ${!isRowUnlocked ? 'disabled' : ''} onchange="onDriverSelectChange(${row.line_no}, this);" class="h-8 w-[124px] px-1.5 font-medium rounded-lg border text-xs focus:border-teal-600 focus:outline-none ${inputStateCls}">
+              <select aria-label="Tài xế dòng ${row.line_no}" ${!isRowUnlocked ? 'disabled' : ''} onchange="onDriverSelectChange(${row.line_no}, this);" class="h-8.5 w-[130px] px-1.5 font-semibold rounded-lg border text-[13px] focus:border-teal-600 focus:outline-none ${inputStateCls}">
                 ${buildDriverOptions(catalog.drivers, curData.driver_name, curData.driver_phone, 'Chọn tài xế')}
               </select>
-              ${isRowUnlocked ? `<button type="button" onclick="openQuickAddModal('driver', ${row.line_no})" title="Thêm mới tài xế" class="h-8 w-6 shrink-0 rounded-lg border border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-teal-700 flex items-center justify-center cursor-pointer"><i class="ph-bold ph-plus text-xs"></i></button>` : ''}
+              ${isRowUnlocked ? `<button type="button" onclick="openQuickAddModal('driver', ${row.line_no})" title="Thêm mới tài xế" class="h-8.5 w-6.5 shrink-0 rounded-lg border border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-teal-700 flex items-center justify-center cursor-pointer"><i class="ph-bold ph-plus text-xs"></i></button>` : ''}
             </div>
           </td>
           <td class="p-2">
-            <input type="tel" readonly value="${escapeHtml(curData.driver_phone || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="Theo tài xế" title="Tự động điền theo Tài xế được chọn" class="vendor-driver-phone h-8 w-[96px] px-2 rounded-lg border text-xs tabular-nums ${!isRowUnlocked ? 'bg-slate-50 text-slate-600 border-slate-200/80 cursor-not-allowed' : 'bg-slate-50 text-slate-700 border-slate-200 cursor-default'}">
+            <input type="tel" readonly value="${escapeHtml(curData.driver_phone || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="Theo tài xế" title="Tự động điền theo Tài xế được chọn" class="vendor-driver-phone h-8.5 w-[102px] px-2 rounded-lg border text-[13px] font-mono tabular-nums ${!isRowUnlocked ? 'bg-slate-50 text-slate-600 border-slate-200/80 cursor-not-allowed' : 'bg-slate-50 text-slate-700 border-slate-200 cursor-default'}">
           </td>
           <td class="p-2">
-            <input type="text" value="${escapeHtml(curData.vendor_note || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="Ghi chú..." oninput="updateRowField(${row.line_no}, 'vendor_note', this.value);" class="h-8 w-[84px] px-2 rounded-lg border text-xs focus:border-teal-600 focus:outline-none ${inputStateCls}">
+            <input type="text" value="${escapeHtml(curData.vendor_note || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="Ghi chú..." oninput="updateRowField(${row.line_no}, 'vendor_note', this.value);" class="h-8.5 w-[88px] px-2 rounded-lg border text-[13px] focus:border-teal-600 focus:outline-none ${inputStateCls}">
           </td>
           <td class="p-2.5 whitespace-nowrap">
             <span class="text-xs font-bold ${statusInfo.cls} inline-flex items-center gap-1" title="${row.trip_code ? 'Mã chuyến: ' + escapeHtml(row.trip_code) : 'Chưa gán xe'}">
               <i class="ph-bold ${statusInfo.icon}"></i>
               <span>${escapeHtml(stepFraction + statusInfo.label)}</span>
             </span>
-            ${row.trip_code ? `<div class="text-[11px] font-mono font-bold text-teal-800 mt-0.5 tracking-tight flex items-center gap-1"><i class="ph-bold ph-ticket text-teal-600"></i>${escapeHtml(row.trip_code)}</div>` : ''}
+            ${row.trip_code ? `<div class="text-xs font-mono font-bold text-teal-800 mt-0.5 tracking-tight flex items-center gap-1"><i class="ph-bold ph-ticket text-teal-600"></i>${escapeHtml(row.trip_code)}</div>` : ''}
             <div id="row-msg-${row.line_no}" class="text-xs font-medium"></div>
           </td>
           <td class="p-2.5 text-right whitespace-nowrap">
             <div class="inline-flex items-center gap-1">
               ${(row.trip_code || row.trip_token) ? `
-                <button type="button" onclick="openDriverQrModal(${row.line_no})" class="h-7 px-2.5 rounded-lg border border-teal-600 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all active:scale-95" title="Mở Lệnh Điều Xe & Mã QR Tài Xế / Copy Link Zalo">
+                <button type="button" onclick="openDriverQrModal(${row.line_no})" class="h-7.5 px-2.5 rounded-lg border border-teal-600 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all active:scale-95" title="Mở Lệnh Điều Xe & Mã QR Tài Xế / Copy Link Zalo">
                   <i class="ph-bold ph-qr-code text-teal-700"></i>
                   <span>Lệnh QR</span>
                 </button>
               ` : ''}
-              <button type="button" onclick="viewRowModal(${row.line_no})" class="h-7 px-2.5 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors" title="Xem &amp; cập nhật thông tin"><i class="ph-bold ph-eye"></i><span>Xem</span></button>
-              <button type="button" onclick="printVendorRow(${row.line_no})" class="h-7 px-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors" title="In phiếu điều xe"><i class="ph-bold ph-printer"></i><span>In</span></button>
+              <button type="button" onclick="viewRowModal(${row.line_no})" class="h-7.5 px-2.5 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors" title="Xem &amp; cập nhật thông tin"><i class="ph-bold ph-eye"></i><span>Xem</span></button>
+              <button type="button" onclick="printVendorRow(${row.line_no})" class="h-7.5 px-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors" title="In phiếu điều xe"><i class="ph-bold ph-printer"></i><span>In</span></button>
             </div>
           </td>
         </tr>
@@ -1858,20 +1858,20 @@
             <span class="px-2.5 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700 border border-slate-200">Ngày hẹn: ${fmtDate(b.loading_date)} ${escapeHtml(b.loading_time || '')}</span>
           </div>
         </div>
-        <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-[13px]">
           <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/70 space-y-1">
-            <div class="text-[11px] font-bold uppercase text-teal-700 font-heading">Thông Tin Hàng Hóa</div>
+            <div class="text-xs font-bold uppercase text-teal-700 font-heading">Thông Tin Hàng Hóa</div>
             <div><span class="text-slate-500">Loại cont:</span> <strong class="tabular-nums text-slate-800">${escapeHtml(b.container_size || '--')}</strong></div>
             <div><span class="text-slate-500">Mặt hàng:</span> <strong class="text-slate-800">${escapeHtml(b.commodity || '--')}</strong></div>
           </div>
           <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/70 space-y-1">
-            <div class="text-[11px] font-bold uppercase text-teal-700 font-heading">Lộ Trình Vận Tải</div>
+            <div class="text-xs font-bold uppercase text-teal-700 font-heading">Lộ Trình Vận Tải</div>
             <div><span class="text-slate-500">1. Nơi lấy:</span> <strong class="text-slate-800">${escapeHtml(b.pickup_location || '--')}</strong></div>
             <div><span class="text-slate-500">2. Kho giao:</span> <strong class="text-slate-800">${escapeHtml(b.delivery_location || '--')}</strong></div>
             <div><span class="text-slate-500">3. Hạ rỗng:</span> <strong class="text-slate-800">${escapeHtml(b.dropoff_location || '--')}</strong></div>
           </div>
           <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/70 space-y-1">
-            <div class="text-[11px] font-bold uppercase text-teal-700 font-heading">Hạn DEM / DET &amp; Lưu Ý</div>
+            <div class="text-xs font-bold uppercase text-teal-700 font-heading">Hạn DEM / DET &amp; Lưu Ý</div>
             <div><span class="text-slate-500">DEM:</span> <strong class="${(b.dem && b.dem.level === 'danger') ? 'text-rose-600' : 'text-slate-800'}">${escapeHtml((b.dem && b.dem.label) || 'Theo quy tắc')}</strong> · <span class="text-slate-500">DET:</span> <strong class="${(b.det && b.det.level === 'danger') ? 'text-rose-600' : 'text-slate-800'}">${escapeHtml((b.det && b.det.label) || 'Theo quy tắc')}</strong></div>
             ${b.destination_notes ? `<div class="text-amber-800 font-medium">${escapeHtml(b.destination_notes)}</div>` : ''}
             ${b.road_restrictions ? `<div class="text-rose-700 font-medium">Cấm tải: ${escapeHtml(b.road_restrictions)}</div>` : ''}
@@ -1968,33 +1968,33 @@
 
         <!-- Lưới dữ liệu Container chuẩn ERP -->
         <div class="${tblWrapClass}" id="container-rows-list">
-          <table class="w-full text-left erp-table whitespace-nowrap text-xs tabular-nums">
+          <table class="w-full text-left erp-table whitespace-nowrap text-[13px] tabular-nums">
             <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-xs sticky top-0 font-heading z-10 border-b border-slate-300 select-none">
               <tr>
                 <th class="p-2.5 w-11 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('line_no')">
-                  <span class="inline-flex items-center gap-1">STT <i class="ph-bold ${assignSortIcon('line_no')} text-[10px]"></i></span>
+                  <span class="inline-flex items-center gap-1">STT <i class="ph-bold ${assignSortIcon('line_no')} text-xs"></i></span>
                 </th>
                 <th class="p-2.5 font-bold text-slate-800 cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('container_number')">
-                  <span class="inline-flex items-center gap-1">SỐ CONTAINER <i class="ph-bold ${assignSortIcon('container_number')} text-[10px]"></i></span>
+                  <span class="inline-flex items-center gap-1">SỐ CONTAINER <i class="ph-bold ${assignSortIcon('container_number')} text-xs"></i></span>
                 </th>
                 <th class="p-2.5 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('container_type')">
-                  <span class="inline-flex items-center gap-1">LOẠI CONT <i class="ph-bold ${assignSortIcon('container_type')} text-[10px]"></i></span>
+                  <span class="inline-flex items-center gap-1">LOẠI CONT <i class="ph-bold ${assignSortIcon('container_type')} text-xs"></i></span>
                 </th>
                 <th class="p-2.5 cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('seal_number')">
-                  <span class="inline-flex items-center gap-1">SỐ CHÌ (SEAL) <i class="ph-bold ${assignSortIcon('seal_number')} text-[10px]"></i></span>
+                  <span class="inline-flex items-center gap-1">SỐ CHÌ (SEAL) <i class="ph-bold ${assignSortIcon('seal_number')} text-xs"></i></span>
                 </th>
                 <th class="p-2.5">ĐIỂM GIAO HÀNG</th>
                 <th class="p-2.5 cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('tractor_plate')">
-                  <span class="inline-flex items-center gap-1">ĐẦU KÉO <span class="text-rose-600">*</span> <i class="ph-bold ${assignSortIcon('tractor_plate')} text-[10px]"></i></span>
+                  <span class="inline-flex items-center gap-1">ĐẦU KÉO <span class="text-rose-600">*</span> <i class="ph-bold ${assignSortIcon('tractor_plate')} text-xs"></i></span>
                 </th>
                 <th class="p-2.5">RƠ-MOÓC</th>
                 <th class="p-2.5 cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('driver_name')">
-                  <span class="inline-flex items-center gap-1">TÀI XẾ <i class="ph-bold ${assignSortIcon('driver_name')} text-[10px]"></i></span>
+                  <span class="inline-flex items-center gap-1">TÀI XẾ <i class="ph-bold ${assignSortIcon('driver_name')} text-xs"></i></span>
                 </th>
                 <th class="p-2.5">SĐT TÀI XẾ</th>
                 <th class="p-2.5">GHI CHÚ</th>
                 <th class="p-2.5 cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('step_status')">
-                  <span class="inline-flex items-center gap-1">TRẠNG THÁI <i class="ph-bold ${assignSortIcon('step_status')} text-[10px]"></i></span>
+                  <span class="inline-flex items-center gap-1">TRẠNG THÁI <i class="ph-bold ${assignSortIcon('step_status')} text-xs"></i></span>
                 </th>
                 <th class="p-2.5 text-right">THAO TÁC</th>
               </tr>
@@ -2046,11 +2046,11 @@
 
           return `
             <div class="rounded-xl border px-2 py-2 text-center transition-all ${boxCls}" ${clickAttr} ${titleAttr}>
-              <div class="text-[11px] font-bold leading-tight truncate font-heading flex items-center justify-center gap-1">
+              <div class="text-xs font-bold leading-tight truncate font-heading flex items-center justify-center gap-1">
                 <span>${stepPos}. ${st.short}</span>
                 ${isNext ? '<i class="ph-bold ph-plus-circle text-xs text-teal-600 group-hover:scale-110 transition-transform"></i>' : ''}
               </div>
-              <div class="text-xs font-mono mt-0.5 truncate ${cur ? 'text-teal-100 font-bold' : (isNext ? 'text-teal-600 font-bold text-[10px]' : '')}">
+              <div class="text-xs font-mono mt-0.5 truncate ${cur ? 'text-teal-100 font-bold' : (isNext ? 'text-teal-600 font-bold' : '')}">
                 ${ts || (cur ? 'Đang chạy' : (isNext ? 'Bấm cập nhật' : '--:--'))}
               </div>
             </div>
@@ -2121,9 +2121,9 @@
               <i class="ph-bold ph-clipboard-text text-teal-700 text-sm"></i>
               <span class="uppercase">Lệnh: ${escapeHtml(bKey)}</span>
               <span class="text-slate-300">|</span>
-              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-extrabold">${grpCount} CHUYẾN</span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold">${grpCount} CHUYẾN</span>
             </div>
-            <div class="text-[11px] text-slate-500 truncate max-w-full sm:max-w-[55%]">
+            <div class="text-xs text-slate-500 truncate max-w-full sm:max-w-[55%]">
               ${routeTxt ? `Lộ trình: <strong class="text-slate-700">${escapeHtml(routeTxt)}</strong>` : ''}
             </div>
           </div>`;
@@ -2149,11 +2149,11 @@
         <div class="vfleet-row" style="--vc:${color}" ${clickJs ? `tabindex="0" onclick="${clickJs}" onkeydown="if(event.key==='Enter')${clickJs}"` : ''} title="Xe ${escapeHtml(t.tractor_plate || '--')} · Cont ${escapeHtml(t.container_number || '--')} · Tài xế ${escapeHtml(t.driver_name || '--')} — bấm để xem chi tiết">
           <div class="vfleet-who">
             <div class="flex items-center justify-between gap-1.5">
-              <span class="px-2 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-teal-800 font-mono font-extrabold text-[11px] truncate">${escapeHtml(t.trip_code || t.tractor_plate || ('Dòng #' + t.line_no))}</span>
-              <span class="text-[11px] font-extrabold text-slate-600 shrink-0">${pct}%</span>
+              <span class="px-2 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-teal-800 font-mono font-black text-xs truncate">${escapeHtml(t.trip_code || t.tractor_plate || ('Dòng #' + t.line_no))}</span>
+              <span class="text-xs font-black text-slate-600 shrink-0">${pct}%</span>
             </div>
-            <div class="font-mono font-bold text-xs text-slate-800 truncate">${escapeHtml(t.container_number || '--')}</div>
-            <div class="text-[10.5px] font-medium truncate ${stInfo.cls}">${escapeHtml(t.driver_name || stInfo.label)}</div>
+            <div class="font-mono font-black text-[13px] text-slate-900 truncate">${escapeHtml(t.container_number || '--')}</div>
+            <div class="text-xs font-semibold truncate ${stInfo.cls}">${escapeHtml(t.driver_name || stInfo.label)}</div>
           </div>
           <div class="vfleet-wrap">
             ${placeLabels}
@@ -2217,8 +2217,8 @@
           </div>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-slate-200">
-          <div id="vendor-fleet-list" class="overflow-y-auto max-h-[calc(100vh-250px)] min-h-[320px] p-2 space-y-1.5">${buildTrackingListHtml()}</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
+          <div id="vendor-fleet-list" class="overflow-y-auto max-h-[calc(100vh-430px)] min-h-[340px] p-2 pb-14 space-y-2">${buildTrackingListHtml()}</div>
         </div>
       </section>
     `;
@@ -2289,19 +2289,19 @@
 
     const curTab = tabs.find(t => t.id === fleetSubTab) || tabs[0];
 
-    // Helper trạng thái badge
+    // Helper trạng thái badge (chuẩn hóa theo UI/UX guidelines: dùng status dot semantic, không bọc badge)
     function makeStatusBadge(status, type = 'vehicle') {
       if (status === 'MAINTENANCE') {
-        return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Bảo dưỡng</span>`;
+        return `<span class="inline-flex items-center gap-1.5 font-bold text-amber-700 text-xs"><span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span> Bảo dưỡng</span>`;
       }
       if (status === 'IDLE') {
-        return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Nằm bãi</span>`;
+        return `<span class="inline-flex items-center gap-1.5 font-bold text-slate-600 text-xs"><span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span> Nằm bãi</span>`;
       }
       if (status === 'LEAVE' || status === 'OFF') {
-        return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Nghỉ phép</span>`;
+        return `<span class="inline-flex items-center gap-1.5 font-bold text-amber-700 text-xs"><span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span> Nghỉ phép</span>`;
       }
       const label = type === 'driver' ? 'Đang làm việc' : (type === 'trailer' ? 'Sẵn sàng chọn' : 'Sẵn sàng chạy');
-      return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ${label}</span>`;
+      return `<span class="inline-flex items-center gap-1.5 font-bold text-emerald-700 text-xs"><span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span> ${label}</span>`;
     }
 
     return `
@@ -2376,7 +2376,7 @@
                   <th class="p-3 text-center w-28">Thao Tác</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 text-xs">
+              <tbody class="divide-y divide-slate-100 text-[13px]">
                 ${filteredTractors.length ? filteredTractors.map((t, idx) => {
                   const plate = t.plate || t.license_plate || '--';
                   const brand = t.brand || '--';
@@ -2390,7 +2390,7 @@
                     <tr class="hover:bg-teal-50/40 transition-colors">
                       <td class="p-3 text-center font-bold text-slate-400 tabular-nums">${idx + 1}</td>
                       <td class="p-3">
-                        <span class="px-2.5 py-1 rounded-lg bg-slate-900 text-white font-mono font-black text-xs tracking-wider shadow-2xs">${escapeHtml(plate)}</span>
+                        <span class="font-mono font-black text-slate-900 text-sm tracking-wide">${escapeHtml(plate)}</span>
                       </td>
                       <td class="p-3">
                         <span class="font-bold text-slate-800 flex items-center gap-1.5">
@@ -2398,8 +2398,8 @@
                         </span>
                       </td>
                       <td class="p-3 text-right">
-                        <span class="font-mono font-black text-slate-900">${payloadTon}</span>
-                        ${payloadKg > 0 ? `<div class="text-[10px] text-slate-400 tabular-nums">(${payloadKg.toLocaleString('vi-VN')} kg)</div>` : ''}
+                        <span class="font-mono font-black text-slate-900 text-sm">${payloadTon}</span>
+                        ${payloadKg > 0 ? `<div class="text-xs text-slate-400 tabular-nums">(${payloadKg.toLocaleString('vi-VN')} kg)</div>` : ''}
                       </td>
                       <td class="p-3 font-medium text-slate-700">
                         <span class="inline-flex items-center gap-1.5">
@@ -2418,12 +2418,12 @@
                       <td class="p-3 text-center">
                         <div class="flex items-center justify-center gap-1.5">
                           <button type="button" onclick="openEditCatalogModal('tractor', ${itemJson})"
-                            class="h-7 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-teal-50 hover:border-teal-300 text-slate-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+                            class="h-7.5 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-teal-50 hover:border-teal-300 text-slate-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
                             title="Sửa thông tin xe đầu kéo">
                             <i class="ph-bold ph-pencil-simple text-teal-700"></i> <span>Sửa</span>
                           </button>
                           <button type="button" onclick="confirmDeleteCatalogItem('tractor', ${t.id || null}, '${escapeHtml(plate)}')"
-                            class="h-7 px-2 rounded-lg border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+                            class="h-7.5 px-2 rounded-lg border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
                             title="Xóa xe khỏi danh mục">
                             <i class="ph-bold ph-trash"></i> <span>Xóa</span>
                           </button>
@@ -2461,7 +2461,7 @@
                   <th class="p-3 text-center w-28">Thao Tác</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 text-xs">
+              <tbody class="divide-y divide-slate-100 text-[13px]">
                 ${filteredTrailers.length ? filteredTrailers.map((t, idx) => {
                   const plate = t.plate || t.license_plate || '--';
                   const trailerType = t.trailer_type || 'Moóc Xương 40ft';
@@ -2476,10 +2476,10 @@
                     <tr class="hover:bg-indigo-50/30 transition-colors">
                       <td class="p-3 text-center font-bold text-slate-400 tabular-nums">${idx + 1}</td>
                       <td class="p-3">
-                        <span class="px-2.5 py-1 rounded-lg bg-indigo-900 text-white font-mono font-black text-xs tracking-wider shadow-2xs">${escapeHtml(plate)}</span>
+                        <span class="font-mono font-black text-slate-900 text-sm tracking-wide">${escapeHtml(plate)}</span>
                       </td>
                       <td class="p-3">
-                        <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold text-xs inline-block">
+                        <span class="font-semibold text-slate-800 text-[13px]">
                           ${escapeHtml(trailerType)}
                         </span>
                       </td>
@@ -2489,8 +2489,8 @@
                         </span>
                       </td>
                       <td class="p-3 text-right">
-                        <span class="font-mono font-black text-slate-900">${payloadTon}</span>
-                        ${payloadKg > 0 ? `<div class="text-[10px] text-slate-400 tabular-nums">(${payloadKg.toLocaleString('vi-VN')} kg)</div>` : ''}
+                        <span class="font-mono font-black text-slate-900 text-sm">${payloadTon}</span>
+                        ${payloadKg > 0 ? `<div class="text-xs text-slate-400 tabular-nums">(${payloadKg.toLocaleString('vi-VN')} kg)</div>` : ''}
                       </td>
                       <td class="p-3 font-medium text-slate-700">
                         <span class="inline-flex items-center gap-1.5">
@@ -2509,12 +2509,12 @@
                       <td class="p-3 text-center">
                         <div class="flex items-center justify-center gap-1.5">
                           <button type="button" onclick="openEditCatalogModal('trailer', ${itemJson})"
-                            class="h-7 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 text-slate-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+                            class="h-7.5 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 text-slate-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
                             title="Sửa thông tin rơ-moóc">
                             <i class="ph-bold ph-pencil-simple text-indigo-700"></i> <span>Sửa</span>
                           </button>
                           <button type="button" onclick="confirmDeleteCatalogItem('trailer', ${t.id || null}, '${escapeHtml(plate)}')"
-                            class="h-7 px-2 rounded-lg border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+                            class="h-7.5 px-2 rounded-lg border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
                             title="Xóa moóc khỏi danh mục">
                             <i class="ph-bold ph-trash"></i> <span>Xóa</span>
                           </button>
@@ -2552,7 +2552,7 @@
                   <th class="p-3 text-center w-28">Thao Tác</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 text-xs">
+              <tbody class="divide-y divide-slate-100 text-[13px]">
                 ${filteredDrivers.length ? filteredDrivers.map((d, idx) => {
                   const name = d.name || d.full_name || '--';
                   const phone = d.phone || '--';
@@ -2572,31 +2572,30 @@
                       <td class="p-3">
                         <div class="flex items-center gap-2.5">
                           ${avatarUrl
-                            ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}" class="w-9 h-9 rounded-full object-cover border border-teal-300 shrink-0 shadow-2xs" onerror="this.onerror=null; this.src=''; this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');"><div class="w-9 h-9 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-black text-xs shrink-0 border border-teal-200 hidden">${initials}</div>`
-                            : `<div class="w-9 h-9 rounded-full bg-gradient-to-br from-teal-600 to-emerald-700 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">${initials}</div>`}
+                            ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}" class="w-9 h-9 rounded-full object-cover border border-slate-300 shrink-0 shadow-2xs" onerror="this.onerror=null; this.src=''; this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');"><div class="w-9 h-9 rounded-full bg-slate-100 text-slate-800 flex items-center justify-center font-black text-xs shrink-0 border border-slate-200 hidden">${initials}</div>`
+                            : `<div class="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">${initials}</div>`}
                           <div>
-                            <div class="font-extrabold text-slate-900 text-xs">${escapeHtml(name)}</div>
-                            <div class="text-[10px] text-slate-400">Tài xế vận tải Cont</div>
+                            <div class="font-black text-slate-900 text-sm">${escapeHtml(name)}</div>
                           </div>
                         </div>
                       </td>
                       <td class="p-3">
-                        <a href="tel:${escapeHtml(phone)}" class="inline-flex items-center gap-1.5 font-mono font-bold text-teal-800 hover:text-teal-900 hover:underline">
+                        <a href="tel:${escapeHtml(phone)}" class="inline-flex items-center gap-1.5 font-mono font-bold text-teal-800 hover:text-teal-900 hover:underline text-[13px]">
                           <i class="ph-bold ph-phone text-teal-600"></i> ${escapeHtml(phone)}
                         </a>
                       </td>
                       <td class="p-3 font-medium text-slate-700">
-                        ${ageTxt ? `<span class="font-bold text-slate-900">${ageTxt}</span>` : ''}
-                        ${dobTxt !== '--' ? `<span class="text-[11px] text-slate-400 block tabular-nums">(${dobTxt})</span>` : (ageTxt ? '' : '--')}
+                        ${ageTxt ? `<span class="font-bold text-slate-900 text-[13px]">${ageTxt}</span>` : ''}
+                        ${dobTxt !== '--' ? `<span class="text-xs text-slate-400 block tabular-nums">(${dobTxt})</span>` : (ageTxt ? '' : '--')}
                       </td>
-                      <td class="p-3 font-mono text-slate-800 font-bold">${escapeHtml(cccd)}</td>
+                      <td class="p-3 font-mono text-slate-800 font-bold text-[13px]">${escapeHtml(cccd)}</td>
                       <td class="p-3">
-                        <div class="flex items-center gap-1.5">
-                          <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-800 border border-sky-200 font-bold text-[11px]">Hạng ${escapeHtml(licenseClass)}</span>
-                          <span class="font-mono text-slate-600 text-[11px]">${escapeHtml(licenseNo)}</span>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <span class="font-bold text-slate-900 text-[13px]">Hạng ${escapeHtml(licenseClass)}</span>
+                          ${licenseNo && licenseNo !== '--' ? `<span class="font-mono text-slate-500 text-xs tabular-nums">(${escapeHtml(licenseNo)})</span>` : ''}
                         </div>
                       </td>
-                      <td class="p-3 text-center font-bold text-slate-800">${expYears}</td>
+                      <td class="p-3 text-center font-bold text-slate-800 text-[13px]">${expYears}</td>
                       <td class="p-3 text-center">${makeStatusBadge(d.status, 'driver')}</td>
                       <td class="p-3 text-slate-500 max-w-xs truncate" title="${escapeHtml(d.notes || '')}">
                         ${d.notes ? `<span class="italic">${escapeHtml(d.notes)}</span>` : '<span class="text-slate-300">--</span>'}
@@ -2604,12 +2603,12 @@
                       <td class="p-3 text-center">
                         <div class="flex items-center justify-center gap-1.5">
                           <button type="button" onclick="openEditCatalogModal('driver', ${itemJson})"
-                            class="h-7 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-sky-50 hover:border-sky-300 text-slate-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+                            class="h-7.5 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-sky-50 hover:border-sky-300 text-slate-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
                             title="Sửa hồ sơ tài xế">
                             <i class="ph-bold ph-pencil-simple text-sky-700"></i> <span>Sửa</span>
                           </button>
                           <button type="button" onclick="confirmDeleteCatalogItem('driver', ${d.id || null}, '${escapeHtml(phone)}')"
-                            class="h-7 px-2 rounded-lg border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+                            class="h-7.5 px-2 rounded-lg border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
                             title="Xóa tài xế khỏi danh mục">
                             <i class="ph-bold ph-trash"></i> <span>Xóa</span>
                           </button>
@@ -2857,7 +2856,7 @@
               <span>Tiến Trình Hành Trình (7 Chặng)</span>
             </div>
             ${nextStep ? `
-              <span class="text-[11px] font-bold text-teal-800 bg-teal-100/70 px-2 py-0.5 rounded-full border border-teal-200 flex items-center gap-1">
+              <span class="text-xs font-bold text-teal-800 bg-teal-100/70 px-2.5 py-0.5 rounded-full border border-teal-200 flex items-center gap-1">
                 <i class="ph-bold ph-shield-check text-teal-700"></i> Điều độ hỗ trợ tài xế
               </span>
             ` : ''}
@@ -2874,9 +2873,9 @@
                 <div>
                   <div class="text-xs font-bold text-teal-950 font-heading flex items-center gap-1.5">
                     <span>Tài xế chưa kịp bấm mốc?</span>
-                    <span class="text-[10px] font-bold text-teal-800 bg-teal-100 px-1.5 py-0.2 rounded border border-teal-200">Điều độ hỗ trợ</span>
+                    <span class="text-xs font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded border border-teal-200">Điều độ hỗ trợ</span>
                   </div>
-                  <div class="text-[11px] text-teal-800 mt-0.5">
+                  <div class="text-xs text-teal-800 mt-0.5">
                     Cập nhật sang chặng kế tiếp: <strong class="text-teal-950">${nextStep.full}</strong>
                   </div>
                 </div>
