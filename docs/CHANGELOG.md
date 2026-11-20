@@ -3,6 +3,13 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Sửa Nút Quay Lại (Back) Trên Trang Lệnh Vận Chuyển
+- **Hiện tượng:** Khi bấm nút `Quay Lại Điều Vận` trên màn hình Lệnh Vận Chuyển, màn hình bị trắng trơn, không hiển thị lại danh sách phân bổ xe.
+- **Nguyên nhân:** Hàm `backToAllocations()` tìm element ID `view-dispatch` (sai tên, ID thực tế của view điều vận là `view-dieu-van`) và gọi nhầm hàm `switchDispatchSubTab` (hàm chuẩn là `switchDispatchViewTab('allocations')`). Do không tìm thấy view điều vận để gỡ class `hidden-view`, tất cả các view đều bị ẩn.
+- **Xử lý:**
+  - Cập nhật `static/js/src/app/dispatch/transport-order.js`: Hàm `backToAllocations()` chuyển sang gọi `switchTab('dieu-van', false)`, gỡ class `hidden-view` cho `view-dieu-van`, kích hoạt đúng Tab 2 `switchDispatchViewTab('allocations')` và nạp lại dữ liệu bảng phân bổ `loadAllocationsTab()`.
+  - Rebuild lại `static/js/app.js` và đồng bộ lên production.
+
 ## 2026-11-20 – Phân Hệ Lệnh Vận Chuyển Nhà Xe (LVC Dedicated Full-Page View)
 - **Bối cảnh & Yêu cầu:**
   - Đổi nút "Lệnh đã gán" thành **"Lệnh Vận chuyển"** tại bảng danh sách phân bổ xe (Tab 2 và Tab 4).

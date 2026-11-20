@@ -16071,19 +16071,32 @@ function refreshTransportOrderPage() {
  * Quay lại danh sách Điều Vận (Tab 2: Phân bổ & gán xe)
  */
 function backToAllocations() {
-    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
-    const dispatchView = document.getElementById('view-dispatch');
-    if (dispatchView) {
-        dispatchView.classList.remove('hidden-view');
+    // Ẩn view Lệnh Vận Chuyển
+    const toView = document.getElementById('view-transport-order');
+    if (toView) toView.classList.add('hidden-view');
+
+    // Mở lại view Điều Vận chính
+    if (typeof switchTab === 'function') {
+        switchTab('dieu-van', false);
+    } else {
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+        const dispatchView = document.getElementById('view-dieu-van');
+        if (dispatchView) dispatchView.classList.remove('hidden-view');
     }
-    if (typeof switchDispatchSubTab === 'function') {
-        switchDispatchSubTab('allocations');
+
+    // Đảm bảo kích hoạt đúng Tab 2: "Phân bổ & gán xe"
+    if (typeof switchDispatchViewTab === 'function') {
+        switchDispatchViewTab('allocations');
     }
-    if (typeof loadVendorAdminTab === 'function') {
+    if (typeof loadAllocationsTab === 'function') {
+        loadAllocationsTab();
+    } else if (typeof loadVendorAdminTab === 'function') {
         loadVendorAdminTab(false);
     }
+
+    // Cập nhật URL sạch: /dispatch
     if (window.history && window.history.pushState) {
-        window.history.pushState({ view: 'dispatch', tab: 'allocations' }, '', window.location.pathname);
+        window.history.pushState({ tabId: 'dieu-van', subTab: 'allocations' }, '', '/dispatch');
     }
 }
 
