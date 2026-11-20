@@ -1654,11 +1654,19 @@ def vendor_overview(subcontractor):
         lc = lifecycle(a)
         if lc['closed']:
             continue
+        is_cmode = container_mode(a.booking)
+        if is_cmode:
+            target_cnt = a.containers.filter(is_deleted=False).count()
+            if a.allocated_containers != target_cnt and target_cnt > 0:
+                a.allocated_containers = target_cnt
+                BookingVendorAllocation.objects.filter(pk=a.pk).update(allocated_containers=target_cnt)
+        else:
+            target_cnt = a.allocated_containers
         trips = list(a.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').values_list('step_status', flat=True))
         filled = len(trips)
         running = sum(1 for st in trips if st in ('ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY'))
         done = sum(1 for st in trips if st == 'EMPTY_RETURNED')
-        total_cont += a.allocated_containers
+        total_cont += target_cnt
         assigned_cont += filled
         in_transit_cont += running
         completed_cont += done
@@ -1674,7 +1682,7 @@ def vendor_overview(subcontractor):
             'delivery_location': b.delivery_location or '',
             'dropoff_location': b.dropoff_location or '',
             'loading_date': b.loading_date.isoformat() if b.loading_date else None,
-            'allocated_containers': a.allocated_containers,
+            'allocated_containers': target_cnt,
             'filled': filled,
             'running': running,
             'completed': done,

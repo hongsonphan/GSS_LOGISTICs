@@ -3,6 +3,20 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Chuẩn Hóa Số Lượng Cont Phân Bổ (15 Cont) & Cuộn Danh Sách Xe Theo Dõi Hành Trình
+- **Bối cảnh & Hiện tượng:**
+  1. *Lệch số lượng container trên Cổng Nhà Xe:* Thẻ KPI hiển thị "16 Cont" (chờ gán 1 cont) và sidebar hiển thị "15/16 xe", trong khi nhà xe chỉ được giao 15 cont và đã gán đủ 15/15 cont.
+     - *Nguyên nhân:* Backend `vendor_overview` trước đó lấy trường `allocated_containers` cũ trong CSDL (lưu 16 từ lúc khởi tạo) thay vì đếm số container thực tế đang liên kết (`containers.count() = 15`). Đồng thời `computeKpis()` ở frontend ưu tiên lấy `overview.kpis` từ backend khiến con số 16 bị áp đặt.
+     - *Xử lý:*
+       - Backend (`apps/dispatch/vendor_service.py`): Trong `vendor_overview`, nếu đơn hàng ở `container_mode`, tự động lấy đúng số container thực tế `target_cnt = a.containers.filter(is_deleted=False).count()`, đồng thời tự động đồng bộ lại trường `allocated_containers` trong database về đúng 15.
+       - Frontend (`templates/vendor_portal.html`): Hàm `computeKpis()` ưu tiên tính theo danh sách container thực tế của lệnh hiện tại `activeRows.length` (đã loại bỏ dòng điều chuyển `moved`), đảm bảo KPI hiển thị chính xác 15/15 cont, chờ gán 0 cont.
+  2. *Không cuộn được danh sách xe ở tab Theo Dõi Hành Trình:*
+     - *Nguyên nhân:* Khi người dùng mở chế độ Toàn màn hình ở bảng gán xe rồi chuyển tab qua sidebar (`switchPortalTab`), lớp `overflow-hidden` trên `document.body` chưa được gỡ bỏ khiến toàn bộ trang bị khóa cuộn.
+     - *Xử lý:*
+       - `switchPortalTab`: Luôn xóa class `overflow-hidden` trên `document.body` và reset cờ fullscreen khi chuyển tab.
+       - Cấu trúc cuộn mượt mà cho tab Theo Dõi Hành Trình: Bọc `#vendor-fleet-list` trong khung cuộn `overflow-y-auto max-h-[calc(100vh-250px)]`, đặt thanh tiêu đề 7 mốc `.vfleet-head` ở trạng thái `sticky top-0 z-10`, giúp người dùng cuộn xem trọn vẹn tất cả các chuyến xe (15/15) mà không bị che mất cột mốc.
+
+
 ## 2026-11-20 – Bổ Sung Nút "Toàn Màn Hình" Cho Bảng Container Cổng Nhà Xe (Vendor Portal)
 - **Bối cảnh & Yêu cầu:** Tại giao diện Cổng Nhà Xe (`vendor_portal.html`), khi danh sách container lớn cần gán nhiều xe/tài xế, bảng hiển thị bị giới hạn chiều cao gây khó khăn khi thao tác cuộn và chọn xe/tài. Người dùng yêu cầu bổ sung nút "Toàn màn hình" để mở rộng không gian làm việc.
 - **Thực hiện chi tiết:**
