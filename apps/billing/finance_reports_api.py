@@ -157,11 +157,11 @@ class CustomerReimbursablesAPIView(APIView):
                 'reimbursement_status': exp.reimbursement_status,
                 'reimbursement_status_label': exp.get_reimbursement_status_display(),
                 'debit_note_number': exp.debit_note_number or '',
-                'reimbursed_at': exp.reimbursed_at.strftime('%d/%m/%Y %H:%M') if exp.reimbursed_at else '',
+                'reimbursed_at': timezone.localtime(exp.reimbursed_at).strftime('%d/%m/%Y %H:%M') if exp.reimbursed_at else '',
                 'reimbursed_by_name': (exp.reimbursed_by.nickname or exp.reimbursed_by.full_name) if exp.reimbursed_by else '',
                 'reimbursement_notes': exp.reimbursement_notes or '',
                 'notes': exp.notes or '',
-                'created_at': exp.created_at.strftime('%d/%m/%Y %H:%M') if exp.created_at else ''
+                'created_at': timezone.localtime(exp.created_at).strftime('%d/%m/%Y %H:%M') if exp.created_at else ''
             })
 
         return Response({
@@ -192,8 +192,9 @@ class CustomerReimbursablesAPIView(APIView):
                 return Response({'error': 'Vui lòng chọn ít nhất một khoản chi hộ để lập Debit Note!'}, status=status.HTTP_400_BAD_REQUEST)
 
             if not debit_note_number:
-                today_str = timezone.now().strftime('%Y%m%d')
-                debit_note_number = f"DN-{today_str}-{timezone.now().strftime('%H%M%S')}"
+                now_vn = timezone.localtime()
+                today_str = now_vn.strftime('%Y%m%d')
+                debit_note_number = f"DN-{today_str}-{now_vn.strftime('%H%M%S')}"
 
             updated_count = TripExpense.objects.filter(
                 id__in=expense_ids,
@@ -360,7 +361,7 @@ class CashBookAPIView(APIView):
                 'bank_account': t.bank_account,
                 'created_by': (t.created_by.nickname or t.created_by.full_name) if t.created_by else '',
                 'notes': t.notes,
-                'created_at': t.created_at.strftime('%d/%m/%Y %H:%M') if t.created_at else ''
+                'created_at': timezone.localtime(t.created_at).strftime('%d/%m/%Y %H:%M') if t.created_at else ''
             })
 
         return Response({
@@ -486,7 +487,7 @@ class CashBookDetailAPIView(APIView):
                 'bank_account': t.bank_account,
                 'created_by': (t.created_by.nickname or t.created_by.full_name) if t.created_by else '',
                 'notes': t.notes,
-                'created_at': t.created_at.strftime('%d/%m/%Y %H:%M') if t.created_at else '',
+                'created_at': timezone.localtime(t.created_at).strftime('%d/%m/%Y %H:%M') if t.created_at else '',
                 'can_edit': check_can_edit_or_delete(request.user, t, owner_field='created_by')[0],
                 'can_delete': (
                     check_can_edit_or_delete(request.user, t, owner_field='created_by')[0]
@@ -749,7 +750,7 @@ class SubcontractorSettlementsAPIView(APIView):
                 'gross_company_margin': int(trip.cached_revenue - trip.subcontractor_cost),
                 'subcontractor_settlement_status': trip.subcontractor_settlement_status,
                 'subcontractor_settlement_status_label': trip.get_subcontractor_settlement_status_display(),
-                'subcontractor_settled_at': trip.subcontractor_settled_at.strftime('%d/%m/%Y %H:%M') if trip.subcontractor_settled_at else '',
+                'subcontractor_settled_at': timezone.localtime(trip.subcontractor_settled_at).strftime('%d/%m/%Y %H:%M') if trip.subcontractor_settled_at else '',
                 'subcontractor_notes': trip.subcontractor_notes or '',
                 'created_at': trip.created_at.strftime('%d/%m/%Y') if trip.created_at else ''
             })
@@ -1064,7 +1065,7 @@ class BotTollAuditAPIView(APIView):
                 'invoice_number': exp.invoice_number or '',
                 'invoice_issuer': exp.invoice_issuer or '',
                 'ocr_raw_text': exp.ocr_raw_text or '',
-                'created_at': exp.created_at.strftime('%d/%m/%Y %H:%M') if exp.created_at else ''
+                'created_at': timezone.localtime(exp.created_at).strftime('%d/%m/%Y %H:%M') if exp.created_at else ''
             })
 
         items = list(trips_bot.values())
@@ -1773,7 +1774,7 @@ class AccountingReportDrilldownAPIView(APIView):
             trips_list.append({
                 'id': t.id,
                 'trip_code': t.trip_code,
-                'created_date': t.created_at.strftime('%d/%m/%Y %H:%M'),
+                'created_date': timezone.localtime(t.created_at).strftime('%d/%m/%Y %H:%M') if t.created_at else '',
                 'customer_name': t.customer.name if t.customer else 'Khách vãng lai',
                 'driver_name': (t.driver.nickname or t.driver.full_name) if t.driver else 'Chưa gán',
                 'driver_phone': getattr(t.driver, 'phone_number', '') if t.driver else '',
@@ -1816,7 +1817,7 @@ class AccountingReportDrilldownAPIView(APIView):
                 'is_on_behalf_of_customer': e.is_on_behalf_of_customer,
                 'status': e.status,
                 'status_display': e.get_status_display() if hasattr(e, 'get_status_display') else e.status,
-                'created_at': e.created_at.strftime('%d/%m/%Y %H:%M'),
+                'created_at': timezone.localtime(e.created_at).strftime('%d/%m/%Y %H:%M') if e.created_at else '',
             })
 
         return Response({

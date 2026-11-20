@@ -200,4 +200,26 @@ Toàn bộ các Form tạo mới, chỉnh sửa (Modal Popup, Full Page Form, Dr
 - **Kiểm thử tự động 100% Passed:** Sau mỗi đợt chỉnh sửa mã nguồn, bắt buộc chạy `python manage.py test --keepdb` để bảo đảm toàn bộ unit test của tất cả các phân hệ đều vượt qua (100% PASS).
 - **Kiểm tra cú pháp & Console:** Rà soát kỹ các khối lệnh JavaScript (dấu ngoặc nhọn `{}`, dấu phẩy, cú pháp template Django) để không làm phát sinh lỗi `SyntaxError` làm tê liệt giao diện người dùng.
 
+---
+
+## VII. QUY CHUẨN XỬ LÝ THỜI GIAN & MÚI GIỜ VIỆT NAM (GMT+7 - ASIA/HO_CHI_MINH)
+
+### 1. Nguyên Tắc Cốt Lõi Về Múi Giờ Trong Hệ Thống
+- **Cấu hình Django:** `TIME_ZONE = 'Asia/Ho_Chi_Minh'`, `USE_TZ = True`.
+- **Lưu trữ CSDL (Database Storage):** Mọi trường `DateTimeField` (`created_at`, `updated_at`, `dispatched_at`, `actual_gate_in_at`, `settled_at`, v.v.) được Django ORM lưu trữ chuẩn dưới dạng UTC (+00:00).
+- **Hiển thị & Xuất Dữ Liệu (Display & Serialization):** 100% dữ liệu hiển thị trên giao diện người dùng, trả về qua REST API, in ấn chứng từ hoặc xuất file Excel/PDF bắt buộc phải chuyển đổi sang **Giờ Việt Nam (GMT+7)**.
+
+### 2. Quy Tắc Backend (Python / Django)
+- **CẤM:** Không gọi trực tiếp `dt.strftime(...)` trên các trường `DateTimeField` hoặc `timezone.now().strftime(...)` khi định dạng ngày giờ. Vì `dt` mang múi giờ UTC, Python `strftime` sẽ xuất nguyên giờ UTC khiến thời gian bị **chậm 7 tiếng** so với giờ thực tế Việt Nam.
+- **CHUẨN HÓA:**
+  - Sử dụng module tiện ích `core.time_utils`:
+    + `from core.time_utils import vietnam_now, to_vietnam_time, format_vietnam_datetime, format_vietnam_time_short`
+    + Hoặc dùng `timezone.localtime(dt).strftime('%d/%m/%Y %H:%M')`.
+  - Khi sinh chuỗi thời gian hiện tại cho các trường CharField (`time_display`, mã chứng từ, tên file xuất Excel): dùng `timezone.localtime().strftime(...)`.
+  - Khi parse mốc thời gian người dùng nhập dạng chuỗi (ví dụ '14:30 20/11'): dùng `parse_vn_datetime(text, base_date)` từ `apps.dispatch.time_utils` để gán aware datetime theo múi giờ `Asia/Ho_Chi_Minh`.
+
+### 3. Quy Tắc Frontend (JavaScript)
+- **Xử lý ngày hiện tại:** CẤM dùng `new Date().toISOString().slice(0, 10)` làm giá trị mặc định cho ô chọn ngày (vì `toISOString()` lấy theo UTC, dẫn đến từ 00:00 đến 06:59 sáng hàng ngày ở Việt Nam bị lùi 1 ngày về hôm trước). Sử dụng `getTodayVNIso()` từ `static/js/src/app/core/utils.js`.
+- **Định dạng ngày giờ:** Sử dụng `formatDateVN(dateStr)` và `formatDateTimeVN(dateStr)` hỗ trợ `Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })` để đảm bảo thời gian luôn chuẩn Việt Nam trên mọi thiết bị máy khách.
+
 

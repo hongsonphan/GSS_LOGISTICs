@@ -79,7 +79,7 @@ class BookingOrderDetailAPIView(APIView):
                 'file_size': f_size,
                 'size_formatted': size_fmt,
                 'file_size_formatted': size_fmt,
-                'created_at': d.created_at.strftime('%H:%M %d/%m/%Y')
+                'created_at': timezone.localtime(d.created_at).strftime('%H:%M %d/%m/%Y') if d.created_at else ''
             })
 
         if b.booking_file and not docs_data:
@@ -100,7 +100,7 @@ class BookingOrderDetailAPIView(APIView):
                 'file_size': f_size,
                 'size_formatted': size_fmt,
                 'file_size_formatted': size_fmt,
-                'created_at': b.created_at.strftime('%H:%M %d/%m/%Y')
+                'created_at': timezone.localtime(b.created_at).strftime('%H:%M %d/%m/%Y') if b.created_at else ''
             })
 
         return Response({

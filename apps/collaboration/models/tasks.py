@@ -321,7 +321,8 @@ class TaskActivityLog(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.user} - {self.action} ({self.created_at.strftime('%d/%m/%Y %H:%M')})"
+        created_str = timezone.localtime(self.created_at).strftime('%d/%m/%Y %H:%M') if self.created_at else ''
+        return f"{self.user} - {self.action} ({created_str})"
 
 
 # Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)

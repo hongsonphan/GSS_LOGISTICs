@@ -295,12 +295,12 @@ def serialize(v, with_lines=True):
         'status': v.status, 'status_label': 'Mới tạo' if (v.status == VoucherStatus.DRAFT and not v.reconciled_at) else v.get_status_display(),
         'reconciled': bool(v.reconciled_at), 'with_cash': v.with_cash,
         'counterparty_confirmed': v.counterparty_confirmed, 'counterparty_confirm_note': v.counterparty_confirm_note,
-        'counterparty_confirmed_at': v.counterparty_confirmed_at.strftime('%d/%m/%Y %H:%M') if v.counterparty_confirmed_at else '',
-        'settled_at': v.settled_at.strftime('%d/%m/%Y %H:%M') if v.settled_at else '',
+        'counterparty_confirmed_at': timezone.localtime(v.counterparty_confirmed_at).strftime('%d/%m/%Y %H:%M') if v.counterparty_confirmed_at else '',
+        'settled_at': timezone.localtime(v.settled_at).strftime('%d/%m/%Y %H:%M') if v.settled_at else '',
         'payment_method': v.payment_method, 'notes': v.notes, 'trips_count': len(v.lines or []),
         'cash_transaction_code': v.cash_transaction.code if v.cash_transaction else '',
-        'created_at': v.created_at.strftime('%d/%m/%Y %H:%M'),
-        'approved_at': v.approved_at.strftime('%d/%m/%Y %H:%M') if v.approved_at else '',
+        'created_at': timezone.localtime(v.created_at).strftime('%d/%m/%Y %H:%M') if v.created_at else '',
+        'approved_at': timezone.localtime(v.approved_at).strftime('%d/%m/%Y %H:%M') if v.approved_at else '',
     }
     if with_lines:
         data['lines'] = v.lines
@@ -404,7 +404,7 @@ class SettlementVoucherListCreateAPIView(APIView):
                 transaction.set_rollback(True)
                 return Response({'error': f'Nhập lý do cho số phát sinh của chuyến: {", ".join(missing[:5])}'}, status=status.HTTP_400_BAD_REQUEST)
             amount, direction = _totals(party_type, lines)
-            code = next_code(SettlementVoucher, 'code', f"{PARTY_PREFIX[party_type]}.{timezone.now().strftime('%y%m')}.", 3)
+            code = next_code(SettlementVoucher, 'code', f"{PARTY_PREFIX[party_type]}.{timezone.localtime().strftime('%y%m')}.", 3)
             voucher = SettlementVoucher.objects.create(
                 code=code, party_type=party_type, party_ref=party_ref, party_name=party_name, lines=lines,
                 amount=amount, direction=direction, notes=(request.data.get('notes') or '').strip(),

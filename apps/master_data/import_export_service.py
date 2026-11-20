@@ -579,7 +579,7 @@ def generate_catalog_data_export(catalog_key):
     ws.row_dimensions[1].height = 28
 
     ws.merge_cells(f'A2:{last_col_letter}2')
-    ws['A2'].value = f"Ngày xuất: {timezone.now().strftime('%d/%m/%Y %H:%M')} | Hệ Thống Quản Trị Vận Tải GSS (GSS Logistics)"
+    ws['A2'].value = f"Ngày xuất: {timezone.localtime().strftime('%d/%m/%Y %H:%M')} | Hệ Thống Quản Trị Vận Tải GSS (GSS Logistics)"
     ws['A2'].font = subtitle_font
     ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
     ws.row_dimensions[2].height = 20
@@ -641,7 +641,7 @@ def generate_catalog_data_export(catalog_key):
     for col_idx, col in enumerate(columns, 1):
         ws.column_dimensions[get_column_letter(col_idx)].width = max(len(str(col['header'])) + 4, 16)
 
-    filename = f"Xuat_Du_Lieu_{catalog_key}_{timezone.now().strftime('%Y%m%d_%H%M')}.xlsx"
+    filename = f"Xuat_Du_Lieu_{catalog_key}_{timezone.localtime().strftime('%Y%m%d_%H%M')}.xlsx"
     return wb, filename
 
 

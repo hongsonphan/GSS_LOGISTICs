@@ -166,14 +166,50 @@ function formatDateVN(dateStr) {
     try {
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
+        const formatter = new Intl.DateTimeFormat('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        return formatter.format(d);
     } catch (e) {
         return dateStr;
     }
 }
+
+function formatDateTimeVN(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const formatter = new Intl.DateTimeFormat('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        return formatter.format(d);
+    } catch (e) {
+        return dateStr;
+    }
+}
+window.formatDateTimeVN = formatDateTimeVN;
+
+function getTodayVNIso() {
+    // Trả về YYYY-MM-DD theo đúng giờ Việt Nam GMT+7 (không bị lệch ngày khi gọi lúc 00:00 - 06:59 sáng)
+    const now = new Date();
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const vnTime = new Date(utcTime + (7 * 3600000));
+    const year = vnTime.getFullYear();
+    const month = String(vnTime.getMonth() + 1).padStart(2, '0');
+    const day = String(vnTime.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+window.getTodayVNIso = getTodayVNIso;
 
 function formatTimeString(timeStr) {
     if (!timeStr) return '';

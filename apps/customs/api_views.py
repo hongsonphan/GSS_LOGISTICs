@@ -116,7 +116,7 @@ class CustomsDeclarationListCreateAPIView(APIView):
                 'reimbursable_fee': float(d.reimbursable_fee),
                 'inspection_notes': d.inspection_notes,
                 'document_url': d.declaration_document.url if d.declaration_document else None,
-                'created_at': d.created_at.strftime('%Y-%m-%d %H:%M') if d.created_at else ''
+                'created_at': timezone.localtime(d.created_at).strftime('%d/%m/%Y %H:%M') if d.created_at else ''
             })
 
         export_count = all_qs.filter(direction=CustomsDirection.EXPORT).count()
@@ -440,7 +440,7 @@ class CustomsExportExcelAPIView(APIView):
 
         ws.merge_cells('A2:L2')
         sub_cell = ws['A2']
-        sub_cell.value = f"Ngày xuất báo cáo: {timezone.now().strftime('%d/%m/%Y %H:%M')} | GSS LOGISTICS TMS PLATFORM"
+        sub_cell.value = f"Ngày xuất báo cáo: {timezone.localtime().strftime('%d/%m/%Y %H:%M')} | GSS LOGISTICS TMS PLATFORM"
         sub_cell.font = Font(name='Arial', size=9, italic=True, color='64748B')
         sub_cell.alignment = Alignment(horizontal='center', vertical='center')
 
@@ -512,6 +512,6 @@ class CustomsExportExcelAPIView(APIView):
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="Bang_Ke_To_Khai_Hai_Quan_{timezone.now().strftime("%Y%m%d_%H%M")}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="Bang_Ke_To_Khai_Hai_Quan_{timezone.localtime().strftime("%Y%m%d_%H%M")}.xlsx"'
         wb.save(response)
         return response

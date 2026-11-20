@@ -269,23 +269,50 @@
 
         <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between text-xs flex-wrap gap-2">
 
-            <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-
-                <i class="ph-bold ph-newspaper text-teal-700 text-sm"></i>
-
-                <span>Booking chưa phân bổ hoặc phân bổ chưa hết (cần gán nhà xe)</span>
-
+            <!-- BỘ LỌC PHÂN NHÓM LỆNH ĐIỀU ĐỘ -->
+            <div class="flex items-center gap-1.5 p-1 bg-slate-200/70 rounded-xl flex-wrap">
+                <button type="button" id="filter-order-mode-all" onclick="filterOrderGroup('ALL')"
+                    class="px-3 py-1.5 rounded-lg bg-white text-teal-900 shadow-2xs font-bold transition-all cursor-pointer flex items-center gap-1.5 text-xs"
+                    title="Xem toàn bộ danh sách lệnh điều độ">
+                    <i class="ph-bold ph-squares-four text-sm text-teal-700"></i>
+                    <span>Tất cả</span>
+                    <span id="count-orders-all" class="ml-1 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-slate-100 text-slate-700">0</span>
+                </button>
+                <button type="button" id="filter-order-mode-pending" onclick="filterOrderGroup('PENDING')"
+                    class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition-all cursor-pointer flex items-center gap-1.5 text-xs"
+                    title="Lệnh chưa phân bổ hoặc chưa phân bổ hết (cần gán xe)">
+                    <i class="ph-bold ph-clock-countdown text-sm text-amber-600"></i>
+                    <span>Chưa phân bổ xong</span>
+                    <span id="count-orders-pending" class="ml-1 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-amber-100 text-amber-800">0</span>
+                </button>
+                <button type="button" id="filter-order-mode-dispatched" onclick="filterOrderGroup('DISPATCHED')"
+                    class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition-all cursor-pointer flex items-center gap-1.5 text-xs"
+                    title="Lệnh đã phân bổ đủ 100% cont cho nhà xe">
+                    <i class="ph-bold ph-check-circle text-sm text-emerald-600"></i>
+                    <span>Phân bổ xong</span>
+                    <span id="count-orders-dispatched" class="ml-1 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800">0</span>
+                </button>
+                <button type="button" id="filter-order-mode-completed" onclick="filterOrderGroup('COMPLETED')"
+                    class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition-all cursor-pointer flex items-center gap-1.5 text-xs"
+                    title="Lệnh đã hoàn thành vận chuyển">
+                    <i class="ph-bold ph-seal-check text-sm text-sky-600"></i>
+                    <span>Đã hoàn thành</span>
+                    <span id="count-orders-completed" class="ml-1 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-sky-100 text-sky-800">0</span>
+                </button>
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
-                <div class="relative min-w-[220px]">
+                <div class="relative min-w-[240px]">
                     <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-2 text-slate-400"></i>
-                    <input type="text" id="dispatch-orders-search" placeholder="Tìm Số B/L, Cont, Seal, Mã lệnh..." 
+                    <input type="text" id="dispatch-orders-search" placeholder="Tìm Số B/L, Cont, Seal, Mã lệnh, KH, Tuyến..." 
                            class="w-full h-8 pl-8 pr-7 text-xs bg-white border border-slate-200 rounded-lg focus:border-teal-600 focus:outline-none"
                            oninput="if(typeof onDispatchOrdersSearch==='function')onDispatchOrdersSearch(this.value)">
                 </div>
-                <button type="button" onclick="loadDispatchOrdersTab()" class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer">
+                <button type="button" onclick="loadDispatchOrdersTab()" class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer" title="Tải lại danh sách lệnh">
                     <i class="ph-bold ph-arrow-counter-clockwise"></i> Làm mới
+                </button>
+                <button type="button" onclick="clearDispatchOrdersFilters()" class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer" title="Xóa toàn bộ ô tìm kiếm & bộ lọc cột">
+                    <i class="ph-bold ph-funnel-simple-x text-rose-500"></i> Xóa lọc
                 </button>
                 <button type="button" onclick="toggleDispatchFullscreen()" class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer" title="Toàn màn hình">
                     <i class="ph-bold ph-corners-out text-indigo-600"></i> <span class="hidden md:inline">Toàn Màn Hình</span>
@@ -305,25 +332,103 @@
 
                     <tr>
 
-                        <th class="p-2.5 w-10 text-center">#</th>
+                        <th class="p-2.5 w-10 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('id')" title="Sắp xếp theo STT / ID">
+                            <span>#</span>
+                            <i id="sort-icon-orders-id" class="ph-bold ph-caret-down text-teal-700 text-xs ml-1 inline-block"></i>
+                        </th>
 
-                        <th class="p-2.5 min-w-[130px]">Mã Lệnh / Số B/L</th>
+                        <th class="p-2.5 min-w-[140px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('booking_code')" title="Sắp xếp theo Mã Lệnh / B/L">
+                            <span>Mã Lệnh / Số B/L</span>
+                            <i id="sort-icon-orders-booking_code" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
+                        </th>
 
-                        <th class="p-2.5 min-w-[200px]">Khách Hàng / Chủ Hàng</th>
+                        <th class="p-2.5 min-w-[200px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('customer_name')" title="Sắp xếp theo Khách Hàng">
+                            <span>Khách Hàng / Chủ Hàng</span>
+                            <i id="sort-icon-orders-customer_name" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
+                        </th>
 
-                        <th class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>
+                        <th class="p-2.5 min-w-[440px] whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('route')" title="Sắp xếp theo Tuyến đường">
+                            <span>Lộ Trình Vận Chuyển</span>
+                            <i id="sort-icon-orders-route" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
+                        </th>
 
-                        <th class="p-2.5 w-32 text-center">Quy Cách & Số Cont</th>
+                        <th class="p-2.5 w-32 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('total_containers')" title="Sắp xếp theo Số Cont">
+                            <span>Quy Cách & Số Cont</span>
+                            <i id="sort-icon-orders-total_containers" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
+                        </th>
 
-                        <th class="p-2.5 min-w-[200px]">Phân Bổ Nhà Xe (Vendor)</th>
+                        <th class="p-2.5 min-w-[200px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('allocated_containers')" title="Sắp xếp theo Tiến độ phân bổ">
+                            <span>Phân Bổ Nhà Xe (Vendor)</span>
+                            <i id="sort-icon-orders-allocated_containers" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
+                        </th>
 
-                        <th class="p-2.5 w-24 text-center">Hạn DEM (Bãi)</th>
-                        <th class="p-2.5 w-24 text-center">Hạn DET (Vỏ)</th>
+                        <th class="p-2.5 w-24 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('free_time_demurrage')" title="Sắp xếp theo Hạn DEM">
+                            <span>Hạn DEM (Bãi)</span>
+                            <i id="sort-icon-orders-free_time_demurrage" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
+                        </th>
+                        <th class="p-2.5 w-24 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('free_time_detention')" title="Sắp xếp theo Hạn DET">
+                            <span>Hạn DET (Vỏ)</span>
+                            <i id="sort-icon-orders-free_time_detention" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
+                        </th>
 
-                        <th class="p-2.5 w-32 text-center">Trạng Thái</th>
+                        <th class="p-2.5 w-32 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('status')" title="Sắp xếp theo Trạng thái">
+                            <span>Trạng Thái</span>
+                            <i id="sort-icon-orders-status" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
+                        </th>
 
                         <th class="p-2.5 w-44 text-center">Thao Tác</th>
 
+                    </tr>
+
+                    <!-- HÀNG Ô TÌM KIẾM / LỌC TRÊN TỪNG CỘT (COLUMN SEARCH / FILTER) -->
+                    <tr class="bg-slate-50/95 border-t border-slate-200 font-normal lowercase tracking-normal">
+                        <th class="p-1 text-center font-normal">
+                            <button type="button" onclick="clearDispatchOrdersFilters()" title="Xóa toàn bộ ô lọc cột"
+                                class="w-6 h-6 inline-flex items-center justify-center rounded text-slate-400 hover:text-rose-600 hover:bg-slate-200 transition-colors">
+                                <i class="ph-bold ph-arrow-counter-clockwise text-xs"></i>
+                            </button>
+                        </th>
+                        <th class="p-1 font-normal">
+                            <input type="text" id="filter-col-code" placeholder="Lọc mã / BL..." oninput="onDispatchOrdersColumnFilter()"
+                                class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
+                        </th>
+                        <th class="p-1 font-normal">
+                            <input type="text" id="filter-col-customer" placeholder="Lọc khách hàng..." oninput="onDispatchOrdersColumnFilter()"
+                                class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
+                        </th>
+                        <th class="p-1 font-normal">
+                            <input type="text" id="filter-col-route" placeholder="Lọc cảng / kho / depot..." oninput="onDispatchOrdersColumnFilter()"
+                                class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
+                        </th>
+                        <th class="p-1 font-normal text-center">
+                            <input type="text" id="filter-col-cont" placeholder="Số cont..." oninput="onDispatchOrdersColumnFilter()"
+                                class="w-full h-7 px-1 text-[11px] bg-white border border-slate-200 rounded font-normal text-center focus:border-teal-600 focus:outline-none">
+                        </th>
+                        <th class="p-1 font-normal">
+                            <input type="text" id="filter-col-vendor" placeholder="Lọc nhà xe..." oninput="onDispatchOrdersColumnFilter()"
+                                class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
+                        </th>
+                        <th class="p-1 font-normal text-center">
+                            <input type="text" id="filter-col-dem" placeholder="DEM" oninput="onDispatchOrdersColumnFilter()"
+                                class="w-full h-7 px-1 text-[11px] bg-white border border-slate-200 rounded font-normal text-center focus:border-teal-600 focus:outline-none">
+                        </th>
+                        <th class="p-1 font-normal text-center">
+                            <input type="text" id="filter-col-det" placeholder="DET" oninput="onDispatchOrdersColumnFilter()"
+                                class="w-full h-7 px-1 text-[11px] bg-white border border-slate-200 rounded font-normal text-center focus:border-teal-600 focus:outline-none">
+                        </th>
+                        <th class="p-1 font-normal">
+                            <select id="filter-col-status" onchange="onDispatchOrdersColumnFilter()"
+                                class="w-full h-7 px-1 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
+                                <option value="">Tất cả</option>
+                                <option value="PENDING">Chờ phân bổ</option>
+                                <option value="PARTIAL">Đang phân bổ</option>
+                                <option value="DISPATCHED">Đã phân bổ đủ</option>
+                                <option value="COMPLETED">Đã hoàn thành</option>
+                            </select>
+                        </th>
+                        <th class="p-1 font-normal text-center">
+                            <span id="dispatch-orders-filtered-count" class="text-[10px] text-slate-500 font-bold"></span>
+                        </th>
                     </tr>
 
                 </thead>

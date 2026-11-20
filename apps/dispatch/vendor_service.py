@@ -801,7 +801,7 @@ def allocation_summary(alloc, request=None):
     dd_order_code = get_dispatch_order_code(b)
 
     closing_val = getattr(b, 'closing_time', '') or ''
-    closing_str = closing_val.strftime('%d/%m/%Y %H:%M') if hasattr(closing_val, 'strftime') else str(closing_val or '')
+    closing_str = (timezone.localtime(closing_val).strftime('%d/%m/%Y %H:%M') if getattr(closing_val, 'tzinfo', None) else closing_val.strftime('%d/%m/%Y %H:%M')) if hasattr(closing_val, 'strftime') else str(closing_val or '')
 
     dem_str = dem_exp.strftime('%d/%m/%Y') if hasattr(dem_exp, 'strftime') else (str(dem_exp) if dem_exp else '')
     det_str = det_exp.strftime('%d/%m/%Y') if hasattr(det_exp, 'strftime') else (str(det_exp) if det_exp else '')

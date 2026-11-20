@@ -5,6 +5,7 @@ from rest_framework import status
 from django.contrib.auth.models import Group, Permission, User
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 
 from core.permissions import CanAdministerAccess
 
@@ -191,7 +192,7 @@ class RolesPermissionsAPIView(APIView):
                 'user_permissions': user_specific_perms,
                 'excluded_permissions': excluded_perms,
                 'has_custom_permissions': bool(user_specific_perms or excluded_perms),
-                'last_login': u.last_login.strftime('%d/%m/%Y %H:%M') if u.last_login else 'Chưa đăng nhập',
+                'last_login': timezone.localtime(u.last_login).strftime('%d/%m/%Y %H:%M') if u.last_login else 'Chưa đăng nhập',
                 'date_joined': u.date_joined.strftime('%d/%m/%Y') if u.date_joined else ''
             })
 

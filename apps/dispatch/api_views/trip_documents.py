@@ -85,7 +85,7 @@ class TripAddDocumentAPIView(APIView):
             created_docs.append(doc)
 
         # Xử lý nghiệp vụ đặc thù theo loại chứng từ
-        now_str = timezone.now().strftime('%H:%M %d/%m')
+        now_str = timezone.localtime().strftime('%H:%M %d/%m')
         if doc_type == DocumentType.CONTAINER_CHECK:
             cond = request.data.get('container_condition', '').strip()
             notes = request.data.get('notes', '').strip()
@@ -163,7 +163,7 @@ class TripAddDocumentAPIView(APIView):
                 trip=trip,
                 step_number=trip.timeline_items.count() + 1,
                 title='Tài xế đã hoàn tất chứng từ & nghiệm thu',
-                time_display=timezone.now().strftime('%H:%M %d/%m'),
+                time_display=timezone.localtime().strftime('%H:%M %d/%m'),
                 is_done=True,
                 is_active=False
             )

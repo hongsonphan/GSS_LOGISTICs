@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -1907,7 +1908,7 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
             'is_default': company.is_default,
             **_features_payload(company),
             'is_active': True,
-            'updated_at': company.updated_at.strftime('%H:%M %d/%m/%Y') if company.updated_at else '-',
+            'updated_at': timezone.localtime(company.updated_at).strftime('%H:%M %d/%m/%Y') if company.updated_at else '-',
         }
         return Response({
             'success': True,
@@ -2042,7 +2043,7 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
                 'notes': company.notes,
                 'is_default': company.is_default,
                 **_features_payload(company),
-                'updated_at': company.updated_at.strftime('%H:%M %d/%m/%Y') if company.updated_at else '-',
+                'updated_at': timezone.localtime(company.updated_at).strftime('%H:%M %d/%m/%Y') if company.updated_at else '-',
             }
         })
 
@@ -2131,7 +2132,7 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
                 'amount': float(b.amount),
                 'is_debit': b.is_debit,
                 'notes': b.notes,
-                'created_at': b.created_at.strftime('%d/%m/%Y %H:%M') if b.created_at else '',
+                'created_at': timezone.localtime(b.created_at).strftime('%d/%m/%Y %H:%M') if b.created_at else '',
             })
 
         # Danh mục Tài khoản Kế toán Chuẩn Thông tư

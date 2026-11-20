@@ -89,9 +89,9 @@ class AccountingAdvancesAPIView(APIView):
                 'refunds_returned': int(refunds),
                 'remaining_balance': int(bal),
                 'approved_by': (f.approved_by.nickname or f.approved_by.full_name) if f.approved_by else '',
-                'approved_at': f.approved_at.strftime('%d/%m/%Y %H:%M') if f.approved_at else '',
+                'approved_at': timezone.localtime(f.approved_at).strftime('%d/%m/%Y %H:%M') if f.approved_at else '',
                 'settled_by': (f.settled_by.nickname or f.settled_by.full_name) if f.settled_by else '',
-                'settled_at': f.settled_at.strftime('%d/%m/%Y %H:%M') if f.settled_at else '',
+                'settled_at': timezone.localtime(f.settled_at).strftime('%d/%m/%Y %H:%M') if f.settled_at else '',
                 'notes': f.notes or ''
             })
 
@@ -154,7 +154,7 @@ class AccountingAdvancesAPIView(APIView):
                 'settlement_diff_label': a.get_settlement_diff_type_display(),
                 'refund_amount': int(a.refund_amount),
                 'reimburse_amount': int(a.reimburse_amount),
-                'settled_at': a.settled_at.strftime('%d/%m/%Y %H:%M') if a.settled_at else '',
+                'settled_at': timezone.localtime(a.settled_at).strftime('%d/%m/%Y %H:%M') if a.settled_at else '',
                 'settled_by': (a.settled_by.nickname or a.settled_by.full_name) if a.settled_by else '',
                 'settlement_notes': a.settlement_notes or '',
                 'notes': a.notes or ''
@@ -607,7 +607,7 @@ class DriverAdvanceDetailAPIView(APIView):
             'refund_amount': int(advance.refund_amount or 0),
             'reimburse_amount': int(advance.reimburse_amount or 0),
             'settlement_diff_type': advance.settlement_diff_type,
-            'settled_at': advance.settled_at.strftime('%d/%m/%Y %H:%M') if advance.settled_at else '',
+            'settled_at': timezone.localtime(advance.settled_at).strftime('%d/%m/%Y %H:%M') if advance.settled_at else '',
             'settled_by': advance.settled_by.full_name if advance.settled_by else '',
             'notes': advance.notes or '',
             'settlement_notes': advance.settlement_notes or '',
@@ -764,9 +764,9 @@ class DispatcherFundDetailAPIView(APIView):
             'settled_amount': int(fund.total_settled_spent),
             'remaining_balance': int(fund.remaining_balance),
             'approved_by': fund.approved_by.full_name if fund.approved_by else '',
-            'approved_at': fund.approved_at.strftime('%d/%m/%Y %H:%M') if fund.approved_at else '',
+            'approved_at': timezone.localtime(fund.approved_at).strftime('%d/%m/%Y %H:%M') if fund.approved_at else '',
             'settled_by': fund.settled_by.full_name if fund.settled_by else '',
-            'settled_at': fund.settled_at.strftime('%d/%m/%Y %H:%M') if fund.settled_at else '',
+            'settled_at': timezone.localtime(fund.settled_at).strftime('%d/%m/%Y %H:%M') if fund.settled_at else '',
             'notes': fund.notes or '',
             'settlement_notes': fund.settlement_notes or '',
             'active_trip_advances_count': fund.trip_advances.filter(is_deleted=False).count(),

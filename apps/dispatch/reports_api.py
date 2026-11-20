@@ -1252,9 +1252,9 @@ class ReportsAPIView(APIView):
                 'remaining_balance': bal,
                 'utilization_rate': util_rate,
                 'approved_by': (f.approved_by.nickname or f.approved_by.full_name) if f.approved_by else '',
-                'approved_at': f.approved_at.strftime('%d/%m/%Y %H:%M') if f.approved_at else '',
+                'approved_at': timezone.localtime(f.approved_at).strftime('%d/%m/%Y %H:%M') if f.approved_at else '',
                 'settled_by': (f.settled_by.nickname or f.settled_by.full_name) if f.settled_by else '',
-                'settled_at': f.settled_at.strftime('%d/%m/%Y %H:%M') if f.settled_at else '',
+                'settled_at': timezone.localtime(f.settled_at).strftime('%d/%m/%Y %H:%M') if f.settled_at else '',
                 'settlement_notes': f.settlement_notes or '',
                 'notes': f.notes or ''
             })
@@ -1306,7 +1306,7 @@ class ReportsAPIView(APIView):
                 adv_status = primary_adv.status
                 is_settled = (primary_adv.status == DriverAdvanceStatus.SETTLED)
                 if primary_adv.settled_at:
-                    settled_at_str = primary_adv.settled_at.strftime('%d/%m/%Y %H:%M')
+                    settled_at_str = timezone.localtime(primary_adv.settled_at).strftime('%d/%m/%Y %H:%M')
                 if primary_adv.settled_by:
                     settled_by_name = primary_adv.settled_by.nickname or primary_adv.settled_by.full_name
             elif t.advance_settlement_status == 'SETTLED':
@@ -1441,7 +1441,7 @@ class ReportsAPIView(APIView):
             has_pod = any(d.document_type in ('POD_RETURN', 'EIR_RECEIPT') for d in t.documents.all()) or bool(t.actual_gate_out_time)
             reimbursable_sum = sum(e.amount for e in t.expenses.all() if not e.is_deleted and e.is_on_behalf_of_customer)
             
-            settled_at_str = t.settled_at.strftime('%d/%m/%Y %H:%M') if t.settled_at else '-'
+            settled_at_str = timezone.localtime(t.settled_at).strftime('%d/%m/%Y %H:%M') if t.settled_at else '-'
             settled_by_name = (t.settled_by.nickname or t.settled_by.full_name) if t.settled_by else '-'
 
             settlement_trips_data.append({
@@ -2002,7 +2002,7 @@ class ReportsAPIView(APIView):
                 'status_class': st_class,
                 'booking_number': t.booking_order.booking_number if t.booking_order else '-',
                 'cargo_notes': t.cargo_notes or t.special_notes or '',
-                'created_at': t.created_at.strftime('%d/%m/%Y %H:%M')
+                'created_at': timezone.localtime(t.created_at).strftime('%d/%m/%Y %H:%M') if t.created_at else ''
             })
 
         # -------------------------------------------------------------

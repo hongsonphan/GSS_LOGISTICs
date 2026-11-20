@@ -54,33 +54,69 @@ def _opt_date(value):
 
 
 class BookingActiveAPIView(APIView):
-    """API lấy danh sách các Booking đang hoạt động để Điều độ viên chọn kế thừa khi tạo lệnh."""
+    """API lấy danh sách các Booking đang hoạt động để Điều độ viên chọn kế thừa khi tạo lệnh và quản lý trên tab Lệnh điều độ."""
     permission_classes = [any_module_view('sales', 'dispatch', 'finance')]
     def get(self, request):
-        # Sắp xếp phiếu mới tạo nhất lên trên đầu (mới nhất theo ngày tạo và id)
-        bookings = BookingOrder.objects.select_related('customer').filter(
-            status__in=[BookingStatus.PENDING_DISPATCH, BookingStatus.PARTIALLY_DISPATCHED]
-        ).order_by('-created_at', '-id')
+        include_completed = request.GET.get('include_completed', '').lower() in ('1', 'true', 'yes')
+        status_param = (request.GET.get('status') or '').strip().upper()
+
+        qs = BookingOrder.objects.select_related('customer').filter(is_deleted=False)
+        if status_param == 'ALL' or include_completed:
+            qs = qs.exclude(status=BookingStatus.CANCELLED)
+        elif status_param == 'COMPLETED':
+            qs = qs.filter(status=BookingStatus.COMPLETED)
+        elif status_param:
+            qs = qs.filter(status=status_param)
+        else:
+            qs = qs.filter(
+                status__in=[BookingStatus.PENDING_DISPATCH, BookingStatus.PARTIALLY_DISPATCHED]
+            )
+
+        bookings = qs.order_by('-created_at', '-id')
         results = []
         for b in bookings:
             alloc_cnt = b.containers.filter(allocation__isnull=False, is_deleted=False).count()
             if alloc_cnt == 0:
                 alloc_cnt = b.vendor_allocations.filter(is_deleted=False).exclude(status='REVOKED').aggregate(t=Sum('allocated_containers'))['t'] or 0
             is_dispatched = (b.total_containers or 0) > 0 and (alloc_cnt >= (b.total_containers or 0))
+
+            # Danh sách nhà xe đã phân bổ
+            allocations = b.vendor_allocations.filter(is_deleted=False).exclude(status='REVOKED').select_related('subcontractor')
+            vendor_items = []
+            for a in allocations:
+                if a.subcontractor:
+                    v_name = a.subcontractor.short_name or a.subcontractor.company_name
+                    vendor_items.append(f"{v_name} ({a.allocated_containers})")
+            vendor_summary = ", ".join(vendor_items) if vendor_items else ""
+
+            # Đếm số chuyến thực tế đã hoàn thành
+            trips_total = b.trips.filter(is_deleted=False).exclude(status='CANCELLED').count()
+            trips_completed = b.trips.filter(is_deleted=False, status__in=['COMPLETED', 'DELIVERED']).count()
+            is_completed = (b.status == BookingStatus.COMPLETED) or (b.total_containers > 0 and trips_completed >= b.total_containers)
+
+            # Danh sách số cont
+            cont_list = list(b.containers.filter(is_deleted=False).values_list('container_number', flat=True))
+            cont_str = ", ".join([c for c in cont_list if c])
+
             results.append({
                 'allocated_containers': alloc_cnt,
                 'is_fully_dispatched': is_dispatched,
+                'is_completed': is_completed,
+                'trips_total': trips_total,
+                'trips_completed': trips_completed,
+                'vendor_summary': vendor_summary,
+                'container_list': cont_str,
                 'id': b.id,
                 'booking_code': b.booking_code,
-                'customer_id': b.customer.id,
-                'customer_name': b.customer.name,
+                'customer_id': b.customer.id if b.customer else None,
+                'customer_name': b.customer.name if b.customer else 'Khách hàng',
                 'booking_number': b.booking_number,
                 'shipping_line': b.shipping_line,
                 'vessel_voyage': b.vessel_voyage,
                 'container_size': b.container_size,
                 'total_containers': b.total_containers,
                 'dispatched_containers': b.dispatched_containers,
-                'remaining_containers': b.total_containers - b.dispatched_containers,
+                'remaining_containers': max(0, (b.total_containers or 0) - alloc_cnt),
                 'commodity': b.commodity,
                 'hs_code': b.hs_code,
                 'pickup_location': b.pickup_location,
@@ -92,8 +128,9 @@ class BookingActiveAPIView(APIView):
                 'loading_date': b.loading_date.strftime('%Y-%m-%d') if b.loading_date else '',
                 'loading_date_display': b.loading_date.strftime('%d/%m/%Y') if b.loading_date else '',
                 'loading_time': b.loading_time,
-                'free_time_detention': b.free_time_detention,
-                'selling_freight_price': float(b.selling_freight_price),
+                'free_time_demurrage': getattr(b, 'free_time_demurrage', 7) or 7,
+                'free_time_detention': b.free_time_detention or 7,
+                'selling_freight_price': float(b.selling_freight_price or 0),
                 'notes': b.notes,
                 'status': b.status,
                 'status_label': b.get_status_display(),
@@ -420,7 +457,7 @@ class SalesAPIView(APIView):
                 'customer': b.customer.name,
                 'customer_short': (b.customer.short_name or b.customer.name) if b.customer else '',
                 'customer_code': b.customer.code if b.customer else '',
-                'created_at': b.created_at.strftime('%d/%m/%Y %H:%M') if hasattr(b, 'created_at') and b.created_at else '',
+                'created_at': timezone.localtime(b.created_at).strftime('%d/%m/%Y %H:%M') if hasattr(b, 'created_at') and b.created_at else '',
                 'customer_id': b.customer.id,
                 'vehicles': vehicles_str,
                 'trip_codes': trip_codes_str,

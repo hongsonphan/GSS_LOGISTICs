@@ -1034,13 +1034,17 @@ class TripDetailAPIView(APIView):
         if 'actual_gate_in_time' in data:
             trip.actual_gate_in_time = str(data['actual_gate_in_time']).strip()
             if not trip.actual_gate_in_at and trip.actual_gate_in_time and trip.actual_gate_in_time != '-':
-                trip.actual_gate_in_at = timezone.now()
+                from apps.dispatch.time_utils import parse_vn_datetime
+                base_d = trip.loading_date or timezone.localdate()
+                trip.actual_gate_in_at = parse_vn_datetime(trip.actual_gate_in_time, base_d) or timezone.now()
         if 'warehouse_call_out_time' in data:
             trip.warehouse_call_out_time = str(data['warehouse_call_out_time']).strip()
         if 'actual_gate_out_time' in data:
             trip.actual_gate_out_time = str(data['actual_gate_out_time']).strip()
             if not trip.actual_gate_out_at and trip.actual_gate_out_time and trip.actual_gate_out_time != '-':
-                trip.actual_gate_out_at = timezone.now()
+                from apps.dispatch.time_utils import parse_vn_datetime
+                base_d = trip.loading_date or timezone.localdate()
+                trip.actual_gate_out_at = parse_vn_datetime(trip.actual_gate_out_time, base_d) or timezone.now()
         if 'warehouse_dock' in data:
             trip.warehouse_dock = str(data['warehouse_dock']).strip()
         if 'commercial_invoice' in data:

@@ -512,7 +512,7 @@ def export_employees_to_excel(queryset=None):
 
     total_cols = len(EMPLOYEE_COLUMNS)
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_cols)
-    title_cell = ws.cell(row=1, column=1, value=f"DANH SÁCH NHÂN SỰ & TÀI XẾ Green Solutions Supply Co., Ltd. — {timezone.now().strftime('%d/%m/%Y')}")
+    title_cell = ws.cell(row=1, column=1, value=f"DANH SÁCH NHÂN SỰ & TÀI XẾ Green Solutions Supply Co., Ltd. — {timezone.localtime().strftime('%d/%m/%Y')}")
     title_cell.font = Font(name="Arial", size=13, bold=True, color="FFFFFF")
     title_cell.fill = PatternFill(start_color="0F766E", end_color="0F766E", fill_type="solid")
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
@@ -580,5 +580,5 @@ def export_employees_to_excel(queryset=None):
         max_len = len(str(col['header']))
         ws.column_dimensions[col_letter].width = max(max_len + 4, 15)
 
-    filename = f"Danh_Sach_Nhan_Su_{timezone.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filename = f"Danh_Sach_Nhan_Su_{timezone.localtime().strftime('%Y%m%d_%H%M%S')}.xlsx"
     return wb, filename

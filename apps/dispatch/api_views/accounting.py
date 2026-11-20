@@ -72,7 +72,7 @@ class AccountingAPIView(APIView):
                 'invoices_count': inv_count,
                 'sample_invoice': sample_inv,
                 'is_settled': t.is_expenses_settled,
-                'settled_at': t.settled_at.strftime('%d/%m/%Y %H:%M') if t.settled_at else '',
+                'settled_at': timezone.localtime(t.settled_at).strftime('%d/%m/%Y %H:%M') if t.settled_at else '',
                 'settled_by': (t.settled_by.nickname or t.settled_by.full_name) if t.settled_by else '',
                 'status': t.status,
                 'status_label': t.get_status_display(),

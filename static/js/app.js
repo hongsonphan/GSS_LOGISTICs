@@ -1791,14 +1791,50 @@ function formatDateVN(dateStr) {
     try {
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
+        const formatter = new Intl.DateTimeFormat('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        return formatter.format(d);
     } catch (e) {
         return dateStr;
     }
 }
+
+function formatDateTimeVN(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const formatter = new Intl.DateTimeFormat('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        return formatter.format(d);
+    } catch (e) {
+        return dateStr;
+    }
+}
+window.formatDateTimeVN = formatDateTimeVN;
+
+function getTodayVNIso() {
+    // Trả về YYYY-MM-DD theo đúng giờ Việt Nam GMT+7 (không bị lệch ngày khi gọi lúc 00:00 - 06:59 sáng)
+    const now = new Date();
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const vnTime = new Date(utcTime + (7 * 3600000));
+    const year = vnTime.getFullYear();
+    const month = String(vnTime.getMonth() + 1).padStart(2, '0');
+    const day = String(vnTime.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+window.getTodayVNIso = getTodayVNIso;
 
 function formatTimeString(timeStr) {
     if (!timeStr) return '';
@@ -11794,7 +11830,7 @@ window.mdoUploadExcel = mdoUploadExcel;
 // -------------------------------------------------------------
 
 var currentDispatchTab = 'orders';
-var currentOrderGroup = 'PENDING'; // tab Lệnh điều độ chỉ hiện booking chưa phân bổ hoặc phân bổ chưa hết
+var currentOrderGroup = 'ALL'; // Mặc định hiển thị tất cả lệnh để dễ quản lý, có các nhóm Chưa phân bổ / Phân bổ xong / Hoàn thành
 var allDispatchBookings = [];
 var loadedVcContainers = [];
 var vcSearchTimeout = null;
@@ -11924,21 +11960,39 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+function isOrderFullyAllocated(b) {
+    const total = Number(b.total_containers) || 1;
+    const alloc = Number(b.allocated_containers) || 0;
+    const disp = Number(b.dispatched_containers) || 0;
+    return Boolean(b.is_fully_dispatched || alloc >= total || disp >= total);
+}
+window.isOrderFullyAllocated = isOrderFullyAllocated;
+
+function isOrderCompleted(b) {
+    const total = Number(b.total_containers) || 1;
+    const tripsDone = Number(b.trips_completed) || 0;
+    return Boolean(b.is_completed || b.status === 'COMPLETED' || (tripsDone > 0 && tripsDone >= total));
+}
+window.isOrderCompleted = isOrderCompleted;
+
 function filterOrderGroup(group) {
     currentOrderGroup = group || 'ALL';
     const btnAll = document.getElementById('filter-order-mode-all');
     const btnPending = document.getElementById('filter-order-mode-pending');
     const btnDispatched = document.getElementById('filter-order-mode-dispatched');
+    const btnCompleted = document.getElementById('filter-order-mode-completed');
 
-    const activePill = 'px-2.5 py-1 rounded-md bg-white text-teal-900 shadow-2xs font-bold transition-all cursor-pointer';
-    const inactivePill = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 font-semibold transition-all cursor-pointer';
+    const activePill = 'px-3 py-1.5 rounded-lg bg-white text-teal-900 shadow-2xs font-bold transition-all cursor-pointer flex items-center gap-1.5 text-xs';
+    const inactivePill = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition-all cursor-pointer flex items-center gap-1.5 text-xs';
 
     if (btnAll) btnAll.className = (group === 'ALL') ? activePill : inactivePill;
-    if (btnPending) btnPending.className = (group === 'PENDING') ? activePill + ' flex items-center gap-1' : inactivePill + ' flex items-center gap-1';
-    if (btnDispatched) btnDispatched.className = (group === 'DISPATCHED') ? activePill + ' flex items-center gap-1' : inactivePill + ' flex items-center gap-1';
+    if (btnPending) btnPending.className = (group === 'PENDING') ? activePill : inactivePill;
+    if (btnDispatched) btnDispatched.className = (group === 'DISPATCHED') ? activePill : inactivePill;
+    if (btnCompleted) btnCompleted.className = (group === 'COMPLETED') ? activePill : inactivePill;
 
     renderDispatchOrdersTable();
 }
+window.filterOrderGroup = filterOrderGroup;
 
 let dispatchOrdersSearchQuery = '';
 function onDispatchOrdersSearch(val) {
@@ -11947,11 +12001,91 @@ function onDispatchOrdersSearch(val) {
 }
 window.onDispatchOrdersSearch = onDispatchOrdersSearch;
 
+var dispatchOrdersSortColumn = 'id';
+var dispatchOrdersSortDirection = 'desc';
+var dispatchOrdersColFilters = {
+    code: '',
+    customer: '',
+    route: '',
+    cont: '',
+    vendor: '',
+    dem: '',
+    det: '',
+    status: ''
+};
+
+function sortDispatchOrders(colKey) {
+    if (dispatchOrdersSortColumn === colKey) {
+        dispatchOrdersSortDirection = (dispatchOrdersSortDirection === 'asc') ? 'desc' : 'asc';
+    } else {
+        dispatchOrdersSortColumn = colKey;
+        dispatchOrdersSortDirection = (['id', 'total_containers', 'allocated_containers', 'free_time_demurrage', 'free_time_detention'].includes(colKey)) ? 'desc' : 'asc';
+    }
+    updateDispatchOrdersSortIcons();
+    renderDispatchOrdersTable();
+}
+window.sortDispatchOrders = sortDispatchOrders;
+
+function updateDispatchOrdersSortIcons() {
+    const cols = ['id', 'booking_code', 'customer_name', 'route', 'total_containers', 'allocated_containers', 'free_time_demurrage', 'free_time_detention', 'status'];
+    cols.forEach(col => {
+        const iconEl = document.getElementById('sort-icon-orders-' + col);
+        if (!iconEl) return;
+        if (dispatchOrdersSortColumn === col) {
+            iconEl.className = 'ph-bold ' + (dispatchOrdersSortDirection === 'asc' ? 'ph-caret-up text-teal-700' : 'ph-caret-down text-teal-700') + ' text-xs ml-1 inline-block';
+        } else {
+            iconEl.className = 'ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60';
+        }
+    });
+}
+window.updateDispatchOrdersSortIcons = updateDispatchOrdersSortIcons;
+
+function onDispatchOrdersColumnFilter() {
+    dispatchOrdersColFilters = {
+        code: (document.getElementById('filter-col-code')?.value || '').toLowerCase().trim(),
+        customer: (document.getElementById('filter-col-customer')?.value || '').toLowerCase().trim(),
+        route: (document.getElementById('filter-col-route')?.value || '').toLowerCase().trim(),
+        cont: (document.getElementById('filter-col-cont')?.value || '').toLowerCase().trim(),
+        vendor: (document.getElementById('filter-col-vendor')?.value || '').toLowerCase().trim(),
+        dem: (document.getElementById('filter-col-dem')?.value || '').toLowerCase().trim(),
+        det: (document.getElementById('filter-col-det')?.value || '').toLowerCase().trim(),
+        status: (document.getElementById('filter-col-status')?.value || '').trim()
+    };
+    renderDispatchOrdersTable();
+}
+window.onDispatchOrdersColumnFilter = onDispatchOrdersColumnFilter;
+
+function clearDispatchOrdersFilters() {
+    ['filter-col-code', 'filter-col-customer', 'filter-col-route', 'filter-col-cont', 'filter-col-vendor', 'filter-col-dem', 'filter-col-det'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const stEl = document.getElementById('filter-col-status');
+    if (stEl) stEl.value = '';
+    const searchEl = document.getElementById('dispatch-orders-search');
+    if (searchEl) searchEl.value = '';
+    dispatchOrdersSearchQuery = '';
+    dispatchOrdersColFilters = { code: '', customer: '', route: '', cont: '', vendor: '', dem: '', det: '', status: '' };
+    renderDispatchOrdersTable();
+}
+window.clearDispatchOrdersFilters = clearDispatchOrdersFilters;
+
 function renderDispatchOrdersTable() {
     const tbody = document.getElementById('dispatch-orders-tbody');
     if (!tbody) return;
 
     let filtered = allDispatchBookings || [];
+
+    // 1. Phân nhóm cấp cao (Tất cả, Chưa phân bổ xong, Phân bổ xong, Đã hoàn thành)
+    if (currentOrderGroup === 'PENDING') {
+        filtered = filtered.filter(b => !isOrderFullyAllocated(b) && !isOrderCompleted(b));
+    } else if (currentOrderGroup === 'DISPATCHED') {
+        filtered = filtered.filter(b => isOrderFullyAllocated(b) && !isOrderCompleted(b));
+    } else if (currentOrderGroup === 'COMPLETED') {
+        filtered = filtered.filter(b => isOrderCompleted(b));
+    }
+
+    // 2. Tìm kiếm chung (Global Search)
     if (dispatchOrdersSearchQuery) {
         const q = dispatchOrdersSearchQuery.toLowerCase().trim();
         filtered = filtered.filter(b => {
@@ -11960,17 +12094,99 @@ function renderDispatchOrdersTable() {
             const cust = (b.customer_name || b.customer || '').toLowerCase();
             const route = `${b.pickup_location || ''} ${b.delivery_location || ''} ${b.dropoff_location || ''}`.toLowerCase();
             const conts = (b.container_list || '').toLowerCase();
-            return code.includes(q) || bl.includes(q) || cust.includes(q) || route.includes(q) || conts.includes(q);
+            const vendor = (b.vendor_summary || '').toLowerCase();
+            const commodity = (b.commodity || '').toLowerCase();
+            return code.includes(q) || bl.includes(q) || cust.includes(q) || route.includes(q) || conts.includes(q) || vendor.includes(q) || commodity.includes(q);
         });
     }
-    if (currentOrderGroup === 'PENDING') {
-        filtered = filtered.filter(b => !Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= (Number(b.total_containers) || 1)) || ((Number(b.dispatched_containers) || 0) >= (Number(b.total_containers) || 1))));
-    } else if (currentOrderGroup === 'DISPATCHED') {
-        filtered = filtered.filter(b => Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= (Number(b.total_containers) || 1)) || ((Number(b.dispatched_containers) || 0) >= (Number(b.total_containers) || 1))));
+
+    // 3. Lọc theo từng cột (Column Filters)
+    if (dispatchOrdersColFilters.code) {
+        filtered = filtered.filter(b => (b.booking_code || '').toLowerCase().includes(dispatchOrdersColFilters.code) || (b.booking_number || '').toLowerCase().includes(dispatchOrdersColFilters.code));
+    }
+    if (dispatchOrdersColFilters.customer) {
+        filtered = filtered.filter(b => (b.customer_name || b.customer || '').toLowerCase().includes(dispatchOrdersColFilters.customer));
+    }
+    if (dispatchOrdersColFilters.route) {
+        filtered = filtered.filter(b => `${b.pickup_location || ''} ${b.delivery_location || ''} ${b.dropoff_location || ''}`.toLowerCase().includes(dispatchOrdersColFilters.route));
+    }
+    if (dispatchOrdersColFilters.cont) {
+        filtered = filtered.filter(b => String(b.total_containers || '').includes(dispatchOrdersColFilters.cont) || (b.container_size || '').toLowerCase().includes(dispatchOrdersColFilters.cont));
+    }
+    if (dispatchOrdersColFilters.vendor) {
+        filtered = filtered.filter(b => (b.vendor_summary || '').toLowerCase().includes(dispatchOrdersColFilters.vendor));
+    }
+    if (dispatchOrdersColFilters.dem) {
+        filtered = filtered.filter(b => String(b.free_time_demurrage || '').includes(dispatchOrdersColFilters.dem));
+    }
+    if (dispatchOrdersColFilters.det) {
+        filtered = filtered.filter(b => String(b.free_time_detention || '').includes(dispatchOrdersColFilters.det));
+    }
+    if (dispatchOrdersColFilters.status) {
+        const stFilter = dispatchOrdersColFilters.status;
+        filtered = filtered.filter(b => {
+            const alloc = Number(b.allocated_containers || 0);
+            const fullyAlloc = isOrderFullyAllocated(b);
+            const comp = isOrderCompleted(b);
+            if (stFilter === 'PENDING') return !fullyAlloc && !comp && alloc === 0;
+            if (stFilter === 'PARTIAL') return !fullyAlloc && !comp && alloc > 0;
+            if (stFilter === 'DISPATCHED') return fullyAlloc && !comp;
+            if (stFilter === 'COMPLETED') return comp;
+            return true;
+        });
+    }
+
+    // 4. Sắp xếp (Sorting)
+    if (dispatchOrdersSortColumn) {
+        const dir = (dispatchOrdersSortDirection === 'asc') ? 1 : -1;
+        filtered.sort((a, b) => {
+            let va = a[dispatchOrdersSortColumn];
+            let vb = b[dispatchOrdersSortColumn];
+            if (dispatchOrdersSortColumn === 'route') {
+                va = `${a.pickup_location || ''} ${a.delivery_location || ''}`;
+                vb = `${b.pickup_location || ''} ${b.delivery_location || ''}`;
+            } else if (dispatchOrdersSortColumn === 'allocated_containers' || dispatchOrdersSortColumn === 'total_containers' || dispatchOrdersSortColumn === 'free_time_demurrage' || dispatchOrdersSortColumn === 'free_time_detention' || dispatchOrdersSortColumn === 'id') {
+                return ((Number(va) || 0) - (Number(vb) || 0)) * dir;
+            }
+            va = (va || '').toString().toLowerCase();
+            vb = (vb || '').toString().toLowerCase();
+            return va.localeCompare(vb, 'vi') * dir;
+        });
+    }
+
+    // Cập nhật số lượng hiển thị trên cột filter
+    const elFilteredCount = document.getElementById('dispatch-orders-filtered-count');
+    if (elFilteredCount) {
+        elFilteredCount.innerText = `${filtered.length}/${allDispatchBookings.length} lệnh`;
     }
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không còn booking nào chưa phân bổ hoặc phân bổ chưa hết.</td></tr>`;
+        let msg = 'Không có lệnh điều độ nào phù hợp với bộ lọc hiện tại.';
+        if (currentOrderGroup === 'PENDING') {
+            msg = 'Tuyệt vời! Hiện không còn lệnh nào chưa phân bổ hoặc phân bổ chưa hết.';
+        } else if (currentOrderGroup === 'DISPATCHED') {
+            msg = 'Chưa có lệnh nào đã phân bổ xong 100% cont.';
+        } else if (currentOrderGroup === 'COMPLETED') {
+            msg = 'Chưa có lệnh nào đã hoàn thành vận chuyển.';
+        }
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="p-8 text-center text-slate-400 font-medium">
+                    <div class="flex flex-col items-center justify-center space-y-2">
+                        <i class="ph-bold ph-tray text-3xl text-slate-300"></i>
+                        <span>${msg}</span>
+                        <div class="flex items-center gap-2 mt-2">
+                            <button type="button" onclick="clearDispatchOrdersFilters()" class="text-xs font-bold text-teal-700 hover:text-teal-900 underline cursor-pointer">
+                                Xóa bộ lọc cột
+                            </button>
+                            <span class="text-slate-300">·</span>
+                            <button type="button" onclick="filterOrderGroup('ALL')" class="text-xs font-bold text-indigo-700 hover:text-indigo-900 underline cursor-pointer">
+                                Xem tất cả lệnh (${allDispatchBookings.length})
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>`;
         return;
     }
 
@@ -11978,38 +12194,56 @@ function renderDispatchOrdersTable() {
     filtered.forEach((b, idx) => {
         const rawCode = b.booking_code || `BK#${b.id}`;
         const total = Number(b.total_containers) || 1;
+        const allocated = Number(b.allocated_containers) || 0;
         const dispatched = Number(b.dispatched_containers) || 0;
-        const remaining = total - dispatched;
-        const isDispatched = Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= total) || (dispatched >= total));
+        const remaining = Math.max(0, total - allocated);
+        const isDispatched = isOrderFullyAllocated(b);
+        const isCompleted = isOrderCompleted(b);
 
         // Chuẩn hóa mã phiếu: Đã điều độ thì DD.BK..., chưa điều độ thì BK...
         const codeDisplay = isDispatched 
             ? (rawCode.startsWith("DD.") ? rawCode : (rawCode.startsWith("BK.") ? `DD.${rawCode}` : `DD.BK.${rawCode}`)) 
             : rawCode;
 
-        const codeBadge = isDispatched 
-            ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">ĐÃ ĐIỀU ĐỘ</span>`
-            : `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold font-mono">CHỜ ĐIỀU ĐỘ</span>`;
+        let codeBadge = '';
+        if (isCompleted) {
+            codeBadge = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 text-[10px] font-bold font-mono">HOÀN TẤT</span>`;
+        } else if (isDispatched) {
+            codeBadge = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">ĐÃ ĐIỀU ĐỘ</span>`;
+        } else {
+            codeBadge = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold font-mono">CHỜ ĐIỀU ĐỘ</span>`;
+        }
 
-        const bl = b.booking_number ? `<span class="text-slate-500 font-mono text-[11px] block">B/L: ${b.booking_number}</span>` : '';
-        const cust = b.customer_name || b.customer || 'Khách hàng';
-        const route = `<div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5" title="${b.pickup_location || ''} -> ${b.delivery_location || ''} -> ${b.dropoff_location || ''}"><span class="text-teal-700 font-bold" title="1. Lấy cont">${b.pickup_location || 'Cảng/Depot'}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-blue-900 font-bold" title="2. Kho đóng/trả">${b.delivery_location || 'Kho khách'}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Hạ rỗng">${b.dropoff_location || 'Depot'}</span></div>`;
-        const conts = `<strong class="text-teal-700 font-bold">${total}</strong> <span class="text-slate-500 text-[11px]">Cont (${b.container_size || '40HC'})</span>`;
+        const bl = b.booking_number ? `<span class="text-slate-500 font-mono text-[11px] block" title="Số B/L: ${escapeHtml(b.booking_number)}">B/L: ${escapeHtml(b.booking_number)}</span>` : '';
+        const cust = escapeHtml(b.customer_name || b.customer || 'Khách hàng');
+        const route = `<div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5" title="${escapeHtml(b.pickup_location || '')} -> ${escapeHtml(b.delivery_location || '')} -> ${escapeHtml(b.dropoff_location || '')}"><span class="text-teal-700 font-bold" title="1. Lấy cont">${escapeHtml(b.pickup_location || 'Cảng/Depot')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-blue-900 font-bold" title="2. Kho đóng/trả">${escapeHtml(b.delivery_location || 'Kho khách')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Hạ rỗng">${escapeHtml(b.dropoff_location || 'Depot')}</span></div>`;
+        const conts = `<strong class="text-teal-700 font-bold">${total}</strong> <span class="text-slate-500 text-[11px]">Cont (${escapeHtml(b.container_size || '40HC')})</span>`;
 
         let allocProgress = '';
-        if (isDispatched) {
-            allocProgress = `<span class="text-emerald-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle"></i> Đã chia ${dispatched}/${total} cont</span>`;
-        } else if (dispatched > 0) {
-            allocProgress = `<span class="text-amber-700 font-bold flex items-center gap-1"><i class="ph-bold ph-arrows-split"></i> Đã chia ${dispatched}/${total} (Còn ${remaining})</span>`;
+        if (isCompleted) {
+            allocProgress = `<span class="text-sky-700 font-bold flex items-center gap-1"><i class="ph-bold ph-seal-check"></i> Đã hoàn tất (${total}/${total} cont)</span>`;
+        } else if (isDispatched) {
+            allocProgress = `<span class="text-emerald-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle"></i> Đã chia đủ ${allocated}/${total} cont</span>`;
+        } else if (allocated > 0) {
+            allocProgress = `<span class="text-amber-700 font-bold flex items-center gap-1"><i class="ph-bold ph-arrows-split"></i> Đã chia ${allocated}/${total} (Còn ${remaining})</span>`;
         } else {
             allocProgress = `<span class="text-rose-700 font-bold flex items-center gap-1"><i class="ph-bold ph-clock"></i> Chưa phân bổ (${total} cont)</span>`;
         }
 
-        const demDet = `<span class="text-slate-600 block text-[11px]">DEM: ${b.free_time_demurrage || 7}d | DET: ${b.free_time_detention || 7}d</span>`;
+        const vendorDisplay = b.vendor_summary 
+            ? `<div class="font-bold text-slate-800 text-xs truncate max-w-[220px]" title="${escapeHtml(b.vendor_summary)}">${escapeHtml(b.vendor_summary)}</div><div class="text-[11px] mt-0.5">${allocProgress}</div>`
+            : `<div class="text-xs">${allocProgress}</div>`;
 
-        let statusText = isDispatched ? 'Đã phát lệnh' : 'Chờ điều phối';
-        let statusColor = isDispatched ? 'text-emerald-700' : 'text-amber-700';
-        let statusIcon = isDispatched ? 'ph-check-circle' : 'ph-clock';
+        let statusBadgeHtml = '';
+        if (isCompleted) {
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200"><i class="ph-bold ph-seal-check"></i> Đã hoàn thành</span>`;
+        } else if (isDispatched) {
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"><i class="ph-bold ph-check-circle"></i> Đã phân bổ đủ</span>`;
+        } else if (allocated > 0) {
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"><i class="ph-bold ph-arrows-split"></i> Đang phân bổ</span>`;
+        } else {
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200"><i class="ph-bold ph-clock"></i> Chờ phân bổ</span>`;
+        }
 
         html += `
         <tr class="hover:bg-teal-50/40 transition-colors">
@@ -12024,14 +12258,11 @@ function renderDispatchOrdersTable() {
             <td class="p-2.5 font-bold text-slate-800">${cust}</td>
             <td class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
             <td class="p-2.5 text-center">${conts}</td>
-            <td class="p-2.5">${allocProgress}</td>
+            <td class="p-2.5">${vendorDisplay}</td>
             <td class="p-2.5 text-center font-mono text-[11px] font-bold text-amber-700">${b.free_time_demurrage || 7}d</td>
             <td class="p-2.5 text-center font-mono text-[11px] font-bold text-sky-700">${b.free_time_detention || 7}d</td>
             <td class="p-2.5 text-center">
-                <span class="inline-flex items-center gap-1 text-xs font-bold ${statusColor}">
-                    <i class="ph-bold ${statusIcon}"></i>
-                    <span>${statusText}</span>
-                </span>
+                ${statusBadgeHtml}
             </td>
             <td class="p-2.5 text-center">
                 <div class="inline-flex items-center gap-1.5 justify-center">
@@ -12058,29 +12289,33 @@ function renderDispatchOrdersTable() {
 async function loadDispatchOrdersTab() {
     const tbody = document.getElementById('dispatch-orders-tbody');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-400">Đang tải danh sách Kế Hoạch Điều Độ...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="p-6 text-center text-slate-400">Đang tải danh sách Lệnh Điều Động...</td></tr>';
 
     try {
-        const res = await fetchWithAuth('/api/bookings/active/');
+        const res = await fetchWithAuth('/api/bookings/active/?include_completed=1');
         if (!res.ok) throw new Error('Không thể tải danh sách Lệnh Điều Động');
         const data = await res.json();
         allDispatchBookings = data.data || data.results || data || [];
 
         // Thống kê phân nhóm
         const totalCount = allDispatchBookings.length;
-        const pendingCount = allDispatchBookings.filter(b => !Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= (Number(b.total_containers) || 1)) || ((Number(b.dispatched_containers) || 0) >= (Number(b.total_containers) || 1)))).length;
-        const dispatchedCount = allDispatchBookings.filter(b => Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= (Number(b.total_containers) || 1)) || ((Number(b.dispatched_containers) || 0) >= (Number(b.total_containers) || 1)))).length;
+        const pendingCount = allDispatchBookings.filter(b => !isOrderFullyAllocated(b) && !isOrderCompleted(b)).length;
+        const dispatchedCount = allDispatchBookings.filter(b => isOrderFullyAllocated(b) && !isOrderCompleted(b)).length;
+        const completedCount = allDispatchBookings.filter(b => isOrderCompleted(b)).length;
 
         const elAll = document.getElementById('count-orders-all');
         const elPending = document.getElementById('count-orders-pending');
         const elDispatched = document.getElementById('count-orders-dispatched');
+        const elCompleted = document.getElementById('count-orders-completed');
         const elTabBadge = document.getElementById('tab-orders-badge');
 
         if (elAll) elAll.innerText = totalCount;
         if (elPending) elPending.innerText = pendingCount;
         if (elDispatched) elDispatched.innerText = dispatchedCount;
-        if (elTabBadge) elTabBadge.innerText = pendingCount;
+        if (elCompleted) elCompleted.innerText = completedCount;
+        if (elTabBadge) elTabBadge.innerText = totalCount;
 
+        updateDispatchOrdersSortIcons();
         renderDispatchOrdersTable();
     } catch (e) {
         tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-rose-500 font-bold">Lỗi khi tải Lệnh Điều Động: ${e.message}</td></tr>`;

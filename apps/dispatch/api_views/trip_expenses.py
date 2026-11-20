@@ -435,7 +435,7 @@ class TripSettleExpensesAPIView(APIView):
         return Response({
             'success': True,
             'message': f'Kế toán đã chốt sổ chi phí cho chuyến xe {locked_trip.trip_code} thành công!',
-            'settled_at': locked_trip.settled_at.strftime('%H:%M %d/%m/%Y'),
+            'settled_at': timezone.localtime(locked_trip.settled_at).strftime('%H:%M %d/%m/%Y') if locked_trip.settled_at else '',
             'settled_by': accountant.nickname or accountant.full_name if accountant else 'Kế toán',
             'cached_expense': locked_trip.cached_expense,
             'cached_profit': locked_trip.cached_profit,

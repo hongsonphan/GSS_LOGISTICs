@@ -119,7 +119,8 @@ class TrackingEventLog(TimeStampedModel):
         ]
 
     def __str__(self):
-        return f"[{self.event_time.strftime('%d/%m %H:%M')}] {self.title}"
+        time_str = timezone.localtime(self.event_time).strftime('%d/%m %H:%M') if self.event_time else ''
+        return f"[{time_str}] {self.title}"
 
 
 class DocumentSequence(models.Model):
