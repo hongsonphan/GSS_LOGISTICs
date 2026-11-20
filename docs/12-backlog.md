@@ -174,3 +174,12 @@ Zalo không cho đọc tự do nhóm chat cá nhân; hướng khả thi phải q
 | V3 | Tab Phân bổ & gán xe lấy từ phiếu chia (`BookingVendorAllocation`); booking chưa phân bổ cho nhà xe nào vẫn ở tab Lệnh điều độ | Ghi nhận |
 | V4 | Chế độ "Theo bước hành trình" là bản gọn (6 cột); chưa có hình xe `GSSTruck` như Dashboard | Nhẹ |
 
+
+## 10. Phát hiện khi rà soát 20/11/2026
+
+| # | Việc | Vị trí | Mức |
+|---|---|---|---|
+| R1 | Nút «In» (phiếu vận chuyển) gọi hàm `printTripSheet` chưa từng được định nghĩa (thêm từ `a697d7d`); bấm không có phản hồi. Cần chốt mẫu phiếu rồi viết hàm, hoặc ẩn nút. `qa.py audit` báo FAIL mục handler | `static/js/src/app/dispatch/transport-order.js:216` | Vừa |
+| R2 | Deploy VPS thất bại 4 lần (15/11): secret `VPS_SSH_KEY` lỗi định dạng (`error in libcrypto`); chưa có `VPS_HOST_KEY`. Nạp lại secret rồi chạy lại workflow | GitHub Settings → Secrets | Nặng |
+| R3 | Bật bảo vệ nhánh `master` (cấm force-push, bắt CI xanh) và Dependabot alerts; xử lý 9 PR Dependabot (Django 6, Python 3.15 phải qua `verify --full`); cân nhắc chuyển repo sang Private; gắn tag phiên bản và thêm mã commit vào `/healthz/` | GitHub, `core/health.py` | Vừa |
+| R4 | Rà lại tài liệu kế thừa BIM (02, 03, 04, 05, 07, 08, 09) và bổ sung tài liệu phần mới 17–20/11: phân quyền theo tab, Nhật ký hoạt động, bộ mã chứng từ 5 tầng, cổng nhà xe toàn màn hình | `docs/` | Nhẹ |
