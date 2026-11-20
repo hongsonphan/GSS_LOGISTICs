@@ -3,6 +3,76 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Nâng Cấp Quy Trình Ghép Đôi Container 20ft (Kẹp 20): Checkbox Cột Đầu & Nút Ghép Cont Header
+- **Bối cảnh & Yêu cầu người dùng:**
+  - Nút "Kẹp 20" trước đó dùng hộp thoại `window.prompt()` mặc định của trình duyệt để gõ số dòng, giao diện thô sơ và bất tiện.
+  - Người dùng yêu cầu cải tiến trải nghiệm:
+    1. Bổ sung ô Checkbox ở cột đầu tiên của từng dòng container để người dùng có thể tick chọn.
+    2. Khi tick chọn đủ 2 container 20 feet thì nút **"Ghép Cont"** sẽ tự động xuất hiện trên Header bảng.
+    3. Trên Header bảng container: bỏ nút "Thêm Xe / Tài Xế Mới" (do mỗi cột đầu kéo, moóc, tài xế đã có sẵn nút `+` thêm nhanh), đồng thời sắp xếp lại thứ tự nút theo chuẩn:
+       `"Ghép Cont" | "Nhập Excel" | "Toàn Màn Hình"`.
+- **Thay đổi kỹ thuật & Giao diện (`templates/vendor_portal.html`):**
+  1. **Header Bảng Container:**
+     - Xóa bỏ nút "+ Thêm Xe / Tài Xế Mới".
+     - Thêm nút `id="btn-vendor-pair-conts"`: mặc định ẩn, khi tick chọn đúng 2 container 20ft thì xuất hiện nổi bật (`bg-teal-700 hover:bg-teal-800 text-white`, icon link, nhãn `Ghép Cont (2)`).
+     - Thứ tự 3 nút chuẩn xác: `Ghép Cont` $\rightarrow$ `Nhập Excel` $\rightarrow$ `Toàn Màn Hình`.
+  2. **Cột đầu tiên của Bảng Container:**
+     - Tích hợp ô `<input type="checkbox" class="vendor-cont-checkbox ...">` cùng với số STT dòng.
+     - Hàm `onSelectContLineToPair(lineNo, isChecked)`:
+       - Kiểm tra chỉ cho phép chọn container loại 20 feet.
+       - Giới hạn chọn tối đa 2 container (nếu chọn sang cont thứ 3 sẽ có thông báo nhắc nhở).
+       - Khi chọn đủ 2 cont, tự động làm sáng nút "Ghép Cont" trên header và highlight nhẹ 2 dòng được chọn.
+  3. **Hàm Ghép Cont Thông Minh `onExecutePairSelectedConts()`:**
+     - Thay thế hoàn toàn `prompt()` cũ.
+     - Khi bấm "Ghép Cont":
+       - Tự động nhận diện dòng nào đã có xe đầu kéo/rơ-moóc/tài xế để sao chép sang dòng còn lại.
+       - Trường hợp cả 2 dòng có 2 xe khác nhau, hiển thị xác nhận cho người dùng chọn xe ưu tiên.
+       - Tự động gán `paired_with_line_no`, `is_twin_container = true`, cập nhật ghi chú `Kẹp cùng dòng #...` và số container thứ 2 cho cả 2 dòng.
+       - Bổ sung `paired_with_line_no`, `is_twin_container`, `container_number_2` vào `buildRowPayload()` để backend đồng bộ chuyến xe chạy kẹp khi Lưu.
+     - Bổ sung tính năng Hủy Ghép Cont `onUnpairCont(lineNo)` trực tiếp trên huy hiệu `Kẹp #...` nếu muốn tách riêng.
+- **Kiểm thử tự động:**
+  - `python scripts/build_app_js.py` & `python scripts/build_css.py`: Thành công.
+  - `python scripts/qa.py verify --fast`: PASS=6/6, FAIL=0, KẾT LUẬN: ĐẠT.
+
+## 2026-11-20 – Rà Soát & Chuẩn Hóa Toàn Diện Múi Giờ Hệ Thống Việt Nam (Asia/Ho_Chi_Minh - GMT+7)
+- **Bối cảnh & Yêu cầu người dùng:**
+  - Rà soát lại tất cả các trường dữ liệu có ghi Ngày giờ, đặc biệt là trường Giờ trong toàn bộ hệ thống Bim_Logisstic_GSS.
+  - Xác minh hệ thống đang cập nhật theo giờ nào và đồng bộ chuẩn hóa 100% về đúng giờ hệ thống Việt Nam (GMT+7).
+- **Kết quả điều tra hiện trạng ("Đang cập nhật theo giờ nào?"):**
+  - **Lưu trữ CSDL:** Hệ thống sử dụng `USE_TZ = True` và `TIME_ZONE = 'Asia/Ho_Chi_Minh'`. Các trường `DateTimeField` (`created_at`, `updated_at`, `actual_gate_in_at`, `settled_at`, `approved_at`, `event_time`, v.v.) được Django ORM lưu trữ chuẩn dưới dạng UTC (+00:00).
+  - **Lỗi hiển thị giờ UTC (bị chậm 7 tiếng):** Khi format dữ liệu trả về qua REST API, render giao diện hoặc xuất báo cáo Excel, nhiều vị trí gọi trực tiếp `.strftime('%d/%m/%Y %H:%M')` hoặc `timezone.now().strftime(...)` trên các datetime đối tượng UTC. Do hàm `strftime` của Python không tự động đổi múi giờ, chuỗi thời gian sinh ra bị lấy theo giờ UTC (GMT+0), khiến người dùng thấy giờ bị **chậm 7 tiếng** so với giờ thực tế Việt Nam (ví dụ: thao tác lúc 14:30 nhưng màn hình hiển thị 07:30).
+  - **Lỗi mốc thời gian dạng chuỗi:** Các hàm sinh mốc tiến độ tự động gọi `timezone.now().strftime('%H:%M %d/%m')` dẫn đến ghi chuỗi giờ UTC vào các trường text (`time_display`, mốc phát lệnh Zalo).
+  - **Lỗi lùi ngày lúc nửa đêm ở Frontend:** Sử dụng `new Date().toISOString().slice(0, 10)` dẫn đến từ 00:00 đến 06:59 sáng hàng ngày ở Việt Nam, ngày mặc định bị lùi 1 ngày về hôm trước.
+- **Các cải tiến & Thay đổi kỹ thuật đã thực hiện:**
+  1. **Khởi tạo Module Tiện Ích Chuẩn Hóa `core/time_utils.py`:**
+     - Cung cấp các hàm tiện ích: `vietnam_now()`, `to_vietnam_time(dt)`, `format_vietnam_datetime(dt, fmt)`, `format_vietnam_time_short(dt, fmt)`, `format_vietnam_date(dt, fmt)`.
+     - Tự động phát hiện aware datetime và chuyển đổi an toàn sang `Asia/Ho_Chi_Minh` trước khi format.
+  2. **Chuẩn Hóa 100% Format DateTime Phía Backend:**
+     - `apps/dispatch/timeline_service.py`: Chuẩn hóa các mốc giờ cổng kho (`actual_gate_in_at`, `actual_gate_out_at`, `actual_dropoff_at`, `actual_start_time`, `created_at`, `pod_doc.created_at`) qua `format_vietnam_time()`.
+     - `apps/dispatch/api_views/trips.py`: Đổi toàn bộ các lời gọi `timezone.now().strftime(...)` thành `timezone.localtime().strftime(...)`. Bọc `timezone.localtime()` cho các trường `startTime` (`t.created_at`), chi phí (`exp.created_at`), chứng từ (`doc.created_at`), chốt sổ (`trip.settled_at`).
+     - Tự động parse chuỗi giờ Việt Nam khi người dùng PATCH mốc vào cổng/ra cổng kho (`actual_gate_in_time`, `actual_gate_out_time`) bằng `parse_vn_datetime` thay vì gán bừa giờ hiện tại.
+     - `apps/dispatch/api_views/trip_documents.py`: Chuẩn hóa `now_str` và `time_display` sang `timezone.localtime()`.
+     - `apps/dispatch/api_views/bookings.py`: Chuẩn hóa `created_at` tài liệu và booking sang `timezone.localtime()`.
+     - `apps/dispatch/api_views/sales.py`: Chuẩn hóa `created_at` booking đơn hàng sang `timezone.localtime()`.
+     - `apps/dispatch/api_views/accounting.py` & `trip_expenses.py`: Chuẩn hóa `settled_at` sang `timezone.localtime()`.
+     - `apps/dispatch/reports_api.py`: Chuẩn hóa `approved_at`, `settled_at`, `created_at` sang `timezone.localtime()`.
+     - `apps/dispatch/vendor_service.py`: Chuẩn hóa `closing_str` cho lệnh điều động vendor.
+     - `apps/billing/advance_views.py`: Chuẩn hóa `approved_at`, `settled_at` của quỹ tạm ứng điều vận và tạm ứng tài xế.
+     - `apps/billing/finance_reports_api.py`: Chuẩn hóa `reimbursed_at`, `created_at`, `subcontractor_settled_at`, mã số `debit_note_number` sang giờ Việt Nam.
+     - `apps/billing/settlement_voucher_views.py`: Chuẩn hóa `counterparty_confirmed_at`, `settled_at`, `created_at`, `approved_at`, và mã phiếu thanh toán (`next_code`) sang `timezone.localtime()`.
+     - `apps/master_data/api_views.py` & `permission_views.py`: Chuẩn hóa `updated_at`, `created_at`, `last_login` sang `timezone.localtime()`.
+     - `apps/master_data/import_export_service.py` & `apps/personnel/import_export_service.py`: Chuẩn hóa dòng tiêu đề ngày xuất Excel và tên file xuất dữ liệu sang `timezone.localtime()`.
+     - `apps/customs/api_views.py`: Chuẩn hóa ngày tạo tờ khai, dòng tiêu đề xuất báo cáo và tên file Excel tờ khai hải quan.
+     - `apps/collaboration/models/tasks.py` & `core/models.py`: Chuẩn hóa hàm `__str__` hiển thị nhật ký task và chuỗi sự kiện tracking.
+  3. **Chuẩn Hóa Phía Frontend (JavaScript):**
+     - Cập nhật `static/js/src/app/core/utils.js`: Bổ sung `formatDateTimeVN(dateStr)` và `formatDateVN(dateStr)` sử dụng `Intl.DateTimeFormat` với `timeZone: 'Asia/Ho_Chi_Minh'`, và bổ sung hàm `getTodayVNIso()` đảm bảo ngày theo giờ Việt Nam không bị lùi khi thao tác vào khung giờ 00:00 - 06:59 sáng.
+     - Build lại file bundle `static/js/app.js` bằng `python scripts/build_app_js.py`.
+  4. **Cập Nhật Tài Liệu:**
+     - Bổ sung Mục VII vào `docs/09-coding-standards.md` quy định bắt buộc về xử lý thời gian và múi giờ Việt Nam GMT+7.
+- **Kiểm thử & Xác nhận:**
+  - 100% tệp Python đã được biên dịch cú pháp thành công (`python -m py_compile`).
+  - Quét lại toàn bộ codebase: Số lượng gọi `timezone.now().strftime(...)` giảm từ 14 xuống 0; số lượng format datetime không qua localtime giảm từ 50 xuống 0 (các trường hợp còn lại đã được bọc `timezone.localtime()` an toàn).
+
 ## 2026-11-20 – Tối Ưu Giao Diện Vendor Portal: Giới Hạn Scroll Hành Trình, Bỏ Badge Danh Mục & Chuẩn Hóa Cỡ Chữ UI/UX
 - **Bối cảnh & Yêu cầu người dùng:**
   - **Màn hình Theo Dõi Hành Trình (Hình 1):** Khung bảng bị tràn quá mép dưới màn hình (do tính toán `max-h-[calc(100vh-250px)]` trong khi phần trên đã chiếm ~380px), khiến các dòng cuối cùng (cont 15) bị che khuất và bắt sự kiện cuộn làm người dùng không thể thấy hết nội dung.

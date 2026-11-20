@@ -935,6 +935,7 @@
   let trackingSort = 'booking';
   let trackingSearch = '';
   let fleetSearch = '';
+  let selectedContLines = new Set(); // Danh sách số dòng container 20ft được chọn để Ghép Cont
   const FLEET_TRACK_COLORS = ['#2563eb', '#d97706', '#7c3aed', '#e11d48', '#0891b2'];
   const FLEET_STEP_HEADERS = [
     ['READY', '1. SẴN SÀNG'],
@@ -1140,6 +1141,7 @@
     state = null;
     trackingRows = [];
     dirtyRows = {};
+    selectedContLines.clear();
     modalLineNo = null;
     document.getElementById('sticky-bar').classList.add('hidden');
     document.getElementById('modal-vendor-row-view').classList.add('hidden');
@@ -1488,6 +1490,7 @@
     if (allocId === activeAllocId && activeTab === 'assign') return;
     if (hasDirtyChanges() && !confirm('Bạn có thay đổi chưa lưu trên lệnh hiện tại. Vẫn chuyển lệnh?')) return;
     dirtyRows = {};
+    selectedContLines.clear();
     modalLineNo = null;
     activeAllocId = allocId;
     activeTab = 'assign';
@@ -1758,14 +1761,31 @@
         : 'bg-white text-slate-800 border-slate-300 hover:border-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20';
 
       return `
-        <tr id="row-container-${row.line_no}" class="hover:bg-teal-50/30 transition-colors ${isModified ? 'bg-amber-50/40' : ''}">
-          <td class="p-2.5 text-center font-bold text-slate-500 tabular-nums text-[13px]">${row.line_no}</td>
+        <tr id="row-container-${row.line_no}" class="hover:bg-teal-50/30 transition-colors ${isModified ? 'bg-amber-50/40' : ''} ${selectedContLines.has(row.line_no) ? '!bg-teal-50/80 ring-1 ring-inset ring-teal-500/30' : ''}">
+          <td class="p-2.5 text-center whitespace-nowrap">
+            <label class="inline-flex items-center justify-center gap-1.5 ${isRowUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'} select-none" title="${is20 ? 'Chọn cont 20ft này để ghép đôi (Kẹp 20)' : 'Chỉ hỗ trợ ghép với cont 20ft'}">
+              <input type="checkbox"
+                class="vendor-cont-checkbox w-4 h-4 rounded text-teal-700 focus:ring-teal-500 border-slate-300 cursor-pointer transition-all"
+                data-line="${row.line_no}"
+                data-is20="${is20 ? '1' : '0'}"
+                ${selectedContLines.has(row.line_no) ? 'checked' : ''}
+                ${!isRowUnlocked ? 'disabled' : ''}
+                onchange="onSelectContLineToPair(${row.line_no}, this.checked)">
+              <span class="font-bold text-slate-600 tabular-nums text-[13px]">${row.line_no}</span>
+            </label>
+          </td>
           <td class="p-2.5">
             <div class="flex items-center gap-1.5">
               ${row.container_locked
                 ? `<div class="leading-tight"><div class="font-mono font-black text-slate-900 text-[13px] whitespace-nowrap tabular-nums ${(curData.is_twin_container && curData.container_number_2) ? 'text-xs' : ''}">${escapeHtml(curData.container_number || '--')}</div>${(curData.is_twin_container && curData.container_number_2) ? `<div class="text-xs font-bold text-indigo-700 whitespace-nowrap tabular-nums">+ ${escapeHtml(curData.container_number_2)}</div>` : ''}</div>`
                 : `<input type="text" value="${escapeHtml(curData.container_number || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="ABCD1234567" oninput="this.value = this.value.toUpperCase(); updateRowField(${row.line_no}, 'container_number', this.value);" class="h-8.5 w-[120px] px-2 font-mono font-black uppercase rounded-lg border text-[13px] tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">`}
-              ${is20 && isRowUnlocked ? `<button type="button" onclick="showPair20Options(${row.line_no})" class="h-6.5 px-2 rounded border border-teal-300 bg-teal-50 text-teal-700 font-bold text-xs hover:bg-teal-100 cursor-pointer shrink-0" title="Ghép đôi cont 20ft (Kẹp 20)">Kẹp 20</button>` : ''}
+              ${(curData.paired_with_line_no || curData.is_twin_container) ? `
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0" title="Chạy kẹp chung xe với dòng #${curData.paired_with_line_no || 'khác'}">
+                  <i class="ph-bold ph-link text-xs"></i>
+                  <span>Kẹp #${curData.paired_with_line_no || ''}</span>
+                  ${isRowUnlocked ? `<button type="button" onclick="onUnpairCont(${row.line_no})" class="text-rose-500 hover:text-rose-700 ml-0.5 font-black cursor-pointer text-xs leading-none" title="Hủy ghép đôi container này">×</button>` : ''}
+                </span>
+              ` : ''}
             </div>
           </td>
           <td class="p-2.5 text-center font-bold text-slate-700 tabular-nums text-[13px]">${escapeHtml(row.container_type || '40HC')}</td>
@@ -1907,20 +1927,18 @@
             <h3 class="font-extrabold text-sm text-slate-800 uppercase tracking-wide font-heading">Danh Sách Container Được Giao &amp; Gán Xe (${activeRows.length} Container)</h3>
           </div>
           <div class="flex items-center gap-2 shrink-0">
+            <button type="button" id="btn-vendor-pair-conts" onclick="onExecutePairSelectedConts()" class="${selectedContLines.size === 2 ? 'inline-flex' : 'hidden'} btn-keep-solid h-8.5 px-3.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs items-center gap-1.5 shadow-sm cursor-pointer transition-all animate-pulse" title="Ghép 2 container 20 feet đã chọn vào chung 1 chuyến xe (Kẹp 20)">
+              <i class="ph-bold ph-link text-sm text-teal-200"></i>
+              <span id="text-vendor-pair-conts">Ghép Cont (${selectedContLines.size})</span>
+            </button>
+            <button type="button" onclick="openVendorExcelModal()" id="btn-open-excel-modal" class="btn-keep-solid h-8.5 px-3.5 rounded-lg border border-slate-300 bg-white hover:bg-teal-50 hover:text-teal-800 text-slate-700 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors" title="Tải file mẫu Excel hoặc nạp file đã bổ sung thông tin xe & tài xế">
+              <i class="ph-bold ph-file-xls text-sm text-teal-700"></i>
+              <span>Nhập Excel</span>
+            </button>
             <button type="button" id="btn-vendor-expand-table" onclick="toggleVendorContainersTableExpand()" class="h-8.5 px-3 rounded-lg border border-slate-300 bg-white hover:bg-teal-50 hover:text-teal-800 text-slate-700 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors" title="Mở rộng bảng container toàn màn hình để dễ thao tác">
               <i id="icon-vendor-expand-table" class="ph-bold ${fsIcon} text-sm"></i>
               <span id="text-vendor-expand-table">${fsText}</span>
             </button>
-            <button type="button" onclick="openVendorExcelModal()" id="btn-open-excel-modal" class="btn-keep-solid h-8.5 px-3.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors" title="Tải file mẫu Excel hoặc nạp file đã bổ sung thông tin xe & tài xế">
-              <i class="ph-bold ph-file-xls text-sm"></i>
-              <span>Nhập Excel</span>
-            </button>
-            ${!isReadonly ? `
-              <button type="button" onclick="openQuickAddModal()" class="h-8.5 px-3 rounded-lg border border-slate-200 bg-slate-50 hover:bg-white text-slate-700 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-colors">
-                <i class="ph-bold ph-plus text-sm text-teal-700"></i>
-                <span>Thêm Xe / Tài Xế Mới</span>
-              </button>
-            ` : ''}
           </div>
         </div>
 
@@ -1971,8 +1989,8 @@
           <table class="w-full text-left erp-table whitespace-nowrap text-[13px] tabular-nums">
             <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-xs sticky top-0 font-heading z-10 border-b border-slate-300 select-none">
               <tr>
-                <th class="p-2.5 w-11 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('line_no')">
-                  <span class="inline-flex items-center gap-1">STT <i class="ph-bold ${assignSortIcon('line_no')} text-xs"></i></span>
+                <th class="p-2.5 w-16 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('line_no')" title="Bấm để sắp xếp theo STT dòng">
+                  <span class="inline-flex items-center justify-center gap-1">STT <i class="ph-bold ${assignSortIcon('line_no')} text-xs"></i></span>
                 </th>
                 <th class="p-2.5 font-bold text-slate-800 cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('container_number')">
                   <span class="inline-flex items-center gap-1">SỐ CONTAINER <i class="ph-bold ${assignSortIcon('container_number')} text-xs"></i></span>
@@ -2792,6 +2810,9 @@
       driver_name: d.driver_name !== undefined ? d.driver_name : (base.driver_name || ''),
       driver_phone: d.driver_phone !== undefined ? d.driver_phone : (base.driver_phone || ''),
       vendor_note: d.vendor_note !== undefined ? d.vendor_note : (base.vendor_note || ''),
+      paired_with_line_no: d.paired_with_line_no !== undefined ? d.paired_with_line_no : (base.paired_with_line_no || null),
+      is_twin_container: d.is_twin_container !== undefined ? d.is_twin_container : Boolean(base.is_twin_container),
+      container_number_2: d.container_number_2 !== undefined ? d.container_number_2 : (base.container_number_2 || ''),
     };
   }
 
@@ -3313,24 +3334,130 @@
     w.print();
   };
 
-  window.showPair20Options = function(currentLineNo) {
-    if (!state || !state.rows) return;
-    const other20s = state.rows.filter(r => r.line_no !== currentLineNo && !r.moved && (r.container_type || '').includes('20'));
-    if (!other20s.length) { alert('Không có container 20 feet nào khác để ghép cùng xe (Kẹp 20).'); return; }
-    const targetLine = prompt(`GHÉP CONT (KẸP 20):\nNhập số dòng muốn ghép chung xe với dòng #${currentLineNo}:\n` + other20s.map(r => `• "${r.line_no}": Cont ${r.container_number || `#${r.line_no}`}`).join('\n'));
-    if (!targetLine) return;
-    const targetRow = state.rows.find(r => String(r.line_no) === String(targetLine.trim()));
-    if (!targetRow) { alert('Số dòng không hợp lệ.'); return; }
-    const src = dirtyRows[targetRow.line_no] ? { ...targetRow, ...dirtyRows[targetRow.line_no] } : targetRow;
-    if (!src.tractor_plate) { alert(`Dòng #${targetRow.line_no} chưa có biển số Đầu kéo.`); return; }
-    updateRowField(currentLineNo, 'tractor_plate', src.tractor_plate || '');
-    updateRowField(currentLineNo, 'trailer_plate', src.trailer_plate || '');
-    updateRowField(currentLineNo, 'driver_name', src.driver_name || '');
-    updateRowField(currentLineNo, 'driver_phone', src.driver_phone || '');
-    updateRowField(currentLineNo, 'vendor_note', (src.vendor_note ? src.vendor_note + ' | ' : '') + `Kẹp cùng dòng #${targetRow.line_no}`);
-    updateRowField(currentLineNo, 'paired_with_line_no', targetRow.line_no);
-    updateRowField(currentLineNo, 'is_twin_container', true);
-    updateRowField(currentLineNo, 'container_number_2', src.container_number || '');
+  // Quản lý nghiệp vụ chọn và ghép đôi 2 Container 20ft (Kẹp 20)
+  window.onSelectContLineToPair = function(lineNo, isChecked) {
+    const row = (state && state.rows) ? state.rows.find(r => r.line_no === lineNo) : null;
+    const is20 = row && (row.container_type || '').includes('20');
+    if (isChecked) {
+      if (!is20) {
+        alert(`Container dòng #${lineNo} là loại ${row ? (row.container_type || 'cont khác') : 'cont'}. Chức năng ghép chung 1 xe (Kẹp 20) chỉ áp dụng cho container 20 feet.`);
+        const cb = document.querySelector(`.vendor-cont-checkbox[data-line="${lineNo}"]`);
+        if (cb) cb.checked = false;
+        return;
+      }
+      if (selectedContLines.size >= 2) {
+        alert('Bạn chỉ có thể chọn tối đa 2 container 20 feet để ghép chung 1 chuyến xe (Kẹp 20). Hãy bỏ chọn bớt nếu muốn đổi sang container khác.');
+        const cb = document.querySelector(`.vendor-cont-checkbox[data-line="${lineNo}"]`);
+        if (cb) cb.checked = false;
+        return;
+      }
+      selectedContLines.add(lineNo);
+    } else {
+      selectedContLines.delete(lineNo);
+    }
+    window.updatePairContButton();
+    const rowEl = document.getElementById(`row-container-${lineNo}`);
+    if (rowEl) {
+      rowEl.classList.toggle('!bg-teal-50/80', isChecked);
+      rowEl.classList.toggle('ring-1', isChecked);
+      rowEl.classList.toggle('ring-inset', isChecked);
+      rowEl.classList.toggle('ring-teal-500/30', isChecked);
+    }
+  };
+
+  window.updatePairContButton = function() {
+    const btn = document.getElementById('btn-vendor-pair-conts');
+    const txt = document.getElementById('text-vendor-pair-conts');
+    if (!btn) return;
+    if (selectedContLines.size === 2) {
+      btn.classList.remove('hidden');
+      btn.classList.add('inline-flex');
+      if (txt) txt.textContent = `Ghép Cont (2)`;
+    } else {
+      btn.classList.add('hidden');
+      btn.classList.remove('inline-flex');
+    }
+  };
+
+  window.onExecutePairSelectedConts = function() {
+    if (selectedContLines.size !== 2) {
+      alert('Vui lòng tick chọn đúng 2 container 20 feet ở cột đầu tiên để thực hiện ghép cont.');
+      return;
+    }
+    const lines = Array.from(selectedContLines);
+    const lineA = lines[0];
+    const lineB = lines[1];
+    const rowA = (state && state.rows) ? state.rows.find(r => r.line_no === lineA) : null;
+    const rowB = (state && state.rows) ? state.rows.find(r => r.line_no === lineB) : null;
+    if (!rowA || !rowB) return;
+
+    const dataA = dirtyRows[lineA] ? { ...rowA, ...dirtyRows[lineA] } : rowA;
+    const dataB = dirtyRows[lineB] ? { ...rowB, ...dirtyRows[lineB] } : rowB;
+
+    let donor = null;
+    if (dataA.tractor_plate && !dataB.tractor_plate) {
+      donor = dataA;
+    } else if (dataB.tractor_plate && !dataA.tractor_plate) {
+      donor = dataB;
+    } else if (dataA.tractor_plate && dataB.tractor_plate && dataA.tractor_plate !== dataB.tractor_plate) {
+      const chooseA = confirm(`Hai container này đang gán 2 đầu kéo khác nhau:\n• Dòng #${lineA}: ${dataA.tractor_plate}\n• Dòng #${lineB}: ${dataB.tractor_plate}\n\nBấm [OK] để dùng xe dòng #${lineA}, hoặc [Cancel] để dùng xe dòng #${lineB}.`);
+      donor = chooseA ? dataA : dataB;
+    } else if (dataA.tractor_plate) {
+      donor = dataA;
+    }
+
+    // Ghép cont A với B
+    updateRowField(lineA, 'paired_with_line_no', lineB);
+    updateRowField(lineA, 'is_twin_container', true);
+    updateRowField(lineA, 'container_number_2', dataB.container_number || '');
+    const cleanNoteA = (dataA.vendor_note || '').replace(/\s*\|\s*Kẹp cùng dòng #\d+/g, '').replace(/^Kẹp cùng dòng #\d+\s*\|?\s*/g, '').trim();
+    updateRowField(lineA, 'vendor_note', (cleanNoteA ? cleanNoteA + ' | ' : '') + `Kẹp cùng dòng #${lineB}`);
+
+    // Ghép cont B với A
+    updateRowField(lineB, 'paired_with_line_no', lineA);
+    updateRowField(lineB, 'is_twin_container', true);
+    updateRowField(lineB, 'container_number_2', dataA.container_number || '');
+    const cleanNoteB = (dataB.vendor_note || '').replace(/\s*\|\s*Kẹp cùng dòng #\d+/g, '').replace(/^Kẹp cùng dòng #\d+\s*\|?\s*/g, '').trim();
+    updateRowField(lineB, 'vendor_note', (cleanNoteB ? cleanNoteB + ' | ' : '') + `Kẹp cùng dòng #${lineA}`);
+
+    // Đồng bộ đầu kéo, rơ-moóc, tài xế nếu đã có nguồn
+    if (donor && donor.tractor_plate) {
+      ['tractor_plate', 'trailer_plate', 'driver_name', 'driver_phone'].forEach(k => {
+        updateRowField(lineA, k, donor[k] || '');
+        updateRowField(lineB, k, donor[k] || '');
+      });
+    }
+
+    selectedContLines.clear();
+    render();
+  };
+
+  window.onUnpairCont = function(lineNo) {
+    const row = state && state.rows ? state.rows.find(r => r.line_no === lineNo) : null;
+    if (!row) return;
+    const cur = dirtyRows[lineNo] ? { ...row, ...dirtyRows[lineNo] } : row;
+    const pairLine = cur.paired_with_line_no;
+    if (!confirm(`Bạn có chắc muốn hủy ghép đôi container dòng #${lineNo}${pairLine ? ` với dòng #${pairLine}` : ''}?`)) return;
+
+    updateRowField(lineNo, 'paired_with_line_no', null);
+    updateRowField(lineNo, 'is_twin_container', false);
+    updateRowField(lineNo, 'container_number_2', '');
+    const cleanNote = (cur.vendor_note || '').replace(/\s*\|\s*Kẹp cùng dòng #\d+/g, '').replace(/^Kẹp cùng dòng #\d+\s*\|?\s*/g, '').trim();
+    updateRowField(lineNo, 'vendor_note', cleanNote);
+
+    if (pairLine) {
+      const rowPair = state.rows.find(r => r.line_no === pairLine);
+      const curPair = rowPair ? (dirtyRows[pairLine] ? { ...rowPair, ...dirtyRows[pairLine] } : rowPair) : null;
+      if (curPair) {
+        updateRowField(pairLine, 'paired_with_line_no', null);
+        updateRowField(pairLine, 'is_twin_container', false);
+        updateRowField(pairLine, 'container_number_2', '');
+        const cleanPairNote = (curPair.vendor_note || '').replace(/\s*\|\s*Kẹp cùng dòng #\d+/g, '').replace(/^Kẹp cùng dòng #\d+\s*\|?\s*/g, '').trim();
+        updateRowField(pairLine, 'vendor_note', cleanPairNote);
+      }
+    }
+    selectedContLines.delete(lineNo);
+    if (pairLine) selectedContLines.delete(pairLine);
     render();
   };
 
