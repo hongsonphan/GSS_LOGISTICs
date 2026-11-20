@@ -452,6 +452,7 @@ def assign(booking, container_ids, subcontractor, *, user=None, reason='', expir
                 expires_at=timezone.now() + datetime.timedelta(days=days) if days else None, company=booking.company,
                 draft_rows={'_raw_token': raw})
             vs.audit_allocation(alloc, 'GRANT', user, {'source': 'assign_containers'})
+    affected_allocs = set()
     for c in conts:
         if alloc is not None and c.allocation_id == alloc.id:
             continue
@@ -460,46 +461,97 @@ def assign(booking, container_ids, subcontractor, *, user=None, reason='', expir
             errors.append(f'Không đổi được nhà xe: {why}.')
             continue
         old_vendor = c.allocation.subcontractor if c.allocation_id else None
-        if c.trip_id and c.trip.step_status == 'READY':
-            if user is None or not getattr(user, 'is_authenticated', False):
-                errors.append(f'Cont {c.container_number} đã có chuyến, cần nhân viên điều vận đổi.')
-                continue
-            wf.cancel(c.trip, user=user, reason=(reason or 'Đổi nhà xe cho cont')[:255] if len(reason or '') >= 5 else 'Đổi nhà xe cho cont')
-            c.trip = None
         old_alloc = c.allocation
         if old_alloc is not None:
-            drafts = dict(old_alloc.draft_rows or {})
-            drafts.pop(str(c.alloc_line_no), None)
-            old_alloc.draft_rows = drafts
-            old_alloc.save(update_fields=['draft_rows', 'updated_at'])
+            affected_allocs.add(old_alloc)
+        
+        # Hủy các chuyến xe ở trạng thái READY của cont này ở nhà xe cũ
+        trips_to_cancel = []
+        if c.trip_id and c.trip.step_status == 'READY':
+            trips_to_cancel.append(c.trip)
+        if old_alloc is not None and c.container_number:
+            extra = old_alloc.trips.filter(is_deleted=False, step_status='READY', container_number=c.container_number)
+            for et in extra:
+                if et not in trips_to_cancel:
+                    trips_to_cancel.append(et)
+        for t in trips_to_cancel:
+            if user is not None and getattr(user, 'is_authenticated', False):
+                wf.cancel(t, user=user, reason=(reason or 'Đổi nhà xe cho cont')[:255] if len(reason or '') >= 5 else 'Đổi nhà xe cho cont')
+            else:
+                t.step_status = 'CANCELLED'
+                t.status = 'CANCELLED'
+            t.vendor_line_no = None
+            t.save(update_fields=['step_status', 'status', 'vendor_line_no', 'updated_at'])
+        c.trip = None
+
         if alloc is not None:
-            nxt = (BookingContainer.objects.filter(allocation=alloc).aggregate(m=Max('alloc_line_no'))['m'] or 0)
-            nxt = max(nxt, alloc.trips.aggregate(m=Max('vendor_line_no'))['m'] or 0) + 1
-            c.allocation, c.alloc_line_no = alloc, nxt
+            c.allocation = alloc
+            affected_allocs.add(alloc)
         else:
             c.allocation, c.alloc_line_no = None, None
         c.save(update_fields=['allocation', 'alloc_line_no', 'trip', 'updated_at'])
         changed.append({'container': c.container_number, 'from': (old_vendor.short_name or old_vendor.name) if old_vendor else '',
                         'to': (subcontractor.short_name or subcontractor.name) if subcontractor else ''})
-        if old_alloc is not None:
-            _resize_to_lines(old_alloc)
-    if alloc is not None:
-        _resize_to_lines(alloc)
+    for a in affected_allocs:
+        reindex_allocation_lines(a)
     if changed:
         _audit(booking, 'update', user, {'vendor_assignment': changed, 'reason': reason})
     vs.sync_booking_progress(booking)
     return {'allocation': alloc, 'raw_token': raw, 'changed': changed, 'errors': errors}
 
 
-def _resize_to_lines(alloc):
-    """Phiếu theo cont: số dòng = số dòng lớn nhất đang dùng (cont đang giao hoặc chuyến đã sinh)."""
+def reindex_allocation_lines(alloc):
+    """Đồng bộ và đánh lại số thứ tự dòng 1..N liên tục cho phiếu phân bổ theo cont.
+    Cập nhật allocated_containers chính xác theo số lượng cont đang được giao.
+    Đồng thời cập nhật vendor_line_no cho các DispatchTrip đang liên kết với cont tương ứng.
+    """
     from apps.dispatch import vendor_service as vs
-    m = max(BookingContainer.objects.filter(allocation=alloc, is_deleted=False).aggregate(m=Max('alloc_line_no'))['m'] or 0,
-            alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').aggregate(m=Max('vendor_line_no'))['m'] or 0)
-    if alloc.allocated_containers != m:
-        alloc.allocated_containers = m
-        alloc.save(update_fields=['allocated_containers', 'updated_at'])
+    from apps.dispatch.models import DispatchTrip
+    if alloc is None:
+        return
+    conts = list(BookingContainer.objects.filter(allocation=alloc, is_deleted=False).order_by('alloc_line_no', 'id'))
+    count = len(conts)
+    old_drafts = dict(alloc.draft_rows or {})
+    new_drafts = {}
+
+    # 1. Hủy các chuyến mồ côi (chuyến còn gắn vendor_allocation=alloc nhưng cont không còn thuộc alloc)
+    valid_cnums = {c.container_number for c in conts if c.container_number}
+    stale_trips = alloc.trips.filter(is_deleted=False).exclude(container_number__in=valid_cnums)
+    for st in stale_trips:
+        if st.step_status == 'READY':
+            st.step_status = 'CANCELLED'
+            st.status = 'CANCELLED'
+        st.vendor_line_no = None
+        st.save(update_fields=['step_status', 'status', 'vendor_line_no', 'updated_at'])
+
+    # 2. Tạm thời set None để tránh đụng UniqueConstraint khi đánh lại 1..count
+    for c in conts:
+        if c.trip_id:
+            DispatchTrip.objects.filter(pk=c.trip_id).update(vendor_line_no=None)
+
+    # 3. Đánh lại số thứ tự liên tục 1..count
+    for idx, c in enumerate(conts, start=1):
+        old_line = c.alloc_line_no
+        if c.alloc_line_no != idx:
+            c.alloc_line_no = idx
+            c.save(update_fields=['alloc_line_no', 'updated_at'])
+        if c.trip_id:
+            DispatchTrip.objects.filter(pk=c.trip_id).update(vendor_line_no=idx)
+        if str(old_line) in old_drafts:
+            new_drafts[str(idx)] = old_drafts[str(old_line)]
+    for k, v in old_drafts.items():
+        if str(k).startswith('_'):
+            new_drafts[k] = v
+
+    alloc.allocated_containers = count
+    alloc.draft_rows = new_drafts
+    alloc.save(update_fields=['allocated_containers', 'draft_rows', 'updated_at'])
     vs.refresh_status(alloc)
+
+
+def _resize_to_lines(alloc):
+    """Phiếu theo cont: đồng bộ số dòng và số cont theo thực tế cont đang phân bổ."""
+    reindex_allocation_lines(alloc)
 
 
 def container_for_line(alloc, line_no):

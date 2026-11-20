@@ -366,6 +366,26 @@ def rows_for(alloc, for_vendor=True):
             'container_type': (bc.container_type if bc else '') or alloc.booking.container_size,
             'delivery': ((bc.delivery_loc.name if bc.delivery_loc_id else bc.delivery_address) if bc else '') or '',
         })
+    # Bổ sung các container đã chuyển đi (cancelled trip) nếu chưa có trong out
+    seen_cnums = {r.get('container_number') for r in out if r.get('container_number')}
+    extra_line = alloc.allocated_containers + 1
+    cancelled_trips = alloc.trips.filter(is_deleted=False, step_status='CANCELLED').order_by('id')
+    for t in cancelled_trips:
+        cn = t.container_number
+        if cn and cn not in seen_cnums:
+            seen_cnums.add(cn)
+            out.append({
+                'line_no': extra_line, 'container_number': cn, 'seal_number': t.seal_number or '',
+                'tractor_plate': '', 'trailer_plate': '', 'driver_name': '', 'driver_phone': '',
+                'vendor_note': '', 'is_twin_container': False, 'container_number_2': '',
+                'trip_id': t.id, 'trip_code': t.trip_code, 'trip_token': None, 'driver_token': None,
+                'driver_url': None, 'zalo_message': '', 'zalo_url': '', 'pickup': '', 'warehouse': '',
+                'dropoff': '', 'dem_expiry': '', 'det_expiry': '', 'step_status': 'CANCELLED',
+                'step_index': 0, 'step_label': 'Đã chuyển cho nhà xe khác', 'milestones': {},
+                'events': [], 'editable': False, 'container_locked': True, 'moved': True,
+                'container_type': alloc.booking.container_size or '20GP', 'delivery': '',
+            })
+            extra_line += 1
     return out
 
 
@@ -1657,12 +1677,14 @@ def vendor_overview(subcontractor):
         is_cmode = container_mode(a.booking)
         if is_cmode:
             target_cnt = a.containers.filter(is_deleted=False).count()
-            if a.allocated_containers != target_cnt and target_cnt > 0:
+            if a.allocated_containers != target_cnt:
                 a.allocated_containers = target_cnt
                 BookingVendorAllocation.objects.filter(pk=a.pk).update(allocated_containers=target_cnt)
+            valid_cnums = set(a.containers.filter(is_deleted=False).values_list('container_number', flat=True))
+            trips = list(a.trips.filter(is_deleted=False, container_number__in=valid_cnums).exclude(step_status='CANCELLED').values_list('step_status', flat=True))
         else:
             target_cnt = a.allocated_containers
-        trips = list(a.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').values_list('step_status', flat=True))
+            trips = list(a.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').values_list('step_status', flat=True))
         filled = len(trips)
         running = sum(1 for st in trips if st in ('ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY'))
         done = sum(1 for st in trips if st == 'EMPTY_RETURNED')
@@ -1719,7 +1741,12 @@ def vendor_tracking_rows(subcontractor, alloc_id=None):
         .order_by('-id')
     )
     if alloc_id:
-        qs = qs.filter(vendor_allocation_id=alloc_id)
+        alloc = BookingVendorAllocation.objects.filter(pk=alloc_id).first()
+        if alloc and container_mode(alloc.booking):
+            valid_cnums = set(alloc.containers.filter(is_deleted=False).values_list('container_number', flat=True))
+            qs = qs.filter(vendor_allocation_id=alloc_id, container_number__in=valid_cnums)
+        else:
+            qs = qs.filter(vendor_allocation_id=alloc_id)
     trips = list(qs[:200])
     events_map = _trip_events_map([t.id for t in trips])
     out = []

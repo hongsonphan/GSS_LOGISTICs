@@ -188,6 +188,59 @@ class AllocationByContainerTests(Base):
         self.assertTrue(AuditLog.objects.filter(model_label='customers.bookingorder', changes__has_key='vendor_assignment').exists())
         self.assertTrue(AuditLog.objects.filter(model_label='dispatch.bookingvendorallocation', changes__event='GRANT').exists())
 
+    def test_unassign_and_reassign_deducts_allocated_and_tracking(self):
+        """Khi gán cont cho nhà xe rồi hủy gán hoặc chuyển nhà xe khác, số cont và danh sách theo dõi phải trừ bỏ chính xác."""
+        from apps.dispatch import vendor_service as vs
+        from apps.gss.models import BookingContainer
+
+        # 1. Giao 3 cont C1, C2, C3 cho self.sub
+        self.assign([self.c[C1].id, self.c[C2].id, self.c[C3].id], self.sub)
+        alloc = BookingContainer.objects.get(container_number=C1).allocation
+        alloc.refresh_from_db()
+        self.assertEqual(alloc.allocated_containers, 3)
+
+        # 2. Khai báo xe cho cả 3 cont (sinh 3 DispatchTrip)
+        rows = {r['container_number']: r['line_no'] for r in vs.rows_for(alloc) if not r.get('moved')}
+        vs.submit_rows(alloc, [
+            {'line_no': rows[C1], 'tractor_plate': '51C-111.11'},
+            {'line_no': rows[C2], 'tractor_plate': '51C-222.22'},
+            {'line_no': rows[C3], 'tractor_plate': '51C-333.33'},
+        ])
+        tracking = vs.vendor_tracking_rows(self.sub, alloc.id)
+        self.assertEqual(len(tracking), 3)
+
+        # 3. Hủy gán cont C2 (bỏ phân bổ)
+        out = self.assign([self.c[C2].id], None)
+        alloc.refresh_from_db()
+        # Số cont được giao cho nhà xe cũ PHẢI giảm từ 3 xuống 2
+        self.assertEqual(alloc.allocated_containers, 2)
+        remaining = list(BookingContainer.objects.filter(allocation=alloc, is_deleted=False).order_by('alloc_line_no'))
+        self.assertEqual(len(remaining), 2)
+        # Các dòng còn lại phải được đánh số thứ tự liên tục 1, 2
+        self.assertEqual([c.alloc_line_no for c in remaining], [1, 2])
+        # Danh sách theo dõi hành trình của nhà xe cũ PHẢI trừ bỏ cont C2 (chỉ còn 2)
+        tracking_after = vs.vendor_tracking_rows(self.sub, alloc.id)
+        self.assertEqual(len(tracking_after), 2)
+        self.assertNotIn(C2, [t['container_number'] for t in tracking_after])
+
+        # KPI và Overview phải cập nhật 2 cont
+        summary = vs.allocation_summary(alloc)
+        self.assertEqual(summary['allocated_containers'], 2)
+        self.assertEqual(summary['filled'], 2)
+
+        # 4. Chuyển tiếp C3 sang nhà xe sub2
+        self.assign([self.c[C3].id], self.sub2)
+        alloc.refresh_from_db()
+        alloc2 = BookingContainer.objects.get(container_number=C3).allocation
+        alloc2.refresh_from_db()
+
+        # Nhà xe cũ sub còn 1 cont, nhà xe mới sub2 nhận 1 cont
+        self.assertEqual(alloc.allocated_containers, 1)
+        self.assertEqual(alloc2.allocated_containers, 1)
+        tracking_sub1 = vs.vendor_tracking_rows(self.sub, alloc.id)
+        self.assertEqual(len(tracking_sub1), 1)
+        self.assertEqual(tracking_sub1[0]['container_number'], C1)
+
     def test_excel_two_phase_allocation(self):
         r = self.client.get(f'/api/gss/bookings/{self.booking.id}/allocation-template/')
         self.assertEqual(r.status_code, 200)

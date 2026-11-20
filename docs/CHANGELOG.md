@@ -3,6 +3,33 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Chuẩn Hóa Logic Phân Bổ, Hủy Gán Và Chuyển Nhà Xe Cho Container
+- **Bối cảnh & Vấn đề phát hiện:**
+  - Khi điều vận gán container cho một nhà xe, sau đó thao tác hủy gán (bỏ phân bổ) hoặc chuyển container sang nhà xe khác:
+    1. Số cont được phân bổ của nhà xe cũ không tự động trừ bỏ (`allocated_containers` giữ nguyên con số cũ lớn nhất do `_resize_to_lines` dùng `Max(alloc_line_no)` thay vì đếm thực tế `count()`).
+    2. Các dòng thứ tự container (`alloc_line_no`) bị để lại khoảng trống (ví dụ dòng 3 bị khuyết, khi gán lại bị đẩy thành dòng 16), làm cho bảng phân bổ bị thừa dòng ma hoặc lệch số thứ tự.
+    3. Tab **"Theo Dõi Hành Trình"** (`vendor_tracking_rows`) vẫn giữ lại chuyến xe của container đã bị hủy gán hoặc chuyển đi, dẫn đến mẫu số hành trình không khớp với số cont đang được giao (ví dụ giao 14 cont nhưng hành trình báo `14/15`).
+    4. Sidebar lệnh điều vận hiển thị mẫu số sai (ví dụ `14/15 xe` thay vì `14/14 xe`).
+- **Giải pháp & Thay đổi kỹ thuật:**
+  - **1. Tự động đánh lại thứ tự dòng & đồng bộ số lượng (`apps/gss/containers.py`):**
+    - Bổ sung hàm `reindex_allocation_lines(alloc)`:
+      - Quét toàn bộ danh sách container còn hiệu lực của phiếu phân bổ (`is_deleted=False`).
+      - Tự động đánh lại số thứ tự dòng liên tục từ `1 .. count` (không còn lỗ hổng hay khoảng trống dòng).
+      - Đồng bộ lại `vendor_line_no` của `DispatchTrip` tương ứng với từng container.
+      - Chuyển `allocated_containers` về đúng số lượng container thực tế (`len(conts)`).
+      - Đồng bộ lại `draft_rows` theo đúng bộ key chỉ số dòng mới.
+    - Trong `cs.assign`:
+      - Khi gán/hủy gán container: Tự động hủy (`wf.cancel`) các chuyến xe ở trạng thái `READY` thuộc container bị hủy gán/chuyển đi và đặt `t.vendor_line_no = None`.
+      - Tự động gọi `reindex_allocation_lines` cho tất cả các phiếu phân bổ (`BookingVendorAllocation`) liên quan (cả nhà xe cũ và nhà xe mới).
+    - Trong `cs.remove_container`: Tự động gọi `reindex_allocation_lines` khi xóa container khỏi đơn hàng.
+  - **2. Làm sạch hành trình theo dõi nhà xe (`apps/dispatch/vendor_service.py`):**
+    - `vendor_tracking_rows(subcontractor, alloc_id)`: Khi lọc theo `alloc_id` trong chế độ `container_mode`, chỉ trả về các chuyến xe thuộc danh sách container ĐANG ĐƯỢC PHÂN BỔ cho nhà xe đó (`container_number__in=valid_cnums`). Loại bỏ triệt để các chuyến mồ côi của container đã hủy gán hoặc điều chuyển.
+    - `vendor_overview`: Đồng bộ `target_cnt = a.containers.filter(is_deleted=False).count()` ngay cả khi `target_cnt == 0`, lọc chuyến xe tính KPI `filled/running/done` chỉ theo các container còn hiệu lực của phiếu.
+    - `rows_for`: Bổ sung các container đã chuyển đi (cancelled trip) vào cuối bảng với `moved=True, editable=False` mà không làm vỡ chỉ số dòng của các cont đang hoạt động.
+  - **3. Kiểm thử tự động:**
+    - Bổ sung kiểm thử đơn vị `test_unassign_and_reassign_deducts_allocated_and_tracking` trong `apps/gss/tests.py`: Kiểm tra toàn diện luồng gán 3 cont -> gán xe -> hủy gán 1 cont -> kiểm tra trừ bỏ số lượng, re-index 1..2, dọn dẹp tracking -> chuyển cont sang nhà xe khác. Toàn bộ 39 unit tests và `qa.py verify --fast` đều đạt chuẩn.
+
+
 ## 2026-11-20 – Chuẩn Hóa Số Lượng Cont Phân Bổ (15 Cont) & Cuộn Danh Sách Xe Theo Dõi Hành Trình
 - **Bối cảnh & Hiện tượng:**
   1. *Lệch số lượng container trên Cổng Nhà Xe:* Thẻ KPI hiển thị "16 Cont" (chờ gán 1 cont) và sidebar hiển thị "15/16 xe", trong khi nhà xe chỉ được giao 15 cont và đã gán đủ 15/15 cont.
