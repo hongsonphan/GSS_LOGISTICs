@@ -14,7 +14,8 @@ const ROUTE_TAB_MAP = {
     '/reports': 'bao-cao',
     '/settings': 'cai-dat',
     '/news': 'ban-tin',
-    '/tasks': 'giao-viec'
+    '/tasks': 'giao-viec',
+    '/audit-log': 'nhat-ky'
 };
 
 const TAB_ROUTE_MAP = {
@@ -29,7 +30,8 @@ const TAB_ROUTE_MAP = {
     'bao-cao': '/reports',
     'cai-dat': '/settings',
     'ban-tin': '/news',
-    'giao-viec': '/tasks'
+    'giao-viec': '/tasks',
+    'nhat-ky': '/audit-log'
 };
 
 // --- QUẢN LÝ CHẾ ĐỘ HIỂN THỊ TOPBAR LINH HOẠT (FULLPAGE BREADCRUMB VS STANDARD TABS) ---
@@ -110,7 +112,7 @@ function resetTopbarStandardMode(tabId) {
 const TAB_ACCESS_MODULES = {
     'dieu-van': ['dispatch'], 'kinh-doanh': ['sales'], 'xe-bai': ['fleet'], 'nhan-su': ['hr'],
     'ke-toan': ['accounting', 'advances', 'ledger'], 'quyet-toan': ['accounting'], 'hai-quan': ['customs'],
-    'bao-cao': ['reports_any'], 'cai-dat': ['settings', 'admin']
+    'bao-cao': ['reports_any'], 'cai-dat': ['settings', 'admin'], 'nhat-ky': ['audit_log']
 };
 
 function canOpenTab(tabId) {
@@ -250,7 +252,8 @@ function switchTab(tabId, updateHistory = true) {
             'bao-cao': 'Báo cáo',
             'cai-dat': 'Cài đặt',
             'ban-tin': 'Bản tin Công ty & Thông báo Nội bộ',
-            'giao-viec': 'Quản lý Giao việc Văn phòng'
+            'giao-viec': 'Quản lý Giao việc Văn phòng',
+            'nhat-ky': 'Nhật ký hoạt động'
         };
         topbarTitleEl.innerText = TAB_NAME_MAP[tabId] || 'Dashboard Tổng quan';
     }
@@ -314,6 +317,7 @@ function switchTab(tabId, updateHistory = true) {
             loadReportsData();
         }
         if (tabId === 'cai-dat') loadMasterData();
+        if (tabId === 'nhat-ky' && typeof loadAuditLog === 'function') loadAuditLog();
         if (tabId === 'ban-tin') {
             if (typeof loadCompanyNews === 'function') loadCompanyNews();
         }
@@ -505,7 +509,9 @@ function resolveInitialRoute() {
             'ban-tin': 'ban-tin',
             'news': 'ban-tin',
             'giao-viec': 'giao-viec',
-            'tasks': 'giao-viec'
+            'tasks': 'giao-viec',
+            'nhat-ky': 'nhat-ky',
+            'audit-log': 'nhat-ky'
         };
         if (validLegacyTabs[cleanHash]) {
             const mappedTab = validLegacyTabs[cleanHash];

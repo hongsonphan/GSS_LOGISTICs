@@ -39,6 +39,7 @@
   - [B11. Rơ-Moóc](#b11-rơ-moóc)
   - [B12. Quy Cách Cont & Xe](#b12-quy-cách-cont--xe)
   - [B13. Số Dư Ban Đầu](#b13-số-dư-ban-đầu)
+  - [B14. Nhật Ký Hoạt Động](#b14-nhật-ký-hoạt-động)
 - **PHẦN C. HƯỚNG DẪN THAO TÁC THEO PHÂN HỆ**
   - [C1. Dashboard Tổng quan](#c1-dashboard-tổng-quan)
   - [C2. Sale & Booking](#c2-sale--booking)
@@ -324,6 +325,18 @@ Danh mục các loại container chuẩn quốc tế: 20GP, 40GP, 40HC, 45HQ, Fl
 
 **Nơi thực hiện:** Cài đặt ➔ Tài Chính & Quản Trị ➔ **Số Dư Ban Đầu**.
 Khai báo số dư khởi tạo tại thời điểm bắt đầu đưa hệ thống vào vận hành: số dư Quỹ tiền mặt công ty, số dư từng Tài khoản ngân hàng, và số dư Quỹ tạm ứng giao cho điều phối viên.
+
+## B14. Nhật Ký Hoạt Động
+
+**Nơi thực hiện:** Cài đặt ➔ Khai Báo Ban Đầu ➔ **Nhật Ký Hoạt Động** (hoặc menu tên người dùng ➔ Nhật ký hoạt động, địa chỉ `/audit-log`). Chỉ hiện với người được cấp quyền Xem; mặc định chỉ nhóm **Admin** và **Giám đốc** có.
+
+1. Tab **Thay đổi dữ liệu**: ai tạo / sửa / đổi trạng thái / xóa phiếu nào, lúc nào. Bấm một dòng để xem từng trường **trước ➔ sau**.
+2. Tab **Đăng nhập**: thời gian, tài khoản, sự kiện (đăng nhập, sai mật khẩu, bị khóa...), IP, trình duyệt, thiết bị mới.
+3. Lọc theo từ khóa, người, loại phiếu, hành động, từ / đến ngày ➔ **`Lọc`**; **`Xóa lọc`** để bỏ lọc.
+4. **`Xuất CSV`** tải tối đa 5000 dòng đang lọc (cần quyền Xuất). Mật khẩu / token luôn hiển thị `***`.
+5. Cấp cho người khác: Cài đặt ➔ **Vai Trò & Phân Quyền** ➔ dòng **Cài đặt · Nhật ký hoạt động** ➔ tích **Xem** (và **Xuất**) ➔ lưu; người đó tải lại trang (F5).
+
+Lưu ý: nhật ký chỉ đọc, không sửa hay xóa được; thay đổi hàng loạt bằng lệnh cập nhật trực tiếp trong CSDL không được ghi.
 
 ---
 

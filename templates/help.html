@@ -217,6 +217,7 @@
 <a href="#sec-b11" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]"><span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span><span class="truncate">B11. Rơ-Moóc</span></a>
 <a href="#sec-b12" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]"><span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span><span class="truncate">B12. Quy Cách Cont &amp; Xe</span></a>
 <a href="#sec-b13" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]"><span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span><span class="truncate">B13. Số Dư Ban Đầu</span></a>
+<a href="#sec-b14" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]"><span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span><span class="truncate">B14. Nhật Ký Hoạt Động</span></a>
 </div></div>
 <div class="tree-parent-group border-b border-slate-100 pb-2.5">
 <div class="tree-header flex items-center justify-between px-2.5 py-2 rounded-xl hover:bg-slate-50 cursor-pointer font-bold text-teal-900 group" onclick="toggleTreeGroup(this)">
@@ -974,6 +975,20 @@ Danh mục các loại container chuẩn quốc tế: 20GP, 40GP, 40HC, 45HQ, Fl
 <div class="text-sm text-slate-700 space-y-3">
 <p class="leading-relaxed"><strong class="font-bold text-slate-900">Nơi thực hiện:</strong> Cài đặt ➔ Tài Chính &amp; Quản Trị ➔ <strong class="font-bold text-slate-900">Số Dư Ban Đầu</strong>.
 Khai báo số dư khởi tạo tại thời điểm bắt đầu đưa hệ thống vào vận hành: số dư Quỹ tiền mặt công ty, số dư từng Tài khoản ngân hàng, và số dư Quỹ tạm ứng giao cho điều phối viên.</p>
+</div>
+</section>
+<section id="sec-b14" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
+<h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">B14. Nhật Ký Hoạt Động</h3>
+<div class="text-sm text-slate-700 space-y-3">
+<p class="leading-relaxed"><strong class="font-bold text-slate-900">Nơi thực hiện:</strong> Cài đặt ➔ Khai Báo Ban Đầu ➔ <strong class="font-bold text-slate-900">Nhật Ký Hoạt Động</strong> (hoặc menu tên người dùng ➔ Nhật ký hoạt động, địa chỉ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">/audit-log</code>). Chỉ hiện với người được cấp quyền Xem; mặc định chỉ nhóm <strong class="font-bold text-slate-900">Admin</strong> và <strong class="font-bold text-slate-900">Giám đốc</strong> có.</p>
+<ol class="list-decimal pl-5 space-y-1.5">
+<li>Tab <strong class="font-bold text-slate-900">Thay đổi dữ liệu</strong>: ai tạo / sửa / đổi trạng thái / xóa phiếu nào, lúc nào. Bấm một dòng để xem từng trường <strong class="font-bold text-slate-900">trước ➔ sau</strong>.</li>
+<li>Tab <strong class="font-bold text-slate-900">Đăng nhập</strong>: thời gian, tài khoản, sự kiện (đăng nhập, sai mật khẩu, bị khóa...), IP, trình duyệt, thiết bị mới.</li>
+<li>Lọc theo từ khóa, người, loại phiếu, hành động, từ / đến ngày ➔ <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Lọc</span>; <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Xóa lọc</span> để bỏ lọc.</li>
+<li><span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 border border-teal-300 whitespace-nowrap">Xuất CSV</span> tải tối đa 5000 dòng đang lọc (cần quyền Xuất). Mật khẩu / token luôn hiển thị <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">***</code>.</li>
+<li>Cấp cho người khác: Cài đặt ➔ <strong class="font-bold text-slate-900">Vai Trò &amp; Phân Quyền</strong> ➔ dòng <strong class="font-bold text-slate-900">Cài đặt · Nhật ký hoạt động</strong> ➔ tích <strong class="font-bold text-slate-900">Xem</strong> (và <strong class="font-bold text-slate-900">Xuất</strong>) ➔ lưu; người đó tải lại trang (F5).</li>
+</ol>
+<p class="leading-relaxed">Lưu ý: nhật ký chỉ đọc, không sửa hay xóa được; thay đổi hàng loạt bằng lệnh cập nhật trực tiếp trong CSDL không được ghi.</p>
 </div>
 </section>
 <div id="sec-group-3"><h2 class="text-xl sm:text-2xl font-black text-slate-900 uppercase font-heading tracking-tight border-b-2 border-slate-900 pb-3 mb-8">PHẦN C. HƯỚNG DẪN THAO TÁC THEO PHÂN HỆ</h2></div>

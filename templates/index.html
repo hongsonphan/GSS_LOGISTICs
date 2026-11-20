@@ -79,6 +79,9 @@
     {% include 'views/view_transport_order.html' %}
     {% include 'components/modal_import_containers.html' %}
 
+    <!-- 11.1. Nhật ký hoạt động (ai làm gì, sửa / xóa phiếu nào) -->
+    {% include 'views/view_audit_log.html' %}
+
     {% if gss_on %}
     <!-- 12. Màn hình GSS: nhà xe · bãi cont · QR (nhúng trong khung BIM) -->
     {% include 'views/view_gss.html' %}

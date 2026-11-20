@@ -47,9 +47,11 @@ REPORT_CATEGORY = {f'rpt_{r[0]}': r[3] for r in REPORTS}
 #   reports_any: xem được ít nhất một báo cáo; reports_fin: xem được Lãi lỗ hoặc Doanh thu khách (số liệu lãi lỗ);
 #   reports_ops: xem được ít nhất một báo cáo vận hành; settings: xem được ít nhất một tab Cài đặt.
 CFG_KEYS = ['cfg_company', 'cfg_finance', 'cfg_partners', 'cfg_network', 'cfg_fleet']
+# Dòng quyền của trang Cài đặt tính cả Nhật ký hoạt động (chỉ Xem / Xuất): có quyền này thì vào được trang Cài đặt
+SETTINGS_KEYS = CFG_KEYS + ['audit_log']
 # Tab của trang Cài đặt -> phân hệ quyền (roles_permissions thuộc Quản trị hệ thống)
 CFG_TAB_MODULE = {
-    'company': 'cfg_company', 'roles_permissions': 'admin',
+    'company': 'cfg_company', 'roles_permissions': 'admin', 'audit_log': 'audit_log',
     'opening_balance': 'cfg_finance', 'account_settings': 'cfg_finance', 'expenses': 'cfg_finance', 'driver_tariffs': 'cfg_finance', 'allowances': 'cfg_finance',
     'customers': 'cfg_partners', 'tariffs': 'cfg_partners', 'subcontractors': 'cfg_partners',
     'locations': 'cfg_network', 'shipping_lines': 'cfg_network',
@@ -59,7 +61,7 @@ DERIVED_MODULES = {
     'reports_any': lambda keys: any(k in REPORT_CATEGORY for k in keys),
     'reports_fin': lambda keys: bool(keys & {'rpt_pnl', 'rpt_customer_rev'}),
     'reports_ops': lambda keys: any(REPORT_CATEGORY.get(k) == 'ops' for k in keys),
-    'settings': lambda keys: bool(keys & set(CFG_KEYS)),   # vào được trang Cài đặt: xem được ít nhất một tab
+    'settings': lambda keys: bool(keys & set(SETTINGS_KEYS)),   # vào được trang Cài đặt: xem được ít nhất một tab
 }
 # Khoá phân hệ báo cáo cũ (trước khi tách từng báo cáo) -> các báo cáo tương ứng; dữ liệu đã lưu theo khoá cũ vẫn đọc được
 LEGACY_EXPAND = {
@@ -87,6 +89,7 @@ MODULES = [
     ('cfg_partners', 'Cài đặt · Khách hàng & Đối tác', 'Khách hàng, biểu giá cước, nhà thầu phụ 3PL', ['view', 'create', 'edit', 'delete', 'export']),
     ('cfg_network', 'Cài đặt · Mạng lưới & Địa điểm', 'Cảng, kho, bãi, tuyến, hãng tàu', ['view', 'create', 'edit', 'delete', 'export']),
     ('cfg_fleet', 'Cài đặt · Phương tiện & Thiết bị', 'Đầu kéo, rơ-moóc, loại container', ['view', 'create', 'edit', 'delete', 'export']),
+    ('audit_log', 'Cài đặt · Nhật ký hoạt động', 'Xem ai tạo / sửa / xoá / duyệt gì, lúc nào và lịch sử đăng nhập (chỉ đọc); Xuất = tải CSV. Mặc định chỉ Admin và Giám đốc', ['view', 'export']),
     ('admin', 'Quản trị hệ thống', 'Phân quyền, tài khoản người dùng, thông tin công ty', ['view', 'edit']),
 ]
 MODULE_KEYS = [m[0] for m in MODULES]
@@ -283,7 +286,7 @@ def _from_set(pairs):
 def _with_derived(grants):
     for name, test in DERIVED_MODULES.items():
         acts = [act for act in ('view', 'export')
-                if test({m for m, acts_ in grants.items() if m in REPORT_CATEGORY or m in CFG_KEYS if act in acts_})]
+                if test({m for m, acts_ in grants.items() if m in REPORT_CATEGORY or m in SETTINGS_KEYS if act in acts_})]
         if acts:
             grants[name] = acts
     return grants

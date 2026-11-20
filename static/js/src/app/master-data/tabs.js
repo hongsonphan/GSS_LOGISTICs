@@ -8,7 +8,7 @@ const MASTER_DATA_GROUPS = {
     'initial_setup': {
         name: 'Khai Báo Ban Đầu',
         icon: 'ph-buildings',
-        tabs: ['company', 'roles_permissions']
+        tabs: ['company', 'roles_permissions', 'audit_log']
     },
     'finance_admin': {
         name: 'Tài Chính & Quản Trị',
@@ -34,7 +34,7 @@ const MASTER_DATA_GROUPS = {
 
 // Mỗi tab thuộc một dòng quyền "Cài đặt · ..." trong trang Phân quyền (khớp core/access.py CFG_TAB_MODULE)
 const MASTER_DATA_TAB_MODULE = {
-    company: 'cfg_company', roles_permissions: 'admin',
+    company: 'cfg_company', roles_permissions: 'admin', audit_log: 'audit_log',
     opening_balance: 'cfg_finance', account_settings: 'cfg_finance', expenses: 'cfg_finance', driver_tariffs: 'cfg_finance', allowances: 'cfg_finance',
     customers: 'cfg_partners', tariffs: 'cfg_partners', subcontractors: 'cfg_partners',
     locations: 'cfg_network', shipping_lines: 'cfg_network',
@@ -227,6 +227,7 @@ function switchMasterDataTab(tabKey) {
     const rolesView = document.getElementById('md-roles-permissions-view');
     const openingBalanceView = document.getElementById('md-opening-balance-view');
     const accountSettingsView = document.getElementById('md-account-settings-view');
+    const auditLogView = document.getElementById('md-audit-log-view');
     const createBtnContainer = document.getElementById('md-create-btn') || document.getElementById('md-create-btn-label')?.parentElement;
 
     if (createBtnContainer) createBtnContainer.style.display = '';
@@ -237,9 +238,10 @@ function switchMasterDataTab(tabKey) {
     if (rolesView) { rolesView.classList.add('hidden'); rolesView.parentElement.classList.remove('shrink-0'); }
     if (openingBalanceView) openingBalanceView.classList.add('hidden');
     if (accountSettingsView) { accountSettingsView.classList.add('hidden'); }
+    if (auditLogView) { auditLogView.classList.add('hidden'); }
 
     // Ẩn/hiện các nút Tải Mẫu, Nhập Excel, Xuất Dữ Liệu theo danh mục
-    const isSpecialTab = (tabKey === 'company' || tabKey === 'roles_permissions' || tabKey === 'account_settings');
+    const isSpecialTab = (tabKey === 'company' || tabKey === 'roles_permissions' || tabKey === 'account_settings' || tabKey === 'audit_log');
     const exportTemplateBtn = document.getElementById('md-export-template-btn');
     const importBtn = document.getElementById('md-import-btn');
     const exportDataBtn = document.getElementById('md-export-data-btn');
@@ -266,6 +268,15 @@ function switchMasterDataTab(tabKey) {
         accountSettingsView.classList.remove('hidden');
         accountSettingsView.parentElement.classList.add('shrink-0');
         renderAccountSettingsPage(accountSettingsView);
+        return;
+    }
+
+    if (tabKey === 'audit_log' && auditLogView && typeof loadAuditLog === 'function') {
+        // Nhật ký hoạt động: khung riêng (audit/audit-log.js), không dùng bảng danh mục chung
+        [filterToolbar, tableContainer, paginationContainer].forEach(el => el && el.classList.add('hidden'));
+        if (createBtnContainer) createBtnContainer.style.display = 'none';
+        auditLogView.classList.remove('hidden');
+        loadAuditLog();
         return;
     }
 

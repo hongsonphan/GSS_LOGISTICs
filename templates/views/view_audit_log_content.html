@@ -1,0 +1,69 @@
+<div class="bg-white border-b border-slate-200 px-4 md:px-6 py-3.5 flex flex-col gap-3 shrink-0 shadow-xs">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 shadow-xs shrink-0">
+            <i class="ph-bold ph-clock-counter-clockwise text-xl"></i>
+        </div>
+        <div class="min-w-0">
+            <h2 class="text-lg font-black text-slate-800 tracking-tight font-heading">NHẬT KÝ HOẠT ĐỘNG</h2>
+            <p class="text-xs text-slate-500">Ai đã tạo, sửa, xóa, duyệt phiếu nào và vào hệ thống lúc nào. Chỉ đọc, không thể sửa hay xóa.</p>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button type="button" id="audit-tab-data" onclick="switchAuditTab('data')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-teal-800 shadow-xs">Thay đổi dữ liệu</button>
+            <button type="button" id="audit-tab-login" onclick="switchAuditTab('login')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900">Đăng nhập</button>
+        </div>
+    </div>
+
+    <!-- Bộ lọc -->
+    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2 items-end">
+        <label class="col-span-2 md:col-span-2 xl:col-span-2 flex flex-col gap-1">
+            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Tìm kiếm</span>
+            <input id="audit-q" type="search" placeholder="Số phiếu, tên đối tượng, tài khoản..." onkeydown="if(event.key==='Enter'){applyAuditFilters()}" class="h-10 px-3 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600">
+        </label>
+        <label id="audit-f-actor" class="flex flex-col gap-1">
+            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Người thực hiện</span>
+            <select id="audit-actor" onchange="applyAuditFilters()" class="h-10 px-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600/30"><option value="">Tất cả</option></select>
+        </label>
+        <label id="audit-f-model" class="flex flex-col gap-1">
+            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Loại phiếu</span>
+            <select id="audit-model" onchange="applyAuditFilters()" class="h-10 px-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600/30"><option value="">Tất cả</option></select>
+        </label>
+        <label class="flex flex-col gap-1">
+            <span id="audit-kind-label" class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Hành động</span>
+            <select id="audit-kind" onchange="applyAuditFilters()" class="h-10 px-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600/30"><option value="">Tất cả</option></select>
+        </label>
+        <label class="flex flex-col gap-1">
+            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Từ ngày</span>
+            <input id="audit-from" type="date" onchange="applyAuditFilters()" class="h-10 px-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600/30">
+        </label>
+        <label class="flex flex-col gap-1">
+            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Đến ngày</span>
+            <input id="audit-to" type="date" onchange="applyAuditFilters()" class="h-10 px-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600/30">
+        </label>
+        <div class="col-span-2 md:col-span-4 xl:col-span-7 flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="applyAuditFilters()" class="h-10 px-4 rounded-lg border border-teal-700 text-teal-800 hover:bg-teal-700 hover:text-white text-sm font-bold transition-colors inline-flex items-center gap-1.5"><i class="ph-bold ph-magnifying-glass"></i>Lọc</button>
+            <button type="button" onclick="resetAuditFilters()" class="h-10 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-bold transition-colors">Xóa lọc</button>
+            <button type="button" id="audit-export-btn" data-access="audit_log:export" onclick="exportAuditLog()" class="h-10 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-bold transition-colors inline-flex items-center gap-1.5 ml-auto"><i class="ph-bold ph-download-simple"></i>Xuất CSV</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bảng -->
+<div class="flex-1 overflow-auto p-4 md:p-6">
+    <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-x-auto">
+        <table class="w-full text-sm text-left min-w-[860px]">
+            <thead id="audit-thead" class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500 font-bold border-b border-slate-200"></thead>
+            <tbody id="audit-tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+    </div>
+    <div class="flex items-center justify-between gap-3 flex-wrap mt-3 text-xs text-slate-600">
+        <span id="audit-summary">—</span>
+        <div class="flex items-center gap-2">
+            <button type="button" id="audit-prev" onclick="goAuditPage(-1)" class="h-9 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 font-bold disabled:opacity-40 disabled:cursor-not-allowed">Trang trước</button>
+            <span id="audit-page-label" class="font-bold text-slate-700">1 / 1</span>
+            <button type="button" id="audit-next" onclick="goAuditPage(1)" class="h-9 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 font-bold disabled:opacity-40 disabled:cursor-not-allowed">Trang sau</button>
+        </div>
+    </div>
+</div>

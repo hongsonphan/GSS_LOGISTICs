@@ -24,7 +24,7 @@ def access_menu(request):
 def _menu(user):
     if user.is_superuser:
         return {'menu': {k: True for k in ('sales', 'dispatch', 'fleet', 'hr', 'accounting', 'customs', 'reports',
-                                           'settings', 'access_admin', 'depot')}}
+                                           'settings', 'access_admin', 'depot', 'audit_log')}}
     v = lambda m, a='view': access.allowed(user, m, a)
     return {'menu': {
         'sales': v('sales'), 'dispatch': v('dispatch'), 'fleet': v('fleet'), 'customs': v('customs'), 'depot': v('depot'),
@@ -33,6 +33,7 @@ def _menu(user):
         'reports': v('reports_any'),
         'settings': v('settings') or v('admin'),
         'access_admin': v('admin'),
+        'audit_log': v('audit_log'),
     }}
 
 

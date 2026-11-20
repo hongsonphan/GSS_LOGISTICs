@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from core import access_views, account_views
+from core import access_views, account_views, audit_views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
@@ -114,6 +114,8 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
 
     # Clean Semantic Routes cho Web SPA (Tiêu chuẩn UI/UX & Quản trị Quốc tế)
+    path('audit-log/', index_view, name='spa-audit-log'),
+    path('audit-log', index_view, name='spa-audit-log-noslash'),
     path('dashboard/', index_view, name='spa-dashboard'),
     path('dashboard', index_view, name='spa-dashboard-noslash'),
     path('dispatch/', index_view, name='spa-dispatch'),
@@ -205,6 +207,9 @@ urlpatterns = [
     path('api/access/groups/<str:key>/', access_views.GroupAccessAPIView.as_view(), name='api-access-group'),
     path('api/access/roles/<str:role>/', access_views.RoleAccessAPIView.as_view(), name='api-access-role'),
     path('api/access/users/<int:pk>/', access_views.UserAccessAPIView.as_view(), name='api-access-user'),
+    # Nhật ký hoạt động (chỉ đọc): quyền 'audit_log' trong ma trận
+    path('api/audit/logs/', audit_views.AuditLogListAPIView.as_view(), name='api-audit-logs'),
+    path('api/audit/logins/', audit_views.LoginEventListAPIView.as_view(), name='api-audit-logins'),
     path('api/access/users/<int:pk>/send-reset/', account_views.SendPasswordResetAPIView.as_view(), name='api-access-user-send-reset'),
     # Tài khoản: quên mật khẩu qua email, đặt lại bằng link, đổi mật khẩu
     path('password-reset/', account_views.password_reset_request, name='password-reset'),

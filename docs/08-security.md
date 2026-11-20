@@ -69,6 +69,7 @@ Mục I bên dưới là **bộ chuẩn mục tiêu kế thừa từ hệ BIM c�
 ### 11. Kiểm Soát Phân Quyền Theo Vai Trò (RBAC Access Control)
 - **Chuẩn:** Phân quyền nghiêm ngặt giữa: Tài xế, Điều phối viên, Thủ kho, Kế toán và Ban Giám Đốc.
 - **Hành động:** Áp dụng Permission Classes trong DRF (`IsDriver`, `IsDispatcher`, `IsAccountant`, `IsAdminOrDirector`).
+- **Nhật ký hoạt động (20/11/2026):** `/api/audit/logs/`, `/api/audit/logins/` chỉ đọc, quyền `audit_log` (mặc định Admin + Giám đốc), lọc theo công ty người xem, che giá trị password / token / secret / otp; nhật ký bất biến ở tầng CSDL (xem `PLATFORM_PATCHES.md`).
 
 ### 12. Chống Tấn Công SQL Injection (Parameterized ORM Queries)
 - **Chuẩn:** Mọi báo cáo sản lượng, P&L, đối soát tài chính phải dùng Django ORM.

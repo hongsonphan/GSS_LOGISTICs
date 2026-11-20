@@ -52,6 +52,7 @@ IsSalesOrDirector = module_permission('sales', 'IsSalesOrDirector')
 IsDispatcherOrAccountant = module_permission('advances', 'IsDispatcherOrAccountant')
 IsCustomsOrDirector = module_permission('customs', 'IsCustomsOrDirector')
 CanManageFleet = module_permission('fleet', 'CanManageFleet')
+CanViewAuditLog = module_permission('audit_log', 'CanViewAuditLog')   # Cài đặt › Nhật ký hoạt động (GET = Xem, ?export= = Xuất)
 CanViewFinancialReports = module_permission('reports_fin', 'CanViewFinancialReports')
 CanViewOperationalReports = module_permission('reports_any', 'CanViewOperationalReports')
 class CanManageMasterData(permissions.BasePermission):

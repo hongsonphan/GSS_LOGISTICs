@@ -560,6 +560,21 @@ Trả về toàn bộ dữ liệu cho màn hình đối soát kế toán: KPI + 
 
 ---
 
+## 15. NHẬT KÝ HOẠT ĐỘNG (chỉ đọc)
+
+Quyền: dòng `audit_log` của ma trận (GET = Xem; `?export=csv` = Xuất). Chỉ trả dữ liệu của công ty người xem.
+
+### `GET /api/audit/logs/`
+
+Tham số: `q`, `actor`, `model`, `kind` (`create|update|status|delete|hard_delete`), `object_id`, `date_from`, `date_to` (`YYYY-MM-DD`), `page`, `page_size` (≤ 100), `with_filters=1` (kèm danh sách lọc), `export=csv` (≤ 5000 dòng).
+Trả `{count, page, page_size, results:[{id, when, actor, actor_name, ip, kind, kind_label, model, model_name, object_id, object_repr, summary, changes:[{field, label, old, new}]}], filters?}`. Trường password / token / secret / otp trả `***`. POST / PUT / DELETE: 403 / 405.
+
+### `GET /api/audit/logins/`
+
+Tham số: `q` (tài khoản, IP), `kind`, `date_from`, `date_to`, `page`, `page_size`, `with_filters=1`, `export=csv`. Trả `{count, page, page_size, results:[{id, when, username, name, kind, kind_label, ip, user_agent, new_device}]}`.
+
+---
+
 ## LƯU Ý KỸ THUẬT QUAN TRỌNG
 
 ### Zero Variance Enforcement

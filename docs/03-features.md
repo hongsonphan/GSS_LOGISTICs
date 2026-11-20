@@ -553,6 +553,12 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 - Tài khoản ngân hàng, Logo, Địa chỉ trụ sở + Chi nhánh
 - Tham số hệ thống: VAT mặc định, Giá dầu tham chiếu, Hệ số CBM
 
+### 13.11 Nhật ký hoạt động (Cài đặt, 20/11/2026)
+- Tab **Nhật Ký Hoạt Động** (Cài đặt ➔ Khai Báo Ban Đầu; `/audit-log`; `audit/audit-log.js`), chỉ đọc. Tab "Thay đổi dữ liệu" (thời gian, người, hành động, loại phiếu, đối tượng, nội dung; bấm dòng xem trước ➔ sau) và tab "Đăng nhập" (tài khoản, sự kiện, IP, trình duyệt, thiết bị mới).
+- Lọc theo tìm kiếm, người, loại phiếu, hành động, ngày; Xuất CSV (≤ 5000 dòng). Trường nhạy cảm che `***`.
+- Quyền `audit_log` (Xem + Xuất), mặc định Admin và Giám đốc. Lọc theo công ty của người xem (cách ly tenant). API `GET /api/audit/logs/`, `/api/audit/logins/`.
+- Giới hạn: không thấy thay đổi qua `QuerySet.update()` / `bulk_create`.
+
 ### 13.10 Tính năng Xuất Mẫu & Nhập Danh Mục Ban Đầu Từ Excel (Master Data Import/Export)
 - **Tải Mẫu Excel Chuẩn Hóa:** Cho phép tải template Excel (`.xlsx`) cho 12 danh mục với header chuẩn GSS Logistics, giải thích định dạng và dữ liệu mẫu thực tế.
 - **Nhập Danh Mục Hàng Loạt:** Hỗ trợ kéo thả/chọn file Excel để nạp dữ liệu ban đầu cho các bảng Cảng bãi, Khách hàng, Biểu cước, Đội xe, Lương chuyến, Khoản chi, Số dư đầu kỳ.

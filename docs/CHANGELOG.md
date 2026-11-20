@@ -3,6 +3,14 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Nhật Ký Hoạt Động (chuyển từ BIM Logistics sang GSS)
+- **Tính năng mới:** tab **Cài đặt ➔ Khai Báo Ban Đầu ➔ Nhật Ký Hoạt Động** (cũng mở từ menu người dùng, địa chỉ `/audit-log`): xem ai đã tạo / sửa / đổi trạng thái / xóa dữ liệu nào lúc nào (trước ➔ sau từng trường) và nhật ký đăng nhập. Chỉ đọc; bảng chữ thuần, tên tab không số đếm.
+- **Bộ lọc:** tìm kiếm, người, loại phiếu, hành động, từ / đến ngày; **Xuất CSV** (tối đa 5000 dòng, cần quyền Xuất). Giá trị trường nhạy cảm (password / token / secret / otp) che `***`.
+- **API:** `GET /api/audit/logs/`, `GET /api/audit/logins/` (`core/audit_views.py`). **Cách ly công ty:** nhật ký lọc theo `company` của người xem; nhật ký đăng nhập chỉ gồm tài khoản của công ty.
+- **Phân quyền:** dòng ma trận mới `audit_log` (Xem + Xuất, `core/access.py`, lớp `CanViewAuditLog`); mặc định chỉ Admin và Giám đốc, cấp thêm cho người khác ở trang Phân quyền. Có quyền này thì vào được trang Cài đặt (khóa dẫn xuất `settings`). Không cần migration (không đổi model; nhóm đã lưu trong CSDL: bật dòng này ở trang Phân quyền).
+- **Giữ nguyên:** `AuditLog`, `LoginEvent`, `core/audit.py`, trigger bất biến CSDL; mọi route, API, khóa JSON cũ.
+- **Giới hạn:** không ghi thay đổi qua `QuerySet.update()` / `bulk_create`; thao tác tài xế / nhà xe qua link hiện nhãn chung. Test: `core/test_audit_log_api.py`.
+
 ## 2026-11-20 – Chuẩn Hóa Quy Tắc Một Nút Nhập Excel Trên Toàn Bộ Ứng Dụng
 - **Bối cảnh & Yêu cầu:**
   - Loại bỏ các cặp nút bấm rời rạc gây rối giao diện (`[Xuất Excel]` và `[Nhập Excel]` hoặc `[Mẫu Excel]` và `[Nhập Excel]`) trên các thanh công cụ (Toolbar) của hệ thống.

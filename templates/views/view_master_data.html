@@ -42,6 +42,10 @@
                         <i class="ph-bold ph-shield-check text-sm"></i>
                         <span>Vai Trò & Phân Quyền</span>
                     </button>
+                    <button type="button" data-access="audit_log" onclick="switchMasterDataTab('audit_log')" data-md-tab="audit_log" class="md-tab-btn px-3 py-1.5 text-xs md:text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-clock-counter-clockwise text-sm"></i>
+                        <span>Nhật Ký Hoạt Động</span>
+                    </button>
                 </div>
 
                 <!-- 2. Tài Chính & Quản Trị -->
@@ -175,6 +179,11 @@
 
         <!-- Cài đặt tài khoản kế toán: ánh xạ nghiệp vụ -> tài khoản (master-data/account-settings.js) -->
         <div id="md-account-settings-view" class="hidden p-3 md:p-4 bg-slate-50" data-m-keep></div>
+
+        <!-- Nhật ký hoạt động: lịch sử thao tác & đăng nhập (audit/audit-log.js) -->
+        <div id="md-audit-log-view" class="hidden flex-1 flex flex-col bg-slate-50 overflow-hidden" data-m-keep>
+            {% include 'views/view_audit_log_content.html' %}
+        </div>
 
         <!-- Dynamic Data Table Container (Sticky Header & Scrollable Body) -->
         <div id="md-table-container" class="overflow-x-auto relative border-b border-slate-200 erp-table-container min-h-[420px] max-h-[calc(100vh-320px)] overflow-y-auto">

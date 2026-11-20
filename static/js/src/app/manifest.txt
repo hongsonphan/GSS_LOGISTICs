@@ -89,6 +89,8 @@ master-data/opening-balance.js
 master-data/account-settings.js
 master-data/import-export.js
 master-data/subcontractor-fleet.js
+# 8.1. Nhật ký hoạt động (Admin / Giám đốc, người được cấp quyền)
+audit/audit-log.js
 # 9. Báo cáo
 reports/reports-core.js
 reports/operations/report-01-03.js

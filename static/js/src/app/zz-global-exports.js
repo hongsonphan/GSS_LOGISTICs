@@ -328,3 +328,10 @@ window.setFullpageBookingLoadingTime = typeof setFullpageBookingLoadingTime !== 
 window.handleBookingSortChange = typeof handleBookingSortChange !== 'undefined' ? handleBookingSortChange : undefined;
 window.handleQuoteSortChange = typeof handleQuoteSortChange !== 'undefined' ? handleQuoteSortChange : undefined;
 window.handleDispatchSortChange = typeof handleDispatchSortChange !== 'undefined' ? handleDispatchSortChange : undefined;
+window.loadAuditLog = typeof loadAuditLog !== 'undefined' ? loadAuditLog : undefined;
+window.switchAuditTab = typeof switchAuditTab !== 'undefined' ? switchAuditTab : undefined;
+window.applyAuditFilters = typeof applyAuditFilters !== 'undefined' ? applyAuditFilters : undefined;
+window.resetAuditFilters = typeof resetAuditFilters !== 'undefined' ? resetAuditFilters : undefined;
+window.goAuditPage = typeof goAuditPage !== 'undefined' ? goAuditPage : undefined;
+window.toggleAuditRow = typeof toggleAuditRow !== 'undefined' ? toggleAuditRow : undefined;
+window.exportAuditLog = typeof exportAuditLog !== 'undefined' ? exportAuditLog : undefined;
