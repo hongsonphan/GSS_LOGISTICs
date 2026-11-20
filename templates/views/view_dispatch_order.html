@@ -229,15 +229,12 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button type="button" onclick="mdoDownloadExcelTemplate()" 
-                            class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors font-heading" title="Xuất file mẫu phân bổ">
-                            <i class="ph-bold ph-file-xls text-emerald-600 text-sm"></i> Xuất Mẫu Excel
+                        <button type="button" onclick="mdoOpenExcelModal()" 
+                            class="px-3.5 py-1.5 rounded-xl border border-teal-600 bg-white hover:bg-teal-50 text-teal-800 font-bold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors font-heading" title="Tải mẫu Excel hoặc nạp file phân bổ container">
+                            <i class="ph-bold ph-file-xls text-teal-700 text-sm"></i>
+                            <span>Nhập Excel</span>
                         </button>
-                        <button type="button" onclick="document.getElementById('mdo-excel-input').click()" 
-                            class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors font-heading" title="Nhập danh sách phân bổ hàng loạt">
-                            <i class="ph-bold ph-upload-simple text-indigo-600 text-sm"></i> Nhập Excel
-                        </button>
-                        <input type="file" id="mdo-excel-input" accept=".xlsx,.xls,.csv" onchange="mdoUploadExcel(this.files[0])" class="hidden">
+                        <input type="file" id="mdo-excel-input" accept=".xlsx,.xls,.csv" onchange="mdoHandleExcelPicked(this)" class="hidden">
                     </div>
                 </div>
 
@@ -461,4 +458,61 @@
 
         </div>
     </div>
+</div>
+
+<!-- ============================================================================= -->
+<!-- MODAL NHẬP PHÂN BỔ TỪ EXCEL (MDO EXCEL IMPORT MODAL CHUẨN 2 BƯỚC)            -->
+<!-- ============================================================================= -->
+<div id="modal-mdo-excel" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+  <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
+    <div class="px-6 py-4.5 bg-gradient-to-r from-teal-800 to-teal-950 text-white flex items-center justify-between rounded-t-2xl font-heading">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
+          <i class="ph-bold ph-file-xls text-2xl"></i>
+        </div>
+        <div>
+          <h3 class="font-black text-base leading-tight font-heading">Nhập Phân Bổ Container Từ Excel</h3>
+          <p class="text-xs text-teal-100/90 mt-0.5">Phân bổ chỉ tiêu hoặc gán số container cho nhà xe</p>
+        </div>
+      </div>
+      <button type="button" onclick="mdoCloseExcelModal()" class="text-teal-200 hover:text-white p-1.5 rounded-xl hover:bg-white/10 cursor-pointer">
+        <i class="ph-bold ph-x text-lg"></i>
+      </button>
+    </div>
+
+    <div class="p-6 space-y-5 text-xs text-slate-700">
+      <!-- Bước 1 -->
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="font-bold text-slate-800 flex items-center gap-1.5 text-sm">
+            <span class="w-5 h-5 rounded-full bg-teal-700 text-white flex items-center justify-center text-[11px] font-black">1</span>
+            <span>Tải File Mẫu Phân Bổ</span>
+          </div>
+          <button type="button" onclick="mdoDownloadExcelTemplate()" class="h-8 px-3 rounded-lg bg-white border border-teal-600 text-teal-700 font-bold inline-flex items-center gap-1.5 hover:bg-teal-50 shadow-2xs cursor-pointer">
+            <i class="ph-bold ph-download-simple text-sm"></i>
+            <span>Tải File Mẫu (.xlsx)</span>
+          </button>
+        </div>
+        <p class="text-slate-500 pl-6 leading-relaxed">
+          Tải file mẫu Excel chứa danh sách container của đơn hàng Booking này để điền chỉ tiêu hoặc gán nhà xe.
+        </p>
+      </div>
+
+      <!-- Bước 2 -->
+      <div class="space-y-2.5">
+        <div class="font-bold text-slate-800 flex items-center gap-1.5 text-sm">
+          <span class="w-5 h-5 rounded-full bg-teal-700 text-white flex items-center justify-center text-[11px] font-black">2</span>
+          <span>Chọn File Đã Điền Để Nạp Lên Hệ Thống</span>
+        </div>
+        <label class="border-2 border-dashed border-slate-300 hover:border-teal-600 hover:bg-teal-50/40 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors text-center" onclick="document.getElementById('mdo-excel-input').click()">
+          <i class="ph-bold ph-cloud-arrow-up text-3xl text-teal-600"></i>
+          <div class="font-bold text-slate-700" id="mdo-excel-drop-label">Bấm vào đây để chọn tệp Excel (.xlsx, dưới 5MB)</div>
+        </label>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+        <button type="button" onclick="mdoCloseExcelModal()" class="h-9 px-4 rounded-xl border border-slate-300 text-slate-600 font-bold hover:bg-slate-100 cursor-pointer">Đóng</button>
+      </div>
+    </div>
+  </div>
 </div>

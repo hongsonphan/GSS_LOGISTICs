@@ -567,6 +567,28 @@ async function submitDispatchOrderAllocation() {
 
 
 
+function mdoOpenExcelModal() {
+    if (!mdoCurrentBooking || !mdoCurrentBooking.id) {
+        showToast('warning', 'Vui lòng chọn Booking trước khi nạp file Excel phân bổ.');
+        return;
+    }
+    const modal = document.getElementById('modal-mdo-excel');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function mdoCloseExcelModal() {
+    const modal = document.getElementById('modal-mdo-excel');
+    if (modal) modal.classList.add('hidden');
+}
+
+function mdoHandleExcelPicked(input) {
+    if (input && input.files && input.files[0]) {
+        const file = input.files[0];
+        mdoCloseExcelModal();
+        mdoUploadExcel(file);
+    }
+}
+
 function mdoDownloadExcelTemplate() {
     if (!mdoCurrentBooking || !mdoCurrentBooking.id) {
         showToast('warning', 'Vui lòng chọn Booking trước khi kết xuất file Excel phân bổ.');
@@ -1676,6 +1698,11 @@ window.mdoToggleSelectAllConts = mdoToggleSelectAllConts;
 window.mdoOnContCheckChange = mdoOnContCheckChange;
 
 window.mdoAssignBulkContainers = mdoAssignBulkContainers;
+window.mdoOpenExcelModal = mdoOpenExcelModal;
+window.mdoCloseExcelModal = mdoCloseExcelModal;
+window.mdoHandleExcelPicked = mdoHandleExcelPicked;
+window.mdoDownloadExcelTemplate = mdoDownloadExcelTemplate;
+window.mdoUploadExcel = mdoUploadExcel;
 
 
 function openBookingDetail(bookingId) {

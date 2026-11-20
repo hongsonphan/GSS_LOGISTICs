@@ -113,20 +113,12 @@
                 </div>
             </div>
 
-            <!-- Action Buttons: Export Mẫu, Nhập Excel, Xuất Dữ Liệu & Tạo Mới -->
+            <!-- Action Buttons: Nhập Excel (tích hợp tải mẫu), Xuất Dữ Liệu & Tạo Mới -->
             <div class="flex items-center space-x-2" id="md-action-buttons-group" data-access-keep>
-                <!-- Nút Tải Mẫu Excel (Export Mẫu) -->
-                <button type="button" onclick="exportMasterDataTemplate()" id="md-export-template-btn" 
-                        class="px-3 py-1.5 bg-white hover:bg-teal-50 text-slate-700 hover:text-teal-800 border border-slate-300 hover:border-teal-400 rounded-lg text-xs md:text-sm font-bold font-heading shadow-2xs flex items-center space-x-1.5 transition-all cursor-pointer" 
-                        title="Tải file Excel mẫu chuẩn hóa để nhập dữ liệu ban đầu">
-                    <i class="ph-bold ph-download-simple text-base text-teal-700"></i>
-                    <span>Tải Mẫu Excel</span>
-                </button>
-
-                <!-- Nút Nhập Danh Mục (Import Excel) -->
+                <!-- Nút Nhập Danh Mục (Import Excel - có sẵn tải mẫu bên trong) -->
                 <button type="button" onclick="openMasterDataImportModal()" id="md-import-btn" 
                         class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer" 
-                        title="Nhập danh mục từ tệp Excel vào hệ thống">
+                        title="Nhập danh mục từ tệp Excel vào hệ thống (có sẵn tải file mẫu bên trong)">
                     <i class="ph-bold ph-file-arrow-up text-base"></i>
                     <span>Nhập Excel</span>
                 </button>

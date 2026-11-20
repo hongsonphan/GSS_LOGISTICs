@@ -2557,11 +2557,8 @@ async function vaViewUnallocatedContainersModal(allocId) {
                         <div class="text-xs font-bold text-slate-700">Tiến độ phân bổ:</div>
                         <div class="text-xs font-bold text-teal-800">${filled} / ${total} cont <span class="text-amber-700">(${remaining > 0 ? 'Còn thiếu ' + remaining + ' cont' : 'Đã đủ xe'})</span></div>
                     </div>
-                    <button type="button" class="h-8 px-3 rounded-xl bg-white hover:bg-teal-50 border border-teal-600 text-teal-800 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="vaExportAllocExcel(${allocId})" title="Kết xuất danh sách container ra file Excel để bổ sung xe và tài xế">
-                        <i class="ph-bold ph-download-simple text-sm text-teal-700"></i> Xuất Excel
-                    </button>
-                    <button type="button" class="h-8 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="vaTriggerAllocExcelUpload(${allocId})" title="Nạp file Excel đã điền thông tin xe & tài xế lên hệ thống">
-                        <i class="ph-bold ph-upload-simple text-sm"></i> Nhập Excel
+                    <button type="button" class="h-8 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-xs" onclick="toOpenExcelModal(${allocId})" title="Tải mẫu Excel hoặc nạp file container gán xe">
+                        <i class="ph-bold ph-file-xls text-sm"></i> Nhập Excel
                     </button>
                     ${vendorLink ? `
                         <button type="button" class="h-8 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs" onclick="window.open('${vaEsc(vendorLink)}', '_blank')" title="Mở Cổng Nhà Xe để gán hộ hoặc hỗ trợ">

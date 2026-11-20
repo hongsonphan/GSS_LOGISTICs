@@ -274,7 +274,8 @@ function backToAllocations() {
 // NHẬP EXCEL MODAL CHUẨN 2 BƯỚC
 // -----------------------------------------------------------------------------
 
-function toOpenExcelModal() {
+function toOpenExcelModal(allocId) {
+    if (allocId) currentTransportOrderId = allocId;
     if (!currentTransportOrderId) return;
     const modal = document.getElementById('modal-to-excel');
     if (!modal) return;

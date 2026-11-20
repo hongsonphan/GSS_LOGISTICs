@@ -3,6 +3,30 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Chuẩn Hóa Quy Tắc Một Nút Nhập Excel Trên Toàn Bộ Ứng Dụng
+- **Bối cảnh & Yêu cầu:**
+  - Loại bỏ các cặp nút bấm rời rạc gây rối giao diện (`[Xuất Excel]` và `[Nhập Excel]` hoặc `[Mẫu Excel]` và `[Nhập Excel]`) trên các thanh công cụ (Toolbar) của hệ thống.
+  - Áp dụng triệt để quy tắc **Một Nút Duy Nhất: `Nhập Excel`** (hoặc `Nhập Từ Excel`).
+  - Khi người dùng nhấn nút này, hệ thống sẽ mở **Modal Chuẩn 2 Bước trực quan**:
+    - **Bước 1 (Tải Mẫu / Kết Xuất Dữ Liệu):** Cung cấp nút tải tệp Excel mẫu chuẩn `.xlsx` (hoặc kết xuất dữ liệu hiện tại kèm công thức/danh sách cont) để người dùng điền/bổ sung thông tin.
+    - **Bước 2 (Nạp Dữ Liệu):** Khu vực kéo thả hoặc chọn tệp Excel đã điền để tải lên hệ thống và tiến hành đồng bộ dữ liệu.
+- **Phạm vi chuẩn hóa toàn diện:**
+  1. **Cổng Nhà Xe (`templates/vendor_portal.html`):**
+     - Loại bỏ nút `[ Xuất Excel ]` rời rạc trên thanh công cụ tiêu đề.
+     - Giữ duy nhất nút `[ Nhập Từ Excel ]` mở `#modal-vendor-excel`. Nút ở Bước 1 chuyển sang gọi trực tiếp `exportVendorExcel()` tải tệp Excel `.xlsx` chuẩn.
+  2. **View Chi Tiết Lập Lệnh Điều Vận (`templates/views/view_dispatch_order.html` & `templates/components/modal_dispatch_order.html`):**
+     - Gom hai nút `[ Xuất Mẫu Excel ]` và `[ Nhập Excel ]` thành một nút `[ Nhập Excel ]` duy nhất.
+     - Tích hợp Modal chuẩn 2 bước `#modal-mdo-excel` (Bước 1 tải file mẫu phân bổ booking, Bước 2 chọn file và nạp lên hệ thống qua `mdoHandleExcelPicked`).
+  3. **View Lệnh Vận Chuyển Toàn Màn Hình (`templates/views/view_transport_order.html`):**
+     - Đã chuẩn hóa nút `[ Nhập Excel ]` mở Modal 2 bước `#modal-to-excel` (kết xuất container riêng của phiếu chia và nạp lên).
+  4. **Modal Phân Bổ Container Tab Quản Lý Vendor (`static/js/src/app/dispatch/vendor-admin.js`):**
+     - Gom cụm nút thành một nút `[ Nhập Excel ]` gọi `toOpenExcelModal(allocId)` mở trực tiếp modal 2 bước chuẩn.
+  5. **Màn Hình Nhân Sự (`templates/views/view_personnel.html`):**
+     - Loại bỏ nút `[ Mẫu Excel ]` dư thừa trên thanh toolbar vì bên trong modal `modal-employee-import` đã tích hợp sẵn hộp Tải Mẫu chuẩn.
+  6. **Màn Hình Danh Mục Gốc (`templates/views/view_master_data.html`):**
+     - Loại bỏ nút `[ Tải Mẫu Excel ]` dư thừa trên thanh toolbar vì bên trong modal `modal-master-data-import` đã tích hợp sẵn hộp Tải Mẫu chuẩn theo từng danh mục.
+
+
 ## 2026-11-20 – Sửa Nút Quay Lại (Back) Trên Trang Lệnh Vận Chuyển
 - **Hiện tượng:** Khi bấm nút `Quay Lại Điều Vận` trên màn hình Lệnh Vận Chuyển, màn hình bị trắng trơn, không hiển thị lại danh sách phân bổ xe.
 - **Nguyên nhân:** Hàm `backToAllocations()` tìm element ID `view-dispatch` (sai tên, ID thực tế của view điều vận là `view-dieu-van`) và gọi nhầm hàm `switchDispatchSubTab` (hàm chuẩn là `switchDispatchViewTab('allocations')`). Do không tìm thấy view điều vận để gỡ class `hidden-view`, tất cả các view đều bị ẩn.

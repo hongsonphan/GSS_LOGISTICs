@@ -226,15 +226,10 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button type="button" onclick="mdoDownloadExcelTemplate()" 
-                            class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1 shadow-2xs cursor-pointer transition-colors">
-                            <i class="ph-bold ph-file-xls text-emerald-600"></i> Xuất Mẫu Excel
+                        <button type="button" onclick="mdoOpenExcelModal()" 
+                            class="px-2.5 py-1.5 rounded-lg border border-teal-600 bg-white hover:bg-teal-50 text-teal-800 font-bold text-xs flex items-center gap-1 shadow-2xs cursor-pointer transition-colors">
+                            <i class="ph-bold ph-file-xls text-teal-700"></i> Nhập Excel
                         </button>
-                        <button type="button" onclick="document.getElementById('mdo-excel-input').click()" 
-                            class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1 shadow-2xs cursor-pointer transition-colors">
-                            <i class="ph-bold ph-upload-simple text-indigo-600"></i> Nhập Excel
-                        </button>
-                        <input type="file" id="mdo-excel-input" accept=".xlsx,.xls,.csv" onchange="mdoUploadExcel(this.files[0])" class="hidden">
                     </div>
                 </div>
 
