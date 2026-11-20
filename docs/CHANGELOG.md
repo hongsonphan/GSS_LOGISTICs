@@ -3,6 +3,35 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-20 – Chuẩn Hóa Quy Tắc Đặt Mã Chứng Từ & Màn Hình Quản Lý (BG, BK, DD, VC)
+- **Bối cảnh & Thống nhất nghiệp vụ:**
+  - Chuẩn hóa toàn bộ hệ thống mã chứng từ theo chuỗi giá trị vận hành 5 tầng:
+    1. **Báo giá (Sales):** `BG.YYMM.STT` (VD: `BG.2611.001`), reset STT theo tháng (001–999).
+    2. **Booking (Đơn hàng):** `BK.YYMM.STT` (VD: `BK.2611.001`), reset STT theo tháng (001–999).
+    3. **Lệnh Điều Độ (Tổng):** `DD.[Số Booking]` (VD: `DD.BK.2611.001`), gắn kết 1-1 với đơn hàng Booking.
+    4. **Lệnh Điều Độ (con - theo Nhà xe):** `DD.STT.[Số Booking]` (VD: `DD.001.BK.2611.001`, `DD.002.BK.2611.001`), STT đếm theo từng nhà xe/phiếu phân bổ trong Booking.
+    5. **Lệnh Vận Chuyển (Chuyến xe thực tế):** `VC.STT.[Số Booking]` (VD: `VC.001.BK.2611.001`, `VC.002.BK.2611.001`), STT đếm theo số thứ tự container trong toàn Booking (1 đến N) nhằm loại trừ hoàn toàn nguy cơ trùng mã giữa các nhà xe khi cùng mở cổng phân bổ.
+- **Thay đổi kỹ thuật & Hệ thống:**
+  - **Backend (`apps/dispatch/vendor_service.py`):**
+    - Thêm các hàm chuẩn hóa:
+      - `get_allocation_code(alloc)`: Sinh mã `DD.STT.[Số Booking]` cho phiếu phân bổ nhà xe.
+      - `get_dispatch_order_code(booking)`: Sinh mã `DD.[Số Booking]` cho lệnh điều độ tổng.
+      - `get_trip_code_for_booking(booking, alloc, line_no)`: Tự động tính toán STT container toàn cục dựa trên số cont của các phân bổ trước đó (`offset + line_no`) hoặc thứ tự container trong B/L (`bc.line_no`), đảm bảo duy nhất và an toàn xung đột mã tuyệt đối.
+    - Cập nhật `build_trip` sử dụng `get_trip_code_for_booking`.
+    - Cập nhật `allocation_summary` trả về các trường `allocation_code`, `dispatch_order_code` và gán vào `transport_order_code` để tương thích ngược.
+    - Cập nhật `rows_for` tính sẵn `expected_trip_code` cho các dòng nháp.
+  - **Models & Views (`apps/dispatch/models.py`, `apps/customers/models.py`, `apps/dispatch/api_views/trips.py`):**
+    - Thêm thuộc tính `@property allocation_code` và `@property dispatch_order_code` vào `BookingVendorAllocation` và `BookingOrder`.
+    - Khi tạo chuyến xe thủ công có gắn Booking, tự động áp dụng `get_trip_code_for_booking`.
+  - **Giao diện & Màn hình quản lý (`templates/`, `static/js/`):**
+    - `view_dispatch_order.html`: Chuyển tiền tố hiển thị Header từ `LDD.--` sang chuẩn `DD.--`.
+    - `view_transport_order.html`: Đổi nhãn `LỆNH VẬN CHUYỂN` thành `LỆNH ĐIỀU ĐỘ (CON)` với mã phiếu `DD.STT.[Số Booking]`, các dòng cont bên dưới hiển thị mã `VC.STT.[Số Booking]`.
+    - `dispatch-order-modal.js` & `transport-order.js`: Cập nhật logic tiền tố `DD.` và hiển thị mã phân bổ mới.
+    - `vendor_portal.html`: Đồng bộ mã chuyến hiển thị sang `VC.[STT].[Số Booking]`.
+    - Chạy `scripts/build_app_js.py` cập nhật `static/js/app.js`.
+  - **Kiểm thử tự động:**
+    - Chạy kiểm thử tự động toàn diện qua `python scripts/qa.py verify`: 7/7 bước ĐẠT (Bao gồm ruff, migration check, system check, và toàn bộ test suites của `apps.gss`, `apps.dispatch`, `apps.billing`).
+
 ## 2026-11-20 – Chuẩn Hóa Logic Phân Bổ, Hủy Gán Và Chuyển Nhà Xe Cho Container
 - **Bối cảnh & Vấn đề phát hiện:**
   - Khi điều vận gán container cho một nhà xe, sau đó thao tác hủy gán (bỏ phân bổ) hoặc chuyển container sang nhà xe khác:

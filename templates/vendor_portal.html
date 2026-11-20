@@ -3117,7 +3117,7 @@
 
   function formatDriverZaloMessage(row, fullDriverUrl) {
     const b = (state && state.booking) || {};
-    const tripCode = row.trip_code || ('DV.BK.' + row.line_no);
+    const tripCode = row.trip_code || row.expected_trip_code || ('VC.' + String(row.line_no || 1).padStart(3, '0') + '.' + (b.booking_code || ''));
     const contNo = row.container_number || '--';
     const contType = row.container_type || '40HC';
     const sealNo = (row.seal_number && row.seal_number !== '-') ? row.seal_number : '--';
@@ -3153,7 +3153,7 @@
     const cur = { ...base, ...(dirtyRows[lineNo] || {}) };
     currentQrLineNo = lineNo;
 
-    const tripCode = cur.trip_code || ('DV.LINE.' + lineNo);
+    const tripCode = cur.trip_code || cur.expected_trip_code || ('VC.' + String(lineNo).padStart(3, '0') + '.' + (b.booking_code || ''));
     const tripTok = cur.trip_token || base.trip_token || '';
     const fullUrl = tripTok ? (window.location.origin + '/q/' + tripTok + '/') : (window.location.origin + '/q/');
     const qrImgSrc = tripTok ? ('/api/qr/t/' + tripTok + '/qr.svg') : '';

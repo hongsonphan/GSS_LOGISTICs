@@ -346,6 +346,7 @@ def rows_for(alloc, for_vendor=True):
             'line_no': n, **data,
             'trip_id': trip.id if trip else None,
             'trip_code': trip.trip_code if trip else None,
+            'expected_trip_code': trip.trip_code if trip else get_trip_code_for_booking(alloc.booking, alloc=alloc, line_no=n),
             'trip_token': trip_tok,
             'driver_token': trip.driver_token if trip else None,
             'driver_url': driver_url,
@@ -447,6 +448,78 @@ def _container_in_use(number, exclude_trip_id=None):
 _SHIPMENT = {'EXPORT_FCL': ShipmentType.EXPORT, 'IMPORT_FCL': ShipmentType.IMPORT, 'DOMESTIC': ShipmentType.DOMESTIC}
 
 
+def get_allocation_code(alloc):
+    """Mã Lệnh Điều Độ (con) phân bổ cho từng nhà xe: DD.STT.[Số Booking] (VD: DD.001.BK.2611.001)."""
+    if not alloc:
+        return "DD.--"
+    b = getattr(alloc, 'booking', None)
+    if not b:
+        return f"DD.{alloc.id:03d}"
+    b_code = getattr(b, 'booking_code', None) or f"BK#{b.id}"
+    alloc_ids = list(
+        BookingVendorAllocation.objects.filter(booking=b, is_deleted=False)
+        .exclude(status=AllocationStatus.REVOKED)
+        .order_by('id')
+        .values_list('id', flat=True)
+    )
+    if alloc.id in alloc_ids:
+        stt = alloc_ids.index(alloc.id) + 1
+    else:
+        stt = len(alloc_ids) + 1
+    return f"DD.{stt:03d}.{b_code}"
+
+
+def get_dispatch_order_code(booking):
+    """Mã Lệnh Điều Độ (Tổng): DD.[Số Booking] (VD: DD.BK.2611.001)."""
+    if not booking:
+        return "DD.--"
+    b_code = getattr(booking, 'booking_code', None) or f"BK#{getattr(booking, 'id', '')}"
+    return f"DD.{b_code}"
+
+
+def get_trip_code_for_booking(booking, alloc=None, line_no=None):
+    """Sinh mã Lệnh Vận Chuyển: VC.[STT].[Số Booking] (VD: VC.001.BK.2611.001).
+
+    STT đếm theo thứ tự container trong toàn Booking (từ 1 đến N).
+    """
+    from core.sequences import next_code
+    if not booking or not getattr(booking, 'booking_code', None):
+        return next_code(DispatchTrip, 'trip_code', f"VC.{timezone.localdate():%y%m}.", 3)
+
+    b_code = booking.booking_code
+    seq = None
+    if alloc is not None and line_no is not None:
+        from apps.gss.models import BookingContainer
+        bc = BookingContainer.objects.filter(booking=booking, allocation=alloc, alloc_line_no=line_no, is_deleted=False).first()
+        if bc and bc.line_no:
+            seq = bc.line_no
+        else:
+            prev_allocs = BookingVendorAllocation.objects.filter(
+                booking=booking, id__lt=alloc.id, is_deleted=False
+            ).exclude(status=AllocationStatus.REVOKED)
+            offset = sum(a.allocated_containers for a in prev_allocs)
+            seq = offset + int(line_no)
+
+    if seq is None:
+        import re
+        existing_codes = DispatchTrip.all_objects.filter(booking_order=booking).values_list('trip_code', flat=True)
+        max_num = 0
+        for c in existing_codes:
+            m = re.match(r'^VC\.(\d+)\.', c or '')
+            if m:
+                max_num = max(max_num, int(m.group(1)))
+        if max_num > 0:
+            seq = max_num + 1
+        else:
+            seq = DispatchTrip.all_objects.filter(booking_order=booking).count() + 1
+
+    code = f"VC.{seq:03d}.{b_code}"
+    while DispatchTrip.all_objects.filter(trip_code=code).exists():
+        seq += 1
+        code = f"VC.{seq:03d}.{b_code}"
+    return code
+
+
 def _create_trip(alloc, line_no, row):
     veh = _find_or_create_vehicle(row['tractor_plate'], alloc.subcontractor)
     return build_trip(alloc.booking, alloc.subcontractor, row, veh, alloc=alloc, line_no=line_no)
@@ -457,10 +530,9 @@ def build_trip(booking, subcontractor, row, vehicle, *, alloc=None, line_no=None
 
     booking có thể None (chuyến ngoài Booking): khi đó cần customer và extra={'pickup','delivery','dropoff','container_size','loading_date'}.
     """
-    from core.sequences import next_code
     b, extra = booking, extra or {}
     trailer = _find_trailer(row['trailer_plate'])
-    code = next_code(DispatchTrip, 'trip_code', f"VC.{timezone.localdate():%y%m}.", 3)
+    code = get_trip_code_for_booking(b, alloc=alloc, line_no=line_no)
     common = dict(
         trip_code=code, vehicle=vehicle, trailer=trailer, trailer_plate_text='' if trailer else row['trailer_plate'],
         subcontractor=subcontractor, subcontractor_driver_name=row['driver_name'], subcontractor_driver_phone=row['driver_phone'],
@@ -725,7 +797,8 @@ def allocation_summary(alloc, request=None):
     det_exp = det_val() if callable(det_val) else det_val
     sub_name = (alloc.subcontractor.short_name or alloc.subcontractor.name) if alloc.subcontractor else 'Nhà xe'
     b_code = (b.booking_code if b else '') or ''
-    lvc_code = f"LVC.{b_code.replace('BK.', '')} - {sub_name}" if b_code else f"LVC.{alloc.id} - {sub_name}"
+    alloc_code = get_allocation_code(alloc)
+    dd_order_code = get_dispatch_order_code(b)
 
     closing_val = getattr(b, 'closing_time', '') or ''
     closing_str = closing_val.strftime('%d/%m/%Y %H:%M') if hasattr(closing_val, 'strftime') else str(closing_val or '')
@@ -750,7 +823,9 @@ def allocation_summary(alloc, request=None):
         'vendor_link': vendor_link,
         'booking_id': b.id if b else None,
         'booking_code': b_code,
-        'transport_order_code': lvc_code,
+        'allocation_code': alloc_code,
+        'dispatch_order_code': dd_order_code,
+        'transport_order_code': alloc_code,
         'customer': cust.name if cust else (getattr(b, 'customer_name', '') or ''),
         'customer_code': getattr(cust, 'code', '') if cust else '',
         'bill_of_lading': bl_str,

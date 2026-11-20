@@ -29,21 +29,30 @@ flowchart TD
 
 ---
 
-## 1.1 KIẾN TRÚC MÃ CHỨNG TỪ 3 CẤP (3-TIER TMS DOCUMENT HIERARCHY)
+## 1.1 KIẾN TRÚC MÃ CHỨNG TỪ 5 TẦNG ĐỒNG BỘ (5-TIER TMS DOCUMENT HIERARCHY)
 
-Để phục vụ quản lý chuỗi cung ứng chặt chẽ từ Sales đến Điều vận nội bộ, Nhà xe thầu phụ (Vendor) và Lái xe hiện trường, hệ thống chuẩn hóa 3 cấp mã phiếu độc lập:
+Để phục vụ quản lý chuỗi cung ứng chặt chẽ từ Sales đến Điều vận nội bộ, Nhà xe thầu phụ (Vendor) và Lái xe hiện trường, hệ thống chuẩn hóa 5 tầng mã chứng từ liên kết dòng chảy (flow traceability):
 
-1. **`BK.yyMM.xxx` (Đơn Đặt Chỗ / Booking Khách Hàng):**
-   - Sinh ra khi Phòng Kinh doanh chốt đơn hàng và nhập vào hệ thống.
-   - Thể hiện nhu cầu vận chuyển tổng thể của lô hàng (chưa có phương tiện).
-   - Tại Tab 1 Điều vận, những đơn chưa phân bổ hoặc đang điều dở dang được giữ nguyên mã `BK.yyMM.xxx` kèm huy hiệu `CHỜ ĐIỀU ĐỘ`.
-2. **`LDD.BK.yyMM.xxx` (Lệnh Điều Động Lô Hàng):**
-   - Kích hoạt khi Điều vận hoàn tất phân bổ toàn bộ container cho các Nhà xe và phát lệnh.
-   - Tại Tab 1 Điều vận, mã tự động gắn tiền tố `LDD.` kèm huy hiệu `ĐÃ ĐIỀU ĐỘ`.
-3. **`VC.yyMM.xxx` (Phiếu Vận Chuyển / Vận Đơn Chuyến Xe Lăn Bánh):**
-   - **Chỉ được sinh ra ngay khi Container được gán cụ thể Đầu kéo + Rơ-moóc + Tài xế** (do Nhà xe khai báo trên Cổng Vendor Portal hoặc Điều vận chỉ định).
-   - Nếu container chưa được gán tài xế & đầu kéo, hệ thống hiển thị trạng thái `Chờ Vendor gán xe` và **chưa sinh mã VC**.
-   - Tại Tab 3, hệ thống giám sát hành trình các xe lăn bánh trên tuyến theo từng Phiếu VC.
+1. **`BG.YYMM.STT` (Báo Giá Khách Hàng - Sales):**
+   - Sinh ra khi Sale lập báo giá cho khách (VD: `BG.2611.001`).
+   - STT 3 chữ số, tự động reset theo tháng. Là căn cứ tạo Booking khi khách chốt giá.
+2. **`BK.YYMM.STT` (Đơn Đặt Chỗ / Booking Khách Hàng):**
+   - Sinh ra khi Phòng Kinh doanh tiếp nhận đơn hàng/Booking từ khách hàng (VD: `BK.2611.001`).
+   - STT 3 chữ số, reset theo tháng. Thể hiện nhu cầu vận chuyển tổng thể của lô hàng (chưa có phương tiện).
+3. **`DD.[Số Booking]` (Lệnh Điều Độ Tổng Lô Hàng):**
+   - Kế thừa 1-1 từ Booking (VD: `DD.BK.2611.001`).
+   - Thể hiện kế hoạch điều độ và phân bổ tổng thể số lượng container của Booking cho các nhà xe / đội xe nội bộ.
+4. **`DD.STT.[Số Booking]` (Lệnh Điều Độ Con / Phiếu Phân Bổ Nhà Xe):**
+   - Tự động sinh ra khi Điều vận phân bổ container cho từng nhà xe (VD: Booking chia 2 nhà xe sinh `DD.001.BK.2611.001` và `DD.002.BK.2611.001`).
+   - STT đếm theo từng nhà xe/phiếu phân bổ trong Booking. Là phiếu giao việc chính thức cho từng Nhà xe (truy cập qua Cổng Vendor Portal).
+5. **`VC.STT.[Số Booking]` (Lệnh Vận Chuyển / Vận Đơn Chuyến Xe Lăn Bánh):**
+   - **Sinh ra ngay khi Container được gán cụ thể Đầu kéo + Rơ-moóc + Tài xế** (do Nhà xe khai báo trên Cổng Vendor Portal hoặc Điều vận chỉ định).
+   - **Quy tắc STT:** Đếm theo **số thứ tự của Container trong toàn bộ Booking (1 đến N)**:
+     - Ví dụ: Booking `BK.2611.001` có 5 cont:
+       - Nhà xe 1 nhận 3 cont: sinh `VC.001.BK.2611.001`, `VC.002.BK.2611.001`, `VC.003.BK.2611.001`.
+       - Nhà xe 2 nhận 2 cont: sinh `VC.004.BK.2611.001`, `VC.005.BK.2611.001`.
+   - **Ưu điểm vượt trội:** Loại trừ hoàn toàn nguy cơ trùng mã (collision) khi nhiều nhà xe cùng nhập liệu đồng thời, mỗi cont có mã duy nhất tuyệt đối.
+   - Tại Tab 3 và giao diện Mobile Tài xế, hệ thống giám sát hành trình các xe lăn bánh trên tuyến theo từng Phiếu VC.
 
 ---
 

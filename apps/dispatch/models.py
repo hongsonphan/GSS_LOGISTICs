@@ -671,7 +671,19 @@ class BookingVendorAllocation(CompanyOwnedModel, TimeStampedModel, SoftDeleteMod
         verbose_name_plural = 'Phiếu chia cont cho nhà xe'
 
     def __str__(self):
-        return f"{self.booking.booking_code} -> {self.subcontractor.name}: {self.allocated_containers} cont"
+        return f"{self.allocation_code} ({self.subcontractor.name}: {self.allocated_containers} cont)"
+
+    @property
+    def allocation_code(self):
+        """Mã Lệnh Điều Độ (con): DD.STT.[Số Booking] (VD: DD.001.BK.2611.001)."""
+        from apps.dispatch.vendor_service import get_allocation_code
+        return get_allocation_code(self)
+
+    @property
+    def dispatch_order_code(self):
+        """Mã Lệnh Điều Độ (Tổng): DD.[Số Booking] (VD: DD.BK.2611.001)."""
+        from apps.dispatch.vendor_service import get_dispatch_order_code
+        return get_dispatch_order_code(self.booking)
 
 
 

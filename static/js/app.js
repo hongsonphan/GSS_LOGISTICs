@@ -11188,7 +11188,7 @@ async function openDispatchOrderPage(preselectedBookingId = null, updateHistory 
                 let html = '<option value="">-- Chọn Booking / Đơn Hàng Cần Lập Lệnh Điều Động --</option>';
                 mdoActiveBookings.forEach(b => {
                     const rawCode = b.booking_code || b.booking_number || `BK#${b.id}`;
-    const code = rawCode.startsWith("LDD.") ? rawCode : `LDD.${rawCode}`;
+                    const code = rawCode.startsWith("DD.") ? rawCode : (rawCode.startsWith("BK.") ? `DD.${rawCode}` : `DD.BK.${rawCode}`);
                     const cust = b.customer_name || b.customer || 'Khách hàng';
                     const conts = b.total_containers || 1;
                     const route = `${b.pickup_location || 'A'} -> ${b.delivery_location || 'B'}`;
@@ -11286,7 +11286,7 @@ async function onDispatchOrderBookingChanged(bookingId) {
 
     if (summaryCard) summaryCard.classList.remove('hidden');
     const rawCode = b.booking_code || b.booking_number || `BK#${b.id}`;
-    const code = rawCode.startsWith("LDD.") ? rawCode : `LDD.${rawCode}`;
+    const code = rawCode.startsWith("DD.") ? rawCode : (rawCode.startsWith("BK.") ? `DD.${rawCode}` : `DD.BK.${rawCode}`);
     if (badge) badge.innerText = `Đang chọn: ${code}`;
     if (headerCode) headerCode.innerText = code;
     if (headerCust) headerCust.innerText = b.customer_name || b.customer || '--';
@@ -11982,9 +11982,9 @@ function renderDispatchOrdersTable() {
         const remaining = total - dispatched;
         const isDispatched = Boolean(b.is_fully_dispatched || (Number(b.allocated_containers || 0) >= total) || (dispatched >= total));
 
-        // Chuẩn hóa mã phiếu: Đã điều độ thì LDD.BK..., chưa điều độ thì BK...
+        // Chuẩn hóa mã phiếu: Đã điều độ thì DD.BK..., chưa điều độ thì BK...
         const codeDisplay = isDispatched 
-            ? (rawCode.startsWith("LDD.") ? rawCode : `LDD.${rawCode}`) 
+            ? (rawCode.startsWith("DD.") ? rawCode : (rawCode.startsWith("BK.") ? `DD.${rawCode}` : `DD.BK.${rawCode}`)) 
             : rawCode;
 
         const codeBadge = isDispatched 
@@ -15943,7 +15943,7 @@ function renderTransportOrderView(data) {
     const remaining = Math.max(0, total - filled);
 
     // 1. Header Bar
-    const lvcCode = data.transport_order_code || `LVC.${(data.booking_code || '').replace('BK.', '')} - ${data.subcontractor}`;
+    const lvcCode = data.allocation_code || data.transport_order_code || (data.booking_code ? `DD.001.${data.booking_code}` : 'DD.--');
     setText('to-header-code', lvcCode);
     setText('to-header-vendor', data.subcontractor);
     setText('to-header-customer', data.customer);

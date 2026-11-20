@@ -483,11 +483,15 @@ class TripListCreateAPIView(APIView):
             if not dropoff_vehicle and dropoff_driver:
                 dropoff_vehicle = Vehicle.objects.filter(current_driver=dropoff_driver).first()
 
-        # Generate collision-proof unique trip code: DV.YYMM.XXX (Chuẩn nghiệp vụ TMS quốc tế)
-        now = timezone.now()
-        yymm = now.strftime('%y%m')
-        prefix = f"DV.{yymm}."
-        trip_code = next_code(DispatchTrip, 'trip_code', prefix, 3)  # mã tuần tự an toàn, không trùng
+        # Generate collision-proof unique trip code: VC.[STT].[Số Booking] (nếu có Booking) hoặc VC.YYMM.XXX
+        from apps.dispatch.vendor_service import get_trip_code_for_booking
+        if booking_order:
+            trip_code = get_trip_code_for_booking(booking_order)
+        else:
+            now = timezone.now()
+            yymm = now.strftime('%y%m')
+            prefix = f"VC.{yymm}."
+            trip_code = next_code(DispatchTrip, 'trip_code', prefix, 3)  # mã tuần tự an toàn, không trùng
 
         shipment_type_input = data.get('type', 'Nhập')
         type_mapping = {

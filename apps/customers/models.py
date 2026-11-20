@@ -365,6 +365,11 @@ class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     def remaining_containers(self):
         return max(0, self.total_containers - self.dispatched_containers)
 
+    @property
+    def dispatch_order_code(self):
+        """Mã Lệnh Điều Độ (Tổng): DD.[Số Booking] (VD: DD.BK.2611.001)."""
+        return f"DD.{self.booking_code}" if self.booking_code else "DD.--"
+
     class Meta:
         ordering = ['-created_at']
 
