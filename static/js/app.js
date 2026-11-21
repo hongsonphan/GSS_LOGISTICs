@@ -12288,6 +12288,7 @@ function onDispatchOrdersColumnFilter() {
     dispatchOrdersColFilters = {
         code: (document.getElementById('filter-col-code')?.value || '').toLowerCase().trim(),
         bl: (document.getElementById('filter-col-bl')?.value || '').toLowerCase().trim(),
+        customer_short: (document.getElementById('filter-col-customer-short')?.value || '').toLowerCase().trim(),
         customer: (document.getElementById('filter-col-customer')?.value || '').toLowerCase().trim(),
         route: (document.getElementById('filter-col-route')?.value || '').toLowerCase().trim(),
         cont: (document.getElementById('filter-col-cont')?.value || '').toLowerCase().trim(),
@@ -12301,7 +12302,7 @@ function onDispatchOrdersColumnFilter() {
 window.onDispatchOrdersColumnFilter = onDispatchOrdersColumnFilter;
 
 function clearDispatchOrdersFilters() {
-    ['filter-col-code', 'filter-col-bl', 'filter-col-customer', 'filter-col-route', 'filter-col-cont', 'filter-col-vendor', 'filter-col-dem', 'filter-col-det'].forEach(id => {
+    ['filter-col-code', 'filter-col-bl', 'filter-col-customer-short', 'filter-col-customer', 'filter-col-route', 'filter-col-cont', 'filter-col-vendor', 'filter-col-dem', 'filter-col-det'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
@@ -12310,7 +12311,7 @@ function clearDispatchOrdersFilters() {
     const searchEl = document.getElementById('dispatch-orders-search');
     if (searchEl) searchEl.value = '';
     dispatchOrdersSearchQuery = '';
-    dispatchOrdersColFilters = { code: '', bl: '', customer: '', route: '', cont: '', vendor: '', dem: '', det: '', status: '' };
+    dispatchOrdersColFilters = { code: '', bl: '', customer_short: '', customer: '', route: '', cont: '', vendor: '', dem: '', det: '', status: '' };
     renderDispatchOrdersTable();
 }
 window.clearDispatchOrdersFilters = clearDispatchOrdersFilters;
@@ -12351,6 +12352,9 @@ function renderDispatchOrdersTable() {
     }
     if (dispatchOrdersColFilters.bl) {
         filtered = filtered.filter(b => (b.booking_number || '').toLowerCase().includes(dispatchOrdersColFilters.bl));
+    }
+    if (dispatchOrdersColFilters.customer_short) {
+        filtered = filtered.filter(b => (b.customer_short_name || b.customer_short || b.customer_name || '').toLowerCase().includes(dispatchOrdersColFilters.customer_short));
     }
     if (dispatchOrdersColFilters.customer) {
         filtered = filtered.filter(b => (b.customer_name || b.customer || '').toLowerCase().includes(dispatchOrdersColFilters.customer));
@@ -12393,6 +12397,9 @@ function renderDispatchOrdersTable() {
             if (dispatchOrdersSortColumn === 'route') {
                 va = `${a.pickup_location || ''} ${a.delivery_location || ''}`;
                 vb = `${b.pickup_location || ''} ${b.delivery_location || ''}`;
+            } else if (dispatchOrdersSortColumn === 'customer_short_name') {
+                va = a.customer_short_name || a.customer_short || a.customer_name || '';
+                vb = b.customer_short_name || b.customer_short || b.customer_name || '';
             } else if (dispatchOrdersSortColumn === 'allocated_containers' || dispatchOrdersSortColumn === 'total_containers' || dispatchOrdersSortColumn === 'free_time_demurrage' || dispatchOrdersSortColumn === 'free_time_detention' || dispatchOrdersSortColumn === 'id') {
                 return ((Number(va) || 0) - (Number(vb) || 0)) * dir;
             }
@@ -12451,16 +12458,16 @@ function renderDispatchOrdersTable() {
         // Chuẩn hóa mã Phiếu Điều độ: DD.[Số Booking] (VD: DD.BK.2611.001)
         const codeDisplay = rawCode.startsWith("DD.") ? rawCode : (rawCode.startsWith("BK.") ? `DD.${rawCode}` : `DD.BK.${rawCode}`);
 
-        let codeBadge = '';
-        if (isCompleted) {
-            codeBadge = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 text-[10px] font-bold font-mono">HOÀN TẤT</span>`;
-        } else if (isDispatched) {
-            codeBadge = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">ĐÃ ĐIỀU ĐỘ</span>`;
-        } else {
-            codeBadge = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold font-mono">CHỜ ĐIỀU ĐỘ</span>`;
+        // Màu mã Phiếu Điều Độ (trung tính, không chói): Đã phân bổ xong (Xanh), Đang phân bổ (Vàng), Chưa phân bổ (Đỏ)
+        let codeColor = 'text-rose-600'; // Chưa phân bổ (đỏ trung tính)
+        if (isCompleted || isDispatched) {
+            codeColor = 'text-emerald-700'; // Đã phân bổ xong (xanh trung tính)
+        } else if (allocated > 0) {
+            codeColor = 'text-amber-600'; // Đang phân bổ (vàng trung tính)
         }
 
         const blDisplay = b.booking_number ? `<span class="font-mono font-bold text-slate-800 text-xs">${escapeHtml(b.booking_number)}</span>` : '<span class="text-slate-400 italic">--</span>';
+        const shortCust = escapeHtml(b.customer_short_name || b.customer_short || b.customer_name || '--');
         const cust = escapeHtml(b.customer_name || b.customer || 'Khách hàng');
         const route = `<div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5" title="${escapeHtml(b.pickup_location || '')} -> ${escapeHtml(b.delivery_location || '')} -> ${escapeHtml(b.dropoff_location || '')}"><span class="text-teal-700 font-bold" title="1. Lấy cont">${escapeHtml(b.pickup_location || 'Cảng/Depot')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-blue-900 font-bold" title="2. Kho đóng/trả">${escapeHtml(b.delivery_location || 'Kho khách')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Hạ rỗng">${escapeHtml(b.dropoff_location || 'Depot')}</span></div>`;
         const conts = `<strong class="text-teal-700 font-bold">${total}</strong> <span class="text-slate-500 text-[11px]">Cont (${escapeHtml(b.container_size || '40HC')})</span>`;
@@ -12493,24 +12500,22 @@ function renderDispatchOrdersTable() {
 
         html += `
         <tr class="hover:bg-teal-50/40 transition-colors">
-            <td class="p-2.5 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
-            <td class="p-2.5">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <strong class="text-teal-950 font-bold font-mono text-xs">${codeDisplay}</strong>
-                    ${codeBadge}
-                </div>
+            <td data-col-key="stt" class="p-2.5 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+            <td data-col-key="dispatch_code" class="p-2.5">
+                <strong class="${codeColor} font-bold font-mono text-xs">${codeDisplay}</strong>
             </td>
-            <td class="p-2.5">${blDisplay}</td>
-            <td class="p-2.5 font-bold text-slate-800">${cust}</td>
-            <td class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
-            <td class="p-2.5 text-center">${conts}</td>
-            <td class="p-2.5">${vendorDisplay}</td>
-            <td class="p-2.5 text-center font-mono text-[11px] font-bold text-amber-700">${b.free_time_demurrage || 7}d</td>
-            <td class="p-2.5 text-center font-mono text-[11px] font-bold text-sky-700">${b.free_time_detention || 7}d</td>
-            <td class="p-2.5 text-center">
+            <td data-col-key="bl_number" class="p-2.5">${blDisplay}</td>
+            <td data-col-key="customer_short" class="p-2.5 font-bold font-heading text-teal-900" title="${escapeHtml(b.customer_name || '')}">${shortCust}</td>
+            <td data-col-key="customer" class="p-2.5 text-slate-700 font-medium" title="${escapeHtml(b.customer_name || '')}">${cust}</td>
+            <td data-col-key="route" class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
+            <td data-col-key="conts" class="p-2.5 text-center">${conts}</td>
+            <td data-col-key="vendor" class="p-2.5">${vendorDisplay}</td>
+            <td data-col-key="dem" class="p-2.5 text-center font-mono text-[11px] font-bold text-amber-700">${b.free_time_demurrage || 7}d</td>
+            <td data-col-key="det" class="p-2.5 text-center font-mono text-[11px] font-bold text-sky-700">${b.free_time_detention || 7}d</td>
+            <td data-col-key="status" class="p-2.5 text-center">
                 ${statusBadgeHtml}
             </td>
-            <td class="p-2.5 text-center">
+            <td data-col-key="actions" class="p-2.5 text-center">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <button type="button" onclick="openDispatchOrderPage(${b.id})" 
                         class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
@@ -12530,6 +12535,10 @@ function renderDispatchOrdersTable() {
     });
 
     tbody.innerHTML = html;
+
+    if (window.BimTableColumnManager) {
+        window.BimTableColumnManager.apply('dispatch-orders-table');
+    }
 }
 
 async function loadDispatchOrdersTab() {
@@ -13880,16 +13889,16 @@ function renderAllocationsTable() {
 }
 
 // =============================================================
-// TAB 3: THEO DÕI HÀNH TRÌNH (chế độ xem)
+// TAB 3: THEO DÕI HÀNH TRÌNH (chế độ xem: Phiếu Vận chuyển | Hành trình)
 // =============================================================
 function setJourneyMode(mode) {
-    if (!['table', 'board', 'trips'].includes(mode)) mode = 'table';
+    if (!['table', 'board'].includes(mode)) mode = 'table';
     window.currentJourneyMode = mode;
-    ['dispatch-vendor-containers-view', 'dispatch-journey-board-view', 'dispatch-trips-view'].forEach(id => {
+    ['dispatch-vendor-containers-view', 'dispatch-journey-board-view'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
     });
-    [['table', 'jmode-table'], ['board', 'jmode-board'], ['trips', 'jmode-trips']].forEach(([m, id]) => {
+    [['table', 'jmode-table'], ['board', 'jmode-board']].forEach(([m, id]) => {
         const b = document.getElementById(id);
         if (b) b.className = (m === mode ? VA_SEC_ON : VA_SEC_OFF);
     });
@@ -13900,14 +13909,11 @@ function setJourneyMode(mode) {
     } else if (mode === 'board') {
         show('dispatch-journey-board-view');
         loadJourneyBoard();
-    } else {
-        show('dispatch-trips-view');
-        if (typeof loadTripsData === 'function') loadTripsData();
     }
 }
 
 // =============================================================
-// TAB 3: THEO DÕI HÀNH TRÌNH (chế độ theo bước - KANBAN 7 BƯỚC CHUẨN GSS)
+// TAB 3: THEO DÕI HÀNH TRÌNH (chế độ Hành trình xe container - chuẩn timeline 7 mốc)
 // =============================================================
 var jboardSearchQuery = '';
 var jboardFilterVendorId = '';
@@ -13915,16 +13921,15 @@ var jboardFilterVendorId = '';
 async function loadJourneyBoard(force) {
     const body = document.getElementById('jboard-body');
     if (!body) return;
-    body.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">Đang tải ma trận hành trình xe...</div>';
+    body.innerHTML = '';
 
-    try {
-        const res = await fetchWithAuth('/api/dispatch/vendor-containers/?status=ACTIVE');
-        if (!res.ok) throw new Error('Không thể nạp dữ liệu hành trình');
-        const resData = await res.json();
-        jboardRows = resData.data || [];
-        renderJourneyKanbanBoard();
-    } catch (e) {
-        body.innerHTML = `<div class="p-8 text-center text-rose-600 font-bold text-sm">Lỗi tải hành trình: ${vaEsc(e.message)}</div>`;
+    if (window.GSSApp && typeof GSSApp.fleetTimeline === 'function') {
+        const host = document.createElement('div');
+        host.className = 'gss-scope';
+        body.appendChild(host);
+        GSSApp.fleetTimeline(host);
+    } else {
+        body.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs">Chưa tải được bảng Theo dõi hành trình xe container.</div>';
     }
 }
 

@@ -883,6 +883,7 @@ function onDispatchOrdersColumnFilter() {
     dispatchOrdersColFilters = {
         code: (document.getElementById('filter-col-code')?.value || '').toLowerCase().trim(),
         bl: (document.getElementById('filter-col-bl')?.value || '').toLowerCase().trim(),
+        customer_short: (document.getElementById('filter-col-customer-short')?.value || '').toLowerCase().trim(),
         customer: (document.getElementById('filter-col-customer')?.value || '').toLowerCase().trim(),
         route: (document.getElementById('filter-col-route')?.value || '').toLowerCase().trim(),
         cont: (document.getElementById('filter-col-cont')?.value || '').toLowerCase().trim(),
@@ -896,7 +897,7 @@ function onDispatchOrdersColumnFilter() {
 window.onDispatchOrdersColumnFilter = onDispatchOrdersColumnFilter;
 
 function clearDispatchOrdersFilters() {
-    ['filter-col-code', 'filter-col-bl', 'filter-col-customer', 'filter-col-route', 'filter-col-cont', 'filter-col-vendor', 'filter-col-dem', 'filter-col-det'].forEach(id => {
+    ['filter-col-code', 'filter-col-bl', 'filter-col-customer-short', 'filter-col-customer', 'filter-col-route', 'filter-col-cont', 'filter-col-vendor', 'filter-col-dem', 'filter-col-det'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
@@ -905,7 +906,7 @@ function clearDispatchOrdersFilters() {
     const searchEl = document.getElementById('dispatch-orders-search');
     if (searchEl) searchEl.value = '';
     dispatchOrdersSearchQuery = '';
-    dispatchOrdersColFilters = { code: '', bl: '', customer: '', route: '', cont: '', vendor: '', dem: '', det: '', status: '' };
+    dispatchOrdersColFilters = { code: '', bl: '', customer_short: '', customer: '', route: '', cont: '', vendor: '', dem: '', det: '', status: '' };
     renderDispatchOrdersTable();
 }
 window.clearDispatchOrdersFilters = clearDispatchOrdersFilters;
@@ -946,6 +947,9 @@ function renderDispatchOrdersTable() {
     }
     if (dispatchOrdersColFilters.bl) {
         filtered = filtered.filter(b => (b.booking_number || '').toLowerCase().includes(dispatchOrdersColFilters.bl));
+    }
+    if (dispatchOrdersColFilters.customer_short) {
+        filtered = filtered.filter(b => (b.customer_short_name || b.customer_short || b.customer_name || '').toLowerCase().includes(dispatchOrdersColFilters.customer_short));
     }
     if (dispatchOrdersColFilters.customer) {
         filtered = filtered.filter(b => (b.customer_name || b.customer || '').toLowerCase().includes(dispatchOrdersColFilters.customer));
@@ -988,6 +992,9 @@ function renderDispatchOrdersTable() {
             if (dispatchOrdersSortColumn === 'route') {
                 va = `${a.pickup_location || ''} ${a.delivery_location || ''}`;
                 vb = `${b.pickup_location || ''} ${b.delivery_location || ''}`;
+            } else if (dispatchOrdersSortColumn === 'customer_short_name') {
+                va = a.customer_short_name || a.customer_short || a.customer_name || '';
+                vb = b.customer_short_name || b.customer_short || b.customer_name || '';
             } else if (dispatchOrdersSortColumn === 'allocated_containers' || dispatchOrdersSortColumn === 'total_containers' || dispatchOrdersSortColumn === 'free_time_demurrage' || dispatchOrdersSortColumn === 'free_time_detention' || dispatchOrdersSortColumn === 'id') {
                 return ((Number(va) || 0) - (Number(vb) || 0)) * dir;
             }
