@@ -1273,27 +1273,19 @@ async function loadVendorContainersTab() {
                 `;
             }
 
-            // Phiếu Vận Chuyển (VC)
+            // Phiếu Vận Chuyển (VC): Bỏ badge và bỏ trạng thái (trạng thái hiển thị ở cột hành trình)
             let vcDisplay = '';
             if (r.trip_code) {
                 vcDisplay = `
-                    <div class="text-center">
-                        <button type="button" onclick="viewTripDetail('${r.trip_code}')"
-                            class="px-2.5 py-1 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-950 font-mono font-bold text-xs border border-teal-300 shadow-2xs inline-flex items-center gap-1 cursor-pointer transition-colors"
-                            title="Bấm để xem Chi tiết Phiếu Vận Chuyển [${r.trip_code}]">
-                            <span>${r.trip_code}</span>
-                            <i class="ph-bold ph-arrow-square-out text-[11px] text-teal-700"></i>
-                        </button>
-                        ${r.step_status_display ? `<div class="text-[10px] text-teal-700 font-semibold mt-0.5">${escapeHtml(r.step_status_display)}</div>` : ''}
-                    </div>
+                    <button type="button" onclick="viewTripDetail('${r.trip_code}')"
+                        class="font-mono font-bold text-teal-800 hover:text-teal-950 hover:underline cursor-pointer inline-flex items-center gap-1"
+                        title="Bấm để xem Chi tiết Phiếu Vận Chuyển [${r.trip_code}]">
+                        <span>${r.trip_code}</span>
+                        <i class="ph-bold ph-arrow-square-out text-[11px] text-teal-600"></i>
+                    </button>
                 `;
             } else {
-                vcDisplay = `
-                    <div class="text-center text-amber-700 font-semibold text-xs flex items-center justify-center gap-1">
-                        <i class="ph-bold ph-hourglass-medium text-amber-500"></i>
-                        <span>Chưa gán xe</span>
-                    </div>
-                `;
+                vcDisplay = `<span class="text-slate-400 italic text-xs">--</span>`;
             }
 
             // Phương tiện
@@ -1416,23 +1408,28 @@ async function loadVendorContainersTab() {
 
             html += `
                 <tr class="hover:bg-teal-50/30 transition-colors">
-                    <td class="p-2.5 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
-                    <td class="p-2.5">${contDisplay}</td>
-                    <td class="p-2.5">${lddDisplay}</td>
-                    <td class="p-2.5 font-mono font-bold text-slate-800 text-xs">${escapeHtml(r.booking_number || '--')}</td>
-                    <td class="p-2.5">${vendorDisplay}</td>
-                    <td class="p-2.5 text-center">${vcDisplay}</td>
-                    <td class="p-2.5">${vehicleDisplay}</td>
-                    <td class="p-2.5">${driverDisplay}</td>
-                    <td class="p-2.5 min-w-[440px] whitespace-nowrap">${routeDisplay}</td>
-                    <td class="p-2.5 min-w-[340px] text-center">${journey7Step}</td>
-                    <td class="p-2.5 text-center">${freeTime}</td>
-                    <td class="p-2.5 text-center">${actions}</td>
+                    <td data-col-key="stt" class="p-2.5 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+                    <td data-col-key="trip_code" class="p-2.5">${vcDisplay}</td>
+                    <td data-col-key="container" class="p-2.5">${contDisplay}</td>
+                    <td data-col-key="dispatch_code" class="p-2.5">${lddDisplay}</td>
+                    <td data-col-key="bl_number" class="p-2.5 font-mono font-bold text-slate-800 text-xs">${escapeHtml(r.booking_number || '--')}</td>
+                    <td data-col-key="vendor" class="p-2.5">${vendorDisplay}</td>
+                    <td data-col-key="vehicle" class="p-2.5">${vehicleDisplay}</td>
+                    <td data-col-key="driver" class="p-2.5">${driverDisplay}</td>
+                    <td data-col-key="route" class="p-2.5 min-w-[440px] whitespace-nowrap">${routeDisplay}</td>
+                    <td data-col-key="journey_step" class="p-2.5 min-w-[340px] text-center">${journey7Step}</td>
+                    <td data-col-key="free_time" class="p-2.5 text-center">${freeTime}</td>
+                    <td data-col-key="actions" class="p-2.5 text-center">${actions}</td>
                 </tr>
             `;
         });
 
         tbody.innerHTML = html;
+
+        // Đồng bộ và áp dụng trạng thái ẩn/hiện cột
+        if (window.BimTableColumnManager) {
+            window.BimTableColumnManager.apply('dispatch-vendor-containers-table');
+        }
     } catch (e) {
         tbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-rose-500 font-bold">Lỗi khi tải danh sách Container: ${e.message}</td></tr>`;
     }

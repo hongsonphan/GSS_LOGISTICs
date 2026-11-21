@@ -624,18 +624,18 @@
             <table class="w-full text-left erp-table whitespace-nowrap text-xs" id="dispatch-vendor-containers-table" data-table-title="Bảng Container & Tiến Độ Vận Chuyển">
                 <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[11px] font-heading sticky top-0 z-10 shadow-2xs">
                     <tr>
-                        <th class="p-2.5 w-10 text-center">#</th>
-                        <th class="p-2.5 min-w-[150px]">Số Container & Quy Cách</th>
-                        <th class="p-2.5 min-w-[170px]">Phiếu Điều Độ / Khách Hàng</th>
-                        <th class="p-2.5 min-w-[130px]">Số B/L</th>
-                        <th class="p-2.5 min-w-[180px]">Nhà Xe Phụ Trách (Vendor)</th>
-                        <th class="p-2.5 min-w-[140px] text-center">Phiếu Vận Chuyển</th>
-                        <th class="p-2.5 min-w-[160px]">Đầu Kéo & Rơ-moóc</th>
-                        <th class="p-2.5 min-w-[170px]">Tài Xế & Số ĐT</th>
-                        <th class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>
-                        <th class="p-2.5 min-w-[340px] text-center">Trạng Thái 7 Bước Hành Trình</th>
-                        <th class="p-2.5 w-24 text-center">Hạn Free</th>
-                        <th class="p-2.5 w-36 text-center">Thao Tác</th>
+                        <th data-col-key="stt" class="p-2.5 w-10 text-center">#</th>
+                        <th data-col-key="trip_code" class="p-2.5 min-w-[150px]">Phiếu Vận Chuyển</th>
+                        <th data-col-key="container" class="p-2.5 min-w-[150px]">Số Container & Quy Cách</th>
+                        <th data-col-key="dispatch_code" class="p-2.5 min-w-[170px]">Phiếu Điều Độ / Khách Hàng</th>
+                        <th data-col-key="bl_number" class="p-2.5 min-w-[130px]">Số B/L</th>
+                        <th data-col-key="vendor" class="p-2.5 min-w-[180px]">Nhà Xe Phụ Trách (Vendor)</th>
+                        <th data-col-key="vehicle" class="p-2.5 min-w-[160px]">Đầu Kéo & Rơ-moóc</th>
+                        <th data-col-key="driver" class="p-2.5 min-w-[170px]">Tài Xế & Số ĐT</th>
+                        <th data-col-key="route" class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>
+                        <th data-col-key="journey_step" class="p-2.5 min-w-[340px] text-center">Trạng Thái 7 Bước Hành Trình</th>
+                        <th data-col-key="free_time" class="p-2.5 w-24 text-center">Hạn Free</th>
+                        <th data-col-key="actions" class="p-2.5 w-36 text-center">Thao Tác</th>
                     </tr>
                 </thead>
                 <tbody id="dispatch-vendor-containers-tbody" class="divide-y divide-slate-100 bg-white">

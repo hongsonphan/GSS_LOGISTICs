@@ -3,6 +3,24 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-21 – Tối Ưu Bảng "Theo Dõi Hành Trình": Đưa Cột "Phiếu Vận Chuyển" Lên Mặc Định Cột Đầu Sau STT, Bỏ Badge Và Trạng Thái Con
+- **Bối cảnh & Yêu cầu người dùng:**
+  - Trong Tab "Theo dõi hành trình" (`#dispatch-vendor-containers-table`): Cột "Phiếu Vận Chuyển" được yêu cầu đưa lên làm cột đầu tiên ngay sau STT (vị trí #2).
+  - Bỏ hiển thị dạng badge màu xanh to viền đậm và bỏ dòng trạng thái con bên dưới (`step_status_display`) vì các cột phía sau đã có riêng cột "Trạng Thái 7 Bước Hành Trình" thể hiện tiến độ chi tiết.
+- **Thay đổi kỹ thuật & Giao diện:**
+  1. **Tái cấu trúc Header & Vị trí Cột (`templates/views/view_dispatch.html`):**
+     - Đưa cột `<th data-col-key="trip_code">Phiếu Vận Chuyển</th>` lên vị trí ngay sau `<th data-col-key="stt">#</th>`.
+     - Thứ tự cột chuẩn: `#` (STT) $\rightarrow$ `Phiếu Vận Chuyển` $\rightarrow$ `Số Container & Quy Cách` $\rightarrow$ `Phiếu Điều Độ / Khách Hàng` $\rightarrow$ `Số B/L` $\rightarrow$ `Nhà Xe Phụ Trách (Vendor)` $\rightarrow$ `Đầu Kéo & Rơ-moóc` $\rightarrow$ `Tài Xế & Số ĐT` $\rightarrow$ `Lộ Trình Vận Chuyển` $\rightarrow$ `Trạng Thái 7 Bước Hành Trình` $\rightarrow$ `Hạn Free` $\rightarrow$ `Thao Tác`.
+     - Gắn đầy đủ thuộc tính `data-col-key` trên tất cả các thẻ `th` và `td` tương ứng để quản lý ẩn/hiện cột với `BimTableColumnManager`.
+  2. **Tối ưu hiển thị mã Phiếu Vận Chuyển (`dispatch-order-modal.js`):**
+     - Bỏ khối giao diện badge (`bg-teal-100`, `border-teal-300`) và bỏ hiển thị text trạng thái con bên dưới (`step_status_display`).
+     - Hiển thị tinh gọn mã chuyến `r.trip_code` dạng link font mono đậm (`font-mono font-bold text-teal-800 hover:text-teal-950 hover:underline`), kèm icon mở chi tiết chuyến xe (`ph-arrow-square-out`), giữ thao tác click mở Modal chi tiết (`viewTripDetail(trip_code)`).
+     - Trường hợp container chưa gán chuyến xe, hiển thị `--` dạng chữ xám nghiêng tinh giản thay vì badge cảnh báo chiếm dụng diện tích.
+     - Tự động gọi `BimTableColumnManager.apply('dispatch-vendor-containers-table')` sau mỗi lần render dữ liệu để đồng bộ trạng thái ẩn/hiện và thứ tự tùy biến cột người dùng đã lưu.
+- **Kiểm thử tự động:**
+  - `python scripts/build_app_js.py`: Biên dịch thành công từ 109 file module.
+  - `python scripts/qa.py verify --fast`: PASS=6/6, FAIL=0, KẾT LUẬN: ĐẠT.
+
 ## 2026-11-21 – Bổ Sung Cột Số Vận Đơn (B/L) Cho Các Màn Hình Quản Lý Điều Vận & Cổng Vendor
 - **Bối cảnh & Yêu cầu người dùng:**
   - Vì các màn hình quản lý của Điều vận & Vendor bắt buộc phải có cột Số vận đơn B/L, cần bổ sung cột riêng biệt này vào tất cả các bảng quản lý tương ứng.
