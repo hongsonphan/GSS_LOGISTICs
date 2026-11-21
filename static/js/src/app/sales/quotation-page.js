@@ -309,7 +309,7 @@ async function openCreateQuotationPage(updateHistory = true) {
 
     setTopbarFullpageMode({
         backFn: backToQuotations,
-        prefix: 'Sale & Booking',
+        prefix: 'Sales & Shipments',
         title: 'Tạo Mới Báo Giá',
         subText: '',
         badgesHtml: '',
@@ -414,7 +414,7 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
 
         setTopbarFullpageMode({
             backFn: backToQuotations,
-            prefix: 'Sale & Booking',
+            prefix: 'Sales & Shipments',
             title: `Báo Giá | ${q.quotation_code || ('BG-' + q.id)}`,
             subText: '',
             badgesHtml: '',

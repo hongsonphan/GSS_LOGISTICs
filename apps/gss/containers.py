@@ -584,6 +584,15 @@ def _apply_container_to_trip(c, trip):
 def serialize(c):
     t = c.trip
     alloc = c.allocation
+    driver_cccd = ''
+    if t:
+        if t.driver and getattr(t.driver, 'national_id', None):
+            driver_cccd = t.driver.national_id
+        elif t.subcontractor_driver and getattr(t.subcontractor_driver, 'citizen_id', None):
+            driver_cccd = t.subcontractor_driver.citizen_id
+    if not driver_cccd:
+        driver_cccd = _extract_note(c.notes, 'CCCD:') or _extract_note(c.notes, 'CMND:') or ''
+
     return {
         'id': c.id, 'line_no': c.line_no, 'container_number': c.container_number, 'iso_valid': c.iso_valid,
         'container_type': c.container_type, 'seal_number': c.seal_number,
@@ -603,8 +612,9 @@ def serialize(c):
         'container_number_2': (t.container_number_2 or '') if t else '',
         'step_label': wf.STEP_LABELS.get(t.step_status, t.get_step_status_display()) if t else '', 'dispatch_status': (t.step_status if t else ('ASSIGNED' if alloc else 'UNASSIGNED')), 'dispatch_status_label': (wf.STEP_LABELS.get(t.step_status, t.get_step_status_display()) if t else ('Đã giao cho Nhà xe' if alloc else 'Chưa phân bổ')),
         'tractor_plate': (t.vehicle.license_plate if t and t.vehicle_id else (t.subcontractor_truck if t and t.subcontractor_truck else (_extract_note(c.notes, 'Xe:') or ''))),
-        'driver_name': (t.subcontractor_driver_name if t and t.subcontractor_driver_name else (t.driver.full_name if t and t.driver_id else (_extract_note(c.notes, 'Tài:') or _extract_note(c.notes, 'Tai:') or ''))),
-        'driver_phone': t.subcontractor_driver_phone if t else '',
+        'driver_name': (t.assigned_driver_name if t else (_extract_note(c.notes, 'Tài:') or _extract_note(c.notes, 'Tai:') or '')),
+        'driver_phone': (t.assigned_driver_phone if t else (_extract_note(c.notes, 'SĐT:') or _extract_note(c.notes, 'SDT:') or '')),
+        'driver_cccd': driver_cccd,
         'locked': bool(_container_locked_reason(c)), 'notes': c.notes,
     }
 

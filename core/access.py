@@ -70,7 +70,9 @@ CFG_TAB_MODULE = {
     'opening_balance': 'cfg_opening', 'account_settings': 'cfg_accounts', 'expenses': 'cfg_expenses',
     'driver_tariffs': 'cfg_driver_tariffs', 'allowances': 'cfg_allowances',
     'customers': 'cfg_customers', 'tariffs': 'cfg_tariffs', 'subcontractors': 'cfg_subcontractors',
+    'suppliers': 'cfg_customers',
     'locations': 'cfg_locations', 'shipping_lines': 'cfg_shipping_lines',
+    'vessels': 'cfg_shipping_lines', 'pol_ports': 'cfg_locations',
     'vehicles': 'cfg_vehicles', 'trailers': 'cfg_trailers', 'containers': 'cfg_containers',
 }
 DERIVED_MODULES = {
@@ -99,7 +101,7 @@ A_CRUD = ['view', 'create', 'edit', 'delete', 'export']
 # Cây theo đúng sidebar: (khoá, nhãn, biểu tượng phosphor, [(khoá nhóm con, nhãn)])
 SECTIONS = [
     ('dashboard', 'Tổng quan', 'ph-squares-four', []),
-    ('sales', 'Sale & Booking', 'ph-handshake', []),
+    ('sales', 'Sales & Shipments', 'ph-handshake', []),
     ('dispatch', 'Điều vận & Vendor', 'ph-truck', []),
     ('depot', 'Bãi depot (Thủ bãi)', 'ph-warehouse', []),
     ('fleet', 'Bãi & Phương Tiện', 'ph-garage', []),

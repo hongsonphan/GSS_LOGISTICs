@@ -12,6 +12,8 @@ cd "$APP_DIR"
 ROLLBACK_FILE="$(dirname "$APP_DIR")/GSS_LOGISTICS_rollback_commit.txt"
 SUDO=""; [ "$(id -u)" -ne 0 ] && SUDO="sudo"
 if docker compose version >/dev/null 2>&1; then DC="docker compose"; elif $SUDO docker compose version >/dev/null 2>&1; then DC="$SUDO docker compose"; else DC="docker-compose"; fi
+# Thư mục sao lưu RIÊNG của GSS (VPS còn chạy BIM_LOGISTICS cùng ghi db_*/media_* vào /home/ubuntu/backups: không dùng chung)
+BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/backups_gss}"; export BACKUP_DIR
 step() { echo; echo "=== $* ==="; }
 
 step "1/7 Kiểm tra file .env"
@@ -37,7 +39,7 @@ grep -q '^SITE_URL=' .env || printf 'SITE_URL=https://gss-logistics.example.com\
 step "2/7 Sao lưu CSDL và media trước khi cập nhật"
 bash scripts/backup_vps.sh
 # Điểm khôi phục TRƯỚC migrate: quay lại mã không quay lại CSDL, nên ghi bản này để quay CSDL bằng tay khi migration lỗi nặng
-PRE_MIGRATE_DB="$(ls -1t /home/ubuntu/backups/db_*.sql.gz | head -1)"
+PRE_MIGRATE_DB="$(ls -1t "$BACKUP_DIR"/db_*.sql.gz | head -1)"
 echo "$PRE_MIGRATE_DB" > "$(dirname "$APP_DIR")/GSS_LOGISTICS_rollback_db.txt"
 echo "Điểm khôi phục CSDL trước migrate: $PRE_MIGRATE_DB"
 echo "(Nếu cần quay CSDL: bash scripts/restore_vps.sh $PRE_MIGRATE_DB  — chỉ khi migration đã làm hỏng dữ liệu; dữ liệu nhập sau mốc này sẽ mất)"
@@ -115,7 +117,7 @@ $DC up -d web
 
 MEDIA_AFTER="$(find media -type f | wc -l)"
 if [ "$MEDIA_AFTER" -lt "$MEDIA_BEFORE" ]; then
-    echo "CẢNH BÁO: số file media giảm từ $MEDIA_BEFORE xuống $MEDIA_AFTER sau khi cập nhật. Khôi phục từ bản sao lưu mới nhất trong /home/ubuntu/backups (media_*.tar.gz)."
+    echo "CẢNH BÁO: số file media giảm từ $MEDIA_BEFORE xuống $MEDIA_AFTER sau khi cập nhật. Khôi phục từ bản sao lưu mới nhất trong $BACKUP_DIR (media_*.tar.gz)."
     exit 1
 fi
 
@@ -136,9 +138,9 @@ if [ -z "$ok" ]; then
 fi
 $DC exec -T web python manage.py rebuild_ledger
 
-step "7/7 Lịch sao lưu hằng ngày (2h sáng)"
-CRON_LINE="0 2 * * * $APP_DIR/scripts/backup_vps.sh >> /home/ubuntu/backups/backup.log 2>&1"
+step "7/7 Lịch sao lưu (23:30 đầy đủ để máy local kéo lúc 00:00; chỉ CSDL mỗi 4 giờ)"
+CRON_LINE="30 23 * * * BACKUP_DIR=$BACKUP_DIR $APP_DIR/scripts/backup_vps.sh >> $BACKUP_DIR/backup.log 2>&1"
 # Thêm bản chỉ CSDL mỗi 4 giờ (RPO <= 4 giờ thay vì 24 giờ; docs/16 mục 4)
-CRON_DB="15 6,10,14,18,22 * * * BACKUP_MODE=db $APP_DIR/scripts/backup_vps.sh >> /home/ubuntu/backups/backup.log 2>&1"
-( crontab -l 2>/dev/null | grep -v 'scripts/backup_vps.sh' ; echo "$CRON_LINE"; echo "$CRON_DB" ) | crontab -
+CRON_DB="15 6,10,14,18,22 * * * BACKUP_DIR=$BACKUP_DIR BACKUP_MODE=db $APP_DIR/scripts/backup_vps.sh >> $BACKUP_DIR/backup.log 2>&1"
+( crontab -l 2>/dev/null | grep -vF "$APP_DIR/scripts/backup_vps.sh" ; echo "$CRON_LINE"; echo "$CRON_DB" ) | crontab -
 echo "HOÀN TẤT: $(git rev-parse --short HEAD) đang chạy, /healthz/ OK"

@@ -3085,6 +3085,29 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
     document.addEventListener('click', (e) => {
         if (!wrapper.contains(e.target)) {
             if (isOpen()) {
+                // Hỗ trợ gõ Free-Text cho combobox cho phép nhập tự do (data-allow-custom="true")
+                if (customOptions.allowCustomText || selectEl.dataset.allowCustom === 'true') {
+                    const typedVal = mainInput.value.trim();
+                    if (typedVal) {
+                        let found = false;
+                        for (let i = 0; i < selectEl.options.length; i++) {
+                            if (selectEl.options[i].value.toLowerCase() === typedVal.toLowerCase() ||
+                                selectEl.options[i].text.toLowerCase() === typedVal.toLowerCase()) {
+                                selectEl.selectedIndex = i;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            const opt = document.createElement('option');
+                            opt.value = typedVal;
+                            opt.innerText = typedVal;
+                            selectEl.appendChild(opt);
+                            selectEl.value = typedVal;
+                            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                }
                 closeDropdown();
                 syncDisplay();
             }
@@ -3144,6 +3167,7 @@ function initAllSearchableComboboxes(container = document) {
         'edit-inp-customer', 'edit-inp-driver', 'edit-inp-vehicle', 'edit-inp-trailer',
         'booking-customer', 'booking-pickup', 'booking-delivery', 'booking-dropoff',
         'fullpage-booking-customer', 'fullpage-booking-pickup', 'fullpage-booking-delivery', 'fullpage-booking-dropoff',
+        'fullpage-booking-supplier', 'fullpage-booking-shipping-line', 'fullpage-booking-vessel', 'fullpage-booking-port-loading', 'fullpage-booking-port-discharge',
         'quote-customer', 'fullpage-quote-customer', 'quote-route-preset',
         'adv-inp-trip', 'adv-inp-driver', 'adv-inp-fund'
     ];
@@ -3432,6 +3456,13 @@ function populateMasterDataDropdowns() {
     fillSelect('fullpage-booking-pickup', locations?.pickup_options, '-- Chọn Cảng / Depot Lấy Cont --', 'name', 'label');
     fillSelect('fullpage-booking-delivery', locations?.warehouse_options, '-- Chọn Kho Khách Hàng --', 'name', 'label');
     fillSelect('fullpage-booking-dropoff', locations?.dropoff_options, '-- Chọn Nơi Hạ Cont --', 'name', 'label');
+
+    // 5 Ô Thông Tin Hãng Tàu & Cảng Booking Chuẩn Danh Mục (Droplist + Free-Text Search)
+    fillSelect('fullpage-booking-supplier', masterDataFormOptionsCache?.suppliers, '-- Chọn Nhà Cung Cấp (NCC / Shipper) --', 'name', 'label');
+    fillSelect('fullpage-booking-shipping-line', masterDataFormOptionsCache?.shipping_lines, '-- Chọn Hãng Tàu --', 'code', 'label');
+    fillSelect('fullpage-booking-vessel', masterDataFormOptionsCache?.vessels, '-- Chọn Tàu & Chuyến (vessel/voy) --', 'name', 'label');
+    fillSelect('fullpage-booking-port-loading', masterDataFormOptionsCache?.pol_ports, '-- Chọn Cảng Xuất (POL) --', 'name', 'label');
+    fillSelect('fullpage-booking-port-discharge', masterDataFormOptionsCache?.pod_ports || locations?.pickup_options, '-- Chọn Cảng Nhận Hàng (POD) --', 'name', 'label');
 
     // Datalist Hãng Tàu cho Booking (Modal & Fullpage)
     const slDatalist = document.getElementById('shipping-lines-datalist');
@@ -4799,7 +4830,7 @@ function switchTab(tabId, updateHistory = true) {
     if (topbarTitleEl) {
         const TAB_NAME_MAP = {
             'dashboard': 'Dashboard Tổng quan',
-            'kinh-doanh': 'Sale & Booking',
+            'kinh-doanh': 'Sales & Shipments',
             'dieu-van': 'Điều vận & Vendor',
             'xe-bai': 'Bãi & Phương Tiện',
             'nhan-su': 'Hành chính & Nhân sự',
@@ -21584,7 +21615,7 @@ async function openCreateQuotationPage(updateHistory = true) {
 
     setTopbarFullpageMode({
         backFn: backToQuotations,
-        prefix: 'Sale & Booking',
+        prefix: 'Sales & Shipments',
         title: 'Tạo Mới Báo Giá',
         subText: '',
         badgesHtml: '',
@@ -21689,7 +21720,7 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
 
         setTopbarFullpageMode({
             backFn: backToQuotations,
-            prefix: 'Sale & Booking',
+            prefix: 'Sales & Shipments',
             title: `Báo Giá | ${q.quotation_code || ('BG-' + q.id)}`,
             subText: '',
             badgesHtml: '',
@@ -22411,7 +22442,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
 
     setTopbarFullpageMode({
         backFn: closeQuotationPrintModal,
-        prefix: 'Sale & Booking',
+        prefix: 'Sales & Shipments',
         title: 'Bản In Báo Giá',
         subText: '',
         badgesHtml: '',
@@ -22443,7 +22474,7 @@ function closeQuotationPrintModal() {
         const quoteCode = document.getElementById('fullpage-quote-code')?.innerText || '';
         setTopbarFullpageMode({
             backFn: backToQuotations,
-            prefix: 'Sale & Booking',
+            prefix: 'Sales & Shipments',
             title: quoteId ? `Báo Giá | ${quoteCode || ('BG-' + quoteId)}` : 'Tạo Mới Báo Giá',
             subText: '',
             badgesHtml: '',
@@ -23956,7 +23987,7 @@ async function openCreateBookingPage(updateHistory = true) {
 
 
 
-            prefix: 'Sale & Booking',
+            prefix: 'Sales & Shipments',
 
 
 
@@ -24253,21 +24284,11 @@ async function openCreateBookingPage(updateHistory = true) {
 
 
         if (totalInput) totalInput.value = formatNumberVN(1);
-
-
-
         if (detInput) detInput.value = formatNumberVN(7);
-
-
-
         if (demInput) demInput.value = formatNumberVN(7);
-
-
-
         if (priceInput) priceInput.value = formatNumberVN(4000000);
-
-
-
+        const sizeSelect = document.getElementById('fullpage-booking-container-size');
+        if (sizeSelect) setSelectValueCaseInsensitive(sizeSelect, '20GP');
         fillBookingDemDet(null);
 
 
@@ -24687,7 +24708,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
 
-            prefix: 'Sale & Booking',
+            prefix: 'Sales & Shipments',
 
 
 
@@ -24740,26 +24761,13 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
         const shipEl = document.getElementById('fullpage-booking-shipping-line');
-
-
-
-        if (shipEl) shipEl.value = b.shipping_line || '';
-
-
+        if (shipEl) setSelectValueCaseInsensitive(shipEl, b.shipping_line || '');
 
         const vesEl = document.getElementById('fullpage-booking-vessel');
-
-
-
-        if (vesEl) vesEl.value = b.vessel_voyage || '';
-
-
+        if (vesEl) setSelectValueCaseInsensitive(vesEl, b.vessel_voyage || '');
 
         const sizeEl = document.getElementById('fullpage-booking-container-size');
-
-
-
-        if (sizeEl) setSelectValueCaseInsensitive(sizeEl, b.container_size || '40HC');
+        if (sizeEl) setSelectValueCaseInsensitive(sizeEl, b.container_size || '20GP');
 
 
 
@@ -24920,26 +24928,13 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
         const supEl = document.getElementById('fullpage-booking-supplier');
-
-
-
-        if (supEl) supEl.value = b.supplier_name || '';
-
-
+        if (supEl) setSelectValueCaseInsensitive(supEl, b.supplier_name || '');
 
         const polEl = document.getElementById('fullpage-booking-port-loading');
-
-
-
-        if (polEl) polEl.value = b.port_of_loading || '';
-
-
+        if (polEl) setSelectValueCaseInsensitive(polEl, b.port_of_loading || '');
 
         const podEl = document.getElementById('fullpage-booking-port-discharge');
-
-
-
-        if (podEl) podEl.value = b.port_of_discharge || '';
+        if (podEl) setSelectValueCaseInsensitive(podEl, b.port_of_discharge || '');
 
 
 
@@ -25532,7 +25527,7 @@ async function saveFullpageBooking(e) {
 
 
 
-    const containerSize = document.getElementById('fullpage-booking-container-size')?.value || '40HC';
+    const containerSize = document.getElementById('fullpage-booking-container-size')?.value || '20GP';
 
 
 
@@ -27989,6 +27984,129 @@ async function deleteSavedContainerRow(contId, contNumber) {
     }
 }
 window.deleteSavedContainerRow = deleteSavedContainerRow;
+
+// =========================================================================
+// KẾT XUẤT BẢNG PHÂN BỔ CONTAINER GỬI KHO THEO DÕI (EXCEL & ZALO COPY)
+// =========================================================================
+let currentWarehouseDispatchBookingId = null;
+
+async function openWarehouseDispatchModal(bookingId = null) {
+    const bId = bookingId || document.getElementById('fullpage-booking-id')?.value;
+    if (!bId) {
+        showToast('warning', 'Vui lòng lưu đơn hàng / booking trước khi kết xuất bảng gửi Kho!');
+        return;
+    }
+    currentWarehouseDispatchBookingId = bId;
+
+    const modal = document.getElementById('modal-warehouse-dispatch');
+    const headerInfo = document.getElementById('wh-dispatch-header-info');
+    const contCount = document.getElementById('wh-dispatch-cont-count');
+    const tbody = document.getElementById('wh-dispatch-tbody');
+    const zaloTextarea = document.getElementById('wh-dispatch-zalo-textarea');
+
+    if (modal) modal.classList.remove('hidden');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic"><i class="ph-bold ph-spinner animate-spin text-xl mb-1 block"></i>Đang tải dữ liệu phân bổ container...</td></tr>`;
+
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${bId}/warehouse-dispatch-export/?as=json`);
+        if (!res.ok) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-500 italic">Không thể tải dữ liệu đơn hàng.</td></tr>`;
+            return;
+        }
+        const data = await res.json();
+        const b = data.booking || {};
+        const rows = data.rows || [];
+
+        if (headerInfo) {
+            headerInfo.textContent = `B/L: ${b.order_number || ''} · Khách hàng: ${b.customer_name || '—'} · Kho: ${b.warehouse_name || '—'} · Ngày giao: ${b.delivery_date || '—'}`;
+        }
+        if (contCount) {
+            contCount.textContent = `${rows.length} container`;
+        }
+
+        if (rows.length === 0) {
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Chưa có container nào trong đơn hàng này.</td></tr>`;
+            }
+            if (zaloTextarea) zaloTextarea.value = '';
+            return;
+        }
+
+        // Render table rows
+        if (tbody) {
+            tbody.innerHTML = rows.map((r, idx) => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="p-2.5 text-center font-bold text-slate-500">${idx + 1}</td>
+                    <td class="p-2.5 font-mono font-black text-teal-800">${escapeHtml(r.container_number || '—')}</td>
+                    <td class="p-2.5 font-mono font-bold text-slate-800">${escapeHtml(r.vehicle_plate || '—')}</td>
+                    <td class="p-2.5 font-bold text-slate-800">${escapeHtml(r.driver_name || '—')}</td>
+                    <td class="p-2.5 font-mono text-slate-700">${escapeHtml(r.driver_cccd || '—')}</td>
+                    <td class="p-2.5 font-mono font-bold text-emerald-700">${escapeHtml(r.driver_phone || '—')}</td>
+                    <td class="p-2.5 text-slate-600">${escapeHtml(r.notes || '')}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Build Zalo formatted text
+        let zaloLines = [
+            `📋 BẢNG ĐIỀU XE GIAO HÀNG CHO KHO`,
+            `Đơn hàng / B/L: ${b.order_number || ''}`,
+            `Khách hàng: ${b.customer_name || ''}`,
+            `Kho nhận hàng: ${b.warehouse_name || ''}`,
+            `Ngày giao dự kiến: ${b.delivery_date || ''}`,
+            `Tổng số cont: ${rows.length} cont`,
+            `--------------------------------`,
+            `STT | SỐ CONT | BIỂN SỐ XE | TÀI XẾ | CCCD | SĐT | GHI CHÚ`
+        ];
+        rows.forEach((r, idx) => {
+            const line = `${idx + 1}. Cont: ${r.container_number || '—'} | Xe: ${r.vehicle_plate || '—'} | TX: ${r.driver_name || '—'} | CCCD: ${r.driver_cccd || '—'} | SĐT: ${r.driver_phone || '—'}${r.notes ? ' | GC: ' + r.notes : ''}`;
+            zaloLines.push(line);
+        });
+        zaloLines.push(`--------------------------------`);
+        zaloLines.push(`GSS TMS Smart Logistics chúc quý khách và kho nhận hàng thuận lợi!`);
+
+        if (zaloTextarea) {
+            zaloTextarea.value = zaloLines.join('\n');
+        }
+    } catch (e) {
+        console.error('Lỗi tải dữ liệu warehouse-dispatch:', e);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-500 italic">Lỗi kết nối máy chủ khi tải dữ liệu.</td></tr>`;
+    }
+}
+window.openWarehouseDispatchModal = openWarehouseDispatchModal;
+
+function closeWarehouseDispatchModal() {
+    const modal = document.getElementById('modal-warehouse-dispatch');
+    if (modal) modal.classList.add('hidden');
+}
+window.closeWarehouseDispatchModal = closeWarehouseDispatchModal;
+
+function downloadWarehouseDispatchExcel(bookingId = null) {
+    const bId = bookingId || currentWarehouseDispatchBookingId || document.getElementById('fullpage-booking-id')?.value;
+    if (!bId) {
+        showToast('warning', 'Không xác định được đơn hàng để tải file!');
+        return;
+    }
+    window.location.href = `/api/gss/bookings/${bId}/warehouse-dispatch-export/?as=xlsx`;
+}
+window.downloadWarehouseDispatchExcel = downloadWarehouseDispatchExcel;
+window.exportWarehouseAllocatedContainers = (bId) => openWarehouseDispatchModal(bId);
+
+function copyWarehouseDispatchZaloText() {
+    const textarea = document.getElementById('wh-dispatch-zalo-textarea');
+    if (!textarea || !textarea.value) {
+        showToast('warning', 'Chưa có nội dung để sao chép!');
+        return;
+    }
+    navigator.clipboard.writeText(textarea.value).then(() => {
+        showToast('success', 'Đã sao chép nội dung bảng điều xe gửi Kho vào bộ nhớ tạm (Clipboard)! Có thể dán trực tiếp vào Zalo/Viber.');
+    }).catch(err => {
+        textarea.select();
+        document.execCommand('copy');
+        showToast('success', 'Đã sao chép nội dung vào bộ nhớ tạm!');
+    });
+}
+window.copyWarehouseDispatchZaloText = copyWarehouseDispatchZaloText;
 
 // ---- src/app/sales/booking-page/vendor-allocations.js ----
 // GSS: hạn lệnh DEM/DET, ghi chú điểm đến và chia cont cho nhà xe trên trang chi tiết Booking.
@@ -38041,12 +38159,12 @@ const MASTER_DATA_GROUPS = {
     'partners': {
         name: 'Khách Hàng & Đối Tác',
         icon: 'ph-handshake',
-        tabs: ['customers', 'tariffs', 'subcontractors']
+        tabs: ['customers', 'tariffs', 'subcontractors', 'suppliers']
     },
     'locations_network': {
         name: 'Mạng Lưới & Địa Điểm',
         icon: 'ph-map-pin',
-        tabs: ['locations', 'shipping_lines']
+        tabs: ['locations', 'shipping_lines', 'vessels', 'pol_ports']
     },
     'fleet_equipment': {
         name: 'Phương Tiện & Thiết Bị',
@@ -38059,8 +38177,8 @@ const MASTER_DATA_GROUPS = {
 const MASTER_DATA_TAB_MODULE = {
     company: 'cfg_company', roles_permissions: 'admin', audit_log: 'audit_log',
     opening_balance: 'cfg_opening', account_settings: 'cfg_accounts', expenses: 'cfg_expenses', driver_tariffs: 'cfg_driver_tariffs', allowances: 'cfg_allowances',
-    customers: 'cfg_customers', tariffs: 'cfg_tariffs', subcontractors: 'cfg_subcontractors',
-    locations: 'cfg_locations', shipping_lines: 'cfg_shipping_lines',
+    customers: 'cfg_customers', tariffs: 'cfg_tariffs', subcontractors: 'cfg_subcontractors', suppliers: 'cfg_customers',
+    locations: 'cfg_locations', shipping_lines: 'cfg_shipping_lines', vessels: 'cfg_shipping_lines', pol_ports: 'cfg_locations',
     vehicles: 'cfg_vehicles', trailers: 'cfg_trailers', containers: 'cfg_containers'
 };
 
@@ -38235,6 +38353,9 @@ function switchMasterDataTab(tabKey) {
         'vehicles': 'Tạo mới',
         'trailers': 'Tạo mới',
         'shipping_lines': 'Tạo mới',
+        'suppliers': 'Tạo mới',
+        'vessels': 'Tạo mới',
+        'pol_ports': 'Tạo mới',
         'subcontractors': 'Tạo mới'
     };
     const createBtnLabel = document.getElementById('md-create-btn-label');
@@ -38330,6 +38451,9 @@ async function loadActiveMasterDataTab() {
         'vehicles': '/api/master-data/vehicles/',
         'trailers': '/api/master-data/trailers/',
         'shipping_lines': '/api/master-data/shipping-lines/',
+        'suppliers': '/api/master-data/suppliers/',
+        'vessels': '/api/master-data/vessels/',
+        'pol_ports': '/api/master-data/pol-ports/',
         'subcontractors': '/api/master-data/subcontractors/'
     };
 
@@ -39266,6 +39390,123 @@ function renderMasterDataTable(items, total = items.length) {
             `;
         }).join('');
     }
+    // 9.1. NHÀ CUNG CẤP / SHIPPER GỬI HÀNG
+    else if (currentMasterDataTab === 'suppliers') {
+        tableHead.innerHTML = `
+            <tr>
+                ${renderMdSttTh()}
+                ${renderMdTh('code', 'Mã NCC')}
+                ${renderMdTh('name', 'Tên Nhà Cung Cấp / Shipper')}
+                ${renderMdTh('short_name', 'Tên Viết Tắt')}
+                ${renderMdTh('tax_code', 'Mã Số Thuế')}
+                ${renderMdTh('phone', 'Điện Thoại')}
+                ${renderMdTh('contact_person', 'Người Liên Hệ')}
+                ${renderMdTh('address', 'Địa Chỉ')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
+            </tr>
+        `;
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.code || '—')}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-slate-700 border-r border-slate-200">${escapeHtml(item.short_name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.tax_code || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.phone || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 border-r border-slate-200">${escapeHtml(item.contact_person || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200 max-w-xs truncate">${escapeHtml(item.address || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${escapeHtml(item.notes || '—')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
+                </td>
+                <td class="py-2 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
+    // 9.2. DANH MỤC TÀU BIỂN (VESSELS)
+    else if (currentMasterDataTab === 'vessels') {
+        tableHead.innerHTML = `
+            <tr>
+                ${renderMdSttTh()}
+                ${renderMdTh('name', 'Tên Tàu Biển')}
+                ${renderMdTh('code', 'Mã Hiệu Tàu')}
+                ${renderMdTh('imo_number', 'Số IMO')}
+                ${renderMdTh('shipping_line_code', 'Hãng Tàu')}
+                ${renderMdTh('flag', 'Quốc Tịch / Cờ')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
+            </tr>
+        `;
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.code || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.imo_number || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-teal-800 border-r border-slate-200">${escapeHtml(item.shipping_line_code || item.shipping_line_name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 border-r border-slate-200">${escapeHtml(item.flag || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${escapeHtml(item.notes || '—')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
+                </td>
+                <td class="py-2 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
+    // 9.3. CẢNG XUẤT (PORT OF LOADING - POL)
+    else if (currentMasterDataTab === 'pol_ports') {
+        tableHead.innerHTML = `
+            <tr>
+                ${renderMdSttTh()}
+                ${renderMdTh('name', 'Tên Cảng Xuất (POL)')}
+                ${renderMdTh('code', 'Mã Cảng (UN/LOCODE)')}
+                ${renderMdTh('country', 'Quốc Gia')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
+            </tr>
+        `;
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.code || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${escapeHtml(item.country || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${escapeHtml(item.notes || '—')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
+                </td>
+                <td class="py-2 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
     // 11. NHÀ XE THẦU PHỤ / XE BẠN 3PL
     else if (currentMasterDataTab === 'subcontractors') {
         tableHead.innerHTML = `
@@ -39907,7 +40148,8 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Thuế (MST)</label>
                     </div>
-                    <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
+                    <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full" onblur="checkDuplicateTaxCode(this.value, '${d.id || ''}')">
+                    <div id="mdf-tax-code-warning" class="text-[11px] text-amber-600 font-semibold mt-0.5 hidden"></div>
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -40697,16 +40939,20 @@ function injectMasterDataModalFields(data) {
                 <div id="sub-driver-add-row" class="hidden-view p-2.5 bg-amber-50/90 border border-amber-300 rounded-xl mb-2.5 space-y-2">
                     <div class="text-[11px] font-bold text-amber-900 uppercase">Khai Báo Bác Tài Mới Trực Thuộc Nhà Xe</div>
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                        <div class="sm:col-span-5">
+                        <div class="sm:col-span-4">
                             <input type="text" id="new-subdrv-name" placeholder="Họ và tên tài xế *" class="form-input h-8 px-2 py-1 text-xs font-bold text-slate-800 border-amber-300 w-full rounded">
                         </div>
-                        <div class="sm:col-span-4">
+                        <div class="sm:col-span-3">
                             <input type="tel" id="new-subdrv-phone" placeholder="Số điện thoại *" class="form-input h-8 px-2 py-1 text-xs font-mono font-bold text-teal-800 border-amber-300 w-full rounded">
                         </div>
                         <div class="sm:col-span-3">
-                            <input type="text" id="new-subdrv-license" placeholder="Số GPLX (Tùy chọn)" class="form-input h-8 px-2 py-1 text-xs font-mono border-amber-300 w-full rounded">
+                            <input type="text" id="new-subdrv-cccd" placeholder="Số CCCD" class="form-input h-8 px-2 py-1 text-xs font-mono border-amber-300 w-full rounded" onblur="checkDriverDuplicateCitizenId(this.value)">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <input type="text" id="new-subdrv-license" placeholder="Số GPLX" class="form-input h-8 px-2 py-1 text-xs font-mono border-amber-300 w-full rounded">
                         </div>
                     </div>
+                    <div id="sub-driver-cccd-warning" class="text-[11px] text-amber-600 font-semibold hidden"></div>
                     <div class="flex items-center justify-end gap-2 pt-1">
                         <button type="button" onclick="hideAddSubDriverInline()" class="px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-200 rounded font-semibold cursor-pointer">Hủy</button>
                         <button type="button" onclick="saveNewSubDriverInline(${d.id})" class="btn-bim-primary px-3.5 py-1 text-xs font-bold shadow-xs cursor-pointer">Lưu Bác Tài</button>
@@ -40807,6 +41053,154 @@ function injectMasterDataModalFields(data) {
                 <input type="text" id="mdf-ob-notes" value="${escapeHtml(d.notes || '')}" placeholder="Căn cứ biên bản đối chiếu công nợ, sao kê ngân hàng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
         `;
+    } else if (currentMasterDataTab === 'suppliers') {
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Nhà Cung Cấp</label>
+                    </div>
+                    <input type="text" id="mdf-supplier-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh: NCC..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                </div>
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Nhà Cung Cấp / Shipper <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-supplier-name" value="${escapeHtml(d.name || '')}" placeholder="VD: PROSPECT METALS PTE. LTD, Ryobi Technologies..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Thuế (Nếu có)</label>
+                    </div>
+                    <input type="text" id="mdf-supplier-tax-code" value="${escapeHtml(d.tax_code || '')}" placeholder="MST hoặc Tax ID..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Điện Thoại</label>
+                    </div>
+                    <input type="tel" id="mdf-supplier-phone" value="${escapeHtml(d.phone || '')}" placeholder="Hotline liên hệ..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Email</label>
+                    </div>
+                    <input type="email" id="mdf-supplier-email" value="${escapeHtml(d.email || '')}" placeholder="sales@supplier.com..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Trụ Sở / Kho Hàng</label>
+                </div>
+                <input type="text" id="mdf-supplier-address" value="${escapeHtml(d.address || '')}" placeholder="Địa chỉ đối tác..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Người Phụ Trách / Liên Hệ</label>
+                    </div>
+                    <input type="text" id="mdf-supplier-contact" value="${escapeHtml(d.contact_person || '')}" placeholder="Họ tên người liên hệ..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú</label>
+                    </div>
+                    <input type="text" id="mdf-supplier-notes" value="${escapeHtml(d.notes || '')}" placeholder="Ghi chú quy trình giao nhận..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'vessels') {
+        const slList = masterDataFormOptionsCache?.shipping_lines || [];
+        const slOpts = slList.map(sl => `<option value="${sl.id}" ${d.shipping_line === sl.id || d.shipping_line_id === sl.id ? 'selected' : ''}>${escapeHtml(sl.name)} (${escapeHtml(sl.code)})</option>`).join('');
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Tàu Biển <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-vessel-name" value="${escapeHtml(d.name || '')}" placeholder="VD: EVER CONSIST, CAP SAN LAZARO, MAERSK MC-KINNEY MOLLER..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold uppercase text-slate-800 w-full" required>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Tàu (Code)</label>
+                    </div>
+                    <input type="text" id="mdf-vessel-code" value="${escapeHtml(d.code || '')}" placeholder="VD: EVCONS, CSLZ..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hãng Tàu Khai Thác</label>
+                    </div>
+                    <select id="mdf-vessel-shipping-line" class="form-select h-8.5 px-2.5 py-1 text-xs font-medium text-slate-800 w-full">
+                        <option value="">-- Chọn Hãng Tàu (Tùy chọn) --</option>
+                        ${slOpts}
+                    </select>
+                </div>
+                <div class="md:col-span-3">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số IMO</label>
+                    </div>
+                    <input type="text" id="mdf-vessel-imo" value="${escapeHtml(d.imo_number || '')}" placeholder="VD: 9811000" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-3">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Quốc Tịch (Flag)</label>
+                    </div>
+                    <input type="text" id="mdf-vessel-flag" value="${escapeHtml(d.flag || '')}" placeholder="VD: Panama, Liberia..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú</label>
+                </div>
+                <input type="text" id="mdf-vessel-notes" value="${escapeHtml(d.notes || '')}" placeholder="Thông tin tuyến chạy, lưu ý..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'pol_ports') {
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Cảng (UN/LOCODE) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-pol-code" value="${escapeHtml(d.code || '')}" placeholder="VD: CNSHA, IDJKT, KRPUS..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" required ${d.code ? 'readonly' : ''}>
+                </div>
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Cảng Xuất (POL) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-pol-name" value="${escapeHtml(d.name || '')}" placeholder="VD: JAKARTA PORT INDONESIA, SHANGHAI, BUSAN..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold uppercase text-slate-800 w-full" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Quốc Gia</label>
+                    </div>
+                    <input type="text" id="mdf-pol-country" value="${escapeHtml(d.country || '')}" placeholder="VD: Indonesia, China, Korea, Japan..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú</label>
+                    </div>
+                    <input type="text" id="mdf-pol-notes" value="${escapeHtml(d.notes || '')}" placeholder="Khu vực bến bãi, cảng trung chuyển..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
+            </div>
+        `;
     }
 
     // Tự động khởi tạo format hàng ngàn cho tất cả input tiền tệ / số trong modal
@@ -40814,6 +41208,70 @@ function injectMasterDataModalFields(data) {
         initAllNumberInputs();
     }
 }
+
+// Kiểm tra trùng lặp MST Khách hàng thời gian thực
+async function checkDuplicateTaxCode(taxCode, currentCustomerId) {
+    if (!taxCode || !taxCode.trim()) {
+        const warnEl = document.getElementById('mdf-tax-code-warning');
+        if (warnEl) warnEl.classList.add('hidden');
+        return;
+    }
+    try {
+        const params = new URLSearchParams({ tax_code: taxCode.trim() });
+        if (currentCustomerId) params.append('exclude_id', currentCustomerId);
+        const res = await fetchWithAuth(`/api/master-data/check-tax-code/?${params.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const warnEl = document.getElementById('mdf-tax-code-warning');
+        if (warnEl) {
+            if (data.duplicate) {
+                warnEl.innerHTML = `<i class="ph-bold ph-warning text-amber-500 mr-1"></i>${escapeHtml(data.message)}`;
+                warnEl.classList.remove('hidden');
+            } else {
+                warnEl.classList.add('hidden');
+            }
+        }
+    } catch (e) {
+        console.error('Lỗi checkDuplicateTaxCode:', e);
+    }
+}
+window.checkDuplicateTaxCode = checkDuplicateTaxCode;
+
+// Kiểm tra trùng lặp CCCD Tài xế thời gian thực (Cả Tài xế công ty và Tài xế nhà xe 3PL)
+async function checkDriverDuplicateCitizenId(citizenId, excludeDriverId) {
+    if (!citizenId || !citizenId.trim()) {
+        const warnEls = [
+            document.getElementById('emp-national-id-warning'),
+            document.getElementById('sub-driver-cccd-warning'),
+            document.getElementById('driver-citizen-id-warning')
+        ].filter(Boolean);
+        warnEls.forEach(el => el.classList.add('hidden'));
+        return;
+    }
+    try {
+        const params = new URLSearchParams({ citizen_id: citizenId.trim() });
+        if (excludeDriverId) params.append('exclude_id', excludeDriverId);
+        const res = await fetchWithAuth(`/api/master-data/check-driver-citizen-id/?${params.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const warnEls = [
+            document.getElementById('emp-national-id-warning'),
+            document.getElementById('sub-driver-cccd-warning'),
+            document.getElementById('driver-citizen-id-warning')
+        ].filter(Boolean);
+        warnEls.forEach(el => {
+            if (data.duplicate) {
+                el.innerHTML = `<i class="ph-bold ph-warning text-amber-500 mr-1"></i>${escapeHtml(data.message)}`;
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        });
+    } catch (e) {
+        console.error('Lỗi checkDriverDuplicateCitizenId:', e);
+    }
+}
+window.checkDriverDuplicateCitizenId = checkDriverDuplicateCitizenId;
 
 // ---- src/app/master-data/form-submit.js ----
 // Submit Create or Edit Form
@@ -40836,7 +41294,10 @@ async function submitMasterDataForm(e) {
         'vehicles': isEdit ? `/api/master-data/vehicles/${editId}/` : '/api/master-data/vehicles/',
         'trailers': isEdit ? `/api/master-data/trailers/${editId}/` : '/api/master-data/trailers/',
         'shipping_lines': isEdit ? `/api/master-data/shipping-lines/${editId}/` : '/api/master-data/shipping-lines/',
-        'subcontractors': isEdit ? `/api/master-data/subcontractors/${editId}/` : '/api/master-data/subcontractors/'
+        'subcontractors': isEdit ? `/api/master-data/subcontractors/${editId}/` : '/api/master-data/subcontractors/',
+        'suppliers': isEdit ? `/api/master-data/suppliers/${editId}/` : '/api/master-data/suppliers/',
+        'vessels': isEdit ? `/api/master-data/vessels/${editId}/` : '/api/master-data/vessels/',
+        'pol_ports': isEdit ? `/api/master-data/pol-ports/${editId}/` : '/api/master-data/pol-ports/'
     };
 
     let payload = {};
@@ -41028,6 +41489,37 @@ async function submitMasterDataForm(e) {
             bank_name: document.getElementById('mdf-sc-bank').value,
             bank_account_holder: document.getElementById('mdf-sc-holder').value,
             notes: document.getElementById('mdf-sc-notes').value,
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
+        };
+    } else if (tabKey === 'suppliers') {
+        payload = {
+            code: document.getElementById('mdf-supplier-code')?.value?.trim() || '',
+            name: document.getElementById('mdf-supplier-name')?.value?.trim() || '',
+            tax_code: document.getElementById('mdf-supplier-tax-code')?.value?.trim() || '',
+            address: document.getElementById('mdf-supplier-address')?.value?.trim() || '',
+            phone: document.getElementById('mdf-supplier-phone')?.value?.trim() || '',
+            email: document.getElementById('mdf-supplier-email')?.value?.trim() || '',
+            contact_person: document.getElementById('mdf-supplier-contact')?.value?.trim() || '',
+            notes: document.getElementById('mdf-supplier-notes')?.value?.trim() || '',
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
+        };
+    } else if (tabKey === 'vessels') {
+        const slVal = document.getElementById('mdf-vessel-shipping-line')?.value;
+        payload = {
+            code: document.getElementById('mdf-vessel-code')?.value?.trim().toUpperCase() || '',
+            name: document.getElementById('mdf-vessel-name')?.value?.trim().toUpperCase() || '',
+            imo_number: document.getElementById('mdf-vessel-imo')?.value?.trim() || '',
+            shipping_line: slVal ? parseInt(slVal) : null,
+            flag: document.getElementById('mdf-vessel-flag')?.value?.trim() || '',
+            notes: document.getElementById('mdf-vessel-notes')?.value?.trim() || '',
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
+        };
+    } else if (tabKey === 'pol_ports') {
+        payload = {
+            code: document.getElementById('mdf-pol-code')?.value?.trim().toUpperCase() || '',
+            name: document.getElementById('mdf-pol-name')?.value?.trim().toUpperCase() || '',
+            country: document.getElementById('mdf-pol-country')?.value?.trim() || '',
+            notes: document.getElementById('mdf-pol-notes')?.value?.trim() || '',
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     }
@@ -44564,10 +45056,12 @@ function hideAddSubDriverInline() {
 async function saveNewSubDriverInline(subId) {
     const nameInp = document.getElementById('new-subdrv-name');
     const phoneInp = document.getElementById('new-subdrv-phone');
+    const cccdInp = document.getElementById('new-subdrv-cccd');
     const licInp = document.getElementById('new-subdrv-license');
 
     const full_name = nameInp ? nameInp.value.trim() : '';
     const phone = phoneInp ? phoneInp.value.trim() : '';
+    const citizen_id = cccdInp ? cccdInp.value.trim() : '';
     const license_number = licInp ? licInp.value.trim() : '';
 
     if (!full_name) {
@@ -44584,14 +45078,17 @@ async function saveNewSubDriverInline(subId) {
     try {
         const res = await fetchWithAuth(`/api/master-data/subcontractors/${subId}/drivers/`, {
             method: 'POST',
-            body: JSON.stringify({ full_name, phone, license_number, is_active: true })
+            body: JSON.stringify({ full_name, phone, citizen_id, license_number, is_active: true })
         });
         const result = await res.json();
         if (res.ok && result.success) {
             showToast('success', `Đã thêm tài xế [${full_name}] vào danh bạ đối tác!`);
             if (nameInp) nameInp.value = '';
             if (phoneInp) phoneInp.value = '';
+            if (cccdInp) cccdInp.value = '';
             if (licInp) licInp.value = '';
+            const cccdWarn = document.getElementById('sub-driver-cccd-warning');
+            if (cccdWarn) cccdWarn.classList.add('hidden');
             hideAddSubDriverInline();
             loadSubcontractorDriversInModal(subId);
             if (typeof checkAndSyncMasterData === 'function') {

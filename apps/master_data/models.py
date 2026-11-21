@@ -287,6 +287,47 @@ class ShippingLine(Party):
     def __str__(self):
         return f"{self.code} - {self.name}"
 
+class Supplier(Party):
+    """
+    Nhà cung cấp hàng hóa / Người gửi hàng (Shipper / Supplier).
+    Proxy của Party với vai trò is_supplier = True.
+    """
+    objects, all_objects = role_managers('is_supplier')
+
+    class Meta:
+        proxy = True
+        ordering = ['name']
+        verbose_name = 'Nhà Cung Cấp / Shipper'
+        verbose_name_plural = 'Danh mục Nhà Cung Cấp / Shipper'
+
+    @classmethod
+    def generate_next_code(cls):
+        import re
+        codes = cls.all_objects.filter(code__startswith='NCC').values_list('code', flat=True)
+        max_num = 0
+        pattern = re.compile(r"^NCC(\d+)$")
+        for c in codes:
+            match = pattern.match(c or '')
+            if match:
+                try:
+                    num = int(match.group(1))
+                    if num > max_num:
+                        max_num = num
+                except ValueError:
+                    pass
+        return f"NCC{max_num + 1:03d}"
+
+    def save(self, *args, **kwargs):
+        self.is_supplier = True
+        if not self.code or not str(self.code).strip():
+            self.code = self.generate_next_code()
+        if not self.short_name or not str(self.short_name).strip():
+            self.short_name = self.name[:50] if self.name else self.code
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})" if self.code else self.name
+
 class Subcontractor(Party):
     """
     Nhà xe thầu phụ / đối tác vận tải 3PL, gara và nhà cung cấp (proxy của Party: vai trò is_carrier / is_supplier).
@@ -725,6 +766,50 @@ class OpeningBalance(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
             self.partner_type = 'DRIVER'
 
         super().save(*args, **kwargs)
+
+class Vessel(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """
+    Danh mục Tàu Biển & Chuyến (Vessels).
+    Phục vụ chọn tàu nhanh cho Đơn hàng / Booking FCL / LCL.
+    """
+    code = models.CharField(max_length=50, blank=True, default='', db_index=True, help_text="Mã hiệu tàu / IMO")
+    name = models.CharField(max_length=150, db_index=True, help_text="Tên Tàu (VD: EVER CONSIST, CAP SAN LAZARO...)")
+    imo_number = models.CharField(max_length=30, blank=True, default='', help_text="Số IMO quốc tế")
+    shipping_line = models.ForeignKey(
+        'master_data.ShippingLine', on_delete=models.SET_NULL, null=True, blank=True, related_name='vessels',
+        help_text="Hãng tàu vận hành"
+    )
+    flag = models.CharField(max_length=50, blank=True, default='', help_text="Quốc tịch / Cờ hiệu tàu")
+    notes = models.CharField(max_length=255, blank=True, default='', help_text="Ghi chú thêm")
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Tàu Biển'
+        verbose_name_plural = 'Danh mục Tàu Biển'
+
+    def __str__(self):
+        return f"{self.name} ({self.code})" if self.code else self.name
+
+
+class PortLoading(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+    """
+    Danh mục Cảng Xuất (Port of Loading - POL) / Cảng Nước Ngoài.
+    Phục vụ chọn cảng xuất hàng nhanh khi tạo Booking nhập khẩu/quốc tế.
+    """
+    code = models.CharField(max_length=50, blank=True, default='', db_index=True, help_text="Mã Cảng (UN/LOCODE, VD: IDJKT, CNSHA...)")
+    name = models.CharField(max_length=150, db_index=True, help_text="Tên Cảng Xuất (VD: JAKARTA PORT INDONESIA, SHANGHAI...)")
+    country = models.CharField(max_length=100, blank=True, default='', help_text="Quốc gia (VD: Indonesia, China, Korea...)")
+    notes = models.CharField(max_length=255, blank=True, default='', help_text="Ghi chú")
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Cảng Xuất (POL)'
+        verbose_name_plural = 'Danh mục Cảng Xuất (POL)'
+
+    def __str__(self):
+        return f"{self.name} ({self.code})" if self.code else self.name
 
 # Cách ly đa doanh nghiệp cho model con không có cột company (xem core.models.tenant_scope)
 SubcontractorDriver.tenant_path = 'subcontractor__company'

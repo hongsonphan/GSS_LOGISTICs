@@ -1,0 +1,16 @@
+{
+  "transport": "ssh",
+  "sshHost": "DIEN-DIA-CHI-VPS-O-DAY-KHONG-COMMIT",
+  "sshUser": "gssbackup",
+  "sshPort": 22,
+  "sshKey": "C:\\Users\\<ten>\\.ssh\\gss_backup",
+  "remoteDir": "/home/ubuntu/backups_gss",
+  "localDir": "D:\\GSS_Backups",
+  "keepDays": 30,
+  "keepMinSets": 3,
+  "staleWarnHours": 36,
+  "remoteBackupCommand": "run-backup",
+  "remoteBackupMaxAgeHours": 6,
+  "serverUtcOffsetHours": 0,
+  "ageRecipient": ""
+}

@@ -84,11 +84,17 @@ Không có `send` thì chỉ ghi nhận đã gửi tay (`MANUAL`) như trước.
 
 ## 7. Sao lưu, khôi phục, triển khai VPS riêng
 
-- Sao lưu hằng ngày: `scripts/backup_vps.sh` (cron `0 2 * * *`; CSDL + media, giữ 14 ngày). Diễn tập khôi phục: `scripts/restore_drill.sh`
+- Sao lưu hằng ngày: `scripts/backup_vps.sh` (cron `30 23 * * *` để xong trước 00:00; CSDL + media, giữ 14 ngày; **thư mục riêng `/home/ubuntu/backups_gss`** vì VPS còn chạy BIM_LOGISTICS ghi `db_*` vào `/home/ubuntu/backups`). Diễn tập khôi phục: `scripts/restore_drill.sh`
   (đối chiếu cả bảng GSS: phiếu chia cont, lượt ra vào bãi, nhật ký quét QR).
 - **Bản sao ngoài máy chủ (mã hoá):** cài `age`, `rclone`; `rclone config` tạo remote; tạo khoá `age-keygen -o gss-backup.key` (khoá riêng cất ở nơi KHÁC VPS, mất khoá = không giải mã được); ghi `/home/ubuntu/backups/.backup.env`:
   `OFFSITE_REMOTE=remote:gss-backups` và `BACKUP_AGE_RECIPIENT=age1…` (khoá công khai). Chưa đặt thì `backup_vps.sh` cảnh báo mỗi lần chạy.
   Khôi phục từ bản ngoài: tải `db_*.sql.gz.age` + `.sha256` về, `BACKUP_AGE_IDENTITY=/đường/dẫn/gss-backup.key bash scripts/restore_vps.sh db_….sql.gz.age`.
+- **Kéo bản sao lưu về máy local lúc 00:00 (Windows):** máy local chủ động kết nối VPS qua SSH khoá riêng (VPS không biết địa chỉ máy local).
+  1. Tạo khoá riêng: `ssh-keygen -t ed25519 -f $env:USERPROFILE\.ssh\gss_backup` (không passphrase để tác vụ chạy ngầm). Trên VPS: copy `scripts/backup_ssh_gate.sh` tới `/home/ubuntu/gss_backup_gate.sh` (chmod 700) và thêm vào `~/.ssh/authorized_keys` dòng `command="/home/ubuntu/gss_backup_gate.sh",restrict ssh-ed25519 AAAA… gss-backup-pull@local`. Cổng này chỉ cho: liệt kê thư mục sao lưu, đọc/tải/băm file `db_*`/`media_*` và lệnh `run-backup` (tạo bản mới); mọi lệnh khác bị từ chối (mã 126), nên máy local bị lộ cũng không có shell trên VPS. Script dùng `scp -O` (giao thức scp cổ điển) vì cổng không cho SFTP. Chạy `ssh` tay một lần để lưu host key vào `known_hosts` (`StrictHostKeyChecking=yes`).
+  2. Sao `scripts/pull_backup_local.config.example.json` thành `%USERPROFILE%\.gss-backup\config.json` (NGOÀI repo), điền `sshHost`, `sshUser`, `sshKey`, `localDir`. Tuỳ chọn: `ageRecipient` (mã hoá ban local, cần `age.exe`), `remoteBackupCommand: "run-backup"` (tạo bản mới trên VPS khi bản hiện có cũ hơn `remoteBackupMaxAgeHours`), `serverUtcOffsetHours` (giờ trong tên file là giờ máy chủ; VPS UTC = 0).
+  3. Chạy thử: `powershell -ExecutionPolicy Bypass -File scripts\pull_backup_local.ps1 -Force`; rồi đăng ký lịch: `powershell -ExecutionPolicy Bypass -File scripts
+egister_backup_task.ps1 -RunNow` (go: `-Unregister`).
+  - Lịch: 00:00 hằng ngày (lặp mỗi giờ nếu mất mạng), **chạy bù khi máy bật lại** (`StartWhenAvailable`) và khi đăng nhập; chỉ tải ban mới, mỗi file được đối chiếu sha256 + kiểm gzip trước khi nhận; log `pull.log`, cảnh báo `CANH_BAO.txt` khi ban mới nhất > 36 giờ. Kiểm các ban đã lưu: `pull_backup_local.ps1 -VerifyOnly`. Máy phải đăng nhập Windows (tác vụ chạy dưới tài khoản hiện tại, không lưu mật khẩu); nên bật BitLocker cho ổ lưu.
 - **Bản chỉ CSDL mỗi 4 giờ:** `deploy_vps.sh` cài thêm cron `BACKUP_MODE=db` (RPO ≤ 4 giờ). Mục tiêu đề xuất: RPO ≤ 15 phút cần WAL/PITR (chưa làm), RTO ≤ 4 giờ (đo lại trên VPS bằng `restore_drill.sh`).
 - **Hạ quyền CSDL (một lần, cần anh đồng ý, xem `docs/16`):** `APP_DB_PASSWORD='…' bash scripts/db_harden.sh`, rồi đặt `APP_DB_USER=gss_app` + `APP_DB_PASSWORD` trong `.env` và `docker compose up -d web`. Khôi phục sau đó đặt `APP_DB_USER=gss_app` khi chạy `restore_vps.sh`.
 - **Quay CSDL sau migration lỗi:** `deploy_vps.sh` ghi bản sao lưu trước migrate vào `../GSS_LOGISTICS_rollback_db.txt`; chỉ quay khi dữ liệu bị hỏng (mất dữ liệu nhập sau mốc đó).

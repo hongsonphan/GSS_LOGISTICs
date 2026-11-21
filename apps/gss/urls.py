@@ -7,6 +7,7 @@ urlpatterns = [
     path('api/gss/bookings/<int:pk>/containers/', api.BookingContainersAPI.as_view()),
     path('api/gss/bookings/<int:pk>/containers/assign/', api.AssignContainersAPI.as_view()),
     path('api/gss/bookings/<int:pk>/allocation-template/', api.AllocationTemplateAPI.as_view()),
+    path('api/gss/bookings/<int:pk>/warehouse-dispatch-export/', api.WarehouseDispatchExportAPI.as_view()),
     path('api/gss/bookings/<int:pk>/allocation-import/', api.AllocationImportAPI.as_view()),
     path('api/gss/bookings/<int:pk>/allocation-import/commit/', api.AllocationImportCommitAPI.as_view()),
     path('api/gss/bookings/<int:pk>/overview/', api.BookingOverviewAPI.as_view()),

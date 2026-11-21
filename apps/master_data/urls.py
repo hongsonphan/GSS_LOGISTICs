@@ -13,6 +13,10 @@ from apps.master_data.api_views import (
     DriverSalaryTariffListCreateAPIView, DriverSalaryTariffDetailAPIView,
     DriverAllowanceListCreateAPIView, DriverAllowanceDetailAPIView,
     ShippingLineListCreateAPIView, ShippingLineDetailAPIView,
+    SupplierListCreateAPIView, SupplierDetailAPIView,
+    VesselListCreateAPIView, VesselDetailAPIView,
+    PortLoadingListCreateAPIView, PortLoadingDetailAPIView,
+    CheckTaxCodeAPIView, CheckDriverCitizenIdAPIView,
     TrailerMasterListCreateAPIView, TrailerMasterDetailAPIView,
     SubcontractorListCreateAPIView, SubcontractorDetailAPIView, SubcontractorNextCodeAPIView,
     SubcontractorFleetAPIView, SubcontractorDriverListCreateAPIView, SubcontractorDriverDetailAPIView,
@@ -77,6 +81,22 @@ urlpatterns = [
     # 9. Hãng Tàu Biển
     path('shipping-lines/', ShippingLineListCreateAPIView.as_view(), name='master-shipping-lines'),
     path('shipping-lines/<int:pk>/', ShippingLineDetailAPIView.as_view(), name='master-shipping-line-detail'),
+
+    # 9.1. Nhà Cung Cấp / Shipper
+    path('suppliers/', SupplierListCreateAPIView.as_view(), name='master-suppliers'),
+    path('suppliers/<int:pk>/', SupplierDetailAPIView.as_view(), name='master-supplier-detail'),
+
+    # 9.2. Tàu Biển (Vessels)
+    path('vessels/', VesselListCreateAPIView.as_view(), name='master-vessels'),
+    path('vessels/<int:pk>/', VesselDetailAPIView.as_view(), name='master-vessel-detail'),
+
+    # 9.3. Cảng Xuất (POL)
+    path('pol-ports/', PortLoadingListCreateAPIView.as_view(), name='master-pol-ports'),
+    path('pol-ports/<int:pk>/', PortLoadingDetailAPIView.as_view(), name='master-pol-port-detail'),
+
+    # Tiện ích kiểm tra cảnh báo trùng dữ liệu thời gian thực
+    path('check-tax-code/', CheckTaxCodeAPIView.as_view(), name='master-check-tax-code'),
+    path('check-driver-citizen-id/', CheckDriverCitizenIdAPIView.as_view(), name='master-check-driver-citizen-id'),
 
     # 10. Rơ-Moóc Container
     path('trailers/', TrailerMasterListCreateAPIView.as_view(), name='master-trailers'),

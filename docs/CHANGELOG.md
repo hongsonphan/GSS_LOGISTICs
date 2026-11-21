@@ -3,6 +3,53 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-21 – Nâng Cấp Màn Hình Tạo Booking, Đổi Tên Phân Hệ Sales & Shipments, Xuất Bảng Gửi Kho & Cảnh Báo Trùng Lặp Dữ Liệu
+- **Bối cảnh & Yêu cầu người dùng:**
+  - **A. Màn hình Tạo Booking:**
+    1. *Tên Nhà Cung Cấp (NCC / Shipper)*: Bổ sung danh mục trong Cài Đặt, có nút "+ Tạo mới" trên form để tạo nhanh; droplist chọn + tìm kiếm gõ free-text.
+    2. *Hãng tàu, Tên Tàu, Cảng xuất (POL)*: Bổ sung danh mục tương ứng trong Cài Đặt (Hãng Tàu, Tàu Biển, Cảng Xuất POL), có nút "+ Tạo mới" tại header từng ô, droplist chọn + gõ free-text.
+    3. *Cảng nhận hàng (POD)*: Tích hợp từ Danh mục Cảng đã có (Loại PORT / ICD), hỗ trợ chọn từ droplist và gõ free-text.
+    4. *Loại Cont / Xe*: Không bắt buộc nhập (bỏ dấu sao đỏ `*`), mặc định là Cont 20GP (`20GP`).
+    5. Đổi nhãn *"Ngày hẹn Dỡ hàng"* $\rightarrow$ *"Ngày giao cho Khách"*.
+  - **B. Sidebar & Điều hướng:**
+    1. Phân hệ "Sale & Booking" đổi tên thành "Sales & Shipments".
+    2. Tab "Đơn đặt hàng/ Booking" đổi thành "Đơn đặt hàng/ Shipments".
+  - **C. Kết xuất Bảng phân bổ Container gửi Kho theo dõi:**
+    - Mẫu cột chuẩn: `STT | Số Cont | Số xe | Tên tài xế | CCCD | Số điện thoại | Ghi chú nếu có`.
+    - Hỗ trợ xuất file Excel chuẩn và hiển thị modal có chức năng sao chép nhanh văn bản gửi Zalo/Viber cho thủ kho.
+  - **D. Tối ưu thao tác & Chống trùng lặp dữ liệu:**
+    - Cảnh báo trùng lặp CCCD của Tài xế thời gian thực (kiểm tra chéo cả Tài xế công ty `Employee` và Tài xế nhà xe 3PL `SubcontractorDriver`).
+    - Cảnh báo trùng lặp Mã số thuế (MST) của Khách hàng thời gian thực.
+- **Thay đổi kỹ thuật & Giao diện:**
+  1. **Backend & Cơ sở dữ liệu (`apps/master_data/models.py`, `api_views.py`, `urls.py`, `import_export_service.py`):**
+     - Thêm proxy model `Supplier` (Party có `is_supplier=True`, tiền tố mã `NCC`).
+     - Thêm model `Vessel` (`name`, `code`, `imo_number`, `shipping_line`, `flag`, `notes`, `is_active`).
+     - Thêm model `PortLoading` (`name`, `code`, `country`, `notes`, `is_active`).
+     - Tạo và chạy migration `apps/master_data/migrations/0008_supplier_portloading_vessel.py`.
+     - Thêm API CRUD và tra cứu: `SupplierListCreateAPIView`, `VesselListCreateAPIView`, `PortLoadingListCreateAPIView`.
+     - Thêm API kiểm tra trùng lặp: `CheckTaxCodeAPIView` (`/api/master-data/check-tax-code/`) và `CheckDriverCitizenIdAPIView` (`/api/master-data/check-driver-citizen-id/`).
+     - Mở rộng `MasterDataFormOptionsAPIView` trả về danh sách `suppliers`, `vessels`, `pol_ports`, `pod_ports`.
+  2. **Kết xuất Bảng gửi Kho (`apps/gss/vendor_excel.py`, `apps/gss/api.py`, `apps/gss/urls.py`, `containers.py`):**
+     - Viết hàm `warehouse_dispatch_excel(booking)` tạo workbook Excel định dạng chuyên nghiệp với các cột: `STT | Số Cont | Số Xe | Tên Tài Xế | CCCD | Số Điện Thoại | Ghi Chú Nếu Có`.
+     - Bổ sung `WarehouseDispatchExportAPI` tại `/api/gss/bookings/<pk>/warehouse-dispatch-export/` hỗ trợ cả `?as=xlsx` và `?as=json`.
+     - Bổ sung serializer `serialize(c)` container đọc thông tin `driver_cccd`, `driver_phone`, `driver_name`.
+  3. **Giao diện Master Data (`view_master_data.html`, `tabs.js`, `table.js`, `form-fields.js`, `form-submit.js`):**
+     - Nhóm "Khách Hàng & Đối Tác": thêm tab con "Nhà Cung Cấp / Shipper" (`suppliers`).
+     - Nhóm "Mạng Lưới & Địa Điểm": thêm tab con "Tàu Biển" (`vessels`) và "Cảng Xuất (POL)" (`pol_ports`).
+     - Tích hợp cảnh báo thời gian thực MST Khách hàng và CCCD Bác tài trực thuộc 3PL.
+  4. **Giao diện Booking Detail (`view_booking_detail.html`, `page.js`, `containers.js`, `combobox.js`, `master-options.js`):**
+     - Row 2: Cả 5 ô (NCC, Hãng tàu, Tàu biển, Cảng xuất POL, Cảng nhận POD) chuyển sang Combobox chọn + gõ tìm kiếm free-text, có nút "+ Tạo mới" mở nhanh modal Cài Đặt.
+     - Row 3: Bỏ bắt buộc loại cont, mặc định Cont 20GP (`20GP`).
+     - Row 4: Đổi nhãn thành "Ngày Giao Cho Khách".
+     - Toolbar Container: Thêm nút "Gửi Kho Theo Dõi" mở modal xem trước, sao chép Zalo và tải file Excel.
+  5. **Đồng bộ Sidebar & Tên phân hệ:**
+     - `sidebar.html`, `topbar.html`, `view_sales.html`, `router.js`, `quotation-page.js`, `quotation-print.js`: Đổi thành "Sales & Shipments" và "Đơn đặt hàng/ Shipments".
+- **Kiểm thử tự động:**
+  - `python scripts/build_app_js.py`: Ghép thành công 109 file module vào `static/js/app.js`.
+  - `python scripts/build_css.py`: Biên dịch Tailwind CSS thành công.
+  - `python manage.py test apps.master_data apps.gss`: 72 tests PASS.
+  - `python scripts/qa.py verify --fast`: PASS=6/6, FAIL=0, KẾT LUẬN: ĐẠT.
+
 ## 2026-11-21 – Tối Ưu Bảng "Theo Dõi Hành Trình": Đưa Cột "Phiếu Vận Chuyển" Lên Mặc Định Cột Đầu Sau STT, Bỏ Badge Và Trạng Thái Con
 - **Bối cảnh & Yêu cầu người dùng:**
   - Trong Tab "Theo dõi hành trình" (`#dispatch-vendor-containers-table`): Cột "Phiếu Vận Chuyển" được yêu cầu đưa lên làm cột đầu tiên ngay sau STT (vị trí #2).

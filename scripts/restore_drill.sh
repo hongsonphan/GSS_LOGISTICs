@@ -7,7 +7,7 @@
 # Chạy tay: bash scripts/restore_drill.sh   |  Tự động: .github/workflows/restore-drill.yml (hằng tuần)
 # =============================================================================
 set -uo pipefail
-BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/backups}"
+BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/backups_gss}"
 DB_CONTAINER="${DB_CONTAINER:-gss_logistics_postgres}"
 DB_USER="${DB_USER:-gss_logistics_user}"
 DB_NAME="${DB_NAME:-gss_logistics_db}"

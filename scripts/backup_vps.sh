@@ -7,13 +7,13 @@
 #   rồi đẩy lên nơi lưu qua rclone. Đã đặt mà lỗi -> script thoát mã khác 0 (không im lặng bỏ qua).
 # - Giữ KEEP_DAYS ngày gần nhất, tự xoá bản cũ hơn
 #
-# Biến môi trường (đặt trong crontab hoặc /home/ubuntu/backups/.backup.env, file được source nếu có):
+# Biến môi trường (đặt trong crontab hoặc /home/ubuntu/backups_gss/.backup.env, file được source nếu có):
 #   BACKUP_MODE=full|db        full (mặc định) = CSDL + media; db = chỉ CSDL (chạy dày, giảm RPO)
 #   OFFSITE_REMOTE=remote:duong/dan   remote rclone đã cấu hình (S3-tương thích, SFTP, ổ khác...)
 #   BACKUP_AGE_RECIPIENT=age1...      khoá CÔNG KHAI age; khoá riêng cất ở nơi khác, KHÔNG để trên VPS
 #   OFFSITE_KEEP_DAYS=60              giữ bao lâu ở nơi lưu ngoài (mặc định 60)
 # Lịch gợi ý (deploy_vps.sh cài sẵn):
-#   0 2 * * *      backup_vps.sh                     (đầy đủ)
+#   30 23 * * *    backup_vps.sh                     (đầy đủ; xong trước 00:00 để máy local kéo về)
 #   15 6,10,14,18,22 * * *  BACKUP_MODE=db backup_vps.sh   (chỉ CSDL, RPO <= 4 giờ)
 # Khôi phục: bash scripts/restore_vps.sh  (xem docs/16-data-security-dr.md mục 4)
 # =============================================================================
@@ -21,7 +21,7 @@ set -euo pipefail
 umask 077
 
 APP_DIR="${APP_DIR:-/home/ubuntu/GSS_LOGISTICS}"
-BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/backups}"
+BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/backups_gss}"
 [ -f "$BACKUP_DIR/.backup.env" ] && . "$BACKUP_DIR/.backup.env"
 KEEP_DAYS="${KEEP_DAYS:-14}"
 DB_CONTAINER="${DB_CONTAINER:-gss_logistics_postgres}"

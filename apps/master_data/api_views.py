@@ -23,7 +23,8 @@ from apps.master_data.models import (
     ContainerType, ContainerCategory,
     ExpenseItem, ExpenseCategoryGroup,
     DriverSalaryTariff, DriverAllowanceCatalog, AllowanceCategory,
-    ShippingLine, Subcontractor, SubcontractorDriver, CompanyProfile,
+    ShippingLine, Supplier, Vessel, PortLoading,
+    Subcontractor, SubcontractorDriver, CompanyProfile,
     OpeningBalance, OpeningBalanceCategory,
     ACCOUNT_CHART_CHOICES, ACCOUNT_NAME_MAP
 )
@@ -247,6 +248,56 @@ class MasterDataFormOptionsAPIView(APIView):
             for ct in RouteTariff.objects.select_related('customer').all().order_by('customer__name', 'pickup_location')
         ]
 
+        # 10. Danh mục Nhà cung cấp / Shipper
+        suppliers = [
+            {
+                'id': s.id,
+                'code': s.code,
+                'name': s.name,
+                'short_name': s.short_name or s.name,
+                'tax_code': s.tax_code or '',
+                'label': f"[{s.short_name}] {s.name}" if s.short_name and s.short_name != s.name else s.name
+            }
+            for s in Supplier.objects.filter(is_active=True).order_by('name')
+        ]
+
+        # 11. Danh mục Tàu biển (Vessels)
+        vessels = [
+            {
+                'id': v.id,
+                'code': v.code,
+                'name': v.name,
+                'imo_number': v.imo_number,
+                'shipping_line': v.shipping_line.code if v.shipping_line else '',
+                'label': f"{v.name}" + (f" ({v.shipping_line.code})" if v.shipping_line else "")
+            }
+            for v in Vessel.objects.filter(is_active=True).order_by('name')
+        ]
+
+        # 12. Danh mục Cảng xuất (POL)
+        pol_ports = [
+            {
+                'id': p.id,
+                'code': p.code,
+                'name': p.name,
+                'country': p.country,
+                'label': f"{p.name}" + (f" ({p.country})" if p.country else "")
+            }
+            for p in PortLoading.objects.filter(is_active=True).order_by('name')
+        ]
+
+        # 13. Danh mục Cảng nhận hàng (POD) - từ Cảng biển & Cảng cạn ICD nội địa
+        pod_ports = [
+            {
+                'id': loc.id,
+                'code': loc.code,
+                'name': loc.name,
+                'type': loc.location_type,
+                'label': f"{loc.name} ({loc.get_location_type_display()})"
+            }
+            for loc in Location.objects.filter(location_type__in=[LocationType.PORT, LocationType.ICD], is_active=True).order_by('name')
+        ]
+
         from apps.master_data.version import get_master_data_version
 
         response = Response({
@@ -267,6 +318,10 @@ class MasterDataFormOptionsAPIView(APIView):
             'vehicles': vehicles,
             'trailers': trailers,
             'shipping_lines': shipping_lines,
+            'suppliers': suppliers,
+            'vessels': vessels,
+            'pol_ports': pol_ports,
+            'pod_ports': pod_ports,
             'subcontractors': subcontractors,
             'container_types': container_types,
             'routes': routes,
@@ -593,12 +648,19 @@ class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
         if Customer.objects.filter(code=code).exists():
             return Response({'error': f'Mã khách hàng [{code}] đã tồn tại!'}, status=status.HTTP_400_BAD_REQUEST)
 
+        tax_code = data.get('tax_code', '').strip()
+        warning = None
+        if tax_code:
+            dup_cust = Customer.objects.filter(tax_code__iexact=tax_code).first()
+            if dup_cust:
+                warning = f"Cảnh báo: Mã số thuế [{tax_code}] đã được sử dụng cho khách hàng [{dup_cust.name}] ({dup_cust.code})."
+
         cust = Customer.objects.create(
             code=code,
             name=name,
             short_name=short_name,
             customer_group=data.get('customer_group', 'COMMERCIAL_TRADING') or 'COMMERCIAL_TRADING',
-            tax_code=data.get('tax_code', '').strip(),
+            tax_code=tax_code,
             address=data.get('address', '').strip(),
             company_email=data.get('company_email', '').strip(),
             contact_person=data.get('contact_person', '').strip(),
@@ -613,7 +675,10 @@ class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
             credit_limit=float(data.get('credit_limit', 0) or 0),
             notes=data.get('notes', '').strip(),
         )
-        return Response({'success': True, 'message': f'Đã thêm khách hàng [{cust.name}] thành công!', 'id': cust.id}, status=status.HTTP_201_CREATED)
+        resp_data = {'success': True, 'message': f'Đã thêm khách hàng [{cust.name}] thành công!', 'id': cust.id}
+        if warning:
+            resp_data['warning'] = warning
+        return Response(resp_data, status=status.HTTP_201_CREATED)
 
 class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
     def get(self, request, pk):
@@ -652,7 +717,14 @@ class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
         if 'name' in data: cust.name = data['name'].strip()
         if 'short_name' in data: cust.short_name = data['short_name'].strip()
         if 'customer_group' in data: cust.customer_group = data['customer_group']
-        if 'tax_code' in data: cust.tax_code = data['tax_code'].strip()
+        warning = None
+        if 'tax_code' in data:
+            new_tax = data['tax_code'].strip()
+            if new_tax:
+                dup_cust = Customer.objects.filter(tax_code__iexact=new_tax).exclude(id=cust.id).first()
+                if dup_cust:
+                    warning = f"Cảnh báo: Mã số thuế [{new_tax}] đã được sử dụng cho khách hàng [{dup_cust.name}] ({dup_cust.code})."
+            cust.tax_code = new_tax
         if 'address' in data: cust.address = data['address'].strip()
         if 'company_email' in data: cust.company_email = data['company_email'].strip()
         if 'contact_person' in data: cust.contact_person = data['contact_person'].strip()
@@ -675,7 +747,10 @@ class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
                 cust.credit_limit = 0
         if 'notes' in data: cust.notes = data['notes'].strip()
         cust.save()
-        return Response({'success': True, 'message': f'Đã cập nhật thông tin khách hàng [{cust.name}]!'})
+        resp_data = {'success': True, 'message': f'Đã cập nhật thông tin khách hàng [{cust.name}]!'}
+        if warning:
+            resp_data['warning'] = warning
+        return Response(resp_data)
 
     def delete(self, request, pk):
         cust = Customer.objects.filter(id=pk).first()
@@ -1229,6 +1304,327 @@ class ShippingLineDetailAPIView(MasterDataBaseAPIView):
             return Response({'error': 'Không tìm thấy hãng tàu!'}, status=status.HTTP_404_NOT_FOUND)
         sl.delete()
         return Response({'success': True, 'message': f'Đã xóa hãng tàu [{sl.name}].'})
+
+# ==============================================================================
+# 9.1. DANH MỤC NHÀ CUNG CẤP / SHIPPER (SUPPLIERS)
+# ==============================================================================
+class SupplierListCreateAPIView(MasterDataBaseAPIView):
+    def get(self, request):
+        q = request.GET.get('q', '').strip()
+        qs = Supplier.objects.all()
+        if q:
+            qs = qs.filter(Q(code__icontains=q) | Q(name__icontains=q) | Q(short_name__icontains=q) | Q(tax_code__icontains=q) | Q(phone__icontains=q))
+
+        data = []
+        for s in qs:
+            data.append({
+                'id': s.id,
+                'code': s.code,
+                'name': s.name,
+                'short_name': s.short_name,
+                'tax_code': s.tax_code,
+                'address': s.address,
+                'phone': s.phone,
+                'contact_person': s.contact_person,
+                'contact_email': s.contact_email or s.company_email,
+                'notes': s.notes,
+                'is_active': s.is_active,
+            })
+        return Response({'results': data, 'total': len(data)})
+
+    def post(self, request):
+        data = request.data
+        name = data.get('name', '').strip()
+        if not name:
+            return Response({'error': 'Tên nhà cung cấp / Shipper không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        code = data.get('code', '').strip().upper()
+        if not code:
+            code = Supplier.generate_next_code()
+        elif Supplier.objects.filter(code=code).exists():
+            return Response({'error': f'Mã nhà cung cấp [{code}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        tax_code = data.get('tax_code', '').strip()
+        warning = None
+        if tax_code and Supplier.objects.filter(tax_code=tax_code).exists():
+            warning = f"Lưu ý: Mã số thuế [{tax_code}] đã tồn tại cho một nhà cung cấp khác."
+
+        short_name = data.get('short_name', '').strip() or name[:50]
+        sup = Supplier.objects.create(
+            code=code,
+            name=name,
+            short_name=short_name,
+            tax_code=tax_code,
+            address=data.get('address', '').strip(),
+            phone=data.get('phone', '').strip(),
+            contact_person=data.get('contact_person', '').strip(),
+            contact_email=data.get('contact_email', '').strip(),
+            notes=data.get('notes', '').strip(),
+            is_supplier=True,
+            is_active=bool(data.get('is_active', True)),
+        )
+        resp_data = {
+            'success': True,
+            'message': f'Đã thêm nhà cung cấp [{sup.name}] thành công!',
+            'id': sup.id,
+            'code': sup.code,
+            'name': sup.name,
+        }
+        if warning:
+            resp_data['warning'] = warning
+        return Response(resp_data, status=status.HTTP_201_CREATED)
+
+
+class SupplierDetailAPIView(MasterDataBaseAPIView):
+    def put(self, request, pk):
+        sup = Supplier.objects.filter(id=pk).first()
+        if not sup:
+            return Response({'error': 'Không tìm thấy nhà cung cấp!'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'name' in data: sup.name = data['name'].strip()
+        if 'short_name' in data: sup.short_name = data['short_name'].strip()
+        if 'tax_code' in data: sup.tax_code = data['tax_code'].strip()
+        if 'address' in data: sup.address = data['address'].strip()
+        if 'phone' in data: sup.phone = data['phone'].strip()
+        if 'contact_person' in data: sup.contact_person = data['contact_person'].strip()
+        if 'contact_email' in data: sup.contact_email = data['contact_email'].strip()
+        if 'notes' in data: sup.notes = data['notes'].strip()
+        if 'is_active' in data: sup.is_active = bool(data['is_active'])
+        sup.save()
+
+        return Response({'success': True, 'message': f'Đã cập nhật nhà cung cấp [{sup.name}] thành công!'})
+
+    def delete(self, request, pk):
+        sup = Supplier.objects.filter(id=pk).first()
+        if not sup:
+            return Response({'error': 'Không tìm thấy nhà cung cấp!'}, status=status.HTTP_404_NOT_FOUND)
+        sup.delete()
+        return Response({'success': True, 'message': f'Đã xóa nhà cung cấp [{sup.name}].'})
+
+
+# ==============================================================================
+# 9.2. DANH MỤC TÀU BIỂN (VESSELS)
+# ==============================================================================
+class VesselListCreateAPIView(MasterDataBaseAPIView):
+    def get(self, request):
+        q = request.GET.get('q', '').strip()
+        qs = Vessel.objects.select_related('shipping_line').all()
+        if q:
+            qs = qs.filter(Q(code__icontains=q) | Q(name__icontains=q) | Q(imo_number__icontains=q) | Q(flag__icontains=q))
+
+        data = []
+        for v in qs:
+            data.append({
+                'id': v.id,
+                'code': v.code,
+                'name': v.name,
+                'imo_number': v.imo_number,
+                'shipping_line_id': v.shipping_line_id,
+                'shipping_line_code': v.shipping_line.code if v.shipping_line else '',
+                'shipping_line_name': v.shipping_line.name if v.shipping_line else '',
+                'flag': v.flag,
+                'notes': v.notes,
+                'is_active': v.is_active,
+            })
+        return Response({'results': data, 'total': len(data)})
+
+    def post(self, request):
+        data = request.data
+        name = data.get('name', '').strip().upper()
+        if not name:
+            return Response({'error': 'Tên tàu không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        code = data.get('code', '').strip().upper()
+        sl_id = data.get('shipping_line_id') or None
+        if not sl_id and data.get('shipping_line'):
+            sl_obj = ShippingLine.objects.filter(Q(code__iexact=str(data.get('shipping_line')).strip()) | Q(name__iexact=str(data.get('shipping_line')).strip())).first()
+            if sl_obj:
+                sl_id = sl_obj.id
+
+        vessel = Vessel.objects.create(
+            name=name,
+            code=code,
+            imo_number=data.get('imo_number', '').strip().upper(),
+            shipping_line_id=sl_id,
+            flag=data.get('flag', '').strip(),
+            notes=data.get('notes', '').strip(),
+            is_active=bool(data.get('is_active', True)),
+        )
+        return Response({
+            'success': True,
+            'message': f'Đã thêm tàu [{vessel.name}] thành công!',
+            'id': vessel.id,
+            'name': vessel.name,
+            'code': vessel.code
+        }, status=status.HTTP_201_CREATED)
+
+
+class VesselDetailAPIView(MasterDataBaseAPIView):
+    def put(self, request, pk):
+        vessel = Vessel.objects.filter(id=pk).first()
+        if not vessel:
+            return Response({'error': 'Không tìm thấy tàu!'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'name' in data: vessel.name = data['name'].strip().upper()
+        if 'code' in data: vessel.code = data['code'].strip().upper()
+        if 'imo_number' in data: vessel.imo_number = data['imo_number'].strip().upper()
+        if 'shipping_line_id' in data: vessel.shipping_line_id = data['shipping_line_id'] or None
+        if 'flag' in data: vessel.flag = data['flag'].strip()
+        if 'notes' in data: vessel.notes = data['notes'].strip()
+        if 'is_active' in data: vessel.is_active = bool(data['is_active'])
+        vessel.save()
+
+        return Response({'success': True, 'message': f'Đã cập nhật tàu [{vessel.name}] thành công!'})
+
+    def delete(self, request, pk):
+        vessel = Vessel.objects.filter(id=pk).first()
+        if not vessel:
+            return Response({'error': 'Không tìm thấy tàu!'}, status=status.HTTP_404_NOT_FOUND)
+        vessel.delete()
+        return Response({'success': True, 'message': f'Đã xóa tàu [{vessel.name}].'})
+
+
+# ==============================================================================
+# 9.3. DANH MỤC CẢNG XUẤT (PORT OF LOADING - POL)
+# ==============================================================================
+class PortLoadingListCreateAPIView(MasterDataBaseAPIView):
+    def get(self, request):
+        q = request.GET.get('q', '').strip()
+        qs = PortLoading.objects.all()
+        if q:
+            qs = qs.filter(Q(code__icontains=q) | Q(name__icontains=q) | Q(country__icontains=q))
+
+        data = []
+        for p in qs:
+            data.append({
+                'id': p.id,
+                'code': p.code,
+                'name': p.name,
+                'country': p.country,
+                'notes': p.notes,
+                'is_active': p.is_active,
+            })
+        return Response({'results': data, 'total': len(data)})
+
+    def post(self, request):
+        data = request.data
+        name = data.get('name', '').strip().upper()
+        if not name:
+            return Response({'error': 'Tên cảng xuất không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        code = data.get('code', '').strip().upper()
+        country = data.get('country', '').strip()
+
+        port = PortLoading.objects.create(
+            name=name,
+            code=code,
+            country=country,
+            notes=data.get('notes', '').strip(),
+            is_active=bool(data.get('is_active', True)),
+        )
+        return Response({
+            'success': True,
+            'message': f'Đã thêm cảng xuất [{port.name}] thành công!',
+            'id': port.id,
+            'name': port.name,
+            'code': port.code
+        }, status=status.HTTP_201_CREATED)
+
+
+class PortLoadingDetailAPIView(MasterDataBaseAPIView):
+    def put(self, request, pk):
+        port = PortLoading.objects.filter(id=pk).first()
+        if not port:
+            return Response({'error': 'Không tìm thấy cảng xuất!'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'name' in data: port.name = data['name'].strip().upper()
+        if 'code' in data: port.code = data['code'].strip().upper()
+        if 'country' in data: port.country = data['country'].strip()
+        if 'notes' in data: port.notes = data['notes'].strip()
+        if 'is_active' in data: port.is_active = bool(data['is_active'])
+        port.save()
+
+        return Response({'success': True, 'message': f'Đã cập nhật cảng xuất [{port.name}] thành công!'})
+
+    def delete(self, request, pk):
+        port = PortLoading.objects.filter(id=pk).first()
+        if not port:
+            return Response({'error': 'Không tìm thấy cảng xuất!'}, status=status.HTTP_404_NOT_FOUND)
+        port.delete()
+        return Response({'success': True, 'message': f'Đã xóa cảng xuất [{port.name}].'})
+
+
+# ==============================================================================
+# KIỂM TRA TRÙNG LẶP DỮ LIỆU THỜI GIAN THỰC (REALTIME DUPLICATE WARNINGS)
+# ==============================================================================
+class CheckTaxCodeAPIView(APIView):
+    """Kiểm tra cảnh báo trùng MST khách hàng."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tax_code = request.GET.get('tax_code', '').strip()
+        exclude_id = request.GET.get('exclude_id', '').strip()
+        if not tax_code:
+            return Response({'duplicate': False})
+
+        qs = Customer.objects.filter(tax_code__iexact=tax_code, is_deleted=False)
+        if exclude_id and exclude_id.isdigit():
+            qs = qs.exclude(id=int(exclude_id))
+
+        existing = qs.first()
+        if existing:
+            return Response({
+                'duplicate': True,
+                'message': f"Mã số thuế '{tax_code}' đã được đăng ký cho Khách hàng '{existing.name}' ({existing.code}).",
+                'existing_customer': {
+                    'id': existing.id,
+                    'code': existing.code,
+                    'name': existing.name,
+                }
+            })
+        return Response({'duplicate': False})
+
+
+class CheckDriverCitizenIdAPIView(APIView):
+    """Kiểm tra cảnh báo trùng CCCD tài xế (cả nhân sự nội bộ và nhà xe đối tác)."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cccd = request.GET.get('cccd', '').strip()
+        exclude_id = request.GET.get('exclude_id', '').strip()
+        source = request.GET.get('source', 'internal').strip() # 'internal' or 'subcontractor'
+        if not cccd:
+            return Response({'duplicate': False})
+
+        # 1. Kiểm tra trong nhân sự Employee
+        emp_qs = Employee.objects.filter(national_id__iexact=cccd, is_deleted=False)
+        if source == 'internal' and exclude_id and exclude_id.isdigit():
+            emp_qs = emp_qs.exclude(id=int(exclude_id))
+        emp = emp_qs.first()
+        if emp:
+            return Response({
+                'duplicate': True,
+                'message': f"Số CCCD '{cccd}' đã thuộc về tài xế/nhân sự '{emp.full_name}' ({emp.code}).",
+                'driver': {'id': emp.id, 'name': emp.full_name, 'code': emp.code, 'type': 'Nội bộ'}
+            })
+
+        # 2. Kiểm tra trong tài xế thầu phụ SubcontractorDriver
+        sub_qs = SubcontractorDriver.objects.filter(citizen_id__iexact=cccd, is_deleted=False)
+        if source == 'subcontractor' and exclude_id and exclude_id.isdigit():
+            sub_qs = sub_qs.exclude(id=int(exclude_id))
+        sub_drv = sub_qs.first()
+        if sub_drv:
+            return Response({
+                'duplicate': True,
+                'message': f"Số CCCD '{cccd}' đã thuộc về tài xế thầu phụ '{sub_drv.full_name}' (Nhà xe: {sub_drv.subcontractor.name}).",
+                'driver': {'id': sub_drv.id, 'name': sub_drv.full_name, 'subcontractor': sub_drv.subcontractor.name, 'type': 'Thầu phụ'}
+            })
+
+        return Response({'duplicate': False})
+
 
 # ==============================================================================
 # 10. DANH MỤC RƠ-MOÓC (TRAILERS)
@@ -2501,7 +2897,9 @@ for _cls in (DriverSalaryTariffListCreateAPIView, DriverSalaryTariffDetailAPIVie
              DriverAllowanceListCreateAPIView, DriverAllowanceDetailAPIView):
     _cls.permission_classes = [CanManageMasterData, PayMasterOnly, SharedConfigWritePermission]
 for _cls in (ContainerTypeListCreateAPIView, ContainerTypeDetailAPIView, ExpenseItemListCreateAPIView, ExpenseItemDetailAPIView,
-             ShippingLineListCreateAPIView, ShippingLineDetailAPIView):
+             ShippingLineListCreateAPIView, ShippingLineDetailAPIView,
+             VesselListCreateAPIView, VesselDetailAPIView,
+             PortLoadingListCreateAPIView, PortLoadingDetailAPIView):
     _cls.permission_classes = [CanManageMasterData, SharedConfigWritePermission]
 
 
@@ -2525,6 +2923,9 @@ _VIEW_TAB = {
     VehicleMasterListCreateAPIView: 'vehicles', VehicleMasterDetailAPIView: 'vehicles',
     TrailerMasterListCreateAPIView: 'trailers', TrailerMasterDetailAPIView: 'trailers',
     CompanyProfileAPIView: 'company',
+    SupplierListCreateAPIView: 'suppliers', SupplierDetailAPIView: 'suppliers',
+    VesselListCreateAPIView: 'vessels', VesselDetailAPIView: 'vessels',
+    PortLoadingListCreateAPIView: 'pol_ports', PortLoadingDetailAPIView: 'pol_ports',
 }
 for _cls, _tab in _VIEW_TAB.items():
     _cls.cfg_module = CFG_TAB_MODULE[_tab]
@@ -2540,7 +2941,8 @@ for _cls in (MasterDataExportTemplateAPIView, MasterDataExportDataAPIView, Maste
 
 
 # Danh sách khách hàng, biểu giá, nhà thầu phụ, xe: chỉ đọc được khi thuộc nghiệp vụ liên quan hoặc có quyền tab Cài đặt tương ứng
-for _cls in (CustomerMasterListCreateAPIView, CustomerMasterDetailAPIView, TariffMasterListCreateAPIView, TariffMasterDetailAPIView):
+for _cls in (CustomerMasterListCreateAPIView, CustomerMasterDetailAPIView, TariffMasterListCreateAPIView, TariffMasterDetailAPIView,
+             SupplierListCreateAPIView, SupplierDetailAPIView):
     _cls.read_modules = _PARTNER_DATA_MODULES
 for _cls in (SubcontractorListCreateAPIView, SubcontractorDetailAPIView, SubcontractorNextCodeAPIView, SubcontractorFleetAPIView,
              SubcontractorVehicleListCreateAPIView, SubcontractorVehicleDetailAPIView,

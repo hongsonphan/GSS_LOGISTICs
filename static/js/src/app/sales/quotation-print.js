@@ -322,7 +322,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
 
     setTopbarFullpageMode({
         backFn: closeQuotationPrintModal,
-        prefix: 'Sale & Booking',
+        prefix: 'Sales & Shipments',
         title: 'Bản In Báo Giá',
         subText: '',
         badgesHtml: '',
@@ -354,7 +354,7 @@ function closeQuotationPrintModal() {
         const quoteCode = document.getElementById('fullpage-quote-code')?.innerText || '';
         setTopbarFullpageMode({
             backFn: backToQuotations,
-            prefix: 'Sale & Booking',
+            prefix: 'Sales & Shipments',
             title: quoteId ? `Báo Giá | ${quoteCode || ('BG-' + quoteId)}` : 'Tạo Mới Báo Giá',
             subText: '',
             badgesHtml: '',

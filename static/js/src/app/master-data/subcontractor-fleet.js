@@ -313,10 +313,12 @@ function hideAddSubDriverInline() {
 async function saveNewSubDriverInline(subId) {
     const nameInp = document.getElementById('new-subdrv-name');
     const phoneInp = document.getElementById('new-subdrv-phone');
+    const cccdInp = document.getElementById('new-subdrv-cccd');
     const licInp = document.getElementById('new-subdrv-license');
 
     const full_name = nameInp ? nameInp.value.trim() : '';
     const phone = phoneInp ? phoneInp.value.trim() : '';
+    const citizen_id = cccdInp ? cccdInp.value.trim() : '';
     const license_number = licInp ? licInp.value.trim() : '';
 
     if (!full_name) {
@@ -333,14 +335,17 @@ async function saveNewSubDriverInline(subId) {
     try {
         const res = await fetchWithAuth(`/api/master-data/subcontractors/${subId}/drivers/`, {
             method: 'POST',
-            body: JSON.stringify({ full_name, phone, license_number, is_active: true })
+            body: JSON.stringify({ full_name, phone, citizen_id, license_number, is_active: true })
         });
         const result = await res.json();
         if (res.ok && result.success) {
             showToast('success', `Đã thêm tài xế [${full_name}] vào danh bạ đối tác!`);
             if (nameInp) nameInp.value = '';
             if (phoneInp) phoneInp.value = '';
+            if (cccdInp) cccdInp.value = '';
             if (licInp) licInp.value = '';
+            const cccdWarn = document.getElementById('sub-driver-cccd-warning');
+            if (cccdWarn) cccdWarn.classList.add('hidden');
             hideAddSubDriverInline();
             loadSubcontractorDriversInModal(subId);
             if (typeof checkAndSyncMasterData === 'function') {

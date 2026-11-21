@@ -18,12 +18,12 @@ const MASTER_DATA_GROUPS = {
     'partners': {
         name: 'Khách Hàng & Đối Tác',
         icon: 'ph-handshake',
-        tabs: ['customers', 'tariffs', 'subcontractors']
+        tabs: ['customers', 'tariffs', 'subcontractors', 'suppliers']
     },
     'locations_network': {
         name: 'Mạng Lưới & Địa Điểm',
         icon: 'ph-map-pin',
-        tabs: ['locations', 'shipping_lines']
+        tabs: ['locations', 'shipping_lines', 'vessels', 'pol_ports']
     },
     'fleet_equipment': {
         name: 'Phương Tiện & Thiết Bị',
@@ -36,8 +36,8 @@ const MASTER_DATA_GROUPS = {
 const MASTER_DATA_TAB_MODULE = {
     company: 'cfg_company', roles_permissions: 'admin', audit_log: 'audit_log',
     opening_balance: 'cfg_opening', account_settings: 'cfg_accounts', expenses: 'cfg_expenses', driver_tariffs: 'cfg_driver_tariffs', allowances: 'cfg_allowances',
-    customers: 'cfg_customers', tariffs: 'cfg_tariffs', subcontractors: 'cfg_subcontractors',
-    locations: 'cfg_locations', shipping_lines: 'cfg_shipping_lines',
+    customers: 'cfg_customers', tariffs: 'cfg_tariffs', subcontractors: 'cfg_subcontractors', suppliers: 'cfg_customers',
+    locations: 'cfg_locations', shipping_lines: 'cfg_shipping_lines', vessels: 'cfg_shipping_lines', pol_ports: 'cfg_locations',
     vehicles: 'cfg_vehicles', trailers: 'cfg_trailers', containers: 'cfg_containers'
 };
 
@@ -212,6 +212,9 @@ function switchMasterDataTab(tabKey) {
         'vehicles': 'Tạo mới',
         'trailers': 'Tạo mới',
         'shipping_lines': 'Tạo mới',
+        'suppliers': 'Tạo mới',
+        'vessels': 'Tạo mới',
+        'pol_ports': 'Tạo mới',
         'subcontractors': 'Tạo mới'
     };
     const createBtnLabel = document.getElementById('md-create-btn-label');
@@ -307,6 +310,9 @@ async function loadActiveMasterDataTab() {
         'vehicles': '/api/master-data/vehicles/',
         'trailers': '/api/master-data/trailers/',
         'shipping_lines': '/api/master-data/shipping-lines/',
+        'suppliers': '/api/master-data/suppliers/',
+        'vessels': '/api/master-data/vessels/',
+        'pol_ports': '/api/master-data/pol-ports/',
         'subcontractors': '/api/master-data/subcontractors/'
     };
 

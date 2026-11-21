@@ -67,7 +67,7 @@ async function openCreateBookingPage(updateHistory = true) {
 
 
 
-            prefix: 'Sale & Booking',
+            prefix: 'Sales & Shipments',
 
 
 
@@ -364,21 +364,11 @@ async function openCreateBookingPage(updateHistory = true) {
 
 
         if (totalInput) totalInput.value = formatNumberVN(1);
-
-
-
         if (detInput) detInput.value = formatNumberVN(7);
-
-
-
         if (demInput) demInput.value = formatNumberVN(7);
-
-
-
         if (priceInput) priceInput.value = formatNumberVN(4000000);
-
-
-
+        const sizeSelect = document.getElementById('fullpage-booking-container-size');
+        if (sizeSelect) setSelectValueCaseInsensitive(sizeSelect, '20GP');
         fillBookingDemDet(null);
 
 
@@ -798,7 +788,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
 
-            prefix: 'Sale & Booking',
+            prefix: 'Sales & Shipments',
 
 
 
@@ -851,26 +841,13 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
         const shipEl = document.getElementById('fullpage-booking-shipping-line');
-
-
-
-        if (shipEl) shipEl.value = b.shipping_line || '';
-
-
+        if (shipEl) setSelectValueCaseInsensitive(shipEl, b.shipping_line || '');
 
         const vesEl = document.getElementById('fullpage-booking-vessel');
-
-
-
-        if (vesEl) vesEl.value = b.vessel_voyage || '';
-
-
+        if (vesEl) setSelectValueCaseInsensitive(vesEl, b.vessel_voyage || '');
 
         const sizeEl = document.getElementById('fullpage-booking-container-size');
-
-
-
-        if (sizeEl) setSelectValueCaseInsensitive(sizeEl, b.container_size || '40HC');
+        if (sizeEl) setSelectValueCaseInsensitive(sizeEl, b.container_size || '20GP');
 
 
 
@@ -1031,26 +1008,13 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
         const supEl = document.getElementById('fullpage-booking-supplier');
-
-
-
-        if (supEl) supEl.value = b.supplier_name || '';
-
-
+        if (supEl) setSelectValueCaseInsensitive(supEl, b.supplier_name || '');
 
         const polEl = document.getElementById('fullpage-booking-port-loading');
-
-
-
-        if (polEl) polEl.value = b.port_of_loading || '';
-
-
+        if (polEl) setSelectValueCaseInsensitive(polEl, b.port_of_loading || '');
 
         const podEl = document.getElementById('fullpage-booking-port-discharge');
-
-
-
-        if (podEl) podEl.value = b.port_of_discharge || '';
+        if (podEl) setSelectValueCaseInsensitive(podEl, b.port_of_discharge || '');
 
 
 
@@ -1643,7 +1607,7 @@ async function saveFullpageBooking(e) {
 
 
 
-    const containerSize = document.getElementById('fullpage-booking-container-size')?.value || '40HC';
+    const containerSize = document.getElementById('fullpage-booking-container-size')?.value || '20GP';
 
 
 

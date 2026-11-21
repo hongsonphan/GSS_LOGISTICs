@@ -8,7 +8,7 @@
 # =============================================================================
 set -euo pipefail
 APP_DIR="${APP_DIR:-/home/ubuntu/GSS_LOGISTICS}"
-BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/backups}"
+BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/backups_gss}"
 DB_CONTAINER="${DB_CONTAINER:-gss_logistics_postgres}"
 WEB_CONTAINER="${WEB_CONTAINER:-gss_logistics_web}"
 DB_USER="${DB_USER:-gss_logistics_user}"

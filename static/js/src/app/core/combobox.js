@@ -440,6 +440,29 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
     document.addEventListener('click', (e) => {
         if (!wrapper.contains(e.target)) {
             if (isOpen()) {
+                // Hỗ trợ gõ Free-Text cho combobox cho phép nhập tự do (data-allow-custom="true")
+                if (customOptions.allowCustomText || selectEl.dataset.allowCustom === 'true') {
+                    const typedVal = mainInput.value.trim();
+                    if (typedVal) {
+                        let found = false;
+                        for (let i = 0; i < selectEl.options.length; i++) {
+                            if (selectEl.options[i].value.toLowerCase() === typedVal.toLowerCase() ||
+                                selectEl.options[i].text.toLowerCase() === typedVal.toLowerCase()) {
+                                selectEl.selectedIndex = i;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            const opt = document.createElement('option');
+                            opt.value = typedVal;
+                            opt.innerText = typedVal;
+                            selectEl.appendChild(opt);
+                            selectEl.value = typedVal;
+                            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                }
                 closeDropdown();
                 syncDisplay();
             }
@@ -499,6 +522,7 @@ function initAllSearchableComboboxes(container = document) {
         'edit-inp-customer', 'edit-inp-driver', 'edit-inp-vehicle', 'edit-inp-trailer',
         'booking-customer', 'booking-pickup', 'booking-delivery', 'booking-dropoff',
         'fullpage-booking-customer', 'fullpage-booking-pickup', 'fullpage-booking-delivery', 'fullpage-booking-dropoff',
+        'fullpage-booking-supplier', 'fullpage-booking-shipping-line', 'fullpage-booking-vessel', 'fullpage-booking-port-loading', 'fullpage-booking-port-discharge',
         'quote-customer', 'fullpage-quote-customer', 'quote-route-preset',
         'adv-inp-trip', 'adv-inp-driver', 'adv-inp-fund'
     ];

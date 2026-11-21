@@ -631,6 +631,123 @@ function renderMasterDataTable(items, total = items.length) {
             `;
         }).join('');
     }
+    // 9.1. NHÀ CUNG CẤP / SHIPPER GỬI HÀNG
+    else if (currentMasterDataTab === 'suppliers') {
+        tableHead.innerHTML = `
+            <tr>
+                ${renderMdSttTh()}
+                ${renderMdTh('code', 'Mã NCC')}
+                ${renderMdTh('name', 'Tên Nhà Cung Cấp / Shipper')}
+                ${renderMdTh('short_name', 'Tên Viết Tắt')}
+                ${renderMdTh('tax_code', 'Mã Số Thuế')}
+                ${renderMdTh('phone', 'Điện Thoại')}
+                ${renderMdTh('contact_person', 'Người Liên Hệ')}
+                ${renderMdTh('address', 'Địa Chỉ')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
+            </tr>
+        `;
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.code || '—')}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-slate-700 border-r border-slate-200">${escapeHtml(item.short_name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.tax_code || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.phone || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 border-r border-slate-200">${escapeHtml(item.contact_person || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200 max-w-xs truncate">${escapeHtml(item.address || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${escapeHtml(item.notes || '—')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
+                </td>
+                <td class="py-2 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
+    // 9.2. DANH MỤC TÀU BIỂN (VESSELS)
+    else if (currentMasterDataTab === 'vessels') {
+        tableHead.innerHTML = `
+            <tr>
+                ${renderMdSttTh()}
+                ${renderMdTh('name', 'Tên Tàu Biển')}
+                ${renderMdTh('code', 'Mã Hiệu Tàu')}
+                ${renderMdTh('imo_number', 'Số IMO')}
+                ${renderMdTh('shipping_line_code', 'Hãng Tàu')}
+                ${renderMdTh('flag', 'Quốc Tịch / Cờ')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
+            </tr>
+        `;
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.code || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.imo_number || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-teal-800 border-r border-slate-200">${escapeHtml(item.shipping_line_code || item.shipping_line_name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 border-r border-slate-200">${escapeHtml(item.flag || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${escapeHtml(item.notes || '—')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
+                </td>
+                <td class="py-2 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
+    // 9.3. CẢNG XUẤT (PORT OF LOADING - POL)
+    else if (currentMasterDataTab === 'pol_ports') {
+        tableHead.innerHTML = `
+            <tr>
+                ${renderMdSttTh()}
+                ${renderMdTh('name', 'Tên Cảng Xuất (POL)')}
+                ${renderMdTh('code', 'Mã Cảng (UN/LOCODE)')}
+                ${renderMdTh('country', 'Quốc Gia')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
+            </tr>
+        `;
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.name || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.code || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${escapeHtml(item.country || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${escapeHtml(item.notes || '—')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
+                </td>
+                <td class="py-2 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
     // 11. NHÀ XE THẦU PHỤ / XE BẠN 3PL
     else if (currentMasterDataTab === 'subcontractors') {
         tableHead.innerHTML = `

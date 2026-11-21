@@ -240,7 +240,7 @@ function switchTab(tabId, updateHistory = true) {
     if (topbarTitleEl) {
         const TAB_NAME_MAP = {
             'dashboard': 'Dashboard Tổng quan',
-            'kinh-doanh': 'Sale & Booking',
+            'kinh-doanh': 'Sales & Shipments',
             'dieu-van': 'Điều vận & Vendor',
             'xe-bai': 'Bãi & Phương Tiện',
             'nhan-su': 'Hành chính & Nhân sự',

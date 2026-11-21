@@ -250,6 +250,32 @@ class AssignContainersAPI(Base):
         return ok({'changed': out['changed'], 'errors': out['errors'], 'containers': cs.list_for(b), 'progress': cs.progress(b)}, msg, link=link)
 
 
+class WarehouseDispatchExportAPI(Base):
+    """Xuất file Excel hoặc lấy dữ liệu Bảng phân bổ gửi kho."""
+    permission_classes = [IsBookingStaff]
+
+    def get(self, request, pk):
+        from apps.gss import vendor_excel
+        from apps.gss import containers as cs
+        b = booking_or_404(pk)
+        if not cs.has_container_list(b):
+            return err('Đơn hàng / Booking chưa có danh sách container.')
+
+        as_fmt = request.query_params.get('as', 'xlsx')
+        if as_fmt == 'json':
+            rows = cs.list_for(b)
+            return ok({
+                'booking_id': b.id,
+                'booking_code': b.booking_code,
+                'customer_name': b.customer.name if b.customer else '',
+                'delivery_location': b.delivery_location or (b.delivery_loc.name if b.delivery_loc else ''),
+                'loading_date': b.loading_date.strftime('%d/%m/%Y') if b.loading_date else (b.discharge_date.strftime('%d/%m/%Y') if b.discharge_date else ''),
+                'bl_number': b.hbl_number or b.mbl_number or b.booking_number or '',
+                'containers': rows
+            })
+        return vendor_excel.warehouse_dispatch_excel(b)
+
+
 class AllocationTemplateAPI(Base):
     permission_classes = [IsDispatcher]
 

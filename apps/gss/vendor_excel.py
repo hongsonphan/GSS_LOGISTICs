@@ -275,3 +275,113 @@ def error_workbook(booking, preview):
                 c.fill = red
     _style(ws)
     return _response(wb, f'loi-phan-bo-{booking.booking_code}.xlsx')
+
+
+def warehouse_dispatch_excel(booking):
+    """
+    Kết xuất Bảng phân bổ container gửi cho Kho theo dõi (Mẫu GSS chuẩn).
+    Cột bảng: Số Cont | Số xe | Tên tài xế | Cccd | Số điện thoại | Ghi chú nếu có
+    """
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    from openpyxl.utils import get_column_letter
+    from core.validators import excel_safe
+    from apps.gss import containers as cs
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'PhanBo_GuiKho'
+
+    # 1. Tiêu đề chính
+    ws.merge_cells('A1:G1')
+    ws['A1'] = 'BẢNG PHÂN BỔ PHƯƠNG TIỆN & TÀI XẾ GIAO NHẬN CONTAINER (GỬI KHO)'
+    ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='0F766E')
+    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 30
+
+    # 2. Thông tin chung về lô hàng / Kho
+    cust_name = booking.customer.name if booking.customer else ''
+    delivery_place = booking.delivery_location or (booking.delivery_loc.name if booking.delivery_loc else '')
+    bl_no = booking.hbl_number or booking.mbl_number or booking.booking_number or booking.booking_code
+    delivery_date = booking.loading_date.strftime('%d/%m/%Y') if booking.loading_date else (booking.discharge_date.strftime('%d/%m/%Y') if booking.discharge_date else '')
+
+    ws['A3'] = 'Khách Hàng:'
+    ws['B3'] = cust_name
+    ws['E3'] = 'Số Vận Đơn / B/L:'
+    ws['F3'] = bl_no
+
+    ws['A4'] = 'Kho Nhận Hàng:'
+    ws['B4'] = delivery_place
+    ws['E4'] = 'Ngày Giao Dự Kiến:'
+    ws['F4'] = delivery_date
+
+    meta_font_bold = Font(name='Calibri', size=11, bold=True, color='334155')
+    meta_font_val = Font(name='Calibri', size=11, bold=False, color='0F172A')
+    for r in (3, 4):
+        ws.row_dimensions[r].height = 20
+        ws[f'A{r}'].font = meta_font_bold
+        ws[f'B{r}'].font = meta_font_val
+        ws[f'E{r}'].font = meta_font_bold
+        ws[f'F{r}'].font = meta_font_val
+
+    # 3. Tiêu đề bảng cột (Header row) tại dòng 6
+    headers = ['STT', 'Số Cont', 'Số Xe', 'Tên Tài Xế', 'CCCD', 'Số Điện Thoại', 'Ghi Chú Nếu Có']
+    header_row = 6
+    ws.row_dimensions[header_row].height = 26
+    teal_fill = PatternFill(start_color='0F766E', end_color='0F766E', fill_type='solid')
+    header_font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+    thin_side = Side(border_style='thin', color='CBD5E1')
+    thin_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+    for col_idx, h in enumerate(headers, start=1):
+        cell = ws.cell(row=header_row, column=col_idx, value=h)
+        cell.font = header_font
+        cell.fill = teal_fill
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    # 4. Đổ dữ liệu các container đã phân bổ
+    rows_data = cs.list_for(booking)
+    data_font = Font(name='Calibri', size=11, bold=False, color='0F172A')
+
+    current_row = 7
+    for idx, r in enumerate(rows_data, start=1):
+        stt = idx
+        cont_no = r.get('container_number') or ''
+        plate = r.get('tractor_plate') or ''
+        driver_name = r.get('driver_name') or ''
+        cccd = r.get('driver_cccd') or ''
+        phone = r.get('driver_phone') or ''
+
+        # Ghi chú: seal + loại cont + ghi chú riêng
+        notes_parts = []
+        if r.get('seal_number'):
+            notes_parts.append(f"Seal: {r['seal_number']}")
+        if r.get('container_type'):
+            notes_parts.append(f"Loại: {r['container_type']}")
+        if r.get('notes'):
+            notes_parts.append(r['notes'])
+        notes_str = ' | '.join(notes_parts)
+
+        row_values = [stt, cont_no, plate, driver_name, cccd, phone, notes_str]
+        ws.row_dimensions[current_row].height = 22
+
+        for col_idx, val in enumerate(row_values, start=1):
+            cell = ws.cell(row=current_row, column=col_idx, value=excel_safe(val))
+            cell.font = data_font
+            cell.border = thin_border
+            if col_idx in (1, 2, 3, 5, 6):
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+                cell.number_format = '@'
+            else:
+                cell.alignment = Alignment(horizontal='left', vertical='center')
+        current_row += 1
+
+    col_widths = {1: 8, 2: 18, 3: 16, 4: 24, 5: 18, 6: 18, 7: 35}
+    for col_idx, width in col_widths.items():
+        ws.column_dimensions[get_column_letter(col_idx)].width = width
+
+    safe_code = booking.booking_code.replace('/', '_').replace('\\', '_')
+    filename = f"Bang_Phan_Bo_Kho_{safe_code}.xlsx"
+    return _response(wb, filename)
+

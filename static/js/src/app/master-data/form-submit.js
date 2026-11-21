@@ -18,7 +18,10 @@ async function submitMasterDataForm(e) {
         'vehicles': isEdit ? `/api/master-data/vehicles/${editId}/` : '/api/master-data/vehicles/',
         'trailers': isEdit ? `/api/master-data/trailers/${editId}/` : '/api/master-data/trailers/',
         'shipping_lines': isEdit ? `/api/master-data/shipping-lines/${editId}/` : '/api/master-data/shipping-lines/',
-        'subcontractors': isEdit ? `/api/master-data/subcontractors/${editId}/` : '/api/master-data/subcontractors/'
+        'subcontractors': isEdit ? `/api/master-data/subcontractors/${editId}/` : '/api/master-data/subcontractors/',
+        'suppliers': isEdit ? `/api/master-data/suppliers/${editId}/` : '/api/master-data/suppliers/',
+        'vessels': isEdit ? `/api/master-data/vessels/${editId}/` : '/api/master-data/vessels/',
+        'pol_ports': isEdit ? `/api/master-data/pol-ports/${editId}/` : '/api/master-data/pol-ports/'
     };
 
     let payload = {};
@@ -210,6 +213,37 @@ async function submitMasterDataForm(e) {
             bank_name: document.getElementById('mdf-sc-bank').value,
             bank_account_holder: document.getElementById('mdf-sc-holder').value,
             notes: document.getElementById('mdf-sc-notes').value,
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
+        };
+    } else if (tabKey === 'suppliers') {
+        payload = {
+            code: document.getElementById('mdf-supplier-code')?.value?.trim() || '',
+            name: document.getElementById('mdf-supplier-name')?.value?.trim() || '',
+            tax_code: document.getElementById('mdf-supplier-tax-code')?.value?.trim() || '',
+            address: document.getElementById('mdf-supplier-address')?.value?.trim() || '',
+            phone: document.getElementById('mdf-supplier-phone')?.value?.trim() || '',
+            email: document.getElementById('mdf-supplier-email')?.value?.trim() || '',
+            contact_person: document.getElementById('mdf-supplier-contact')?.value?.trim() || '',
+            notes: document.getElementById('mdf-supplier-notes')?.value?.trim() || '',
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
+        };
+    } else if (tabKey === 'vessels') {
+        const slVal = document.getElementById('mdf-vessel-shipping-line')?.value;
+        payload = {
+            code: document.getElementById('mdf-vessel-code')?.value?.trim().toUpperCase() || '',
+            name: document.getElementById('mdf-vessel-name')?.value?.trim().toUpperCase() || '',
+            imo_number: document.getElementById('mdf-vessel-imo')?.value?.trim() || '',
+            shipping_line: slVal ? parseInt(slVal) : null,
+            flag: document.getElementById('mdf-vessel-flag')?.value?.trim() || '',
+            notes: document.getElementById('mdf-vessel-notes')?.value?.trim() || '',
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
+        };
+    } else if (tabKey === 'pol_ports') {
+        payload = {
+            code: document.getElementById('mdf-pol-code')?.value?.trim().toUpperCase() || '',
+            name: document.getElementById('mdf-pol-name')?.value?.trim().toUpperCase() || '',
+            country: document.getElementById('mdf-pol-country')?.value?.trim() || '',
+            notes: document.getElementById('mdf-pol-notes')?.value?.trim() || '',
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     }

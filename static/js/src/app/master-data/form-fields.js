@@ -380,7 +380,8 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Thuế (MST)</label>
                     </div>
-                    <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
+                    <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full" onblur="checkDuplicateTaxCode(this.value, '${d.id || ''}')">
+                    <div id="mdf-tax-code-warning" class="text-[11px] text-amber-600 font-semibold mt-0.5 hidden"></div>
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -1170,16 +1171,20 @@ function injectMasterDataModalFields(data) {
                 <div id="sub-driver-add-row" class="hidden-view p-2.5 bg-amber-50/90 border border-amber-300 rounded-xl mb-2.5 space-y-2">
                     <div class="text-[11px] font-bold text-amber-900 uppercase">Khai Báo Bác Tài Mới Trực Thuộc Nhà Xe</div>
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                        <div class="sm:col-span-5">
+                        <div class="sm:col-span-4">
                             <input type="text" id="new-subdrv-name" placeholder="Họ và tên tài xế *" class="form-input h-8 px-2 py-1 text-xs font-bold text-slate-800 border-amber-300 w-full rounded">
                         </div>
-                        <div class="sm:col-span-4">
+                        <div class="sm:col-span-3">
                             <input type="tel" id="new-subdrv-phone" placeholder="Số điện thoại *" class="form-input h-8 px-2 py-1 text-xs font-mono font-bold text-teal-800 border-amber-300 w-full rounded">
                         </div>
                         <div class="sm:col-span-3">
-                            <input type="text" id="new-subdrv-license" placeholder="Số GPLX (Tùy chọn)" class="form-input h-8 px-2 py-1 text-xs font-mono border-amber-300 w-full rounded">
+                            <input type="text" id="new-subdrv-cccd" placeholder="Số CCCD" class="form-input h-8 px-2 py-1 text-xs font-mono border-amber-300 w-full rounded" onblur="checkDriverDuplicateCitizenId(this.value)">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <input type="text" id="new-subdrv-license" placeholder="Số GPLX" class="form-input h-8 px-2 py-1 text-xs font-mono border-amber-300 w-full rounded">
                         </div>
                     </div>
+                    <div id="sub-driver-cccd-warning" class="text-[11px] text-amber-600 font-semibold hidden"></div>
                     <div class="flex items-center justify-end gap-2 pt-1">
                         <button type="button" onclick="hideAddSubDriverInline()" class="px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-200 rounded font-semibold cursor-pointer">Hủy</button>
                         <button type="button" onclick="saveNewSubDriverInline(${d.id})" class="btn-bim-primary px-3.5 py-1 text-xs font-bold shadow-xs cursor-pointer">Lưu Bác Tài</button>
@@ -1280,6 +1285,154 @@ function injectMasterDataModalFields(data) {
                 <input type="text" id="mdf-ob-notes" value="${escapeHtml(d.notes || '')}" placeholder="Căn cứ biên bản đối chiếu công nợ, sao kê ngân hàng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
         `;
+    } else if (currentMasterDataTab === 'suppliers') {
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Nhà Cung Cấp</label>
+                    </div>
+                    <input type="text" id="mdf-supplier-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh: NCC..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                </div>
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Nhà Cung Cấp / Shipper <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-supplier-name" value="${escapeHtml(d.name || '')}" placeholder="VD: PROSPECT METALS PTE. LTD, Ryobi Technologies..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Thuế (Nếu có)</label>
+                    </div>
+                    <input type="text" id="mdf-supplier-tax-code" value="${escapeHtml(d.tax_code || '')}" placeholder="MST hoặc Tax ID..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Điện Thoại</label>
+                    </div>
+                    <input type="tel" id="mdf-supplier-phone" value="${escapeHtml(d.phone || '')}" placeholder="Hotline liên hệ..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Email</label>
+                    </div>
+                    <input type="email" id="mdf-supplier-email" value="${escapeHtml(d.email || '')}" placeholder="sales@supplier.com..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Trụ Sở / Kho Hàng</label>
+                </div>
+                <input type="text" id="mdf-supplier-address" value="${escapeHtml(d.address || '')}" placeholder="Địa chỉ đối tác..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Người Phụ Trách / Liên Hệ</label>
+                    </div>
+                    <input type="text" id="mdf-supplier-contact" value="${escapeHtml(d.contact_person || '')}" placeholder="Họ tên người liên hệ..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú</label>
+                    </div>
+                    <input type="text" id="mdf-supplier-notes" value="${escapeHtml(d.notes || '')}" placeholder="Ghi chú quy trình giao nhận..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'vessels') {
+        const slList = masterDataFormOptionsCache?.shipping_lines || [];
+        const slOpts = slList.map(sl => `<option value="${sl.id}" ${d.shipping_line === sl.id || d.shipping_line_id === sl.id ? 'selected' : ''}>${escapeHtml(sl.name)} (${escapeHtml(sl.code)})</option>`).join('');
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Tàu Biển <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-vessel-name" value="${escapeHtml(d.name || '')}" placeholder="VD: EVER CONSIST, CAP SAN LAZARO, MAERSK MC-KINNEY MOLLER..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold uppercase text-slate-800 w-full" required>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Tàu (Code)</label>
+                    </div>
+                    <input type="text" id="mdf-vessel-code" value="${escapeHtml(d.code || '')}" placeholder="VD: EVCONS, CSLZ..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hãng Tàu Khai Thác</label>
+                    </div>
+                    <select id="mdf-vessel-shipping-line" class="form-select h-8.5 px-2.5 py-1 text-xs font-medium text-slate-800 w-full">
+                        <option value="">-- Chọn Hãng Tàu (Tùy chọn) --</option>
+                        ${slOpts}
+                    </select>
+                </div>
+                <div class="md:col-span-3">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số IMO</label>
+                    </div>
+                    <input type="text" id="mdf-vessel-imo" value="${escapeHtml(d.imo_number || '')}" placeholder="VD: 9811000" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-3">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Quốc Tịch (Flag)</label>
+                    </div>
+                    <input type="text" id="mdf-vessel-flag" value="${escapeHtml(d.flag || '')}" placeholder="VD: Panama, Liberia..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú</label>
+                </div>
+                <input type="text" id="mdf-vessel-notes" value="${escapeHtml(d.notes || '')}" placeholder="Thông tin tuyến chạy, lưu ý..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'pol_ports') {
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Cảng (UN/LOCODE) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-pol-code" value="${escapeHtml(d.code || '')}" placeholder="VD: CNSHA, IDJKT, KRPUS..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" required ${d.code ? 'readonly' : ''}>
+                </div>
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Cảng Xuất (POL) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-pol-name" value="${escapeHtml(d.name || '')}" placeholder="VD: JAKARTA PORT INDONESIA, SHANGHAI, BUSAN..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold uppercase text-slate-800 w-full" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Quốc Gia</label>
+                    </div>
+                    <input type="text" id="mdf-pol-country" value="${escapeHtml(d.country || '')}" placeholder="VD: Indonesia, China, Korea, Japan..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú</label>
+                    </div>
+                    <input type="text" id="mdf-pol-notes" value="${escapeHtml(d.notes || '')}" placeholder="Khu vực bến bãi, cảng trung chuyển..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
+            </div>
+        `;
     }
 
     // Tự động khởi tạo format hàng ngàn cho tất cả input tiền tệ / số trong modal
@@ -1287,3 +1440,67 @@ function injectMasterDataModalFields(data) {
         initAllNumberInputs();
     }
 }
+
+// Kiểm tra trùng lặp MST Khách hàng thời gian thực
+async function checkDuplicateTaxCode(taxCode, currentCustomerId) {
+    if (!taxCode || !taxCode.trim()) {
+        const warnEl = document.getElementById('mdf-tax-code-warning');
+        if (warnEl) warnEl.classList.add('hidden');
+        return;
+    }
+    try {
+        const params = new URLSearchParams({ tax_code: taxCode.trim() });
+        if (currentCustomerId) params.append('exclude_id', currentCustomerId);
+        const res = await fetchWithAuth(`/api/master-data/check-tax-code/?${params.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const warnEl = document.getElementById('mdf-tax-code-warning');
+        if (warnEl) {
+            if (data.duplicate) {
+                warnEl.innerHTML = `<i class="ph-bold ph-warning text-amber-500 mr-1"></i>${escapeHtml(data.message)}`;
+                warnEl.classList.remove('hidden');
+            } else {
+                warnEl.classList.add('hidden');
+            }
+        }
+    } catch (e) {
+        console.error('Lỗi checkDuplicateTaxCode:', e);
+    }
+}
+window.checkDuplicateTaxCode = checkDuplicateTaxCode;
+
+// Kiểm tra trùng lặp CCCD Tài xế thời gian thực (Cả Tài xế công ty và Tài xế nhà xe 3PL)
+async function checkDriverDuplicateCitizenId(citizenId, excludeDriverId) {
+    if (!citizenId || !citizenId.trim()) {
+        const warnEls = [
+            document.getElementById('emp-national-id-warning'),
+            document.getElementById('sub-driver-cccd-warning'),
+            document.getElementById('driver-citizen-id-warning')
+        ].filter(Boolean);
+        warnEls.forEach(el => el.classList.add('hidden'));
+        return;
+    }
+    try {
+        const params = new URLSearchParams({ citizen_id: citizenId.trim() });
+        if (excludeDriverId) params.append('exclude_id', excludeDriverId);
+        const res = await fetchWithAuth(`/api/master-data/check-driver-citizen-id/?${params.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const warnEls = [
+            document.getElementById('emp-national-id-warning'),
+            document.getElementById('sub-driver-cccd-warning'),
+            document.getElementById('driver-citizen-id-warning')
+        ].filter(Boolean);
+        warnEls.forEach(el => {
+            if (data.duplicate) {
+                el.innerHTML = `<i class="ph-bold ph-warning text-amber-500 mr-1"></i>${escapeHtml(data.message)}`;
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        });
+    } catch (e) {
+        console.error('Lỗi checkDriverDuplicateCitizenId:', e);
+    }
+}
+window.checkDriverDuplicateCitizenId = checkDriverDuplicateCitizenId;

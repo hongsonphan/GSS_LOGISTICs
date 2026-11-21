@@ -12,7 +12,7 @@ from apps.master_data.models import (
     ContainerType, ContainerCategory,
     ExpenseItem, ExpenseCategoryGroup,
     DriverSalaryTariff, DriverAllowanceCatalog, AllowanceCategory,
-    ShippingLine, Subcontractor,
+    ShippingLine, Supplier, Vessel, PortLoading, Subcontractor,
     OpeningBalance, OpeningBalanceCategory,
     ACCOUNT_NAME_MAP
 )
@@ -385,6 +385,69 @@ CATALOG_REGISTRY = {
             ['COSCO', 'COSCO Shipping Lines (Vietnam)', '028.3829.4567', 'cs.sgn@coscon.com', 'https://lines.coscoshipping.com', '7', '7', 'Lưu ý kiểm tra phí vệ sinh vỏ', 'Hoạt động'],
             ['SITC', 'SITC Container Lines', '028.5404.7415', 'cs@sitc.vn', 'https://sitc.vn', '5', '5', 'Hạ rỗng bãi Solog Libra', 'Hoạt động'],
             ['CMA', 'CMA CGM Vietnam', '028.3914.8400', 'sgn.genmbox@cma-cgm.com', 'https://cma-cgm.com', '7', '5', 'Yêu cầu kiểm tra cược cont', 'Hoạt động']
+        ]
+    },
+
+    'suppliers': {
+        'title': 'DANH MỤC NHÀ CUNG CẤP / SHIPPER GỬI HÀNG',
+        'sheet_name': 'NhaCungCap_Shipper',
+        'filename': 'Mau_Nhap_Nha_Cung_Cap_Shipper.xlsx',
+        'model': Supplier,
+        'unique_fields': ['code'],
+        'columns': [
+            {'key': 'code', 'header': 'Mã NCC / Shipper (VD: NCC001)', 'required': False, 'type': 'str', 'sample': 'NCC001'},
+            {'key': 'name', 'header': 'Tên Nhà Cung Cấp / Shipper (*)', 'required': True, 'type': 'str', 'sample': 'PROSPECT METALS PTE. LTD'},
+            {'key': 'short_name', 'header': 'Tên Viết Tắt', 'required': False, 'type': 'str', 'sample': 'PROSPECT'},
+            {'key': 'tax_code', 'header': 'Mã Số Thuế / Business ID', 'required': False, 'type': 'str', 'sample': '201912345A'},
+            {'key': 'address', 'header': 'Địa Chỉ', 'required': False, 'type': 'str', 'sample': '10 Marina Boulevard, Marina Bay Financial Centre, Singapore'},
+            {'key': 'phone', 'header': 'Điện Thoại', 'required': False, 'type': 'str', 'sample': '+65 6888 9999'},
+            {'key': 'contact_person', 'header': 'Người Phụ Trách / Liên Hệ', 'required': False, 'type': 'str', 'sample': 'Mr. David Tan'},
+            {'key': 'notes', 'header': 'Ghi Chú', 'required': False, 'type': 'str', 'sample': 'Chuyên cung cấp kim loại màu nhập khẩu'},
+            {'key': 'is_active', 'header': 'Trạng Thái', 'required': False, 'type': 'bool', 'sample': 'Hoạt động'}
+        ],
+        'samples': [
+            ['NCC001', 'PROSPECT METALS PTE. LTD', 'PROSPECT', '201912345A', '10 Marina Boulevard, Singapore', '+65 6888 9999', 'Mr. David Tan', 'NCC kim loại', 'Hoạt động'],
+            ['NCC002', 'Ryobi Technologies, Co.', 'RYOBI', 'JP987654321', 'Hiroshima, Japan', '+81 82 123 4567', 'Kenji Sato', 'Máy móc thiết bị', 'Hoạt động']
+        ]
+    },
+
+    'vessels': {
+        'title': 'DANH MỤC TÀU BIỂN & CHUYẾN',
+        'sheet_name': 'TauBien',
+        'filename': 'Mau_Nhap_Tau_Bien.xlsx',
+        'model': Vessel,
+        'unique_fields': ['name'],
+        'columns': [
+            {'key': 'name', 'header': 'Tên Tàu (*)', 'required': True, 'type': 'str', 'sample': 'EVER CONSIST'},
+            {'key': 'code', 'header': 'Mã Tàu / Số Hiệu', 'required': False, 'type': 'str', 'sample': 'EV-CONSIST'},
+            {'key': 'imo_number', 'header': 'Số IMO Quốc Tế', 'required': False, 'type': 'str', 'sample': '9876543'},
+            {'key': 'flag', 'header': 'Quốc Tịch / Quốc Kỳ', 'required': False, 'type': 'str', 'sample': 'Panama'},
+            {'key': 'notes', 'header': 'Ghi Chú', 'required': False, 'type': 'str', 'sample': 'Tàu container hãng Evergreen'},
+            {'key': 'is_active', 'header': 'Trạng Thái', 'required': False, 'type': 'bool', 'sample': 'Hoạt động'}
+        ],
+        'samples': [
+            ['EVER CONSIST', 'EV-CONSIST', '9876543', 'Panama', 'Tàu Evergreen', 'Hoạt động'],
+            ['CAP SAN LAZARO', 'CS-LAZARO', '9712345', 'Marshall Islands', 'Tàu Maersk', 'Hoạt động']
+        ]
+    },
+
+    'pol_ports': {
+        'title': 'DANH MỤC CẢNG XUẤT (PORT OF LOADING - POL)',
+        'sheet_name': 'CangXuat_POL',
+        'filename': 'Mau_Nhap_Cang_Xuat_POL.xlsx',
+        'model': PortLoading,
+        'unique_fields': ['name'],
+        'columns': [
+            {'key': 'name', 'header': 'Tên Cảng Xuất (*)', 'required': True, 'type': 'str', 'sample': 'JAKARTA PORT INDONESIA'},
+            {'key': 'code', 'header': 'Mã Cảng (UN/LOCODE)', 'required': False, 'type': 'str', 'sample': 'IDJKT'},
+            {'key': 'country', 'header': 'Quốc Gia', 'required': False, 'type': 'str', 'sample': 'Indonesia'},
+            {'key': 'notes', 'header': 'Ghi Chú', 'required': False, 'type': 'str', 'sample': 'Cảng bốc hàng chính Indonesia'},
+            {'key': 'is_active', 'header': 'Trạng Thái', 'required': False, 'type': 'bool', 'sample': 'Hoạt động'}
+        ],
+        'samples': [
+            ['JAKARTA PORT INDONESIA', 'IDJKT', 'Indonesia', 'Cảng Tanjung Priok', 'Hoạt động'],
+            ['SHANGHAI PORT', 'CNSHA', 'China', 'Cảng Thượng Hải', 'Hoạt động'],
+            ['BUSAN PORT', 'KRPUS', 'South Korea', 'Cảng Busan Hàn Quốc', 'Hoạt động']
         ]
     },
 

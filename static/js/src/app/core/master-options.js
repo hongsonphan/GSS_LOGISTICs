@@ -174,6 +174,13 @@ function populateMasterDataDropdowns() {
     fillSelect('fullpage-booking-delivery', locations?.warehouse_options, '-- Chọn Kho Khách Hàng --', 'name', 'label');
     fillSelect('fullpage-booking-dropoff', locations?.dropoff_options, '-- Chọn Nơi Hạ Cont --', 'name', 'label');
 
+    // 5 Ô Thông Tin Hãng Tàu & Cảng Booking Chuẩn Danh Mục (Droplist + Free-Text Search)
+    fillSelect('fullpage-booking-supplier', masterDataFormOptionsCache?.suppliers, '-- Chọn Nhà Cung Cấp (NCC / Shipper) --', 'name', 'label');
+    fillSelect('fullpage-booking-shipping-line', masterDataFormOptionsCache?.shipping_lines, '-- Chọn Hãng Tàu --', 'code', 'label');
+    fillSelect('fullpage-booking-vessel', masterDataFormOptionsCache?.vessels, '-- Chọn Tàu & Chuyến (vessel/voy) --', 'name', 'label');
+    fillSelect('fullpage-booking-port-loading', masterDataFormOptionsCache?.pol_ports, '-- Chọn Cảng Xuất (POL) --', 'name', 'label');
+    fillSelect('fullpage-booking-port-discharge', masterDataFormOptionsCache?.pod_ports || locations?.pickup_options, '-- Chọn Cảng Nhận Hàng (POD) --', 'name', 'label');
+
     // Datalist Hãng Tàu cho Booking (Modal & Fullpage)
     const slDatalist = document.getElementById('shipping-lines-datalist');
     if (slDatalist && Array.isArray(shipping_lines)) {

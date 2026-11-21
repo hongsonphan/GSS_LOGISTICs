@@ -95,6 +95,12 @@ Quy trình sự cố trong `08-security.md` mục II.5 (4 giờ khoanh vùng, 72
 | S5 `/admin/`, 2FA | **Chưa làm** (`config/urls.py` đang có thay đổi chưa commit của phiên FrontEnd) |
 | S8, D6 tài liệu | Cập nhật `08-security.md` (đầu file), runbook mục 7; `06-database.md` phần B vẫn là tài liệu kế thừa |
 
+## 5c. Rà soát mã 21/11/2026 và bản sao về máy local
+
+**Rà soát (grep + bandit mức trung/cao):** bandit không báo lỗi; không có `eval/exec/pickle/shell=True/verify=False/.raw()/extra()` trong mã ứng dụng; `|safe` chỉ ở các JSON do máy chủ dựng (`base.html`, `news_detail.html`); `csrf_exempt` không còn ở mã ứng dụng; upload kiểm đuôi + magic bytes (`core/validators.py`), tải media qua Django kiểm quyền (`core/media_views.py`); cấu hình production đã có HSTS, cookie Secure/HttpOnly, CSP, throttle, `DEBUG` mặc định tắt; không có `.env`/khoá trong repo.
+**Còn tồn đọng (đã ghi mục 5b và backlog):** RLS fail-open + `company` NULL (S2/D3); `/admin/` đường mặc định, chưa 2FA (S5); còn đoạn mã BIM cũ gán trạng thái trực tiếp ngoài `gss_workflow` (`apps/billing/advance_views.py`, `settlement_voucher_views.py`: `trip.status = TripStatus.COMPLETED`, đang khoá bằng cờ `fleet_internal`, dọn theo backlog #2); 51 chỗ `.delete()` chưa phân loại (backlog #6); chưa chạy `pip-audit`.
+**Bản sao về máy local (mới):** `scripts/pull_backup_local.ps1` + `register_backup_task.ps1` (xem runbook mục 7). VPS tạo bản đầy đủ lúc 23:30 để 00:00 máy local kéo bản mới; máy tắt thì kéo bù khi bật/đăng nhập. Đã thử bằng thư mục giả lập VPS (tải, checksum sai bị loại, chạy lại không tải lại, giữ bản theo số ngày, mất nguồn trả mã 3, ban cũ trả mã 2). Sau đó đã thử qua SSH thật (cổng hạn chế, khoá riêng) và đăng ký tác vụ Windows; **chưa thử** chờ tới 00:00 thật và khôi phục từ bản local; bản trên máy local chỉ là bản thứ hai, vẫn nên có bản mã hoá ngoài (mục B1).
+
 ## 6. Cần anh quyết
 
 1. Nơi lưu bản sao ngoài máy chủ (VPS thứ hai, S3-tương thích, ổ ngoài?) và ngân sách.

@@ -1651,3 +1651,126 @@ async function deleteSavedContainerRow(contId, contNumber) {
     }
 }
 window.deleteSavedContainerRow = deleteSavedContainerRow;
+
+// =========================================================================
+// KẾT XUẤT BẢNG PHÂN BỔ CONTAINER GỬI KHO THEO DÕI (EXCEL & ZALO COPY)
+// =========================================================================
+let currentWarehouseDispatchBookingId = null;
+
+async function openWarehouseDispatchModal(bookingId = null) {
+    const bId = bookingId || document.getElementById('fullpage-booking-id')?.value;
+    if (!bId) {
+        showToast('warning', 'Vui lòng lưu đơn hàng / booking trước khi kết xuất bảng gửi Kho!');
+        return;
+    }
+    currentWarehouseDispatchBookingId = bId;
+
+    const modal = document.getElementById('modal-warehouse-dispatch');
+    const headerInfo = document.getElementById('wh-dispatch-header-info');
+    const contCount = document.getElementById('wh-dispatch-cont-count');
+    const tbody = document.getElementById('wh-dispatch-tbody');
+    const zaloTextarea = document.getElementById('wh-dispatch-zalo-textarea');
+
+    if (modal) modal.classList.remove('hidden');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic"><i class="ph-bold ph-spinner animate-spin text-xl mb-1 block"></i>Đang tải dữ liệu phân bổ container...</td></tr>`;
+
+    try {
+        const res = await fetchWithAuth(`/api/gss/bookings/${bId}/warehouse-dispatch-export/?as=json`);
+        if (!res.ok) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-500 italic">Không thể tải dữ liệu đơn hàng.</td></tr>`;
+            return;
+        }
+        const data = await res.json();
+        const b = data.booking || {};
+        const rows = data.rows || [];
+
+        if (headerInfo) {
+            headerInfo.textContent = `B/L: ${b.order_number || ''} · Khách hàng: ${b.customer_name || '—'} · Kho: ${b.warehouse_name || '—'} · Ngày giao: ${b.delivery_date || '—'}`;
+        }
+        if (contCount) {
+            contCount.textContent = `${rows.length} container`;
+        }
+
+        if (rows.length === 0) {
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Chưa có container nào trong đơn hàng này.</td></tr>`;
+            }
+            if (zaloTextarea) zaloTextarea.value = '';
+            return;
+        }
+
+        // Render table rows
+        if (tbody) {
+            tbody.innerHTML = rows.map((r, idx) => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="p-2.5 text-center font-bold text-slate-500">${idx + 1}</td>
+                    <td class="p-2.5 font-mono font-black text-teal-800">${escapeHtml(r.container_number || '—')}</td>
+                    <td class="p-2.5 font-mono font-bold text-slate-800">${escapeHtml(r.vehicle_plate || '—')}</td>
+                    <td class="p-2.5 font-bold text-slate-800">${escapeHtml(r.driver_name || '—')}</td>
+                    <td class="p-2.5 font-mono text-slate-700">${escapeHtml(r.driver_cccd || '—')}</td>
+                    <td class="p-2.5 font-mono font-bold text-emerald-700">${escapeHtml(r.driver_phone || '—')}</td>
+                    <td class="p-2.5 text-slate-600">${escapeHtml(r.notes || '')}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Build Zalo formatted text
+        let zaloLines = [
+            `📋 BẢNG ĐIỀU XE GIAO HÀNG CHO KHO`,
+            `Đơn hàng / B/L: ${b.order_number || ''}`,
+            `Khách hàng: ${b.customer_name || ''}`,
+            `Kho nhận hàng: ${b.warehouse_name || ''}`,
+            `Ngày giao dự kiến: ${b.delivery_date || ''}`,
+            `Tổng số cont: ${rows.length} cont`,
+            `--------------------------------`,
+            `STT | SỐ CONT | BIỂN SỐ XE | TÀI XẾ | CCCD | SĐT | GHI CHÚ`
+        ];
+        rows.forEach((r, idx) => {
+            const line = `${idx + 1}. Cont: ${r.container_number || '—'} | Xe: ${r.vehicle_plate || '—'} | TX: ${r.driver_name || '—'} | CCCD: ${r.driver_cccd || '—'} | SĐT: ${r.driver_phone || '—'}${r.notes ? ' | GC: ' + r.notes : ''}`;
+            zaloLines.push(line);
+        });
+        zaloLines.push(`--------------------------------`);
+        zaloLines.push(`GSS TMS Smart Logistics chúc quý khách và kho nhận hàng thuận lợi!`);
+
+        if (zaloTextarea) {
+            zaloTextarea.value = zaloLines.join('\n');
+        }
+    } catch (e) {
+        console.error('Lỗi tải dữ liệu warehouse-dispatch:', e);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-500 italic">Lỗi kết nối máy chủ khi tải dữ liệu.</td></tr>`;
+    }
+}
+window.openWarehouseDispatchModal = openWarehouseDispatchModal;
+
+function closeWarehouseDispatchModal() {
+    const modal = document.getElementById('modal-warehouse-dispatch');
+    if (modal) modal.classList.add('hidden');
+}
+window.closeWarehouseDispatchModal = closeWarehouseDispatchModal;
+
+function downloadWarehouseDispatchExcel(bookingId = null) {
+    const bId = bookingId || currentWarehouseDispatchBookingId || document.getElementById('fullpage-booking-id')?.value;
+    if (!bId) {
+        showToast('warning', 'Không xác định được đơn hàng để tải file!');
+        return;
+    }
+    window.location.href = `/api/gss/bookings/${bId}/warehouse-dispatch-export/?as=xlsx`;
+}
+window.downloadWarehouseDispatchExcel = downloadWarehouseDispatchExcel;
+window.exportWarehouseAllocatedContainers = (bId) => openWarehouseDispatchModal(bId);
+
+function copyWarehouseDispatchZaloText() {
+    const textarea = document.getElementById('wh-dispatch-zalo-textarea');
+    if (!textarea || !textarea.value) {
+        showToast('warning', 'Chưa có nội dung để sao chép!');
+        return;
+    }
+    navigator.clipboard.writeText(textarea.value).then(() => {
+        showToast('success', 'Đã sao chép nội dung bảng điều xe gửi Kho vào bộ nhớ tạm (Clipboard)! Có thể dán trực tiếp vào Zalo/Viber.');
+    }).catch(err => {
+        textarea.select();
+        document.execCommand('copy');
+        showToast('success', 'Đã sao chép nội dung vào bộ nhớ tạm!');
+    });
+}
+window.copyWarehouseDispatchZaloText = copyWarehouseDispatchZaloText;
