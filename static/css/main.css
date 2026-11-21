@@ -1870,3 +1870,32 @@ body:has([id^="modal-"].fixed.inset-0:not(.hidden):not(.hidden-view)) #chat-bubb
     height: 100vh !important;
     padding: 1rem 1.25rem !important;
 }
+
+/* ── VIEWPORT AUTO-SCALE & DENSITY ENGINE (Enterprise SaaS Standard) ── */
+:root {
+    --gss-viewport-zoom: 1;
+}
+
+#main-views,
+#main-content {
+    zoom: var(--gss-viewport-zoom, 1);
+}
+
+/* Đảm bảo 5 thẻ KPI Điều vận luôn hiển thị trên 1 hàng duy nhất ở mọi màn hình Desktop & Laptop (>= 1024px) */
+@media (min-width: 1024px) {
+    .dispatch-kpi-grid,
+    #view-dieu-van .grid.xl\:grid-cols-5 {
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Tối ưu hóa padding và khoảng cách cho màn hình Laptop (<= 1536px) */
+@media (max-width: 1536px) {
+    #view-dieu-van {
+        padding: 0.875rem !important;
+    }
+    .dispatch-kpi-grid > div {
+        padding: 0.875rem 1rem !important;
+    }
+}
+

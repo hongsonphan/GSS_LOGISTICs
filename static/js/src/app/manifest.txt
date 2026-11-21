@@ -11,6 +11,7 @@ core/combobox.js
 core/master-options.js
 core/live-sync.js
 core/layout.js
+core/viewport-scale.js
 core/time-picker.js
 core/router.js
 core/fit-text.js

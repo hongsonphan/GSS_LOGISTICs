@@ -335,3 +335,8 @@ window.resetAuditFilters = typeof resetAuditFilters !== 'undefined' ? resetAudit
 window.goAuditPage = typeof goAuditPage !== 'undefined' ? goAuditPage : undefined;
 window.toggleAuditRow = typeof toggleAuditRow !== 'undefined' ? toggleAuditRow : undefined;
 window.exportAuditLog = typeof exportAuditLog !== 'undefined' ? exportAuditLog : undefined;
+
+window.applyViewportScale = typeof applyViewportScale !== 'undefined' ? applyViewportScale : undefined;
+window.setDisplayScale = typeof setDisplayScale !== 'undefined' ? setDisplayScale : undefined;
+window.toggleDisplayScaleDropdown = typeof toggleDisplayScaleDropdown !== 'undefined' ? toggleDisplayScaleDropdown : undefined;
+window.closeDisplayScaleDropdown = typeof closeDisplayScaleDropdown !== 'undefined' ? closeDisplayScaleDropdown : undefined;

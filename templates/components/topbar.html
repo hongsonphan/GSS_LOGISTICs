@@ -51,6 +51,66 @@
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span> Database Connected
         </div>
 
+        <!-- NÚT ĐIỀU CHỈNH TỶ LỆ MÀN HÌNH (AUTO-SCALE VIEWPORT) -->
+        <div class="relative hidden sm:block" id="topbar-scale-control-container">
+            <button type="button" id="btn-topbar-scale" onclick="toggleDisplayScaleDropdown(event)"
+                class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-teal-800 bg-white hover:bg-slate-50 rounded-full border border-slate-200 transition-all cursor-pointer shadow-2xs active:scale-95"
+                title="Tự động hoặc tùy chỉnh tỷ lệ hiển thị vừa vặn màn hình (Laptop & Desktop)">
+                <i class="ph-bold ph-arrows-in text-teal-600 text-sm"></i>
+                <span id="display-scale-label">Tự động (Fit)</span>
+                <i class="ph-bold ph-caret-down text-[10px] text-slate-400"></i>
+            </button>
+
+            <!-- Dropdown Menu Tỷ Lệ -->
+            <div id="display-scale-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-fade-in text-xs font-medium">
+                <div class="px-3.5 py-1.5 border-b border-slate-100 flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tỷ Lệ Màn Hình</span>
+                    <span class="text-[10px] text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded font-bold">Auto-Fit</span>
+                </div>
+                <div class="py-1">
+                    <button type="button" onclick="setDisplayScale('auto')" class="scale-check-item w-full text-left px-3.5 py-2 flex items-center justify-between hover:bg-teal-50 text-slate-700 hover:text-teal-900 transition-colors cursor-pointer" data-scale="auto">
+                        <span class="flex items-center gap-2">
+                            <i class="ph-bold ph-sparkle text-teal-600 text-sm"></i>
+                            <span>Tự động vừa vặn (Khuyên dùng)</span>
+                        </span>
+                        <i class="ph-bold ph-check text-teal-600 hidden scale-check-icon text-sm"></i>
+                    </button>
+                    <div class="border-t border-slate-100 my-1"></div>
+                    <button type="button" onclick="setDisplayScale('1.0')" class="scale-check-item w-full text-left px-3.5 py-2 flex items-center justify-between hover:bg-teal-50 text-slate-700 hover:text-teal-900 transition-colors cursor-pointer" data-scale="1.0">
+                        <span class="flex items-center gap-2">
+                            <i class="ph-bold ph-desktop text-slate-400 text-sm"></i>
+                            <span>100% (Màn hình 24 - 27")</span>
+                        </span>
+                        <i class="ph-bold ph-check text-teal-600 hidden scale-check-icon text-sm"></i>
+                    </button>
+                    <button type="button" onclick="setDisplayScale('0.9')" class="scale-check-item w-full text-left px-3.5 py-2 flex items-center justify-between hover:bg-teal-50 text-slate-700 hover:text-teal-900 transition-colors cursor-pointer" data-scale="0.9">
+                        <span class="flex items-center gap-2">
+                            <i class="ph-bold ph-laptop text-slate-400 text-sm"></i>
+                            <span>90% (Laptop 15.6")</span>
+                        </span>
+                        <i class="ph-bold ph-check text-teal-600 hidden scale-check-icon text-sm"></i>
+                    </button>
+                    <button type="button" onclick="setDisplayScale('0.85')" class="scale-check-item w-full text-left px-3.5 py-2 flex items-center justify-between hover:bg-teal-50 text-slate-700 hover:text-teal-900 transition-colors cursor-pointer" data-scale="0.85">
+                        <span class="flex items-center gap-2">
+                            <i class="ph-bold ph-laptop text-slate-400 text-sm"></i>
+                            <span>85% (Laptop 14")</span>
+                        </span>
+                        <i class="ph-bold ph-check text-teal-600 hidden scale-check-icon text-sm"></i>
+                    </button>
+                    <button type="button" onclick="setDisplayScale('0.8')" class="scale-check-item w-full text-left px-3.5 py-2 flex items-center justify-between hover:bg-teal-50 text-slate-700 hover:text-teal-900 transition-colors cursor-pointer" data-scale="0.8">
+                        <span class="flex items-center gap-2">
+                            <i class="ph-bold ph-device-tablet text-slate-400 text-sm"></i>
+                            <span>80% (Laptop 12 - 13")</span>
+                        </span>
+                        <i class="ph-bold ph-check text-teal-600 hidden scale-check-icon text-sm"></i>
+                    </button>
+                </div>
+                <div class="px-3.5 py-1.5 bg-slate-50 border-t border-slate-100 text-[10.5px] text-slate-400">
+                    Tỷ lệ sẽ được tự động lưu riêng trên máy này.
+                </div>
+            </div>
+        </div>
+
         <!-- Nút Trợ Giúp & HDSD (/helps) -->
         <a href="/helps" target="_blank" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-teal-800 hover:text-teal-900 bg-teal-50 hover:bg-teal-100/80 rounded-full border border-teal-200 transition-all cursor-pointer shadow-2xs active:scale-95" title="Mở sổ tay hướng dẫn sử dụng hệ thống (/helps)">
             <i class="ph-bold ph-book-open text-teal-600"></i>
