@@ -882,6 +882,7 @@ window.updateDispatchOrdersSortIcons = updateDispatchOrdersSortIcons;
 function onDispatchOrdersColumnFilter() {
     dispatchOrdersColFilters = {
         code: (document.getElementById('filter-col-code')?.value || '').toLowerCase().trim(),
+        bl: (document.getElementById('filter-col-bl')?.value || '').toLowerCase().trim(),
         customer: (document.getElementById('filter-col-customer')?.value || '').toLowerCase().trim(),
         route: (document.getElementById('filter-col-route')?.value || '').toLowerCase().trim(),
         cont: (document.getElementById('filter-col-cont')?.value || '').toLowerCase().trim(),
@@ -895,7 +896,7 @@ function onDispatchOrdersColumnFilter() {
 window.onDispatchOrdersColumnFilter = onDispatchOrdersColumnFilter;
 
 function clearDispatchOrdersFilters() {
-    ['filter-col-code', 'filter-col-customer', 'filter-col-route', 'filter-col-cont', 'filter-col-vendor', 'filter-col-dem', 'filter-col-det'].forEach(id => {
+    ['filter-col-code', 'filter-col-bl', 'filter-col-customer', 'filter-col-route', 'filter-col-cont', 'filter-col-vendor', 'filter-col-dem', 'filter-col-det'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
@@ -904,7 +905,7 @@ function clearDispatchOrdersFilters() {
     const searchEl = document.getElementById('dispatch-orders-search');
     if (searchEl) searchEl.value = '';
     dispatchOrdersSearchQuery = '';
-    dispatchOrdersColFilters = { code: '', customer: '', route: '', cont: '', vendor: '', dem: '', det: '', status: '' };
+    dispatchOrdersColFilters = { code: '', bl: '', customer: '', route: '', cont: '', vendor: '', dem: '', det: '', status: '' };
     renderDispatchOrdersTable();
 }
 window.clearDispatchOrdersFilters = clearDispatchOrdersFilters;
@@ -941,7 +942,10 @@ function renderDispatchOrdersTable() {
 
     // 3. Lọc theo từng cột (Column Filters)
     if (dispatchOrdersColFilters.code) {
-        filtered = filtered.filter(b => (b.booking_code || '').toLowerCase().includes(dispatchOrdersColFilters.code) || (b.booking_number || '').toLowerCase().includes(dispatchOrdersColFilters.code));
+        filtered = filtered.filter(b => (b.booking_code || '').toLowerCase().includes(dispatchOrdersColFilters.code));
+    }
+    if (dispatchOrdersColFilters.bl) {
+        filtered = filtered.filter(b => (b.booking_number || '').toLowerCase().includes(dispatchOrdersColFilters.bl));
     }
     if (dispatchOrdersColFilters.customer) {
         filtered = filtered.filter(b => (b.customer_name || b.customer || '').toLowerCase().includes(dispatchOrdersColFilters.customer));
@@ -1010,7 +1014,7 @@ function renderDispatchOrdersTable() {
         }
         tbody.innerHTML = `
             <tr>
-                <td colspan="10" class="p-8 text-center text-slate-400 font-medium">
+                <td colspan="11" class="p-8 text-center text-slate-400 font-medium">
                     <div class="flex flex-col items-center justify-center space-y-2">
                         <i class="ph-bold ph-tray text-3xl text-slate-300"></i>
                         <span>${msg}</span>
@@ -1051,7 +1055,7 @@ function renderDispatchOrdersTable() {
             codeBadge = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold font-mono">CHỜ ĐIỀU ĐỘ</span>`;
         }
 
-        const bl = b.booking_number ? `<span class="text-slate-500 font-mono text-[11px] block" title="Số B/L: ${escapeHtml(b.booking_number)}">B/L: ${escapeHtml(b.booking_number)}</span>` : '';
+        const blDisplay = b.booking_number ? `<span class="font-mono font-bold text-slate-800 text-xs">${escapeHtml(b.booking_number)}</span>` : '<span class="text-slate-400 italic">--</span>';
         const cust = escapeHtml(b.customer_name || b.customer || 'Khách hàng');
         const route = `<div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5" title="${escapeHtml(b.pickup_location || '')} -> ${escapeHtml(b.delivery_location || '')} -> ${escapeHtml(b.dropoff_location || '')}"><span class="text-teal-700 font-bold" title="1. Lấy cont">${escapeHtml(b.pickup_location || 'Cảng/Depot')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-blue-900 font-bold" title="2. Kho đóng/trả">${escapeHtml(b.delivery_location || 'Kho khách')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Hạ rỗng">${escapeHtml(b.dropoff_location || 'Depot')}</span></div>`;
         const conts = `<strong class="text-teal-700 font-bold">${total}</strong> <span class="text-slate-500 text-[11px]">Cont (${escapeHtml(b.container_size || '40HC')})</span>`;
@@ -1090,8 +1094,8 @@ function renderDispatchOrdersTable() {
                     <strong class="text-teal-950 font-bold font-mono text-xs">${codeDisplay}</strong>
                     ${codeBadge}
                 </div>
-                ${bl}
             </td>
+            <td class="p-2.5">${blDisplay}</td>
             <td class="p-2.5 font-bold text-slate-800">${cust}</td>
             <td class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
             <td class="p-2.5 text-center">${conts}</td>
@@ -1222,7 +1226,7 @@ async function loadVendorContainersTab() {
         }
 
         if (rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy Container nào phù hợp với bộ lọc.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy Container nào phù hợp với bộ lọc.</td></tr>';
             return;
         }
 
@@ -1415,6 +1419,7 @@ async function loadVendorContainersTab() {
                     <td class="p-2.5 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
                     <td class="p-2.5">${contDisplay}</td>
                     <td class="p-2.5">${lddDisplay}</td>
+                    <td class="p-2.5 font-mono font-bold text-slate-800 text-xs">${escapeHtml(r.booking_number || '--')}</td>
                     <td class="p-2.5">${vendorDisplay}</td>
                     <td class="p-2.5 text-center">${vcDisplay}</td>
                     <td class="p-2.5">${vehicleDisplay}</td>
@@ -1429,7 +1434,7 @@ async function loadVendorContainersTab() {
 
         tbody.innerHTML = html;
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-rose-500 font-bold">Lỗi khi tải danh sách Container: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-rose-500 font-bold">Lỗi khi tải danh sách Container: ${e.message}</td></tr>`;
     }
 }
 

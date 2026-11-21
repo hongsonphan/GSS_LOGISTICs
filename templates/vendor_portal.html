@@ -1799,7 +1799,7 @@
     if (!rows.length) {
       return `
         <tr>
-          <td colspan="12" class="p-10 text-center text-slate-400 italic text-xs">
+          <td colspan="13" class="p-10 text-center text-slate-400 italic text-xs">
             Không có container nào khớp điều kiện tìm kiếm / lọc hiện tại.
           </td>
         </tr>`;
@@ -1848,6 +1848,7 @@
               ` : ''}
             </div>
           </td>
+          <td class="p-2.5 font-mono font-bold text-slate-800 text-[13px] tabular-nums whitespace-nowrap">${escapeHtml(curData.bill_of_lading || b.bill_of_lading || '--')}</td>
           <td class="p-2.5 text-center font-bold text-slate-700 tabular-nums text-[13px]">${escapeHtml(row.container_type || '40HC')}</td>
           <td class="p-2.5">
             <input type="text" value="${escapeHtml(curData.seal_number || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="Seal..." oninput="this.value = this.value.toUpperCase(); updateRowField(${row.line_no}, 'seal_number', this.value);" class="h-8.5 w-[96px] px-2 uppercase font-mono rounded-lg border text-[13px] tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">
@@ -2078,6 +2079,9 @@
                 </th>
                 <th class="p-2.5 font-bold text-slate-800 cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('container_number')">
                   <span class="inline-flex items-center gap-1">SỐ CONTAINER <i class="ph-bold ${assignSortIcon('container_number')} text-xs"></i></span>
+                </th>
+                <th class="p-2.5 font-bold text-slate-800 cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('bill_of_lading')">
+                  <span class="inline-flex items-center gap-1">SỐ B/L <i class="ph-bold ${assignSortIcon('bill_of_lading')} text-xs"></i></span>
                 </th>
                 <th class="p-2.5 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="toggleAssignSort('container_type')">
                   <span class="inline-flex items-center gap-1">LOẠI CONT <i class="ph-bold ${assignSortIcon('container_type')} text-xs"></i></span>

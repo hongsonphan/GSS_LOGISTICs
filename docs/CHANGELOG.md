@@ -3,6 +3,29 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-21 – Bổ Sung Cột Số Vận Đơn (B/L) Cho Các Màn Hình Quản Lý Điều Vận & Cổng Vendor
+- **Bối cảnh & Yêu cầu người dùng:**
+  - Vì các màn hình quản lý của Điều vận & Vendor bắt buộc phải có cột Số vận đơn B/L, cần bổ sung cột riêng biệt này vào tất cả các bảng quản lý tương ứng.
+- **Thay đổi kỹ thuật & Giao diện:**
+  1. **Tab 1: Lệnh Điều Độ (`templates/views/view_dispatch.html` & `dispatch-order-modal.js`):**
+     - Bổ sung riêng cột **"Số B/L"** (Số vận đơn) ngay cạnh cột "Phiếu Điều Độ", có thể sắp xếp (`sortDispatchOrders('booking_number')`).
+     - Bổ sung ô input lọc theo B/L (`filter-col-bl`) trên hàng lọc con thead, tích hợp vào `onDispatchOrdersColumnFilter()` và `clearDispatchOrdersFilters()`.
+     - Cột "Phiếu Điều Độ" hiển thị cô đọng mã `DD.[Số Booking]` kèm badge trạng thái; số B/L chuyển sang hiển thị chuyên biệt tại cột mới.
+  2. **Tab 2: Phân Bổ & Gán Xe (`templates/views/view_dispatch.html` & `vendor-admin.js`):**
+     - Bổ sung cột **"Số B/L"** ngay sau cột "Phiếu Phân Bổ", hiển thị mã B/L (`l.bill_of_lading`).
+     - Tích hợp tìm kiếm nhanh theo Số B/L trong ô tìm kiếm tổng thể `alloc-search-input`.
+  3. **Tab 3: Bảng Container Hành Trình (`templates/views/view_dispatch.html` & `dispatch-order-modal.js`):**
+     - Bổ sung cột **"Số B/L"** ngay sau cột "Phiếu Điều Độ / Khách Hàng", hiển thị số B/L (`r.booking_number`).
+  4. **Cổng Đối Tác Nhà Xe - Vendor Portal (`templates/vendor_portal.html`):**
+     - Bổ sung cột **"SỐ B/L"** trong Bảng Khai Báo Container ngay sau cột "SỐ CONTAINER", có hỗ trợ sắp xếp (`toggleAssignSort('bill_of_lading')`).
+     - Hiển thị giá trị Số B/L từ Booking (`curData.bill_of_lading || b.bill_of_lading`), giúp Nhà xe nắm bắt ngay số vận đơn tương ứng với từng container.
+  5. **Màn Hình Lệnh Vận Chuyển (`templates/views/view_transport_order.html` & `transport-order.js`):**
+     - Bổ sung cột **"Số B/L"** trong Bảng Danh Sách Container của Lệnh Vận Chuyển (ngay sau cột "Số Container").
+- **Kiểm thử tự động:**
+  - `python scripts/build_app_js.py` & `python scripts/build_css.py`: Biên dịch thành công.
+  - `python scripts/qa.py verify --fast`: PASS=6/6, FAIL=0, KẾT LUẬN: ĐẠT.
+
+
 ## 2026-11-21 – Chuẩn Hóa Cột Mã 3 Màn Hình Điều Độ & Bổ Sung Nút "Cột" (Universal Column Manager)
 - **Bối cảnh & Yêu cầu người dùng:**
   - Tab "Lệnh điều độ": Cột "Phiếu Điều độ" hiển thị chuẩn mã `DD.[Số Booking]` (ví dụ `DD.BK.2611.006`).

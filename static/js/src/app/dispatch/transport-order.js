@@ -41,7 +41,7 @@ async function openTransportOrderPage(allocId, updateHistory = true) {
 async function loadTransportOrderData(allocId) {
     const tbody = document.getElementById('to-containers-tbody');
     if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium"><i class="ph-bold ph-spinner animate-spin text-xl text-teal-600 mr-2"></i>Đang tải dữ liệu Lệnh Vận Chuyển...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium"><i class="ph-bold ph-spinner animate-spin text-xl text-teal-600 mr-2"></i>Đang tải dữ liệu Lệnh Vận Chuyển...</td></tr>';
     }
 
     try {
@@ -58,7 +58,7 @@ async function loadTransportOrderData(allocId) {
     } catch (err) {
         console.error('Lỗi tải Lệnh Vận Chuyển:', err);
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-rose-500 font-medium">Lỗi nạp dữ liệu: ${toEsc(err.message)}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-rose-500 font-medium">Lỗi nạp dữ liệu: ${toEsc(err.message)}</td></tr>`;
         }
         if (typeof showToast === 'function') {
             showToast('error', `Không thể tải Lệnh Vận Chuyển: ${err.message}`, 'Lỗi Tải Dữ Liệu');
@@ -144,13 +144,14 @@ function renderTransportOrderView(data) {
     if (!tbody) return;
 
     if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Phiếu chia ${total} container cho nhà xe ${toEsc(data.subcontractor)}. Hiện chưa có dữ liệu container.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Phiếu chia ${total} container cho nhà xe ${toEsc(data.subcontractor)}. Hiện chưa có dữ liệu container.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = rows.map((r, i) => {
         const hasTrip = !!r.trip_id;
         const cNum = r.container_number || '';
+        const bl = r.bill_of_lading || data.bill_of_lading || '';
         const seal = r.seal_number || '';
         const plate = r.license_plate || '';
         const trailer = r.trailer_plate || '';
@@ -182,6 +183,9 @@ function renderTransportOrderView(data) {
                 <td class="p-3 font-mono font-bold text-slate-400 text-center">${r.line_no || (i + 1)}</td>
                 <td class="p-3">
                     <div class="font-mono font-bold text-slate-900 text-xs">${cNum ? toEsc(cNum) : '<span class="text-slate-400 italic">Theo lệnh B/L</span>'}</div>
+                </td>
+                <td class="p-3">
+                    <div class="font-mono font-bold text-slate-800 text-xs">${bl ? toEsc(bl) : '<span class="text-slate-300">---</span>'}</div>
                 </td>
                 <td class="p-3 text-center">
                     <span class="font-mono text-xs px-2 py-0.5 rounded bg-slate-100 font-bold text-slate-700 border border-slate-200">${toEsc(data.container_type || '20GP')}</span>

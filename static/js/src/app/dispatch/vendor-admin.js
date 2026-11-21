@@ -180,16 +180,17 @@ function renderAllocationsTable() {
     if (searchVal) {
         rows = rows.filter(l => {
             const bcode = (l.booking_code || '').toLowerCase();
+            const bl = (l.bill_of_lading || l.hbl_number || l.mbl_number || '').toLowerCase();
             const sub = (l.subcontractor || '').toLowerCase();
             const cust = (l.customer || '').toLowerCase();
-            return bcode.includes(searchVal) || sub.includes(searchVal) || cust.includes(searchVal);
+            return bcode.includes(searchVal) || bl.includes(searchVal) || sub.includes(searchVal) || cust.includes(searchVal);
         });
     }
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
     set('alloc-shown-count', rows.length);
     set('alloc-total-count', total);
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Mọi phiếu phân bổ đã gán đủ xe/tài. Không có việc cần gán tiếp.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Mọi phiếu phân bổ đã gán đủ xe/tài. Không có việc cần gán tiếp.</td></tr>';
         return;
     }
     tbody.innerHTML = rows.map((l, i) => {
@@ -203,10 +204,12 @@ function renderAllocationsTable() {
         else st = vaState('text-amber-700', 'ph-arrows-split', `Gán chưa hết (còn ${left})`);
         const route = `<div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5" title="${vaEsc(l.pickup_location || '')} -> ${vaEsc(l.delivery_location || '')} -> ${vaEsc(l.dropoff_location || '')}"><span class="text-teal-700 font-bold" title="1. Lấy cont">${vaEsc(l.pickup_location || 'Cảng/Depot')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-blue-900 font-bold" title="2. Kho đóng/trả">${vaEsc(l.delivery_location || 'Kho khách')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Hạ rỗng">${vaEsc(l.dropoff_location || 'Depot rỗng')}</span></div>`;
         const allocCode = l.allocation_code || (l.booking_code ? `DD.001.${l.booking_code}` : 'DD.--');
+        const blStr = l.bill_of_lading || l.hbl_number || l.mbl_number || '--';
         return `
         <tr class="hover:bg-teal-50/30 cursor-pointer" onclick="openTransportOrderPage(${l.id})" title="Bấm để mở Lệnh Vận Chuyển của nhà xe này">
             <td class="p-2.5 text-center text-slate-400 font-mono text-xs">${i + 1}</td>
             <td class="p-2.5"><div class="font-mono font-bold text-teal-900 text-xs">${vaEsc(allocCode)}</div><div class="text-xs text-slate-600">${vaEsc(l.customer)}</div></td>
+            <td class="p-2.5 font-mono font-bold text-slate-800 text-xs">${vaEsc(blStr)}</td>
             <td class="p-2.5 font-bold text-slate-800">${vaEsc(l.subcontractor)}</td>
             <td class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
             <td class="p-2.5 text-right font-bold tabular-nums">${l.allocated_containers}</td>

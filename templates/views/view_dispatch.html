@@ -340,6 +340,11 @@
                             <i id="sort-icon-orders-booking_code" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
+                        <th class="p-2.5 min-w-[130px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('booking_number')" title="Sắp xếp theo Số Vận Đơn B/L">
+                            <span>Số B/L</span>
+                            <i id="sort-icon-orders-booking_number" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
+                        </th>
+
                         <th class="p-2.5 min-w-[200px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('customer_name')" title="Sắp xếp theo Khách Hàng">
                             <span>Khách Hàng / Chủ Hàng</span>
                             <i id="sort-icon-orders-customer_name" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
@@ -387,7 +392,11 @@
                             </button>
                         </th>
                         <th class="p-1 font-normal">
-                            <input type="text" id="filter-col-code" placeholder="Lọc mã / BL..." oninput="onDispatchOrdersColumnFilter()"
+                            <input type="text" id="filter-col-code" placeholder="Lọc mã LĐĐ..." oninput="onDispatchOrdersColumnFilter()"
+                                class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
+                        </th>
+                        <th class="p-1 font-normal">
+                            <input type="text" id="filter-col-bl" placeholder="Lọc B/L..." oninput="onDispatchOrdersColumnFilter()"
                                 class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
                         </th>
                         <th class="p-1 font-normal">
@@ -433,7 +442,7 @@
 
                 <tbody id="dispatch-orders-tbody" class="divide-y divide-slate-100 bg-white">
 
-                    <tr><td colspan="10" class="p-6 text-center text-slate-400">Đang tải danh sách Lệnh Điều Động...</td></tr>
+                    <tr><td colspan="11" class="p-6 text-center text-slate-400">Đang tải danh sách Lệnh Điều Động...</td></tr>
 
                 </tbody>
 
@@ -480,6 +489,7 @@
                     <tr>
                         <th class="p-2.5 w-10 text-center">#</th>
                         <th class="p-2.5 min-w-[170px]">Phiếu Phân Bổ</th>
+                        <th class="p-2.5 min-w-[130px]">Số B/L</th>
                         <th class="p-2.5 min-w-[160px]">Nhà xe được phân bổ</th>
                         <th class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>
                         <th class="p-2.5 w-28 text-right">Số cont giao</th>
@@ -490,7 +500,7 @@
                     </tr>
                 </thead>
                 <tbody id="dispatch-allocations-tbody" class="divide-y divide-slate-100 bg-white">
-                    <tr><td colspan="9" class="p-6 text-center text-slate-400">Đang tải danh sách phân bổ...</td></tr>
+                    <tr><td colspan="10" class="p-6 text-center text-slate-400">Đang tải danh sách phân bổ...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -617,6 +627,7 @@
                         <th class="p-2.5 w-10 text-center">#</th>
                         <th class="p-2.5 min-w-[150px]">Số Container & Quy Cách</th>
                         <th class="p-2.5 min-w-[170px]">Phiếu Điều Độ / Khách Hàng</th>
+                        <th class="p-2.5 min-w-[130px]">Số B/L</th>
                         <th class="p-2.5 min-w-[180px]">Nhà Xe Phụ Trách (Vendor)</th>
                         <th class="p-2.5 min-w-[140px] text-center">Phiếu Vận Chuyển</th>
                         <th class="p-2.5 min-w-[160px]">Đầu Kéo & Rơ-moóc</th>
@@ -628,7 +639,7 @@
                     </tr>
                 </thead>
                 <tbody id="dispatch-vendor-containers-tbody" class="divide-y divide-slate-100 bg-white">
-                    <tr><td colspan="11" class="p-6 text-center text-slate-400">Đang tải danh sách Container & Tiến độ Vendor...</td></tr>
+                    <tr><td colspan="12" class="p-6 text-center text-slate-400">Đang tải danh sách Container & Tiến độ Vendor...</td></tr>
                 </tbody>
             </table>
         </div>
