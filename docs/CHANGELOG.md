@@ -3,6 +3,43 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-21 – Tối Ưu Màn Hình Điều Độ & Theo Dõi Hành Trình: Bổ Sung Tên Viết Tắt KH, Phân Biệt Màu Số Phiếu Điều Độ, Đồng Bộ Đủ Trạng Thái Container & Chuẩn Hóa Timeline Hành Trình
+- **Bối cảnh & Yêu cầu người dùng:**
+  1. **Tab "Lệnh điều độ":**
+     - Bổ sung cột "Tên KH" hiển thị tên viết tắt của khách hàng (`short_name` / `customer_code`).
+     - Cột "Phiếu Điều độ": Chỉ hiển thị số phiếu (bỏ badge trạng thái), chia màu mã phiếu trung tính, trang nhã:
+       - *Đã phân bổ xong*: Màu xanh (`text-emerald-700 font-mono font-bold`)
+       - *Đang phân bổ*: Màu vàng (`text-amber-600 font-mono font-bold`)
+       - *Chưa phân bổ*: Màu đỏ (`text-rose-600 font-mono font-bold`)
+  2. **Tab "Theo dõi hành trình":**
+     - Đổi tên thẻ "Bảng container" $\rightarrow$ "Phiếu Vận chuyển"; lược bỏ thẻ "Phiếu VC" bị trùng lặp.
+     - Thanh thống kê trạng thái container: Bổ sung đầy đủ 5 trạng thái để tổng số lượng container khớp chính xác 100% với Tổng Cont:
+       - `Chưa phân bổ` (`stats.unassigned` - màu đỏ nhạt)
+       - `Chờ gán xe/tài` (`stats.waiting_vehicle` - màu vàng nhạt)
+       - `Đã nhận lệnh (chờ chạy)` (`stats.assigned` - màu xanh dương)
+       - `Đang trên tuyến` (`stats.in_transit` - màu xanh ngọc)
+       - `Đã hoàn thành` (`stats.completed` - màu xám)
+     - Đổi tên thẻ "Theo bước hành trình" $\rightarrow$ "Hành trình" và tích hợp đúng component ma trận hành trình xe container 7 mốc (`GSSApp.fleetTimeline`).
+     - **Xe container trên Timeline:**
+       - Tinh chỉnh kích thước xe SVG nhỏ gọn, vừa vặn và hài hòa (128x44px).
+       - Gắn logo biểu tượng Giải Pháp Xanh (lá xanh viền trắng sắc nét) tại cửa buồng lái đầu xe.
+- **Thay đổi kỹ thuật & Giao diện:**
+  1. **Backend (`apps/dispatch/api_views/sales.py` & `vendor.py`):**
+     - Bổ sung trường `customer_short_name` trong `BookingActiveAPIView`.
+     - API `/api/dispatch/vendor-containers/` trả về đầy đủ phân rã trạng thái: `unassigned`, `waiting_vehicle`, `assigned`, `in_transit`, `completed`, `total`.
+  2. **Giao diện & Logic Điều độ (`templates/views/view_dispatch.html` & `dispatch-order-modal.js`):**
+     - Thêm cột `data-col-key="customer_short"` (Tên KH) và ô lọc cột tương ứng trong `dispatch-orders-table`.
+     - Chuẩn hóa màu sắc mã `DD.[Số Booking]` theo 3 mức trung tính (xanh, vàng, đỏ).
+     - Bổ sung 2 pill trạng thái `Chưa phân bổ` và `Chờ gán xe/tài` trên thanh KPI mini strip; bổ sung các tùy chọn lọc vào dropdown `#filter-vc-status`.
+     - Tích hợp gọi `BimTableColumnManager.apply('dispatch-orders-table')` sau mỗi lần render.
+  3. **Ma trận Hành trình & Xe container (`vendor-admin.js` & `truck.js`):**
+     - Cập nhật hàm `loadJourneyBoard()` nhúng trực tiếp component `GSSApp.fleetTimeline(host)`.
+     - Cập nhật hàm `setJourneyMode(mode)` với 2 chế độ chính: `table` (Phiếu Vận chuyển) và `board` (Hành trình).
+     - Cập nhật SVG xe container trong `static/js/gss/truck.js`: thêm logo lá xanh thương hiệu GSS trên cabin đầu xe, cân đối kích thước xe.
+- **Kiểm thử tự động:**
+  - `python scripts/build_app_js.py` & `python scripts/build_css.py`: Biên dịch thành công.
+  - `python scripts/qa.py verify --fast`: PASS=6/6, FAIL=0, KẾT LUẬN: ĐẠT.
+
 ## 2026-11-21 – Nâng Cấp Màn Hình Tạo Booking, Đổi Tên Phân Hệ Sales & Shipments, Xuất Bảng Gửi Kho & Cảnh Báo Trùng Lặp Dữ Liệu
 - **Bối cảnh & Yêu cầu người dùng:**
   - **A. Màn hình Tạo Booking:**
