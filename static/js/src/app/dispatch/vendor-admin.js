@@ -205,21 +205,24 @@ function renderAllocationsTable() {
         const route = `<div class="whitespace-nowrap font-medium text-slate-800 text-xs flex items-center gap-1.5" title="${vaEsc(l.pickup_location || '')} -> ${vaEsc(l.delivery_location || '')} -> ${vaEsc(l.dropoff_location || '')}"><span class="text-teal-700 font-bold" title="1. Lấy cont">${vaEsc(l.pickup_location || 'Cảng/Depot')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-blue-900 font-bold" title="2. Kho đóng/trả">${vaEsc(l.delivery_location || 'Kho khách')}</span> <span class="text-slate-400 font-bold">&rarr;</span> <span class="text-amber-800 font-bold" title="3. Hạ rỗng">${vaEsc(l.dropoff_location || 'Depot rỗng')}</span></div>`;
         const allocCode = l.allocation_code || (l.booking_code ? `DD.001.${l.booking_code}` : 'DD.--');
         const blStr = l.bill_of_lading || l.hbl_number || l.mbl_number || '--';
+        const custShort = l.customer_short_name || l.customer || '--';
+        const custFull = l.customer_name || l.customer || '';
         return `
         <tr class="hover:bg-teal-50/30 cursor-pointer" onclick="openTransportOrderPage(${l.id})" title="Bấm để mở Lệnh Vận Chuyển của nhà xe này">
-            <td class="p-2.5 text-center text-slate-400 font-mono text-xs">${i + 1}</td>
-            <td class="p-2.5"><div class="font-mono font-bold text-teal-900 text-xs">${vaEsc(allocCode)}</div><div class="text-xs text-slate-600">${vaEsc(l.customer)}</div></td>
-            <td class="p-2.5 font-mono font-bold text-slate-800 text-xs">${vaEsc(blStr)}</td>
-            <td class="p-2.5 font-bold text-slate-800">${vaEsc(l.subcontractor)}</td>
-            <td class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
-            <td class="p-2.5 text-right font-bold tabular-nums">${l.allocated_containers}</td>
-            <td class="p-2.5">
+            <td data-col-key="stt" class="p-2.5 text-center text-slate-400 font-mono text-xs">${i + 1}</td>
+            <td data-col-key="alloc_code" class="p-2.5"><span class="font-mono font-bold text-teal-900 text-xs">${vaEsc(allocCode)}</span></td>
+            <td data-col-key="bl_number" class="p-2.5 font-mono font-bold text-slate-800 text-xs">${vaEsc(blStr)}</td>
+            <td data-col-key="customer_short" class="p-2.5 font-bold font-heading text-teal-900 text-xs" title="${vaEsc(custFull)}">${vaEsc(custShort)}</td>
+            <td data-col-key="vendor" class="p-2.5 font-bold text-slate-800">${vaEsc(l.subcontractor)}</td>
+            <td data-col-key="route" class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
+            <td data-col-key="qty" class="p-2.5 text-right font-bold tabular-nums">${l.allocated_containers}</td>
+            <td data-col-key="filled" class="p-2.5">
                 <div class="text-xs font-bold text-slate-800 tabular-nums">${l.filled} / ${l.allocated_containers} cont đã gán xe</div>
                 <div class="h-1.5 mt-1 rounded bg-slate-200 w-40"><div class="h-1.5 rounded ${left <= 0 ? 'bg-emerald-600' : 'bg-amber-500'}" style="width:${pct}%"></div></div>
             </td>
-            <td class="p-2.5">${st}</td>
-            <td class="p-2.5 text-xs">${vaExpiry(l.expires_at, l.expired)}</td>
-            <td class="p-2.5 text-center whitespace-nowrap" onclick="event.stopPropagation()">
+            <td data-col-key="status" class="p-2.5">${st}</td>
+            <td data-col-key="expiry" class="p-2.5 text-xs">${vaExpiry(l.expires_at, l.expired)}</td>
+            <td data-col-key="actions" class="p-2.5 text-center whitespace-nowrap" onclick="event.stopPropagation()">
                 <div class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
                     <!-- 1. Lệnh Vận chuyển (Hành động chính mở toàn màn hình) -->
                     <button type="button" class="${VA_BTN_TEAL}" onclick="event.stopPropagation(); openTransportOrderPage(${l.id})" title="Mở Lệnh Vận Chuyển của nhà xe này">
@@ -251,6 +254,10 @@ function renderAllocationsTable() {
             </td>
         </tr>`;
     }).join('');
+
+    if (window.BimTableColumnManager) {
+        window.BimTableColumnManager.apply('dispatch-allocations-table');
+    }
 }
 
 // =============================================================

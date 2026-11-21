@@ -498,16 +498,17 @@
             <table class="w-full text-left erp-table whitespace-nowrap text-xs" id="dispatch-allocations-table" data-table-title="Danh Sách Phân Bổ & Gán Xe" data-no-toolbar="true">
                 <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-xs font-heading sticky top-0 z-10 shadow-2xs">
                     <tr>
-                        <th class="p-2.5 w-10 text-center">#</th>
-                        <th class="p-2.5 min-w-[170px]">Phiếu Phân Bổ</th>
-                        <th class="p-2.5 min-w-[130px]">Số B/L</th>
-                        <th class="p-2.5 min-w-[160px]">Nhà xe được phân bổ</th>
-                        <th class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>
-                        <th class="p-2.5 w-28 text-right">Số cont giao</th>
-                        <th class="p-2.5 min-w-[200px]">Đã gán xe / tài</th>
-                        <th class="p-2.5 min-w-[150px]">Trạng thái</th>
-                        <th class="p-2.5 w-40">Hạn link nhà xe</th>
-                        <th class="p-2.5 min-w-[320px] text-center">Thao tác</th>
+                        <th data-col-key="stt" class="p-2.5 w-10 text-center">#</th>
+                        <th data-col-key="alloc_code" class="p-2.5 min-w-[170px]">Phiếu Phân Bổ</th>
+                        <th data-col-key="bl_number" class="p-2.5 min-w-[130px]">Số B/L</th>
+                        <th data-col-key="customer_short" class="p-2.5 min-w-[110px]">Tên KH</th>
+                        <th data-col-key="vendor" class="p-2.5 min-w-[160px]">Nhà xe được phân bổ</th>
+                        <th data-col-key="route" class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>
+                        <th data-col-key="qty" class="p-2.5 w-28 text-right">Số cont giao</th>
+                        <th data-col-key="filled" class="p-2.5 min-w-[200px]">Đã gán xe / tài</th>
+                        <th data-col-key="status" class="p-2.5 min-w-[150px]">Trạng thái</th>
+                        <th data-col-key="expiry" class="p-2.5 w-40">Hạn link nhà xe</th>
+                        <th data-col-key="actions" class="p-2.5 min-w-[320px] text-center">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody id="dispatch-allocations-tbody" class="divide-y divide-slate-100 bg-white">
@@ -647,8 +648,9 @@
                         <th data-col-key="stt" class="p-2.5 w-10 text-center">#</th>
                         <th data-col-key="trip_code" class="p-2.5 min-w-[150px]">Phiếu Vận Chuyển</th>
                         <th data-col-key="container" class="p-2.5 min-w-[150px]">Số Container & Quy Cách</th>
-                        <th data-col-key="dispatch_code" class="p-2.5 min-w-[170px]">Phiếu Điều Độ / Khách Hàng</th>
+                        <th data-col-key="dispatch_code" class="p-2.5 min-w-[140px]">Phiếu Điều Độ</th>
                         <th data-col-key="bl_number" class="p-2.5 min-w-[130px]">Số B/L</th>
+                        <th data-col-key="customer_short" class="p-2.5 min-w-[110px]">Tên KH</th>
                         <th data-col-key="vendor" class="p-2.5 min-w-[180px]">Nhà Xe Phụ Trách (Vendor)</th>
                         <th data-col-key="vehicle" class="p-2.5 min-w-[160px]">Đầu Kéo & Rơ-moóc</th>
                         <th data-col-key="driver" class="p-2.5 min-w-[170px]">Tài Xế & Số ĐT</th>

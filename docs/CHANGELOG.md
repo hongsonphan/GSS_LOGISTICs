@@ -3,6 +3,27 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-21 – Bổ Sung Cột Riêng "Tên KH" (Tên Viết Tắt) Cho Màn Hình Phân Bổ & Gán Xe và Bảng Container Hành Trình
+- **Bối cảnh & Yêu cầu người dùng:**
+  - Trong Tab "Phân bổ & gán xe" (`dispatch-allocations-table`): Tên viết tắt khách hàng (như `THQ`) trước đó hiển thị lồng dòng bên dưới mã phiếu phân bổ `DD.002.BK.2611.006`.
+  - Người dùng yêu cầu tách riêng và bổ sung cột **"Tên KH"** lấy tên viết tắt của khách hàng để hiển thị độc lập, rõ ràng và nhất quán với Tab 1 "Lệnh điều độ".
+- **Thay đổi kỹ thuật & Giao diện:**
+  1. **Tab 2: Phân bổ & Gán xe (`templates/views/view_dispatch.html` & `vendor-admin.js`):**
+     - Header bảng `dispatch-allocations-table`: Thêm cột `<th data-col-key="customer_short">Tên KH</th>`.
+     - Cột "Phiếu Phân Bổ": Chỉ hiển thị mã phiếu `allocCode` (`DD.STT.[Số Booking]`), bỏ dòng tên khách hàng lồng bên dưới.
+     - Cột mới "Tên KH": Hiển thị tên viết tắt khách hàng (`THQ`, font đậm màu teal `font-bold font-heading text-teal-900`), tooltip rê chuột hiển thị tên đầy đủ của khách hàng.
+     - Tự động gọi `BimTableColumnManager.apply('dispatch-allocations-table')` sau khi render danh sách.
+  2. **Tab 3: Phiếu Vận chuyển / Bảng Container (`templates/views/view_dispatch.html` & `dispatch-order-modal.js`):**
+     - Header bảng `dispatch-vendor-containers-table`: Thêm cột `<th data-col-key="customer_short">Tên KH</th>`.
+     - Cột "Phiếu Điều Độ": Chỉ hiển thị mã phiếu điều độ `dispatch_order_code`, bỏ tên khách hàng lồng bên dưới.
+     - Cột mới "Tên KH": Hiển thị tên viết tắt khách hàng (`THQ`, font đậm màu teal).
+  3. **Backend (`apps/dispatch/api_views/vendor_admin.py` & `vendor.py`):**
+     - API `/api/vendor-admin/overview/` bổ sung trả về `customer_short_name` và `customer_name`.
+     - API `/api/dispatch/vendor-containers/` bổ sung trả về `customer_short_name` và `customer_full_name`.
+- **Kiểm thử tự động:**
+  - `python scripts/build_app_js.py`: Biên dịch thành công từ 109 file module.
+  - `python scripts/qa.py verify --fast`: PASS=6/6, FAIL=0, KẾT LUẬN: ĐẠT.
+
 ## 2026-11-21 – Tối Ưu Màn Hình Điều Độ & Theo Dõi Hành Trình: Bổ Sung Tên Viết Tắt KH, Phân Biệt Màu Số Phiếu Điều Độ, Đồng Bộ Đủ Trạng Thái Container & Chuẩn Hóa Timeline Hành Trình
 - **Bối cảnh & Yêu cầu người dùng:**
   1. **Tab "Lệnh điều độ":**

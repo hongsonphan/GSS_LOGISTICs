@@ -1253,15 +1253,12 @@ async function loadVendorContainersTab() {
             `;
 
             const lddDisplay = `
-                <div>
-                    <button type="button" onclick="openDispatchOrderPage(${r.booking_id})"
-                        class="font-mono text-xs font-bold text-teal-800 hover:text-teal-950 hover:underline cursor-pointer inline-flex items-center gap-1 text-left"
-                        title="Xem Lệnh Điều Động [${escapeHtml(r.dispatch_order_code)}]">
-                        <span>${escapeHtml(r.dispatch_order_code)}</span>
-                        <i class="ph-bold ph-arrow-square-out text-[11px] text-teal-600"></i>
-                    </button>
-                    <div class="text-xs text-slate-700 font-semibold truncate max-w-[180px]" title="${escapeHtml(r.customer_name)}">${escapeHtml(r.customer_name)}</div>
-                </div>
+                <button type="button" onclick="openDispatchOrderPage(${r.booking_id})"
+                    class="font-mono text-xs font-bold text-teal-800 hover:text-teal-950 hover:underline cursor-pointer inline-flex items-center gap-1 text-left"
+                    title="Xem Lệnh Điều Động [${escapeHtml(r.dispatch_order_code)}]">
+                    <span>${escapeHtml(r.dispatch_order_code)}</span>
+                    <i class="ph-bold ph-arrow-square-out text-[11px] text-teal-600"></i>
+                </button>
             `;
 
             let vendorDisplay = '';
@@ -1422,6 +1419,7 @@ async function loadVendorContainersTab() {
                     <td data-col-key="container" class="p-2.5">${contDisplay}</td>
                     <td data-col-key="dispatch_code" class="p-2.5">${lddDisplay}</td>
                     <td data-col-key="bl_number" class="p-2.5 font-mono font-bold text-slate-800 text-xs">${escapeHtml(r.booking_number || '--')}</td>
+                    <td data-col-key="customer_short" class="p-2.5 font-bold font-heading text-teal-900 text-xs" title="${escapeHtml(r.customer_full_name || r.customer_name || '')}">${escapeHtml(r.customer_short_name || r.customer_name || '--')}</td>
                     <td data-col-key="vendor" class="p-2.5">${vendorDisplay}</td>
                     <td data-col-key="vehicle" class="p-2.5">${vehicleDisplay}</td>
                     <td data-col-key="driver" class="p-2.5">${driverDisplay}</td>

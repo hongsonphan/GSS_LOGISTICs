@@ -136,6 +136,8 @@ class VendorAdminOverviewAPIView(APIView):
                 'booking_id': a.booking_id,
                 'booking_code': b.booking_code,
                 'customer': (cust.short_name or cust.name) if cust else '',
+                'customer_short_name': (cust.short_name or cust.code or cust.name) if cust else '',
+                'customer_name': cust.name if cust else '',
                 'pickup_location': b.pickup_location or 'Cảng/Depot',
                 'delivery_location': b.delivery_location or 'Kho khách',
                 'dropoff_location': b.dropoff_location or 'Depot hạ rỗng',
