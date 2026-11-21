@@ -35,6 +35,7 @@ def _actor(request):
 
 
 class _TokenView(APIView):
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 

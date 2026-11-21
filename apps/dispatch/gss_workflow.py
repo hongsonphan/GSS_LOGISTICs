@@ -147,6 +147,8 @@ def advance(trip, target, *, user=None, actor_label='', reason='', fields=None, 
                     overridden.append(f'bỏ qua chứng từ chặng {STAGE_LABELS[stage]}')
                 elif by_vendor:
                     overridden.append(f'điều độ nhà xe cập nhật thay tài xế (bổ sung chứng từ chặng {STAGE_LABELS[stage]} sau)')
+                elif staff and (trip.subcontractor_id or trip.vendor_allocation_id):
+                    overridden.append(f'điều độ cập nhật thay tài xế vendor (bổ sung chứng từ chặng {STAGE_LABELS[stage]} sau)')
                 else:
                     raise ValidationError(f'Phải đính kèm ít nhất 1 chứng từ chặng "{STAGE_LABELS[stage]}" (tối đa {MAX_FILES_PER_STAGE} file) trước khi chuyển bước.')
         if target == 'LOADED_ON_VEHICLE' and not (trip.container_number or '').strip():

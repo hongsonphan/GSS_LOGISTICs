@@ -26,7 +26,8 @@ window.G = (function () {
       headers['Content-Type'] = 'application/json';
     }
     var method = (opts.method || 'GET').toUpperCase();
-    if (method !== 'GET') headers['X-CSRFToken'] = cookie('csrftoken');
+    var csrf = cookie('csrftoken');
+    if (method !== 'GET' && csrf) headers['X-CSRFToken'] = csrf;
     return fetch(url, { method: method, headers: headers, body: body, credentials: 'same-origin', cache: 'no-store' })
       .then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (j) {

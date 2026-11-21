@@ -5,7 +5,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image
 
 ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.pdf']
-MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5MB chuẩn Logistics
+MAX_UPLOAD_SIZE_BYTES = 15 * 1024 * 1024  # 15MB chuẩn Logistics (hỗ trợ ảnh camera smartphone hiện đại)
 
 # Magic byte signatures
 MAGIC_BYTES = {
@@ -17,7 +17,7 @@ MAGIC_BYTES = {
 def validate_uploaded_document(file_obj, max_size=MAX_UPLOAD_SIZE_BYTES):
     """
     Xác thực tệp chứng từ tải lên (POD, EIR, hóa đơn) theo Tiêu chuẩn 7 & 8 (08-security.md):
-    1. Giới hạn kích thước tối đa 5MB.
+    1. Giới hạn kích thước tối đa 15MB (hỗ trợ camera điện thoại tài xế).
     2. Chống giả mạo đuôi tệp: Kiểm tra chữ ký Magic Bytes.
     3. Xác thực tính toàn vẹn hình ảnh bằng Pillow (đối với ảnh).
     """

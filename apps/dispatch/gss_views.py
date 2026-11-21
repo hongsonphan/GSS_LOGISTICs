@@ -2,11 +2,13 @@
 from django.http import Http404
 from django.shortcuts import render
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.features import has_feature
 
 
 @never_cache
+@ensure_csrf_cookie
 def qr_trip_page_view(request, token):
     """Trang di động mở từ QR. Token xác thực ở API; trang này chỉ là khung tĩnh."""
     if not has_feature('qr_tracking', request):

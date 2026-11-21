@@ -66,6 +66,46 @@
     G.clear(main).append(frag);
   }
 
+  function compressImageFile(file) {
+    return new Promise(function (resolve) {
+      if (!file || !file.type || !file.type.startsWith('image/')) {
+        return resolve(file);
+      }
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var maxW = 1600, maxH = 1600;
+          var w = img.width, h = img.height;
+          if (w > maxW || h > maxH) {
+            if (w > h) {
+              h = Math.round((h * maxW) / w);
+              w = maxW;
+            } else {
+              w = Math.round((w * maxH) / h);
+              h = maxH;
+            }
+          }
+          var canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(function (blob) {
+            if (!blob) return resolve(file);
+            var safeName = (file.name || 'photo.jpg').replace(/\.[^.]+$/, '') + '.jpg';
+            var compressed = new File([blob], safeName, { type: 'image/jpeg', lastModified: Date.now() });
+            resolve(compressed);
+          }, 'image/jpeg', 0.82);
+        };
+        img.onerror = function () { resolve(file); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function () { resolve(file); };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function actionCard(a) {
     var card = el('section', 'card stack'), fields = {};
     card.append(el('h2', null, 'Bước tiếp theo: ' + a.label));
@@ -110,15 +150,18 @@
         fileInp.setAttribute('capture', 'environment');
         fileInp.className = 'hidden';
         fileInp.onchange = function () {
-          var files = Array.from(fileInp.files || []);
-          if (!files.length) return;
-          var fd = stamp(new FormData(), state.staff ? 'staff_upload' : 'camera');
-          fd.append('stage', a.stage);
-          fd.append('document_type', docItem.key);
-          files.forEach(function (f) { fd.append('files', f, f.name); });
+          var rawFiles = Array.from(fileInp.files || []);
+          if (!rawFiles.length) return;
           docBtn.disabled = true;
-          docBtn.textContent = 'Đang tải ảnh lên…';
-          G.api('/api/qr/t/' + encodeURIComponent(token) + '/attachments/', { method: 'POST', body: fd }).then(function (j) {
+          docBtn.textContent = 'Đang xử lý & tối ưu ảnh…';
+          Promise.all(rawFiles.map(compressImageFile)).then(function (files) {
+            var fd = stamp(new FormData(), state.staff ? 'staff_upload' : 'camera');
+            fd.append('stage', a.stage);
+            fd.append('document_type', docItem.key);
+            files.forEach(function (f) { fd.append('files', f, f.name); });
+            docBtn.textContent = 'Đang tải ảnh lên…';
+            return G.api('/api/qr/t/' + encodeURIComponent(token) + '/attachments/', { method: 'POST', body: fd });
+          }).then(function (j) {
             state.counts = j.counts; state.action = j.action; G.toast('Đã tải lên ' + docItem.label, 'ok'); render();
           }).catch(function (e) {
             G.toast(e.message || 'Lỗi tải ảnh', 'bad');
@@ -145,7 +188,8 @@
     btn.disabled = !a.ready;
     if (!a.ready) card.append(el('div', 'small mut', 'Hãy tải ít nhất 1 chứng từ để mở nút chuyển bước.'));
     btn.onclick = function () {
-      msg.textContent = ''; btn.disabled = true;
+      var origLabel = btn.textContent;
+      msg.textContent = ''; btn.disabled = true; btn.textContent = 'Đang xác nhận…';
       var body = { to: a.to, fields: {} };
       if (fields.container_number) body.fields.container_number = fields.container_number.value;
       if (swap && swap.cb.checked) body.swap = { new_number: swap.n.value, reason: swap.r.value };
@@ -157,7 +201,7 @@
             G.toast('Mất sóng – đã lưu tạm xác nhận bước, sẽ tự đồng bộ khi có mạng.', 'ok');
           });
         }
-        msg.textContent = e.message; btn.disabled = false;
+        msg.textContent = e.message; btn.disabled = false; btn.textContent = origLabel;
       });
     };
     card.append(msg, btn);
