@@ -110,6 +110,7 @@ class BookingActiveAPIView(APIView):
                 'booking_code': b.booking_code,
                 'customer_id': b.customer.id if b.customer else None,
                 'customer_name': b.customer.name if b.customer else 'Khách hàng',
+                'customer_short_name': (b.customer.short_name or b.customer.code or b.customer.name) if b.customer else 'Khách hàng',
                 'booking_number': b.booking_number,
                 'shipping_line': b.shipping_line,
                 'vessel_voyage': b.vessel_voyage,

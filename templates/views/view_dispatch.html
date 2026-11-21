@@ -330,100 +330,109 @@
 
                     <tr>
 
-                        <th class="p-2.5 w-10 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('id')" title="Sắp xếp theo STT / ID">
+                        <th data-col-key="stt" class="p-2.5 w-10 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('id')" title="Sắp xếp theo STT / ID">
                             <span>#</span>
                             <i id="sort-icon-orders-id" class="ph-bold ph-caret-down text-teal-700 text-xs ml-1 inline-block"></i>
                         </th>
 
-                        <th class="p-2.5 min-w-[140px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('booking_code')" title="Sắp xếp theo Phiếu Điều Độ">
+                        <th data-col-key="dispatch_code" class="p-2.5 min-w-[140px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('booking_code')" title="Sắp xếp theo Phiếu Điều Độ">
                             <span>Phiếu Điều Độ</span>
                             <i id="sort-icon-orders-booking_code" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
-                        <th class="p-2.5 min-w-[130px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('booking_number')" title="Sắp xếp theo Số Vận Đơn B/L">
+                        <th data-col-key="bl_number" class="p-2.5 min-w-[130px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('booking_number')" title="Sắp xếp theo Số Vận Đơn B/L">
                             <span>Số B/L</span>
                             <i id="sort-icon-orders-booking_number" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
-                        <th class="p-2.5 min-w-[200px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('customer_name')" title="Sắp xếp theo Khách Hàng">
+                        <th data-col-key="customer_short" class="p-2.5 min-w-[100px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('customer_short_name')" title="Sắp xếp theo Tên Viết Tắt Khách Hàng">
+                            <span>Tên KH</span>
+                            <i id="sort-icon-orders-customer_short_name" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
+                        </th>
+
+                        <th data-col-key="customer" class="p-2.5 min-w-[200px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('customer_name')" title="Sắp xếp theo Khách Hàng">
                             <span>Khách Hàng / Chủ Hàng</span>
                             <i id="sort-icon-orders-customer_name" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
-                        <th class="p-2.5 min-w-[440px] whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('route')" title="Sắp xếp theo Tuyến đường">
+                        <th data-col-key="route" class="p-2.5 min-w-[440px] whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('route')" title="Sắp xếp theo Tuyến đường">
                             <span>Lộ Trình Vận Chuyển</span>
                             <i id="sort-icon-orders-route" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
-                        <th class="p-2.5 w-32 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('total_containers')" title="Sắp xếp theo Số Cont">
+                        <th data-col-key="conts" class="p-2.5 w-32 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('total_containers')" title="Sắp xếp theo Số Cont">
                             <span>Quy Cách & Số Cont</span>
                             <i id="sort-icon-orders-total_containers" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
-                        <th class="p-2.5 min-w-[200px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('allocated_containers')" title="Sắp xếp theo Tiến độ phân bổ">
+                        <th data-col-key="vendor" class="p-2.5 min-w-[200px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('allocated_containers')" title="Sắp xếp theo Tiến độ phân bổ">
                             <span>Phân Bổ Nhà Xe (Vendor)</span>
                             <i id="sort-icon-orders-allocated_containers" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
-                        <th class="p-2.5 w-24 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('free_time_demurrage')" title="Sắp xếp theo Hạn DEM">
+                        <th data-col-key="dem" class="p-2.5 w-24 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('free_time_demurrage')" title="Sắp xếp theo Hạn DEM">
                             <span>Hạn DEM (Bãi)</span>
                             <i id="sort-icon-orders-free_time_demurrage" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
-                        <th class="p-2.5 w-24 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('free_time_detention')" title="Sắp xếp theo Hạn DET">
+                        <th data-col-key="det" class="p-2.5 w-24 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('free_time_detention')" title="Sắp xếp theo Hạn DET">
                             <span>Hạn DET (Vỏ)</span>
                             <i id="sort-icon-orders-free_time_detention" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
-                        <th class="p-2.5 w-32 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('status')" title="Sắp xếp theo Trạng thái">
+                        <th data-col-key="status" class="p-2.5 w-32 text-center cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('status')" title="Sắp xếp theo Trạng thái">
                             <span>Trạng Thái</span>
                             <i id="sort-icon-orders-status" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
-                        <th class="p-2.5 w-44 text-center">Thao Tác</th>
+                        <th data-col-key="actions" class="p-2.5 w-44 text-center">Thao Tác</th>
 
                     </tr>
 
                     <!-- HÀNG Ô TÌM KIẾM / LỌC TRÊN TỪNG CỘT (COLUMN SEARCH / FILTER) -->
                     <tr class="bg-slate-50/95 border-t border-slate-200 font-normal lowercase tracking-normal">
-                        <th class="p-1 text-center font-normal">
+                        <th data-col-key="stt" class="p-1 text-center font-normal">
                             <button type="button" onclick="clearDispatchOrdersFilters()" title="Xóa toàn bộ ô lọc cột"
                                 class="w-6 h-6 inline-flex items-center justify-center rounded text-slate-400 hover:text-rose-600 hover:bg-slate-200 transition-colors">
                                 <i class="ph-bold ph-arrow-counter-clockwise text-xs"></i>
                             </button>
                         </th>
-                        <th class="p-1 font-normal">
+                        <th data-col-key="dispatch_code" class="p-1 font-normal">
                             <input type="text" id="filter-col-code" placeholder="Lọc mã LĐĐ..." oninput="onDispatchOrdersColumnFilter()"
                                 class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
                         </th>
-                        <th class="p-1 font-normal">
+                        <th data-col-key="bl_number" class="p-1 font-normal">
                             <input type="text" id="filter-col-bl" placeholder="Lọc B/L..." oninput="onDispatchOrdersColumnFilter()"
                                 class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
                         </th>
-                        <th class="p-1 font-normal">
+                        <th data-col-key="customer_short" class="p-1 font-normal">
+                            <input type="text" id="filter-col-customer-short" placeholder="Lọc tên KH..." oninput="onDispatchOrdersColumnFilter()"
+                                class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
+                        </th>
+                        <th data-col-key="customer" class="p-1 font-normal">
                             <input type="text" id="filter-col-customer" placeholder="Lọc khách hàng..." oninput="onDispatchOrdersColumnFilter()"
                                 class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
                         </th>
-                        <th class="p-1 font-normal">
+                        <th data-col-key="route" class="p-1 font-normal">
                             <input type="text" id="filter-col-route" placeholder="Lọc cảng / kho / depot..." oninput="onDispatchOrdersColumnFilter()"
                                 class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
                         </th>
-                        <th class="p-1 font-normal text-center">
+                        <th data-col-key="conts" class="p-1 font-normal text-center">
                             <input type="text" id="filter-col-cont" placeholder="Số cont..." oninput="onDispatchOrdersColumnFilter()"
                                 class="w-full h-7 px-1 text-[11px] bg-white border border-slate-200 rounded font-normal text-center focus:border-teal-600 focus:outline-none">
                         </th>
-                        <th class="p-1 font-normal">
+                        <th data-col-key="vendor" class="p-1 font-normal">
                             <input type="text" id="filter-col-vendor" placeholder="Lọc nhà xe..." oninput="onDispatchOrdersColumnFilter()"
                                 class="w-full h-7 px-2 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
                         </th>
-                        <th class="p-1 font-normal text-center">
+                        <th data-col-key="dem" class="p-1 font-normal text-center">
                             <input type="text" id="filter-col-dem" placeholder="DEM" oninput="onDispatchOrdersColumnFilter()"
                                 class="w-full h-7 px-1 text-[11px] bg-white border border-slate-200 rounded font-normal text-center focus:border-teal-600 focus:outline-none">
                         </th>
-                        <th class="p-1 font-normal text-center">
+                        <th data-col-key="det" class="p-1 font-normal text-center">
                             <input type="text" id="filter-col-det" placeholder="DET" oninput="onDispatchOrdersColumnFilter()"
                                 class="w-full h-7 px-1 text-[11px] bg-white border border-slate-200 rounded font-normal text-center focus:border-teal-600 focus:outline-none">
                         </th>
-                        <th class="p-1 font-normal">
+                        <th data-col-key="status" class="p-1 font-normal">
                             <select id="filter-col-status" onchange="onDispatchOrdersColumnFilter()"
                                 class="w-full h-7 px-1 text-[11px] bg-white border border-slate-200 rounded font-normal focus:border-teal-600 focus:outline-none">
                                 <option value="">Tất cả</option>
@@ -433,6 +442,8 @@
                                 <option value="COMPLETED">Đã hoàn thành</option>
                             </select>
                         </th>
+                        <th data-col-key="actions" class="p-1 font-normal text-center"></th>
+                    </tr>
                         <th class="p-1 font-normal text-center">
                             <span id="dispatch-orders-filtered-count" class="text-[10px] text-slate-500 font-bold"></span>
                         </th>
@@ -506,14 +517,13 @@
         </div>
     </div>
 
-    <!-- TAB 3: THANH CHẾ ĐỘ XEM (bảng | theo bước | phiếu VC) -->
+    <!-- TAB 3: THANH CHẾ ĐỘ XEM (Phiếu Vận chuyển | Hành trình) -->
     <div id="dispatch-journey-modebar" class="hidden items-center gap-2 mb-2 flex-wrap shrink-0">
-        <button type="button" id="jmode-table" onclick="setJourneyMode('table')" class="h-8 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer bg-teal-50/90 text-teal-900 border-teal-600"><i class="ph-bold ph-table"></i> Bảng container</button>
-        <button type="button" id="jmode-board" onclick="setJourneyMode('board')" class="h-8 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer bg-white text-slate-700 border-slate-200"><i class="ph ph-chart-line"></i> Theo bước hành trình</button>
-        <button type="button" id="jmode-trips" onclick="setJourneyMode('trips')" class="h-8 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer bg-white text-slate-700 border-slate-200"><i class="ph ph-receipt"></i> Phiếu VC</button>
+        <button type="button" id="jmode-table" onclick="setJourneyMode('table')" class="h-8 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer bg-teal-50/90 text-teal-900 border-teal-600"><i class="ph-bold ph-receipt"></i> Phiếu Vận chuyển</button>
+        <button type="button" id="jmode-board" onclick="setJourneyMode('board')" class="h-8 px-3 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer bg-white text-slate-700 border-slate-200"><i class="ph-bold ph-chart-line"></i> Hành trình</button>
     </div>
 
-    <!-- TAB 3 (chế độ theo bước): Timeline ma trận hành trình xe container (dùng chung với Dashboard) -->
+    <!-- TAB 3 (chế độ hành trình): Timeline ma trận hành trình xe container (dùng chung với Dashboard) -->
     <div id="dispatch-journey-board-view" class="gss-scope flex-1 overflow-auto hidden flex-col mb-4 bg-white rounded-2xl border border-slate-200 p-2 sm:p-4">
         <div id="jboard-body" class="w-full"></div>
     </div>
@@ -540,7 +550,7 @@
         <div id="va-body" class="flex-1 overflow-auto"></div>
     </div>
 
-    <!-- TAB 3 (chế độ bảng): container đã nhận lệnh và đang hành trình -->
+    <!-- TAB 3 (chế độ bảng Phiếu Vận chuyển): container đã nhận lệnh và đang hành trình -->
     <div id="dispatch-vendor-containers-view" class="erp-table-container flex-1 overflow-hidden hidden flex-col shadow-sm mb-4">
         <!-- KPI Strip Mini cho Container -->
         <div class="px-4 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between gap-3 flex-wrap">
@@ -549,20 +559,28 @@
                     <i class="ph-bold ph-chart-donut text-teal-600 text-sm"></i>
                     <span>Tình Trạng Container:</span>
                 </span>
-                <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-bold border border-slate-200 flex items-center gap-1.5 cursor-pointer hover:bg-slate-200 transition-colors" onclick="quickFilterVcStatus('ALL')">
+                <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-bold border border-slate-200 flex items-center gap-1.5 cursor-pointer hover:bg-slate-200 transition-colors" onclick="quickFilterVcStatus('ALL')" title="Xem tất cả container">
                     <span>Tổng Cont:</span> <strong id="vc-stat-total" class="text-slate-900">0</strong>
                 </span>
-                <span class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 font-bold border border-blue-200 flex items-center gap-1.5 cursor-pointer hover:bg-blue-100 transition-colors" onclick="quickFilterVcStatus('ASSIGNED')">
+                <span class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-800 font-bold border border-rose-200 flex items-center gap-1.5 cursor-pointer hover:bg-rose-100 transition-colors" onclick="quickFilterVcStatus('UNASSIGNED')" title="Xem container chưa phân bổ nhà xe">
+                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                    <span>Chưa phân bổ:</span> <strong id="vc-stat-unassigned" class="text-rose-900">0</strong>
+                </span>
+                <span class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 font-bold border border-amber-200 flex items-center gap-1.5 cursor-pointer hover:bg-amber-100 transition-colors" onclick="quickFilterVcStatus('WAITING_VEHICLE')" title="Xem container đã giao nhà xe nhưng chưa gán xe / tài">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span>Chờ gán xe/tài:</span> <strong id="vc-stat-waiting" class="text-amber-900">0</strong>
+                </span>
+                <span class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 font-bold border border-blue-200 flex items-center gap-1.5 cursor-pointer hover:bg-blue-100 transition-colors" onclick="quickFilterVcStatus('ASSIGNED')" title="Xem container đã nhận lệnh, sẵn sàng chờ chạy">
                     <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                    <span>Đã nhận lệnh (chờ chạy):</span> <strong id="vc-stat-assigned">0</strong>
+                    <span>Đã nhận lệnh (chờ chạy):</span> <strong id="vc-stat-assigned" class="text-blue-900">0</strong>
                 </span>
-                <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 flex items-center gap-1.5 cursor-pointer hover:bg-emerald-100 transition-colors" onclick="quickFilterVcStatus('IN_TRANSIT')">
+                <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 flex items-center gap-1.5 cursor-pointer hover:bg-emerald-100 transition-colors" onclick="quickFilterVcStatus('IN_TRANSIT')" title="Xem container đang vận chuyển trên tuyến">
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span>Đang trên tuyến:</span> <strong id="vc-stat-intransit">0</strong>
+                    <span>Đang trên tuyến:</span> <strong id="vc-stat-intransit" class="text-emerald-900">0</strong>
                 </span>
-                <span class="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 font-bold border border-slate-200 flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 transition-colors" onclick="quickFilterVcStatus('COMPLETED')">
+                <span class="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 font-bold border border-slate-200 flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 transition-colors" onclick="quickFilterVcStatus('COMPLETED')" title="Xem container đã hoàn tất / hạ rỗng">
                     <span class="w-2 h-2 rounded-full bg-slate-400"></span>
-                    <span>Đã hoàn thành:</span> <strong id="vc-stat-completed">0</strong>
+                    <span>Đã hoàn thành:</span> <strong id="vc-stat-completed" class="text-slate-800">0</strong>
                 </span>
             </div>
             <div>
@@ -586,11 +604,13 @@
             <div>
                 <select id="filter-vc-status" onchange="loadVendorContainersTab()"
                     class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
-                    <option value="ACTIVE">Đã nhận lệnh & đang hành trình</option>
-                    <option value="ALL">Tất cả trạng thái</option>
+                    <option value="ALL">-- Tất cả trạng thái --</option>
+                    <option value="UNASSIGNED">Chưa phân bổ Nhà xe</option>
+                    <option value="WAITING_VEHICLE">Chờ Nhà xe gán xe / tài</option>
                     <option value="ASSIGNED">Đã gán xe (Sẵn sàng chờ chạy)</option>
                     <option value="IN_TRANSIT">Đang trên tuyến (Đang chạy)</option>
                     <option value="COMPLETED">Đã hoàn thành / Hạ rỗng</option>
+                    <option value="ACTIVE">Đang hoạt động (Đã gán + Trên tuyến)</option>
                 </select>
             </div>
 
