@@ -531,6 +531,10 @@ Nhật ký của hệ thống trước đó không chuyển sang repo này.
     + Cập nhật `static/css/main.css`: Quy định chặt chẽ `.view.hidden-view { display: none !important; }`.
     + Kiểm thử thị giác bằng Playwright xác nhận thành công: Toàn bộ bảng container của Booking và bảng Điều Vận mở rộng hoàn hảo `width: 1920px, height: 1080px, zIndex: 999999` che kín toàn bộ màn hình, hiển thị đầy đủ thông tin và cuộn mượt mà.
 
+## 2026-11-21 – QA Tự Bật Hook Chặn File Tự Sinh Lệch (Chống CI Đỏ #72, #73, #81, #94)
+- **Vấn đề:** CI đỏ lặp lại vì commit sửa JS/giao diện mà quên build `static/js/app.js` / `static/css/tailwind.css`. Hook `.githooks/pre-commit` đã chặn được nhưng chỉ chạy khi từng bản clone tự `git config core.hooksPath .githooks`.
+- **Xử lý:** `scripts/qa.py` (`verify`/`audit`) tự bật `core.hooksPath` nếu bản clone chưa bật và báo INFO. Hook chỉ có tác dụng từ lần chạy `qa.py` đầu tiên trên mỗi bản clone; vẫn phải build file tự sinh như `CLAUDE.md` quy định.
+
 ## 2026-11-19 – Sửa Lỗi 500 Khi Xóa Booking (CI Đỏ #61–#63)
 - **Vấn đề:** `DELETE /api/bookings/<id>/` trả 500 vì `BookingOrderDetailAPIView.delete` gọi `b.allocations`, trong khi quan hệ ngược của `BookingVendorAllocation.booking` tên là `vendor_allocations`. Test `core.tests.GssLogisticsCoreTestCase.test_simulation_sales_and_booking_full_flow` đỏ.
 - **Xử lý:** `apps/dispatch/api_views/bookings.py` đổi sang `b.vendor_allocations`; vẫn chỉ xóa mềm phân bổ và container của booking.

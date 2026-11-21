@@ -331,10 +331,25 @@ def report():
     return 1 if counts["FAIL"] else 0
 
 
+def ensure_git_hooks():
+    """Tự bật hook pre-commit (chặn commit khi file tự sinh lệch nguồn) nếu bản clone này chưa bật."""
+    if not (ROOT / ".githooks" / "pre-commit").is_file() or not (ROOT / ".git").exists():
+        return
+    code, out = run(["git", "config", "--get", "core.hooksPath"], timeout=30)
+    if code == 0 and out.strip() == ".githooks":
+        return
+    code, out = run(["git", "config", "core.hooksPath", ".githooks"], timeout=30)
+    if code == 0:
+        add("INFO", "Hook pre-commit", "đã tự bật git config core.hooksPath .githooks cho bản clone này")
+    else:
+        add("WARN", "Hook pre-commit", "chưa bật được; chạy tay: git config core.hooksPath .githooks")
+
+
 def main(argv):
     if len(argv) < 2 or argv[1] not in ("verify", "audit"):
         print(__doc__)
         return 2
+    ensure_git_hooks()
     if argv[1] == "verify":
         verify(fast="--fast" in argv, full="--full" in argv)
     else:
