@@ -6,11 +6,12 @@
   var wheel = function (x) { return '<circle cx="' + x + '" cy="70" r="10.5" fill="#fff" ' + S + '/><circle cx="' + x + '" cy="70" r="5.2" fill="#fff" ' + S.replace('2.6', '1.8') + '/><circle cx="' + x + '" cy="70" r="1.8" fill="#0f172a"/>'; };
   
   /* Thiết kế xe chuẩn UI/UX TMS:
-     - Bỏ chữ T ngược hoàn toàn.
+     - Kích thước vừa phải, thanh thoát và hài hòa trên dòng thời gian (128x44).
      - Khung hiển thị rõ nét trên thùng container.
      - Chữ GPX màu xanh ngọc thương hiệu (#0d9488 / #0f766e), in siêu đậm (font-weight: 900), cỡ lớn nổi bật.
-     - Biển số xe in đậm to rõ, dễ nhìn, font monospace hiện đại. */
-  var MARKUP = '<svg viewBox="0 0 244 84" width="144" height="48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+     - Biển số xe in đậm to rõ, dễ nhìn, font monospace hiện đại.
+     - Gắn biểu tượng logo thương hiệu Giải Pháp Xanh (lá xanh viền trắng) trên cửa buồng lái đầu kéo. */
+  var MARKUP = '<svg viewBox="0 0 244 84" width="128" height="44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
     + '<rect x="3" y="3" width="185" height="52" rx="4" fill="#ffffff" ' + S + '/>'
     + '<path d="M3 46H188" ' + S + '/>'
     + '<path d="M70 46V55M118 46V55M160 46V55" stroke="#0f172a" stroke-width="1.6"/>'
@@ -24,6 +25,10 @@
     + '<path d="M192 60V10H214C220 10 224 13 227 18L238 38C240 42 241 45 241 50V66H192Z" fill="#fff" ' + S + '/>'
     + '<path d="M199 16V40H230L221 22C219 18 217 16 213 16Z" fill="#f8fafc" ' + S.replace('2.6', '1.8') + '/>'
     + '<path d="M206 40V60" stroke="#0f172a" stroke-width="1.8"/>'
+    + '<!-- Logo thương hiệu Giải Pháp Xanh trên cửa cabin -->'
+    + '<circle cx="223" cy="50" r="5.2" fill="#0d9488" stroke="#0f172a" stroke-width="1"/>'
+    + '<path d="M221 51.5C221 49 223 48 225 48C225 49.8 223.8 51.8 221 51.5Z" fill="#ffffff"/>'
+    + '<circle cx="239" cy="53" r="1.6" fill="#f59e0b"/>'
     + [33, 52, 71, 150, 214].map(wheel).join('')
     + '</svg>';
   var tpl = null;

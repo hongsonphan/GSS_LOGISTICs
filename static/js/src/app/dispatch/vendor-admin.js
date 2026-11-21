@@ -254,16 +254,16 @@ function renderAllocationsTable() {
 }
 
 // =============================================================
-// TAB 3: THEO DÕI HÀNH TRÌNH (chế độ xem)
+// TAB 3: THEO DÕI HÀNH TRÌNH (chế độ xem: Phiếu Vận chuyển | Hành trình)
 // =============================================================
 function setJourneyMode(mode) {
-    if (!['table', 'board', 'trips'].includes(mode)) mode = 'table';
+    if (!['table', 'board'].includes(mode)) mode = 'table';
     window.currentJourneyMode = mode;
-    ['dispatch-vendor-containers-view', 'dispatch-journey-board-view', 'dispatch-trips-view'].forEach(id => {
+    ['dispatch-vendor-containers-view', 'dispatch-journey-board-view'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
     });
-    [['table', 'jmode-table'], ['board', 'jmode-board'], ['trips', 'jmode-trips']].forEach(([m, id]) => {
+    [['table', 'jmode-table'], ['board', 'jmode-board']].forEach(([m, id]) => {
         const b = document.getElementById(id);
         if (b) b.className = (m === mode ? VA_SEC_ON : VA_SEC_OFF);
     });
@@ -274,14 +274,11 @@ function setJourneyMode(mode) {
     } else if (mode === 'board') {
         show('dispatch-journey-board-view');
         loadJourneyBoard();
-    } else {
-        show('dispatch-trips-view');
-        if (typeof loadTripsData === 'function') loadTripsData();
     }
 }
 
 // =============================================================
-// TAB 3: THEO DÕI HÀNH TRÌNH (chế độ theo bước - KANBAN 7 BƯỚC CHUẨN GSS)
+// TAB 3: THEO DÕI HÀNH TRÌNH (chế độ Hành trình xe container - chuẩn timeline 7 mốc)
 // =============================================================
 var jboardSearchQuery = '';
 var jboardFilterVendorId = '';
@@ -289,16 +286,15 @@ var jboardFilterVendorId = '';
 async function loadJourneyBoard(force) {
     const body = document.getElementById('jboard-body');
     if (!body) return;
-    body.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">Đang tải ma trận hành trình xe...</div>';
+    body.innerHTML = '';
 
-    try {
-        const res = await fetchWithAuth('/api/dispatch/vendor-containers/?status=ACTIVE');
-        if (!res.ok) throw new Error('Không thể nạp dữ liệu hành trình');
-        const resData = await res.json();
-        jboardRows = resData.data || [];
-        renderJourneyKanbanBoard();
-    } catch (e) {
-        body.innerHTML = `<div class="p-8 text-center text-rose-600 font-bold text-sm">Lỗi tải hành trình: ${vaEsc(e.message)}</div>`;
+    if (window.GSSApp && typeof GSSApp.fleetTimeline === 'function') {
+        const host = document.createElement('div');
+        host.className = 'gss-scope';
+        body.appendChild(host);
+        GSSApp.fleetTimeline(host);
+    } else {
+        body.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs">Chưa tải được bảng Theo dõi hành trình xe container.</div>';
     }
 }
 
