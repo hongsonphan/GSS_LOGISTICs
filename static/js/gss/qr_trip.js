@@ -29,7 +29,7 @@
     // 1. Lưu ý quan trọng nhất đặt lên đầu
     if (s.is_twin_container) {
       var twinMsg = 'Chuyến xe kéo 2 Container (2x20ft): ' + (s.container_number || 'Cont 1') + ' và ' + (s.container_number_2 || 'Cont 2') + '. Bác tài lưu ý chụp đủ chứng từ giao nhận riêng biệt cho từng container tương ứng.';
-      frag.append(note('LƯU Ý XE KÉO 2 CONT (2x20')', twinMsg));
+      frag.append(note('LƯU Ý XE KÉO 2 CONT (2x20ft)', twinMsg));
     }
     if (s.special_notes) frag.append(note('Ghi chú Điều vận', s.special_notes));
     if (s.destination_notes) frag.append(note('Lưu ý điểm đến', s.destination_notes));
