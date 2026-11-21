@@ -309,6 +309,9 @@
                 <button type="button" onclick="clearDispatchOrdersFilters()" class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer" title="Xóa toàn bộ ô tìm kiếm & bộ lọc cột">
                     <i class="ph-bold ph-funnel-simple-x text-rose-500"></i> Xóa lọc
                 </button>
+                <button type="button" onclick="openColumnCustomizer('dispatch-orders-table')" class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-teal-700 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer" title="Tùy chỉnh ẩn/hiện, ghim và kéo dãn độ rộng các cột">
+                    <i class="ph-bold ph-columns text-teal-700"></i> <span>Cột</span>
+                </button>
                 <button type="button" onclick="toggleDispatchFullscreen()" class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer" title="Toàn màn hình">
                     <i class="ph-bold ph-corners-out text-indigo-600"></i> <span class="hidden md:inline">Toàn Màn Hình</span>
                 </button>
@@ -321,7 +324,7 @@
 
         <div class="flex-1 overflow-auto">
 
-            <table class="w-full text-left erp-table whitespace-nowrap text-xs">
+            <table class="w-full text-left erp-table whitespace-nowrap text-xs" id="dispatch-orders-table" data-table-title="Danh Sách Lệnh Điều Độ">
 
                 <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[11px] font-heading sticky top-0 z-10 shadow-2xs">
 
@@ -332,8 +335,8 @@
                             <i id="sort-icon-orders-id" class="ph-bold ph-caret-down text-teal-700 text-xs ml-1 inline-block"></i>
                         </th>
 
-                        <th class="p-2.5 min-w-[140px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('booking_code')" title="Sắp xếp theo Mã Lệnh / B/L">
-                            <span>Mã Lệnh / Số B/L</span>
+                        <th class="p-2.5 min-w-[140px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('booking_code')" title="Sắp xếp theo Phiếu Điều Độ">
+                            <span>Phiếu Điều Độ</span>
                             <i id="sort-icon-orders-booking_code" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
@@ -466,14 +469,17 @@
                 <button type="button" onclick="loadAllocationsTab(true)" class="h-8 px-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer">
                     <i class="ph-bold ph-arrow-counter-clockwise"></i> Làm mới
                 </button>
+                <button type="button" onclick="openColumnCustomizer('dispatch-allocations-table')" class="h-8 px-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-teal-700 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer" title="Tùy chỉnh ẩn/hiện, ghim và kéo dãn độ rộng các cột">
+                    <i class="ph-bold ph-columns text-teal-700"></i> <span>Cột</span>
+                </button>
             </div>
         </div>
         <div class="flex-1 overflow-auto">
-            <table class="w-full text-left erp-table whitespace-nowrap text-xs" data-no-toolbar="true">
+            <table class="w-full text-left erp-table whitespace-nowrap text-xs" id="dispatch-allocations-table" data-table-title="Danh Sách Phân Bổ & Gán Xe" data-no-toolbar="true">
                 <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-xs font-heading sticky top-0 z-10 shadow-2xs">
                     <tr>
                         <th class="p-2.5 w-10 text-center">#</th>
-                        <th class="p-2.5 min-w-[170px]">Lệnh / khách hàng</th>
+                        <th class="p-2.5 min-w-[170px]">Phiếu Phân Bổ</th>
                         <th class="p-2.5 min-w-[160px]">Nhà xe được phân bổ</th>
                         <th class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>
                         <th class="p-2.5 w-28 text-right">Số cont giao</th>
@@ -588,6 +594,12 @@
                         <i class="ph-bold ph-x text-xs"></i>
                     </button>
                 </div>
+                <button type="button" onclick="openColumnCustomizer('dispatch-vendor-containers-table')" 
+                    class="h-8 px-2.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-teal-700 border border-slate-200 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Tùy chỉnh ẩn/hiện, ghim và kéo dãn độ rộng các cột">
+                    <i class="ph-bold ph-columns text-teal-700"></i>
+                    <span>Cột</span>
+                </button>
                 <button type="button" onclick="toggleDispatchFullscreen()" 
                     class="h-8 px-2.5 bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-800 border border-slate-200 hover:border-indigo-300 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
                     title="Mở rộng toàn màn hình bảng container hành trình">
@@ -599,14 +611,14 @@
 
         <!-- Bảng Dữ Liệu Container Toàn Màn Hình -->
         <div class="flex-1 overflow-auto">
-            <table class="w-full text-left erp-table whitespace-nowrap text-xs">
+            <table class="w-full text-left erp-table whitespace-nowrap text-xs" id="dispatch-vendor-containers-table" data-table-title="Bảng Container & Tiến Độ Vận Chuyển">
                 <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[11px] font-heading sticky top-0 z-10 shadow-2xs">
                     <tr>
                         <th class="p-2.5 w-10 text-center">#</th>
                         <th class="p-2.5 min-w-[150px]">Số Container & Quy Cách</th>
-                        <th class="p-2.5 min-w-[170px]">Lệnh Điều Động / Khách Hàng</th>
+                        <th class="p-2.5 min-w-[170px]">Phiếu Điều Độ / Khách Hàng</th>
                         <th class="p-2.5 min-w-[180px]">Nhà Xe Phụ Trách (Vendor)</th>
-                        <th class="p-2.5 min-w-[130px] text-center">Phiếu Vận Chuyển (VC)</th>
+                        <th class="p-2.5 min-w-[140px] text-center">Phiếu Vận Chuyển</th>
                         <th class="p-2.5 min-w-[160px]">Đầu Kéo & Rơ-moóc</th>
                         <th class="p-2.5 min-w-[170px]">Tài Xế & Số ĐT</th>
                         <th class="p-2.5 min-w-[440px] whitespace-nowrap">Lộ Trình Vận Chuyển</th>

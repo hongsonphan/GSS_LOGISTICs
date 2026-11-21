@@ -423,6 +423,33 @@
                 });
             }
 
+            // 1b. Đồng bộ hàng filter thứ 2 trong thead nếu có (ví dụ ô lọc cột của bảng)
+            const trFilter = thead.querySelector(':scope > tr:nth-child(2)');
+            if (trFilter) {
+                const filterThs = Array.from(trFilter.children);
+                if (filterThs.length === this.defaultColumns.length) {
+                    filterThs.forEach(function(th, idx) {
+                        if (!th.getAttribute('data-col-key') && this.defaultColumns[idx]) {
+                            th.setAttribute('data-col-key', this.defaultColumns[idx].key);
+                        }
+                    }, this);
+
+                    const sortedFilterThs = [];
+                    this.columns.forEach(function(c) {
+                        const found = filterThs.find(function(th) {
+                            return th.getAttribute('data-col-key') === c.key;
+                        });
+                        if (found) {
+                            found.style.display = c.visible ? '' : 'none';
+                            sortedFilterThs.push(found);
+                        }
+                    });
+                    sortedFilterThs.forEach(function(th) {
+                        trFilter.appendChild(th);
+                    });
+                }
+            }
+
             // 2. Đồng bộ tbody td elements
             if (tbody) {
                 const rows = tbody.querySelectorAll(':scope > tr');

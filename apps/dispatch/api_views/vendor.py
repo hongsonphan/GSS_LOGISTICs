@@ -801,7 +801,7 @@ class VendorContainersMonitoringAPIView(APIView):
             phone = t.driver.phone if (t and t.driver) else (t.subcontractor_driver_phone if t else '')
 
             is_full_alloc = (b.total_containers or 0) > 0 and (b.containers.filter(allocation__isnull=False, is_deleted=False).count() >= (b.total_containers or 0))
-            dispatch_code = f"LDD.{b.booking_code}" if is_full_alloc else b.booking_code
+            dispatch_code = f"DD.{b.booking_code}" if b.booking_code else "DD.--"
 
             # Tìm kiếm từ khóa nếu có
             search_str = f"{c.container_number} {c.seal_number or ''} {b.booking_code} {dispatch_code} {b.booking_number or ''} {sub.name if sub else ''} {sub.short_name if sub else ''} {tractor} {trailer} {driver} {phone}".lower()
@@ -831,6 +831,7 @@ class VendorContainersMonitoringAPIView(APIView):
                 'vendor_short': sub.short_name if sub else (sub.name if sub else 'Chưa phân bổ'),
                 'vendor_code': sub.code if sub else '',
                 'allocation_id': alloc.id if alloc else None,
+                'allocation_code': svc.get_allocation_code(alloc) if alloc else None,
                 'portal_token': raw_tok,
                 'trip_id': t.id if t else None,
                 'trip_code': t.trip_code if t else None,

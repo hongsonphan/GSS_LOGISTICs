@@ -3,6 +3,44 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-21 – Chuẩn Hóa Cột Mã 3 Màn Hình Điều Độ & Bổ Sung Nút "Cột" (Universal Column Manager)
+- **Bối cảnh & Yêu cầu người dùng:**
+  - Tab "Lệnh điều độ": Cột "Phiếu Điều độ" hiển thị chuẩn mã `DD.[Số Booking]` (ví dụ `DD.BK.2611.006`).
+  - Tab "Phân bổ & Gán xe": Cột "Phiếu Phân bổ" hiển thị chuẩn mã `DD.STT.[Số Booking]` (ví dụ `DD.001.BK.2611.006`, `DD.002.BK.2611.006`).
+  - Tab "Theo dõi hành trình": Cột "Phiếu Vận chuyển" hiển thị chuẩn mã `VC.STT.[Số Booking]` (ví dụ `VC.001.BK.2611.006`).
+  - Rà soát và bổ sung Nút "Cột" (Column Manager) cho các bảng của phân hệ Điều độ để người dùng có thể tùy chỉnh ẩn/hiện cột, ghim cột, điều chỉnh kéo dãn độ rộng cột và lưu trạng thái vào `localStorage`.
+- **Thay đổi kỹ thuật & Giao diện:**
+  1. **Tab 1: Lệnh điều độ (`templates/views/view_dispatch.html` & `dispatch-order-modal.js`):**
+     - Đặt `id="dispatch-orders-table" data-table-title="Danh Sách Lệnh Điều Độ"`.
+     - Thêm nút "Cột" (`openColumnCustomizer('dispatch-orders-table')`) trên thanh toolbar bên cạnh các nút Làm mới, Xóa lọc, Toàn màn hình.
+     - Đổi tiêu đề cột thứ 2 thành **"Phiếu Điều Độ"**.
+     - Chuẩn hóa hiển thị mã trong cột: luôn hiển thị mã `DD.[Số Booking]` (ví dụ `DD.BK.2611.006`), phân biệt trạng thái bằng badge `CHỜ ĐIỀU ĐỘ` / `ĐÃ ĐIỀU ĐỘ` / `HOÀN TẤT` và dòng số `B/L` bên dưới.
+  2. **Tab 2: Phân bổ & Gán xe (`templates/views/view_dispatch.html` & `vendor-admin.js`):**
+     - Đặt `id="dispatch-allocations-table" data-table-title="Danh Sách Phân Bổ & Gán Xe"`.
+     - Thêm nút "Cột" (`openColumnCustomizer('dispatch-allocations-table')`) trên thanh toolbar bên cạnh nút Làm mới.
+     - Đổi tiêu đề cột thứ 2 thành **"Phiếu Phân Bổ"**.
+     - Cập nhật hiển thị mã: lấy `allocCode = l.allocation_code || 'DD.001.' + l.booking_code` chuẩn định dạng `DD.STT.[Số Booking]` (ví dụ `DD.001.BK.2611.006`, `DD.002.BK.2611.006`).
+  3. **Tab 3: Theo dõi hành trình (`templates/views/view_dispatch.html`, `dispatch-order-modal.js` & `api_views/vendor.py`):**
+     - Đặt `id="dispatch-vendor-containers-table" data-table-title="Bảng Container & Tiến Độ Vận Chuyển"`.
+     - Thêm nút "Cột" (`openColumnCustomizer('dispatch-vendor-containers-table')`) trên thanh toolbar Bảng container bên cạnh nút Toàn Màn Hình.
+     - Đổi tiêu đề cột thứ 3 thành **"Phiếu Điều Độ / Khách Hàng"** (backend `dispatch_code` đổi từ tiền tố cũ `LDD.` sang `DD.BK.YYMM.STT`).
+     - Đổi tiêu đề cột thứ 5 thành **"Phiếu Vận Chuyển"** (hiển thị mã `VC.STT.[Số Booking]`).
+  4. **Nâng cấp Universal Column Manager (`static/js/src/app/core/table-manager.js`):**
+     - Cải tiến `TableColumnInstance.prototype.apply`: bổ sung cơ chế đồng bộ hàng thead thứ 2 (`tr:nth-child(2)`) chứa các ô input tìm kiếm/lọc từng cột (như của `dispatch-orders-table`), giúp các ô lọc luôn thẳng hàng chính xác với các cột dữ liệu khi người dùng ẩn/hiện hoặc đổi thứ tự cột.
+- **Kiểm thử tự động:**
+  - `python scripts/build_app_js.py`: Build thành công `app.js` từ 109 file.
+  - `python scripts/build_css.py`: Tailwind CSS biên dịch đạt chuẩn.
+  - `python scripts/qa.py verify`: TỔNG KẾT: PASS=7 FAIL=0 WARN=0, KẾT LUẬN: ĐẠT 100%.
+
+
+## 2026-11-21 – Kéo bản sao lưu về máy local lúc 00:00
+- `scripts/pull_backup_local.ps1`: máy Windows kéo bản sao lưu từ VPS qua SSH (hoặc từ thư mục); chỉ tải bản mới, đối chiếu sha256 và kiểm gzip trước khi nhận, tuỳ chọn mã hoá age, khoá quyền thư mục, giữ theo ngày, cảnh báo khi bản quá cũ; mã thoát 0/1/2/3.
+- `scripts/register_backup_task.ps1`: tác vụ Windows 00:00 hằng ngày (lặp mỗi giờ khi mất mạng), chạy bù khi máy bật lại và khi đăng nhập.
+- `deploy_vps.sh`/`backup_vps.sh`: bản đầy đủ chuyển sang 23:30 để kịp trước lần kéo 00:00.
+- `scripts/backup_ssh_gate.sh`: cổng SSH hạn chế (chỉ ls/cat/scp/sha256sum file sao lưu + `run-backup`) cho khoá kéo sao lưu.
+- **Sao lưu GSS dùng thư mục riêng `/home/ubuntu/backups_gss`** (mặc định trong backup/restore/drill/deploy): thư mục cũ `/home/ubuntu/backups` đang dùng chung với BIM_LOGISTICS, lẫn dump hai hệ thống. `deploy_vps.sh` chỉ thay cron của chính GSS (trước đây xoá cả cron sao lưu của BIM).
+- Tài liệu: runbook mục 7, `docs/16` mục 5c (kết quả rà soát mã). Đã thử qua SSH thật: kéo, checksum, kiểm gzip đạt.
+
 ## 2026-11-20 – Nâng Cấp Quy Trình Ghép Đôi Container 20ft (Kẹp 20): Checkbox Cột Đầu & Nút Ghép Cont Header
 - **Bối cảnh & Yêu cầu người dùng:**
   - Nút "Kẹp 20" trước đó dùng hộp thoại `window.prompt()` mặc định của trình duyệt để gõ số dòng, giao diện thô sơ và bất tiện.

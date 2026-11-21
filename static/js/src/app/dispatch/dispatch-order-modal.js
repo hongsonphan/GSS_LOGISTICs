@@ -1039,10 +1039,8 @@ function renderDispatchOrdersTable() {
         const isDispatched = isOrderFullyAllocated(b);
         const isCompleted = isOrderCompleted(b);
 
-        // Chuẩn hóa mã phiếu: Đã điều độ thì DD.BK..., chưa điều độ thì BK...
-        const codeDisplay = isDispatched 
-            ? (rawCode.startsWith("DD.") ? rawCode : (rawCode.startsWith("BK.") ? `DD.${rawCode}` : `DD.BK.${rawCode}`)) 
-            : rawCode;
+        // Chuẩn hóa mã Phiếu Điều độ: DD.[Số Booking] (VD: DD.BK.2611.001)
+        const codeDisplay = rawCode.startsWith("DD.") ? rawCode : (rawCode.startsWith("BK.") ? `DD.${rawCode}` : `DD.BK.${rawCode}`);
 
         let codeBadge = '';
         if (isCompleted) {
