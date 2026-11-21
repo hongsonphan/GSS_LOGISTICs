@@ -3,6 +3,42 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-21 – Nâng Cấp Ô "Loại Cont / Xe" Thành Multi-Select Checkbox (Cho Phép Chọn Nhiều Loại) & Kiểm Thử Toàn Diện
+- **Bối cảnh & Yêu cầu người dùng:**
+  - Trên màn hình Chi tiết / Tạo mới Booking (`view_booking_detail.html` và modal `modal_booking.html`), ô "Loại Cont / Xe" trước đây là `<select>` đơn chỉ cho chọn 1 loại duy nhất (vd: `Cont 20GP (Thường)`).
+  - Khách hàng và điều vận thực tế thường xuyên tạo booking kết hợp nhiều loại phương tiện/quy cách cont (vd: vừa 20GP vừa 40HC, hoặc cont thường kèm xe tải).
+  - Người dùng yêu cầu chuyển đổi ô này thành dạng Dropdown Checkbox cho phép tick chọn nhiều loại đồng thời.
+- **Thay đổi kỹ thuật & Giao diện:**
+  1. **Giao diện Dropdown Checkbox Multi-Select (`templates/views/view_booking_detail.html` & `templates/components/modal_booking.html`):**
+     - Nút Trigger thiết kế chuẩn GSS Design System, hiển thị tóm tắt thông minh:
+       - Chọn 1 loại: Tên đầy đủ kèm mô tả (vd: `Cont 20GP (Thường)`).
+       - Chọn 2 loại: Tên các loại cách nhau bằng dấu phẩy (vd: `Cont 20GP, Cont 40HC`).
+       - Chọn > 2 loại: Số lượng loại đã chọn (vd: `3 loại cont/xe đã chọn`).
+     - Badge nhỏ `Chọn nhiều` trên nhãn để người dùng nhận biết ngay tính năng.
+     - Panel Dropdown nổi với danh sách checkbox rõ ràng:
+       - `Cont 20GP (Thường)`
+       - `Cont 40HC (Cao 9ft6)`
+       - `Cont 45 Feet`
+       - `Cont 40GP (Thường)`
+       - `Xe Tải 15 Tấn`
+       - `Xe Tải 8 Tấn`
+       - `Xe Tải 5 Tấn`
+     - Thanh thao tác nhanh trên đầu dropdown: "Tất cả" | "Xóa hết".
+     - Tự động đóng khi bấm ra ngoài hoặc bấm "Xác nhận".
+  2. **Script Tương Thích & Đồng Bộ (`static/js/src/app/sales/booking-page/form.js` & `combobox.js`):**
+     - Hàm `initBookingContainerSizeMultiSelect()`, `toggleBookingContainerSizeDropdown()`, `onBookingContainerSizeChange()`, `selectAllBookingContainerSizes()`, `setBookingContainerSizes()`.
+     - Tích hợp hook `_bimMultiSelect` vào `setSelectValueCaseInsensitive` trong `combobox.js` để mọi lệnh gán giá trị cũ (cả đơn và đa giá trị) đều đồng bộ tức thì vào checkbox.
+     - Tự động kích hoạt lại `autoLookupBookingPrice` khi người dùng thay đổi lựa chọn.
+  3. **Backend & Cơ Sở Dữ Liệu (`apps/customers/models.py`, `apps/dispatch/gss_bookings.py`, `sales.py`):**
+     - Nâng `max_length` của `BookingOrder.container_size` từ 30 lên 150 ký tự để lưu trữ an toàn danh sách nhiều loại phương tiện nối bằng dấu phẩy.
+     - Tạo và chạy migration `0004_alter_bookingorder_container_size.py`.
+     - API báo giá `sales.py` tách lấy loại cont đầu tiên khi tra cứu để không bị lỗi chuỗi ghép.
+- **Kiểm thử tự động:**
+  - `python scripts/build_app_js.py`: Thành công từ 109 file module.
+  - `python scripts/build_css.py`: Rebuilt tailwind.css.
+  - `python scripts/qa.py verify --fast`: PASS=6/6, FAIL=0, KẾT LUẬN: ĐẠT.
+
+
 ## 2026-11-21 – Bổ Sung Cột Riêng "Tên KH" (Tên Viết Tắt) Cho Màn Hình Phân Bổ & Gán Xe và Bảng Container Hành Trình
 - **Bối cảnh & Yêu cầu người dùng:**
   - Trong Tab "Phân bổ & gán xe" (`dispatch-allocations-table`): Tên viết tắt khách hàng (như `THQ`) trước đó hiển thị lồng dòng bên dưới mã phiếu phân bổ `DD.002.BK.2611.006`.

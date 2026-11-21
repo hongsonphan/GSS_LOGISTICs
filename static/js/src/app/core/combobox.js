@@ -561,6 +561,10 @@ function cleanupTransportTypeOptions(selectEl) {
 function setSelectValueCaseInsensitive(selectEl, value, label = null) {
     if (!selectEl || value === undefined || value === null) return;
     const strVal = String(value).trim();
+    if (selectEl._bimMultiSelect && typeof selectEl._bimMultiSelect.set === 'function') {
+        selectEl._bimMultiSelect.set(strVal);
+        return;
+    }
     if (!strVal) {
         selectEl.value = '';
         if (selectEl._bimCombobox) selectEl._bimCombobox.sync();

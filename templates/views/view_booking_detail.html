@@ -166,20 +166,73 @@
                     <!-- Hàng 3 (3 Cột): Loại Cont/Xe | Số Lượng Cont | Tải Chứng Từ Nhập Khẩu Đính Kèm -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 pt-1">
                         <!-- Loại Cont / Xe (col 3) -->
-                        <div class="lg:col-span-3 sm:col-span-6">
-                            <div class="h-6 flex items-center mb-1.5">
+                        <div class="lg:col-span-3 sm:col-span-6 relative" id="wrapper-fullpage-booking-container-size">
+                            <div class="h-6 flex items-center justify-between mb-1.5">
                                 <label id="fullpage-label-booking-container-size" class="block font-bold text-slate-700 text-xs truncate">Loại Cont / Xe</label>
+                                <span class="text-[10px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">Chọn nhiều</span>
                             </div>
-                            <select id="fullpage-booking-container-size" onchange="if(typeof autoLookupBookingPrice==='function')autoLookupBookingPrice('fullpage-');" 
-                                class="w-full h-10 px-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs">
-                                <option value="20GP" selected>Cont 20GP (Thường)</option>
-                                <option value="40HC">Cont 40HC (Cao 9ft6)</option>
-                                <option value="45G1">Cont 45 Feet</option>
-                                <option value="40GP">Cont 40GP (Thường)</option>
-                                <option value="XE_TAI_15T">Xe Tải 15 Tấn</option>
-                                <option value="XE_TAI_8T">Xe Tải 8 Tấn</option>
-                                <option value="XE_TAI_5T">Xe Tải 5 Tấn</option>
-                            </select>
+                            <div class="relative">
+                                <button type="button" id="fullpage-booking-container-size-btn" onclick="toggleBookingContainerSizeDropdown('fullpage-')"
+                                    class="w-full h-10 px-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs flex items-center justify-between text-left transition-all hover:bg-white cursor-pointer shadow-2xs">
+                                    <span id="fullpage-booking-container-size-label" class="truncate">Cont 20GP (Thường)</span>
+                                    <i class="ph-bold ph-caret-down text-slate-500 text-xs ml-1 flex-shrink-0 transition-transform duration-200" id="fullpage-booking-container-size-icon"></i>
+                                </button>
+                                <!-- Dropdown Menu Checkboxes -->
+                                <div id="fullpage-booking-container-size-dropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2.5 space-y-1.5 w-full min-w-[250px]">
+                                    <div class="flex items-center justify-between px-1 pb-1.5 border-b border-slate-100 text-[11px] text-slate-500">
+                                        <span class="font-bold text-slate-700">Chọn các loại cont / xe:</span>
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" onclick="selectAllBookingContainerSizes('fullpage-', true)" class="text-teal-600 hover:text-teal-800 font-bold cursor-pointer">Tất cả</button>
+                                            <span class="text-slate-300">|</span>
+                                            <button type="button" onclick="selectAllBookingContainerSizes('fullpage-', false)" class="text-rose-500 hover:text-rose-700 font-bold cursor-pointer">Xóa hết</button>
+                                        </div>
+                                    </div>
+                                    <div class="max-h-56 overflow-y-auto space-y-1 py-0.5 custom-scrollbar">
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="20GP" checked onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Cont 20GP</span> <span class="text-slate-500 text-[11px]">(Thường)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="40HC" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Cont 40HC</span> <span class="text-slate-500 text-[11px]">(Cao 9ft6)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="45G1" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Cont 45 Feet</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="40GP" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Cont 40GP</span> <span class="text-slate-500 text-[11px]">(Thường)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="XE_TAI_15T" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Xe Tải 15 Tấn</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="XE_TAI_8T" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Xe Tải 8 Tấn</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="XE_TAI_5T" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Xe Tải 5 Tấn</span>
+                                        </label>
+                                    </div>
+                                    <div class="pt-2 border-t border-slate-100 flex justify-end">
+                                        <button type="button" onclick="closeBookingContainerSizeDropdown('fullpage-')"
+                                            class="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-lg cursor-pointer transition-colors">
+                                            Xác nhận
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="fullpage-booking-container-size" value="20GP">
+                            </div>
                         </div>
 
                         <!-- Số Lượng Cont (col 2) -->

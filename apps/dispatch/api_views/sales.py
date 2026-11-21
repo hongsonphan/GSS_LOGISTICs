@@ -154,7 +154,8 @@ class BookingPriceLookupAPIView(APIView):
         customer_param = request.GET.get('customer') or request.GET.get('customer_id') or ''
         pickup = (request.GET.get('pickup') or request.GET.get('pickup_location') or '').strip()
         delivery = (request.GET.get('delivery') or request.GET.get('delivery_location') or '').strip()
-        container_size = (request.GET.get('container_size') or '40HC').strip().upper()
+        raw_size = (request.GET.get('container_size') or '40HC').strip()
+        container_size = (raw_size.split(',')[0].strip() if raw_size else '40HC').upper()
 
         customer = resolve_customer(customer_param)
         if not customer:

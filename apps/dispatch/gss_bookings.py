@@ -17,7 +17,7 @@ BOOKING_TYPES = ['EXPORT_FCL', 'IMPORT_FCL', 'DOMESTIC']
 MAX_CONTAINERS = 500
 MAX_DOCS = 10
 _DATE_FIELDS = ('loading_date', 'dem_start_date', 'det_start_date', 'dem_expiry_override', 'det_expiry_override', 'eta', 'discharge_date', 'do_expiry')
-_TEXT_FIELDS = {'booking_number': 50, 'shipping_line': 50, 'vessel_voyage': 100, 'container_size': 30, 'commodity': 255, 'hs_code': 50,
+_TEXT_FIELDS = {'booking_number': 50, 'shipping_line': 50, 'vessel_voyage': 100, 'container_size': 150, 'commodity': 255, 'hs_code': 50,
                 'si_cutoff': 100, 'vgm_cutoff': 100, 'closing_time': 100, 'loading_time': 20, 'destination_notes': 4000,
                 'road_restrictions': 4000, 'notes': 4000, 'mbl_number': 40, 'hbl_number': 40, 'port_of_loading': 100,
                 'port_of_discharge': 100, 'supplier_name': 150}

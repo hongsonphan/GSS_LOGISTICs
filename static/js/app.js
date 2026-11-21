@@ -3206,6 +3206,10 @@ function cleanupTransportTypeOptions(selectEl) {
 function setSelectValueCaseInsensitive(selectEl, value, label = null) {
     if (!selectEl || value === undefined || value === null) return;
     const strVal = String(value).trim();
+    if (selectEl._bimMultiSelect && typeof selectEl._bimMultiSelect.set === 'function') {
+        selectEl._bimMultiSelect.set(strVal);
+        return;
+    }
     if (!strVal) {
         selectEl.value = '';
         if (selectEl._bimCombobox) selectEl._bimCombobox.sync();
@@ -23599,6 +23603,20 @@ function applyBookingFormTypeAdapters(prefix = '') {
         isReadOnly = editBtn && !editBtn.classList.contains('hidden');
     }
 
+    // Khởi tạo và đồng bộ multi-select loại cont/xe
+    if (typeof initBookingContainerSizeMultiSelect === 'function') {
+        initBookingContainerSizeMultiSelect(prefix);
+    }
+    const sizeBtn = document.getElementById(prefix + 'booking-container-size-btn');
+    if (sizeBtn) {
+        sizeBtn.disabled = isReadOnly;
+        if (isReadOnly) {
+            sizeBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        } else {
+            sizeBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+        }
+    }
+
     // Helper kiểm soát trạng thái Disable, Làm mờ và Tab navigation
     function setFieldState(wrapperId, inputIds, isDisabled, defaultValue = null) {
         const wrapper = document.getElementById(prefix + wrapperId);
@@ -23926,6 +23944,175 @@ async function autoLookupBookingPrice(prefix = 'fullpage-') {
     }
 }
 window.autoLookupBookingPrice = autoLookupBookingPrice;
+
+/**
+ * ==========================================================================
+ * Quản lý Dropdown Checkbox Chọn Nhiều Loại Cont / Xe
+ * ==========================================================================
+ */
+const BOOKING_CONTAINER_SIZE_OPTIONS = [
+    { value: '20GP', label: 'Cont 20GP', desc: '(Thường)' },
+    { value: '40HC', label: 'Cont 40HC', desc: '(Cao 9ft6)' },
+    { value: '45G1', label: 'Cont 45 Feet', desc: '' },
+    { value: '40GP', label: 'Cont 40GP', desc: '(Thường)' },
+    { value: 'XE_TAI_15T', label: 'Xe Tải 15 Tấn', desc: '' },
+    { value: 'XE_TAI_8T', label: 'Xe Tải 8 Tấn', desc: '' },
+    { value: 'XE_TAI_5T', label: 'Xe Tải 5 Tấn', desc: '' }
+];
+
+function toggleBookingContainerSizeDropdown(prefix = '') {
+    const dropdown = document.getElementById(prefix + 'booking-container-size-dropdown');
+    const icon = document.getElementById(prefix + 'booking-container-size-icon');
+    if (!dropdown) return;
+    const isHidden = dropdown.classList.contains('hidden');
+    // Đóng dropdown khác nếu đang mở
+    document.querySelectorAll('[id$="booking-container-size-dropdown"]').forEach(d => {
+        if (d !== dropdown) d.classList.add('hidden');
+    });
+    if (isHidden) {
+        dropdown.classList.remove('hidden');
+        if (icon) icon.classList.add('rotate-180');
+        // Click outside listener
+        const closeOnClickOutside = (e) => {
+            const wrapper = document.getElementById(prefix + 'wrapper-booking-container-size') || 
+                            document.getElementById('wrapper-' + prefix + 'booking-container-size');
+            if (wrapper && !wrapper.contains(e.target)) {
+                dropdown.classList.add('hidden');
+                if (icon) icon.classList.remove('rotate-180');
+                document.removeEventListener('click', closeOnClickOutside);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeOnClickOutside), 10);
+    } else {
+        dropdown.classList.add('hidden');
+        if (icon) icon.classList.remove('rotate-180');
+    }
+}
+
+function closeBookingContainerSizeDropdown(prefix = '') {
+    const dropdown = document.getElementById(prefix + 'booking-container-size-dropdown');
+    const icon = document.getElementById(prefix + 'booking-container-size-icon');
+    if (dropdown) dropdown.classList.add('hidden');
+    if (icon) icon.classList.remove('rotate-180');
+}
+
+function onBookingContainerSizeChange(prefix = '') {
+    const cbName = prefix === 'fullpage-' ? 'fullpage-cont-size-cb' : 'cont-size-cb';
+    const cbs = Array.from(document.querySelectorAll(`input[name="${cbName}"]`));
+    if (cbs.length === 0) return;
+
+    let checkedCbs = cbs.filter(cb => cb.checked);
+    
+    // Nếu bỏ chọn hết thì tự động chọn lại 20GP
+    if (checkedCbs.length === 0) {
+        const defaultCb = cbs.find(cb => cb.value === '20GP');
+        if (defaultCb) {
+            defaultCb.checked = true;
+            checkedCbs.push(defaultCb);
+        }
+    }
+
+    const selectedValues = checkedCbs.map(cb => cb.value);
+    const hiddenInput = document.getElementById(prefix + 'booking-container-size');
+    const labelEl = document.getElementById(prefix + 'booking-container-size-label');
+    const btn = document.getElementById(prefix + 'booking-container-size-btn');
+
+    // Cập nhật chuỗi nối nhau bằng dấu phẩy
+    const valStr = selectedValues.join(', ');
+    if (hiddenInput && hiddenInput.value !== valStr) {
+        hiddenInput.value = valStr;
+        hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // Hiển thị nhãn trên trigger button
+    let displayText = '';
+    if (selectedValues.length === 1) {
+        const opt = BOOKING_CONTAINER_SIZE_OPTIONS.find(o => o.value === selectedValues[0]);
+        displayText = opt ? `${opt.label} ${opt.desc}`.trim() : selectedValues[0];
+    } else if (selectedValues.length === 2) {
+        displayText = selectedValues.map(v => {
+            const opt = BOOKING_CONTAINER_SIZE_OPTIONS.find(o => o.value === v);
+            return opt ? opt.label : v;
+        }).join(', ');
+    } else {
+        displayText = `${selectedValues.length} loại cont/xe đã chọn`;
+    }
+
+    if (labelEl) labelEl.textContent = displayText;
+    if (btn) btn.title = valStr;
+
+    // Tự động kích hoạt tra cứu giá cước
+    if (prefix === 'fullpage-' && typeof autoLookupBookingPrice === 'function') {
+        autoLookupBookingPrice('fullpage-');
+    } else if (!prefix && typeof lookupBookingPrice === 'function') {
+        lookupBookingPrice();
+    }
+}
+
+function selectAllBookingContainerSizes(prefix = '', selectAll = true) {
+    const cbName = prefix === 'fullpage-' ? 'fullpage-cont-size-cb' : 'cont-size-cb';
+    const cbs = document.querySelectorAll(`input[name="${cbName}"]`);
+    cbs.forEach(cb => {
+        cb.checked = selectAll;
+    });
+    onBookingContainerSizeChange(prefix);
+}
+
+function setBookingContainerSizes(val, prefix = '') {
+    const cbName = prefix === 'fullpage-' ? 'fullpage-cont-size-cb' : 'cont-size-cb';
+    const cbs = document.querySelectorAll(`input[name="${cbName}"]`);
+    if (!cbs || cbs.length === 0) return;
+
+    let targetCodes = [];
+    if (Array.isArray(val)) {
+        targetCodes = val.map(v => String(v).trim().toUpperCase());
+    } else if (typeof val === 'string' && val.trim()) {
+        targetCodes = val.split(',').map(s => s.trim().toUpperCase());
+    } else {
+        targetCodes = ['20GP'];
+    }
+
+    cbs.forEach(cb => {
+        const vUpper = cb.value.toUpperCase();
+        cb.checked = targetCodes.some(tc => tc === vUpper || tc.includes(vUpper) || vUpper.includes(tc));
+    });
+
+    onBookingContainerSizeChange(prefix);
+}
+
+function initBookingContainerSizeMultiSelect(prefix = '') {
+    const hiddenInput = document.getElementById(prefix + 'booking-container-size');
+    if (!hiddenInput) return;
+
+    hiddenInput._bimMultiSelect = {
+        set: (v) => setBookingContainerSizes(v, prefix),
+        get: () => hiddenInput.value
+    };
+
+    // Khởi tạo trạng thái ban đầu dựa vào value hiện tại
+    const initVal = hiddenInput.value || '20GP';
+    setBookingContainerSizes(initVal, prefix);
+}
+
+window.toggleBookingContainerSizeDropdown = toggleBookingContainerSizeDropdown;
+window.closeBookingContainerSizeDropdown = closeBookingContainerSizeDropdown;
+window.onBookingContainerSizeChange = onBookingContainerSizeChange;
+window.selectAllBookingContainerSizes = selectAllBookingContainerSizes;
+window.setBookingContainerSizes = setBookingContainerSizes;
+window.initBookingContainerSizeMultiSelect = initBookingContainerSizeMultiSelect;
+
+// Tự động khởi tạo multi-select khi tải DOM
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            initBookingContainerSizeMultiSelect('fullpage-');
+            initBookingContainerSizeMultiSelect('');
+        });
+    } else {
+        initBookingContainerSizeMultiSelect('fullpage-');
+        initBookingContainerSizeMultiSelect('');
+    }
+}
 
 // ---- src/app/sales/booking-page/page.js ----
 async function openCreateBookingPage(updateHistory = true) {
