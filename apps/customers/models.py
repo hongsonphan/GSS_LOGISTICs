@@ -289,7 +289,7 @@ class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     vessel_voyage = models.CharField(max_length=100, blank=True, help_text="Tên tàu / Số chuyến")
     destination_port = models.CharField(max_length=100, blank=True, help_text="Cảng đích / Nước nhập khẩu")
     
-    container_size = models.CharField(max_length=150, default='20GP', blank=True, help_text="40HC, 20GP, 45G1, Xe tải... Hỗ trợ chọn nhiều loại")
+    container_size = models.CharField(max_length=150, default='40HC', blank=True, help_text="40HC, 20GP, 45G1, Xe tải... Hỗ trợ chọn nhiều loại")
     total_containers = models.IntegerField(default=1, help_text="Tổng số cont / chuyến cần điều")
     dispatched_containers = models.IntegerField(default=0, help_text="Số cont / chuyến đã phát lệnh")
 

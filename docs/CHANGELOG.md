@@ -3,6 +3,10 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-22 – Khôi Phục Mặc Định Loại Cont 40HC Của Booking (Sửa CI #100 Đỏ)
+- **Vấn đề:** commit `402fb2b` (chọn nhiều loại cont) đổi mặc định `BookingOrder.container_size` từ `40HC` sang `20GP`. Mọi nơi khác (nhập Excel, API, chuyến, tin nhắn nhà xe) vẫn mặc định `40HC`, nên booking tạo không kèm loại cont âm thầm thành 20GP, làm sai TEU (1 thay vì 2) và sai đơn giá. Hai test đỏ: `apps.gss.test_model4.LegAndTruckRunTests.test_legs_api` và `apps.gss.tests.PricingTests.test_auto_apply_on_completion_and_snapshot`.
+- **Xử lý:** `apps/customers/models.py` trả mặc định về `40HC` (giữ `max_length=150`, `blank=True`); thêm migration `customers/0005_restore_booking_container_size_default`. Form Booking vẫn tự chọn 20GP ở giao diện nên không đổi hành vi người dùng.
+
 ## 2026-11-21 – Nâng Cấp Ô "Loại Cont / Xe" Thành Multi-Select Checkbox (Cho Phép Chọn Nhiều Loại) & Kiểm Thử Toàn Diện
 - **Bối cảnh & Yêu cầu người dùng:**
   - Trên màn hình Chi tiết / Tạo mới Booking (`view_booking_detail.html` và modal `modal_booking.html`), ô "Loại Cont / Xe" trước đây là `<select>` đơn chỉ cho chọn 1 loại duy nhất (vd: `Cont 20GP (Thường)`).
