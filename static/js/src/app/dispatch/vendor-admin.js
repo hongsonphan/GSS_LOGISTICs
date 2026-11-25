@@ -793,7 +793,7 @@ function vaShowTokenResult(vendorName, data) {
     const tok = data.plain_token || data.issued_confirm_token || '';
     const expText = data.token_expires_at ? vaFmt(data.token_expires_at) : 'Vô thời hạn (Không bao giờ hết hạn)';
     const magic = data.magic_link || '';
-    const zaloMsg = `Kính gửi Quý đối tác vận tải ${vendorName},\nPhòng Điều Vận GSS gửi thông tin tài khoản truy cập Cổng Nhà Xe:\n- Tên đăng nhập: ${data.username}\n- Mã Token xác nhận: ${tok}\n- Hạn dùng token: ${expText}\n- Link đăng nhập nhanh (1-chạm tự điền): ${magic}\nQuý nhà xe vui lòng mở link trên để cập nhật xe/tài và theo dõi lệnh vận chuyển.\nTrân trọng!`;
+    const zaloMsg = `Kính gửi Quý đối tác vận tải ${vendorName},\nPhòng Điều Vận Giải Pháp Xanh gửi thông tin tài khoản truy cập Cổng Nhà Xe:\n- Tên đăng nhập: ${data.username}\n- Mã Token xác nhận: ${tok}\n- Hạn dùng token: ${expText}\n- Link đăng nhập nhanh (1-chạm tự điền): ${magic}\nQuý nhà xe vui lòng mở link trên để cập nhật xe/tài và theo dõi lệnh vận chuyển.\nTrân trọng!`;
 
     const body = `
         <div class="space-y-3.5 text-xs">
@@ -923,7 +923,7 @@ function vaShareAllocZalo(allocId) {
     const l = vaFindAlloc(allocId);
     if (!l) return;
     const expText = l.expires_at ? vaFmt(l.expires_at) : 'Không giới hạn';
-    const msg = `Kính gửi Quý đối tác vận tải ${l.subcontractor},\nPhòng Điều Vận GSS thông báo Lệnh điều động Booking ${l.booking_code}${l.customer ? ' (' + l.customer + ')' : ''}:\n- Số lượng: ${l.allocated_containers} cont\n- Link nhận lệnh & gán xe/tài: ${l.vendor_link || '—'}\n- Hạn link: ${expText}\nQuý nhà xe vui lòng mở link trên điện thoại hoặc máy tính để gán Đầu kéo/Moóc và Bác tài nhận lệnh.\nTrân trọng!`;
+    const msg = `Kính gửi Quý đối tác vận tải ${l.subcontractor},\nPhòng Điều Vận Giải Pháp Xanh thông báo Lệnh điều động Booking ${l.booking_code}${l.customer ? ' (' + l.customer + ')' : ''}:\n- Số lượng: ${l.allocated_containers} cont\n- Link nhận lệnh & gán xe/tài: ${l.vendor_link || '—'}\n- Hạn link: ${expText}\nQuý nhà xe vui lòng mở link trên điện thoại hoặc máy tính để gán Đầu kéo/Moóc và Bác tài nhận lệnh.\nTrân trọng!`;
     vaCopy(msg, 'Đã sao chép tin nhắn Zalo lệnh điều động cho nhà xe.');
 }
 
@@ -931,7 +931,7 @@ function vaShareDriverZalo(tripId) {
     const d = vaFindDriver(tripId);
     if (!d) return;
     const expText = d.expires_at ? vaFmt(d.expires_at) : 'Không giới hạn';
-    const msg = `LỆNH ĐIỀU ĐỘNG GSS - Bác tài: ${d.driver_name || 'Bác tài'}${d.driver_phone ? ' (' + d.driver_phone + ')' : ''}\n- Chuyến xe: ${d.trip_code} | Cont: ${d.container_number || 'Theo lệnh'}\n- Đầu kéo: ${d.plate || 'Theo lệnh'}\n- Link mở lệnh di động & cập nhật POD: ${d.link}\n- Hạn lệnh: ${expText}\nBác tài bấm link trên điện thoại khi đến cảng/kho lấy cont và giao hàng nhé!\nTrân trọng!`;
+    const msg = `LỆNH ĐIỀU ĐỘNG GIẢI PHÁP XANH - Bác tài: ${d.driver_name || 'Bác tài'}${d.driver_phone ? ' (' + d.driver_phone + ')' : ''}\n- Chuyến xe: ${d.trip_code} | Cont: ${d.container_number || 'Theo lệnh'}\n- Đầu kéo: ${d.plate || 'Theo lệnh'}\n- Link mở lệnh di động & cập nhật POD: ${d.link}\n- Hạn lệnh: ${expText}\nBác tài bấm link trên điện thoại khi đến cảng/kho lấy cont và giao hàng nhé!\nTrân trọng!`;
     vaCopy(msg, 'Đã sao chép tin nhắn Zalo điều lệnh gửi Bác tài.');
 }
 
@@ -1894,7 +1894,7 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
                                 <span>${vaEsc(v.contact_phone || v.phone || 'Chưa cấu hình')}</span>
                                 ${(v.contact_phone || v.phone) ? `<button type="button" class="text-slate-400 hover:text-teal-700 p-1 cursor-pointer" onclick="vaCopy('${vaEsc(v.contact_phone || v.phone)}', 'Đã sao chép SĐT.')" title="Sao chép SĐT"><i class="ph-bold ph-copy"></i></button>` : ''}
                             </div>
-                            <div class="text-[11px] text-slate-400 mt-1">Đường dây nóng trao đổi với Điều vận GSS</div>
+                            <div class="text-[11px] text-slate-400 mt-1">Đường dây nóng trao đổi với Điều vận Giải Pháp Xanh</div>
                         </div>
                     </div>
 
@@ -2597,7 +2597,7 @@ async function vaViewUnallocatedContainersModal(allocId) {
             <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
                 <div class="flex items-center gap-2">
                     <i class="ph-bold ph-info text-amber-700 text-sm"></i>
-                    <span>Màn hình theo dõi nội bộ của Điều Vận GSS. Khi nhà xe cập nhật xe/tài trên Cổng Nhà Xe, dữ liệu sẽ tự động đồng bộ.</span>
+                    <span>Màn hình theo dõi nội bộ của Điều Vận Giải Pháp Xanh. Khi nhà xe cập nhật xe/tài trên Cổng Nhà Xe, dữ liệu sẽ tự động đồng bộ.</span>
                 </div>
             </div>
         </div>

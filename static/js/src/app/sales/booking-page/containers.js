@@ -1730,7 +1730,7 @@ async function openWarehouseDispatchModal(bookingId = null) {
             zaloLines.push(line);
         });
         zaloLines.push(`--------------------------------`);
-        zaloLines.push(`GSS TMS Smart Logistics chúc quý khách và kho nhận hàng thuận lợi!`);
+        zaloLines.push(`Giải Pháp Xanh Logistics chúc quý khách và kho nhận hàng thuận lợi!`);
 
         if (zaloTextarea) {
             zaloTextarea.value = zaloLines.join('\n');

@@ -200,7 +200,7 @@ function printCurrentTaskSlip() {
                 <tr>
                     <td>
                         <div class="company-title">CÔNG TY TNHH CUNG ỨNG GIẢI PHÁP XANH</div>
-                        <div style="font-size: 11px; color: #64748b;">Hệ sinh thái Quản trị Vận tải & Chuỗi cung ứng GSS Logistics</div>
+                        <div style="font-size: 11px; color: #64748b;">Hệ sinh thái Quản trị Vận tải & Chuỗi cung ứng Giải Pháp Xanh Logistics</div>
                     </td>
                     <td style="text-align: right; font-size: 11px; color: #64748b;">
                         Ngày in: ${new Date().toLocaleDateString('vi-VN')}

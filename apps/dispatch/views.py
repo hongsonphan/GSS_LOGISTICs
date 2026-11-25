@@ -157,7 +157,7 @@ def logout_view(request):
 
 @never_cache
 def index_view(request, *args, **kwargs):
-    """Giao diện Quản trị Điều vận GSS Logistics (Hỗ trợ SPA Clean Semantic Routes)."""
+    """Giao diện Quản trị Điều vận Giải Pháp Xanh Logistics (Hỗ trợ SPA Clean Semantic Routes)."""
     if not request.user.is_authenticated:
         return redirect_to_login(request.get_full_path(), "/login/")
 

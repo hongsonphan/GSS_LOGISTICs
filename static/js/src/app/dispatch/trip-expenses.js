@@ -65,23 +65,23 @@ function selectExpensePayer(payerType) {
         if (btnCost) btnCost.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
-            badge.innerText = "🏢 Chi phí của GSS";
+            badge.innerText = "🏢 Chi phí của Giải Pháp Xanh";
         }
         if (guide) guide.innerHTML = "🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.";
     } else if (payerType === 'COMPANY_OBH') {
         if (btnCompanyObh) btnCompanyObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
-            badge.innerText = "↗ GSS chi hộ Khách hàng";
+            badge.innerText = "↗ Giải Pháp Xanh chi hộ Khách hàng";
         }
-        if (guide) guide.innerHTML = "↗ <strong>Công ty chi hộ:</strong> GSS ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
+        if (guide) guide.innerHTML = "↗ <strong>Công ty chi hộ:</strong> Giải Pháp Xanh ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
     } else if (payerType === 'SUB_OBH') {
         if (btnSubObh) btnSubObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-amber-600 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-heading";
             badge.innerText = "🔄 3PL chi hộ Khách hàng";
         }
-        if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ GSS hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
+        if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ Giải Pháp Xanh hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
     }
 }
 
@@ -109,23 +109,23 @@ function selectEditExpensePayer(payerType) {
         if (btnCost) btnCost.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
-            badge.innerText = "🏢 Chi phí của GSS";
+            badge.innerText = "🏢 Chi phí của Giải Pháp Xanh";
         }
         if (guide) guide.innerHTML = "🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.";
     } else if (payerType === 'COMPANY_OBH') {
         if (btnCompanyObh) btnCompanyObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
-            badge.innerText = "↗ GSS chi hộ Khách hàng";
+            badge.innerText = "↗ Giải Pháp Xanh chi hộ Khách hàng";
         }
-        if (guide) guide.innerHTML = "↗ <strong>Công ty chi hộ:</strong> GSS ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
+        if (guide) guide.innerHTML = "↗ <strong>Công ty chi hộ:</strong> Giải Pháp Xanh ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
     } else if (payerType === 'SUB_OBH') {
         if (btnSubObh) btnSubObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-amber-600 text-white cursor-pointer touch-btn";
         if (badge) {
             badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-heading";
             badge.innerText = "🔄 3PL chi hộ Khách hàng";
         }
-        if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ GSS hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
+        if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ Giải Pháp Xanh hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
     }
 }
 

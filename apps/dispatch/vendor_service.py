@@ -1479,7 +1479,7 @@ def vendor_login(request, username, password, confirm_token=''):
     if acct.locked_until and acct.locked_until > timezone.now():
         mins = max(1, int((acct.locked_until - timezone.now()).total_seconds() // 60) + 1)
         raise ValidationError(
-            f'Tài khoản đang tạm khóa do nhập sai nhiều lần. Vui lòng thử lại sau {mins} phút hoặc liên hệ Điều vận GSS.',
+            f'Tài khoản đang tạm khóa do nhập sai nhiều lần. Vui lòng thử lại sau {mins} phút hoặc liên hệ Điều vận Giải Pháp Xanh.',
             code='vendor_account_locked',
         )
 
@@ -1487,7 +1487,7 @@ def vendor_login(request, username, password, confirm_token=''):
         _record_login_failure(acct)
         if acct.locked_until and acct.locked_until > timezone.now():
             raise ValidationError(
-                'Đã nhập sai 5 lần liên tiếp. Tài khoản tạm khóa 15 phút hoặc liên hệ Điều vận GSS mở khóa.',
+                'Đã nhập sai 5 lần liên tiếp. Tài khoản tạm khóa 15 phút hoặc liên hệ Điều vận Giải Pháp Xanh mở khóa.',
                 code='vendor_account_locked',
             )
         raise ValidationError('Tên đăng nhập, mật khẩu hoặc mã Token xác nhận không đúng.')
@@ -1504,7 +1504,7 @@ def vendor_login(request, username, password, confirm_token=''):
         _record_login_failure(acct)
         if acct.locked_until and acct.locked_until > timezone.now():
             raise ValidationError(
-                'Đã nhập sai quá nhiều lần. Tài khoản tạm khóa 15 phút hoặc liên hệ Điều vận GSS mở khóa.',
+                'Đã nhập sai quá nhiều lần. Tài khoản tạm khóa 15 phút hoặc liên hệ Điều vận Giải Pháp Xanh mở khóa.',
                 code='vendor_account_locked',
             )
         raise ValidationError('Mã Token xác nhận không hợp lệ hoặc không thuộc nhà xe này.')

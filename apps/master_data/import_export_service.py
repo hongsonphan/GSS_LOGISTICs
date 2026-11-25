@@ -503,7 +503,7 @@ CATALOG_REGISTRY = {
             {'key': 'notes', 'header': 'Diễn Giải Chứng Từ / Biên Bản Chốt', 'required': False, 'type': 'str', 'sample': 'Số dư chốt đầu năm tài chính'}
         ],
         'samples': [
-            ['1111', 'Tiền mặt tại quỹ', 'Quỹ Tiền Mặt Điều Vận GSS', 'QUY_TM_CHINH', 'Nội bộ công ty', '01/01/2026', '50000000', '0', '', '', 'Số dư tiền mặt tại két văn phòng'],
+            ['1111', 'Tiền mặt tại quỹ', 'Quỹ Tiền Mặt Điều Vận Giải Pháp Xanh', 'QUY_TM_CHINH', 'Nội bộ công ty', '01/01/2026', '50000000', '0', '', '', 'Số dư tiền mặt tại két văn phòng'],
             ['1121', 'Tiền gửi Ngân hàng', 'Tài Khoản Ngân hàng GSS', 'TCB_1903', 'Ngân hàng', '01/01/2026', '250000000', '0', '19030000000001', 'Techcombank Chi nhánh Nam Sài Gòn', 'Số dư tài khoản thanh toán'],
             ['131', 'Phải thu của khách hàng', 'CÔNG TY TNHH SAMVINA LOGISTICS', 'KH_SAMVINA', 'Khách hàng', '01/01/2026', '125000000', '0', '', '', 'Công nợ cước vận tải tháng 12/2025'],
             ['331', 'Phải trả người bán (Thầu phụ)', 'Công Ty TNHH Vận Tải Hoàng Nam', 'THAU_PHU_HOANG_NAM', 'Nhà xe bạn / Thầu phụ 3PL', '01/01/2026', '0', '48000000', '', '', 'Cước thuê ngoài chưa thanh toán']

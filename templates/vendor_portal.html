@@ -228,14 +228,9 @@
   <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-4xl w-full overflow-hidden grid grid-cols-1 lg:grid-cols-12">
     <div class="lg:col-span-5 bg-gradient-to-br from-teal-800 via-teal-700 to-slate-900 text-white p-7 flex flex-col justify-between gap-6">
       <div class="space-y-4">
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center">
-            <i class="ph-bold ph-shield-check text-2xl text-teal-200"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-extrabold uppercase tracking-wider text-teal-200">GSS Smart Logistics</div>
-            <h1 class="text-lg font-black tracking-tight">Cổng Nhà Xe Đối Tác</h1>
-          </div>
+        <div class="space-y-3">
+          <img src="{% static 'images/logo_lockup.png' %}" alt="Giải Pháp Xanh Logistics" class="h-14 w-auto max-w-full object-contain object-left">
+          <h1 class="text-lg font-black tracking-tight">Cổng Nhà Xe Đối Tác</h1>
         </div>
         <p class="text-xs text-teal-100/90 leading-relaxed">
           Không gian làm việc chuyên biệt trên máy tính dành riêng cho Nhà xe thầu phụ thực hiện gán phương tiện, điều chỉnh tài xế và theo dõi hành trình đội xe của chính mình.
@@ -247,7 +242,7 @@
           <i class="ph-bold ph-lock-key text-base text-teal-200 shrink-0 mt-0.5"></i>
           <div>
             <div class="font-bold">Xác thực 3 lớp bắt buộc</div>
-            <div class="text-[11px] text-teal-100/80">Tên đăng nhập + Mật khẩu + Mã Token xác nhận do Điều vận GSS cấp.</div>
+            <div class="text-[11px] text-teal-100/80">Tên đăng nhập + Mật khẩu + Mã Token xác nhận do Điều vận Giải Pháp Xanh cấp.</div>
           </div>
         </div>
         <div class="flex items-start gap-2.5 bg-white/10 rounded-xl p-3 border border-white/10">
@@ -316,7 +311,7 @@
       </form>
 
       <div class="pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between gap-2 flex-wrap">
-        <span>Cần cấp tài khoản / quên Token xác nhận? Liên hệ Điều vận GSS.</span>
+        <span>Cần cấp tài khoản / quên Token xác nhận? Liên hệ Điều vận Giải Pháp Xanh.</span>
         <span class="font-mono">No-Storage Cookie Session</span>
       </div>
     </div>
@@ -1423,7 +1418,7 @@
           <div class="p-12 text-center text-rose-600 bg-white rounded-2xl border border-rose-200 shadow-sm space-y-3 max-w-xl mx-auto mt-10">
             <i class="ph-bold ph-warning-circle text-4xl block"></i>
             <h2 class="text-lg font-bold">Liên kết không hợp lệ hoặc đã hết hạn</h2>
-            <p class="text-xs text-slate-500">${escapeHtml(json.message || 'Vui lòng liên hệ Điều vận GSS để cấp liên kết mới hoặc đăng nhập tài khoản Portal.')}</p>
+            <p class="text-xs text-slate-500">${escapeHtml(json.message || 'Vui lòng liên hệ Điều vận Giải Pháp Xanh để cấp liên kết mới hoặc đăng nhập tài khoản Portal.')}</p>
             <a href="/vendor/" class="btn-keep-solid inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-700 text-white text-xs font-bold">Đăng Nhập Cổng Nhà Xe</a>
           </div>`;
         return;
@@ -1683,7 +1678,7 @@
           </div>
           <p class="text-xs text-slate-500 font-medium mt-2 flex items-center gap-1">
             <i class="ph-bold ph-check-circle text-indigo-600 text-xs shrink-0"></i>
-            <span>Tổng lượng container phân bổ từ Điều vận GSS</span>
+            <span>Tổng lượng container phân bổ từ Điều vận Giải Pháp Xanh</span>
           </p>
         </div>
 
@@ -2123,7 +2118,7 @@
             </span>
             <span class="text-slate-300 hidden md:inline">|</span>
             <span class="text-slate-500 text-[11px] hidden md:inline">
-              <i class="ph-bold ph-shield-check text-teal-600"></i> Hỗ trợ kiểm tra số container chuẩn ISO 6346 · GSS Smart Logistics TMS
+              <i class="ph-bold ph-shield-check text-teal-600"></i> Hỗ trợ kiểm tra số container chuẩn ISO 6346 · Giải Pháp Xanh Logistics
             </span>
           </div>
           <div class="flex items-center gap-2">
@@ -2757,7 +2752,7 @@
   function render() {
     const main = document.getElementById('main-content');
     const subName = (overview && overview.subcontractor) || (state && state.subcontractor) || (sessionInfo && sessionInfo.subcontractor) || 'Nhà Xe Đối Tác';
-    const coName = (state && state.company_name) || 'GSS SMART LOGISTICS';
+    const coName = (state && state.company_name) || 'GIẢI PHÁP XANH';
     document.getElementById('h-company').innerText = coName;
     document.getElementById('h-subcontractor').innerText = subName;
 
@@ -3391,7 +3386,7 @@
 <body>
   <div class="header">
     <div class="logo-box">
-      <h2>GSS SMART LOGISTICS TMS - PHIẾU ĐIỀU XE</h2>
+      <h2>${escapeHtml((state && state.company_name) || 'GIẢI PHÁP XANH').toUpperCase()} - PHIẾU ĐIỀU XE</h2>
       <div>Đơn hàng: <strong>${escapeHtml(b.code || '--')}</strong> · B/L: <strong>${escapeHtml(b.bl_number || b.booking_number || '--')}</strong> · Nhà xe: <strong>${escapeHtml(state.subcontractor || '')}</strong></div>
     </div>
     <div class="badge">${escapeHtml(cur.trip_code || ('LỆNH #' + lineNo))}</div>
@@ -3423,7 +3418,7 @@
   </div>
 
   <div class="footer-note">
-    * Phiếu điều xe được khởi tạo tự động từ Cổng thông tin Nhà xe (GSS Vendor Portal). Mọi vướng mắc xin liên hệ Điều vận GSS.
+    * Phiếu điều xe được khởi tạo tự động từ Cổng thông tin Nhà xe (GSS Vendor Portal). Mọi vướng mắc xin liên hệ Điều vận Giải Pháp Xanh.
   </div>
 </body>
 </html>`);

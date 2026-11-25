@@ -1491,7 +1491,7 @@ window.handleViewVcRowMissing = handleViewVcRowMissing;
 
 function remindVendorZalo(vendorName, contNumber, lddCode, token) {
     const link = token ? `${window.location.origin}/vendor/${token}/` : `${window.location.origin}/vendor/`;
-    const msg = `[GSS TMS] Kính gửi Quý Nhà Xe ${vendorName},\nLô hàng ${lddCode} có container ${contNumber} hiện đang CHỜ ĐIỀU XE.\nKính nhờ Quý Nhà Xe truy cập Cổng Khai Báo gán Đầu kéo & Tài xế để kịp tiến độ lấy cont:\n👉 ${link}\nXin cảm ơn!`;
+    const msg = `[Giải Pháp Xanh] Kính gửi Quý Nhà Xe ${vendorName},\nLô hàng ${lddCode} có container ${contNumber} hiện đang CHỜ ĐIỀU XE.\nKính nhờ Quý Nhà Xe truy cập Cổng Khai Báo gán Đầu kéo & Tài xế để kịp tiến độ lấy cont:\n👉 ${link}\nXin cảm ơn!`;
     if (navigator.clipboard) {
         navigator.clipboard.writeText(msg.replace(/\\n/g, '\n'));
         if (typeof showToast === 'function') {

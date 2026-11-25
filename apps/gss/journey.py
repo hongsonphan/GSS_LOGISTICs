@@ -173,4 +173,4 @@ def dispatch_order_html(booking, vendor=None):
             '<style>@page{size:A4 landscape;margin:12mm}body{font:12px/1.4 Arial,sans-serif;color:#000}h1{font-size:18px;margin:0 0 4px}'
             'table{width:100%;border-collapse:collapse;margin:6px 0}th,td{border:1px solid #555;padding:4px 6px;text-align:left}'
             'th{background:#eee}.kv th{width:12%}</style></head><body>' + head + summ + detail
-            + '<p style="margin-top:28px">Điều vận GSS (ký, ghi rõ họ tên)</p></body></html>')
+            + '<p style="margin-top:28px">Điều vận Giải Pháp Xanh (ký, ghi rõ họ tên)</p></body></html>')

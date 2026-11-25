@@ -330,7 +330,7 @@ async function printDispatcherFundVoucher(fundId) {
         </tr>
         <tr>
             <td class="label">Bộ phận công tác:</td>
-            <td>Phòng Điều Phối & Quản Lý Đội Xe Vận Tải GSS</td>
+            <td>Phòng Điều Phối & Quản Lý Đội Xe Vận Tải Giải Pháp Xanh</td>
         </tr>
         <tr>
             <td class="label">Mục đích cấp quỹ:</td>

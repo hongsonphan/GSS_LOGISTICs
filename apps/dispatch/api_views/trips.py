@@ -766,7 +766,7 @@ class TripDetailAPIView(APIView):
             for exp in expenses
         ]
 
-        # Phân rã 8 khoản mục chi phí chuẩn theo Bảng Kê Chi Phí GSS
+        # Phân rã 8 khoản mục chi phí chuẩn theo Bảng Kê Chi Phí Giải Pháp Xanh
         # Chỉ tính chi phí công ty thực sự chịu (loại trừ khoản chi hộ KH)
         valid_expenses = [e for e in expenses if e.status != ApprovalStatus.REJECTED]
         opex_expenses = [e for e in valid_expenses if not e.is_on_behalf_of_customer]

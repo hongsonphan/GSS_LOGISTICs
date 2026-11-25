@@ -215,7 +215,7 @@ function renderReportPrintContent(reportKey) {
     if (exportDateEl) exportDateEl.innerText = `Ngày in: ${dateStr} ${timeStr}`;
 
     const subtitleEl = document.getElementById('print-rep-period-subtitle');
-    if (subtitleEl) subtitleEl.innerText = `Kỳ báo cáo: ${periodLabel} • Đơn vị tiền tệ: VNĐ • Xuất tự động từ Hệ thống GSS Logistics`;
+    if (subtitleEl) subtitleEl.innerText = `Kỳ báo cáo: ${periodLabel} • Đơn vị tiền tệ: VNĐ • Xuất tự động từ Hệ thống Giải Pháp Xanh Logistics`;
 
     const authorEl = document.getElementById('print-rep-sign-author');
     if (authorEl) {
