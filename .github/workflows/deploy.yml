@@ -1,11 +1,11 @@
-# Triển khai GSS Logistics lên VPS RIÊNG của dự án GSS. Chỉ chạy tay (tab Actions), chỉ từ nhánh master.
+# Triển khai GSS Logistics lên VPS RIÊNG của dự án GSS. Tự động chạy sau khi CI xanh trên master, hoặc chạy tay (tab Actions).
 # Luồng: local -> GitHub (CI xanh) -> VPS. Workflow này là chặng cuối.
 #
 # Khai báo trong GitHub > Settings > Secrets and variables > Actions:
 #   Secrets:   VPS_HOST (IP VPS của GSS, KHÔNG dùng máy chủ của dự án khác), VPS_USER (vd ubuntu), VPS_SSH_KEY (khoá RIÊNG dành riêng cho GSS)
 #              VPS_HOST_KEY (khuyến nghị): dòng host key của VPS, lấy bằng `ssh-keyscan -t ed25519 <IP>` rồi đối chiếu vân tay với nhà cung cấp
 #   Variables: SITE_URL, vd https://gss.ten-mien.vn
-# Khuyến nghị: Settings > Environments > production > Required reviewers (người duyệt trước khi chạy).
+# Lưu ý: Nếu Settings > Environments > production bật Required reviewers thì sẽ chờ duyệt tay trước khi chạy lên VPS.
 #
 # Bảo vệ của workflow: chỉ master · CI (test + secrets) của ĐÚNG commit phải xanh · triển khai đúng commit đó (không "master mới nhất")
 #   · chỉ fast-forward (không ghi đè) · VPS có file sửa tay thì dừng · khoá SSH xoá sau khi chạy.
@@ -14,6 +14,10 @@ name: Deploy VPS
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [master]
 
 permissions:
   contents: read
@@ -25,7 +29,9 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master')
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 30
@@ -43,7 +49,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
         run: |
           python3 - <<'PY'
           import json, os, sys, urllib.request
@@ -67,7 +73,7 @@ jobs:
           USER: ${{ secrets.VPS_USER }}
           KEY: ${{ secrets.VPS_SSH_KEY }}
           HOST_KEY: ${{ secrets.VPS_HOST_KEY }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
