@@ -38,6 +38,49 @@ def clean_str(s):
         return ''
     return re.sub(r'\s+', ' ', str(s)).strip().upper()
 
+
+def archive_deleted_codes(model_cls, label):
+    """Giải phóng mã 001..00n từ các bản ghi đã xóa mềm để bản ghi đang dùng bắt đầu từ 001."""
+    global total_changes
+    for obj in model_cls.all_objects.filter(is_deleted=True).order_by('id'):
+        if obj.code and not obj.code.startswith('DEL-'):
+            new_code = f"DEL-{obj.id}-{obj.code}"[:50]
+            print(f"  [{label} #{obj.id} (đã xóa)] Mã: '{obj.code}' ➔ '{new_code}'")
+            total_changes += 1
+            if not DRY_RUN:
+                model_cls.all_objects.filter(pk=obj.pk).update(code=new_code)
+
+
+def resequence_active(items, label, prefix, name_field='name', short_field=None):
+    """Đánh số lại các bản ghi đang hoạt động từ 001 -> 00n, an toàn với UniqueConstraint."""
+    global total_changes
+    pending = []
+    for seq, obj in enumerate(items, 1):
+        exp_code = f"{prefix}{seq:03d}"
+        exp_name = clean_str(getattr(obj, name_field))
+        exp_short = clean_str(getattr(obj, short_field)) if short_field else None
+        diffs = []
+        if obj.code != exp_code:
+            diffs.append(f"Mã: '{obj.code}' ➔ '{exp_code}'")
+        if getattr(obj, name_field) != exp_name:
+            diffs.append(f"Tên: '{getattr(obj, name_field)}' ➔ '{exp_name}'")
+        if short_field and getattr(obj, short_field) != exp_short:
+            diffs.append(f"Tên VT: '{getattr(obj, short_field)}' ➔ '{exp_short}'")
+        if diffs:
+            print(f"  [{label} #{obj.id}] " + " | ".join(diffs))
+            total_changes += 1
+            pending.append((obj, exp_code, exp_name, exp_short))
+    if not DRY_RUN and pending:
+        with transaction.atomic():
+            for obj, _, _, _ in pending:
+                obj.__class__.all_objects.filter(pk=obj.pk).update(code=f"TMP-{obj.pk}")
+            for obj, exp_code, exp_name, exp_short in pending:
+                obj.code = exp_code
+                setattr(obj, name_field, exp_name)
+                if short_field:
+                    setattr(obj, short_field, exp_short)
+                obj.save()
+
 # ---------------------------------------------------------
 # 1. KHÁCH HÀNG (CUSTOMER / PARTY is_customer=True)
 # ---------------------------------------------------------
@@ -52,60 +95,16 @@ for mst, dupes in tax_map.items():
     if len(dupes) > 1:
         print(f"  [CẢNH BÁO TRÙNG MST] MST {mst} xuất hiện trên {len(dupes)} khách hàng: {[c.id for c in dupes]}")
 
-customers = Customer.all_objects.all().order_by('id')
-cus_seq = 1
-for c in customers:
-    expected_code = f"CUS{cus_seq:03d}"
-    expected_name = clean_str(c.name)
-    expected_short = clean_str(c.short_name)
-    
-    code_diff = (c.code != expected_code)
-    name_diff = (c.name != expected_name)
-    short_diff = (c.short_name != expected_short)
-    
-    if code_diff or name_diff or short_diff:
-        print(f"  [Customer #{c.id}]")
-        if code_diff:
-            print(f"    - Mã: '{c.code}' ➔ '{expected_code}'")
-        if name_diff:
-            print(f"    - Tên: '{c.name}' ➔ '{expected_name}'")
-        if short_diff:
-            print(f"    - Tên VT: '{c.short_name}' ➔ '{expected_short}'")
-        total_changes += 1
-        if not DRY_RUN:
-            c.code = expected_code
-            c.name = expected_name
-            c.short_name = expected_short
-            c.save()
-    cus_seq += 1
+archive_deleted_codes(Customer, 'Customer')
+resequence_active(Customer.objects.all().order_by('id'), 'Customer', 'CUS', name_field='name', short_field='short_name')
 
 # ---------------------------------------------------------
 # 2. MẠNG LƯỚI ĐỊA ĐIỂM (LOCATION)
 # ---------------------------------------------------------
 print("\n>>> 2. RÀ SOÁT MẠNG LƯỚI ĐỊA ĐIỂM (LOCATION):")
-# Chuẩn hóa theo từng loại địa điểm
+archive_deleted_codes(Location, 'Location')
 for loc_type, prefix in Location.PREFIX_MAP.items():
-    locs = Location.all_objects.filter(location_type=loc_type).order_by('id')
-    seq = 1
-    for loc in locs:
-        expected_code = f"{prefix}{seq:03d}"
-        expected_name = clean_str(loc.name)
-        
-        code_diff = (loc.code != expected_code)
-        name_diff = (loc.name != expected_name)
-        
-        if code_diff or name_diff:
-            print(f"  [Location #{loc.id} - {loc_type}]")
-            if code_diff:
-                print(f"    - Mã: '{loc.code}' ➔ '{expected_code}'")
-            if name_diff:
-                print(f"    - Tên: '{loc.name}' ➔ '{expected_name}'")
-            total_changes += 1
-            if not DRY_RUN:
-                loc.code = expected_code
-                loc.name = expected_name
-                loc.save()
-        seq += 1
+    resequence_active(Location.objects.filter(location_type=loc_type).order_by('id'), f'Location-{loc_type}', prefix)
 
 # ---------------------------------------------------------
 # 3. ĐỐI TÁC, NHÀ XE & NHÀ CUNG CẤP (SUBCONTRACTOR & SUPPLIER)
@@ -116,80 +115,22 @@ PARTNER_PREFIX_MAP = {
     'GARAGE': 'GAR',
     'SUPPLIER': 'SPL',
 }
-# Group by partner_type
+archive_deleted_codes(Subcontractor, 'Subcontractor')
 for ptype, prefix in PARTNER_PREFIX_MAP.items():
-    scs = Subcontractor.all_objects.filter(partner_type=ptype).order_by('id')
-    seq = 1
-    for sc in scs:
-        expected_code = f"{prefix}{seq:03d}"
-        expected_name = clean_str(sc.name)
-        expected_short = clean_str(sc.short_name)
-        
-        code_diff = (sc.code != expected_code)
-        name_diff = (sc.name != expected_name)
-        short_diff = (sc.short_name != expected_short)
-        
-        if code_diff or name_diff or short_diff:
-            print(f"  [Subcontractor #{sc.id} - {ptype}]")
-            if code_diff:
-                print(f"    - Mã: '{sc.code}' ➔ '{expected_code}'")
-            if name_diff:
-                print(f"    - Tên: '{sc.name}' ➔ '{expected_name}'")
-            if short_diff:
-                print(f"    - Tên VT: '{sc.short_name}' ➔ '{expected_short}'")
-            total_changes += 1
-            if not DRY_RUN:
-                sc.code = expected_code
-                sc.name = expected_name
-                sc.short_name = expected_short
-                sc.save()
-        seq += 1
+    resequence_active(
+        Subcontractor.objects.filter(partner_type=ptype).order_by('id'),
+        f'Subcontractor-{ptype}', prefix, name_field='name', short_field='short_name'
+    )
 
-# Rà soát Nhà cung cấp của khách hàng / Shipper (SHP)
-suppliers = Supplier.all_objects.all().order_by('id')
-shp_seq = 1
-for spl in suppliers:
-    expected_code = f"SHP{shp_seq:03d}"
-    expected_name = clean_str(spl.name)
-    if spl.code != expected_code or spl.name != expected_name:
-        print(f"  [Shipper #{spl.id}] Mã: '{spl.code}' ➔ '{expected_code}' | Tên: '{spl.name}' ➔ '{expected_name}'")
-        total_changes += 1
-        if not DRY_RUN:
-            spl.code = expected_code
-            spl.name = expected_name
-            spl.save()
-    shp_seq += 1
+archive_deleted_codes(Supplier, 'Shipper')
+resequence_active(Supplier.objects.all().order_by('id'), 'Shipper', 'SHP', name_field='name', short_field='short_name')
 
 # ---------------------------------------------------------
 # 4. NHÂN SỰ & TÀI XẾ (EMPLOYEE)
 # ---------------------------------------------------------
 print("\n>>> 4. RÀ SOÁT NHÂN SỰ & TÀI XẾ (EMPLOYEE):")
-employees = Employee.all_objects.all().order_by('id')
-emp_seq = 1
-for emp in employees:
-    expected_code = f"EMP{emp_seq:03d}"
-    expected_name = clean_str(emp.full_name)
-    expected_nick = clean_str(emp.nickname)
-    
-    code_diff = (emp.code != expected_code)
-    name_diff = (emp.full_name != expected_name)
-    nick_diff = (emp.nickname != expected_nick)
-    
-    if code_diff or name_diff or nick_diff:
-        print(f"  [Employee #{emp.id} - {emp.role}]")
-        if code_diff:
-            print(f"    - Mã: '{emp.code}' ➔ '{expected_code}'")
-        if name_diff:
-            print(f"    - Họ tên: '{emp.full_name}' ➔ '{expected_name}'")
-        if nick_diff:
-            print(f"    - Biệt danh: '{emp.nickname}' ➔ '{expected_nick}'")
-        total_changes += 1
-        if not DRY_RUN:
-            emp.code = expected_code
-            emp.full_name = expected_name
-            emp.nickname = expected_nick
-            emp.save()
-    emp_seq += 1
+archive_deleted_codes(Employee, 'Employee')
+resequence_active(Employee.objects.all().order_by('id'), 'Employee', 'EMP', name_field='full_name', short_field='nickname')
 
 # ---------------------------------------------------------
 # 5. XE ĐẦU KÉO & RƠ-MOÓC (VEHICLE & TRAILER) & CHUYẾN XE
