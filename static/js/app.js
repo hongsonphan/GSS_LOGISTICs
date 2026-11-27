@@ -19942,6 +19942,29 @@ window.confirmDispatcherMilestone = async function(step) {
 // ---- src/app/sales/sales-lists.js ----
 let currentSalesSubTab = 'quotations';
 
+function renderTableDateTimeCell(dateStr, timeStr = '') {
+    const raw = String(dateStr || '').trim();
+    if (!raw || raw === '-') {
+        return `<span class="text-slate-400 text-sm font-medium">-</span>`;
+    }
+    let datePart = raw;
+    let timePart = timeStr ? formatTimeString(timeStr) : '';
+    if (!timePart && raw.includes(' ')) {
+        const parts = raw.split(/\s+/);
+        datePart = parts[0];
+        timePart = parts[1] ? formatTimeString(parts[1]) : '';
+    }
+    return `
+        <div class="flex flex-col">
+            <p class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                <i class="ph-bold ph-calendar-blank text-slate-400 text-xs shrink-0"></i>
+                <span>${escapeHtml(datePart)}</span>
+            </p>
+            ${timePart ? `<p class="text-xs text-slate-500 font-medium mt-0.5 pl-4">${escapeHtml(timePart)}</p>` : ''}
+        </div>
+    `;
+}
+
 function switchSalesSubTab(tabName) {
     currentSalesSubTab = tabName;
     const tabQuotesBtn = document.getElementById('tab-btn-quotations');
@@ -20298,13 +20321,7 @@ function renderBookingsTable(bookings) {
                 </div>
             </td>
             <td data-col-key="loading_date" class="p-3.5 whitespace-nowrap">
-                <div class="flex flex-col">
-                    <p class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                        <i class="ph-bold ph-calendar-blank text-slate-400 text-xs shrink-0"></i>
-                        <span>${b.loading_date}</span>
-                    </p>
-                    ${b.loading_time ? `<p class="text-xs text-slate-500 font-medium mt-0.5 pl-4">${formatTimeString(b.loading_time)}</p>` : ''}
-                </div>
+                ${renderTableDateTimeCell(b.loading_date, b.loading_time)}
             </td>
             <td data-col-key="customer_service" class="p-3.5">
                 <p class="font-bold text-slate-900 text-sm truncate max-w-[200px]" title="${escapeHtml(b.customer)}">${escapeHtml(b.customer)}</p>
@@ -20378,8 +20395,8 @@ function renderBookingsTable(bookings) {
             <td data-col-key="si_cutoff" class="p-3.5 text-xs font-mono text-rose-600 whitespace-nowrap" style="display:none">
                 ${escapeHtml(b.si_cutoff || '-')}
             </td>
-            <td data-col-key="created_at" class="p-3.5 text-xs font-mono text-slate-500 whitespace-nowrap" style="display:none">
-                ${escapeHtml(b.created_at || b.loading_date || '-')}
+            <td data-col-key="created_at" class="p-3.5 whitespace-nowrap" style="display:none">
+                ${renderTableDateTimeCell(b.created_at || b.loading_date)}
             </td>
             <td data-col-key="actions" class="p-3.5 text-center">
                 <div class="inline-flex items-center gap-1.5 justify-center">
@@ -20918,7 +20935,7 @@ function renderQuotationsTable(quotations) {
                     ${methodBadge ? `<div class="mt-0.5">${methodBadge}</div>` : ''}
                 </div>
             </td>
-            <td data-col-key="created_at" class="p-3.5 text-center whitespace-nowrap text-xs font-semibold text-slate-700">${escapeHtml(s.created_at || '-')}</td>
+            <td data-col-key="created_at" class="p-3.5 whitespace-nowrap">${renderTableDateTimeCell(s.created_at)}</td>
             <td data-col-key="customer" class="p-3.5 font-bold text-slate-900 text-sm">${escapeHtml(s.customer)}</td>
             <td data-col-key="route" class="p-3.5 font-medium text-slate-700 text-[13px]">${routeDisplay}</td>
             <td data-col-key="unit_price" class="p-3.5 font-semibold text-slate-700 tabular-nums text-sm text-right">${new Intl.NumberFormat('vi-VN').format(s.unit_price)} đ</td>

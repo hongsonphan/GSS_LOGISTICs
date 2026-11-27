@@ -100,6 +100,9 @@ Nhãn danh mục/tiêu đề KPI/header bảng: `uppercase tracking-wider`.
 - Class `tabular-nums`; ô nhập tiền dùng `.input-number-vn font-mono font-bold text-teal-800`, tự format khi gõ.
 - Số/tiền trong bảng **canh phải**. Đơn vị (`VNĐ`/`km`/`kg`) đặt cố định trong ô bên phải `text-xs font-bold text-slate-400`.
 - Giờ dùng định dạng 24h; có nút giờ nhanh (08:00, 13:00, 17:00, 23:59) dưới ô ngày giờ.
+- **Đồng nhất cột Ngày / Giờ trong bảng:** các cột dữ liệu cùng loại (như *Ngày tạo đơn*, *Lịch đóng*, *Ngày tạo*…) bắt buộc dùng chung một kiểu font, cỡ chữ và bố cục 2 dòng:
+  - Dòng 1 (Ngày `dd/mm/yyyy`): `font-bold text-slate-900 text-sm flex items-center gap-1.5` kèm icon `ph-bold ph-calendar-blank text-slate-400 text-xs shrink-0`.
+  - Dòng 2 (Giờ `HH:MM`, nếu có): `text-xs text-slate-500 font-medium mt-0.5 pl-4`.
 - Tên viết tắt khách hàng hiển thị và lưu **IN HOA**.
 
 ### 2.5 Hình khối
