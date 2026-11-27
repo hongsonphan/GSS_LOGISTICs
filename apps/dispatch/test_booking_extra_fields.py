@@ -18,7 +18,7 @@ User = get_user_model()
 
 class BookingExtraFieldsTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user('sale_x', password='Pw-Test-12345')
+        self.user = User.objects.create_user('sale_x', password='password123')
         Employee.objects.create(user=self.user, code='SALEX', full_name='Sale X', phone_number='0933000001', role=EmployeeRole.DIRECTOR)
         self.api = APIClient()
         self.api.force_authenticate(self.user)
@@ -103,7 +103,7 @@ class BookingExtraFieldsTests(TestCase):
                                         invoice_no='INV-A', company=get_default_company())
         CustomsDeclarationRef.objects.create(booking=b, number='308000000001', company=b.company)
         other = Company.objects.create(code='B_EXTRA', name='Công ty B')
-        boss_b = User.objects.create_user('boss_b_extra', password='Pw-Test-12345')
+        boss_b = User.objects.create_user('boss_b_extra', password='password123')
         Employee.objects.create(user=boss_b, code='GDBX', full_name='GĐ B', phone_number='0933000002', role=EmployeeRole.DIRECTOR, company=other)
         api_b = APIClient()
         api_b.force_authenticate(boss_b)
