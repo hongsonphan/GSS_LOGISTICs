@@ -3,12 +3,153 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-27 – Khắc Phục Lỗi Hiển Thị Đơn Hàng Booking Mới Tạo Trên Màn Hình Sales & Shipments
+- **Bối cảnh & Vấn đề:**
+  - Người dùng tạo booking mới (mã `BK.2611.008`, số B/L `ZIMUIAH993543` của khách hàng `LỘC THIÊN PHÚ`, ngày đóng hàng `01/12/2026`).
+  - Đơn hàng xuất hiện đầy đủ bên màn hình **Điều vận & Vendor** (tab Lệnh điều độ), nhưng lại **không thấy** bên màn hình **Sales & Shipments** (Đơn đặt hàng/Shipments).
+- **Nguyên nhân gốc rễ:**
+  - Màn hình Sales & Shipments mặc định chọn kỳ thời gian là **"Kỳ: Tháng Này"** (`this_month`, từ 01/11/2026 đến 30/11/2026).
+  - Backend API `/api/sales/` (`SalesAPIView.get`) áp dụng điều kiện lọc theo `loading_date` và chỉ fallback về `created_at` khi `loading_date is null`. Khi đơn hàng có ngày đóng hàng sang đầu tháng sau (`2026-12-01`), câu truy vấn `loading_date <= 2026-11-30` trả về False, loại bỏ đơn hàng khỏi danh sách trả về dù đơn được tạo ngay trong tháng này (ngày 27/11/2026) và đang ở trạng thái `PENDING_DISPATCH` (chờ điều xe).
+  - Trong khi đó, phân hệ Điều vận gọi API `/api/bookings/active/?include_completed=1` lấy toàn bộ booking hoạt động mà không lọc chặn theo `loading_date` của kỳ, dẫn đến sự bất đồng bộ hiển thị giữa hai màn hình.
+- **Giải pháp xử lý:**
+  - Cập nhật logic lọc booking trong `SalesAPIView`: Mở rộng điều kiện lọc theo kỳ thời gian thành:
+    1. Đơn hàng có ngày đóng hàng trong kỳ (`loading_date` trong `[fd, td]`), HOẶC
+    2. Đơn hàng được tiếp nhận / tạo trong kỳ (`created_at__date` trong `[fd, td]`), HOẶC
+    3. Đơn hàng đang ở trạng thái hoạt động chưa hoàn tất (`PENDING_DISPATCH` hoặc `PARTIALLY_DISPATCHED`).
+  - Đảm bảo mọi đơn hàng mới tạo và các đơn đang chờ điều vận luôn luôn hiển thị trực quan và thống nhất trên cả 2 màn hình Sales & Shipments và Điều vận & Vendor.
+
 ## 2026-11-22 – Khôi Phục Mặc Định Loại Cont 40HC Của Booking (Sửa CI #100 Đỏ)
 - **Vấn đề:** commit `402fb2b` (chọn nhiều loại cont) đổi mặc định `BookingOrder.container_size` từ `40HC` sang `20GP`. Mọi nơi khác (nhập Excel, API, chuyến, tin nhắn nhà xe) vẫn mặc định `40HC`, nên booking tạo không kèm loại cont âm thầm thành 20GP, làm sai TEU (1 thay vì 2) và sai đơn giá. Hai test đỏ: `apps.gss.test_model4.LegAndTruckRunTests.test_legs_api` và `apps.gss.tests.PricingTests.test_auto_apply_on_completion_and_snapshot`.
 - **Xử lý:** `apps/customers/models.py` trả mặc định về `40HC` (giữ `max_length=150`, `blank=True`); thêm migration `customers/0005_restore_booking_container_size_default`. Form Booking vẫn tự chọn 20GP ở giao diện nên không đổi hành vi người dùng.
 
 ## 2026-11-21 – Nâng Cấp Ô "Loại Cont / Xe" Thành Multi-Select Checkbox (Cho Phép Chọn Nhiều Loại) & Kiểm Thử Toàn Diện
+## 2026-11-27 (Phiên 2) – Tinh Chỉnh Form Booking: Bỏ Tên Tàu, Chuẩn Hóa Dropdown Quy Cách Cont Theo Danh Mục & Cho Phép Nhập Sau Đơn Giá/Lộ Trình
+- **Bỏ trường Tên Tàu & Chuyến, giữ Hãng Tàu:**
+  - Trên màn hình Chi tiết / Tạo mới Đơn Hàng Booking (`templates/views/view_booking_detail.html`): Loại bỏ ô chọn "Tên Tàu & Chuyến (vessel/voy)", giữ lại "Hãng Tàu", tái cơ cấu Hàng 2 thành 4 cột đều nhau (`lg:col-span-3`: Nhà Cung Cấp, Hãng Tàu, Cảng Xuất POL, Cảng Nhận POD).
+  - Trên Modal Booking nhanh (`templates/components/modal_booking.html`): Loại bỏ ô "Tàu / Chuyến", chia đều Hàng 2 thành 2 cột cân xứng 6-6 (Hãng Tàu & Loại Phương Tiện / Cont).
+  - Giữ lại input ẩn (`input type="hidden" id="...booking-vessel"`) để bảo toàn tương thích ngược cho backend và JS mà không làm gãy luồng xử lý.
+- **Chuẩn hóa Multi-Select "Loại Cont / Xe" theo đúng Danh mục CSDL:**
+  - Loại bỏ danh sách 7 loại hardcoded (trong đó có Xe tải 15T, 8T, 5T không thuộc danh mục).
+  - Thay thế bằng đúng 10 loại Container chuẩn ISO từ Danh mục "Quy cách Cont & Xe" (`master_data.ContainerType`): `20GP`, `40GP`, `40HC`, `45HQ`, `20RF`, `40RF`, `20FR`, `40FR`, `20OT`, `40OT`.
+  - Bổ sung hàm `populateBookingContainerSizeOptions()` nạp động tự động từ API `/api/master-data/form-options/` (`container_types`) và `renderBookingContainerSizeDropdownList()` đồng bộ giữa modal và fullpage view.
+- **Mở khóa cho phép nhập sau (Bỏ dấu `*` bắt buộc):**
+  - Đơn Giá Cước Vận Chuyển: Bỏ dấu `*` và thuộc tính `required`, cho phép người dùng lưu đơn booking trước khi có báo giá chốt.
+  - Điểm 2 (Kho Rút Hàng / Đóng Hàng) & Điểm 3 (Depot Hạ Rỗng / Trả Cont): Bỏ dấu `*` và ràng buộc `required`, cho phép tiếp nhận đơn hàng trước khi khách hàng chỉ định kho hoặc depot trả cont.
+- **Biên dịch & Kiểm thử:**
+  - Rebuild `static/js/app.js` và `static/css/tailwind.css`.
+  - Kiểm thử `scripts/qa.py verify`: Đạt 7/7 bước PASS 100% (230 test cases).
+
+
+- **Mục tiêu & Thực thi:**
+  - Xây dựng công cụ chuyên dụng [scripts/standardize_existing_data.py](file:///e:/Bim_Logisstic_GSS/scripts/standardize_existing_data.py) hỗ trợ hai chế độ: `--dry-run` (kiểm tra an toàn) và `--apply` (thực thi ghi DB).
+  - Rà soát toàn bộ các bảng Master Data, Fleet và Dispatch trên CSDL thực tế (`gss_logistics_db`), sửa đổi toàn bộ các mã cũ và dữ liệu chưa đạt chuẩn:
+- **Chi tiết kết quả chuẩn hóa:**
+  1. **Khách hàng (Customer):**
+     - Party/Customer `#1`: Mã cũ `DEMO-KH1` ➔ Chuẩn hóa thành `CUS001`.
+     - Party/Customer `#5`: Mã cũ `DN-EXP-01` ➔ Chuẩn hóa thành `CUS002`; Tên `Công Ty Xuất Nhập Khẩu Đắk Nông XNK` ➔ `CÔNG TY XUẤT NHẬP KHẨU ĐẮK NÔNG XNK`; Tên VT `Đắk Nông XNK` ➔ `ĐẮK NÔNG XNK`.
+  2. **Mạng lưới Địa điểm (Location):**
+     - Location `#1` (PORT): Mã cũ `DEMO-KHO` ➔ Chuẩn hóa thành `PRT001`.
+     - Location `#2` (PORT): Mã cũ `DEMO-KHO2` ➔ Chuẩn hóa thành `PRT002`.
+     - Location `#3` (WAREHOUSE): Mã cũ `AB` ➔ Chuẩn hóa thành `WHS001`; Tên `abx  cty a` ➔ `ABX CTY A`.
+     - Location `#4` (WAREHOUSE): Mã cũ `XAI` ➔ Chuẩn hóa thành `WHS002`.
+  3. **Thầu phụ & Nhà xe (Subcontractor):**
+     - Toàn bộ danh mục 5 nhà xe (`3PL001` - `3PL005`) được chuẩn hóa tên và tên viết tắt sang 100% IN HOA (`CÔNG TY VẬN TẢI HOÀNG NAM`, `NHÀ XE TÂY NGUYÊN EXPRESS`, `VẬN TẢI THÀNH ĐẠT`, `NHÀ XE HOÀNG LONG`, `NHÀ XE THÀNH ĐẠT`).
+  4. **Biển số xe (Vehicle, Trailer & Chuyến xe):**
+     - Chuẩn hóa theo Thông tư 24/2023/TT-BCA:
+       - Xe đầu kéo: `51C-12345` ➔ `51C-123.45`, `52H12356` ➔ `52H-123.56`, `59C76865` ➔ `59C-768.65`.
+       - Rơ-moóc trên chuyến xe: `51R98765` ➔ `51R-987.65`, `59R09899` ➔ `59R-098.99`.
+  5. **Mã Chuyến xe (DispatchTrip):**
+     - Chuyến `#15` từng bị gán mã `DV.2611.002` được điều chỉnh về chuẩn `VC.2611.002` (bảo tồn nguyên vẹn quy tắc chuỗi 5 tầng GSS: `BG` -> `BK` -> `DD` -> `VC`).
+- **Nghiệm thu sau chuẩn hóa:**
+  - Chạy lại rà soát dry-run: 0 bản ghi lệch chuẩn (100% dữ liệu đạt chuẩn).
+  - Kiểm thử `scripts/qa.py verify`: 7/7 bước PASS 100% (230 test cases đạt).
+
+## 2026-11-26 (Phiên 2) – Rà Soát Toàn Diện Codebase, Thiết Lập Kiến Trúc Sub-Agent Tuần Tự (5 Quality Gates) & Chuẩn Hóa Bảng ERP
+- **Bối cảnh & Yêu cầu:**
+  - Rà soát toàn diện codebase, cấu trúc dữ liệu và hệ thống tài liệu docs của GSS TMS để chuẩn bị cho chu kỳ refactor toàn diện.
+  - Xây dựng và kiểm thử thực chiến hệ thống Sub-Agent chuyên trách vận hành tuần tự qua 5 Cổng Chất Lượng (Quality Gates) chuẩn quốc tế.
+- **Chi tiết các thành phần đã triển khai & khắc phục theo kết quả Sub-Agents:**
+  1. **Khởi chạy & Kiểm thử Thực chiến 3 Sub-Agents Chuyên trách:**
+     - `gss-db-auditor` (Cổng 1): Rà soát cấu trúc models, ràng buộc toàn vẹn và soft-delete.
+     - `gss-uiux-auditor` (Cổng 3): Rà soát giao diện, thẻ HTML, Fitts's Law và chuẩn bảng ERP phẳng.
+     - `gss-security-auditor` (Cổng 4): Quét IDOR, an ninh API và cách ly đa doanh nghiệp (RLS).
+  2. **Khắc phục lỗi Cổng 1 (Database & Schema Integrity):**
+     - Bỏ `unique=True` toàn bảng trên `Statement.code`, `DeliveryNote.code`, `TruckRun.code`; chuyển sang `UniqueConstraint` scoped theo `['company', 'code']` với điều kiện `condition=Q(is_deleted=False)`.
+     - Kế thừa `PublicIdModel` (UUIDv7) cho `Statement`, `DeliveryNote`, `CostClaim` để bảo vệ chống vét cạn ID số nguyên.
+     - Bổ sung composite index `(trip, side)` trên `JobCharge` tối ưu hóa đối soát chi phí.
+     - Sinh migration sạch `apps/gss/migrations/0004_remove_routetemplate_uniq_route_template_code_and_more.py`.
+  3. **Khắc phục lỗi Cổng 4 (Security & Multi-Tenancy):**
+     - Vá lỗ hổng IDOR trên API kiện hàng (`GssPackageDetailAPIView`, `GssPackageScanAPIView`): bắt buộc xác thực `trip__company=request.company`.
+     - Vá rò rỉ dữ liệu chéo Tenant trên quản lý mẫu in POD (`GssPodTemplatesAPIView`, `GssCustomerPodTemplateAPIView`): lọc chặt chẽ `company=request.company`.
+     - Gắn chặt lọc tenant vào hàm tiện ích `get_trip(code, request)`.
+  4. **Khắc phục lỗi Cổng 3 (UI/UX & Field Usability):**
+     - Cắt bỏ hoàn toàn 537 dòng code trùng lặp của cụm Modal (từ dòng 1481 đến 2019) trong `templates/views/view_trip_detail.html`.
+     - Sửa toàn bộ lỗi cú pháp typo `</div>>` thành `</div>`. Cân bằng hoàn hảo 285 thẻ mở / 285 thẻ đóng.
+     - Đổi badge bo tròn `rounded-full` trong ô `<td>` tại `trip-cost-sheet.js` sang `rounded-md` phẳng theo chuẩn ERP.
+  5. **Biên dịch & Kiểm thử Toàn diện (Verify Gate):**
+     - Rebuild sạch sẽ `static/js/app.js` và `static/css/tailwind.css`.
+     - Chạy `python scripts/qa.py verify` với toàn bộ test suite trên Postgres QA (cổng 5438): **PASS 7/7 bước, 0 lỗi!**
+
+## 2026-11-26 – Chuẩn Hóa Dữ Liệu, Kiến Trúc Sinh Mã Tự Động & Smart Input Theo Chuẩn BIM LOGISTICS
+- **Bối cảnh & Mục tiêu:**
+  - Áp dụng triệt để "QUY CHUẨN CHUẨN HÓA DỮ LIỆU & KIẾN TRÚC SINH MÃ TỰ ĐỘNG" từ hệ thống BIM LOGISTICS vào dự án GSS TMS.
+  - Phân tích và kết hợp hoàn hảo với quy tắc nghiệp vụ cốt lõi của GSS: bảo tồn nguyên vẹn chuỗi 5 tầng mã điều vận GSS (`BG` -> `BK` -> `DD.[Số Booking]` -> `DD.STT.[Số Booking]` -> `VC.STT.[Số Booking]`), tuyệt đối không thay thế `VC` thành `DV`.
+  - Khóa chặt nhập tay mã trên giao diện, áp dụng cơ chế Backend Zero-Trust sinh mã tuần tự tự động.
+  - Hỗ trợ đổi phân loại Master Data (Phương án 1): Giữ nguyên khóa ngoại Surrogate Key `id`, sinh mã mới qua API `next-code` và cảnh báo người dùng.
+  - Chuẩn hóa định dạng biển số xe quốc gia (Thông tư 24/2023/TT-BCA) với Smart Input UX.
+  - Tự động chuyển đổi 100% IN HOA (UPPERCASE) và cắt khoảng trắng thừa cho tên pháp nhân, tên địa điểm, họ tên nhân sự và biển số xe.
+  - Thống nhất các mã chứng từ kế toán/tác nghiệp: `PT/PC.YYMM.xxx`, `TUNV/TUTX/TU3PL/TUKH.YYMM.xxx`, `QTKH/QTTX/QTDV/QT3PL.YYMM.xxx`, `TK.YYMM.xxx`.
+- **Chi tiết các thành phần đã triển khai:**
+  1. **Master Data & Models (`apps/master_data/models.py`, `apps/customers/models.py`, `apps/personnel/models.py`, `apps/fleet/models.py`):**
+     - `Location`: Bổ sung `PREFIX_MAP` và hàm sinh mã `generate_next_code(location_type)` theo tiền tố `PRT`, `ICD`, `DPT`, `PKG`, `WHS`. `save()` tự động uppercase `name`.
+     - `Party` & `Customer`: Sinh mã `CUS001`, `CUS002`... `save()` tự động uppercase `name` và `short_name`.
+     - `Supplier`: Tiền tố đổi từ `NCC` sang `SPL`.
+     - `Subcontractor`: Tiền tố `3PL`, `GAR`, `SPL`. `save()` tự động uppercase `name` và `short_name`.
+     - `Employee`: Thống nhất dải mã `EMP001` cho toàn bộ cán bộ công nhân viên công ty (lọc tài xế qua `role = DRIVER`).
+     - `Vehicle` & `Trailer`: Tích hợp hàm `normalize_license_plate(plate, is_trailer)` tự động chuẩn hóa biển số theo Thông tư 24/2023/TT-BCA (`XX[A-Z]-XXX.XX` và `XXRM/XXR-XXX.XX`).
+  2. **Backend API Zero-Trust & Next-Code Endpoints (`apps/master_data/api_views.py`, `apps/personnel/api_views.py`):**
+     - Thêm `LocationNextCodeAPIView` (`GET /api/master-data/locations/next-code/?location_type=...`).
+     - Thêm `CustomerNextCodeAPIView` (`GET /api/master-data/customers/next-code/`).
+     - Thêm `EmployeeNextCodeAPIView` (`GET /api/personnel/employees/next-code/`).
+     - `LocationListCreateAPIView.post` & `CustomerMasterListCreateAPIView.post`: Bỏ qua mã client gửi lên, tự động sinh mã tuần tự.
+     - `LocationDetailAPIView.put` & `SubcontractorDetailAPIView.put`: Tự cấp mã mới khi phát hiện người dùng thay đổi phân loại (`location_type`, `partner_type`), bảo toàn nguyên vẹn ID Surrogate Key.
+  3. **Chứng từ Giao dịch & Kế toán (`apps/billing/advance_views.py`, `apps/collaboration/api_views/tasks_api.py`, `apps/billing/settlement_voucher_views.py`):**
+     - Quỹ điều vận & tạm ứng nhân viên: `TUNV.YYMM.xxx`.
+     - Tạm ứng chuyến tài xế: `TUTX.YYMM.xxx`.
+     - Phiếu giao việc nội bộ (Tasks): `TK.YYMM.xxx` (sửa từ `TSK` sang `TK`).
+     - Quyết toán điều vận: `QTDV.YYMM.xxx`.
+  4. **Giao diện Frontend & Smart Input UX (`static/js/src/app/**`, `templates/views/**`):**
+     - `formatLicensePlateString` & `formatLicensePlateInput`: Tự động format biển số xe thông minh ngay khi gõ (`oninput`) hoặc rời ô (`onblur`), hỗ trợ gõ liền không cần gõ dấu gạch hay dấu chấm.
+     - Các ô mã (`#mdf-code`, `#mdf-sc-code`, `#emp-code`): Khóa chặt `readonly`, nền xám nhạt `bg-slate-100 cursor-not-allowed`, tooltip chỉ dẫn rõ ràng. Tự động gọi API `next-code` khi mở modal tạo mới.
+     - Đổi phân loại Master Data: Tự động fetch xem trước mã mới, hiển thị box cảnh báo màu cam và popup xác nhận trước khi lưu PUT.
+  5. **Tài liệu & Kiểm thử:**
+     - Cập nhật `.agents/rules/backend-rules.md` (Mục 8) và `.agents/rules/uiux-rules.md` (Mục 11).
+     - Biên dịch thành công 109 file JS (`static/js/app.js`) và CSS (`static/css/tailwind.css`).
+     - Kiểm thử PostgreSQL QA toàn diện qua `scripts/qa.py verify`: 7/7 bước PASS 100% (bao gồm 230 test cases).
+
+## 2026-11-24 – Xây Dựng Bộ Kho Tri Thức Chuẩn Hóa (.md) Cho Zalo Bot / Zalo OA Chăm Sóc Khách Hàng GSS Logistics
 - **Bối cảnh & Yêu cầu người dùng:**
+  - Xây dựng hệ thống các tệp tài liệu tri thức `.md` độc lập, chuyên sâu để nạp vào hệ thống Zalo Bot (Zalo Official Account / Trợ lý ảo AI / RAG Knowledge Base).
+  - Mục tiêu: Giúp con bot chủ động tư vấn dịch vụ, tiếp nhận yêu cầu báo giá, hướng dẫn tra cứu vị trí container (Public Tracking), cung cấp biên bản giao nhận E-POD, giải thích chính sách hạn DEM/DET, thủ tục hải quan và hỗ trợ xử lý sự cố khẩn cấp 24/7.
+  - Mở rộng bổ sung 6 tệp tài liệu tác nghiệp trực tiếp trong nhóm Zalo khách hàng: `quy_trinh.md`, `lich_tuyen.md`, `chung_tu.md`, `xu_ly_su_co.md`, `faq.md` (42 câu hỏi thực tế sát sườn - file giá trị nhất), `thong_tin_nhom.md`.
+- **Chi tiết các tài liệu đã tạo trong `docs/zalo_bot_knowledge/`:**
+  1. `README.md`: Bản đồ tổng quan kho tri thức, hướng dẫn nạp dữ liệu và cấu hình phân đoạn (chunking/embedding) cho các nền tảng AI (Dify, FastGPT, Ragflow, LangChain).
+  2. `quy_trinh.md`: Quy trình từ đặt xe/booking đến giao nhận, các mốc giờ chốt (cut-off), ai làm bước nào và hướng dẫn thao tác chi tiết từng bước ("Việc này làm như thế nào? Bước này rồi xử lý sao?").
+  3. `lich_tuyen.md`: Tuyến chạy, cự ly km, lịch xe, thời gian vận chuyển tiêu chuẩn các tuyến Tây Nguyên (Đắk Nông, Đắk Lắk, Gia Lai) - Cát Lái/Cái Mép, khung giờ cấm tải container tại TP.HCM và lịch trực bãi 24/7.
+  4. `chung_tu.md`: Bộ chứng từ cần thiết cho hàng nông sản xuất khẩu, hàng nhập khẩu và hàng nội địa; biểu mẫu chuẩn copy-paste đặt xe trên Zalo; hướng dẫn luân chuyển E-POD và EIR.
+  5. `xu_ly_su_co.md`: Quy trình xử lý hàng trễ, xe hỏng, nguy cơ trễ Closing Time tàu (xin Late Gate), vỏ cont rách/thủng dột (đổi vỏ tại Depot Đắk Nông), đứt seal, hàng hóa móp méo, đổi địa chỉ giao hàng (chỉ ghi quy trình, không ghi mức đền bù).
+  6. `faq.md`: Bộ 42 câu hỏi - trả lời thực tế hay gặp nhất trong nhóm Zalo (file giá trị nhất) chia thành 7 phần logic: Đặt xe, Tra cứu xe, Giờ chạy & giờ cấm, Depot Đắk Nông, Giao nhận & E-POD, Hạn DEM/DET & Chi phí, Thủ tục hải quan & Xử lý ngoại lệ.
+  7. `thong_tin_nhom.md`: Hồ sơ ngữ cảnh nhóm Zalo (nhóm này là khách nào, đầu mối là ai, quy ước riêng về an toàn kho và tuyến đường).
+  8. `00_TONG_QUAN_VA_KICH_BAN_BOT.md`: Định danh, vai trò (persona), tone giọng chuẩn mực B2B, nguyên tắc chống ảo tưởng, kịch bản chào đón và phản hồi tương tác mẫu cho bot.
+  9. `01_GIOI_THIEU_DICH_VU_GSS.md`: Hồ sơ pháp nhân GSS (MST 0316657112), năng lực 50+ xe đầu kéo, các tuyến thế mạnh (Tây Nguyên - Cát Lái - Cái Mép), lợi thế độc quyền trạm Depot Đắk Nông và thông số kỹ thuật các loại container (20GP, 40HC, 45HQ, RF, OT, FR).
+  10. `02_BAO_GIA_VA_QUY_TRINH_BOOKING.md`: Hướng dẫn checklist 5 thông tin xin báo giá nhanh, cơ cấu giá cước theo tuyến / theo giá dầu DO, phụ phí nâng hạ/BOT/neo xe và quy trình 4 bước từ báo giá đến cấp lệnh điều vận.
+  11. `03_TRA_CUU_DON_HANG_VA_TRACKING.md`: Hướng dẫn tra cứu bằng số Cont, số Booking, số Bill B/L; tính năng Link Tra Cứu Trực Tuyến (`/q/tracking/<token>/`) không cần cài app; diễn giải chi tiết 6 mốc tiến độ hành trình thời gian thực.
+  12. `04_QUY_TRINH_GIAO_NHAN_VA_CHUNG_TU_POD.md`: Quy trình 4 bước giao nhận tại kho, kiểm tra chất lượng vỏ cont, kẹp chì seal niêm phong, ký nhận điện tử E-POD và tải chứng từ gốc EIR/POD.
+  13. `05_CHINH_SACH_DEM_DET_VA_CHI_PHI.md`: Phân biệt chi tiết Free DEM (lưu bãi) và Free DET (lưu vỏ), cơ chế cảnh báo đếm ngược của GSS TMS, kinh nghiệm tránh phí phạt hãng tàu, chính sách hóa đơn VAT điện tử và đối soát công nợ cuối tháng.
+  14. `06_THU_TUC_HAI_QUAN_VA_XUAT_NHAP_KHAU.md`: Dịch vụ đại lý hải quan trọn gói, hồ sơ khai báo, giải nghĩa 3 luồng (Xanh/Vàng/Đỏ), hỗ trợ kiểm hóa hiện trường, đổi Lệnh Giao Hàng Điện Tử eDO và kiểm dịch thực vật nông sản Tây Nguyên.
+  15. `07_HOI_DAP_SU_CO_VA_HOTLINE_KHAN_CAP.md`: Bảng hỏi đáp FAQ tổng hợp 13+ câu hỏi thường gặp nhất, quy trình 4 bước phản ứng nhanh với sự cố và danh bạ hotline các phòng ban GSS 24/7.
+
+## 2026-11-21 – Nâng Cấp Ô "Loại Cont / Xe" Thành Multi-Select Checkbox (Cho Phép Chọn Nhiều Loại) & Kiểm Thử Toàn Diện
   - Trên màn hình Chi tiết / Tạo mới Booking (`view_booking_detail.html` và modal `modal_booking.html`), ô "Loại Cont / Xe" trước đây là `<select>` đơn chỉ cho chọn 1 loại duy nhất (vd: `Cont 20GP (Thường)`).
   - Khách hàng và điều vận thực tế thường xuyên tạo booking kết hợp nhiều loại phương tiện/quy cách cont (vd: vừa 20GP vừa 40HC, hoặc cont thường kèm xe tải).
   - Người dùng yêu cầu chuyển đổi ô này thành dạng Dropdown Checkbox cho phép tick chọn nhiều loại đồng thời.

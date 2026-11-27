@@ -374,24 +374,37 @@ class SalesAPIView(APIView):
         # 2. Ngày đóng hàng (loading_date) gần nhất lên trước
         bookings = BookingOrder.objects.filter(is_deleted=False).select_related('customer').prefetch_related('trips', 'trips__driver', 'trips__vehicle', 'trips__dropoff_driver', 'trips__dropoff_vehicle')
         if booking_period != 'all':
+            fd = None
+            td = None
             if booking_from:
                 try:
                     fd = datetime.datetime.strptime(booking_from.strip(), '%Y-%m-%d').date()
-                    bookings = bookings.filter(
-                        Q(loading_date__gte=fd) | 
-                        Q(loading_date__isnull=True, created_at__date__gte=fd)
-                    )
                 except Exception:
                     pass
             if booking_to:
                 try:
                     td = datetime.datetime.strptime(booking_to.strip(), '%Y-%m-%d').date()
-                    bookings = bookings.filter(
-                        Q(loading_date__lte=td) | 
-                        Q(loading_date__isnull=True, created_at__date__lte=td)
-                    )
                 except Exception:
                     pass
+
+            if fd and td:
+                bookings = bookings.filter(
+                    Q(loading_date__gte=fd, loading_date__lte=td) |
+                    Q(created_at__date__gte=fd, created_at__date__lte=td) |
+                    Q(status__in=[BookingStatus.PENDING_DISPATCH, BookingStatus.PARTIALLY_DISPATCHED])
+                )
+            elif fd:
+                bookings = bookings.filter(
+                    Q(loading_date__gte=fd) |
+                    Q(created_at__date__gte=fd) |
+                    Q(status__in=[BookingStatus.PENDING_DISPATCH, BookingStatus.PARTIALLY_DISPATCHED])
+                )
+            elif td:
+                bookings = bookings.filter(
+                    Q(loading_date__lte=td) |
+                    Q(created_at__date__lte=td) |
+                    Q(status__in=[BookingStatus.PENDING_DISPATCH, BookingStatus.PARTIALLY_DISPATCHED])
+                )
 
         bookings = bookings.order_by(
             models.Case(
@@ -744,7 +757,7 @@ class SalesAPIView(APIView):
                 if auto_price > 0:
                     selling_freight_price = auto_price
                 else:
-                    return Response({'error': 'Đơn giá cước vận chuyển là bắt buộc và phải lớn hơn 0! Vui lòng kiểm tra và nhập giá cước bán.'}, status=status.HTTP_400_BAD_REQUEST)
+                    selling_freight_price = 0  # Cho phép để trống / nhập sau
 
             curr_emp = getattr(request.user, 'employee', None)
             booking = BookingOrder.objects.create(
