@@ -10,18 +10,21 @@ from core.permissions import CanManageMasterData
 
 
 def _hard_delete_master_record(instance, label, display_name, reasons):
-    """Xóa hẳn bản ghi danh mục khi chưa phát sinh chứng từ liên quan để giải phóng mã (vd CUS006)."""
+    """Xóa hẳn bản ghi danh mục khi chưa phát sinh chứng từ; nếu chỉ còn lịch sử đã xóa mềm (PROTECT) thì xóa mềm và giải phóng mã."""
     if reasons:
         return Response({
             'error': f"Không thể xóa {label} [{display_name}] vì đã phát sinh dữ liệu liên quan ({', '.join(reasons)}). Vui lòng gỡ tất cả chứng từ liên quan trước khi xóa!"
         }, status=status.HTTP_400_BAD_REQUEST)
+    code = instance.code
     try:
         instance.hard_delete()
+        return Response({'success': True, 'message': f'Đã xóa hẳn {label} [{display_name}] và giải phóng mã [{code}].'})
     except ProtectedError:
-        return Response({
-            'error': f"Không thể xóa hẳn {label} [{display_name}] vì vẫn còn chứng từ/dữ liệu hệ thống đang tham chiếu. Vui lòng gỡ hết các chứng từ liên quan trước khi xóa!"
-        }, status=status.HTTP_400_BAD_REQUEST)
-    return Response({'success': True, 'message': f'Đã xóa hẳn {label} [{display_name}] và giải phóng mã [{instance.code}].'})
+        if code and not str(code).startswith('DEL-'):
+            instance.code = f"DEL-{instance.pk}-{code}"[:50]
+            instance.save(update_fields=['code'])
+        instance.delete()
+        return Response({'success': True, 'message': f'Đã xóa {label} [{display_name}] và giải phóng mã [{code}].'})
 from apps.master_data.import_export_service import (
     generate_catalog_template,
     generate_catalog_data_export,
