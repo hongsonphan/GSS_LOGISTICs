@@ -44,3 +44,25 @@ class PartySingleTableTestCase(TestCase):
         self.assertFalse(Subcontractor.objects.filter(pk=shp.pk).exists())
         car = Subcontractor.objects.create(name="Nhà xe C", partner_type=PartnerType.CARRIER)
         self.assertFalse(Supplier.objects.filter(pk=car.pk).exists())
+
+    def test_delete_unused_customer_hard_deletes_and_reuses_code(self):
+        from django.contrib.auth import get_user_model
+        from rest_framework.test import APIClient
+        from apps.customers.models import BookingOrder
+        u = get_user_model().objects.create_superuser('admin_test_del', 'a@b.c', 'password123')
+        api = APIClient()
+        api.force_authenticate(user=u)
+        c1 = Customer.objects.create(name="Khách 1")
+        c2 = Customer.objects.create(name="Khách 2")
+        self.assertEqual((c1.code, c2.code), ('CUS001', 'CUS002'))
+        # Chưa phát sinh chứng từ -> xóa hẳn và cấp lại CUS002
+        r = api.delete(f'/api/master-data/customers/{c2.pk}/')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Customer.all_objects.filter(pk=c2.pk).exists())
+        c2_new = Customer.objects.create(name="Khách 2 mới")
+        self.assertEqual(c2_new.code, 'CUS002')
+        # Đã phát sinh Booking -> chặn xóa hẳn
+        BookingOrder.objects.create(customer=c1, booking_code='BK.TEST.001')
+        r_blocked = api.delete(f'/api/master-data/customers/{c1.pk}/')
+        self.assertEqual(r_blocked.status_code, 400)
+        self.assertTrue(Customer.objects.filter(pk=c1.pk).exists())

@@ -3,6 +3,25 @@ from django.db import models
 from core.models import (AllObjectsManager, CompanyOwnedModel, PublicIdModel, SoftDeleteManager,
                          SoftDeleteModel, TimeStampedModel)
 
+
+def _next_available_seq_code(codes_iter, prefix):
+    """Trả về mã [PREFIX][STT_3_CHỮ_SỐ] nhỏ nhất chưa được dùng (vd xóa CUS006 -> cấp lại CUS006)."""
+    import re
+    prefix = str(prefix).strip().upper() or 'CUS'
+    used = set()
+    pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
+    for c in codes_iter:
+        match = pattern.match(c or '')
+        if match:
+            try:
+                used.add(int(match.group(1)))
+            except ValueError:
+                pass
+    seq = 1
+    while seq in used:
+        seq += 1
+    return f"{prefix}{seq:03d}"
+
 class LocationType(models.TextChoices):
     PORT = 'PORT', 'Cảng Biển'
     ICD = 'ICD', 'Cảng Cạn (ICD)'
@@ -54,23 +73,11 @@ class Location(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         - Bãi đỗ xe nội bộ (YARD) -> PKG00n (VD: PKG001, PKG003)
         - Kho hàng / Nhà máy (WAREHOUSE) -> WHS00n (VD: WHS001, WHS061)
         """
-        import re
         if not location_type or location_type not in cls.PREFIX_MAP:
             location_type = LocationType.PORT
         prefix = cls.PREFIX_MAP.get(location_type, 'PRT')
         codes = cls.all_objects.filter(code__startswith=prefix).values_list('code', flat=True)
-        max_num = 0
-        pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
-        for c in codes:
-            match = pattern.match(c or '')
-            if match:
-                try:
-                    num = int(match.group(1))
-                    if num > max_num:
-                        max_num = num
-                except ValueError:
-                    pass
-        return f"{prefix}{max_num + 1:03d}"
+        return _next_available_seq_code(codes, prefix)
 
     def save(self, *args, **kwargs):
         if self.name:
@@ -274,21 +281,9 @@ class Party(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel)
     @classmethod
     def generate_next_code(cls, prefix='CUS'):
         """Sinh mã tự động theo quy chuẩn: [PREFIX_3_KÝ_TỰ][STT_3_CHỮ_SỐ] (VD: CUS001, CUS135)."""
-        import re
         prefix = str(prefix).strip().upper() or 'CUS'
         codes = cls.all_objects.filter(code__startswith=prefix).values_list('code', flat=True)
-        max_num = 0
-        pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
-        for c in codes:
-            match = pattern.match(c or '')
-            if match:
-                try:
-                    num = int(match.group(1))
-                    if num > max_num:
-                        max_num = num
-                except ValueError:
-                    pass
-        return f"{prefix}{max_num + 1:03d}"
+        return _next_available_seq_code(codes, prefix)
 
     def save(self, *args, **kwargs):
         if self.name:
@@ -379,20 +374,8 @@ class Supplier(Party):
 
     @classmethod
     def generate_next_code(cls):
-        import re
         codes = cls.all_objects.filter(code__startswith='SHP').values_list('code', flat=True)
-        max_num = 0
-        pattern = re.compile(r"^SHP(\d+)$")
-        for c in codes:
-            match = pattern.match(c or '')
-            if match:
-                try:
-                    num = int(match.group(1))
-                    if num > max_num:
-                        max_num = num
-                except ValueError:
-                    pass
-        return f"SHP{max_num + 1:03d}"
+        return _next_available_seq_code(codes, 'SHP')
 
     def save(self, *args, **kwargs):
         self.is_shipper = True
@@ -439,26 +422,13 @@ class Subcontractor(Party):
         - Gara sửa chữa (GARAGE) -> GAR[STT] (VD: GAR001, GAR002...)
         - Nhà cung cấp (SUPPLIER) -> SPL[STT] (VD: SPL001, SPL002...)
         """
-        import re
         if not partner_type or partner_type not in cls.PREFIX_MAP:
             partner_type = PartnerType.CARRIER
-            
+
         prefix = cls.PREFIX_MAP.get(partner_type, '3PL')
         # Quét tất cả bản ghi (kể cả đã soft delete) để không vi phạm ràng buộc Unique
         codes = cls.all_objects.filter(code__startswith=prefix).values_list('code', flat=True)
-        max_num = 0
-        pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
-        for c in codes:
-            match = pattern.match(c or '')
-            if match:
-                try:
-                    num = int(match.group(1))
-                    if num > max_num:
-                        max_num = num
-                except ValueError:
-                    pass
-        next_num = max_num + 1
-        return f"{prefix}{next_num:03d}"
+        return _next_available_seq_code(codes, prefix)
 
     def save(self, *args, **kwargs):
         if self.name:

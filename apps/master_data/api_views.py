@@ -5,8 +5,23 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
-from django.db.models import Q
+from django.db.models import Q, ProtectedError
 from core.permissions import CanManageMasterData
+
+
+def _hard_delete_master_record(instance, label, display_name, reasons):
+    """Xóa hẳn bản ghi danh mục khi chưa phát sinh chứng từ liên quan để giải phóng mã (vd CUS006)."""
+    if reasons:
+        return Response({
+            'error': f"Không thể xóa {label} [{display_name}] vì đã phát sinh dữ liệu liên quan ({', '.join(reasons)}). Vui lòng gỡ tất cả chứng từ liên quan trước khi xóa!"
+        }, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        instance.hard_delete()
+    except ProtectedError:
+        return Response({
+            'error': f"Không thể xóa hẳn {label} [{display_name}] vì vẫn còn chứng từ/dữ liệu hệ thống đang tham chiếu. Vui lòng gỡ hết các chứng từ liên quan trước khi xóa!"
+        }, status=status.HTTP_400_BAD_REQUEST)
+    return Response({'success': True, 'message': f'Đã xóa hẳn {label} [{display_name}] và giải phóng mã [{instance.code}].'})
 from apps.master_data.import_export_service import (
     generate_catalog_template,
     generate_catalog_data_export,
@@ -462,18 +477,12 @@ class LocationDetailAPIView(MasterDataBaseAPIView):
             Q(pickup_location__iexact=location.name) | Q(warehouse_location__iexact=location.name) | Q(dropoff_location__iexact=location.name),
             is_deleted=False
         ).count()
-        if b_count > 0 or t_count > 0:
-            reasons = []
-            if b_count > 0:
-                reasons.append(f"{b_count} đơn hàng Booking")
-            if t_count > 0:
-                reasons.append(f"{t_count} chuyến xe điều vận")
-            return Response({
-                'error': f"Không thể xóa địa điểm [{location.name}] vì đang được liên kết trong {', '.join(reasons)}! Vui lòng kiểm tra và xử lý các liên kết trước khi xóa."
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        location.delete() # Soft delete
-        return Response({'success': True, 'message': f'Đã xóa địa điểm [{location.name}].'})
+        reasons = []
+        if b_count > 0:
+            reasons.append(f"{b_count} đơn hàng Booking")
+        if t_count > 0:
+            reasons.append(f"{t_count} chuyến xe điều vận")
+        return _hard_delete_master_record(location, 'địa điểm', location.name, reasons)
 
 # ==============================================================================
 # 2. DANH MỤC QUY CÁCH CONTAINER & XE TẢI
@@ -837,13 +846,7 @@ class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
         if tar_count > 0:
             reasons.append(f"{tar_count} biểu cước tuyến")
 
-        if reasons:
-            return Response({
-                'error': f"Không thể xóa khách hàng [{cust.name}] vì đã phát sinh dữ liệu liên quan ({', '.join(reasons)}). Vui lòng kiểm tra và xóa hoặc chuyển tiếp các phát sinh trước khi xóa khách hàng này!"
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        cust.delete()
-        return Response({'success': True, 'message': f'Đã xóa khách hàng [{cust.name}].'})
+        return _hard_delete_master_record(cust, 'khách hàng', cust.name, reasons)
 
 # ==============================================================================
 # 5. DANH MỤC BIỂU CƯỚC TUYẾN ĐƯỜNG (CRUD TẬP TRUNG)
@@ -1362,8 +1365,18 @@ class ShippingLineDetailAPIView(MasterDataBaseAPIView):
         sl = ShippingLine.objects.filter(id=pk).first()
         if not sl:
             return Response({'error': 'Không tìm thấy hãng tàu!'}, status=status.HTTP_404_NOT_FOUND)
-        sl.delete()
-        return Response({'success': True, 'message': f'Đã xóa hãng tàu [{sl.name}].'})
+        from apps.customers.models import BookingOrder
+        reasons = []
+        b_count = BookingOrder.objects.filter(
+            Q(shipping_line__iexact=sl.name) | Q(shipping_line__iexact=sl.short_name or sl.name),
+            is_deleted=False
+        ).count()
+        if b_count > 0:
+            reasons.append(f"{b_count} đơn hàng Booking")
+        v_count = Vessel.objects.filter(shipping_line=sl, is_deleted=False).count()
+        if v_count > 0:
+            reasons.append(f"{v_count} tàu biển")
+        return _hard_delete_master_record(sl, 'hãng tàu', sl.name, reasons)
 
 # ==============================================================================
 # 9.1. DANH MỤC NHÀ CUNG CẤP / SHIPPER (SUPPLIERS)
@@ -1459,8 +1472,12 @@ class SupplierDetailAPIView(MasterDataBaseAPIView):
         sup = Supplier.objects.filter(id=pk).first()
         if not sup:
             return Response({'error': 'Không tìm thấy nhà cung cấp!'}, status=status.HTTP_404_NOT_FOUND)
-        sup.delete()
-        return Response({'success': True, 'message': f'Đã xóa nhà cung cấp [{sup.name}].'})
+        from apps.customers.models import BookingOrder
+        reasons = []
+        b_count = BookingOrder.objects.filter(supplier_name__iexact=sup.name, is_deleted=False).count()
+        if b_count > 0:
+            reasons.append(f"{b_count} đơn hàng Booking")
+        return _hard_delete_master_record(sup, 'nhà cung cấp / Shipper', sup.name, reasons)
 
 
 # ==============================================================================
@@ -2009,14 +2026,18 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
 
-        from apps.dispatch.models import DispatchTrip
+        from apps.dispatch.models import DispatchTrip, BookingVendorAllocation
         from apps.fleet.models import Vehicle
-        from apps.master_data.models import SubcontractorDriver
+        from apps.master_data.models import SubcontractorDriver, SubcontractorPortalAccount
 
         reasons = []
         t_count = DispatchTrip.objects.filter(subcontractor=sc, is_deleted=False).count()
         if t_count > 0:
             reasons.append(f"{t_count} chuyến xe điều vận")
+
+        a_count = BookingVendorAllocation.objects.filter(subcontractor=sc, is_deleted=False).count()
+        if a_count > 0:
+            reasons.append(f"{a_count} lệnh phân bổ cont")
 
         v_count = Vehicle.objects.filter(subcontractor=sc, is_deleted=False).count()
         if v_count > 0:
@@ -2026,13 +2047,11 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
         if d_count > 0:
             reasons.append(f"{d_count} tài xế trực thuộc")
 
-        if reasons:
-            return Response({
-                'error': f"Không thể xóa đối tác [{sc.short_name or sc.name}] vì đang có dữ liệu liên kết ({', '.join(reasons)}). Vui lòng gỡ hoặc xóa các liên kết trước khi xóa đối tác!"
-            }, status=status.HTTP_400_BAD_REQUEST)
+        p_count = SubcontractorPortalAccount.objects.filter(subcontractor=sc, is_deleted=False).count()
+        if p_count > 0:
+            reasons.append(f"{p_count} tài khoản cổng nhà xe")
 
-        sc.delete()
-        return Response({'success': True, 'message': f'Đã xóa đối tác [{sc.name}].'})
+        return _hard_delete_master_record(sc, 'đối tác', sc.short_name or sc.name, reasons)
 
 class SubcontractorFleetAPIView(MasterDataBaseAPIView):
     """
