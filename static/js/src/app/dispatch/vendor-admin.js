@@ -2354,7 +2354,7 @@ function vaViewVehicleTrips(plate, vendorId) {
                 <table class="w-full text-xs text-left">
                     <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
                         <tr>
-                            <th class="p-2.5">Mã Chuyến</th>
+                            <th class="p-2.5">Số Phiếu</th>
                             <th class="p-2.5">Số Container</th>
                             <th class="p-2.5">Khách Hàng</th>
                             <th class="p-2.5">Bác Tài Lái</th>
@@ -2584,7 +2584,7 @@ async function vaViewUnallocatedContainersModal(allocId) {
                             <th class="p-3">Số Container & Seal</th>
                             <th class="p-3">Tình Trạng Phân Bổ</th>
                             <th class="p-3">Xe & Bác Tài Phụ Trách</th>
-                            <th class="p-3">Mã Chuyến</th>
+                            <th class="p-3">Số Phiếu</th>
                             <th class="p-3 text-center w-28">Thao Tác</th>
                         </tr>
                     </thead>

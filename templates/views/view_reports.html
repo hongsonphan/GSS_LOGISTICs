@@ -392,7 +392,7 @@
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
                             <th onclick="toggleReport2Sort('container_number')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Container</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport2Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport2Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport2Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport2Sort('shipping_line')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Hãng Tàu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport2Sort('location_type')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Vị Trí Hiện Tại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -448,7 +448,7 @@
                     Bảng Nhật Ký Tuân Thủ Mốc Giờ Vận Chuyển & Phân Loại Sự Cố Trễ Chuyến
                 </h3>
                 <div class="flex items-center gap-2">
-                    <input type="text" id="filter-rep3-search" oninput="applyReport3Filters()" placeholder="Tìm mã chuyến, tuyến, nguyên nhân..." 
+                    <input type="text" id="filter-rep3-search" oninput="applyReport3Filters()" placeholder="Tìm số phiếu, tuyến, nguyên nhân..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
                     <button type="button" onclick="openColumnCustomizer('rep3-otp-table')" 
                         class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
@@ -463,7 +463,7 @@
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport3Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport3Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport3Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport3Sort('route')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tuyến Vận Tải</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport3Sort('driver_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài Xế & Biển Số</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -606,7 +606,7 @@
                     Bảng Giám Sát Cắt Kéo (Drop & Hook) & Nhật Ký Xe Chờ Hạ Sau 0H
                 </h3>
                 <div class="flex items-center gap-2">
-                    <input type="text" id="filter-rep5-search" oninput="applyReport5Filters()" placeholder="Tìm mã chuyến, cont, xe..." 
+                    <input type="text" id="filter-rep5-search" oninput="applyReport5Filters()" placeholder="Tìm số phiếu, cont, xe..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
                     <button type="button" onclick="openColumnCustomizer('rep5-layover-table')" 
                         class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
@@ -621,7 +621,7 @@
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport5Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport5Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport5Sort('container_number')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Container</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport5Sort('is_split_trip')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Hình Thức</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -672,7 +672,7 @@
                     Bảng Ghi Nhận Sự Cố & Biên Bản Hiện Trường (OS&D Registry)
                 </h3>
                 <div class="flex items-center gap-2">
-                    <input type="text" id="filter-rep6-search" oninput="applyReport6Filters()" placeholder="Tìm số cont, mã chuyến, mô tả..." 
+                    <input type="text" id="filter-rep6-search" oninput="applyReport6Filters()" placeholder="Tìm số cont, số phiếu, mô tả..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
                     <button type="button" onclick="openColumnCustomizer('rep6-osd-table')" 
                         class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
@@ -687,7 +687,7 @@
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport6Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport6Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport6Sort('date')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Ngày</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport6Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport6Sort('container_number')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Container</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -896,7 +896,7 @@
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport8TripSort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8TripSort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport8TripSort('date')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Ngày Chạy</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport8TripSort('subcontractor_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Nhà Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport8TripSort('vehicle')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Biển Số Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -1121,7 +1121,7 @@
                         <option value="PENDING" selected>Đang tạm ứng (Chưa chốt)</option>
                         <option value="SETTLED">Đã hoàn ứng quyết toán</option>
                     </select>
-                    <input type="text" id="filter-rep11-search" oninput="applyReport11Filters()" placeholder="Tìm tài xế, biển số xe, mã chuyến, khách..." 
+                    <input type="text" id="filter-rep11-search" oninput="applyReport11Filters()" placeholder="Tìm tài xế, biển số xe, số phiếu, khách..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
                     <button type="button" onclick="openColumnCustomizer('rep11-driver-advances-table')" 
                         class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
@@ -1136,7 +1136,7 @@
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport11Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến / TUTX</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport11Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu / TUTX</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport11Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Tuyến Đường</th>
                             <th onclick="toggleReport11Sort('driver_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài Xế & Biển Số</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -1209,7 +1209,7 @@
                         <option value="OWNED">Chỉ Xe Nhà</option>
                         <option value="PARTNER">Chỉ Xe Bạn / 3PL</option>
                     </select>
-                    <input type="text" id="filter-rep12-search" oninput="applyReport12Filters()" placeholder="Tìm biển số xe, tài xế, mã chuyến, khách..." 
+                    <input type="text" id="filter-rep12-search" oninput="applyReport12Filters()" placeholder="Tìm biển số xe, tài xế, số phiếu, khách..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
                     <button type="button" onclick="openColumnCustomizer('rep12-settlement-table')" 
                         class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
@@ -1224,7 +1224,7 @@
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport12Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport12Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport12Sort('loading_date')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Ngày Chạy</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport12Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport12Sort('vehicle_plate')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Xe Kéo & Loại Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -1378,7 +1378,7 @@
                         <option value="WATCH">Theo dõi POD (8-15 Ngày)</option>
                         <option value="NORMAL">Bình thường (0-7 Ngày)</option>
                     </select>
-                    <input type="text" id="filter-rep14-search" oninput="applyReport14Filters()" placeholder="Tìm biển số, tài xế, khách, mã chuyến..." 
+                    <input type="text" id="filter-rep14-search" oninput="applyReport14Filters()" placeholder="Tìm biển số, tài xế, khách, số phiếu..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
                     <button type="button" onclick="openColumnCustomizer('rep14-unsettled-aging-table')" 
                         class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
@@ -1393,7 +1393,7 @@
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport14Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport14Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport14Sort('loading_date')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Ngày Chạy</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport14Sort('days_unsettled')" class="cursor-pointer hover:bg-slate-100 text-center font-black"><div class="flex items-center justify-center gap-1"><span>Số Ngày Tồn</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th class="text-center">Mức Độ Cảnh Báo</th>
@@ -1495,7 +1495,7 @@
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport15Sort('quotation_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Báo Giá</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport15Sort('quotation_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport15Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport15Sort('route_description')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tuyến Đường Vận Chuyển</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport15Sort('unit_price')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Đơn Giá Báo</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -1562,7 +1562,7 @@
                         <option value="COMPLETED">Đã điều đủ</option>
                         <option value="CANCELLED">Đã hủy</option>
                     </select>
-                    <input type="text" id="filter-rep16-search" oninput="applyReport16Filters()" placeholder="Tìm mã BK, số booking, hãng tàu, KH..." 
+                    <input type="text" id="filter-rep16-search" oninput="applyReport16Filters()" placeholder="Tìm số phiếu, số booking, hãng tàu, KH..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-blue-600">
                     <button type="button" onclick="openColumnCustomizer('rep16-bookings-table')" 
                         class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-blue-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
@@ -1577,7 +1577,7 @@
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport16Sort('booking_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Đơn (Booking)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport16Sort('booking_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport16Sort('shipping_line')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Hãng Tàu & Số Booking</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport16Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th class="text-center">Loại Vỏ</th>
@@ -1642,7 +1642,7 @@
                 <button type="button" onclick="exportReport18()" class="h-9 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5"><i class="ph-bold ph-file-xls text-emerald-600"></i><span>Xuất Excel</span></button>
             </div>
             <div class="overflow-x-auto"><table class="erp-table whitespace-nowrap" id="report-18-table" data-table-title="Bảng kê quyết toán & đối soát">
-                <thead><tr><th data-col-key="code" data-col-name="Số phiếu">Số phiếu</th><th data-col-key="party" data-col-name="Đối tượng">Đối tượng</th><th data-col-key="name" data-col-name="Tên">Tên</th>
+                <thead><tr><th data-col-key="code" data-col-name="Số Phiếu">Số Phiếu</th><th data-col-key="party" data-col-name="Đối tượng">Đối tượng</th><th data-col-key="name" data-col-name="Tên">Tên</th>
                     <th data-col-key="trips" data-col-name="Số chuyến" class="text-center">Số chuyến</th><th data-col-key="amount" data-col-name="Số tiền" class="text-right">Số tiền</th>
                     <th data-col-key="direction" data-col-name="Thu/Chi">Thu/Chi</th><th data-col-key="status" data-col-name="Tình trạng">Tình trạng</th>
                     <th data-col-key="cash" data-col-name="Phiếu thu/chi">Phiếu thu/chi</th><th data-col-key="date" data-col-name="Ngày lập">Ngày lập</th><th data-col-key="approved" data-col-name="Ngày duyệt">Ngày duyệt</th></tr></thead>
@@ -1694,7 +1694,7 @@
                         <option value="DISPATCHED">Đã điều xe</option>
                         <option value="DRAFT">Bản nháp</option>
                     </select>
-                    <input type="text" id="filter-rep17-search" oninput="applyReport17Filters()" placeholder="Tìm mã chuyến, xe, tài xế, khách..." 
+                    <input type="text" id="filter-rep17-search" oninput="applyReport17Filters()" placeholder="Tìm số phiếu, xe, tài xế, khách..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-amber-600">
                     <button type="button" onclick="openColumnCustomizer('rep17-wip-table')" 
                         class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-amber-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
@@ -1709,7 +1709,7 @@
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport17Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport17Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport17Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport17Sort('license_plate')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Biển Số Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport17Sort('driver_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài Xế & SĐT</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -1877,7 +1877,7 @@
             <!-- Ô Tìm Kiếm Nội Bộ Tức Thì -->
             <div class="relative w-full sm:w-72">
                 <i class="ph-bold ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
-                <input type="text" id="fullview-search-input" oninput="applyFullviewFilters()" placeholder="Tìm mã chuyến, cont, tuyến, tài xế..." 
+                <input type="text" id="fullview-search-input" oninput="applyFullviewFilters()" placeholder="Tìm số phiếu, cont, tuyến, tài xế..." 
                     class="pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 w-full focus:border-teal-600 focus:bg-white focus:outline-hidden transition-all shadow-2xs">
             </div>
         </div>
@@ -1897,7 +1897,7 @@
                         <tr>
                             <th class="text-center w-12 font-bold py-2.5">STT</th>
                             <th onclick="toggleFullviewSort('trip_code')" class="cursor-pointer hover:bg-slate-200 py-2.5">
-                                <div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                                <div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
                             <th onclick="toggleFullviewSort('date')" class="cursor-pointer hover:bg-slate-200 text-center py-2.5">
                                 <div class="flex items-center justify-center gap-1"><span>Ngày Chạy</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>

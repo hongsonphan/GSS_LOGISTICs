@@ -84,7 +84,7 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
                     <thead class="sticky top-0 bg-slate-100/95 backdrop-blur-xs text-slate-700 font-bold border-b border-slate-200 uppercase text-[11px] tracking-wider z-10 font-heading">
                         <tr>
                             <th class="py-2 px-2.5 text-center w-10">STT</th>
-                            <th class="py-2 px-2.5">Mã Chuyến</th>
+                            <th class="py-2 px-2.5">Số Phiếu</th>
                             <th class="py-2 px-2.5 text-center">Ngày Chạy</th>
                             <th class="py-2 px-2.5">${partnerHeader}</th>
                             <th class="py-2 px-2.5">Số Cont & Loại Vỏ</th>

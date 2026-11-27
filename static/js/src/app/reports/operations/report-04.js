@@ -184,7 +184,7 @@ function renderReport4Thead() {
         thead.innerHTML = `
             <tr class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-xs uppercase tracking-wider font-heading">
                 <th class="text-center w-12 font-bold py-2.5">STT</th>
-                <th onclick="toggleReport4Sort('trip_code')" class="cursor-pointer hover:bg-slate-100 py-2.5"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                <th onclick="toggleReport4Sort('trip_code')" class="cursor-pointer hover:bg-slate-100 py-2.5"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                 <th onclick="toggleReport4Sort('customer_name')" class="cursor-pointer hover:bg-slate-100 py-2.5"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                 <th onclick="toggleReport4Sort('expense_name')" class="cursor-pointer hover:bg-slate-100 py-2.5"><div class="flex items-center gap-1"><span>Khoản Mục Chi Hộ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                 <th onclick="toggleReport4Sort('expense_type')" class="cursor-pointer hover:bg-slate-100 py-2.5"><div class="flex items-center gap-1"><span>Phân Loại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -675,7 +675,7 @@ function exportReport4ToExcel() {
             csv += `${i + 1},"${(item.customer_name || '').replace(/"/g, '""')}","${item.customer_code || ''}","${(item.top_route || '').replace(/"/g, '""')}",${item.trips_count || 0},${item.revenue || 0},${item.direct_expense || 0},${item.reimbursable_fee || 0},${item.gross_profit || 0},${item.margin_percent || 0}\n`;
         });
     } else if (rep4ActivePerspective === 'reimbursable') {
-        csv += 'STT,Mã Chuyến,Khách Hàng,Khoản Mục Chi Hộ,Phân Loại,Số Tiền (VNĐ),Số Hóa Đơn,Ngày Phát Sinh,Tình Trạng Thu Hồi\n';
+        csv += 'STT,Số Phiếu,Khách Hàng,Khoản Mục Chi Hộ,Phân Loại,Số Tiền (VNĐ),Số Hóa Đơn,Ngày Phát Sinh,Tình Trạng Thu Hồi\n';
         list.forEach((item, i) => {
             csv += `${i + 1},"${item.trip_code || ''}","${(item.customer_name || '').replace(/"/g, '""')}","${(item.expense_name || '').replace(/"/g, '""')}","${item.expense_type || ''}",${item.amount || 0},"${item.invoice_number || ''}","${item.date || ''}","${item.is_settled ? 'Đã thu hồi' : 'Chờ khách trả'}"\n`;
         });

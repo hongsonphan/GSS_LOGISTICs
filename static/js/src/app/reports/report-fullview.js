@@ -358,7 +358,7 @@ function exportFullviewToExcel() {
     const title = `Bao_Cao_Chi_Tiet_Van_Don_${cleanName}`;
 
     let csv = '\uFEFF';
-    csv += 'STT,Mã Chuyến,Ngày Chạy,Khách Hàng,Mã KH,Biển Số Xe,Tài Xế,Số Cont,Loại Vỏ,Tuyến Đường,Trạng Thái,Doanh Thu (VNĐ),Chi Phí Phát Sinh (VNĐ)\n';
+    csv += 'STT,Số Phiếu,Ngày Chạy,Khách Hàng,Mã KH,Biển Số Xe,Tài Xế,Số Cont,Loại Vỏ,Tuyến Đường,Trạng Thái,Doanh Thu (VNĐ),Chi Phí Phát Sinh (VNĐ)\n';
     trips.forEach((t, i) => {
         const row = [
             i + 1,

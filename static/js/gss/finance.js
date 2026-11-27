@@ -34,7 +34,7 @@
           h.append(el('div', 'b', b.booking_code + ' · ' + b.customer + (b.hbl ? ' · HBL ' + b.hbl : '') + (b.mbl ? ' · MBL ' + b.mbl : '')), open);
           card.append(h);
           if (b.progress) card.append(el('div', 'small', 'Tổng ' + b.progress.total + ' cont · phân bổ ' + b.progress.allocated + ' · đang chạy ' + b.progress.running + ' · đã giao ' + b.progress.delivered + ' · hoàn tất ' + b.progress.done));
-          var tw = table(['Số cont', 'Mã chuyến', 'Nhà xe', 'Xe', 'Bước', ['Chứng từ', 'num']]);
+          var tw = table(['Số cont', 'Số Phiếu', 'Nhà xe', 'Xe', 'Bước', ['Chứng từ', 'num']]);
           b.trips.forEach(function (t) {
             var tr = el('tr', 'click'); tr.onclick = function () { A.openTrip(t.trip_code); };
             tr.append(td(t.container_number, 'mono b'), td(t.trip_code, 'mono'), td(t.vendor), td(t.plate, 'mono'), td(t.step_label), td(t.docs, 'num')); tw.t.append(tr);
@@ -344,7 +344,7 @@
     bar.append(side, st, ui.btn('+ Lập bảng kê', '', newStatement)); root.append(bar);
     var holder = el('div', 'card center mut', 'Đang tải…'); root.append(holder);
     api('/api/gss/statements/?side=' + stFilter.side + '&status=' + stFilter.status).then(function (j) {
-      var tw = table(['Mã', 'Loại', 'Đối tượng', 'Kỳ', ['Số chuyến', 'num'], ['Cước', 'num'], ['VAT', 'num'], ['Chi hộ', 'num'], ['Tổng', 'num'], 'Trạng thái']);
+      var tw = table(['Số Phiếu', 'Loại', 'Đối tượng', 'Kỳ', ['Số chuyến', 'num'], ['Cước', 'num'], ['VAT', 'num'], ['Chi hộ', 'num'], ['Tổng', 'num'], 'Trạng thái']);
       var tot = 0;
       j.data.forEach(function (s) {
         var t = s.totals || {}, tr = el('tr', 'click'); tr.onclick = function () { openStatement(s.id); };
@@ -373,7 +373,7 @@
         if (!party.value) { G.toast('Chọn đối tượng.', 'bad'); return; }
         api('/api/gss/statements/candidates/?side=' + side.value + '&party_id=' + party.value + '&period_from=' + pf.value + '&period_to=' + pt.value).then(function (j) {
           G.clear(prev); var sum = 0;
-          var tw = table(['Chuyến', 'Cont', 'Khoản', ['Thành tiền', 'num']]);
+          var tw = table(['Số Phiếu', 'Cont', 'Khoản', ['Thành tiền', 'num']]);
           j.data.forEach(function (r) { sum += Number(r.amount); var tr = el('tr'); tr.append(td(r.trip_code, 'mono'), td(r.container, 'mono'), td(r.charge + (r.kind === 'REIMBURSABLE' ? ' (chi hộ)' : '')), td(vnd(r.amount), 'num')); tw.t.append(tr); });
           if (!j.data.length) empty(tw.t, 4, 'Không có dòng nào chưa đối soát trong kỳ.');
           prev.append(el('div', 'small b', j.data.length + ' dòng · ' + vnd(sum) + ' đ (chưa gồm VAT)'), tw);
@@ -411,7 +411,7 @@
         [['FREIGHT', 'I. Cước & phụ phí'], ['REIMBURSABLE', 'II. Chi hộ (tách khỏi doanh thu cước)']].forEach(function (sec) {
           var lines = s.lines.filter(function (l) { return l.section === sec[0]; }); if (!lines.length) return;
           var c = el('section', 'card stack'); c.append(el('h2', null, sec[1] + ' (' + lines.length + ')'));
-          var tw = table(['STT', 'Chuyến', 'Số B/L', 'Cont', 'Hoàn tất', 'Khoản', ['SL', 'num'], ['Đơn giá', 'num'], ['Thành tiền', 'num'], ['VAT', 'num']]), sum = 0;
+          var tw = table(['STT', 'Số Phiếu', 'Số B/L', 'Cont', 'Hoàn tất', 'Khoản', ['SL', 'num'], ['Đơn giá', 'num'], ['Thành tiền', 'num'], ['VAT', 'num']]), sum = 0;
           lines.forEach(function (l, i) { sum += Number(l.amount); var tr = el('tr'); tr.append(td(i + 1, 'num'), td(l.trip_code, 'mono'), td(l.bl, 'mono'), td(l.container, 'mono'), td(G.fmtDate(l.completed_at)), td(l.description), td(Number(l.quantity), 'num'), td(vnd(l.unit_price), 'num'), td(vnd(l.amount), 'num b'), td(vnd(l.vat_amount), 'num')); tw.t.append(tr); });
           var f = el('tr', 'foot'); f.append(td('Cộng mục', 'b'), td(''), td(''), td(''), td(''), td(''), td(''), td(''), td(vnd(sum), 'num b'), td('')); tw.t.append(f);
           c.append(tw); body.append(c);

@@ -607,7 +607,7 @@ async function dashRunLookup() {
                 <td class="px-2 py-1.5">${escapeHtml(t.vendor || '')}</td><td class="px-2 py-1.5 font-mono">${escapeHtml(t.plate || '')}</td>
                 <td class="px-2 py-1.5">${escapeHtml(t.step_label || '')}</td><td class="px-2 py-1.5 text-right">${escapeHtml(String(t.docs ?? ''))}</td></tr>`).join('');
             return `<div class="border border-slate-200 rounded-lg mb-2 overflow-hidden"><div class="px-3 py-2 bg-slate-50"><p class="text-xs font-bold text-slate-800">${escapeHtml(b.booking_code)} · ${escapeHtml(b.customer || '')}${b.hbl ? ' · HBL ' + escapeHtml(b.hbl) : ''}${b.mbl ? ' · MBL ' + escapeHtml(b.mbl) : ''}</p>${pr}</div>
-                <table class="w-full text-xs"><thead><tr class="text-[11px] uppercase text-slate-500"><th class="px-2 py-1 text-left">Số cont</th><th class="px-2 py-1 text-left">Mã chuyến</th><th class="px-2 py-1 text-left">Nhà xe</th><th class="px-2 py-1 text-left">Xe</th><th class="px-2 py-1 text-left">Bước</th><th class="px-2 py-1 text-right">Chứng từ</th></tr></thead>
+                <table class="w-full text-xs"><thead><tr class="text-[11px] uppercase text-slate-500"><th class="px-2 py-1 text-left">Số cont</th><th class="px-2 py-1 text-left">Số phiếu</th><th class="px-2 py-1 text-left">Nhà xe</th><th class="px-2 py-1 text-left">Xe</th><th class="px-2 py-1 text-left">Bước</th><th class="px-2 py-1 text-right">Chứng từ</th></tr></thead>
                 <tbody>${rows || '<tr><td colspan="6" class="px-2 py-2 text-slate-400">Chưa có chuyến xe.</td></tr>'}</tbody></table></div>`;
         }).join('');
     } catch (err) {

@@ -471,7 +471,7 @@ function exportCustomerStatementExcel() {
     csv += `Tổng cước vận tải:,"${cust.freight_revenue}",Tiền chi hộ:,"${cust.reimbursable_amount}",Tổng phải thu:,"${cust.total_receivable}"\n`;
     csv += `Đã thu hồi:,"${cust.collected_amount}",Còn phải thu:,"${cust.remaining_balance}"\n\n`;
     
-    csv += `STT,Mã Chuyến,Ngày Chạy,Đầu Xe,Tài Xế,Số Container,Tuyến Đường,Cước Vận Tải,Tiền Chi Hộ,Tổng Phải Thu,POD,Quyết Toán\n`;
+    csv += `STT,Số Phiếu,Ngày Chạy,Đầu Xe,Tài Xế,Số Container,Tuyến Đường,Cước Vận Tải,Tiền Chi Hộ,Tổng Phải Thu,POD,Quyết Toán\n`;
     trips.forEach((t, i) => {
         csv += `${i + 1},"${t.trip_code}","${t.loading_date}","${t.vehicle_plate}","${t.driver_name || ''}","${t.container_number || ''}","${t.route}",${t.revenue || 0},${t.reimbursable || 0},${t.total_receivable || 0},"${t.has_pod ? 'Đã Nộp' : 'Thiếu'}","${t.is_settled ? 'Đã Chốt' : 'Chưa Chốt'}"\n`;
     });
@@ -555,7 +555,7 @@ function printCustomerARStatement(customerId) {
         theadEl.innerHTML = `
             <tr>
                 <th class="border border-slate-400 p-2 text-center text-slate-900 font-bold bg-slate-100">STT</th>
-                <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Mã Chuyến</th>
+                <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Số Phiếu</th>
                 <th class="border border-slate-400 p-2 text-center text-slate-900 font-bold bg-slate-100">Ngày Chạy</th>
                 <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Xe Kéo & Tài Xế</th>
                 <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Số Cont</th>

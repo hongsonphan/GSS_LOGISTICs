@@ -37,7 +37,7 @@
   function table(j) {
     var wrap = el('div', 'stack'); wrap.append(el('div', 'small mut', j.total + ' booking' + (j.truncated ? ' (đang hiện 300 dòng đầu)' : '')));
     var tw = el('div', 'tw'), t = el('table'), hr = el('tr');
-    ['Mã', 'Khách hàng', 'Số booking · Hãng tàu', 'Cont', 'Chia cont cho nhà xe', 'Ngày hẹn', 'Hạn DEM', 'Hạn DET', 'Trạng thái'].forEach(function (h) { hr.append(el('th', null, h)); }); t.append(hr);
+    ['Số Phiếu', 'Khách hàng', 'Số booking · Hãng tàu', 'Cont', 'Chia cont cho nhà xe', 'Ngày hẹn', 'Hạn DEM', 'Hạn DET', 'Trạng thái'].forEach(function (h) { hr.append(el('th', null, h)); }); t.append(hr);
     j.results.forEach(function (b) {
       var tr = el('tr', 'click'); tr.tabIndex = 0; tr.onclick = function () { openDetail(b.id); }; tr.onkeydown = function (e) { if (e.key === 'Enter') openDetail(b.id); };
       var prog = el('td'), pct = b.total_containers ? Math.min(100, Math.round(100 * b.allocated / b.total_containers)) : 0, bar = el('div', 'progress'), fill = el('i'); fill.style.width = pct + '%'; bar.append(fill);

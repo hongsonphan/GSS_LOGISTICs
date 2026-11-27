@@ -70,7 +70,7 @@ const SETTLE_TH = 'border border-slate-300 px-2 py-1.5 bg-slate-100 text-slate-8
 
 function settleHeadCols(party, anySplit) {
     const th = (t, o = {}) => `<th class="${SETTLE_TH}" ${o.cs ? `colspan="${o.cs}"` : ''} ${o.rs ? `rowspan="${o.rs}"` : ''}>${t}</th>`;
-    const lead = th('STT', { rs: 2 }) + th('Mã chuyến', { rs: 2 }) + th('Số cont / Loại', { rs: 2 }) + th('Tuyến', { rs: 2 });
+    const lead = th('STT', { rs: 2 }) + th('Số Phiếu', { rs: 2 }) + th('Số cont / Loại', { rs: 2 }) + th('Tuyến', { rs: 2 });
     if (party === 'DRIVER') {
         return `<tr>${lead}${th('Tài xế / Xe', { rs: 2 })}${th('Tạm ứng', { cs: 3 })}${th('Chi phí phát sinh', { cs: 5 })}
             ${th('Tổng tạm ứng', { rs: 2 })}${th('Thực chi', { rs: 2 })}${th('Trừ lương TX', { rs: 2 })}${th('Phát sinh KT', { rs: 2 })}${th('Lý do phát sinh', { rs: 2 })}${anySplit ? th('Tỷ lệ thù lao cắt kéo', { rs: 2 }) : ''}${th('Chênh lệch', { rs: 2 })}</tr>
@@ -689,7 +689,7 @@ async function openSettlementVoucherList(partyType = '') {
             <button type="button" onclick="document.getElementById('settle-voucher-list-modal').remove()"><i class="ph-bold ph-x text-lg"></i></button></div>
         <div class="flex gap-2 px-4 py-2">${tab('', 'Tất cả')}${tab('DRIVER', 'Tài xế')}${tab('PARTNER', 'Đối tác 3PL')}${tab('CUSTOMER', 'Khách hàng')}</div>
         <div class="overflow-auto px-4 pb-4"><table class="w-full text-xs" data-no-col-manager data-no-toolbar><thead class="bg-slate-50 font-bold"><tr>
-            <th class="px-2 py-2 text-left">Số phiếu</th><th class="px-2 py-2 text-left">Đối tượng</th><th class="px-2 py-2 text-left">Tên</th>
+            <th class="px-2 py-2 text-left">Số Phiếu</th><th class="px-2 py-2 text-left">Đối tượng</th><th class="px-2 py-2 text-left">Tên</th>
             <th class="px-2 py-2">Số chuyến</th><th class="px-2 py-2 text-right">Số tiền</th><th class="px-2 py-2 text-left">Tình trạng</th><th class="px-2 py-2 text-left">Ngày lập</th>
         </tr></thead><tbody>${rows}</tbody></table></div></div>`;
     document.body.appendChild(modal);

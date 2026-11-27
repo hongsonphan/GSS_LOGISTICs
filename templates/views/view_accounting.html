@@ -529,7 +529,7 @@
 
                     <div class="flex items-center gap-2">
 
-                        <input id="filter-adv-search" oninput="applyDriverAdvancesFilter()" type="text" placeholder="Tìm mã phiếu, mã chuyến, xe..."
+                        <input id="filter-adv-search" oninput="applyDriverAdvancesFilter()" type="text" placeholder="Tìm số phiếu, mã chuyến, xe..."
 
                             class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800" />
 
@@ -565,7 +565,7 @@
 
                             <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
 
-                            <th data-col-key="code" data-col-name="Mã Phiếu Ứng" data-col-locked="true" class="w-28 font-mono">Mã Phiếu Ứng</th>
+                            <th data-col-key="code" data-col-name="Số Phiếu" data-col-locked="true" class="w-28 font-mono">Số Phiếu</th>
 
                             <th data-col-key="trip_code" data-col-name="Mã Chuyến" class="w-28 font-mono">Mã Chuyến</th>
 
@@ -1001,7 +1001,7 @@
 
                             <input id="acct-search-input" oninput="filterAccountingTable()" type="text" 
 
-                                placeholder="Tìm mã chuyến, HĐĐT, tuyến..." 
+                                placeholder="Tìm số phiếu, HĐĐT, tuyến..." 
 
                                 class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500" />
 
@@ -1040,13 +1040,13 @@
 
 
 
-                            <!-- 1. Mã Chuyến -->
+                            <!-- 1. Số Phiếu Chuyến -->
 
-                            <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleAccountingSort('trip_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-28 font-mono" title="Click để sắp xếp theo Mã Chuyến">
+                            <th data-col-key="trip_code" data-col-name="Số Phiếu" data-col-locked="true" onclick="toggleAccountingSort('trip_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-28 font-mono" title="Click để sắp xếp theo Số Phiếu">
 
                                 <div class="flex items-center gap-1.5">
 
-                                    <span>Mã Chuyến</span>
+                                    <span>Số Phiếu</span>
 
                                     <i id="sort-icon-acct-trip_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
 
@@ -1297,7 +1297,7 @@
                         </select>
                     </div>
                     <div>
-                        <input type="text" id="cust-settle-search-input" oninput="filterCustomerSettlementsClientSide()" placeholder="Tìm khách, mã chuyến, cont, lộ trình..." class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:ring-1 focus:ring-teal-500">
+                        <input type="text" id="cust-settle-search-input" oninput="filterCustomerSettlementsClientSide()" placeholder="Tìm khách, số phiếu, cont, lộ trình..." class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:ring-1 focus:ring-teal-500">
                     </div>
                     <div class="flex items-center justify-end gap-2">
                         <!-- Nút Tùy Chỉnh Cột Quyết Toán Khách Hàng -->
@@ -1321,8 +1321,8 @@
                             </th>
                             <!-- Cột STT -->
                             <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
-                            <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleCustomerSettleSort('trip_code')" class="w-28 font-mono cursor-pointer hover:bg-slate-100 transition-colors select-none" title="Click để sắp xếp theo Mã Chuyến">
-                                <div class="flex items-center gap-1"><span>Mã Chuyến</span><i id="sort-icon-cust-trip_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i></div>
+                            <th data-col-key="trip_code" data-col-name="Số Phiếu" data-col-locked="true" onclick="toggleCustomerSettleSort('trip_code')" class="w-28 font-mono cursor-pointer hover:bg-slate-100 transition-colors select-none" title="Click để sắp xếp theo Số Phiếu">
+                                <div class="flex items-center gap-1"><span>Số Phiếu</span><i id="sort-icon-cust-trip_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i></div>
                             </th>
                             <th data-col-key="loading_date" data-col-name="Ngày Đóng" onclick="toggleCustomerSettleSort('loading_date')" class="w-24 text-center cursor-pointer hover:bg-slate-100 transition-colors select-none" title="Click để sắp xếp theo Ngày Đóng">
                                 <div class="flex items-center justify-center gap-1"><span>Ngày Đóng</span><i id="sort-icon-cust-loading_date" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i></div>
@@ -1603,7 +1603,7 @@
 
                             <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
 
-                            <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" class="w-28 font-mono">Mã Chuyến</th>
+                            <th data-col-key="trip_code" data-col-name="Số Phiếu" data-col-locked="true" class="w-28 font-mono">Số Phiếu</th>
 
                             <th data-col-key="created_at" data-col-name="Ngày Chi" class="w-24 text-center">Ngày Chi</th>
 
@@ -1823,7 +1823,7 @@
 
                     <div>
 
-                        <input type="text" id="subcon-search" oninput="debounce(loadSubcontractorData, 300)()" placeholder="Tìm 3PL, biển số, mã chuyến, số cont..."
+                        <input type="text" id="subcon-search" oninput="debounce(loadSubcontractorData, 300)()" placeholder="Tìm 3PL, biển số, số phiếu, số cont..."
 
                             class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-slate-800 focus:ring-1 focus:ring-slate-700">
 
@@ -1867,9 +1867,9 @@
 
                             <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
 
-                            <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleSubconSort('trip_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors font-mono" title="Click để sắp xếp theo Mã Chuyến">
+                            <th data-col-key="trip_code" data-col-name="Số Phiếu" data-col-locked="true" onclick="toggleSubconSort('trip_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors font-mono" title="Click để sắp xếp theo Số Phiếu">
                                 <div class="flex items-center gap-1.5">
-                                    <span>Mã Chuyến</span>
+                                    <span>Số Phiếu</span>
                                     <i id="sort-icon-subcon-trip_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
@@ -1976,7 +1976,7 @@
                 <input id="voucher-filter-search" type="search" oninput="renderVoucherTab()" placeholder="Tìm số phiếu, tên đối tượng..." class="h-9 px-3 border border-slate-200 rounded-xl text-xs font-semibold w-full sm:w-64">
             </div>
             <div class="overflow-x-auto"><table class="erp-table whitespace-nowrap" id="accounting-vouchers-table" data-table-title="Phiếu quyết toán">
-                <thead><tr><th data-col-key="code" data-col-name="Số phiếu">Số phiếu</th><th data-col-key="party" data-col-name="Đối tượng">Đối tượng</th><th data-col-key="name" data-col-name="Tên">Tên</th>
+                <thead><tr><th data-col-key="code" data-col-name="Số Phiếu">Số Phiếu</th><th data-col-key="party" data-col-name="Đối tượng">Đối tượng</th><th data-col-key="name" data-col-name="Tên">Tên</th>
                     <th data-col-key="trips" data-col-name="Số chuyến" class="text-center">Số chuyến</th><th data-col-key="amount" data-col-name="Số tiền" class="text-right">Số tiền</th>
                     <th data-col-key="direction" data-col-name="Thu/Chi">Thu/Chi</th><th data-col-key="status" data-col-name="Tình trạng">Tình trạng</th><th data-col-key="date" data-col-name="Ngày lập">Ngày lập</th></tr></thead>
                 <tbody id="voucher-tab-tbody"><tr><td colspan="8" class="p-8 text-center text-slate-400 font-medium">Đang tải…</td></tr></tbody>
@@ -2197,7 +2197,7 @@
 
                             <th class="w-12 text-center select-none font-bold text-slate-700">STT</th>
 
-                            <th>Mã Chuyến</th>
+                            <th>Số Phiếu</th>
 
                             <th>Đầu Kéo</th>
 

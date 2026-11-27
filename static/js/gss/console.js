@@ -274,7 +274,7 @@
   }
 
   function pendingTable(rows) {
-    var tw = el('div', 'tw'), t = el('table'), hr = el('tr'); ['Booking', 'Nhà xe', 'Được giao', 'Còn thiếu xe/tài'].forEach(function (h) { hr.append(el('th', null, h)); }); t.append(hr);
+    var tw = el('div', 'tw'), t = el('table'), hr = el('tr'); ['Số Phiếu', 'Nhà xe', 'Được giao', 'Còn thiếu xe/tài'].forEach(function (h) { hr.append(el('th', null, h)); }); t.append(hr);
     rows.forEach(function (r) { var tr = el('tr'); [r.booking_code, r.vendor, r.allocated, r.missing].forEach(function (v) { tr.append(el('td', null, String(v))); }); t.append(tr); });
     if (!rows.length) { var e = el('tr'), td = el('td', 'center mut', 'Không còn dòng nào chờ nhà xe nhập.'); td.colSpan = 4; e.append(td); t.append(e); }
     tw.append(t); return tw;
