@@ -10,6 +10,13 @@ function attachAutoNumberFormat(inputEl, onChangeCallback) {
         }
     }
 
+    // Ô đang là "0" (giá trị mặc định): chọn hết khi vào ô để chữ số gõ vào thay thế số 0, không chèn trước số 0
+    const selectIfZero = function() {
+        if (this.value === '0') setTimeout(() => { if (document.activeElement === this && this.value === '0') this.select(); }, 0);
+    };
+    inputEl.addEventListener('focus', selectIfZero);
+    inputEl.addEventListener('click', selectIfZero);
+
     // Xử lý phím Backspace khi đứng ngay sau dấu chấm phân cách hàng ngàn
     inputEl.addEventListener('keydown', function(e) {
         if (e.key === 'Backspace') {

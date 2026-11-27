@@ -42,12 +42,6 @@ function detectActiveUploadContext() {
         return 'task_detail';
     }
 
-    // 4. Modal Booking
-    const bookingModal = document.getElementById('modal-booking');
-    if (bookingModal && !bookingModal.classList.contains('hidden')) {
-        return 'booking';
-    }
-
     // 5. Booking Fullpage View
     const fullpageBookingFile = document.getElementById('fullpage-booking-order-file');
     if (fullpageBookingFile && fullpageBookingFile.offsetParent !== null) {
@@ -133,15 +127,6 @@ function attachPastedImage(file, targetType) {
                     : (fullpageBookingFilesList.push(file), true);
                 if (typeof renderFullpageBookingFilesList === 'function') renderFullpageBookingFilesList();
                 if (added) showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
-            } else if (typeof saleBookingFilesList !== 'undefined') {
-                const totalBytes = saleBookingFilesList.reduce((s, f) => s + (f.size || 0), 0);
-                if (totalBytes + (file.size || 0) > 10 * 1024 * 1024) {
-                    showToast('warning', `Tổng dung lượng tài liệu đính kèm vượt quá 10MB.`, 'Vượt Hạn Mức 10MB');
-                    break;
-                }
-                saleBookingFilesList.push(file);
-                if (typeof renderSaleBookingFilesList === 'function') renderSaleBookingFilesList();
-                showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
             }
             break;
         }

@@ -628,10 +628,16 @@ function addNewContainerRow() {
         stagedBookingContainers = tableConts;
     }
 
+    // Loại cont mặc định của dòng mới: theo loại đã chọn ở booking (đúng 1 loại thì lấy loại đó, nhiều loại thì lấy loại đầu tiên),
+    // chỉ rơi về 40HC khi booking chưa chọn loại nào. Người dùng vẫn đổi được trên từng dòng.
+    const bookingSizes = String(document.getElementById('fullpage-booking-container-size')?.value || '')
+        .split(/[,;/]+/).map(s => s.trim().toUpperCase()).filter(s => /^\d{2}[A-Z0-9]+$/.test(s));
+    const defaultContType = bookingSizes[0] || '40HC';
+
     // Thêm 1 dòng mới với đầy đủ các trường
     stagedBookingContainers.push({
         container_number: '',
-        container_type: '40HC',
+        container_type: defaultContType,
         seal_number: '',
         gross_weight_kg: null,
         delivery_loc: deliveryLocText,

@@ -2233,7 +2233,7 @@ class GssLogisticsCoreTestCase(TestCase):
             vehicle=self.vehicle,
             driver=self.driver,
             loading_date=today,
-            status=TripStatus.DELIVERED,
+            status=TripStatus.DELIVERED, step_status='EMPTY_RETURNED',
             cached_revenue=6000000,
             cached_expense=2000000,
             cached_profit=4000000,

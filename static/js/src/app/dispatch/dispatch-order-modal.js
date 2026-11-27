@@ -248,7 +248,7 @@ function mdoAddAllocationRow(subId = null, count = 1, note = '', isExisting = fa
     let subOptions = '<option value="">-- Chọn Nhà xe (Vendor) --</option>';
     mdoSubcontractors.forEach(s => {
         const sel = subId && String(s.id) === String(subId) ? 'selected' : '';
-        subOptions += `<option value="${s.id}" ${sel}>${escapeHtml(s.short_name || s.name)}</option>`;
+        subOptions += `<option value="${s.id}" ${sel}>${escapeHtml((s.code ? s.code + ' · ' : '') + (s.short_name || s.name))}</option>`;
     });
 
     tr.innerHTML = `
@@ -815,7 +815,8 @@ window.isOrderFullyAllocated = isOrderFullyAllocated;
 function isOrderCompleted(b) {
     const total = Number(b.total_containers) || 1;
     const tripsDone = Number(b.trips_completed) || 0;
-    return Boolean(b.is_completed || b.status === 'COMPLETED' || (tripsDone > 0 && tripsDone >= total));
+    // Hoàn thành = các chuyến đã hạ rỗng (máy chủ tính `is_completed`). Không dùng b.status === 'COMPLETED': đó chỉ là "đã điều đủ xe".
+    return Boolean(b.is_completed || (tripsDone > 0 && tripsDone >= total));
 }
 window.isOrderCompleted = isOrderCompleted;
 
@@ -1076,7 +1077,8 @@ function renderDispatchOrdersTable() {
         if (isCompleted) {
             allocProgress = `<span class="text-sky-700 font-bold flex items-center gap-1"><i class="ph-bold ph-seal-check"></i> Đã hoàn tất (${total}/${total} cont)</span>`;
         } else if (isDispatched) {
-            allocProgress = `<span class="text-emerald-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle"></i> Đã chia đủ ${allocated}/${total} cont</span>`;
+            const running = Number(b.trips_running) || 0;
+            allocProgress = `<span class="text-emerald-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle"></i> Đã chia đủ ${allocated}/${total} cont${running > 0 ? ` · ${running} đang chạy` : ''}</span>`;
         } else if (allocated > 0) {
             allocProgress = `<span class="text-amber-700 font-bold flex items-center gap-1"><i class="ph-bold ph-arrows-split"></i> Đã chia ${allocated}/${total} (Còn ${remaining})</span>`;
         } else {
@@ -1288,7 +1290,7 @@ async function loadVendorContainersTab() {
             const vendorMap = new Map();
             rows.forEach(r => {
                 if (r.vendor_id && !vendorMap.has(r.vendor_id)) {
-                    vendorMap.set(r.vendor_id, r.vendor_short || r.vendor_name);
+                    vendorMap.set(r.vendor_id, (r.vendor_code ? r.vendor_code + ' · ' : '') + (r.vendor_short || r.vendor_name));
                 }
             });
             vendorMap.forEach((vName, vIdVal) => {
@@ -1609,7 +1611,7 @@ async function loadMdoContainers(bookingId) {
     if (bulkSelect) {
         let optHtml = '<option value="">-- Chọn Nhà xe phụ trách --</option>';
         mdoSubcontractors.forEach(s => {
-            optHtml += `<option value="${s.id}">${escapeHtml(s.short_name || s.name)}</option>`;
+            optHtml += `<option value="${s.id}">${escapeHtml((s.code ? s.code + ' · ' : '') + (s.short_name || s.name))}</option>`;
         });
         bulkSelect.innerHTML = optHtml;
     }
@@ -1781,7 +1783,7 @@ function mdoFilterContainers() {
             let subOptions = '<option value="">-- Chưa phân bổ --</option>';
             mdoSubcontractors.forEach(s => {
                 const sel = (currentSubId && String(s.id) === String(currentSubId)) || (subName && (s.short_name === subName || s.name === subName)) ? 'selected' : '';
-                subOptions += `<option value="${s.id}" ${sel}>${escapeHtml(s.short_name || s.name)}</option>`;
+                subOptions += `<option value="${s.id}" ${sel}>${escapeHtml((s.code ? s.code + ' · ' : '') + (s.short_name || s.name))}</option>`;
             });
             vendorSelectHtml = `
                 <select onchange="mdoChangeSingleContainerVendor(${c.id}, this.value)" 

@@ -48,7 +48,8 @@ def connect_master_data_signals():
 # Model nghiệp vụ -> chủ đề đồng bộ. Mọi thêm/sửa/xóa (Web, API, Admin, import) đều tăng phiên bản chủ đề,
 # các màn hình đang mở thấy phiên bản đổi sẽ tự tải lại danh sách (core/live-sync.js).
 TOPIC_MODELS = {
-    'dispatch': ['dispatch.DispatchTrip', 'dispatch.TripTimelineItem', 'dispatch.TripContainer', 'documents.TripDocument', 'exceptions.TripException'],
+    'dispatch': ['dispatch.DispatchTrip', 'dispatch.TripTimelineItem', 'dispatch.TripContainer', 'documents.TripDocument', 'exceptions.TripException',
+                 'dispatch.BookingVendorAllocation', 'gss.BookingContainer'],
     'sales': ['customers.Quotation', 'customers.QuotationItem', 'customers.BookingOrder', 'customers.BookingDocument'],
     'accounting': ['billing.TripExpense', 'billing.DispatcherAdvanceFund', 'billing.DriverTripAdvance', 'billing.CashTransaction',
                    'billing.CustomerInvoice', 'billing.SubcontractorSettlement', 'billing.DriverPayrollSettlement', 'billing.DebitNote',

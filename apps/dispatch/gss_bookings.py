@@ -9,7 +9,7 @@ from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 from apps.customers.dem_det import describe
-from apps.customers.models import BookingDocument, BookingOrder, BookingStatus, Customer
+from apps.customers.models import MAX_CONTAINER_TYPES, BookingDocument, BookingOrder, BookingPriceLine, BookingStatus, Customer, booking_container_types
 from apps.dispatch.models import AllocationStatus, BookingVendorAllocation, DispatchTrip
 from apps.master_data.models import CompanyProfile, Location
 from core.sequences import next_code
@@ -137,7 +137,7 @@ def serialize(b, detail=False):
             'free_time_detention': b.free_time_detention, 'dem_start_date': _iso(b.dem_start_date), 'det_start_date': _iso(b.det_start_date),
             'dem_expiry_override': _iso(b.dem_expiry_override), 'det_expiry_override': _iso(b.det_expiry_override),
             'destination_notes': b.destination_notes, 'road_restrictions': b.road_restrictions, 'notes': b.notes,
-            'selling_freight_price': float(b.selling_freight_price), 'pickup_loc_id': b.pickup_loc_id, 'delivery_loc_id': b.delivery_loc_id,
+            'selling_freight_price': float(b.selling_freight_price), 'price_lines': price_lines_of(b), 'pickup_loc_id': b.pickup_loc_id, 'delivery_loc_id': b.delivery_loc_id,
             'dropoff_loc_id': b.dropoff_loc_id, 'port_of_loading': b.port_of_loading, 'port_of_discharge': b.port_of_discharge,
             'supplier_name': b.supplier_name, 'discharge_date': _iso(b.discharge_date), 'do_expiry': _iso(b.do_expiry),
             'customs_numbers': (nums_c := customs_numbers(b)), 'customs_declaration_number': ', '.join(nums_c),
@@ -168,6 +168,84 @@ def listing(search='', status='', alert=''):
 
 
 @transaction.atomic
+def parse_price_lines(data, booking):
+    """Đọc và kiểm dòng giá từ `price_lines` (list hoặc chuỗi JSON). Trả None nếu không gửi gì về giá.
+    Giá cũ `selling_freight_price` (một số) được hiểu là một dòng giá cho loại cont đầu tiên ở ô Size."""
+    import json
+    raw = data.get('price_lines') if 'price_lines' in data else None
+    if raw is None and 'selling_freight_price' not in data:
+        return None
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw or '[]')
+        except ValueError:
+            raise ValidationError('Dòng giá không hợp lệ.')
+    if raw is None:
+        try:
+            price = float(data['selling_freight_price'] or 0)
+        except (TypeError, ValueError):
+            raise ValidationError('Đơn giá cước không hợp lệ.')
+        types = booking_container_types(getattr(booking, 'container_size', ''))
+        raw = [{'container_type': types[0] if types else '', 'unit_price': price}] if price else []
+        if booking.pk and price:  # client cũ chỉ gửi một số: chỉ sửa dòng đầu, giữ các dòng còn lại
+            old = [{'container_type': l.container_type, 'unit_price': float(l.unit_price), 'note': l.note}
+                   for l in booking.price_lines.filter(is_deleted=False)]
+            if old:
+                old[0]['unit_price'] = price
+                raw = old
+    if not isinstance(raw, list) or len(raw) > MAX_CONTAINER_TYPES:
+        raise ValidationError(f'Giá Booking tối đa {MAX_CONTAINER_TYPES} dòng.')
+    allowed = booking_container_types(booking.container_size)
+    out, seen = [], set()
+    for i, line in enumerate(raw):
+        if not isinstance(line, dict):
+            raise ValidationError('Dòng giá không hợp lệ.')
+        ctype = str(line.get('container_type') or '').strip().upper()[:30]
+        try:
+            price = float(str(line.get('unit_price') or 0).replace(',', ''))
+        except (TypeError, ValueError):
+            raise ValidationError('Đơn giá cước không hợp lệ.')
+        if price < 0:
+            raise ValidationError('Đơn giá cước không được âm.')
+        if not price and not ctype:
+            continue  # dòng trống
+        if allowed and ctype and ctype not in allowed:
+            raise ValidationError(f'Loại cont {ctype} của dòng giá không nằm trong ô Size ({", ".join(allowed)}).')
+        if ctype in seen:
+            raise ValidationError(f'Loại cont {ctype} có hai dòng giá. Mỗi loại chỉ một đơn giá.')
+        seen.add(ctype)
+        out.append({'container_type': ctype, 'unit_price': price, 'note': str(line.get('note') or '').strip()[:200], 'sort_order': i})
+    return out
+
+
+def write_price_lines(booking, lines):
+    """Ghi dòng giá của Booking theo `lines` (đã qua parse_price_lines): sửa tại chỗ theo thứ tự,
+    thêm dòng mới nếu thiếu, dòng thừa xóa mềm. Không sinh bản ghi mới khi không đổi."""
+    now = timezone.now()
+    old = list(booking.price_lines.filter(is_deleted=False).order_by('sort_order', 'id'))
+    for i, l in enumerate(lines):
+        if i < len(old):
+            row = old[i]
+            vals = (row.container_type, float(row.unit_price), row.note, row.sort_order)
+            if vals != (l['container_type'], l['unit_price'], l['note'], l['sort_order']):
+                row.container_type, row.unit_price, row.note, row.sort_order = l['container_type'], l['unit_price'], l['note'], l['sort_order']
+                row.save()
+        else:
+            BookingPriceLine.objects.create(booking=booking, **l)
+    for row in old[len(lines):]:
+        row.is_deleted, row.deleted_at = True, now
+        row.save()
+
+
+def price_lines_of(b):
+    """Danh sách dòng giá để trả cho giao diện; booking cũ chưa có dòng thì suy ra từ cột giá."""
+    rows = [{'container_type': l.container_type, 'unit_price': float(l.unit_price), 'note': l.note} for l in b.price_lines.filter(is_deleted=False)]
+    if not rows and b.selling_freight_price:
+        types = booking_container_types(b.container_size)
+        rows = [{'container_type': types[0] if types else '', 'unit_price': float(b.selling_freight_price), 'note': ''}]
+    return rows
+
+
 def save_booking(data, booking=None):
     """Tạo (booking=None) hoặc cập nhật booking từ dict `data`. Ném ValidationError với thông báo tiếng Việt."""
     creating = booking is None
@@ -194,6 +272,8 @@ def save_booking(data, booking=None):
             val = str(data[key] or '').strip()
             if len(val) > size:
                 raise ValidationError(f'{key} quá dài (tối đa {size} ký tự).')
+            if key == 'container_size' and len(booking_container_types(val)) > MAX_CONTAINER_TYPES:
+                raise ValidationError(f'Ô Size chỉ chọn tối đa {MAX_CONTAINER_TYPES} loại cont.')
             setattr(booking, key, val.upper() if key in _UPPER else val)
     for key in _DATE_FIELDS:
         if key in data:
@@ -224,14 +304,9 @@ def save_booking(data, booking=None):
     for key, lo, hi in (('free_time_demurrage', 0, 365), ('free_time_detention', 0, 365)):
         if key in data:
             setattr(booking, key, _int(data[key], key, lo, hi))
-    if 'selling_freight_price' in data:
-        try:
-            price = float(data['selling_freight_price'] or 0)
-        except (TypeError, ValueError):
-            raise ValidationError('Đơn giá cước không hợp lệ.')
-        if price < 0:
-            raise ValidationError('Đơn giá cước không được âm.')
-        booking.selling_freight_price = price
+    price_lines = parse_price_lines(data, booking)
+    if price_lines is not None:
+        booking.selling_freight_price = price_lines[0]['unit_price'] if price_lines else 0  # bản phản chiếu dòng đầu
     for name, fk in _LOC_FIELDS:
         if f'{fk}_id' in data or name in data:
             loc = Location.objects.filter(pk=data.get(f'{fk}_id'), is_deleted=False).first() if data.get(f'{fk}_id') else None
@@ -252,6 +327,8 @@ def save_booking(data, booking=None):
     if customs_raw is not None:
         split_customs_numbers(customs_raw)  # kiểm tra trước khi lưu, lỗi thì không tạo booking dở
     booking.save()
+    if price_lines is not None:
+        write_price_lines(booking, price_lines)
     if customs_raw is not None:
         sync_customs_numbers(booking, customs_raw)
     if not creating:

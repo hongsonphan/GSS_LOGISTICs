@@ -56,6 +56,54 @@ class VendorBase(TestCase):
         return {**base, **kw}
 
 
+class ContainerTypeFromGridTests(VendorBase):
+    """Mục 17: loại cont của chuyến lấy từ DÒNG CONT ở lưới, không lấy từ ô Size (có thể ghi nhiều loại) của booking."""
+
+    def setUp(self):
+        super().setUp()
+        self.booking.container_size = '20GP,40HC'
+        self.booking.save()
+        self.alloc, _ = svc.create_allocation(self.booking, self.sub_a, 2)
+
+    def test_trip_takes_type_of_its_grid_row_not_booking_size(self):
+        from apps.gss.models import BookingContainer
+        BookingContainer.objects.create(booking=self.booking, company=self.booking.company, line_no=1, container_number='CSQU3054383',
+                                        container_type='20GP', allocation=self.alloc, alloc_line_no=1)
+        BookingContainer.objects.create(booking=self.booking, company=self.booking.company, line_no=2, container_number='MSCU1234565',
+                                        container_type='40HC', allocation=self.alloc, alloc_line_no=2)
+        svc.submit_rows(self.alloc, [self.row(1, container_number='CSQU3054383'), self.row(2, container_number='MSCU1234565')])
+        types = dict(DispatchTrip.objects.filter(booking_order=self.booking).values_list('container_number', 'container_type'))
+        self.assertEqual(types, {'CSQU3054383': '20GP', 'MSCU1234565': '40HC'})  # không phải chuỗi '20GP,40HC'
+
+    def test_without_grid_row_uses_first_booking_type(self):
+        svc.submit_rows(self.alloc, [self.row(1, container_number='CSQU3054383')])
+        t = DispatchTrip.objects.get(booking_order=self.booking)
+        self.assertEqual(t.container_type, '20GP')
+
+    def test_import_requires_type_when_booking_has_several_and_autofills_when_one(self):
+        from apps.gss import containers as cs
+        rows = [{'raw': 'CSQU3054383', 'source_line': 1}]
+        res = cs.validate_rows(self.booking, rows)[0]
+        self.assertFalse(res['ok'])
+        self.assertIn('nhiều loại cont', ' '.join(res['errors']))
+        res = cs.validate_rows(self.booking, [{'raw': 'CSQU3054383', 'source_line': 1, 'container_type': '40HC'}])[0]
+        self.assertTrue(res['ok'])
+        self.booking.container_size = '20GP'
+        self.booking.save()
+        res = cs.validate_rows(self.booking, rows)[0]
+        self.assertTrue(res['ok'])
+        self.assertEqual(res['container_type'], '20GP')  # booking chỉ 1 loại: tự điền cho dòng
+
+    def test_helper_parses_and_limits_to_four_types(self):
+        from apps.customers.models import MAX_CONTAINER_TYPES, booking_container_types
+        self.assertEqual(booking_container_types(' 20gp ; 40HC/40hc,,45HC '), ['20GP', '40HC', '45HC'])
+        self.assertEqual(booking_container_types('Cont 20GP'), [])  # chuỗi tự do không phải loại cont hợp lệ
+        self.assertEqual(MAX_CONTAINER_TYPES, 4)
+        from apps.dispatch import gss_bookings
+        with self.assertRaises(ValidationError):
+            gss_bookings.save_booking({'container_size': '20GP,40GP,40HC,45HC,20RF'}, self.booking)
+
+
 class AllocationTests(VendorBase):
     def test_cannot_exceed_booking_total(self):
         svc.create_allocation(self.booking, self.sub_a, 6)
@@ -270,6 +318,31 @@ class VendorApiTests(VendorBase):
         self.assertEqual(DispatchTrip.objects.filter(booking_order=self.booking).count(), 1)
         from core.models import AuditLog
         self.assertFalse(AuditLog.objects.filter(actor_label='khách (chưa đăng nhập)').exists())
+
+    def test_portal_shows_booking_driver_notes(self):
+        """Ghi chú của booking ("Lưu ý cho tài xế") phải hiện trên cổng nhà xe, cùng B/L để cột Số B/L không trống."""
+        self.booking.notes = 'Kho nhận hàng 7h-17h, cấm đường 6h-9h'
+        self.booking.hbl_number = 'HBL-NOTE-1'
+        self.booking.save()
+        token = self._create()['link'].rstrip('/').split('/')[-1]
+        self.client.logout()
+        b = self.client.get(f'/api/vendor/{token}/').json()['data']['booking']
+        self.assertEqual(b['notes'], 'Kho nhận hàng 7h-17h, cấm đường 6h-9h')
+        self.assertEqual(b['bl_number'], 'HBL-NOTE-1')
+        # trang cổng dùng đúng khóa bl_number/notes (không dùng khóa sai làm cột B/L trống)
+        html = self.client.get(f'/vendor/{token}/').content.decode()
+        self.assertIn('b.bl_number || b.booking_number', html)
+        self.assertIn('b.notes ?', html)
+
+    def test_live_sync_dispatch_topic_bumps_on_allocation_and_containers(self):
+        """Giao cont cho nhà xe / đổi cont phải làm tăng phiên bản chủ đề 'dispatch' để trang điều độ tự làm mới."""
+        import time
+        before = self.client.get('/api/master-data/sync/').json()['topics']['dispatch']
+        time.sleep(0.01)
+        with self.captureOnCommitCallbacks(execute=True):
+            self._create(2)
+        after = self.client.get('/api/master-data/sync/').json()['topics']['dispatch']
+        self.assertGreater(after, before)
 
     def test_wrong_token_and_revoked_token_404(self):
         out = self._create()

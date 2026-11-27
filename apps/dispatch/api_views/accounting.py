@@ -32,8 +32,8 @@ class AccountingAPIView(APIView):
         settlement_list = []
         for t in trips:
             rev = float(t.cached_revenue or 0)
-            if rev <= 0 and t.booking_order and t.booking_order.selling_freight_price:
-                rev = float(t.booking_order.selling_freight_price)
+            if rev <= 0 and t.booking_order and t.booking_order.price_for(t.container_type):
+                rev = float(t.booking_order.price_for(t.container_type))
             if rev <= 0:
                 rev = 0.0
 

@@ -128,6 +128,8 @@ class BookingOrderDetailAPIView(APIView):
             'hs_code': b.hs_code,
             'etd': b.etd.isoformat() if b.etd else '',
             'eta': b.eta.isoformat() if b.eta else '',
+            'discharge_date': b.discharge_date.isoformat() if b.discharge_date else '',
+            'do_expiry': b.do_expiry.isoformat() if b.do_expiry else '',
             'cargo_value': gss_bookings._money(b.cargo_value),
             'invoice_no': b.invoice_no or '',
             'customs_numbers': customs_nums,
@@ -150,6 +152,7 @@ class BookingOrderDetailAPIView(APIView):
             'destination_notes': b.destination_notes, 'road_restrictions': b.road_restrictions,
             'pod_template_id': b.pod_template_id or '',
             'selling_freight_price': float(b.selling_freight_price),
+            'price_lines': gss_bookings.price_lines_of(b),
             'container_deposit': float(b.container_deposit or 0),
             'status': b.status,
             'status_label': b.get_status_display(),
@@ -272,9 +275,9 @@ class BookingOrderDetailAPIView(APIView):
                 except ValueError:
                     return Response({'error': f'Ngày không hợp lệ ở trường {fld} (định dạng YYYY-MM-DD).'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            for fld in ('etd', 'eta'):
+            for fld, label in (('etd', 'ETD'), ('eta', 'ETA'), ('discharge_date', 'Ngày dỡ hàng'), ('do_expiry', 'Hạn D/O')):
                 if fld in data:
-                    setattr(b, fld, gss_bookings._date(data[fld], fld.upper()))
+                    setattr(b, fld, gss_bookings._date(data[fld], label))
             if 'cargo_value' in data:
                 b.cargo_value = gss_bookings.parse_cargo_value(data['cargo_value'])
             if 'invoice_no' in data:
@@ -301,14 +304,14 @@ class BookingOrderDetailAPIView(APIView):
                 b.pod_template = tpl
             else:
                 b.pod_template = None
-        if 'selling_freight_price' in data:
-            try:
-                price_val = float(data.get('selling_freight_price') or 0)
-                if price_val <= 0:
-                    return Response({'error': 'Đơn giá cước vận chuyển là bắt buộc và phải lớn hơn 0! Vui lòng kiểm tra và nhập giá cước bán.'}, status=status.HTTP_400_BAD_REQUEST)
-                b.selling_freight_price = price_val
-            except (ValueError, TypeError):
-                return Response({'error': 'Đơn giá cước không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            _price_lines = gss_bookings.parse_price_lines(data, b)
+        except DjangoValidationError as ve:
+            return Response({'error': ' '.join(ve.messages)}, status=status.HTTP_400_BAD_REQUEST)
+        if _price_lines is not None:
+            if not _price_lines or _price_lines[0]['unit_price'] <= 0:
+                return Response({'error': 'Đơn giá cước vận chuyển là bắt buộc và phải lớn hơn 0! Vui lòng kiểm tra và nhập giá cước bán.'}, status=status.HTTP_400_BAD_REQUEST)
+            b.selling_freight_price = _price_lines[0]['unit_price']
         if 'container_deposit' in data:
             try:
                 b.container_deposit = max(0, float(data.get('container_deposit') or 0))
@@ -320,6 +323,8 @@ class BookingOrderDetailAPIView(APIView):
             b.notes = data['notes']
 
         b.save()
+        if _price_lines is not None:
+            gss_bookings.write_price_lines(b, _price_lines)
         if 'customs_declaration_number' in data:
             gss_bookings.sync_customs_numbers(b, data['customs_declaration_number'])
         return Response({

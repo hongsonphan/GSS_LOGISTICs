@@ -193,7 +193,7 @@ class PostingTests(LedgerTestBase):
             trip = self.trip(cached_revenue=4_000_000)
         self.assertFalse(JournalEntry.objects.filter(source_type='trip').exists())
         with self.captureOnCommitCallbacks(execute=True):
-            DispatchTrip.objects.filter(pk=trip.pk).update(status='COMPLETED')
+            DispatchTrip.objects.filter(pk=trip.pk).update(status='COMPLETED', step_status='EMPTY_RETURNED')
             trip.refresh_from_db()
             trip.save()
             TripExpense.objects.create(trip=trip, driver=self.driver, category='TOLL_FEE', amount=108_000,

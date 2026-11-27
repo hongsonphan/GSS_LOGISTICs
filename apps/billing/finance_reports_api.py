@@ -1399,7 +1399,7 @@ class AccountingReportsAPIView(APIView):
                 if not d_row['assigned_vehicle'] and t.vehicle:
                     d_row['assigned_vehicle'] = t.vehicle.license_plate
 
-                if t.status == 'COMPLETED':
+                if t.step_status == 'EMPTY_RETURNED':
                     d_row['completed_trips_count'] += 1
                     d_row['estimated_trip_salary'] += 400000
 

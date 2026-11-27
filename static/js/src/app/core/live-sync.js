@@ -11,7 +11,28 @@ const LIVE_SYNC_VIEWS = {
     'view-hai-quan': { topics: ['customs'], refresh: () => fetchCustomsDeclarations() },
     'view-nhan-su': { topics: ['hr'], refresh: () => loadHRData() },
     'view-xe-bai': { topics: ['fleet', 'dispatch'], refresh: () => loadFleetData() },
+    'view-dispatch-order': { topics: ['dispatch'], refresh: () => liveSyncDispatchOrder() },
+    'view-booking-detail': { topics: ['dispatch'], refresh: () => liveSyncBookingDetail() },
 };
+
+// Trang Lệnh điều độ: tài xế/nhà xe đổi bước thì bảng cont và thẻ nhà xe tự cập nhật.
+// Đang chọn cont để giao thì hoãn sang nhịp sau (không làm mất lựa chọn của điều độ viên).
+async function liveSyncDispatchOrder() {
+    const id = typeof mdoCurrentBooking !== 'undefined' && mdoCurrentBooking ? mdoCurrentBooking.id : null;
+    if (!id) return;
+    if (typeof mdoSelectedContIds !== 'undefined' && mdoSelectedContIds.size > 0) { liveSyncPending.add('dispatch'); return; }
+    await loadMdoContainers(id);
+    await mdoReloadAllocationsAndCards(id);
+}
+
+// Trang Booking: chỉ làm mới danh sách cont khi đang ở chế độ xem (đang Sửa thì hoãn, tránh ghi đè dòng chưa lưu).
+async function liveSyncBookingDetail() {
+    const id = document.getElementById('fullpage-booking-id')?.value;
+    if (!id) return;
+    const editing = document.getElementById('btn-fullpage-edit-booking-bottom')?.classList.contains('hidden');
+    if (editing || (typeof selectedBookingContIds !== 'undefined' && selectedBookingContIds.size > 0)) { liveSyncPending.add('dispatch'); return; }
+    await loadBookingContainersList(id);
+}
 let liveSyncVersions = null;
 let liveSyncPending = new Set();
 let liveSyncBusy = false;

@@ -2227,7 +2227,6 @@ function closeModal(id) {
     } 
     if (id === 'modal-ocr') resetOcr();
     if (id === 'modal-create-trip') clearBookingFileSelection();
-    if (id === 'modal-booking') clearSaleBookingFileSelection();
 }
 
 // ---- src/app/core/number-input.js ----
@@ -2242,6 +2241,13 @@ function attachAutoNumberFormat(inputEl, onChangeCallback) {
             inputEl.value = new Intl.NumberFormat('vi-VN').format(parseInt(clean, 10));
         }
     }
+
+    // Ô đang là "0" (giá trị mặc định): chọn hết khi vào ô để chữ số gõ vào thay thế số 0, không chèn trước số 0
+    const selectIfZero = function() {
+        if (this.value === '0') setTimeout(() => { if (document.activeElement === this && this.value === '0') this.select(); }, 0);
+    };
+    inputEl.addEventListener('focus', selectIfZero);
+    inputEl.addEventListener('click', selectIfZero);
 
     // Xử lý phím Backspace khi đứng ngay sau dấu chấm phân cách hàng ngàn
     inputEl.addEventListener('keydown', function(e) {
@@ -2443,12 +2449,6 @@ function detectActiveUploadContext() {
         return 'task_detail';
     }
 
-    // 4. Modal Booking
-    const bookingModal = document.getElementById('modal-booking');
-    if (bookingModal && !bookingModal.classList.contains('hidden')) {
-        return 'booking';
-    }
-
     // 5. Booking Fullpage View
     const fullpageBookingFile = document.getElementById('fullpage-booking-order-file');
     if (fullpageBookingFile && fullpageBookingFile.offsetParent !== null) {
@@ -2534,15 +2534,6 @@ function attachPastedImage(file, targetType) {
                     : (fullpageBookingFilesList.push(file), true);
                 if (typeof renderFullpageBookingFilesList === 'function') renderFullpageBookingFilesList();
                 if (added) showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
-            } else if (typeof saleBookingFilesList !== 'undefined') {
-                const totalBytes = saleBookingFilesList.reduce((s, f) => s + (f.size || 0), 0);
-                if (totalBytes + (file.size || 0) > 10 * 1024 * 1024) {
-                    showToast('warning', `Tổng dung lượng tài liệu đính kèm vượt quá 10MB.`, 'Vượt Hạn Mức 10MB');
-                    break;
-                }
-                saleBookingFilesList.push(file);
-                if (typeof renderSaleBookingFilesList === 'function') renderSaleBookingFilesList();
-                showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
             }
             break;
         }
@@ -3593,7 +3584,28 @@ const LIVE_SYNC_VIEWS = {
     'view-hai-quan': { topics: ['customs'], refresh: () => fetchCustomsDeclarations() },
     'view-nhan-su': { topics: ['hr'], refresh: () => loadHRData() },
     'view-xe-bai': { topics: ['fleet', 'dispatch'], refresh: () => loadFleetData() },
+    'view-dispatch-order': { topics: ['dispatch'], refresh: () => liveSyncDispatchOrder() },
+    'view-booking-detail': { topics: ['dispatch'], refresh: () => liveSyncBookingDetail() },
 };
+
+// Trang Lệnh điều độ: tài xế/nhà xe đổi bước thì bảng cont và thẻ nhà xe tự cập nhật.
+// Đang chọn cont để giao thì hoãn sang nhịp sau (không làm mất lựa chọn của điều độ viên).
+async function liveSyncDispatchOrder() {
+    const id = typeof mdoCurrentBooking !== 'undefined' && mdoCurrentBooking ? mdoCurrentBooking.id : null;
+    if (!id) return;
+    if (typeof mdoSelectedContIds !== 'undefined' && mdoSelectedContIds.size > 0) { liveSyncPending.add('dispatch'); return; }
+    await loadMdoContainers(id);
+    await mdoReloadAllocationsAndCards(id);
+}
+
+// Trang Booking: chỉ làm mới danh sách cont khi đang ở chế độ xem (đang Sửa thì hoãn, tránh ghi đè dòng chưa lưu).
+async function liveSyncBookingDetail() {
+    const id = document.getElementById('fullpage-booking-id')?.value;
+    if (!id) return;
+    const editing = document.getElementById('btn-fullpage-edit-booking-bottom')?.classList.contains('hidden');
+    if (editing || (typeof selectedBookingContIds !== 'undefined' && selectedBookingContIds.size > 0)) { liveSyncPending.add('dispatch'); return; }
+    await loadBookingContainersList(id);
+}
 let liveSyncVersions = null;
 let liveSyncPending = new Set();
 let liveSyncBusy = false;
@@ -4861,7 +4873,7 @@ function switchTab(tabId, updateHistory = true) {
     // Tự động đóng tất cả các popup modal nổi khi chuyển đổi phân hệ (chỉ dùng class 'hidden' chuẩn modal, không gắn 'hidden-view' để tránh lỗi display:none !important)
     if (typeof closeDispatchOrderModal === 'function') closeDispatchOrderModal();
     if (typeof closeImportContainersModal === 'function') closeImportContainersModal();
-    ['modal-dispatch-order', 'modal-import-containers', 'modal-booking', 'modal-quotation', 'modal-cash-transaction', 'modal-driver-advance', 'modal-settle-advance', 'modal-dispatcher-fund'].forEach(id => {
+    ['modal-dispatch-order', 'modal-import-containers', 'modal-quotation', 'modal-cash-transaction', 'modal-driver-advance', 'modal-settle-advance', 'modal-dispatcher-fund'].forEach(id => {
         const m = document.getElementById(id);
         if (m) {
             m.classList.add('hidden');
@@ -5680,7 +5692,7 @@ window.addEventListener('popstate', (event) => {
         const cu = window.CURRENT_USER || {};
         if (cu.is_superuser) return true;
         const grants = window.BIM_ACCESS;
-        if (!grants) return true;  // quy tắc cũ: để máy chủ quyết định
+        if (!grants) return false;  // máy chủ luôn trả danh sách quyền cho người đã đăng nhập; không có = không có quyền (máy chủ vẫn kiểm tra lại)
         return (grants[module] || []).includes(action || 'view');
     }
     window.canAccess = canAccess;
@@ -5697,6 +5709,11 @@ window.addEventListener('popstate', (event) => {
         'subtab-acct-reimbursables': 'acc_reimburse', 'subtab-acct-settlements': 'acc_driver_settle', 'subtab-acct-customer-settlements': 'acc_customer_settle',
         'subtab-acct-subcontractors': 'acc_3pl', 'subtab-acct-vouchers': 'acc_voucher', 'subtab-acct-ledger': 'ledger', 'subtab-acct-bot-audit': 'acc_bot',
     };
+    // Modal nằm ngoài các view nên cần ánh xạ riêng để nút Tạo / Xóa / Xuất trong modal ẩn theo quyền của phân hệ
+    const MODAL_MODULE = {
+        'modal-dispatch-order': 'dispatch', 'modal-create-trip': 'dispatch', 'modal-quotation': 'sales',
+        'modal-cash-transaction': 'acc_cashbook', 'modal-driver-advance': 'advances', 'modal-settle-advance': 'advances', 'modal-dispatcher-fund': 'advances',
+    };
     const RULES = [
         [/^\s*(open\w*Create\w*|openCreate\w*|create\w*Page|openNew\w*|openAdd\w*|add(Trip|Vehicle|Trailer|Employee|Customer|Booking|Quotation)\w*)\s*\(/, 'create'],
         [/^\s*(event\.stopPropagation\(\);\s*)?(confirmDelete\w*|delete\w*|remove(Trip|Vehicle|Trailer|Employee|Customer|Booking|Quotation|Voucher|Declaration)\w*)\s*\(/, 'delete'],
@@ -5706,6 +5723,8 @@ window.addEventListener('popstate', (event) => {
     const SETTINGS_EDIT_RULE = /^\s*(openEditMasterDataModal|openSubcontractorFleetModal)\s*\(/;
 
     function moduleOf(el) {
+        const modal = el.closest('[id^="modal-"]');
+        if (modal) return MODAL_MODULE[modal.id] || null;
         // Trang Cài đặt: quyền theo tab đang mở (cfg_*)
         if (el.closest('#view-cai-dat') && typeof window.mdActiveModule === 'function') return window.mdActiveModule();
         const sub = el.closest('[id^="subtab-"]');
@@ -5725,7 +5744,7 @@ window.addEventListener('popstate', (event) => {
             if (!canAccess(m, a || 'view')) el.classList.add('hidden', 'acc-hidden');
         });
         (root || document).querySelectorAll('button[onclick], a[onclick]').forEach(el => {
-            if (el.closest('form, [id^="modal-"], #m-sheet, [data-access-keep]')) return;
+            if (el.closest('#m-sheet, [data-access-keep]')) return;
             const on = el.getAttribute('onclick') || '';
             if (SETTINGS_EDIT_RULE.test(on) && el.closest('#view-cai-dat')) {
                 if (!canAccess(moduleOf(el), 'edit')) el.classList.add('acc-hidden');
@@ -9733,9 +9752,9 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             if (trip.is_twin_container) {
                 contTypeEl.innerText = 'Chế độ: Ghép 2x20ft';
             } else if (trip.vgm_weight && trip.vgm_weight !== '-') {
-                contTypeEl.innerText = `Loại: ${trip.container_type || 'Cont 40'} | VGM: ${trip.vgm_weight}`;
+                contTypeEl.innerText = `Loại: ${trip.container_type || '--'} | VGM: ${trip.vgm_weight}`;
             } else {
-                contTypeEl.innerText = `Loại: ${trip.container_type || 'Cont 40'}`;
+                contTypeEl.innerText = `Loại: ${trip.container_type || '--'}`;
             }
         }
 
@@ -9787,8 +9806,12 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const detCountdownEl = document.getElementById('detail-det-countdown');
         if (trip.det_status) {
             const ds = trip.det_status;
+            const noDeadline = ds.status === 'NONE' || ds.days_remaining === null || ds.days_remaining === undefined;
             if (detBadgeEl) {
-                if (ds.status === 'OVERDUE') {
+                if (noDeadline) {
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold uppercase font-heading bg-slate-100 text-slate-600 border border-slate-200';
+                    detBadgeEl.innerHTML = `<i class="ph-bold ph-minus-circle mr-1"></i> ${escapeHtml(ds.label || 'Chưa đặt hạn DET')}`;
+                } else if (ds.status === 'OVERDUE') {
                     detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-black uppercase font-heading bg-rose-100 text-rose-800 border border-rose-300 animate-pulse';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-warning-circle mr-1"></i> Quá Hạn Phạt Tiền (${Math.abs(ds.days_remaining)} ngày)`;
                 } else if (ds.status === 'TODAY') {
@@ -9806,7 +9829,10 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                 }
             }
             if (detCountdownEl) {
-                if (ds.status === 'OVERDUE') {
+                if (noDeadline) {
+                    detCountdownEl.innerText = 'Chưa có hạn DET. Nhập hạn DET ở Booking hoặc dòng cont để theo dõi thời gian mượn vỏ.';
+                    detCountdownEl.className = 'text-[11px] text-slate-500 mt-1 font-medium';
+                } else if (ds.status === 'OVERDUE') {
                     detCountdownEl.innerText = `Cảnh báo: Đã vượt quá hạn mượn vỏ ${Math.abs(ds.days_remaining)} ngày! Đang phát sinh phí lưu vỏ của hãng tàu.`;
                     detCountdownEl.className = 'text-[11px] text-rose-700 mt-1 font-bold';
                 } else if (ds.status === 'TODAY') {
@@ -10627,8 +10653,25 @@ function renderCostSheetTable(trip) {
     if (appTotal) appTotal.innerText = formatMoney(totalCalculated);
 }
 
-// Xây dựng nội dung tin nhắn Lệnh điều xe gửi Zalo chuẩn hóa
-function buildDriverZaloMessage(trip) {
+// Tin nhắn Lệnh điều xe gửi tài xế: MỘT nguồn duy nhất là máy chủ (cùng cấu trúc ở mọi màn hình).
+// Chỉ khi không gọi được máy chủ mới dùng bản dự phòng soạn tại trình duyệt.
+async function buildDriverZaloMessage(trip) {
+    if (!trip) return '';
+    const code = trip.trip_code || trip.code || trip.id;
+    if (code) {
+        try {
+            const res = await fetchWithAuth(`/api/gss/trips/${encodeURIComponent(code)}/message/`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.content) return data.content;
+            }
+        } catch (e) { /* mất mạng tạm thời: dùng bản dự phòng bên dưới */ }
+    }
+    return buildDriverZaloMessageFallback(trip);
+}
+
+// Bản dự phòng (chỉ dùng khi máy chủ không trả tin)
+function buildDriverZaloMessageFallback(trip) {
     if (!trip) return '';
     const portalUrl = `${window.location.origin}${trip.driver_link || ''}`;
     const tripCode = trip.id || trip.trip_code || trip.code || '-';
@@ -10657,13 +10700,13 @@ ${portalUrl}`;
 window.buildDriverZaloMessage = buildDriverZaloMessage;
 
 // Sao chép Lệnh điều xe kèm link Mobile Driver Portal gửi tài xế qua Zalo/SMS
-window.copyDriverPortalLink = function() {
+window.copyDriverPortalLink = async function() {
     const trip = window.currentTripDetail;
     if (!trip) {
         alert('Chưa có thông tin chi tiết chuyến xe để sao chép!');
         return;
     }
-    const message = buildDriverZaloMessage(trip);
+    const message = await buildDriverZaloMessage(trip);
     const portalUrl = `${window.location.origin}${trip.driver_link || ''}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -10677,10 +10720,10 @@ window.copyDriverPortalLink = function() {
     }
 };
 
-window.openZaloDriverChat = function() {
+window.openZaloDriverChat = async function() {
     const trip = window.currentTripDetail;
     if (!trip) return;
-    const message = buildDriverZaloMessage(trip);
+    const message = await buildDriverZaloMessage(trip);
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).catch(() => {});
     }
@@ -11010,7 +11053,7 @@ async function submitReassignDriver(e) {
             const newTrip = window.currentTripDetail;
             if (newTrip && newTrip.driver_phone) {
                 const cleanPhone = String(newTrip.driver_phone).replace(/\D/g, '');
-                const msg = buildDriverZaloMessage(newTrip);
+                const msg = await buildDriverZaloMessage(newTrip);
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(msg).catch(() => {});
                 }
@@ -11710,7 +11753,7 @@ function mdoAddAllocationRow(subId = null, count = 1, note = '', isExisting = fa
     let subOptions = '<option value="">-- Chọn Nhà xe (Vendor) --</option>';
     mdoSubcontractors.forEach(s => {
         const sel = subId && String(s.id) === String(subId) ? 'selected' : '';
-        subOptions += `<option value="${s.id}" ${sel}>${escapeHtml(s.short_name || s.name)}</option>`;
+        subOptions += `<option value="${s.id}" ${sel}>${escapeHtml((s.code ? s.code + ' · ' : '') + (s.short_name || s.name))}</option>`;
     });
 
     tr.innerHTML = `
@@ -12277,7 +12320,8 @@ window.isOrderFullyAllocated = isOrderFullyAllocated;
 function isOrderCompleted(b) {
     const total = Number(b.total_containers) || 1;
     const tripsDone = Number(b.trips_completed) || 0;
-    return Boolean(b.is_completed || b.status === 'COMPLETED' || (tripsDone > 0 && tripsDone >= total));
+    // Hoàn thành = các chuyến đã hạ rỗng (máy chủ tính `is_completed`). Không dùng b.status === 'COMPLETED': đó chỉ là "đã điều đủ xe".
+    return Boolean(b.is_completed || (tripsDone > 0 && tripsDone >= total));
 }
 window.isOrderCompleted = isOrderCompleted;
 
@@ -12538,7 +12582,8 @@ function renderDispatchOrdersTable() {
         if (isCompleted) {
             allocProgress = `<span class="text-sky-700 font-bold flex items-center gap-1"><i class="ph-bold ph-seal-check"></i> Đã hoàn tất (${total}/${total} cont)</span>`;
         } else if (isDispatched) {
-            allocProgress = `<span class="text-emerald-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle"></i> Đã chia đủ ${allocated}/${total} cont</span>`;
+            const running = Number(b.trips_running) || 0;
+            allocProgress = `<span class="text-emerald-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle"></i> Đã chia đủ ${allocated}/${total} cont${running > 0 ? ` · ${running} đang chạy` : ''}</span>`;
         } else if (allocated > 0) {
             allocProgress = `<span class="text-amber-700 font-bold flex items-center gap-1"><i class="ph-bold ph-arrows-split"></i> Đã chia ${allocated}/${total} (Còn ${remaining})</span>`;
         } else {
@@ -12750,7 +12795,7 @@ async function loadVendorContainersTab() {
             const vendorMap = new Map();
             rows.forEach(r => {
                 if (r.vendor_id && !vendorMap.has(r.vendor_id)) {
-                    vendorMap.set(r.vendor_id, r.vendor_short || r.vendor_name);
+                    vendorMap.set(r.vendor_id, (r.vendor_code ? r.vendor_code + ' · ' : '') + (r.vendor_short || r.vendor_name));
                 }
             });
             vendorMap.forEach((vName, vIdVal) => {
@@ -13071,7 +13116,7 @@ async function loadMdoContainers(bookingId) {
     if (bulkSelect) {
         let optHtml = '<option value="">-- Chọn Nhà xe phụ trách --</option>';
         mdoSubcontractors.forEach(s => {
-            optHtml += `<option value="${s.id}">${escapeHtml(s.short_name || s.name)}</option>`;
+            optHtml += `<option value="${s.id}">${escapeHtml((s.code ? s.code + ' · ' : '') + (s.short_name || s.name))}</option>`;
         });
         bulkSelect.innerHTML = optHtml;
     }
@@ -13243,7 +13288,7 @@ function mdoFilterContainers() {
             let subOptions = '<option value="">-- Chưa phân bổ --</option>';
             mdoSubcontractors.forEach(s => {
                 const sel = (currentSubId && String(s.id) === String(currentSubId)) || (subName && (s.short_name === subName || s.name === subName)) ? 'selected' : '';
-                subOptions += `<option value="${s.id}" ${sel}>${escapeHtml(s.short_name || s.name)}</option>`;
+                subOptions += `<option value="${s.id}" ${sel}>${escapeHtml((s.code ? s.code + ' · ' : '') + (s.short_name || s.name))}</option>`;
             });
             vendorSelectHtml = `
                 <select onchange="mdoChangeSingleContainerVendor(${c.id}, this.value)" 
@@ -14678,15 +14723,23 @@ function vaShareAllocZalo(allocId) {
     const l = vaFindAlloc(allocId);
     if (!l) return;
     const expText = l.expires_at ? vaFmt(l.expires_at) : 'Không giới hạn';
-    const msg = `Kính gửi Quý đối tác vận tải ${l.subcontractor},\nPhòng Điều Vận Giải Pháp Xanh thông báo Lệnh điều động Booking ${l.booking_code}${l.customer ? ' (' + l.customer + ')' : ''}:\n- Số lượng: ${l.allocated_containers} cont\n- Link nhận lệnh & gán xe/tài: ${l.vendor_link || '—'}\n- Hạn link: ${expText}\nQuý nhà xe vui lòng mở link trên điện thoại hoặc máy tính để gán Đầu kéo/Moóc và Bác tài nhận lệnh.\nTrân trọng!`;
+    const msg = `Kính gửi Quý đối tác vận tải ${l.subcontractor},\nPhòng Điều Vận Giải Pháp Xanh thông báo Lệnh điều động Booking ${l.booking_code}:\n- Số lượng: ${l.allocated_containers} cont\n- Link nhận lệnh & gán xe/tài: ${l.vendor_link || '—'}\n- Hạn link: ${expText}\nQuý nhà xe vui lòng mở link trên điện thoại hoặc máy tính để gán Đầu kéo/Moóc và Bác tài nhận lệnh.\nTrân trọng!`;
     vaCopy(msg, 'Đã sao chép tin nhắn Zalo lệnh điều động cho nhà xe.');
 }
 
-function vaShareDriverZalo(tripId) {
+async function vaShareDriverZalo(tripId) {
     const d = vaFindDriver(tripId);
     if (!d) return;
-    const expText = d.expires_at ? vaFmt(d.expires_at) : 'Không giới hạn';
-    const msg = `LỆNH ĐIỀU ĐỘNG GIẢI PHÁP XANH - Bác tài: ${d.driver_name || 'Bác tài'}${d.driver_phone ? ' (' + d.driver_phone + ')' : ''}\n- Chuyến xe: ${d.trip_code} | Cont: ${d.container_number || 'Theo lệnh'}\n- Đầu kéo: ${d.plate || 'Theo lệnh'}\n- Link mở lệnh di động & cập nhật POD: ${d.link}\n- Hạn lệnh: ${expText}\nBác tài bấm link trên điện thoại khi đến cảng/kho lấy cont và giao hàng nhé!\nTrân trọng!`;
+    // Tin gửi tài xế do máy chủ soạn (cùng cấu trúc với màn Chuyến xe và cổng nhà xe)
+    let msg = '';
+    try {
+        const res = await fetchWithAuth(`/api/gss/trips/${encodeURIComponent(d.trip_code)}/message/`);
+        if (res.ok) msg = ((await res.json()) || {}).content || '';
+    } catch (e) { /* dùng bản dự phòng */ }
+    if (!msg) {
+        const expText = d.expires_at ? vaFmt(d.expires_at) : 'Không giới hạn';
+        msg = `GIẢI PHÁP XANH LOGISTICS\nLệnh Vận chuyển: ${d.trip_code}\nTài xế: ${d.driver_name || '—'}${d.driver_phone ? ' · ' + d.driver_phone : ''} | Xe: ${d.plate || '—'}\nCont: ${d.container_number || '—'}\nMở lệnh & nộp chứng từ: ${d.link}\nHạn lệnh: ${expText}`;
+    }
     vaCopy(msg, 'Đã sao chép tin nhắn Zalo điều lệnh gửi Bác tài.');
 }
 
@@ -19332,7 +19385,7 @@ async function submitNewTrip(sourceEl = null) {
             loadTripsData();
 
             // Tự động sao chép Lệnh điều xe và mở Zalo nếu có tài xế
-            const message = buildDriverZaloMessage(result);
+            const message = await buildDriverZaloMessage(result);
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(message).catch(() => {});
             }
@@ -19739,72 +19792,6 @@ function clearBookingOrderSearch() {
     if (inp1) inp1.value = '';
     if (inp2) inp2.value = '';
     filterBookingOrderOptions('');
-}
-
-let isBookingPriceAutoFilled = false;
-
-async function lookupBookingPrice() {
-    const custEl = document.getElementById('booking-customer');
-    const custVal = custEl ? custEl.value.trim() : '';
-    const pickEl = document.getElementById('booking-pickup');
-    const pickVal = pickEl ? pickEl.value.trim() : '';
-    const delivEl = document.getElementById('booking-delivery');
-    const delivVal = delivEl ? delivEl.value.trim() : '';
-    const sizeEl = document.getElementById('booking-container-size');
-    const sizeVal = sizeEl ? sizeEl.value.trim() : '40HC';
-    const priceInput = document.getElementById('booking-price');
-    const hintEl = document.getElementById('booking-price-hint');
-
-    if (!custVal) {
-        if (hintEl) {
-            hintEl.innerText = '';
-            hintEl.classList.add('hidden');
-        }
-        return;
-    }
-
-    if (priceInput) priceInput.classList.remove('border-rose-500', 'bg-rose-50');
-
-    try {
-        const params = new URLSearchParams({
-            customer: custVal,
-            pickup: pickVal,
-            delivery: delivVal,
-            container_size: sizeVal
-        });
-        const res = await fetchWithAuth(`/api/sales/price-lookup/?${params.toString()}`);
-        if (!res.ok) return;
-        const data = await res.json();
-
-        if (data.found && data.price > 0) {
-            if (priceInput && (!priceInput.value || isBookingPriceAutoFilled)) {
-                priceInput.value = formatNumberVN(data.price);
-                isBookingPriceAutoFilled = true;
-            }
-            if (hintEl) {
-                hintEl.innerHTML = `<span class="text-teal-700 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle text-xs"></i> ${data.message || data.source} (${formatMoneyVND(data.price)})</span>`;
-                hintEl.classList.remove('hidden');
-            }
-        } else {
-            isBookingPriceAutoFilled = false;
-            if (hintEl) {
-                hintEl.innerHTML = `<span class="text-amber-700 font-bold flex items-center gap-1"><i class="ph-bold ph-warning-circle text-xs"></i> Tuyến này chưa có báo giá ký kết. Vui lòng kiểm tra kỹ và nhập đơn giá cước bán (Bắt buộc)!</span>`;
-                hintEl.classList.remove('hidden');
-            }
-        }
-    } catch (err) {
-        console.error('Error looking up booking price:', err);
-    }
-}
-
-function onBookingPriceManualInput() {
-    isBookingPriceAutoFilled = false;
-    const priceInput = document.getElementById('booking-price');
-    if (priceInput) priceInput.classList.remove('border-rose-500', 'bg-rose-50');
-    const hintEl = document.getElementById('booking-price-hint');
-    if (hintEl && hintEl.innerHTML.includes('Bắt buộc')) {
-        hintEl.classList.add('hidden');
-    }
 }
 
 // ---- src/app/dispatch/ocr.js ----
@@ -20510,7 +20497,7 @@ function renderBookingsTable(bookings) {
             <td data-col-key="actions" class="p-3.5 text-center">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <!-- 1. Xem Booking (Toàn màn hình) -->
-                    <button type="button" onclick="openModalBooking(${b.id}, true)" 
+                    <button type="button" onclick="viewBookingDetail(${b.id}, true)" 
                         class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xem chi tiết, Sửa, Lưu & Xóa đơn hàng">
                         <i class="ph-bold ph-eye"></i>
@@ -22857,738 +22844,6 @@ window.setFullpageQuickQuoteNote = setFullpageQuickQuoteNote;
 window.printQuotationFromFullPage = printQuotationFromFullPage;
 window.saveFullpageQuotation = saveFullpageQuotation;
 
-// ---- src/app/sales/booking-modal.js ----
-// 2. Quản lý multi-files cho Sale / Booking Order
-
-function handleSaleBookingFilesSelect(input) {
-
-    if (!input || !input.files || input.files.length === 0) return;
-
-
-
-    for (let i = 0; i < input.files.length; i++) {
-
-        const file = input.files[i];
-
-        const currentTotal = saleBookingFilesList.reduce((sum, f) => sum + (f.size || 0), 0);
-
-        if (currentTotal + (file.size || 0) > 10 * 1024 * 1024) {
-
-            showToast('warning', `Không thể thêm "${file.name}". Tổng dung lượng tài liệu đính kèm vượt quá 10MB.`, 'Vượt Hạn Mức 10MB');
-
-            continue;
-
-        }
-
-        const isDuplicate = saleBookingFilesList.some(f => f.name === file.name && f.size === file.size);
-
-        if (!isDuplicate) {
-
-            saleBookingFilesList.push(file);
-
-        }
-
-    }
-
-    input.value = '';
-
-    renderSaleBookingFilesList();
-
-}
-
-
-
-function removeSaleBookingNewFile(index) {
-
-    if (index >= 0 && index < saleBookingFilesList.length) {
-
-        saleBookingFilesList.splice(index, 1);
-
-        renderSaleBookingFilesList();
-
-    }
-
-}
-
-
-
-async function deleteSaleBookingExistingDoc(docId) {
-
-    if (!currentEditingBookingId || !docId) {
-
-        saleBookingExistingDocs = saleBookingExistingDocs.filter(d => d.id !== docId);
-
-        renderSaleBookingFilesList();
-
-        return;
-
-    }
-
-
-
-    const confirmed = await showConfirmModal({
-
-        title: 'Xóa Tài Liệu Booking',
-
-        message: 'Bạn có chắc chắn muốn xóa tài liệu này khỏi Booking không?\n\nThao tác sẽ gỡ bỏ tệp đính kèm khỏi hệ thống.',
-
-        confirmText: 'Xác Nhận Xóa',
-
-        cancelText: 'Huỷ bỏ',
-
-        type: 'danger',
-
-        icon: 'ph-bold ph-trash text-2xl'
-
-    });
-
-    if (!confirmed) return;
-
-
-
-    try {
-
-        const res = await fetchWithAuth(`/api/bookings/${currentEditingBookingId}/documents/${docId}/`, {
-
-            method: 'DELETE'
-
-        });
-
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) throw new Error(data.message || data.error || 'Lỗi khi xóa tài liệu');
-
-
-
-        saleBookingExistingDocs = saleBookingExistingDocs.filter(d => d.id !== docId);
-
-        renderSaleBookingFilesList();
-
-        showToast('success', 'Đã xóa tài liệu đính kèm', 'Thành Công');
-
-    } catch (err) {
-
-        console.error('Lỗi xóa document:', err);
-
-        showToast('error', err.message || 'Không thể xóa tài liệu đính kèm', 'Lỗi');
-
-    }
-
-}
-
-
-
-function renderSaleBookingFilesList() {
-
-    const listArea = document.getElementById('booking-order-files-list');
-
-    const summary = document.getElementById('booking-order-files-summary');
-
-    if (!listArea) return;
-
-
-
-    let itemsHtml = '';
-
-    const totalCount = saleBookingExistingDocs.length + saleBookingFilesList.length;
-
-
-
-    // Render các file đã lưu trong CSDL
-
-    saleBookingExistingDocs.forEach(doc => {
-
-        const isPdf = (doc.name || doc.url || '').toLowerCase().endsWith('.pdf');
-
-        const docName = doc.name || doc.file_name || 'Tài liệu Booking';
-
-        const docUrl = doc.url || doc.file_url || '#';
-
-        const hasValidUrl = docUrl && docUrl !== '#';
-
-
-
-        itemsHtml += `
-
-            <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 hover:bg-teal-100/60 border border-teal-200 shadow-2xs text-xs transition-colors group">
-
-                <a ${hasValidUrl ? `href="${docUrl}" target="_blank" rel="noopener noreferrer"` : ''} 
-
-                   class="flex items-center space-x-2 truncate pr-2 flex-1 cursor-pointer no-underline" 
-
-                   title="Nhấn để mở / tải file: ${docName}">
-
-                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-teal-600'} text-base shrink-0 group-hover:scale-110 transition-transform"></i>
-
-                    <div class="truncate">
-
-                        <p class="font-bold text-teal-900 group-hover:text-teal-700 group-hover:underline truncate font-mono text-[11px]" title="${docName}">${docName}</p>
-
-                        <span class="text-[10px] text-teal-700 font-medium">${doc.size_formatted ? `(${doc.size_formatted})` : '(Đã lưu)'} · <span class="text-teal-600 underline">Bấm để mở</span></span>
-
-                    </div>
-
-                </a>
-
-                <div class="flex items-center space-x-1 shrink-0">
-
-                    ${hasValidUrl ? `
-
-                        <a href="${docUrl}" target="_blank" rel="noopener noreferrer" 
-
-                            class="p-1.5 rounded-md text-teal-700 hover:text-white hover:bg-teal-600 transition-colors shadow-xs" title="Mở file trong tab mới">
-
-                            <i class="ph-bold ph-arrow-square-out text-sm"></i>
-
-                        </a>
-
-                    ` : ''}
-
-                    ${doc.id ? `
-
-                        <button type="button" onclick="deleteSaleBookingExistingDoc(${doc.id})" 
-
-                            class="p-1.5 rounded-md text-rose-600 hover:text-white hover:bg-rose-600 transition-colors shadow-xs" title="Xóa tài liệu này">
-
-                            <i class="ph-bold ph-trash text-sm"></i>
-
-                        </button>
-
-                    ` : ''}
-
-                </div>
-
-            </div>
-
-        `;
-
-    });
-
-
-
-    // Render các file mới chọn chưa lưu
-
-    saleBookingFilesList.forEach((file, idx) => {
-
-        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-
-        const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-
-        const sizeKb = (file.size / 1024).toFixed(0);
-
-        const sizeStr = file.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
-
-        let tempUrl = '';
-
-        try {
-
-            tempUrl = URL.createObjectURL(file);
-
-        } catch (e) {
-
-            tempUrl = '';
-
-        }
-
-
-
-        itemsHtml += `
-
-            <div class="flex items-center justify-between p-2 rounded-lg bg-blue-50 hover:bg-blue-100/60 border border-blue-200 shadow-2xs text-xs transition-colors group">
-
-                ${tempUrl ? `
-
-                    <a href="${tempUrl}" target="_blank" rel="noopener noreferrer" 
-
-                       class="flex items-center space-x-2 truncate pr-2 flex-1 cursor-pointer no-underline" 
-
-                       title="Xem trước file: ${file.name}">
-
-                        <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-blue-600'} text-base shrink-0 group-hover:scale-110 transition-transform"></i>
-
-                        <div class="truncate">
-
-                            <p class="font-bold text-slate-800 group-hover:text-blue-700 group-hover:underline truncate font-mono text-[11px]" title="${file.name}">${file.name}</p>
-
-                            <span class="text-[10px] text-blue-600 font-medium font-mono">(${sizeStr} - Chờ lưu) · <span class="underline">Xem trước</span></span>
-
-                        </div>
-
-                    </a>
-
-                ` : `
-
-                    <div class="flex items-center space-x-2 truncate pr-2 flex-1">
-
-                        <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-blue-600'} text-base shrink-0"></i>
-
-                        <div class="truncate">
-
-                            <p class="font-bold text-slate-800 truncate font-mono text-[11px]" title="${file.name}">${file.name}</p>
-
-                            <span class="text-[10px] text-blue-600 font-medium font-mono">(${sizeStr} - Chờ lưu)</span>
-
-                        </div>
-
-                    </div>
-
-                `}
-
-                <div class="flex items-center space-x-1 shrink-0">
-
-                    ${tempUrl ? `
-
-                        <a href="${tempUrl}" target="_blank" rel="noopener noreferrer" 
-
-                            class="p-1.5 rounded-md text-blue-700 hover:text-white hover:bg-blue-600 transition-colors shadow-xs" title="Xem trước">
-
-                            <i class="ph-bold ph-eye text-sm"></i>
-
-                        </a>
-
-                    ` : ''}
-
-                    <button type="button" onclick="removeSaleBookingNewFile(${idx})" 
-
-                        class="p-1.5 rounded-md text-rose-600 hover:text-white hover:bg-rose-600 transition-colors shadow-xs shrink-0" title="Bỏ file này">
-
-                        <i class="ph-bold ph-trash text-sm"></i>
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        `;
-
-    });
-
-
-
-    listArea.innerHTML = itemsHtml;
-
-    if (summary) {
-
-        if (totalCount > 0) {
-
-            summary.innerHTML = `<i class="ph-bold ph-check-circle text-emerald-600"></i> <strong class="text-emerald-800">${totalCount}</strong> tệp đính kèm`;
-
-        } else {
-
-            summary.innerHTML = `<i class="ph ph-info text-blue-500"></i> Chưa có tệp nào được đính kèm`;
-
-        }
-
-    }
-
-}
-
-
-
-function clearSaleBookingFileSelection() {
-
-    const input = document.getElementById('booking-order-file');
-
-    if (input) input.value = '';
-
-    saleBookingFilesList = [];
-
-    saleBookingExistingDocs = [];
-
-    currentEditingBookingId = null;
-
-    renderSaleBookingFilesList();
-
-}
-
-
-
-
-
-function onBookingTypeChange() {
-
-    applyBookingFormTypeAdapters('');
-
-}
-
-window.onBookingTypeChange = onBookingTypeChange;
-
-
-
-async function openModalBooking(bookingId = null, isReadOnly = false) {
-
-    if (!bookingId) {
-
-        return openCreateBookingPage(true);
-
-    } else {
-
-        return viewBookingDetail(bookingId, true);
-
-    }
-
-}
-
-
-
-function enableEditBookingModal() {
-
-    const form = document.getElementById('form-booking');
-
-    if (form) {
-
-        form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
-
-    }
-
-    const titleEl = document.getElementById('modal-booking-title');
-
-    if (titleEl && !titleEl.innerText.startsWith('Hiệu Chỉnh')) {
-
-        titleEl.innerText = titleEl.innerText.replace('Chi Tiết', 'Hiệu Chỉnh');
-
-    }
-
-    const editModalBtn = document.getElementById('btn-edit-booking-modal');
-
-    if (editModalBtn) editModalBtn.classList.add('hidden');
-
-    const submitBtn = document.getElementById('btn-submit-booking');
-
-    if (submitBtn) submitBtn.style.display = 'inline-flex';
-
-    if (typeof onBookingTypeChange === 'function') onBookingTypeChange();
-
-}
-
-window.enableEditBookingModal = enableEditBookingModal;
-
-
-
-async function saveBooking(e) {
-
-    if (e && typeof e.preventDefault === 'function') {
-
-        e.preventDefault();
-
-    }
-
-    const id = document.getElementById('booking-id')?.value;
-
-    const bookingType = document.getElementById('booking-type')?.value || 'EXPORT_FCL';
-
-    const customer = document.getElementById('booking-customer')?.value?.trim();
-
-    const bookingNumber = document.getElementById('booking-number')?.value?.trim();
-
-    let shippingLine = document.getElementById('booking-shipping-line')?.value?.trim();
-
-    let vessel = document.getElementById('booking-vessel')?.value?.trim();
-
-    const containerSize = document.getElementById('booking-container-size')?.value || '40HC';
-
-    const totalContainers = parseNumberVN(document.getElementById('booking-total-containers')?.value) || 1;
-
-    const commodity = document.getElementById('booking-commodity')?.value?.trim();
-
-    let hsCode = document.getElementById('booking-hs-code')?.value?.trim();
-
-    const pickup = document.getElementById('booking-pickup')?.value?.trim();
-
-    const delivery = document.getElementById('booking-delivery')?.value?.trim();
-
-    let dropoff = document.getElementById('booking-dropoff')?.value?.trim();
-
-    const loadingDate = document.getElementById('booking-loading-date')?.value;
-
-    const loadingTime = formatTimeString(document.getElementById('booking-loading-time')?.value?.trim() || '08:00');
-
-    syncBookingClosingTime();
-
-    syncBookingSiTime();
-
-    let closingTime = document.getElementById('booking-closing-time')?.value?.trim();
-
-    let siCutoff = document.getElementById('booking-si-cutoff')?.value?.trim();
-
-    let det = parseNumberVN(document.getElementById('booking-det')?.value);
-
-    let dem = parseNumberVN(document.getElementById('booking-dem')?.value);
-
-    const price = parseNumberVN(document.getElementById('booking-price')?.value) || 0;
-
-    const statusVal = document.getElementById('booking-status')?.value || 'PENDING_DISPATCH';
-
-    const notes = document.getElementById('booking-notes')?.value?.trim();
-
-
-
-    // Chuẩn hóa và gán ngầm định theo từng phân loại dịch vụ
-
-    if (bookingType === 'DOMESTIC') {
-
-        shippingLine = shippingLine || 'NỘI ĐỊA';
-
-        vessel = '';
-
-        hsCode = '';
-
-        dropoff = dropoff || delivery; // Điểm 3 ngầm định theo điểm giao
-
-        closingTime = '';
-
-        siCutoff = '';
-
-        det = 0;
-
-        dem = 0;
-
-    } else if (bookingType === 'IMPORT_FCL') {
-
-        closingTime = '';
-
-        siCutoff = '';
-
-        if (det === null || det === undefined || isNaN(det)) det = 7;
-
-        if (dem === null || dem === undefined || isNaN(dem)) dem = 7;
-
-    } else {
-
-        if (det === null || det === undefined || isNaN(det)) det = 7;
-
-        if (dem === null || dem === undefined || isNaN(dem)) dem = 7;
-
-    }
-
-
-
-    if (!customer || !bookingNumber || !pickup) {
-
-        showToast('warning', 'Vui lòng điền đủ: Khách hàng, Số đơn/booking và Điểm lấy cont (Điểm 1)', 'Thiếu Thông Tin');
-
-        return;
-
-    }
-
-
-
-    if (price < 0) {
-
-        showToast('warning', 'Đơn giá cước vận chuyển không được âm!', 'Giá Cước Không Hợp Lệ');
-
-        return;
-
-    }
-
-
-
-    const submitBtn = document.getElementById('btn-submit-booking');
-
-    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
-
-    if (submitBtn) {
-
-        submitBtn.disabled = true;
-
-        submitBtn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-base"></i> <span>Đang lưu...</span>';
-
-    }
-
-
-
-    try {
-
-        const saleFileInput = document.getElementById('booking-order-file');
-
-        const hasSaleFile = saleFileInput && saleFileInput.files && saleFileInput.files[0];
-
-
-
-        const formData = new FormData();
-
-        formData.append('action', 'create_booking');
-
-        formData.append('booking_type', bookingType);
-
-        formData.append('customer', customer);
-
-        formData.append('booking_number', bookingNumber);
-
-        formData.append('shipping_line', shippingLine);
-
-        formData.append('vessel_voyage', vessel);
-
-        formData.append('container_size', containerSize);
-
-        formData.append('total_containers', totalContainers);
-
-        formData.append('commodity', commodity);
-
-        formData.append('hs_code', hsCode);
-
-        formData.append('pickup_location', pickup);
-
-        formData.append('delivery_location', delivery);
-
-        formData.append('dropoff_location', dropoff);
-
-        formData.append('loading_date', loadingDate || '');
-
-        formData.append('loading_time', loadingTime);
-
-        formData.append('closing_time', closingTime || '');
-
-        formData.append('si_cutoff', siCutoff || '');
-
-        formData.append('free_time_detention', det);
-
-        formData.append('free_time_demurrage', dem);
-
-        formData.append('selling_freight_price', price);
-
-        formData.append('status', statusVal);
-
-        formData.append('notes', notes || '');
-
-
-
-        if (saleBookingFilesList && saleBookingFilesList.length > 0) {
-
-            formData.append('booking_file', saleBookingFilesList[0]);
-
-            saleBookingFilesList.forEach(file => {
-
-                formData.append('booking_files', file);
-
-            });
-
-        } else if (hasSaleFile) {
-
-            formData.append('booking_file', saleFileInput.files[0]);
-
-        }
-
-
-
-        let res;
-
-        if (id) {
-
-            res = await fetchWithAuth(`/api/bookings/${id}/`, {
-
-                method: 'PUT',
-
-                body: formData
-
-            });
-
-        } else {
-
-            res = await fetchWithAuth('/api/sales/', {
-
-                method: 'POST',
-
-                body: formData
-
-            });
-
-        }
-
-
-
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi lưu đơn hàng / booking');
-
-
-
-        showToast('success', data.message || 'Tiếp nhận đơn hàng thành công!', 'Thành Công');
-
-        closeModal('modal-booking');
-
-        clearSaleBookingFileSelection();
-
-        loadSalesData();
-
-        loadActiveBookingsForModal();
-
-    } catch (err) {
-
-        console.error('Error saving booking:', err);
-
-        showToast('error', err.message || 'Không thể lưu đơn hàng / booking', 'Lỗi');
-
-    } finally {
-
-        if (submitBtn) {
-
-            submitBtn.disabled = false;
-
-            submitBtn.innerHTML = originalBtnHtml;
-
-        }
-
-    }
-
-}
-
-
-
-
-
-async function deleteBooking(bookingId) {
-
-    const confirmed = await showConfirmModal({
-
-        title: 'Hủy / Xóa Đơn Hàng',
-
-        message: 'Bạn có chắc chắn muốn xóa / hủy đơn hàng này không?\n\nDữ liệu lịch sử sẽ được bảo lưu an toàn (Soft-Delete).',
-
-        confirmText: 'Xác Nhận Xóa',
-
-        cancelText: 'Huỷ bỏ',
-
-        type: 'danger',
-
-        icon: 'ph-bold ph-trash text-2xl'
-
-    });
-
-    if (!confirmed) return;
-
-    try {
-
-        const res = await fetchWithAuth(`/api/bookings/${bookingId}/`, {
-
-            method: 'DELETE'
-
-        });
-
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi xóa đơn hàng');
-
-
-
-        showToast('success', data.message || 'Đã xóa đơn hàng / booking', 'Thành Công');
-
-        loadSalesData();
-
-        loadActiveBookingsForModal();
-
-    } catch (err) {
-
-        console.error('Error deleting booking:', err);
-
-        showToast('error', err.message || 'Lỗi xóa đơn hàng / booking', 'Lỗi');
-
-    }
-
-}
-
-
 // ---- src/app/sales/booking-page/files.js ----
 // ==============================================================================
 // 8.1. DEDICATED FULL-PAGE BOOKING VIEW (SALE & BOOKING | TẠO BOOKING)
@@ -24114,7 +23369,8 @@ async function autoLookupBookingPrice(prefix = 'fullpage-') {
 
     const pickup = document.getElementById(prefix + 'booking-pickup')?.value?.trim() || '';
     const delivery = document.getElementById(prefix + 'booking-delivery')?.value?.trim() || '';
-    const containerSize = document.getElementById(prefix + 'booking-container-size')?.value || '40HC';
+    const firstLineType = document.querySelector('#' + prefix + 'booking-price-lines [data-price-type]')?.value || '';
+    const containerSize = firstLineType || (document.getElementById(prefix + 'booking-container-size')?.value || '40HC');
     const priceInput = document.getElementById(prefix + 'booking-price');
     const hintEl = document.getElementById(prefix + 'booking-price-hint');
 
@@ -24129,32 +23385,45 @@ async function autoLookupBookingPrice(prefix = 'fullpage-') {
         if (!res.ok) return;
         const data = await res.json();
 
+        // CHỈ GỢI Ý: không bao giờ tự ghi vào ô giá. Ô giá luôn bằng giá đã lưu hoặc giá người dùng nhập.
         if (data.found && data.price > 0) {
-            if (priceInput) {
-                priceInput.value = formatNumberVN(data.price);
-                priceInput.classList.remove('border-rose-500', 'bg-rose-50');
-            }
+            const current = priceInput ? parseNumberVN(priceInput.value) : 0;
             if (hintEl) {
-                hintEl.className = 'text-[11px] font-bold mt-1 text-teal-700 flex items-center gap-1';
-                hintEl.innerHTML = `<i class="ph-bold ph-check-circle text-xs text-teal-600"></i> ${data.message || ('Áp dụng từ báo giá: ' + formatNumberVN(data.price) + ' đ')}`;
+                if (current === Number(data.price)) {
+                    hintEl.className = 'text-[11px] font-bold mt-1 text-teal-700 flex items-center gap-1';
+                    hintEl.innerHTML = `<i class="ph-bold ph-check-circle text-xs text-teal-600"></i> Đơn giá khớp báo giá (${formatNumberVN(data.price)} đ)`;
+                } else {
+                    hintEl.className = 'text-[11px] font-bold mt-1 text-teal-700 flex items-center gap-2 flex-wrap';
+                    hintEl.innerHTML = `<span class="flex items-center gap-1"><i class="ph-bold ph-lightbulb text-xs text-amber-500"></i> Báo giá gợi ý: ${formatNumberVN(data.price)} đ</span>`
+                        + `<button type="button" class="px-2 py-0.5 rounded border border-teal-600 text-teal-700 hover:bg-teal-50" onclick="applyBookingPriceSuggestion(${Number(data.price)}, '${prefix}')">Áp dụng</button>`;
+                }
                 hintEl.classList.remove('hidden');
             }
-        } else {
-            // Nếu chưa có báo giá riêng, nếu ô giá đang rỗng hoặc = 0 thì tự gợi ý mức chuẩn 4.000.000 VNĐ
-            if (priceInput && (!priceInput.value || parseNumberVN(priceInput.value) <= 0)) {
-                priceInput.value = formatNumberVN(4000000);
-            }
-            if (hintEl) {
-                hintEl.className = 'text-[11px] font-medium mt-1 text-slate-500 flex items-center gap-1';
-                hintEl.innerHTML = `<i class="ph-bold ph-info text-xs text-amber-500"></i> Chưa có báo giá riêng. Đã điền đơn giá tiêu chuẩn (bạn có thể chỉnh sửa).`;
-                hintEl.classList.remove('hidden');
-            }
+        } else if (hintEl) {
+            hintEl.className = 'text-[11px] font-medium mt-1 text-slate-500 flex items-center gap-1';
+            hintEl.innerHTML = '<i class="ph-bold ph-info text-xs text-amber-500"></i> Chưa có báo giá riêng cho tuyến này. Vui lòng nhập đơn giá cước.';
+            hintEl.classList.remove('hidden');
         }
     } catch (e) {
         console.warn('Lỗi tra cứu giá cước tự động:', e);
     }
 }
 window.autoLookupBookingPrice = autoLookupBookingPrice;
+
+/** Người dùng bấm "Áp dụng" trên gợi ý báo giá: lúc này mới ghi giá vào ô (vẫn cần bấm Lưu). */
+function applyBookingPriceSuggestion(price, prefix = 'fullpage-') {
+    const priceInput = document.getElementById(prefix + 'booking-price');
+    if (!priceInput) return;
+    priceInput.value = formatNumberVN(price);
+    priceInput.classList.remove('border-rose-500', 'bg-rose-50');
+    priceInput.dispatchEvent(new Event('input', { bubbles: true }));
+    const hintEl = document.getElementById(prefix + 'booking-price-hint');
+    if (hintEl) {
+        hintEl.className = 'text-[11px] font-bold mt-1 text-teal-700 flex items-center gap-1';
+        hintEl.innerHTML = `<i class="ph-bold ph-check-circle text-xs text-teal-600"></i> Đã áp dụng ${formatNumberVN(price)} đ từ báo giá. Bấm Lưu để ghi nhận.`;
+    }
+}
+window.applyBookingPriceSuggestion = applyBookingPriceSuggestion;
 
 /**
  * ==========================================================================
@@ -24273,6 +23542,14 @@ function onBookingContainerSizeChange(prefix = '') {
         }
     }
 
+    // Ô Size chỉ ghi chú loại hàng, tối đa 4 loại (khớp giới hạn của máy chủ): ô thứ 5 vừa tick bị bỏ chọn
+    if (checkedCbs.length > 4) {
+        const extra = checkedCbs.slice(4);
+        extra.forEach(cb => { cb.checked = false; });
+        checkedCbs = checkedCbs.slice(0, 4);
+        if (typeof showToast === 'function') showToast('warning', 'Ô Size chỉ chọn tối đa 4 loại cont. Loại cont của từng chuyến được chọn ở dòng cont.', 'Tối đa 4 loại');
+    }
+
     const selectedValues = checkedCbs.map(cb => cb.value);
     const hiddenInput = document.getElementById(prefix + 'booking-container-size');
     const labelEl = document.getElementById(prefix + 'booking-container-size-label');
@@ -24305,8 +23582,6 @@ function onBookingContainerSizeChange(prefix = '') {
     // Tự động kích hoạt tra cứu giá cước
     if (prefix === 'fullpage-' && typeof autoLookupBookingPrice === 'function') {
         autoLookupBookingPrice('fullpage-');
-    } else if (!prefix && typeof lookupBookingPrice === 'function') {
-        lookupBookingPrice();
     }
 }
 
@@ -24374,6 +23649,97 @@ if (typeof document !== 'undefined') {
         initBookingContainerSizeMultiSelect('');
     }
 }
+
+// ---- src/app/sales/booking-page/price-lines.js ----
+/* Giá Booking nhiều dòng: mỗi loại cont một đơn giá (tối đa 4 dòng, loại lấy từ ô Size).
+ * Dòng 1 giữ id `fullpage-booking-price` để gợi ý báo giá và phần đọc giá cũ vẫn dùng được. */
+const BOOKING_PRICE_MAX_LINES = 4;
+
+function bookingPriceTypes() {
+    return String(document.getElementById('fullpage-booking-container-size')?.value || '')
+        .split(/[,;/]+/).map(t => t.trim().toUpperCase()).filter(Boolean);
+}
+
+function _priceTypeOptions(selected) {
+    const types = bookingPriceTypes();
+    if (selected && !types.includes(selected)) types.push(selected);
+    return '<option value="">-- Loại cont --</option>' + types.map(t =>
+        `<option value="${escapeHtml(t)}"${t === selected ? ' selected' : ''}>${escapeHtml(t)}</option>`).join('');
+}
+
+function _priceLineRow(i, line) {
+    const priceId = i === 0 ? 'fullpage-booking-price' : `fullpage-booking-price-${i}`;
+    const val = line.unit_price ? formatNumberVN(line.unit_price) : '';
+    return `<div class="grid grid-cols-12 gap-2 items-center" data-price-line="${i}">
+        <select class="col-span-3 h-10 px-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-teal-600"
+            data-price-type aria-label="Loại cont dòng giá ${i + 1}" onfocus="refreshBookingPriceTypes()">${_priceTypeOptions(line.container_type || '')}</select>
+        <div class="relative col-span-4">
+            <input type="text" inputmode="numeric" id="${priceId}" data-price-value value="${val}" placeholder="VD: 4.000.000"
+                oninput="this.classList.remove('border-rose-500','bg-rose-50'); const h=document.getElementById('fullpage-booking-price-hint'); if(h&&${i}===0) h.classList.add('hidden');"
+                class="input-number-vn w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white font-mono font-bold text-teal-800 text-xs tabular-nums pr-12">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-bold text-[11px] pointer-events-none">VNĐ</span>
+        </div>
+        <input type="text" data-price-note maxlength="200" value="${escapeHtml(line.note || '')}" placeholder="Ghi chú giá"
+            class="col-span-4 h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white text-xs text-slate-800">
+        ${i === 0 ? '<span class="col-span-1"></span>' : `<button type="button" onclick="removeBookingPriceLine(${i})" title="Bỏ dòng giá này" aria-label="Bỏ dòng giá ${i + 1}"
+            class="col-span-1 h-10 rounded-xl border border-slate-200 text-rose-600 hover:bg-rose-50 cursor-pointer"><i class="ph-bold ph-x"></i></button>`}
+    </div>`;
+}
+
+function readBookingPriceLines() {
+    const rows = document.querySelectorAll('#fullpage-booking-price-lines [data-price-line]');
+    return Array.from(rows).map(r => ({
+        container_type: r.querySelector('[data-price-type]')?.value || '',
+        unit_price: parseNumberVN(r.querySelector('[data-price-value]')?.value) || 0,
+        note: r.querySelector('[data-price-note]')?.value?.trim() || '',
+    }));
+}
+
+function renderBookingPriceLines(lines) {
+    const box = document.getElementById('fullpage-booking-price-lines');
+    if (!box) return;
+    const list = (lines && lines.length ? lines : [{}]).slice(0, BOOKING_PRICE_MAX_LINES);
+    box.innerHTML = list.map((l, i) => _priceLineRow(i, l)).join('');
+    if (typeof initAllNumberInputs === 'function') initAllNumberInputs();
+    const add = document.getElementById('fullpage-booking-price-add');
+    if (add) add.classList.toggle('hidden', list.length >= BOOKING_PRICE_MAX_LINES);
+}
+
+function addBookingPriceLine() {
+    const lines = readBookingPriceLines();
+    if (lines.length >= BOOKING_PRICE_MAX_LINES) return;
+    const used = lines.map(l => l.container_type);
+    const next = bookingPriceTypes().find(t => !used.includes(t)) || '';
+    lines.push({ container_type: next });
+    renderBookingPriceLines(lines);
+}
+
+function removeBookingPriceLine(i) {
+    const lines = readBookingPriceLines();
+    lines.splice(i, 1);
+    renderBookingPriceLines(lines);
+}
+
+/** Cập nhật danh sách loại ở mọi dòng khi ô Size đổi, giữ nguyên lựa chọn đang có. */
+function refreshBookingPriceTypes() {
+    document.querySelectorAll('#fullpage-booking-price-lines [data-price-type]').forEach(sel => {
+        const cur = sel.value;
+        sel.innerHTML = _priceTypeOptions(cur);
+        sel.value = cur;
+    });
+}
+
+/** Chuỗi JSON các dòng giá (bỏ dòng trống) để gửi lên máy chủ. */
+function bookingPriceLinesPayload() {
+    return JSON.stringify(readBookingPriceLines().filter(l => l.unit_price > 0 || l.container_type));
+}
+
+window.renderBookingPriceLines = renderBookingPriceLines;
+window.addBookingPriceLine = addBookingPriceLine;
+window.removeBookingPriceLine = removeBookingPriceLine;
+window.refreshBookingPriceTypes = refreshBookingPriceTypes;
+window.readBookingPriceLines = readBookingPriceLines;
+window.bookingPriceLinesPayload = bookingPriceLinesPayload;
 
 // ---- src/app/sales/booking-page/page.js ----
 async function openCreateBookingPage(updateHistory = true) {
@@ -24746,7 +24112,7 @@ async function openCreateBookingPage(updateHistory = true) {
         if (depositInput) depositInput.value = '';
         if (detInput) detInput.value = formatNumberVN(7);
         if (demInput) demInput.value = formatNumberVN(7);
-        if (priceInput) priceInput.value = formatNumberVN(4000000);
+        if (typeof renderBookingPriceLines === 'function') renderBookingPriceLines([]);   // không tự điền đơn giá: báo giá chỉ gợi ý, người dùng nhập hoặc bấm "Áp dụng"
         const sizeSelect = document.getElementById('fullpage-booking-container-size');
         if (sizeSelect) setSelectValueCaseInsensitive(sizeSelect, '20GP');
         fillBookingDemDet(null);
@@ -24886,8 +24252,6 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
     if (typeof closeDispatchOrderModal === 'function') closeDispatchOrderModal();
     const _mdo = document.getElementById('modal-dispatch-order');
     if (_mdo) _mdo.classList.add('hidden');
-    const _mbk = document.getElementById('modal-booking');
-    if (_mbk) _mbk.classList.add('hidden-view');
 
     if (!bookingId || bookingId === 'new') {
 
@@ -25342,7 +24706,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
 
-        if (priceEl) priceEl.value = b.selling_freight_price ? formatNumberVN(b.selling_freight_price) : '';
+        if (typeof renderBookingPriceLines === 'function') renderBookingPriceLines(b.price_lines && b.price_lines.length ? b.price_lines : (b.selling_freight_price ? [{ unit_price: b.selling_freight_price }] : []));
 
 
 
@@ -26419,6 +25783,7 @@ async function saveFullpageBooking(e) {
 
 
         formData.append('selling_freight_price', price);
+        formData.append('price_lines', bookingPriceLinesPayload());
         formData.append('container_deposit', containerDeposit);
 
 
@@ -27439,10 +26804,16 @@ function addNewContainerRow() {
         stagedBookingContainers = tableConts;
     }
 
+    // Loại cont mặc định của dòng mới: theo loại đã chọn ở booking (đúng 1 loại thì lấy loại đó, nhiều loại thì lấy loại đầu tiên),
+    // chỉ rơi về 40HC khi booking chưa chọn loại nào. Người dùng vẫn đổi được trên từng dòng.
+    const bookingSizes = String(document.getElementById('fullpage-booking-container-size')?.value || '')
+        .split(/[,;/]+/).map(s => s.trim().toUpperCase()).filter(s => /^\d{2}[A-Z0-9]+$/.test(s));
+    const defaultContType = bookingSizes[0] || '40HC';
+
     // Thêm 1 dòng mới với đầy đủ các trường
     stagedBookingContainers.push({
         container_number: '',
-        container_type: '40HC',
+        container_type: defaultContType,
         seal_number: '',
         gross_weight_kg: null,
         delivery_loc: deliveryLocText,
@@ -37977,8 +37348,6 @@ function openSelectedCustomerSOAView() {
 window.renderBookingOrderOptions = renderBookingOrderOptions;
 window.filterBookingOrderOptions = filterBookingOrderOptions;
 window.clearBookingOrderSearch = clearBookingOrderSearch;
-window.lookupBookingPrice = lookupBookingPrice;
-window.onBookingPriceManualInput = onBookingPriceManualInput;
 window.loadCustomerSettlementsData = loadCustomerSettlementsData;
 window.populateCustomerSettleFilter = populateCustomerSettleFilter;
 window.renderCustomerSettlementsTable = renderCustomerSettlementsTable;
@@ -52394,12 +51763,8 @@ window.resetBookingFilters = typeof resetBookingFilters !== 'undefined' ? resetB
 window.toggleBookingSort = typeof toggleBookingSort !== 'undefined' ? toggleBookingSort : undefined;
 window.openModalQuotation = typeof openModalQuotation !== 'undefined' ? openModalQuotation : undefined;
 window.saveQuotation = typeof saveQuotation !== 'undefined' ? saveQuotation : undefined;
-window.openModalBooking = typeof openModalBooking !== 'undefined' ? openModalBooking : undefined;
-window.saveBooking = typeof saveBooking !== 'undefined' ? saveBooking : undefined;
 window.handleBookingFilesSelect = typeof handleBookingFilesSelect !== 'undefined' ? handleBookingFilesSelect : undefined;
-window.handleSaleBookingFilesSelect = typeof handleSaleBookingFilesSelect !== 'undefined' ? handleSaleBookingFilesSelect : undefined;
 window.onBookingSelected = typeof onBookingSelected !== 'undefined' ? onBookingSelected : undefined;
-window.onBookingTypeChange = typeof onBookingTypeChange !== 'undefined' ? onBookingTypeChange : undefined;
 window.onQuotationPricingMethodChange = typeof onQuotationPricingMethodChange !== 'undefined' ? onQuotationPricingMethodChange : undefined;
 window.addQuotationRouteRow = typeof addQuotationRouteRow !== 'undefined' ? addQuotationRouteRow : undefined;
 window.switchQuotationPrintTemplate = typeof switchQuotationPrintTemplate !== 'undefined' ? switchQuotationPrintTemplate : undefined;

@@ -214,7 +214,7 @@ function switchTab(tabId, updateHistory = true) {
     // Tự động đóng tất cả các popup modal nổi khi chuyển đổi phân hệ (chỉ dùng class 'hidden' chuẩn modal, không gắn 'hidden-view' để tránh lỗi display:none !important)
     if (typeof closeDispatchOrderModal === 'function') closeDispatchOrderModal();
     if (typeof closeImportContainersModal === 'function') closeImportContainersModal();
-    ['modal-dispatch-order', 'modal-import-containers', 'modal-booking', 'modal-quotation', 'modal-cash-transaction', 'modal-driver-advance', 'modal-settle-advance', 'modal-dispatcher-fund'].forEach(id => {
+    ['modal-dispatch-order', 'modal-import-containers', 'modal-quotation', 'modal-cash-transaction', 'modal-driver-advance', 'modal-settle-advance', 'modal-dispatcher-fund'].forEach(id => {
         const m = document.getElementById(id);
         if (m) {
             m.classList.add('hidden');

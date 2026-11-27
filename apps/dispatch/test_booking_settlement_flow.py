@@ -109,7 +109,7 @@ class BookingAndSettlementEnhancementTestCase(TestCase):
             customer=self.customer,
             vehicle=self.vehicle,
             driver=self.driver,
-            status=TripStatus.COMPLETED,
+            status=TripStatus.COMPLETED, step_status='EMPTY_RETURNED',
             pickup_location='CÁT LÁI',
             warehouse_location='KHO TEST',
             dropoff_location='BÃI HẠ',

@@ -60,6 +60,17 @@
       });
       info.lastChild.append(jump);
     }
+    // Liên hệ nhanh: điều phối và kho giao (chạm là gọi)
+    var calls = [['Điều phối', s.dispatcher_name, s.dispatcher_phone], ['Kho giao', '', s.warehouse_phone]].filter(function (c) { return c[2]; });
+    if (calls.length) {
+      var crow = el('div', 'row');
+      calls.forEach(function (c) {
+        var a = el('a', 'btn', '☎ ' + c[0] + (c[1] && c[1] !== 'Hotline' ? ' ' + c[1] : '') + ': ' + c[2]);
+        a.href = 'tel:' + String(c[2]).replace(/[^\d+]/g, '');
+        crow.append(a);
+      });
+      info.append(crow);
+    }
     frag.append(info);
 
     // 3. Tiến độ

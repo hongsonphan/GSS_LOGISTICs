@@ -117,9 +117,9 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             if (trip.is_twin_container) {
                 contTypeEl.innerText = 'Chế độ: Ghép 2x20ft';
             } else if (trip.vgm_weight && trip.vgm_weight !== '-') {
-                contTypeEl.innerText = `Loại: ${trip.container_type || 'Cont 40'} | VGM: ${trip.vgm_weight}`;
+                contTypeEl.innerText = `Loại: ${trip.container_type || '--'} | VGM: ${trip.vgm_weight}`;
             } else {
-                contTypeEl.innerText = `Loại: ${trip.container_type || 'Cont 40'}`;
+                contTypeEl.innerText = `Loại: ${trip.container_type || '--'}`;
             }
         }
 
@@ -171,8 +171,12 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const detCountdownEl = document.getElementById('detail-det-countdown');
         if (trip.det_status) {
             const ds = trip.det_status;
+            const noDeadline = ds.status === 'NONE' || ds.days_remaining === null || ds.days_remaining === undefined;
             if (detBadgeEl) {
-                if (ds.status === 'OVERDUE') {
+                if (noDeadline) {
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold uppercase font-heading bg-slate-100 text-slate-600 border border-slate-200';
+                    detBadgeEl.innerHTML = `<i class="ph-bold ph-minus-circle mr-1"></i> ${escapeHtml(ds.label || 'Chưa đặt hạn DET')}`;
+                } else if (ds.status === 'OVERDUE') {
                     detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-black uppercase font-heading bg-rose-100 text-rose-800 border border-rose-300 animate-pulse';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-warning-circle mr-1"></i> Quá Hạn Phạt Tiền (${Math.abs(ds.days_remaining)} ngày)`;
                 } else if (ds.status === 'TODAY') {
@@ -190,7 +194,10 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                 }
             }
             if (detCountdownEl) {
-                if (ds.status === 'OVERDUE') {
+                if (noDeadline) {
+                    detCountdownEl.innerText = 'Chưa có hạn DET. Nhập hạn DET ở Booking hoặc dòng cont để theo dõi thời gian mượn vỏ.';
+                    detCountdownEl.className = 'text-[11px] text-slate-500 mt-1 font-medium';
+                } else if (ds.status === 'OVERDUE') {
                     detCountdownEl.innerText = `Cảnh báo: Đã vượt quá hạn mượn vỏ ${Math.abs(ds.days_remaining)} ngày! Đang phát sinh phí lưu vỏ của hãng tàu.`;
                     detCountdownEl.className = 'text-[11px] text-rose-700 mt-1 font-bold';
                 } else if (ds.status === 'TODAY') {

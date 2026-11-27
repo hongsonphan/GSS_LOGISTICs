@@ -98,6 +98,60 @@ class BookingExtraFieldsTests(TestCase):
         lst = self.api.get('/api/sales/', {'type': 'bookings'}).json()
         self.assertTrue(lst)
 
+    def test_legacy_form_accepts_discharge_date_and_do_expiry(self):
+        """Mục 23: form cũ (POST /api/sales/, PUT/GET /api/bookings/<id>/) nhận và trả Ngày dỡ hàng và Hạn D/O."""
+        r = self.api.post('/api/sales/', data={'action': 'create_booking', 'customer': self.customer.name, 'total_containers': '1',
+                                               'pickup_location': 'A', 'delivery_location': 'B',
+                                               'discharge_date': '2026-12-03', 'do_expiry': '2026-12-10'})
+        self.assertEqual(r.status_code, 200, r.content)
+        bid = r.json()['booking_id']
+        det = self.api.get(f'/api/bookings/{bid}/').json()
+        self.assertEqual((det['discharge_date'], det['do_expiry']), ('2026-12-03', '2026-12-10'))
+        r = self.api.put(f'/api/bookings/{bid}/', data={'do_expiry': '', 'discharge_date': '2026-12-04'})
+        self.assertEqual(r.status_code, 200, r.content)
+        det = self.api.get(f'/api/bookings/{bid}/').json()
+        self.assertEqual((det['discharge_date'], det['do_expiry']), ('2026-12-04', ''))
+        bad = self.api.put(f'/api/bookings/{bid}/', data={'do_expiry': '10/12/2026'})
+        self.assertEqual(bad.status_code, 400)
+
+    def test_unknown_customer_is_rejected_not_replaced_by_first_customer(self):
+        """Tên khách không nhận ra -> 400, tuyệt đối không tự gán khách đầu tiên (sai khách là sai chứng từ và tiền)."""
+        r = self.api.post('/api/sales/', data={'action': 'create_booking', 'customer': 'KHÔNG TỒN TẠI', 'pickup_location': 'A', 'delivery_location': 'B'})
+        self.assertEqual(r.status_code, 400, r.content)
+        self.assertFalse(BookingOrder.objects.exists())
+        from apps.customers.models import Quotation
+        r = self.api.post('/api/sales/', {'action': 'create_quotation', 'customer': 'KHÔNG TỒN TẠI', 'items': [{'route_description': 'A -> B', 'unit_price': 1000}]}, format='json')
+        self.assertEqual(r.status_code, 400, r.content)
+        self.assertFalse(Quotation.objects.exists())
+
+    def test_booking_price_is_never_auto_filled_from_quotation(self):
+        """Báo giá chỉ GỢI Ý trên màn hình: tạo booking không nhập giá thì giá = 0, backend không tự điền từ báo giá."""
+        from apps.customers.models import Quotation
+        q = self.api.post('/api/sales/', {'action': 'create_quotation', 'customer': self.customer.name, 'status': 'APPROVED',
+                                          'items': [{'route_description': 'CAT LAI -> KHO 1', 'unit_price': 3500000, 'expected_trips_monthly': 5}]}, format='json')
+        self.assertEqual(q.status_code, 200, q.content)
+        self.assertTrue(Quotation.objects.filter(customer=self.customer).exists())
+        r = self.api.post('/api/sales/', data={'action': 'create_booking', 'customer': self.customer.name, 'total_containers': '1',
+                                               'pickup_location': 'CAT LAI', 'delivery_location': 'KHO 1'})
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(BookingOrder.objects.get(pk=r.json()['booking_id']).selling_freight_price, 0)
+        # nhập tay thì lưu đúng giá nhập tay
+        r = self.api.post('/api/sales/', data={'action': 'create_booking', 'customer': self.customer.name, 'total_containers': '1',
+                                               'pickup_location': 'CAT LAI', 'delivery_location': 'KHO 1', 'selling_freight_price': '4000000'})
+        self.assertEqual(BookingOrder.objects.get(pk=r.json()['booking_id']).selling_freight_price, 4000000)
+
+    def test_active_list_does_not_treat_fully_dispatched_as_completed(self):
+        """Booking.status=COMPLETED nghĩa là 'đã điều đủ xe', không phải đã hoàn thành vận chuyển: lệnh điều độ chưa có chuyến hạ rỗng
+        thì is_completed phải False (trước đây hiện 'Đã hoàn thành' khi các chuyến mới đến nơi nhận)."""
+        from apps.customers.models import BookingStatus
+        b = BookingOrder.objects.create(booking_code='BK.9X', customer=self.customer, pickup_location='A', delivery_location='B',
+                                        total_containers=2, status=BookingStatus.COMPLETED, company=get_default_company())
+        rows = self.api.get('/api/bookings/active/?include_completed=1').json()
+        rows = rows['data'] if isinstance(rows, dict) else rows
+        row = next(r for r in rows if r['id'] == b.pk)
+        self.assertFalse(row['is_completed'])
+        self.assertEqual((row['trips_completed'], row['trips_running']), (0, 0))
+
     def test_other_company_cannot_see_or_edit(self):
         b = BookingOrder.objects.create(booking_code='BK.9', customer=self.customer, pickup_location='A', delivery_location='B',
                                         invoice_no='INV-A', company=get_default_company())
@@ -120,3 +174,58 @@ class BookingExtraFieldsTests(TestCase):
         self.assertIsNone(svc.parse_cargo_value(''))
         self.assertEqual(svc.parse_cargo_value('1,000.126'), Decimal('1000.13'))
         self.assertEqual(datetime.date(2026, 1, 1), svc._date('2026-01-01', 'x'))
+
+
+class BookingPriceLinesTests(TestCase):
+    """Giá Booking nhiều dòng (mục 18): mỗi loại cont một đơn giá, tra giá qua BookingOrder.price_for."""
+
+    def setUp(self):
+        self.user = User.objects.create_user('sale_p', password='password123')
+        Employee.objects.create(user=self.user, code='SALEP', full_name='Sale P', phone_number='0933000002', role=EmployeeRole.DIRECTOR)
+        self.api = APIClient()
+        self.api.force_authenticate(self.user)
+        self.customer = Customer.objects.create(code='KHP', name='Khách P')
+
+    def make(self, **kw):
+        data = {'customer_id': self.customer.pk, 'total_containers': 3, 'pickup': 'Cat Lai', 'delivery': 'Kho B',
+                'container_size': '20DC, 40HC', **kw}
+        r = self.api.post('/api/gss/bookings/', data, format='json')
+        self.assertEqual(r.status_code, 201, r.content)
+        return BookingOrder.objects.get(pk=r.json()['data']['id']), r.json()['data']
+
+    def test_two_lines_price_for_and_mirror(self):
+        b, d = self.make(price_lines=[{'container_type': '20DC', 'unit_price': 2500000}, {'container_type': '40HC', 'unit_price': 4000000, 'note': 'gia 40'}])
+        self.assertEqual(b.price_for('20dc'), Decimal('2500000'))
+        self.assertEqual(b.price_for('40HC'), Decimal('4000000'))
+        self.assertEqual(b.price_for('45HC'), 0)   # không có dòng khớp: không tự áp giá khác
+        self.assertEqual(b.price_for(''), 0)       # nhiều dòng mà không rõ loại: không đoán
+        self.assertEqual(b.selling_freight_price, Decimal('2500000'))  # phản chiếu dòng đầu
+        self.assertEqual([l['container_type'] for l in d['price_lines']], ['20DC', '40HC'])
+        self.assertEqual(d['price_lines'][1]['note'], 'gia 40')
+
+    def test_validation(self):
+        for lines in ([{'container_type': '40HC', 'unit_price': 1}, {'container_type': '40HC', 'unit_price': 2}],   # trùng loại
+                      [{'container_type': '45HC', 'unit_price': 1}],                                                  # ngoài ô Size
+                      [{'container_type': '20DC', 'unit_price': -5}]):                                                # giá âm
+            r = self.api.post('/api/gss/bookings/', {'customer_id': self.customer.pk, 'total_containers': 1, 'pickup': 'A', 'delivery': 'B',
+                                                     'container_size': '20DC, 40HC', 'price_lines': lines}, format='json')
+            self.assertEqual(r.status_code, 400, lines)
+        self.assertEqual(BookingOrder.objects.count(), 0)
+
+    def test_edit_replaces_soft_deletes_and_old_client_keeps_other_lines(self):
+        b, _ = self.make(price_lines=[{'container_type': '20DC', 'unit_price': 100}, {'container_type': '40HC', 'unit_price': 200}])
+        # client cũ chỉ gửi một số: chỉ sửa dòng đầu
+        self.api.put(f'/api/gss/bookings/{b.pk}/', {'selling_freight_price': 150}, format='json')
+        self.assertEqual((b.price_for('20DC'), b.price_for('40HC')), (150, 200))
+        # bỏ dòng 40HC: xóa mềm, không xóa cứng
+        self.api.put(f'/api/gss/bookings/{b.pk}/', {'price_lines': [{'container_type': '20DC', 'unit_price': 150}]}, format='json')
+        from apps.customers.models import BookingPriceLine
+        self.assertEqual(b.price_lines.filter(is_deleted=False).count(), 1)
+        self.assertEqual(BookingPriceLine.all_objects.filter(booking=b).count(), 2)  # sửa tại chỗ, dòng thừa chỉ xóa mềm
+        self.assertEqual(b.price_for('40HC'), 0)
+
+    def test_legacy_single_price_and_revenue_plan(self):
+        b, d = self.make(selling_freight_price=3000000)   # chỉ gửi giá cũ
+        self.assertEqual([(l['container_type'], l['unit_price']) for l in d['price_lines']], [('20DC', 3000000.0)])
+        self.assertEqual(b.price_for('20DC'), Decimal('3000000'))
+        self.assertEqual(b.revenue_plan(), Decimal('9000000'))  # 3 cont x giá, chưa có danh sách cont thì dùng dòng đầu

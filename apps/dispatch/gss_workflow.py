@@ -31,6 +31,10 @@ LEGACY_STATUS = {
     'ARRIVED_AT_DELIVERY': TripStatus.AT_WAREHOUSE, 'UNLOADED': TripStatus.DELIVERED,
     'RETURNING_EMPTY': TripStatus.RETURNING_EMPTY, 'EMPTY_RETURNED': TripStatus.COMPLETED, 'CANCELLED': TripStatus.CANCELLED,
 }
+# Mốc tài chính theo 7 bước: ghi doanh thu/công nợ/bảng kê khách và quyết toán nhà xe ở bước 7 (đủ POD + EIR);
+# quyết toán tài xế (mô hình đội xe nội bộ) được phép từ bước 5 (đã dỡ hàng, có POD).
+REVENUE_STEP = 'EMPTY_RETURNED'
+DRIVER_SETTLE_STEPS = ('UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED')
 MAX_FILES_PER_STAGE = 10
 VENDOR_EDITABLE_STEPS = {'READY', 'ARRIVED_AT_PICKUP'}
 

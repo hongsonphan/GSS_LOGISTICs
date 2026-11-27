@@ -134,8 +134,8 @@ class ReportsAPIView(APIView):
         def get_trip_financials(t):
             rev = int(t.cached_revenue or 0)
             if rev <= 0:
-                if t.booking_order and t.booking_order.selling_freight_price > 0:
-                    rev = int(t.booking_order.selling_freight_price)
+                if t.booking_order and t.booking_order.price_for(t.container_type) > 0:
+                    rev = int(t.booking_order.price_for(t.container_type))
                 elif t.customer:
                     tariff = None
                     if t.pickup_loc and t.warehouse_loc:

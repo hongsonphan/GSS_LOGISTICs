@@ -1,6 +1,13 @@
 """Danh sách, tạo mới và chi tiết chuyến xe."""
 from ._common import *  # noqa: F401,F403
 
+def _first_type(booking, data):
+    """Loại cont để tra giá Booking: loại người dùng chọn, không có thì loại đầu tiên ở ô Size."""
+    from apps.customers.models import booking_container_types
+    t = str(data.get('container_type') or '').strip().upper()
+    return t or ((booking_container_types(booking.container_size) or [''])[0])
+
+
 class TripListCreateAPIView(APIView):
     """API lấy danh sách chuyến xe và Tạo Lệnh Điều Động mới."""
     permission_classes = [IsDispatcher]
@@ -344,8 +351,8 @@ class TripListCreateAPIView(APIView):
             booking_order = BookingOrder.objects.filter(id=int(booking_order_id)).first()
             if booking_order:
                 customer = booking_order.customer
-                if revenue <= 0 and booking_order.selling_freight_price:
-                    revenue = float(booking_order.selling_freight_price)
+                if revenue <= 0 and booking_order.price_for(_first_type(booking_order, data)):
+                    revenue = float(booking_order.price_for(_first_type(booking_order, data)))
             else:
                 customer_name = data.get('customer', '').strip()
                 customer = resolve_customer(customer_name)
@@ -358,8 +365,8 @@ class TripListCreateAPIView(APIView):
                 )
                 if booking_order:
                     customer = booking_order.customer
-                    if revenue <= 0 and booking_order.selling_freight_price:
-                        revenue = float(booking_order.selling_freight_price)
+                    if revenue <= 0 and booking_order.price_for(_first_type(booking_order, data)):
+                        revenue = float(booking_order.price_for(_first_type(booking_order, data)))
             customer_id = data.get('customer_id')
             customer_name = data.get('customer', '').strip()
             if customer_id:
@@ -515,7 +522,8 @@ class TripListCreateAPIView(APIView):
 
         # Twin Container 20ft & Port Drayage handling
         is_twin = parse_bool(data.get('is_twin_container', False))
-        cont_type = data.get('container_type') or (booking_order.container_size if booking_order else ('2x20DC' if is_twin else '40HC'))
+        from apps.customers.models import booking_container_types
+        cont_type = data.get('container_type') or ((booking_container_types(booking_order.container_size) or ['40HC'])[0] if booking_order else ('2x20DC' if is_twin else '40HC'))
         if is_twin and not data.get('container_type'):
             cont_type = '2x20DC'
 
@@ -927,6 +935,7 @@ class TripDetailAPIView(APIView):
                 for d in Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True).prefetch_related('assigned_vehicles').order_by('full_name')
             ],
             'container': trip.container_number or 'CHƯA CÓ CONT',
+            'container_type': trip.container_type or '',
             'seal': trip.seal_number or '-',
             'booking': trip.booking_or_bill or '-',
             'booking_file_url': trip.booking_file.url if trip.booking_file else '',

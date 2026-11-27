@@ -212,7 +212,8 @@ def _portal_payload(alloc, request, session_pair=None):
             'container_size': b.container_size, 'commodity': b.commodity,
             'pickup_location': b.pickup_location, 'delivery_location': b.delivery_location,
             'dropoff_location': b.dropoff_location, 'loading_date': b.loading_date.isoformat() if b.loading_date else None,
-            'loading_time': b.loading_time, **notes, 'bl_number': b.hbl_number or b.mbl_number,
+            'loading_time': b.loading_time, **notes, 'notes': b.notes or '',
+            'bl_number': b.hbl_number or b.mbl_number,
             'eta': b.eta.isoformat() if b.eta else None, 'cargo_mode': b.cargo_mode,
             'dem': describe(b.dem_expiry, co.warn_days), 'det': describe(b.det_expiry, co.warn_days),
         },
@@ -762,12 +763,14 @@ class VendorContainersMonitoringAPIView(APIView):
                 st_label = 'Đã hoàn thành / Hạ rỗng'
                 st_color = 'slate'
                 stats['completed'] += 1
-            elif t.step_status in ('EMPTY_RETURNING',):
+            # Mã bước đúng của máy 7 bước: READY → ARRIVED_AT_PICKUP → LOADED_ON_VEHICLE → ARRIVED_AT_DELIVERY → UNLOADED → RETURNING_EMPTY → EMPTY_RETURNED.
+            # (Mã trả về giao diện giữ tên cũ EMPTY_RETURNING cho bước RETURNING_EMPTY.)
+            elif t.step_status == 'RETURNING_EMPTY':
                 st_code = 'EMPTY_RETURNING'
                 st_label = 'Đang hạ bãi rỗng'
                 st_color = 'purple'
                 stats['in_transit'] += 1
-            elif t.step_status in ('EN_ROUTE_PICKUP', 'LOADED_ON_VEHICLE', 'EN_ROUTE_DELIVERY', 'ARRIVED_AT_DELIVERY', 'UNLOADED'):
+            elif t.step_status in ('ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED'):
                 st_code = 'IN_TRANSIT'
                 st_label = 'Đang trên tuyến (Đang chạy)'
                 st_color = 'emerald'

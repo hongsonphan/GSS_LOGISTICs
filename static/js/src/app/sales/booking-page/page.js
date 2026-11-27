@@ -368,7 +368,7 @@ async function openCreateBookingPage(updateHistory = true) {
         if (depositInput) depositInput.value = '';
         if (detInput) detInput.value = formatNumberVN(7);
         if (demInput) demInput.value = formatNumberVN(7);
-        if (priceInput) priceInput.value = formatNumberVN(4000000);
+        if (typeof renderBookingPriceLines === 'function') renderBookingPriceLines([]);   // không tự điền đơn giá: báo giá chỉ gợi ý, người dùng nhập hoặc bấm "Áp dụng"
         const sizeSelect = document.getElementById('fullpage-booking-container-size');
         if (sizeSelect) setSelectValueCaseInsensitive(sizeSelect, '20GP');
         fillBookingDemDet(null);
@@ -508,8 +508,6 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
     if (typeof closeDispatchOrderModal === 'function') closeDispatchOrderModal();
     const _mdo = document.getElementById('modal-dispatch-order');
     if (_mdo) _mdo.classList.add('hidden');
-    const _mbk = document.getElementById('modal-booking');
-    if (_mbk) _mbk.classList.add('hidden-view');
 
     if (!bookingId || bookingId === 'new') {
 
@@ -964,7 +962,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
 
-        if (priceEl) priceEl.value = b.selling_freight_price ? formatNumberVN(b.selling_freight_price) : '';
+        if (typeof renderBookingPriceLines === 'function') renderBookingPriceLines(b.price_lines && b.price_lines.length ? b.price_lines : (b.selling_freight_price ? [{ unit_price: b.selling_freight_price }] : []));
 
 
 
@@ -2041,6 +2039,7 @@ async function saveFullpageBooking(e) {
 
 
         formData.append('selling_freight_price', price);
+        formData.append('price_lines', bookingPriceLinesPayload());
         formData.append('container_deposit', containerDeposit);
 
 

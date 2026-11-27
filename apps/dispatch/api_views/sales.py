@@ -60,6 +60,8 @@ def _booking_extra_fields(b):
         'hs_code': b.hs_code,
         'etd': b.etd.isoformat() if b.etd else '',
         'eta': b.eta.isoformat() if b.eta else '',
+        'discharge_date': b.discharge_date.isoformat() if b.discharge_date else '',
+        'do_expiry': b.do_expiry.isoformat() if b.do_expiry else '',
         'cargo_value': '' if b.cargo_value is None else f'{b.cargo_value:.2f}',
         'invoice_no': b.invoice_no or '',
         'customs_declaration_number': ', '.join(
@@ -114,9 +116,13 @@ class BookingActiveAPIView(APIView):
             vendor_summary = ", ".join(vendor_items) if vendor_items else ""
 
             # Đếm số chuyến thực tế đã hoàn thành
-            trips_total = b.trips.filter(is_deleted=False).exclude(status='CANCELLED').count()
-            trips_completed = b.trips.filter(is_deleted=False, status__in=['COMPLETED', 'DELIVERED']).count()
-            is_completed = (b.status == BookingStatus.COMPLETED) or (b.total_containers > 0 and trips_completed >= b.total_containers)
+            # Hoàn thành = chuyến đã "Hạ rỗng" (EMPTY_RETURNED) theo máy 7 bước. Trạng thái booking COMPLETED chỉ nghĩa là
+            # "đã điều đủ xe" nên KHÔNG được dùng để coi là hoàn thành vận chuyển.
+            live_trips = b.trips.filter(is_deleted=False).exclude(step_status='CANCELLED')
+            trips_total = live_trips.count()
+            trips_completed = live_trips.filter(step_status='EMPTY_RETURNED').count()
+            trips_running = live_trips.filter(step_status__in=['ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY']).count()
+            is_completed = (b.total_containers or 0) > 0 and trips_completed >= (b.total_containers or 0)
 
             # Danh sách số cont
             cont_list = list(b.containers.filter(is_deleted=False).values_list('container_number', flat=True))
@@ -128,6 +134,7 @@ class BookingActiveAPIView(APIView):
                 'is_completed': is_completed,
                 'trips_total': trips_total,
                 'trips_completed': trips_completed,
+                'trips_running': trips_running,
                 'vendor_summary': vendor_summary,
                 'container_list': cont_str,
                 'id': b.id,
@@ -157,6 +164,7 @@ class BookingActiveAPIView(APIView):
                 'free_time_demurrage': getattr(b, 'free_time_demurrage', 7) or 7,
                 'free_time_detention': b.free_time_detention or 7,
                 'selling_freight_price': float(b.selling_freight_price or 0),
+                'price_lines': __import__('apps.dispatch.gss_bookings', fromlist=['x']).price_lines_of(b),
                 'container_deposit': float(b.container_deposit or 0),
                 'notes': b.notes,
                 'status': b.status,
@@ -529,6 +537,7 @@ class SalesAPIView(APIView):
                 'loading_time': b.loading_time,
                 'free_time': f"{b.free_time_demurrage}DEM / {b.free_time_detention}DET",
                 'price': float(b.selling_freight_price),
+                'price_lines': __import__('apps.dispatch.gss_bookings', fromlist=['x']).price_lines_of(b),
                 'status': b.status,
                 'status_label': b.get_status_display(),
                 'is_urgent': is_urgent,
@@ -568,8 +577,8 @@ class SalesAPIView(APIView):
 
         def _calc_t_rev(t):
             r = int(t.cached_revenue or 0)
-            if r <= 0 and t.booking_order and t.booking_order.selling_freight_price > 0:
-                r = int(t.booking_order.selling_freight_price)
+            if r <= 0 and t.booking_order and t.booking_order.price_for(t.container_type) > 0:
+                r = int(t.booking_order.price_for(t.container_type))
             if r <= 0 and t.customer:
                 tar = t.customer.tariffs.first()
                 if tar:
@@ -707,7 +716,7 @@ class SalesAPIView(APIView):
 
         if action == 'create_booking':
             customer_name = data.get('customer', '').strip()
-            customer = resolve_customer(customer_name) or Customer.objects.first()
+            customer = resolve_customer(customer_name)  # không tự gán khách đầu tiên khi không nhận ra tên: sai khách là sai tiền
             if not customer:
                 return Response({'error': 'Vui lòng chọn khách hàng hợp lệ đã khai báo trong Danh Mục!'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -754,57 +763,30 @@ class SalesAPIView(APIView):
             if loading_time_str.upper() in ['8H', '8']:
                 loading_time_str = '08:00'
 
-            selling_freight_price = float(data.get('selling_freight_price') or 0)
-            if selling_freight_price <= 0:
-                # Tự động tra cứu giá từ Báo giá ký kết hoặc Biểu cước của khách hàng theo yêu cầu
-                auto_price = 0
-                quotes = Quotation.objects.filter(customer=customer, is_deleted=False).order_by(
-                    models.Case(
-                        models.When(status='APPROVED', then=models.Value(1)),
-                        models.When(status='PENDING_APPROVAL', then=models.Value(2)),
-                        default=models.Value(3),
-                        output_field=models.IntegerField()
-                    ),
-                    '-created_at'
-                )
-                for q in quotes:
-                    for it in q.items.filter(is_deleted=False):
-                        if delivery_str and (delivery_str.upper() in (it.route_description or '').upper() or delivery_str.upper() in (it.destination_zone or '').upper()):
-                            if it.unit_price > 0:
-                                auto_price = float(it.unit_price)
-                                break
-                    if auto_price > 0:
-                        break
-                    if q.unit_price > 0:
-                        auto_price = float(q.unit_price)
-                        break
-
-                if auto_price <= 0:
-                    tar = customer.tariffs.filter(is_deleted=False).first()
-                    if tar and tar.freight_price > 0:
-                        auto_price = float(tar.freight_price)
-
-                if auto_price > 0:
-                    selling_freight_price = auto_price
-                else:
-                    selling_freight_price = 0  # Cho phép để trống / nhập sau
+            # Đơn giá cước bán: chỉ lấy đúng giá người dùng nhập/áp dụng. Báo giá chỉ GỢI Ý trên màn hình, backend không tự điền.
+            selling_freight_price = 0  # đặt theo dòng giá bên dưới
 
             from apps.dispatch import gss_bookings
             try:
                 etd_d = gss_bookings._date(data.get('etd'), 'ETD')
                 eta_d = gss_bookings._date(data.get('eta'), 'ETA')
+                discharge_d = gss_bookings._date(data.get('discharge_date'), 'Ngày dỡ hàng')
+                do_expiry_d = gss_bookings._date(data.get('do_expiry'), 'Hạn D/O')
                 gss_bookings.check_etd_eta(etd_d, eta_d)
                 cargo_value_d = gss_bookings.parse_cargo_value(data.get('cargo_value'))
                 invoice_no_s = str(data.get('invoice_no') or '').strip()
                 if len(invoice_no_s) > 100:
                     raise DjangoValidationError('Số Invoice quá dài (tối đa 100 ký tự).')
                 gss_bookings.split_customs_numbers(data.get('customs_declaration_number'))
+                _tmp = BookingOrder(container_size=str(data.get('container_size') or '').strip().upper())
+                price_lines = gss_bookings.parse_price_lines(data, _tmp) or []
+                selling_freight_price = price_lines[0]['unit_price'] if price_lines else 0
             except DjangoValidationError as ve:
                 return Response({'error': ' '.join(ve.messages)}, status=status.HTTP_400_BAD_REQUEST)
 
             curr_emp = getattr(request.user, 'employee', None)
             booking = BookingOrder.objects.create(
-                etd=etd_d, eta=eta_d, cargo_value=cargo_value_d, invoice_no=invoice_no_s,
+                etd=etd_d, eta=eta_d, discharge_date=discharge_d, do_expiry=do_expiry_d, cargo_value=cargo_value_d, invoice_no=invoice_no_s,
                 booking_code=booking_code,
                 customer=customer,
                 created_by=curr_emp,
@@ -847,6 +829,7 @@ class SalesAPIView(APIView):
                 notes=data.get('notes', '')
             )
 
+            gss_bookings.write_price_lines(booking, price_lines)
             if data.get('customs_declaration_number'):
                 gss_bookings.sync_customs_numbers(booking, data.get('customs_declaration_number'))
 
@@ -877,7 +860,7 @@ class SalesAPIView(APIView):
 
         elif action == 'create_quotation':
             customer_name = data.get('customer', '').strip()
-            customer = resolve_customer(customer_name) or Customer.objects.first()
+            customer = resolve_customer(customer_name)  # không tự gán khách đầu tiên khi không nhận ra tên
             if not customer:
                 return Response({'error': 'Vui lòng chọn khách hàng hợp lệ đã khai báo trong Danh Mục!'}, status=status.HTTP_400_BAD_REQUEST)
 

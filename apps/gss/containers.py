@@ -41,6 +41,7 @@ from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
 
+from apps.customers.models import booking_container_types
 from apps.dispatch import gss_workflow as wf
 from apps.dispatch.vendor_service import iso6346_valid
 from apps.gss.models import BookingContainer, FreeTimeRule
@@ -256,6 +257,13 @@ def validate_rows(booking, rows):
                 res['gross_weight_kg'] = str(int(round(val_float)))
             except (TypeError, ValueError):
                 res['errors'].append('Trọng lượng không hợp lệ (kg).')
+        # Loại cont là thông tin của TỪNG DÒNG: booking chỉ ghi 1 loại thì tự điền; ghi nhiều loại thì dòng phải chọn rõ
+        types = booking_container_types(booking.container_size)
+        if not res['container_type']:
+            if len(types) == 1:
+                res['container_type'] = types[0]
+            elif len(types) > 1:
+                res['errors'].append(f"Booking có nhiều loại cont ({', '.join(types)}): dòng này phải ghi rõ loại cont.")
         if cn in existing:
             res['action'] = 'UPDATE'
         res['ok'] = not res['errors']
@@ -289,7 +297,7 @@ def import_containers(booking, rows, *, user=None, commit=True, skip_invalid=Fal
         if r['container_type']:
             c.container_type = r['container_type']
         elif not c.container_type:
-            c.container_type = booking.container_size or ''
+            c.container_type = (booking_container_types(booking.container_size) or [''])[0]
         if r['seal_number']:
             c.seal_number = r['seal_number']
         if r['gross_weight_kg'] is not None:

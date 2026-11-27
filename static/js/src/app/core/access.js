@@ -10,7 +10,7 @@
         const cu = window.CURRENT_USER || {};
         if (cu.is_superuser) return true;
         const grants = window.BIM_ACCESS;
-        if (!grants) return true;  // quy tắc cũ: để máy chủ quyết định
+        if (!grants) return false;  // máy chủ luôn trả danh sách quyền cho người đã đăng nhập; không có = không có quyền (máy chủ vẫn kiểm tra lại)
         return (grants[module] || []).includes(action || 'view');
     }
     window.canAccess = canAccess;
@@ -27,6 +27,11 @@
         'subtab-acct-reimbursables': 'acc_reimburse', 'subtab-acct-settlements': 'acc_driver_settle', 'subtab-acct-customer-settlements': 'acc_customer_settle',
         'subtab-acct-subcontractors': 'acc_3pl', 'subtab-acct-vouchers': 'acc_voucher', 'subtab-acct-ledger': 'ledger', 'subtab-acct-bot-audit': 'acc_bot',
     };
+    // Modal nằm ngoài các view nên cần ánh xạ riêng để nút Tạo / Xóa / Xuất trong modal ẩn theo quyền của phân hệ
+    const MODAL_MODULE = {
+        'modal-dispatch-order': 'dispatch', 'modal-create-trip': 'dispatch', 'modal-quotation': 'sales',
+        'modal-cash-transaction': 'acc_cashbook', 'modal-driver-advance': 'advances', 'modal-settle-advance': 'advances', 'modal-dispatcher-fund': 'advances',
+    };
     const RULES = [
         [/^\s*(open\w*Create\w*|openCreate\w*|create\w*Page|openNew\w*|openAdd\w*|add(Trip|Vehicle|Trailer|Employee|Customer|Booking|Quotation)\w*)\s*\(/, 'create'],
         [/^\s*(event\.stopPropagation\(\);\s*)?(confirmDelete\w*|delete\w*|remove(Trip|Vehicle|Trailer|Employee|Customer|Booking|Quotation|Voucher|Declaration)\w*)\s*\(/, 'delete'],
@@ -36,6 +41,8 @@
     const SETTINGS_EDIT_RULE = /^\s*(openEditMasterDataModal|openSubcontractorFleetModal)\s*\(/;
 
     function moduleOf(el) {
+        const modal = el.closest('[id^="modal-"]');
+        if (modal) return MODAL_MODULE[modal.id] || null;
         // Trang Cài đặt: quyền theo tab đang mở (cfg_*)
         if (el.closest('#view-cai-dat') && typeof window.mdActiveModule === 'function') return window.mdActiveModule();
         const sub = el.closest('[id^="subtab-"]');
@@ -55,7 +62,7 @@
             if (!canAccess(m, a || 'view')) el.classList.add('hidden', 'acc-hidden');
         });
         (root || document).querySelectorAll('button[onclick], a[onclick]').forEach(el => {
-            if (el.closest('form, [id^="modal-"], #m-sheet, [data-access-keep]')) return;
+            if (el.closest('#m-sheet, [data-access-keep]')) return;
             const on = el.getAttribute('onclick') || '';
             if (SETTINGS_EDIT_RULE.test(on) && el.closest('#view-cai-dat')) {
                 if (!canAccess(moduleOf(el), 'edit')) el.classList.add('acc-hidden');

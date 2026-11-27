@@ -75,10 +75,11 @@ class UpgradeFeaturesTests(GssBase):
         trip.save()
 
         msg_text = msg.compose_message(trip, base_url="https://app.gpxlogistics.vn")
-        self.assertIn("GIẢI PHÁP XANH", msg_text)
-        self.assertIn("VC: " + trip.trip_code, msg_text)
-        self.assertIn("CSQU3054383 - SL9988", msg_text)
-        self.assertIn("Ghi chú: Tài xế lưu ý mang theo phiếu cân", msg_text)
+        self.assertIn("GIẢI PHÁP XANH LOGISTICS", msg_text)
+        self.assertIn("Lệnh Vận chuyển: " + trip.trip_code, msg_text)
+        self.assertIn("Cont: CSQU3054383", msg_text)
+        self.assertIn("Seal: SL9988", msg_text)
+        self.assertIn("Ghi chú:\n- Tài xế lưu ý mang theo phiếu cân", msg_text)
         self.assertIn("https://app.gpxlogistics.vn/q/", msg_text)
 
     def test_vendor_batch_message_and_excel_roundtrip(self):

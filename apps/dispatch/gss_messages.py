@@ -26,56 +26,100 @@ def _one_line(text):
     return ' '.join(str(text or '').split())
 
 
+def _clean_vendor_note(text):
+    """Ghi chú của chủ vendor, bỏ dấu vết ghép đôi nội bộ ("Kẹp cùng dòng #n") không dành cho tài xế."""
+    t = re.sub(r'\s*\|\s*Kẹp cùng dòng #\d+', '', str(text or ''))
+    t = re.sub(r'^Kẹp cùng dòng #\d+\s*\|?\s*', '', t)
+    return _one_line(t)
+
+
 def driver_note_lines(trip):
-    """(ghi chú chung, ghi chú riêng của cont) – mỗi cái một dòng.
-    Chung: lưu ý điểm đến + cấm đường/giờ cấm tải của booking. Riêng: ghi chú tài xế của dòng cont (+ ghi chú nhà xe nếu có)."""
+    """Ba dòng ghi chú của tin tài xế (mỗi dòng một chuỗi, rỗng thì bỏ):
+    1) ghi chú của booking (và ghi chú riêng của chuyến nếu khác);
+    2) ghi chú điểm đến / cấm đường: lưu ý điểm đến + giờ cấm tải của booking, kèm ghi chú tài xế của dòng cont;
+    3) ghi chú chuyến / cont của chủ vendor."""
     b = trip.booking_order
     eff = effective_notes(b) if b else {}
-    general = ' · '.join(x for x in (_one_line(eff.get('destination_notes')), _one_line(eff.get('road_restrictions'))) if x)
+    booking_note = _one_line(b.notes if b else '')
+    trip_note = _one_line(trip.special_notes or trip.cargo_notes)
+    line1 = ' · '.join(x for x in (booking_note, trip_note if trip_note != booking_note else '') if x)
     bc = getattr(trip, 'booking_container', None)
-    cont = ' · '.join(x for x in (_one_line(bc.driver_note if bc else ''), _one_line(trip.vendor_note)) if x)
-    return general, cont
+    line2 = ' · '.join(x for x in (_one_line(eff.get('destination_notes')), _one_line(eff.get('road_restrictions')),
+                                   _one_line(bc.driver_note if bc else '')) if x)
+    line3 = _clean_vendor_note(trip.vendor_note)
+    return line1, line2, line3
+
+
+def _fmt_deadline(d):
+    """Hạn DEM/DET hiển thị 'HH:MM dd/mm/yyyy' (hạn cuối ngày 23:59), giống lưới cont."""
+    return f'23:59 {d.strftime("%d/%m/%Y")}' if d else '—'
+
+
+def _warehouse_phone(trip):
+    """Số điện thoại kho giao (danh mục địa điểm hoặc ghi trên chuyến). Không dùng số của khách hàng thay thế."""
+    loc = getattr(trip, 'warehouse_loc', None)
+    return str(getattr(loc, 'contact_phone', '') or getattr(trip, 'destination_contact_phone', '') or '').strip()
+
+
+def dispatcher_contact(trip):
+    """(tên, số điện thoại) điều phối của chuyến: điều phối viên được gán, thiếu thì hotline công ty. Dùng chung cho tin Zalo và trang tài xế."""
+    disp = trip.dispatcher
+    if disp:
+        return disp.full_name, (getattr(disp, 'phone_number', '') or '').strip()
+    from apps.master_data.models import CompanyProfile
+    return 'Hotline', (getattr(CompanyProfile.get_default_company(), 'phone', '') or '').strip()
 
 
 def compose_message(trip, base_url):
-    """Bản tin chuẩn GIẢI PHÁP XANH gửi tài xế: VC, Số B/L - Cont - Seal, SDT KHO, Ghi chú, Lộ trình, Link."""
+    """Bản tin chuẩn GIẢI PHÁP XANH LOGISTICS gửi tài xế (Zalo/SMS):
+    Lệnh vận chuyển, Tài xế + Xe, B/L + Cont + Seal, Hạn DEM/DET, Mặt hàng, Giờ hẹn, Lộ trình 3 điểm, Ghi chú (3 dòng), Điều phối, Link."""
     b = trip.booking_order
     bl_no = (b.hbl_number or b.mbl_number or b.booking_number or '') if b else (trip.bill_of_lading_number or '')
+    bc = getattr(trip, 'booking_container', None)
     cont_no = trip.container_number or '(chưa có cont)'
+    cont_type = (trip.container_type or (bc.container_type if bc else '') or (b.container_size if b else '') or '').strip()
     seal_no = '' if trip.seal_number in ('', '-', None) else trip.seal_number
-    
-    # SĐT Kho / Nơi giao
-    sdt_kho = ''
-    if trip.warehouse_loc and hasattr(trip.warehouse_loc, 'contact_phone') and trip.warehouse_loc.contact_phone:
-        sdt_kho = trip.warehouse_loc.contact_phone
-    elif hasattr(trip, 'destination_contact_phone') and trip.destination_contact_phone:
-        sdt_kho = trip.destination_contact_phone
-    elif b and hasattr(b, 'customer') and b.customer and b.customer.phone:
-        sdt_kho = b.customer.phone
+    driver_name = trip.subcontractor_driver_name or (trip.driver.full_name if trip.driver_id else '')
+    driver_phone = trip.subcontractor_driver_phone or ''
+    tractor = trip.vehicle.license_plate if trip.vehicle_id else ''
+    trailer = (trip.trailer.license_plate if trip.trailer_id else trip.trailer_plate_text) or ''
+    commodity = _one_line(b.commodity if b else '')
+    when = ' '.join(x for x in (_fmt_date(trip.loading_date) if trip.loading_date else '', (trip.loading_time or '').strip()) if x)
+    wh_phone = _warehouse_phone(trip)
 
     lines = [
-        'GIẢI PHÁP XANH',
-        f'VC: {trip.trip_code}',
-        f'Số B/L - Cont - Seal: {bl_no or "—"} - {cont_no} - {seal_no or "—"}',
-        f'SDT KHO: {sdt_kho or "—"}',
+        'GIẢI PHÁP XANH LOGISTICS',
+        f'Lệnh Vận chuyển: {trip.trip_code}',
+        f'Tài xế: {(driver_name + " · " + driver_phone) if driver_phone else (driver_name or "—")} | Xe: {tractor or "—"} / {trailer or "—"}',
+        f'Thông tin: Số B/L: {bl_no or "—"} | Cont: {cont_no}{(" · " + cont_type) if cont_type else ""} | Seal: {seal_no or "—"}',
+        f'Hạn DEM: {_fmt_deadline(trip.dem_expiry_date)} · Hạn DET: {_fmt_deadline(trip.det_expiry_date)}',
+        f'Mặt hàng: {commodity or "—"}',
+        f'Giờ hẹn: {when or "—"}',
+        'Lộ trình:',
+        f' 1. Lấy cont: {trip.pickup_location or "—"}',
+        f' 2. Giao hàng: {trip.warehouse_location or "—"}{(" · SĐT kho: " + wh_phone) if wh_phone else ""}',
+        f' 3. Hạ rỗng: {trip.dropoff_location or "—"}',
     ]
 
-    # Ghi chú Điều vận
-    notes = (trip.special_notes or trip.cargo_notes or '').strip()
+    note_booking, note_dest, note_cont = driver_note_lines(trip)
+    notes = []
+    if note_booking:
+        notes.append(f'- {note_booking}')
+    if note_dest:
+        notes.append(f'- Ghi chú điểm đến / cấm đường: {note_dest}')
+    if note_cont:
+        notes.append(f'- Ghi chú chuyến / cont: {note_cont}')
     if notes:
-        lines.append(f'Ghi chú: {notes}')
+        lines.append('Ghi chú:')
+        lines.extend(notes)
 
-    general, cont_note = driver_note_lines(trip)
-    if general:
-        lines.append(f'Ghi chú chung: {general}')
-    if cont_note:
-        lines.append(f'Ghi chú cont: {cont_note}')
-
-    lines.append(f'Lộ trình: {trip.pickup_location or "—"} -> {trip.warehouse_location or "—"} -> {trip.dropoff_location or "—"}')
-    if trip.dem_expiry_date or trip.det_expiry_date:
-        lines.append(f'Hạn DEM: {_fmt_date(trip.dem_expiry_date)} · Hạn DET: {_fmt_date(trip.det_expiry_date)}')
-
-    lines.append(f'Mở lệnh & nộp chứng từ tại: {trip_link(trip, base_url)}')
+    # Điều phối: điều phối viên được gán cho chuyến; chuyến do nhà xe tự khai (chưa gán điều phối viên) thì dùng hotline công ty.
+    disp_name, disp_phone = dispatcher_contact(trip)
+    if disp_phone:
+        lines.append(f'Điều phối: {disp_name} · {disp_phone}' if disp_name != 'Hotline' else f'Điều phối: Hotline {disp_phone}')
+    elif disp_name != 'Hotline':
+        lines.append(f'Điều phối: {disp_name}')
+    lines.append(f'Mở lệnh & nộp chứng từ: {trip_link(trip, base_url)}')
     return '\n'.join(lines)
 
 

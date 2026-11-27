@@ -203,7 +203,7 @@ def get_customer_monthly_statement_data(customer_id, month=None, year=None, from
     elif status_filter == 'PENDING':
         qs = qs.filter(is_customer_settled=False)
     elif status_filter == 'COMPLETED':
-        qs = qs.filter(status__in=[TripStatus.COMPLETED, TripStatus.DELIVERED])
+        qs = qs.filter(step_status='EMPTY_RETURNED')
 
     # Sắp xếp theo ngày vận chuyển tăng dần (Loading Date)
     trips_qs = qs.select_related(

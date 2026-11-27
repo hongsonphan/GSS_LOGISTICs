@@ -125,6 +125,25 @@ class VendorAdminTests(GssBase):
         self.assertTrue(rows)
         self.assertTrue(all(r['status_code'] in ('ASSIGNED', 'IN_TRANSIT', 'EMPTY_RETURNING') for r in rows))
 
+    def test_vendor_containers_status_follows_7_step_machine(self):
+        """Tab Theo dõi hành trình: mã bước của máy 7 bước phải ra đúng nhóm (trước đây ARRIVED_AT_PICKUP bị tính là 'chờ chạy')."""
+        from apps.dispatch.models import DispatchTrip
+        from apps.gss.models import BookingContainer
+        t = self.trip()
+        BookingContainer.objects.create(booking=self.booking, line_no=1, container_number='CSQU3054383',
+                                        allocation=self.alloc, alloc_line_no=1, trip=t)
+        self.login()
+        expect = {'READY': 'ASSIGNED', 'ARRIVED_AT_PICKUP': 'IN_TRANSIT', 'LOADED_ON_VEHICLE': 'IN_TRANSIT',
+                  'ARRIVED_AT_DELIVERY': 'IN_TRANSIT', 'UNLOADED': 'IN_TRANSIT', 'RETURNING_EMPTY': 'EMPTY_RETURNING',
+                  'EMPTY_RETURNED': 'COMPLETED'}
+        for step, code in expect.items():
+            DispatchTrip.objects.filter(pk=t.pk).update(step_status=step)
+            body = self.client.get('/api/dispatch/vendor-containers/').json()
+            self.assertEqual(body['data'][0]['status_code'], code, step)
+            self.assertEqual(body['stats']['in_transit'], 1 if code in ('IN_TRANSIT', 'EMPTY_RETURNING') else 0, step)
+            self.assertEqual(body['stats']['assigned'], 1 if code == 'ASSIGNED' else 0, step)
+            self.assertEqual(body['stats']['completed'], 1 if code == 'COMPLETED' else 0, step)
+
     def test_delete_trip_clears_booking_container_and_active_monitoring(self):
         from apps.gss.models import BookingContainer
         t = self.trip()

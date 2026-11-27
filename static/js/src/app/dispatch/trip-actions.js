@@ -280,7 +280,7 @@ async function submitReassignDriver(e) {
             const newTrip = window.currentTripDetail;
             if (newTrip && newTrip.driver_phone) {
                 const cleanPhone = String(newTrip.driver_phone).replace(/\D/g, '');
-                const msg = buildDriverZaloMessage(newTrip);
+                const msg = await buildDriverZaloMessage(newTrip);
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(msg).catch(() => {});
                 }

@@ -923,15 +923,23 @@ function vaShareAllocZalo(allocId) {
     const l = vaFindAlloc(allocId);
     if (!l) return;
     const expText = l.expires_at ? vaFmt(l.expires_at) : 'Không giới hạn';
-    const msg = `Kính gửi Quý đối tác vận tải ${l.subcontractor},\nPhòng Điều Vận Giải Pháp Xanh thông báo Lệnh điều động Booking ${l.booking_code}${l.customer ? ' (' + l.customer + ')' : ''}:\n- Số lượng: ${l.allocated_containers} cont\n- Link nhận lệnh & gán xe/tài: ${l.vendor_link || '—'}\n- Hạn link: ${expText}\nQuý nhà xe vui lòng mở link trên điện thoại hoặc máy tính để gán Đầu kéo/Moóc và Bác tài nhận lệnh.\nTrân trọng!`;
+    const msg = `Kính gửi Quý đối tác vận tải ${l.subcontractor},\nPhòng Điều Vận Giải Pháp Xanh thông báo Lệnh điều động Booking ${l.booking_code}:\n- Số lượng: ${l.allocated_containers} cont\n- Link nhận lệnh & gán xe/tài: ${l.vendor_link || '—'}\n- Hạn link: ${expText}\nQuý nhà xe vui lòng mở link trên điện thoại hoặc máy tính để gán Đầu kéo/Moóc và Bác tài nhận lệnh.\nTrân trọng!`;
     vaCopy(msg, 'Đã sao chép tin nhắn Zalo lệnh điều động cho nhà xe.');
 }
 
-function vaShareDriverZalo(tripId) {
+async function vaShareDriverZalo(tripId) {
     const d = vaFindDriver(tripId);
     if (!d) return;
-    const expText = d.expires_at ? vaFmt(d.expires_at) : 'Không giới hạn';
-    const msg = `LỆNH ĐIỀU ĐỘNG GIẢI PHÁP XANH - Bác tài: ${d.driver_name || 'Bác tài'}${d.driver_phone ? ' (' + d.driver_phone + ')' : ''}\n- Chuyến xe: ${d.trip_code} | Cont: ${d.container_number || 'Theo lệnh'}\n- Đầu kéo: ${d.plate || 'Theo lệnh'}\n- Link mở lệnh di động & cập nhật POD: ${d.link}\n- Hạn lệnh: ${expText}\nBác tài bấm link trên điện thoại khi đến cảng/kho lấy cont và giao hàng nhé!\nTrân trọng!`;
+    // Tin gửi tài xế do máy chủ soạn (cùng cấu trúc với màn Chuyến xe và cổng nhà xe)
+    let msg = '';
+    try {
+        const res = await fetchWithAuth(`/api/gss/trips/${encodeURIComponent(d.trip_code)}/message/`);
+        if (res.ok) msg = ((await res.json()) || {}).content || '';
+    } catch (e) { /* dùng bản dự phòng */ }
+    if (!msg) {
+        const expText = d.expires_at ? vaFmt(d.expires_at) : 'Không giới hạn';
+        msg = `GIẢI PHÁP XANH LOGISTICS\nLệnh Vận chuyển: ${d.trip_code}\nTài xế: ${d.driver_name || '—'}${d.driver_phone ? ' · ' + d.driver_phone : ''} | Xe: ${d.plate || '—'}\nCont: ${d.container_number || '—'}\nMở lệnh & nộp chứng từ: ${d.link}\nHạn lệnh: ${expText}`;
+    }
     vaCopy(msg, 'Đã sao chép tin nhắn Zalo điều lệnh gửi Bác tài.');
 }
 

@@ -359,8 +359,6 @@ function openSelectedCustomerSOAView() {
 window.renderBookingOrderOptions = renderBookingOrderOptions;
 window.filterBookingOrderOptions = filterBookingOrderOptions;
 window.clearBookingOrderSearch = clearBookingOrderSearch;
-window.lookupBookingPrice = lookupBookingPrice;
-window.onBookingPriceManualInput = onBookingPriceManualInput;
 window.loadCustomerSettlementsData = loadCustomerSettlementsData;
 window.populateCustomerSettleFilter = populateCustomerSettleFilter;
 window.renderCustomerSettlementsTable = renderCustomerSettlementsTable;

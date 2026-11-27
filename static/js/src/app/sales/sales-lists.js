@@ -501,7 +501,7 @@ function renderBookingsTable(bookings) {
             <td data-col-key="actions" class="p-3.5 text-center">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <!-- 1. Xem Booking (Toàn màn hình) -->
-                    <button type="button" onclick="openModalBooking(${b.id}, true)" 
+                    <button type="button" onclick="viewBookingDetail(${b.id}, true)" 
                         class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xem chi tiết, Sửa, Lưu & Xóa đơn hàng">
                         <i class="ph-bold ph-eye"></i>

@@ -195,8 +195,10 @@
 /* trang tài xế quét QR (độc lập, không có khung BIM) */
 body.gss-scope{margin:0;background:var(--bg)}
 body.gss-scope>.topbar{height:56px;background:#fff;border-bottom:1px solid var(--line);box-shadow:var(--shadow);padding:0 16px;display:flex;align-items:center}
-body.gss-scope>.topbar h1{font-size:15px;font-weight:900;color:var(--ink);margin-left:auto;text-align:right}
-body.gss-scope>.topbar img.brand{height:34px;width:auto;flex:0 1 auto;min-width:0}
+body.gss-scope>.topbar{gap:10px}
+body.gss-scope>.topbar h1{font-size:15px;font-weight:900;color:var(--ink);margin-left:auto;text-align:right;min-width:0;overflow-wrap:anywhere;line-height:1.15}
+body.gss-scope>.topbar img.brand{height:34px;width:auto;flex:0 0 auto}
+@media (max-width:420px){body.gss-scope>.topbar{padding:0 12px;gap:8px}body.gss-scope>.topbar img.brand{height:28px}body.gss-scope>.topbar h1{font-size:13px}}
 body.gss-scope>main{max-width:720px;margin:0 auto;padding:14px 12px 80px}
 .drawer-bg .drawer,.drawer-bg{font-size:13px}
 @media(max-width:900px){

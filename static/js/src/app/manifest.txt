@@ -47,9 +47,9 @@ sales/sales-lists.js
 sales/quotation-modal.js
 sales/quotation-page.js
 sales/quotation-print.js
-sales/booking-modal.js
 sales/booking-page/files.js
 sales/booking-page/form.js
+sales/booking-page/price-lines.js
 sales/booking-page/page.js
 sales/booking-page/containers.js
 sales/booking-page/vendor-allocations.js

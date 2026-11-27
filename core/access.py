@@ -434,24 +434,24 @@ def effective_grants(user):
         grants = _with_derived({m: list(MODULE_ACTIONS[m]) for m in MODULE_KEYS})
     else:
         employee = getattr(user, 'employee', None)
-        if True:  # tài khoản không hồ sơ nhân viên: chỉ có quyền của nhóm được gán
-            from core.models import UserAccessOverride
-            from core.tenant import company_for_user
-            company = company_for_user(user)
-            pairs = _to_set(role_grants(company, employee.role)) if employee is not None else set()
-            ov = UserAccessOverride.objects.filter(user=user).first()
-            if ov:
-                extra_keys = list(ov.groups or [])
-            else:
-                extra_keys = []
-            keys = available_group_keys()
-            for key in dict.fromkeys(extra_keys + user_group_keys(user)):
-                if key in keys:
-                    pairs |= _to_set(group_grants(company, key))
-            if ov:
-                pairs |= _to_set(_clean(ov.allow))
-                pairs -= _to_set(_clean(ov.deny))
-            grants = _with_derived(_from_set(pairs))
+        # tài khoản không hồ sơ nhân viên: chỉ có quyền của nhóm được gán
+        from core.models import UserAccessOverride
+        from core.tenant import company_for_user
+        company = company_for_user(user)
+        pairs = _to_set(role_grants(company, employee.role)) if employee is not None else set()
+        ov = UserAccessOverride.objects.filter(user=user).first()
+        if ov:
+            extra_keys = list(ov.groups or [])
+        else:
+            extra_keys = []
+        keys = available_group_keys()
+        for key in dict.fromkeys(extra_keys + user_group_keys(user)):
+            if key in keys:
+                pairs |= _to_set(group_grants(company, key))
+        if ov:
+            pairs |= _to_set(_clean(ov.allow))
+            pairs -= _to_set(_clean(ov.deny))
+        grants = _with_derived(_from_set(pairs))
     user._bim_access = grants
     return grants
 

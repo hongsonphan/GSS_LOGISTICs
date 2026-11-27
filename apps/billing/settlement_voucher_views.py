@@ -20,7 +20,8 @@ from apps.billing.models import (
     ApprovalStatus, CashFlowCategory, CashTransaction, DriverAdvanceStatus, PaymentMethod, ReimbursementStatus, SettlementDiffType,
     SettlementVoucher, SettlementVoucherLog, SettlementVoucherPayment, TransactionType, VoucherPartyType, VoucherStatus,
 )
-from apps.dispatch.models import DispatchTrip, TripStatus
+from apps.dispatch.models import DispatchTrip
+from apps.dispatch.gss_workflow import DRIVER_SETTLE_STEPS
 from core.permissions import CanSettlementVoucher, CanViewSettlementVoucherReport
 from core.security import GracefulJWTAuthentication
 from core.sequences import next_code
@@ -372,9 +373,8 @@ class SettlementVoucherListCreateAPIView(APIView):
             'driver', 'vehicle', 'customer', 'subcontractor', 'dropoff_driver').prefetch_related('expenses', 'driver_advances'))
         if len(trips) != len(set(trip_ids)):
             return Response({'error': 'Có chuyến không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
-        if party_type == VoucherPartyType.DRIVER and any(
-                t.status in (TripStatus.DRAFT, TripStatus.DISPATCHED, TripStatus.IN_TRANSIT, TripStatus.CANCELLED) for t in trips):
-            return Response({'error': 'Chỉ quyết toán các chuyến đã đến kho giao hoặc hoàn thành'}, status=status.HTTP_400_BAD_REQUEST)
+        if party_type == VoucherPartyType.DRIVER and any(t.step_status not in DRIVER_SETTLE_STEPS for t in trips):
+            return Response({'error': 'Chỉ quyết toán tài xế các chuyến đã giao xong (từ bước Đã dỡ hàng trở đi)'}, status=status.HTTP_400_BAD_REQUEST)
         done = [t.trip_code for t in trips if _already_settled(party_type, t)]
         if done:
             return Response({'error': f'Chuyến đã quyết toán: {", ".join(done[:5])}'}, status=status.HTTP_400_BAD_REQUEST)
@@ -556,8 +556,6 @@ class SettlementVoucherApproveAPIView(APIView):
                 t.settled_at = now
                 t.settled_by = emp
                 t.driver_settlement_status = 'APPROVED'
-                if t.status in [TripStatus.AT_WAREHOUSE, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY]:
-                    t.status = TripStatus.COMPLETED
                 t.save()
                 t.expenses.filter(is_deleted=False).exclude(status=ApprovalStatus.REJECTED).update(status=ApprovalStatus.SETTLED)
             elif v.party_type == VoucherPartyType.PARTNER:

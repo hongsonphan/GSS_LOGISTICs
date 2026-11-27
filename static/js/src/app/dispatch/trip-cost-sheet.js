@@ -383,8 +383,25 @@ function renderCostSheetTable(trip) {
     if (appTotal) appTotal.innerText = formatMoney(totalCalculated);
 }
 
-// Xây dựng nội dung tin nhắn Lệnh điều xe gửi Zalo chuẩn hóa
-function buildDriverZaloMessage(trip) {
+// Tin nhắn Lệnh điều xe gửi tài xế: MỘT nguồn duy nhất là máy chủ (cùng cấu trúc ở mọi màn hình).
+// Chỉ khi không gọi được máy chủ mới dùng bản dự phòng soạn tại trình duyệt.
+async function buildDriverZaloMessage(trip) {
+    if (!trip) return '';
+    const code = trip.trip_code || trip.code || trip.id;
+    if (code) {
+        try {
+            const res = await fetchWithAuth(`/api/gss/trips/${encodeURIComponent(code)}/message/`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.content) return data.content;
+            }
+        } catch (e) { /* mất mạng tạm thời: dùng bản dự phòng bên dưới */ }
+    }
+    return buildDriverZaloMessageFallback(trip);
+}
+
+// Bản dự phòng (chỉ dùng khi máy chủ không trả tin)
+function buildDriverZaloMessageFallback(trip) {
     if (!trip) return '';
     const portalUrl = `${window.location.origin}${trip.driver_link || ''}`;
     const tripCode = trip.id || trip.trip_code || trip.code || '-';
@@ -413,13 +430,13 @@ ${portalUrl}`;
 window.buildDriverZaloMessage = buildDriverZaloMessage;
 
 // Sao chép Lệnh điều xe kèm link Mobile Driver Portal gửi tài xế qua Zalo/SMS
-window.copyDriverPortalLink = function() {
+window.copyDriverPortalLink = async function() {
     const trip = window.currentTripDetail;
     if (!trip) {
         alert('Chưa có thông tin chi tiết chuyến xe để sao chép!');
         return;
     }
-    const message = buildDriverZaloMessage(trip);
+    const message = await buildDriverZaloMessage(trip);
     const portalUrl = `${window.location.origin}${trip.driver_link || ''}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -433,10 +450,10 @@ window.copyDriverPortalLink = function() {
     }
 };
 
-window.openZaloDriverChat = function() {
+window.openZaloDriverChat = async function() {
     const trip = window.currentTripDetail;
     if (!trip) return;
-    const message = buildDriverZaloMessage(trip);
+    const message = await buildDriverZaloMessage(trip);
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).catch(() => {});
     }

@@ -884,19 +884,16 @@ class DriverBatchSettlementQueryAPIView(APIView):
         group_by = request.query_params.get('group_by', 'driver') # 'driver', 'customer', 'vehicle', 'date'
         settle_filter = request.query_params.get('settlement_status', 'ALL') # 'ALL', 'PENDING', 'SETTLED'
 
-        valid_settlement_statuses = [
-            TripStatus.COMPLETED,
-            TripStatus.DELIVERED,
-        ]
+        valid_steps = ['UNLOADED', 'EMPTY_RETURNED']
 
         # Cho phép xem các chuyến đang chạy dở dang nếu tham số yêu cầu
         include_wip = request.query_params.get('include_wip', 'false').lower() == 'true'
         if include_wip:
-            valid_settlement_statuses += [TripStatus.RETURNING_EMPTY, TripStatus.AT_WAREHOUSE, TripStatus.IN_TRANSIT, TripStatus.DISPATCHED]
+            valid_steps = ['READY', 'ARRIVED_AT_PICKUP', 'LOADED_ON_VEHICLE', 'ARRIVED_AT_DELIVERY', 'UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED']
 
         trips_qs = DispatchTrip.objects.filter(
             is_deleted=False,
-            status__in=valid_settlement_statuses
+            step_status__in=valid_steps
         ).select_related(
             'driver', 'vehicle', 'customer', 'booking_order', 'dropoff_driver'
         ).prefetch_related(
@@ -1097,11 +1094,11 @@ class DriverBatchSettlementExecuteAPIView(APIView):
             return Response({'error': 'Không tìm thấy các chuyến xe tương ứng'}, status=status.HTTP_404_NOT_FOUND)
 
         # Kiểm tra điều kiện chỉ quyết toán các chuyến hợp lệ (loại trừ DRAFT, DISPATCHED, IN_TRANSIT, CANCELLED)
-        invalid_trips = trips.filter(status__in=[TripStatus.DRAFT, TripStatus.DISPATCHED, TripStatus.IN_TRANSIT, TripStatus.CANCELLED])
+        invalid_trips = trips.exclude(step_status__in=['UNLOADED', 'RETURNING_EMPTY', 'EMPTY_RETURNED'])
         if invalid_trips.exists():
             codes = ", ".join(invalid_trips.values_list('trip_code', flat=True)[:3])
             return Response({
-                'error': f'Không thể quyết toán vì có chuyến đang trên đường vận chuyển hoặc chưa hoàn tất giao hàng ({codes}). Chỉ được quyết toán các chuyến đã đến kho giao hàng hoặc đã hoàn thành!'
+                'error': f'Không thể quyết toán vì có chuyến đang trên đường vận chuyển hoặc chưa hoàn tất giao hàng ({codes}). Chỉ được quyết toán tài xế các chuyến đã giao xong (từ bước Đã dỡ hàng trở đi)!'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()
@@ -1122,9 +1119,7 @@ class DriverBatchSettlementExecuteAPIView(APIView):
                 trip.settled_at = now
                 trip.settled_by = curr_emp
                 trip.advance_settlement_status = 'SETTLED'
-                if trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY]:
-                    trip.status = TripStatus.COMPLETED
-                trip.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by', 'advance_settlement_status', 'status'])
+                trip.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by', 'advance_settlement_status'])
 
                 # 2. Chốt các khoản chi phí của chuyến
                 trip.expenses.filter(is_deleted=False).exclude(status=ApprovalStatus.REJECTED).update(
@@ -1357,7 +1352,7 @@ class CustomerARReconciliationAPIView(APIView):
             trips_qs = DispatchTrip.objects.filter(
                 customer_id=customer_id,
                 is_deleted=False,
-                status__in=[TripStatus.COMPLETED, TripStatus.DELIVERED]
+                step_status='EMPTY_RETURNED'
             )
             if is_settle:
                 trips_qs = trips_qs.filter(is_customer_settled=False)
@@ -1373,13 +1368,12 @@ class CustomerARReconciliationAPIView(APIView):
 
         trips = DispatchTrip.objects.filter(id__in=trip_ids, is_deleted=False)
 
-        # Kiểm tra chỉ chuyến đã giao hàng xong (COMPLETED hoặc DELIVERED) mới được phép chốt quyết toán với khách hàng
-        allowed_statuses = [TripStatus.COMPLETED, TripStatus.DELIVERED]
-        invalid_trips = trips.exclude(status__in=allowed_statuses)
+        # Kiểm tra chỉ chuyến đã hạ rỗng xong (bước 7) mới được phép chốt quyết toán với khách hàng
+        invalid_trips = trips.exclude(step_status='EMPTY_RETURNED')
         if invalid_trips.exists() and is_settle:
             bad_codes = list(invalid_trips.values_list('trip_code', flat=True))
             return Response({
-                'error': f'Các chuyến sau chưa hoàn thành giao hàng, không thể quyết toán công nợ: {", ".join(bad_codes[:5])}'
+                'error': f'Các chuyến sau chưa hạ rỗng xong (bước 7), không thể quyết toán công nợ: {", ".join(bad_codes[:5])}'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()
@@ -1403,7 +1397,7 @@ class CustomerARReconciliationAPIView(APIView):
                 if vat_date:
                     update_kwargs['vat_invoice_date'] = vat_date
 
-            updated_count = trips.filter(status__in=allowed_statuses).update(**update_kwargs)
+            updated_count = trips.filter(step_status='EMPTY_RETURNED').update(**update_kwargs)
             return Response({
                 'success': True,
                 'message': f'Đã chốt quyết toán công nợ thành công cho {updated_count} chuyến xe (chính thức lên công nợ AR).',

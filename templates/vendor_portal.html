@@ -20,6 +20,20 @@
 <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 <link rel="stylesheet" href="{% static 'css/contrast.css' %}">
 <style>
+  /* Điện thoại: mỗi cont là một thẻ, không cuộn ngang (mục 29) */
+  @media (max-width: 640px) {
+    #container-rows-list { overflow-x: visible !important; max-height: none !important; min-height: 0 !important; }
+    table.vendor-cards, table.vendor-cards tbody { display: block; width: 100%; white-space: normal !important; }
+    table.vendor-cards thead { display: none; }
+    table.vendor-cards tr { display: block; margin: 10px 12px; padding: 4px 12px 8px; border: 1px solid #cbd5e1; border-radius: 12px; background: #fff; }
+    table.vendor-cards td { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0 !important; max-width: none !important; border-bottom: 1px dashed #e2e8f0; text-align: right !important; white-space: normal !important; }
+    table.vendor-cards td:last-child { border-bottom: 0; justify-content: flex-end; flex-wrap: wrap; }
+    table.vendor-cards td::before { content: attr(data-label); flex: 0 0 38%; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; }
+    table.vendor-cards td:last-child::before { display: none; }
+    table.vendor-cards td select, table.vendor-cards td input[type="text"], table.vendor-cards td input[type="tel"] { width: 100% !important; min-width: 0; }
+    table.vendor-cards td > div.flex { flex: 1 1 auto; min-width: 0; justify-content: flex-end; }
+    table.vendor-cards td .truncate { white-space: normal; text-align: right; }
+  }
   :root {
     --brand: #0f766e;
     --brand-dark: #0d5f58;
@@ -1666,78 +1680,78 @@
     const k = computeKpis();
     return `
       <!-- BỘ 4 THẺ CHỈ SỐ VẬN HÀNH (ĐỒNG BỘ CHUẨN DESIGN SYSTEM GSS TMS) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-2">
         <!-- Thẻ 1: TỔNG CONT ĐƯỢC GIAO -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
+        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Tổng Cont Được Giao</span>
-              <span class="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-heading">
+              <span class="text-xs sm:text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Tổng Cont Được Giao</span>
+              <span class="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full hidden sm:flex items-center gap-1 font-heading">
                 <i class="ph-bold ph-shipping-container"></i> Phân bổ
               </span>
             </div>
-            <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+            <p class="text-2xl sm:text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
               ${k.total_containers} <span class="text-sm font-bold text-slate-500 font-sans">Cont</span>
             </p>
           </div>
-          <p class="text-xs text-slate-500 font-medium mt-2 flex items-center gap-1">
+          <p class="hidden sm:flex text-xs text-slate-500 font-medium mt-2 items-center gap-1">
             <i class="ph-bold ph-check-circle text-indigo-600 text-xs shrink-0"></i>
             <span>Tổng lượng container phân bổ từ Điều vận Giải Pháp Xanh</span>
           </p>
         </div>
 
         <!-- Thẻ 2: CHỜ GÁN XE / TÀI -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
+        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Chờ Gán Xe / Tài</span>
-              <span class="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-heading">
+              <span class="text-xs sm:text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Chờ Gán Xe / Tài</span>
+              <span class="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full hidden sm:flex items-center gap-1 font-heading">
                 <i class="ph-bold ph-clock"></i> Chờ điều xe
               </span>
             </div>
-            <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1">
+            <p class="text-2xl sm:text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1">
               ${k.pending_count} <span class="text-sm font-bold text-amber-600 font-sans">Cont</span>
             </p>
           </div>
-          <p class="text-xs text-slate-500 font-medium mt-2 flex items-center gap-1">
+          <p class="hidden sm:flex text-xs text-slate-500 font-medium mt-2 items-center gap-1">
             <i class="ph-bold ph-clock text-amber-600 text-xs shrink-0"></i>
             <span>Cần chọn đầu kéo &amp; tài xế nhận lệnh</span>
           </p>
         </div>
 
         <!-- Thẻ 3: ĐANG CHẠY HÀNH TRÌNH -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
+        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Đang Chạy Tuyến</span>
-              <span class="text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-heading">
+              <span class="text-xs sm:text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Đang Chạy Tuyến</span>
+              <span class="text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full hidden sm:flex items-center gap-1 font-heading">
                 <i class="ph-bold ph-navigation-arrow"></i> Trên đường
               </span>
             </div>
-            <p class="text-3xl font-black text-teal-700 tabular-nums font-heading tracking-tight mt-1">
+            <p class="text-2xl sm:text-3xl font-black text-teal-700 tabular-nums font-heading tracking-tight mt-1">
               ${k.in_transit_count} <span class="text-sm font-bold text-teal-600 font-sans">Xe</span>
             </p>
           </div>
-          <p class="text-xs text-slate-500 font-medium mt-2 flex items-center gap-1">
+          <p class="hidden sm:flex text-xs text-slate-500 font-medium mt-2 items-center gap-1">
             <i class="ph-bold ph-navigation-arrow text-teal-600 text-xs shrink-0"></i>
             <span>Phương tiện đang vận hành theo 7 mốc</span>
           </p>
         </div>
 
         <!-- Thẻ 4: ĐÃ HẠ RỖNG HOÀN TẤT -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
+        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Đã Hạ Rỗng Hoàn Tất</span>
-              <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-heading">
+              <span class="text-xs sm:text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Đã Hạ Rỗng Hoàn Tất</span>
+              <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full hidden sm:flex items-center gap-1 font-heading">
                 <i class="ph-bold ph-check-circle"></i> Hoàn tất
               </span>
             </div>
-            <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1">
+            <p class="text-2xl sm:text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1">
               ${k.completed_count} <span class="text-sm font-bold text-emerald-600 font-sans">Cont</span>
             </p>
           </div>
-          <p class="text-xs text-slate-500 font-medium mt-2 flex items-center gap-1">
+          <p class="hidden sm:flex text-xs text-slate-500 font-medium mt-2 items-center gap-1">
             <i class="ph-bold ph-check-circle text-emerald-600 text-xs shrink-0"></i>
             <span>Đã giao hàng và hạ vỏ rỗng về bãi chỉ định</span>
           </p>
@@ -1821,7 +1835,7 @@
 
       return `
         <tr id="row-container-${row.line_no}" class="hover:bg-teal-50/30 transition-colors ${isModified ? 'bg-amber-50/40' : ''} ${selectedContLines.has(row.line_no) ? '!bg-teal-50/80 ring-1 ring-inset ring-teal-500/30' : ''}">
-          <td class="p-2.5 text-center whitespace-nowrap">
+          <td data-label="STT" class="p-2.5 text-center whitespace-nowrap">
             <label class="inline-flex items-center justify-center gap-1.5 ${isRowUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'} select-none" title="${is20 ? 'Chọn cont 20ft này để ghép đôi (Kẹp 20)' : 'Chỉ hỗ trợ ghép với cont 20ft'}">
               <input type="checkbox"
                 class="vendor-cont-checkbox w-4 h-4 rounded text-teal-700 focus:ring-teal-500 border-slate-300 cursor-pointer transition-all"
@@ -1833,7 +1847,7 @@
               <span class="font-bold text-slate-600 tabular-nums text-[13px]">${row.line_no}</span>
             </label>
           </td>
-          <td class="p-2.5">
+          <td data-label="Số container" class="p-2.5">
             <div class="flex items-center gap-1.5">
               ${row.container_locked
                 ? `<div class="leading-tight"><div class="font-mono font-black text-slate-900 text-[13px] whitespace-nowrap tabular-nums ${(curData.is_twin_container && curData.container_number_2) ? 'text-xs' : ''}">${escapeHtml(curData.container_number || '--')}</div>${(curData.is_twin_container && curData.container_number_2) ? `<div class="text-xs font-bold text-indigo-700 whitespace-nowrap tabular-nums">+ ${escapeHtml(curData.container_number_2)}</div>` : ''}</div>`
@@ -1847,15 +1861,15 @@
               ` : ''}
             </div>
           </td>
-          <td class="p-2.5 font-mono font-bold text-slate-800 text-[13px] tabular-nums whitespace-nowrap">${escapeHtml(curData.bill_of_lading || b.bill_of_lading || '--')}</td>
-          <td class="p-2.5 text-center font-bold text-slate-700 tabular-nums text-[13px]">${escapeHtml(row.container_type || '40HC')}</td>
-          <td class="p-2.5">
+          <td data-label="Số B/L" class="p-2.5 font-mono font-bold text-slate-800 text-[13px] tabular-nums whitespace-nowrap">${escapeHtml(curData.bill_of_lading || b.bl_number || b.booking_number || '--')}</td>
+          <td data-label="Loại cont" class="p-2.5 text-center font-bold text-slate-700 tabular-nums text-[13px]">${escapeHtml(row.container_type || '40HC')}</td>
+          <td data-label="Số chì (Seal)" class="p-2.5">
             <input type="text" value="${escapeHtml(curData.seal_number || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="Seal..." oninput="this.value = this.value.toUpperCase(); updateRowField(${row.line_no}, 'seal_number', this.value);" class="h-8.5 w-[96px] px-2 uppercase font-mono rounded-lg border text-[13px] tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">
           </td>
-          <td class="p-2.5 max-w-[145px]">
+          <td data-label="Điểm giao hàng" class="p-2.5 max-w-[145px]">
             <div class="truncate text-slate-700 font-medium text-[13px]" title="${escapeHtml(deliveryTxt)}">${escapeHtml(deliveryTxt)}</div>
           </td>
-          <td class="p-2">
+          <td data-label="Đầu kéo" class="p-2">
             <div class="flex items-center gap-1">
               <select aria-label="Đầu kéo dòng ${row.line_no}" ${!isRowUnlocked ? 'disabled' : ''} onchange="updateRowField(${row.line_no}, 'tractor_plate', this.value);" class="h-8.5 w-[114px] px-1.5 font-mono font-bold uppercase rounded-lg border text-[13px] tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">
                 ${buildPlateOptions(catalog.tractors, curData.tractor_plate, 'Đầu kéo')}
@@ -1863,7 +1877,7 @@
               ${isRowUnlocked ? `<button type="button" onclick="openQuickAddModal('tractor', ${row.line_no})" title="Thêm mới đầu kéo" class="h-8.5 w-6.5 shrink-0 rounded-lg border border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-teal-700 flex items-center justify-center cursor-pointer"><i class="ph-bold ph-plus text-xs"></i></button>` : ''}
             </div>
           </td>
-          <td class="p-2">
+          <td data-label="Rơ-moóc" class="p-2">
             <div class="flex items-center gap-1">
               <select aria-label="Rơ-moóc dòng ${row.line_no}" ${!isRowUnlocked ? 'disabled' : ''} onchange="updateRowField(${row.line_no}, 'trailer_plate', this.value);" class="h-8.5 w-[108px] px-1.5 font-mono font-bold uppercase rounded-lg border text-[13px] tabular-nums focus:border-teal-600 focus:outline-none ${inputStateCls}">
                 ${buildPlateOptions(catalog.trailers, curData.trailer_plate, 'Rơ-moóc')}
@@ -1871,7 +1885,7 @@
               ${isRowUnlocked ? `<button type="button" onclick="openQuickAddModal('trailer', ${row.line_no})" title="Thêm mới rơ-moóc" class="h-8.5 w-6.5 shrink-0 rounded-lg border border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-teal-700 flex items-center justify-center cursor-pointer"><i class="ph-bold ph-plus text-xs"></i></button>` : ''}
             </div>
           </td>
-          <td class="p-2">
+          <td data-label="Tài xế" class="p-2">
             <div class="flex items-center gap-1">
               <select aria-label="Tài xế dòng ${row.line_no}" ${!isRowUnlocked ? 'disabled' : ''} onchange="onDriverSelectChange(${row.line_no}, this);" class="h-8.5 w-[130px] px-1.5 font-semibold rounded-lg border text-[13px] focus:border-teal-600 focus:outline-none ${inputStateCls}">
                 ${buildDriverOptions(catalog.drivers, curData.driver_name, curData.driver_phone, 'Chọn tài xế')}
@@ -1879,13 +1893,13 @@
               ${isRowUnlocked ? `<button type="button" onclick="openQuickAddModal('driver', ${row.line_no})" title="Thêm mới tài xế" class="h-8.5 w-6.5 shrink-0 rounded-lg border border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-teal-700 flex items-center justify-center cursor-pointer"><i class="ph-bold ph-plus text-xs"></i></button>` : ''}
             </div>
           </td>
-          <td class="p-2">
+          <td data-label="SĐT tài xế" class="p-2">
             <input type="tel" readonly value="${escapeHtml(curData.driver_phone || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="Theo tài xế" title="Tự động điền theo Tài xế được chọn" class="vendor-driver-phone h-8.5 w-[102px] px-2 rounded-lg border text-[13px] font-mono tabular-nums ${!isRowUnlocked ? 'bg-slate-50 text-slate-600 border-slate-200/80 cursor-not-allowed' : 'bg-slate-50 text-slate-700 border-slate-200 cursor-default'}">
           </td>
-          <td class="p-2">
+          <td data-label="Ghi chú" class="p-2">
             <input type="text" value="${escapeHtml(curData.vendor_note || '')}" ${!isRowUnlocked ? 'disabled' : ''} placeholder="Ghi chú..." oninput="updateRowField(${row.line_no}, 'vendor_note', this.value);" class="h-8.5 w-[88px] px-2 rounded-lg border text-[13px] focus:border-teal-600 focus:outline-none ${inputStateCls}">
           </td>
-          <td class="p-2.5 whitespace-nowrap">
+          <td data-label="Trạng thái" class="p-2.5 whitespace-nowrap">
             <span class="text-xs font-bold ${statusInfo.cls} inline-flex items-center gap-1" title="${row.trip_code ? 'Mã chuyến: ' + escapeHtml(row.trip_code) : 'Chưa gán xe'}">
               <i class="ph-bold ${statusInfo.icon}"></i>
               <span>${escapeHtml(stepFraction + statusInfo.label)}</span>
@@ -1893,7 +1907,7 @@
             ${row.trip_code ? `<div class="text-xs font-mono font-bold text-teal-800 mt-0.5 tracking-tight flex items-center gap-1"><i class="ph-bold ph-ticket text-teal-600"></i>${escapeHtml(row.trip_code)}</div>` : ''}
             <div id="row-msg-${row.line_no}" class="text-xs font-medium"></div>
           </td>
-          <td class="p-2.5 text-right whitespace-nowrap">
+          <td data-label="Thao tác" class="p-2.5 text-right whitespace-nowrap">
             <div class="inline-flex items-center gap-1">
               ${(row.trip_code || row.trip_token) ? `
                 <button type="button" onclick="openDriverQrModal(${row.line_no})" class="h-7.5 px-2.5 rounded-lg border border-teal-600 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all active:scale-95" title="Mở Lệnh Điều Xe & Mã QR Tài Xế / Copy Link Zalo">
@@ -1953,6 +1967,7 @@
           <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/70 space-y-1">
             <div class="text-xs font-bold uppercase text-teal-700 font-heading">Hạn DEM / DET &amp; Lưu Ý</div>
             <div><span class="text-slate-500">DEM:</span> <strong class="${(b.dem && b.dem.level === 'danger') ? 'text-rose-600' : 'text-slate-800'}">${escapeHtml((b.dem && b.dem.label) || 'Theo quy tắc')}</strong> · <span class="text-slate-500">DET:</span> <strong class="${(b.det && b.det.level === 'danger') ? 'text-rose-600' : 'text-slate-800'}">${escapeHtml((b.det && b.det.label) || 'Theo quy tắc')}</strong></div>
+            ${b.notes ? `<div class="text-amber-800 font-medium whitespace-pre-line">${escapeHtml(b.notes)}</div>` : ''}
             ${b.destination_notes ? `<div class="text-amber-800 font-medium">${escapeHtml(b.destination_notes)}</div>` : ''}
             ${b.road_restrictions ? `<div class="text-rose-700 font-medium">Cấm tải: ${escapeHtml(b.road_restrictions)}</div>` : ''}
           </div>
@@ -1994,6 +2009,7 @@
             <i class="ph-bold ph-list-checks text-base text-teal-700"></i>
             <h3 class="font-extrabold text-sm text-slate-800 uppercase tracking-wide font-heading">Danh Sách Container Được Giao &amp; Gán Xe (${activeRows.length} Container)</h3>
           </div>
+          <p class="sm:hidden w-full text-xs text-slate-500 font-medium">Mỗi cont là một thẻ: chọn đầu kéo, tài xế rồi bấm &quot;Lưu Khai Báo&quot;. Bấm &quot;Xem&quot; để mở chi tiết cont.</p>
           <div class="flex items-center gap-2 shrink-0 flex-wrap">
             <button type="button" id="btn-vendor-pair-conts" onclick="onExecutePairSelectedConts()" class="${selectedContLines.size === 2 ? 'inline-flex' : 'hidden'} btn-keep-solid h-8.5 px-3.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs items-center gap-1.5 shadow-sm cursor-pointer transition-all animate-pulse" title="Ghép 2 container 20 feet đã chọn vào chung 1 chuyến xe (Kẹp 20)">
               <i class="ph-bold ph-link text-sm text-teal-200"></i>
@@ -3233,40 +3249,41 @@
   let currentQrLineNo = null;
 
   function formatDriverZaloMessage(row, fullDriverUrl) {
+    // Bản tin đã lưu chuyến do máy chủ soạn (cùng cấu trúc với điều vận): dùng nguyên, chỉ thay link tương đối bằng link đầy đủ.
+    if (row.zalo_message && /\/q\/[^\s]+\/?$/.test(row.zalo_message.trim())) {
+      return row.zalo_message.trim().replace(/(\s)\/q\/([^\s]+)$/, `$1${window.location.origin}/q/$2`);
+    }
+    // Dòng chưa lưu chuyến: soạn tạm tại trình duyệt theo đúng cấu trúc
     const b = (state && state.booking) || {};
     const tripCode = row.trip_code || row.expected_trip_code || ('VC.' + String(row.line_no || 1).padStart(3, '0') + '.' + (b.booking_code || ''));
-    const contNo = row.container_number || '--';
-    const contType = row.container_type || '40HC';
-    const sealNo = (row.seal_number && row.seal_number !== '-') ? row.seal_number : '--';
-    const tractor = row.tractor_plate || '--';
-    const trailer = row.trailer_plate || '--';
-    const driver = row.driver_name || '--';
-    const phone = row.driver_phone || '--';
-    const pickup = row.pickup || b.pickup_location || '--';
-    const delivery = row.warehouse || row.delivery || b.delivery_location || '--';
-    const dropoff = row.dropoff || b.dropoff_location || '--';
-    const dem = row.dem_expiry || '--';
-    const det = row.det_expiry || '--';
+    const contType = row.container_type || b.container_size || '';
+    const sealNo = (row.seal_number && row.seal_number !== '-') ? row.seal_number : '—';
     const oneLine = (s) => String(s || '').replace(/\s+/g, ' ').trim();
-    // Ghi chú chung của booking (điểm đến, giờ cấm tải) – 1 dòng; ghi chú riêng của dòng cont (+ ghi chú nhà xe) – 1 dòng
-    const generalNote = [oneLine(b.destination_notes), oneLine(b.road_restrictions)].filter(Boolean).join(' · ');
+    const driver = row.driver_phone ? `${row.driver_name || '—'} · ${row.driver_phone}` : (row.driver_name || '—');
+    const when = [b.loading_date ? fmtDate(b.loading_date) : '', b.loading_time || ''].filter(Boolean).join(' ') || '—';
     const vendorNote = oneLine(String(row.vendor_note || '').replace(/\s*\|\s*Kẹp cùng dòng #\d+/g, '').replace(/^Kẹp cùng dòng #\d+\s*\|?\s*/g, ''));
-    const contNote = [oneLine(row.driver_note), vendorNote].filter(Boolean).join(' · ');
-
+    const destNote = [oneLine(b.destination_notes), oneLine(b.road_restrictions), oneLine(row.driver_note)].filter(Boolean).join(' · ');
+    const notes = [
+      ...(oneLine(b.notes) ? [`- ${oneLine(b.notes)}`] : []),
+      ...(destNote ? [`- Ghi chú điểm đến / cấm đường: ${destNote}`] : []),
+      ...(vendorNote ? [`- Ghi chú chuyến / cont: ${vendorNote}`] : []),
+    ];
     return [
-      `🚚 GIẢI PHÁP XANH - LỆNH ĐIỀU XE ${tripCode}`,
-      `📦 Cont: ${contNo} (${contType}) | Seal: ${sealNo}`,
-      `🚛 Xe: ${tractor} | Rơ-moóc: ${trailer}`,
-      `👤 Tài xế: ${driver} (${phone})`,
-      `📍 1. Nhận cont: ${pickup}`,
-      `🏭 2. Giao hàng: ${delivery}`,
-      `⚓ 3. Hạ rỗng: ${dropoff}`,
-      `⏳ Hạn DEM: ${dem} | Hạn DET: ${det}`,
-      ...(generalNote ? [`📝 Ghi chú chung: ${generalNote}`] : []),
-      ...(contNote ? [`📌 Ghi chú cont: ${contNote}`] : []),
-      `👉 Bấm link mở lệnh điều xe, cập nhật 7 mốc và gửi chứng từ:`,
-      `${fullDriverUrl}`
-    ].join('\n');
+      'GIẢI PHÁP XANH LOGISTICS',
+      `Lệnh Vận chuyển: ${tripCode}`,
+      `Tài xế: ${driver} | Xe: ${row.tractor_plate || '—'} / ${row.trailer_plate || '—'}`,
+      `Thông tin: Số B/L: ${b.bl_number || b.booking_number || '—'} | Cont: ${row.container_number || '—'}${contType ? ' · ' + contType : ''} | Seal: ${sealNo}`,
+      `Hạn DEM: ${row.dem_expiry ? '23:59 ' + row.dem_expiry : '—'} · Hạn DET: ${row.det_expiry ? '23:59 ' + row.det_expiry : '—'}`,
+      `Mặt hàng: ${b.commodity || '—'}`,
+      `Giờ hẹn: ${when}`,
+      'Lộ trình:',
+      ` 1. Lấy cont: ${row.pickup || b.pickup_location || '—'}`,
+      ` 2. Giao hàng: ${row.warehouse || row.delivery || b.delivery_location || '—'}`,
+      ` 3. Hạ rỗng: ${row.dropoff || b.dropoff_location || '—'}`,
+      ...(notes.length ? ['Ghi chú:', ...notes] : []),
+      `Mở lệnh & nộp chứng từ: ${fullDriverUrl}`
+    ].join('
+');
   }
 
   window.openDriverQrModal = function(lineNo) {

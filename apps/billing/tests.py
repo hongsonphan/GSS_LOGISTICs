@@ -81,7 +81,7 @@ class DriverBatchSettlementTests(TestCase):
             customer=self.customer,
             driver=self.driver_emp,
             vehicle=self.vehicle,
-            status=TripStatus.COMPLETED,
+            status=TripStatus.COMPLETED, step_status='EMPTY_RETURNED',
             loading_date=datetime.date.today(),
             is_expenses_settled=False
         )
@@ -90,7 +90,7 @@ class DriverBatchSettlementTests(TestCase):
             customer=self.customer,
             driver=self.driver_emp,
             vehicle=self.vehicle,
-            status=TripStatus.COMPLETED,
+            status=TripStatus.COMPLETED, step_status='EMPTY_RETURNED',
             loading_date=datetime.date.today(),
             is_expenses_settled=False
         )
@@ -175,6 +175,23 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(cash_tx.amount, 200000)
         self.assertEqual(cash_tx.category, CashFlowCategory.ADVANCE_REFUND)
 
+    def test_driver_voucher_needs_unloaded_step_and_revenue_waits_for_step7(self):
+        """Quyết toán tài xế chỉ từ bước 5 (đã dỡ); doanh thu sổ cái chỉ ghi ở bước 7."""
+        from apps.ledger.posting import build_trip
+        self.client.force_authenticate(user=self.accountant_user)
+        base = '/api/accounting/settlement-vouchers/'
+        DispatchTrip.objects.filter(pk=self.trip2.pk).update(step_status='LOADED_ON_VEHICLE')
+        res = self.client.post(base, {'party_type': 'DRIVER', 'trip_ids': [self.trip2.id]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        DispatchTrip.objects.filter(pk=self.trip2.pk).update(step_status='UNLOADED')
+        res = self.client.post(base, {'party_type': 'DRIVER', 'trip_ids': [self.trip2.id]}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        self.trip2.refresh_from_db()
+        self.assertIsNone(build_trip(self.trip2))                 # chưa hạ rỗng: chưa ghi doanh thu
+        DispatchTrip.objects.filter(pk=self.trip2.pk).update(step_status='EMPTY_RETURNED', cached_revenue=1000000)
+        self.trip2.refresh_from_db()
+        self.assertIsNotNone(build_trip(self.trip2))
+
     def test_settlement_voucher_lifecycle_driver(self):
         """Phiếu quyết toán tài xế: lập -> sửa phát sinh -> duyệt (có phiếu thu) -> mở lại -> xóa."""
         self.client.force_authenticate(user=self.accountant_user)
@@ -210,12 +227,14 @@ class DriverBatchSettlementTests(TestCase):
         res = self.client.post(f'{base}{vid}/approve/', {}, format='json')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('xác nhận', res.data['error'])
+        DispatchTrip.objects.filter(pk=self.trip1.pk).update(step_status='UNLOADED', status=TripStatus.DELIVERED)
         res = self._approve(base, vid)
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
         self.assertEqual(res.data['voucher']['status'], 'APPROVED')
         self.trip1.refresh_from_db()
         self.assertTrue(self.trip1.is_expenses_settled)
         self.assertEqual(self.trip1.driver_settlement_status, 'APPROVED')
+        self.assertEqual((self.trip1.step_status, self.trip1.status), ('UNLOADED', TripStatus.DELIVERED))   # duyệt phiếu không ép chuyến sang bước 7 / hoàn tất
         self.assertFalse(CashTransaction.objects.filter(ref_code=res.data['voucher']['code']).exists())
         self.adv1.refresh_from_db()
         self.assertEqual(self.adv1.status, DriverAdvanceStatus.ADVANCED)   # tạm ứng chưa đóng
@@ -391,7 +410,7 @@ class DriverBatchSettlementTests(TestCase):
         admin = User.objects.create_user(username='rep_admin2', password='password123', is_staff=True, is_superuser=True)
         trip = DispatchTrip.objects.create(
             trip_code='ACC-TEST-001', customer=self.customer, vehicle=self.vehicle,
-            status=TripStatus.ACCEPTED, loading_date=datetime.date.today(), cached_revenue=Decimal('2000000'))
+            status=TripStatus.ACCEPTED, step_status='UNLOADED', loading_date=datetime.date.today(), cached_revenue=Decimal('2000000'))
 
         def report():
             self.client.force_authenticate(user=admin)
@@ -423,7 +442,7 @@ class DriverBatchSettlementTests(TestCase):
         admin = User.objects.create_user(username='rep_admin3', password='password123', is_staff=True, is_superuser=True)
         trip = DispatchTrip.objects.create(
             trip_code='AR-TEST-001', customer=self.customer, vehicle=self.vehicle,
-            status=TripStatus.ACCEPTED, cached_revenue=Decimal('2000000'))
+            status=TripStatus.ACCEPTED, step_status='UNLOADED', cached_revenue=Decimal('2000000'))
         TripExpense.objects.create(trip=trip, driver=self.driver_emp, category=ExpenseCategory.TOLL_FEE, amount=100000,
                                    status=ApprovalStatus.APPROVED, is_on_behalf_of_customer=True)
         self.client.force_authenticate(user=self.accountant_user)
@@ -788,6 +807,7 @@ class DriverBatchSettlementTests(TestCase):
     def test_batch_settlement_reject_uncompleted_trip(self):
         """Từ chối quyết toán nếu có chuyến xe chưa hoàn thành (chưa COMPLETED)."""
         self.trip2.status = TripStatus.IN_TRANSIT
+        self.trip2.step_status = 'LOADED_ON_VEHICLE'
         self.trip2.save()
 
         self.client.force_authenticate(user=self.accountant_user)
@@ -963,7 +983,7 @@ class DriverBatchSettlementTests(TestCase):
             driver=self.driver_emp,
             subcontractor_cost=Decimal('3000000'),
             subcontractor_advance=Decimal('1000000'),
-            status=TripStatus.IN_TRANSIT,
+            status=TripStatus.IN_TRANSIT, step_status='LOADED_ON_VEHICLE',
             loading_date=datetime.date.today(),
             cached_revenue=Decimal('4000000')
         )
@@ -1032,7 +1052,7 @@ class DriverBatchSettlementTests(TestCase):
             customer=self.customer,
             vehicle=self.vehicle,
             driver=self.driver_emp,
-            status=TripStatus.IN_TRANSIT,
+            status=TripStatus.IN_TRANSIT, step_status='LOADED_ON_VEHICLE',
             loading_date=datetime.date.today(),
             driver_advance_amount=2000000,
             advance_settlement_status='ADVANCED'
@@ -1097,7 +1117,7 @@ class DriverBatchSettlementTests(TestCase):
             customer=self.customer,
             vehicle=self.vehicle,
             subcontractor=sub_test,
-            status=TripStatus.COMPLETED,
+            status=TripStatus.COMPLETED, step_status='EMPTY_RETURNED',
             loading_date=datetime.date.today(),
             subcontractor_cost=3000000,
             subcontractor_advance=1000000,
@@ -1108,7 +1128,7 @@ class DriverBatchSettlementTests(TestCase):
             customer=self.customer,
             vehicle=self.vehicle,
             subcontractor=sub_test,
-            status=TripStatus.COMPLETED,
+            status=TripStatus.COMPLETED, step_status='EMPTY_RETURNED',
             loading_date=datetime.date.today(),
             subcontractor_cost=2500000,
             subcontractor_advance=500000,
@@ -1178,7 +1198,7 @@ class CustomerMonthlyStatementTests(TestCase):
             dropoff_location='CÁT LÁI',
             loading_date=datetime.date(2022, 6, 19),
             cached_revenue=4100000,
-            status=TripStatus.COMPLETED
+            status=TripStatus.COMPLETED, step_status='EMPTY_RETURNED'
         )
         TripExpense.objects.create(
             trip=self.trip,

@@ -514,7 +514,7 @@ class DashboardBGDAPIView(APIView):
         pending_bookings_period = bookings_period_qs.filter(status=BookingStatus.PENDING_DISPATCH).count()
         
         # Doanh thu booking nhận trong kỳ
-        period_booking_rev = sum(float(b.selling_freight_price or 0) * (b.total_containers or 1) for b in bookings_period_qs)
+        period_booking_rev = sum(float(b.revenue_plan()) for b in bookings_period_qs)
         
         # Điều chỉnh doanh thu kế hoạch & nhãn theo kỳ
         if period in ['today', '10_days'] and period_booking_rev > 0:

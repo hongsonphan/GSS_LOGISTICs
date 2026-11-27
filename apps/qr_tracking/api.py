@@ -150,7 +150,10 @@ def _driver_extras(trip):
     from apps.depot_yard.models import Yard
     places = [y.name for y in Yard.objects.filter(is_deleted=False, is_active=True).order_by('name')]
     loc = trip.warehouse_loc
+    from apps.dispatch.gss_messages import dispatcher_contact, _warehouse_phone
+    disp_name, disp_phone = dispatcher_contact(trip)
     return {'claim_codes': [], 'claims': [], 'checkpoint_places': places,
+            'dispatcher_name': disp_name, 'dispatcher_phone': disp_phone, 'warehouse_phone': _warehouse_phone(trip),
             'vendor_note': (trip.vendor_note or '').strip(),
             'driver_note': ((trip.booking_container.driver_note if getattr(trip, 'booking_container', None) else '') or '').strip(), 'special_notes': (trip.special_notes or '').strip(),
             'delivery_opening_hours': (loc.opening_hours if loc else '') or '',

@@ -424,7 +424,7 @@ async function submitNewTrip(sourceEl = null) {
             loadTripsData();
 
             // Tự động sao chép Lệnh điều xe và mở Zalo nếu có tài xế
-            const message = buildDriverZaloMessage(result);
+            const message = await buildDriverZaloMessage(result);
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(message).catch(() => {});
             }

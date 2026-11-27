@@ -139,8 +139,8 @@ def build_cash(tx):
 
 
 def build_trip(trip):
-    """Doanh thu chuyến (Nợ 131 / Có 5113) và cước thuê thầu phụ (Nợ 632 / Có 331) khi chuyến hoàn tất."""
-    if trip.is_deleted or trip.status != 'COMPLETED':
+    """Doanh thu chuyến (Nợ 131 / Có 5113) và cước thuê thầu phụ (Nợ 632 / Có 331) khi chuyến hạ rỗng xong (bước 7, đủ POD và EIR)."""
+    if trip.is_deleted or trip.step_status != 'EMPTY_RETURNED':
         return None
     when = _date(trip.actual_end_time or trip.actual_dropoff_at or trip.loading_date or trip.updated_at)
     customer_partner = _partner_of_customer(trip.customer)

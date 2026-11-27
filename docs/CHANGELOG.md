@@ -3,6 +3,26 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-27 (Phiên 6) – Sửa lỗi phát hiện khi chạy giả lập Báo giá → Booking → Điều độ → Nhà xe → Tài xế
+
+### Changed
+- **Mốc tài chính theo 7 bước (mục 3, đợt A):** ghi doanh thu/công nợ (sổ cái `build_trip`), bảng kê và quyết toán khách, báo cáo hoàn tất chỉ tính chuyến ở bước 7 `EMPTY_RETURNED` (đủ POD và EIR), thay cho điều kiện `TripStatus` cũ (trước đây cả "Đã giao" cũng lọt vào bảng kê khách). Quyết toán tài xế (đội xe nội bộ) cho phép từ bước 5 `UNLOADED` (`DRIVER_SETTLE_STEPS` trong `gss_workflow.py`), trước đây chuyến vừa nhận lệnh cũng qua được. Duyệt phiếu quyết toán không còn ép `trip.status = COMPLETED` (làm lệch bước thật và ghi doanh thu sớm); trạng thái quyết toán dùng cờ riêng.
+
+### Added
+- **Giá Booking nhiều dòng (mục 18):** model `BookingPriceLine` (mỗi loại cont một đơn giá, tối đa 4 dòng, loại phải nằm trong ô Size, không trùng loại); form Booking có khối "Đơn Giá Cước Vận Chuyển" với nút "Thêm dòng giá". Một hàm tra giá duy nhất `BookingOrder.price_for(loại_cont)` (không có dòng khớp thì 0, không tự áp giá khác) và `revenue_plan()` cho dashboard. Cột `selling_freight_price` giữ làm bản phản chiếu dòng đầu; client cũ chỉ gửi một số thì chỉ sửa dòng đầu. Migration `customers/0009` tạo bảng và sinh 1 dòng giá cho booking cũ đã có giá. Sửa dòng giá cập nhật tại chỗ, dòng thừa chỉ xóa mềm.
+- **Cổng nhà xe trên điện thoại (mục 29):** từ 640px trở xuống, mỗi cont là một thẻ (nhãn cột bên trái, ô chọn xe/tài xế rộng hết dòng), không còn cuộn ngang 13 cột.
+
+- **Giá booking chỉ gợi ý (người dùng chốt):** `autoLookupBookingPrice` (`booking-page/form.js`) và `lookupBookingPrice` (`create-trip/booking-link.js`) không còn ghi vào ô giá; hiện "Báo giá gợi ý: X đ" kèm nút "Áp dụng" (`applyBookingPriceSuggestion`). Ô giá mặc định trống (bỏ 4.000.000 ở `page.js` và `view_booking_detail.html`). Mở booking đã lưu luôn hiện đúng giá đã lưu (trước đây màn hình hiện 3.500.000 trong khi CSDL 4.000.000). Backend `create_booking` bỏ đoạn tự áp giá từ báo giá/biểu cước khi giá = 0.
+- **Không gán nhầm khách (`api_views/sales.py`):** `create_booking` và `create_quotation` trả 400 khi không nhận ra tên khách, bỏ nhánh `or Customer.objects.first()`.
+- **Đồng bộ tức thời điều độ/booking:** `live-sync.js` thêm `view-dispatch-order` và `view-booking-detail`; chủ đề `dispatch` bao gồm `BookingVendorAllocation` và `gss.BookingContainer`. Đã chạy thử: tài xế bấm "Đến cảng nhận" thì trang Lệnh điều độ đổi trạng thái trong dưới 5 giây, không tải lại.
+- **Tin tài xế theo cấu trúc người dùng duyệt:** viết lại `compose_message` và `formatDriverZaloMessage` (cổng nhà xe dùng nguyên tin máy chủ nếu chuyến đã lưu). Test mới `test_message_full_structure_in_order`, `test_message_dispatcher_line_and_warehouse_phone`; cập nhật 2 test cũ theo cấu trúc mới.
+- **Cổng nhà xe:** hiện `booking.notes` (API `vendor.py` trả thêm khóa này) và cột Số B/L dùng `bl_number`; thẻ thống kê 2x2 gọn trên điện thoại, có gợi ý vuốt ngang.
+- **Giao diện nhỏ:** tiêu đề màn tài xế 375px không bị logo đè (`gss.css`); ô số đang "0" chọn hết khi vào ô (`number-input.js`); dòng cont mới lấy loại cont theo booking (`booking-page/containers.js`).
+- **Dọn dẹp theo backlog (quyết định giữ Tài chính & Kế toán):** thêm `discharge_date`/`do_expiry` ở form cũ; xóa modal Booking chết; siết `access.js`; loại cont theo dòng cont và giới hạn 4 loại; nút gọi điều phối/kho trên màn tài xế. Test mới: `test_legacy_form_accepts_discharge_date_and_do_expiry`, lớp `ContainerTypeFromGridTests`.
+- **Rà soát phân hệ Điều vận & Vendor (4 tab cha, các tab con):** sửa trạng thái "Đã hoàn thành" sai trên Lệnh điều độ, số liệu tab Theo dõi hành trình (mã bước sai), "null ngày" và loại cont ở chi tiết chuyến, tin tài xế dùng một nguồn ở mọi nút, nhà xe trùng tên ngắn kèm mã. Test mới `test_vendor_containers_status_follows_7_step_machine`, `test_active_list_does_not_treat_fully_dispatched_as_completed`.
+- Test mới: `test_booking_extra_fields.py` (khách lạ bị chặn, giá không tự điền), `test_vendor.py` (ghi chú/B/L trên cổng, phiên bản chủ đề `dispatch` tăng khi giao cont).
+- Kiểm thử: `qa.py verify --full` và chạy thử trình duyệt trên stack 8086 (xem báo cáo phiên).
+
 ## 2026-11-27 (Phiên 4) – Sửa CI đỏ: đổi bước điều vận qua PATCH bị ghi đè + cập nhật test theo tên tự viết HOA
 - **Lỗi thật (`apps/dispatch/api_views/trips.py`, `TripDetailAPIView.patch`):** `gss_workflow.advance/cancel` tải và lưu một bản chuyến riêng, nhưng view vẫn giữ bản cũ rồi `trip.save()` ở cuối nên `step_status`/`status` (và các mốc thời gian workflow vừa ghi) bị ghi đè về giá trị cũ, dù API trả 200. Đã đồng bộ các trường workflow vừa đổi vào bản của view trước khi lưu.
 - **Test cập nhật theo hợp đồng mới:** tên đối tác/nhân sự/địa điểm tự viết HOA khi lưu (`core/test_audit_log_api.py`, `test_data_phase2.py`, `test_report_permissions.py`, `tests.py`); API `/api/customers/` luôn lọc theo công ty người đăng nhập kể cả khi `TENANT_ENFORCE=False`; thêm khẳng định `step_status` sau PATCH trong `test_simulation_dispatch_trip_and_editing`.

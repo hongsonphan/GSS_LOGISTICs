@@ -99,12 +99,8 @@ window.resetBookingFilters = typeof resetBookingFilters !== 'undefined' ? resetB
 window.toggleBookingSort = typeof toggleBookingSort !== 'undefined' ? toggleBookingSort : undefined;
 window.openModalQuotation = typeof openModalQuotation !== 'undefined' ? openModalQuotation : undefined;
 window.saveQuotation = typeof saveQuotation !== 'undefined' ? saveQuotation : undefined;
-window.openModalBooking = typeof openModalBooking !== 'undefined' ? openModalBooking : undefined;
-window.saveBooking = typeof saveBooking !== 'undefined' ? saveBooking : undefined;
 window.handleBookingFilesSelect = typeof handleBookingFilesSelect !== 'undefined' ? handleBookingFilesSelect : undefined;
-window.handleSaleBookingFilesSelect = typeof handleSaleBookingFilesSelect !== 'undefined' ? handleSaleBookingFilesSelect : undefined;
 window.onBookingSelected = typeof onBookingSelected !== 'undefined' ? onBookingSelected : undefined;
-window.onBookingTypeChange = typeof onBookingTypeChange !== 'undefined' ? onBookingTypeChange : undefined;
 window.onQuotationPricingMethodChange = typeof onQuotationPricingMethodChange !== 'undefined' ? onQuotationPricingMethodChange : undefined;
 window.addQuotationRouteRow = typeof addQuotationRouteRow !== 'undefined' ? addQuotationRouteRow : undefined;
 window.switchQuotationPrintTemplate = typeof switchQuotationPrintTemplate !== 'undefined' ? switchQuotationPrintTemplate : undefined;

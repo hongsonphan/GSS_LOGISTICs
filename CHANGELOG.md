@@ -14,11 +14,33 @@ Tất cả các thay đổi đáng chú ý của dự án GSS TMS sẽ được 
 - **Mở rộng logic lọc booking Sales & Shipments:** API `SalesAPIView` hiển thị thống nhất các đơn hàng mới tạo có ngày đóng hàng sang đầu tháng sau.
 - **Rà soát & Đồng bộ 16 tệp tài liệu kỹ thuật (`docs/01` đến `docs/16`):** Chuẩn hóa 100% tài liệu sang mô hình máy 7 bước GSS, PostgreSQL 16 (cấm SQLite3, cấm cổng 8000/8085 cũ), thay thế toàn bộ lệnh test `--keepdb` sang `scripts/qa.py verify`, đảm bảo tài liệu là Single Source of Truth.
 
+- **Đồng bộ tức thời trang Lệnh điều độ và Booking:** `core/live-sync.js` thêm màn `view-dispatch-order` và `view-booking-detail`; chủ đề `dispatch` nay gồm cả `BookingVendorAllocation` và `gss.BookingContainer` (`apps/master_data/signals.py`). Tài xế/nhà xe đổi bước thì bảng cont và thẻ nhà xe tự làm mới (nhịp 5 giây), hoãn khi điều độ viên đang chọn cont hoặc đang ở chế độ Sửa.
+- **Cổng nhà xe:** hiện ghi chú booking ("Lưu ý cho tài xế"), cột Số B/L đúng khóa `bl_number`; API cổng trả thêm `booking.notes`; trên điện thoại 4 thẻ thống kê xếp 2x2 gọn và có gợi ý vuốt ngang.
+
 ### Changed
+- **Đơn giá cước booking chỉ GỢI Ý từ báo giá, không tự điền:** form Booking (trang đầy đủ và modal) hiện gợi ý kèm nút "Áp dụng"; ô giá mặc định để trống thay vì 4.000.000; `POST /api/sales/ create_booking` không còn tự áp giá từ báo giá/biểu cước khi giá = 0 (giá = đúng giá người dùng nhập).
+- **Màn tài xế có nút gọi nhanh:** `GET /api/qr/t/<token>/` trả thêm `dispatcher_name`, `dispatcher_phone`, `warehouse_phone` (điều phối viên của chuyến, thiếu thì hotline công ty; số kho giao); `qr_trip.js` hiện nút gọi khi có số.
+- **Loại cont theo dòng cont (mục 17):** `build_trip` lấy loại cont từ `BookingContainer.container_type` của đúng dòng (không lấy ô Size của booking); import lưới yêu cầu mỗi dòng có loại khi booking ghi nhiều loại và tự điền khi chỉ 1 loại; ô Size tối đa 4 loại (form và `save_booking`); helper `booking_container_types` ở `apps/customers/models.py`.
+- **Form Booking cũ nhận `discharge_date`, `do_expiry`** (`POST /api/sales/`, `PUT/GET /api/bookings/<id>/`).
+- **Tin tài xế một nguồn duy nhất:** nút Zalo ở Quản lý Vendor (`vaShareDriverZalo`), sao chép lệnh/mở Zalo ở trang chi tiết chuyến, tạo lệnh mới và phân lại tài xế (`buildDriverZaloMessage` nay lấy từ `/api/gss/trips/<mã>/message/`) đều ra cùng cấu trúc; mẫu cũ "LỆNH ĐIỀU ĐỘNG GIẢI PHÁP XANH - Bác tài…" chỉ còn làm dự phòng khi mất mạng. Tin Zalo gửi nhà xe không còn kèm tên khách hàng.
+- **Tin gửi tài xế theo cấu trúc mới (người dùng duyệt 27/11):** `compose_message` (`apps/dispatch/gss_messages.py`) và bản tin trong cổng nhà xe (`vendor_portal.html`) cùng một cấu trúc: `GIẢI PHÁP XANH LOGISTICS`, `Lệnh Vận chuyển`, `Tài xế · SĐT | Xe`, `Thông tin: Số B/L | Cont · loại | Seal`, `Hạn DEM · Hạn DET` (dạng `23:59 dd/mm/yyyy`), `Mặt hàng`, `Giờ hẹn`, `Lộ trình` 3 điểm (kèm `SĐT kho` khi có), khối `Ghi chú` 3 dòng (ghi chú booking; ghi chú điểm đến/cấm đường gồm lưu ý điểm đến, giờ cấm tải và ghi chú tài xế của dòng cont; ghi chú chuyến/cont của chủ vendor), `Điều phối` (điều phối viên của chuyến, thiếu thì hotline công ty), link. Dòng không có dữ liệu thì bỏ (ghi chú) hoặc hiện "—". Bỏ việc lấy SĐT khách hàng thay cho SĐT kho.
+- Dòng cont mới thêm ở lưới cont lấy loại cont mặc định theo loại đã chọn ở booking (trước đây luôn 40HC).
+- Ô số có giá trị "0" (đơn giá, số chuyến...) chọn hết khi vào ô, gõ số không còn bị chèn trước số 0 (`core/number-input.js`).
+- Tiêu đề màn tài xế `/q/<token>/` không còn bị logo đè ở màn 375px (`static/css/gss.css`).
 - Khôi phục mặc định loại cont `40HC` trong `BookingOrder.container_size` (migration `customers/0005_restore_booking_container_size_default`).
 - Hoàn tất mục 9 trong `docs/12-backlog.md` về chuẩn hóa tài liệu kế thừa.
 
+### Removed
+- **Modal tạo nhanh Booking** (`templates/components/modal_booking.html`, `static/js/src/app/sales/booking-modal.js`, `lookupBookingPrice`, `onBookingPriceManualInput`): không còn nơi nào mở modal từ khi có trang Booking đầy đủ; nút Xem ở danh sách gọi thẳng `viewBookingDetail`.
+
 ### Fixed
+- **Trạng thái lệnh điều độ sai:** `GET /api/bookings/active/` coi booking `COMPLETED` (nghĩa là "đã điều đủ xe") là hoàn thành và đếm chuyến theo trạng thái cũ, nên đơn có chuyến mới đến nơi nhận hiện "Đã hoàn thành". Nay hoàn thành = các chuyến đã `EMPTY_RETURNED`; API trả thêm `trips_running`; danh sách hiện "Đã chia đủ n/n cont · k đang chạy".
+- **Tab Theo dõi hành trình đếm sai:** `VendorContainersMonitoringAPIView` dùng mã bước không tồn tại (`EN_ROUTE_PICKUP`, `EN_ROUTE_DELIVERY`, `EMPTY_RETURNING`) nên chuyến đã đến nơi nhận bị tính là "chờ chạy"; nay theo đúng máy 7 bước.
+- **Chi tiết chuyến:** hết hiện chữ "null ngày" khi chưa có hạn DET (hiện "Chưa đặt hạn DET"); loại cont lấy từ chuyến (API trả `container_type`) thay vì mặc định "Cont 40".
+- **Nhầm nhà xe cùng tên ngắn:** các ô chọn nhà xe ở trang Lệnh điều độ và bộ lọc Theo dõi hành trình hiện kèm mã (vd. `3PL005 · THÀNH ĐẠT`).
+- **Phân quyền giao diện chặt hơn:** `access.js` coi thiếu `BIM_ACCESS` là không có quyền; nút Tạo/Xóa/Xuất trong modal ẩn theo quyền của phân hệ (bảng `MODAL_MODULE`). Máy chủ vẫn kiểm tra lại mọi thao tác.
+- Đổi tiêu đề cột "Hạn DEM (Bãi)/Hạn DET (Vỏ)" thành "Free DEM/DET (ngày)" vì cột hiển thị số ngày free-time.
+- **Tạo booking/báo giá không còn tự gán khách hàng đầu tiên** khi tên khách không nhận ra: trả 400 "Vui lòng chọn khách hàng hợp lệ" (`apps/dispatch/api_views/sales.py`). Trước đây tên sai/typo làm chứng từ gắn nhầm khách.
 - Khắc phục lỗi ẩn đơn hàng Booking mới tạo trên màn hình Sales & Shipments khi ngày đóng hàng rơi vào đầu tháng sau (`2026-12-01`).
 - Sửa lỗi thẻ HTML trùng lặp và đồng bộ hóa các mốc tiến độ điều vận trên toàn hệ thống.
 

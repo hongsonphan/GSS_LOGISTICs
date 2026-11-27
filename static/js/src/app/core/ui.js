@@ -144,5 +144,4 @@ function closeModal(id) {
     } 
     if (id === 'modal-ocr') resetOcr();
     if (id === 'modal-create-trip') clearBookingFileSelection();
-    if (id === 'modal-booking') clearSaleBookingFileSelection();
 }

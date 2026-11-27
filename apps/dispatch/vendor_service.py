@@ -25,6 +25,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
+from apps.customers.models import booking_container_types
 from apps.dispatch import gss_workflow as wf
 from apps.dispatch.models import (
     AllocationStatus, BookingVendorAllocation, DispatchTrip, ShipmentType, TripStatus,
@@ -377,7 +378,7 @@ def rows_for(alloc, for_vendor=True):
             'events': events_map.get(trip.id, []) if trip else [],
             'editable': (not moved and not finished and row_editable(trip)) if for_vendor else not moved,
             'container_locked': bool(bc is not None), 'moved': moved,
-            'container_type': (bc.container_type if bc else '') or alloc.booking.container_size,
+            'container_type': (bc.container_type if bc else '') or (booking_container_types(alloc.booking.container_size) or [''])[0],
             'delivery': ((bc.delivery_loc.name if bc.delivery_loc_id else bc.delivery_address) if bc else '') or '',
             'driver_note': (bc.driver_note if bc else '') or '',
         })
@@ -398,7 +399,7 @@ def rows_for(alloc, for_vendor=True):
                 'dropoff': '', 'dem_expiry': '', 'det_expiry': '', 'step_status': 'CANCELLED',
                 'step_index': 0, 'step_label': 'Đã chuyển cho nhà xe khác', 'milestones': {},
                 'events': [], 'editable': False, 'container_locked': True, 'moved': True,
-                'container_type': alloc.booking.container_size or '20GP', 'delivery': '',
+                'container_type': (booking_container_types(alloc.booking.container_size) or ['20GP'])[0], 'delivery': '',
             })
             extra_line += 1
     return out
@@ -539,6 +540,21 @@ def _create_trip(alloc, line_no, row):
     return build_trip(alloc.booking, alloc.subcontractor, row, veh, alloc=alloc, line_no=line_no)
 
 
+def _trip_container_type(b, alloc, line_no, container_number):
+    """Loại cont của chuyến lấy từ DÒNG CONT ở lưới (không lấy ô Size của booking, vì ô đó có thể ghi nhiều loại và chỉ để ghi chú).
+    Không có dòng cont thì lấy loại đầu tiên của booking; booking chưa ghi loại nào mới rơi về 40HC."""
+    from apps.gss.models import BookingContainer
+    qs = BookingContainer.objects.filter(booking=b, is_deleted=False)
+    bc = None
+    if alloc is not None and line_no:
+        bc = qs.filter(allocation=alloc, alloc_line_no=line_no).first()
+    if bc is None and container_number:
+        bc = qs.filter(container_number=container_number).first()
+    if bc is not None and bc.container_type:
+        return bc.container_type
+    return (booking_container_types(b.container_size) or ['40HC'])[0]
+
+
 def build_trip(booking, subcontractor, row, vehicle, *, alloc=None, line_no=None, customer=None, extra=None):
     """Sinh một DispatchTrip. Dùng chung cho dòng nhà xe nhập (alloc) và chuyến tạo thủ công (không alloc).
 
@@ -555,7 +571,7 @@ def build_trip(booking, subcontractor, row, vehicle, *, alloc=None, line_no=None
     if b is not None:
         return DispatchTrip.objects.create(
             shipment_type=_SHIPMENT.get(b.booking_type, ShipmentType.IMPORT), customer=b.customer, booking_order=b,
-            container_type=b.container_size or '40HC', booking_or_bill=b.booking_number or '-', cutoff_time=b.closing_time or '-',
+            container_type=_trip_container_type(b, alloc, line_no, row['container_number']), booking_or_bill=b.booking_number or '-', cutoff_time=b.closing_time or '-',
             pickup_location=(b.pickup_location or '').upper(), warehouse_location=(b.delivery_location or '').upper(),
             dropoff_location=(b.dropoff_location or '').upper(), pickup_loc=b.pickup_loc, warehouse_loc=b.delivery_loc,
             dropoff_loc=b.dropoff_loc, loading_date=b.loading_date, loading_time=b.loading_time or '08:00',

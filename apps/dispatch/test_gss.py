@@ -207,6 +207,56 @@ class MessageAndPodTests(GssBase):
         for part in (t.trip_code, 'CSQU3054383', 'CAT LAI', 'Cổng 3', 'Cấm 6-9h', 'DEM', 'https://gss.example/q/'):
             self.assertIn(part, text)
 
+    def test_message_full_structure_in_order(self):
+        """Cấu trúc tin tài xế đã được người dùng duyệt 27/11: đúng thứ tự dòng, đủ thông tin, không lộ khách hàng."""
+        t = self.trip()
+        t.subcontractor_driver_name = 'Nguyễn Văn Tài'
+        t.subcontractor_driver_phone = '0900000111'
+        t.seal_number = 'SL0001'
+        t.container_type = '20GP'
+        t.loading_time = '08:00'
+        t.dropoff_location = 'KHO SÓNG THẦN'
+        t.vendor_note = 'Xuất HD hạ rỗng | Kẹp cùng dòng #2'
+        t.save()
+        self.booking.commodity = 'Cà phê XK'
+        self.booking.notes = 'Kho nhận hàng 7h-17h'
+        self.booking.hbl_number = 'HBL123'
+        self.booking.save()
+        self.booking.customer.phone = '0911222333'
+        self.booking.customer.save()
+        t.refresh_from_db()
+        text = msg.compose_message(t, 'https://gss.example/')
+        lines = text.split('\n')
+        self.assertEqual(lines[0], 'GIẢI PHÁP XANH LOGISTICS')
+        self.assertEqual(lines[1], f'Lệnh Vận chuyển: {t.trip_code}')
+        self.assertTrue(lines[2].startswith('Tài xế: Nguyễn Văn Tài · 0900000111 | Xe: '), lines[2])
+        self.assertEqual(lines[3], 'Thông tin: Số B/L: HBL123 | Cont: CSQU3054383 · 20GP | Seal: SL0001')
+        self.assertTrue(lines[4].startswith('Hạn DEM: ') and ' · Hạn DET: ' in lines[4], lines[4])
+        self.assertEqual(lines[5], 'Mặt hàng: Cà phê XK')
+        self.assertTrue(lines[6].startswith('Giờ hẹn: ') and lines[6].endswith('08:00'), lines[6])
+        self.assertEqual(lines[7], 'Lộ trình:')
+        self.assertTrue(lines[8].startswith(' 1. Lấy cont: ') and lines[9].startswith(' 2. Giao hàng: '))
+        self.assertEqual(lines[10], ' 3. Hạ rỗng: KHO SÓNG THẦN')
+        self.assertEqual(lines[11], 'Ghi chú:')
+        self.assertEqual(lines[12], '- Kho nhận hàng 7h-17h')               # ghi chú của booking, không nhãn
+        self.assertIn('- Ghi chú chuyến / cont: Xuất HD hạ rỗng', text)      # dấu vết ghép đôi nội bộ bị bỏ
+        self.assertNotIn('Kẹp cùng dòng', text)
+        self.assertTrue(lines[-1].startswith('Mở lệnh & nộp chứng từ: https://gss.example/q/'))
+        self.assertNotIn('0911222333', text)   # không lấy số của khách hàng thay cho SĐT kho
+        self.assertNotIn(self.booking.customer.name, text)
+
+    def test_message_dispatcher_line_and_warehouse_phone(self):
+        t = self.trip()
+        t.dispatcher = self.staff.employee if hasattr(self.staff, 'employee') else None
+        t.destination_contact_phone = '0283999888'
+        t.save()
+        text = msg.compose_message(t, 'https://gss.example/')
+        self.assertIn('SĐT kho: 0283999888', text)
+        if t.dispatcher:
+            self.assertIn(f'Điều phối: {t.dispatcher.full_name}', text)
+        else:
+            self.assertNotIn('Điều phối:', text)
+
     def test_open_marks_portal_messages_read(self):
         t = self.trip()
         log = msg.log_message(t, channel='ZALO', content='x', user=self.staff)
@@ -451,11 +501,17 @@ class ApiTests(GssBase):
         t.vendor_note = 'Xuất HD hạ rỗng'
         t.save()
         text = msg.compose_message(t, 'http://x/')
-        self.assertIn('\nGhi chú chung: Cổng 3 · Cấm 6-9h\n', text)  # điểm đến + giờ cấm tải: 1 dòng
-        self.assertIn('\nGhi chú cont: Vào cổng số 3 gặp anh Nam · Xuất HD hạ rỗng\n', text)  # riêng từng cont: 1 dòng
+        # điểm đến + giờ cấm tải của booking + ghi chú tài xế của dòng cont: 1 dòng
+        self.assertIn('\n- Ghi chú điểm đến / cấm đường: Cổng 3 · Cấm 6-9h · Vào cổng số 3 gặp anh Nam\n', text)
+        # ghi chú của chủ vendor: 1 dòng riêng
+        self.assertIn('\n- Ghi chú chuyến / cont: Xuất HD hạ rỗng', text)
         info = self.client.get(self.token_url(t)).json()['data']
         self.assertEqual(info['driver_note'], bc.driver_note)
         self.assertEqual(info['vendor_note'], 'Xuất HD hạ rỗng')
+        # liên hệ nhanh trên trang tài xế (mục 28): điều phối và SĐT kho giao
+        self.assertIn('dispatcher_name', info)
+        self.assertIn('dispatcher_phone', info)
+        self.assertIn('warehouse_phone', info)
 
     def test_bad_token_404_and_revoked_by_version(self):
         t = self.trip()

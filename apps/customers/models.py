@@ -2,6 +2,21 @@ from django.db import models
 from core.models import PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 from apps.master_data.models import Party, role_managers
 
+import re
+
+MAX_CONTAINER_TYPES = 4
+_TYPE_TOKEN = re.compile(r'^\d{2}[A-Z0-9]+$')
+
+
+def booking_container_types(size):
+    """Các loại cont ghi ở ô Size của Booking (tối đa 4, ngăn bởi dấu phẩy, chấm phẩy hoặc gạch chéo), in hoa, bỏ trùng, giữ thứ tự."""
+    out = []
+    for tok in re.split(r'[,;/]+', str(size or '')):
+        t = tok.strip().upper()
+        if t and _TYPE_TOKEN.match(t) and t not in out:
+            out.append(t)
+    return out
+
 class Customer(Party):
     """Khách hàng (proxy của master_data.Party, vai trò is_customer)."""
     objects, all_objects = role_managers('is_customer')
@@ -383,6 +398,37 @@ class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     def remaining_containers(self):
         return max(0, self.total_containers - self.dispatched_containers)
 
+    def price_for(self, container_type=None):
+        """Đơn giá cước (VNĐ/cont) theo loại cont: MỘT nơi tra giá của Booking.
+        Có dòng giá thì lấy dòng cùng loại (không khớp = 0, không tự áp giá khác);
+        chưa có dòng giá nào thì dùng cột selling_freight_price (booking cũ)."""
+        lines = [l for l in self.price_lines.all() if not l.is_deleted] if self.pk else []
+        if not lines:
+            return self.selling_freight_price or 0
+        want = str(container_type or '').strip().upper()
+        for l in lines:
+            if l.container_type.upper() == want:
+                return l.unit_price
+        if not want and len(lines) == 1:
+            return lines[0].unit_price
+        return 0
+
+    def revenue_plan(self):
+        """Doanh thu kế hoạch = tổng đơn giá từng loại x số cont của loại đó (không rõ loại thì dùng giá dòng đầu)."""
+        lines = [l for l in self.price_lines.all() if not l.is_deleted] if self.pk else []
+        total = self.total_containers or 1
+        if not lines:
+            return (self.selling_freight_price or 0) * total
+        counts = {}
+        for c in self.containers.filter(is_deleted=False):
+            t = (c.container_type or '').upper()
+            counts[t] = counts.get(t, 0) + 1
+        if not counts:
+            return lines[0].unit_price * total
+        total_rev = sum(l.unit_price * counts.get(l.container_type.upper(), 0) for l in lines)
+        total_rev += lines[0].unit_price * counts.get('', 0)  # cont chưa ghi loại: tạm tính theo dòng giá đầu
+        return total_rev
+
     @property
     def dispatch_order_code(self):
         """Mã Lệnh Điều Độ (Tổng): DD.[Số Booking] (VD: DD.BK.2611.001)."""
@@ -393,6 +439,20 @@ class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"[{self.booking_code}] {self.customer.name} - {self.booking_number} ({self.dispatched_containers}/{self.total_containers} Cont)"
+
+class BookingPriceLine(TimeStampedModel, SoftDeleteModel):
+    """Một dòng giá của Booking: mỗi loại cont một đơn giá (tối đa 4 dòng, cùng các loại ở ô Size)."""
+    booking = models.ForeignKey(BookingOrder, on_delete=models.CASCADE, related_name='price_lines')
+    container_type = models.CharField(max_length=30, help_text="Loại cont áp giá (vd 40HC)")
+    unit_price = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Đơn giá cước (VNĐ/cont)")
+    note = models.CharField(max_length=200, blank=True, default='')
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+    def __str__(self):
+        return f'{self.container_type}: {self.unit_price}'
 
 
 class BookingDocument(TimeStampedModel, SoftDeleteModel):

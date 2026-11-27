@@ -10,6 +10,8 @@
 > [!IMPORTANT]
 > **Quy ước cập nhật:** Bất kỳ khi nào thêm tính năng mới hoặc thay đổi tính năng cũ, bắt buộc cập nhật file này đồng thời với `docs/CHANGELOG.md`.
 
+> **Cập nhật 27/11/2026:** (1) Đơn giá cước booking chỉ **gợi ý** từ báo giá (nút "Áp dụng"), không tự điền; backend không tự áp giá và không tự gán khách khi tên không nhận ra. (2) Trang Lệnh điều độ và Booking **tự cập nhật** khi tài xế/nhà xe đổi bước (live-sync, nhịp 5 giây). (3) Cổng nhà xe hiện ghi chú booking và Số B/L; gọn hơn trên điện thoại.
+
 ---
 
 ## MỤC LỤC
