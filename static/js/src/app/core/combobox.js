@@ -565,6 +565,10 @@ function setSelectValueCaseInsensitive(selectEl, value, label = null) {
         selectEl._bimMultiSelect.set(strVal);
         return;
     }
+    if (!selectEl.options) {
+        selectEl.value = strVal;
+        return;
+    }
     if (!strVal) {
         selectEl.value = '';
         if (selectEl._bimCombobox) selectEl._bimCombobox.sync();

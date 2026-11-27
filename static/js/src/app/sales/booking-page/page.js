@@ -844,7 +844,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
         if (shipEl) setSelectValueCaseInsensitive(shipEl, b.shipping_line || '');
 
         const vesEl = document.getElementById('fullpage-booking-vessel');
-        if (vesEl) setSelectValueCaseInsensitive(vesEl, b.vessel_voyage || '');
+        if (vesEl) vesEl.value = b.vessel_voyage || '';
 
         const sizeEl = document.getElementById('fullpage-booking-container-size');
         if (sizeEl) setSelectValueCaseInsensitive(sizeEl, b.container_size || '20GP');
