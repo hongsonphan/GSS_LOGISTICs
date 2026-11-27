@@ -572,6 +572,8 @@ def reindex_allocation_lines(alloc):
     else:
         alloc.save(update_fields=['allocated_containers', 'draft_rows', 'updated_at'])
         vs.refresh_status(alloc)
+    if alloc.booking_id:
+        vs.sync_booking_progress(alloc.booking)
 
 
 def _resize_to_lines(alloc):

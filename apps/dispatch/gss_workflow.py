@@ -254,4 +254,8 @@ def cancel(trip, *, user, reason):
         from core.models import TrackingEventLog
         TrackingEventLog.objects.create(trip=trip, event_type='STEP_CANCELLED', title='Hủy chuyến', description=reason,
                                         metadata={'by': user.get_username()})
+        if trip.booking_order_id:
+            # Hủy chuyến làm giảm số cont đã điều: đồng bộ tiến độ/trạng thái booking (về Chờ điều xe khi còn 0).
+            from apps.dispatch.vendor_service import sync_booking_progress
+            sync_booking_progress(trip.booking_order)
     return trip

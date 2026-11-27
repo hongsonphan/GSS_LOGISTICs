@@ -1046,3 +1046,41 @@ class EndToEndLogisticsWorkflowSimulationTestCase(TestCase):
         booking.refresh_from_db()
         self.assertEqual(booking.dispatched_containers, 1)
         self.assertEqual(booking.status, BookingStatus.PARTIALLY_DISPATCHED)
+
+
+from apps.dispatch.test_gss import GssBase as _GssBase  # noqa: E402
+
+
+class BookingStatusAfterUnassignTests(_GssBase):
+    """Hủy gán xe: tiến độ về 0 thì booking về 'Chờ điều xe', còn xe thì giữ 'Đang điều xe'."""
+
+    def _status(self):
+        self.booking.refresh_from_db()
+        return self.booking.status, self.booking.dispatched_containers
+
+    def test_clear_rows_back_to_pending(self):
+        from apps.customers.models import BookingStatus
+        from apps.dispatch import vendor_service as vsvc
+        self.trip(1, 'CSQU3054383')
+        self.trip(2, 'MSKU0000000')
+        self.assertEqual(self._status(), (BookingStatus.PARTIALLY_DISPATCHED, 2))
+        vsvc.clear_row(self.alloc, 1, user=self.staff)
+        self.assertEqual(self._status(), (BookingStatus.PARTIALLY_DISPATCHED, 1))
+        vsvc.clear_row(self.alloc, 2, user=self.staff)
+        self.assertEqual(self._status(), (BookingStatus.PENDING_DISPATCH, 0))
+
+    def test_delete_trip_back_to_pending(self):
+        from apps.customers.models import BookingStatus
+        t = self.trip(1, 'CSQU3054383')
+        self.assertEqual(self._status()[0], BookingStatus.PARTIALLY_DISPATCHED)
+        self.client.force_login(self.staff)
+        r = self.client.delete(f'/api/trips/{t.trip_code}/')
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(self._status(), (BookingStatus.PENDING_DISPATCH, 0))
+
+    def test_workflow_cancel_back_to_pending(self):
+        from apps.customers.models import BookingStatus
+        from apps.dispatch import gss_workflow as wf
+        t = self.trip(1, 'CSQU3054383')
+        wf.cancel(t, user=self.staff, reason='Khách hủy lệnh')
+        self.assertEqual(self._status(), (BookingStatus.PENDING_DISPATCH, 0))

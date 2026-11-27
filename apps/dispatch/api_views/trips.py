@@ -1337,16 +1337,6 @@ class TripDetailAPIView(APIView):
                     'expense_count': exp_count
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Hoàn lại số lượng cont đã phát lệnh cho Booking nếu có
-        if trip.booking_order and trip.booking_order.dispatched_containers > 0:
-            trip.booking_order.dispatched_containers -= 1
-            from apps.customers.models import BookingStatus
-            if trip.booking_order.dispatched_containers == 0:
-                trip.booking_order.status = BookingStatus.PENDING_DISPATCH
-            else:
-                trip.booking_order.status = BookingStatus.PARTIALLY_DISPATCHED
-            trip.booking_order.save(update_fields=['dispatched_containers', 'status'])
-
         reason = request.data.get('reason') or request.GET.get('reason') or 'Điều độ viên hủy lệnh điều động'
         trip.is_deleted = True
         trip.status = TripStatus.CANCELLED
@@ -1367,10 +1357,13 @@ class TripDetailAPIView(APIView):
                 drafts.pop(str(trip.vendor_line_no), None)
                 alloc.draft_rows = drafts
                 alloc.save(update_fields=['draft_rows', 'updated_at'])
-            from apps.dispatch.vendor_service import refresh_status, sync_booking_progress
+            from apps.dispatch.vendor_service import refresh_status
             refresh_status(alloc)
-            if trip.booking_order:
-                sync_booking_progress(trip.booking_order)
+
+        # Hoàn lại số cont đã điều + trạng thái booking theo số chuyến còn hoạt động (một hàm dùng chung).
+        if trip.booking_order:
+            from apps.dispatch.vendor_service import sync_booking_progress
+            sync_booking_progress(trip.booking_order)
 
         from core.models import TrackingEventLog
         actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.dispatcher
