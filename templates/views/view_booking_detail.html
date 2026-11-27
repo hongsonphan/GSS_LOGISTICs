@@ -151,6 +151,41 @@
                         </div>
                     </div>
 
+                    <!-- Hàng 2b (4 Cột 3-3-3-3): Giá Trị Lô Hàng | ETD | ETA | Invoice -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 pt-1">
+                        <div class="lg:col-span-3 sm:col-span-6">
+                            <div class="h-6 flex items-center mb-1.5">
+                                <label class="block font-bold text-slate-700 text-xs truncate" for="fullpage-booking-cargo-value">Giá Trị Lô Hàng</label>
+                            </div>
+                            <div class="relative h-10">
+                                <input type="text" inputmode="numeric" id="fullpage-booking-cargo-value" placeholder="VD: 250.000.000"
+                                    class="input-number-vn w-full h-10 px-3 pr-12 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-mono font-bold text-slate-800 text-xs tabular-nums transition-all">
+                                <span class="absolute right-3 top-2.5 text-slate-400 font-bold text-[11px] pointer-events-none">VNĐ</span>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-3 sm:col-span-6">
+                            <div class="h-6 flex items-center mb-1.5">
+                                <label class="block font-bold text-slate-700 text-xs truncate" for="fullpage-booking-etd">ETD (Ngày Tàu Chạy)</label>
+                            </div>
+                            <input type="date" id="fullpage-booking-etd"
+                                class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs transition-all">
+                        </div>
+                        <div class="lg:col-span-3 sm:col-span-6">
+                            <div class="h-6 flex items-center mb-1.5">
+                                <label class="block font-bold text-slate-700 text-xs truncate" for="fullpage-booking-eta">ETA (Ngày Tàu Đến)</label>
+                            </div>
+                            <input type="date" id="fullpage-booking-eta"
+                                class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs transition-all">
+                        </div>
+                        <div class="lg:col-span-3 sm:col-span-6">
+                            <div class="h-6 flex items-center mb-1.5">
+                                <label class="block font-bold text-slate-700 text-xs truncate" for="fullpage-booking-invoice-no">Số Invoice</label>
+                            </div>
+                            <input type="text" id="fullpage-booking-invoice-no" maxlength="100" placeholder="VD: INV-2026-0001"
+                                class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-mono font-bold text-slate-800 text-xs uppercase transition-all">
+                        </div>
+                    </div>
+
                     <!-- Hàng 3 (3 Cột): Loại Cont/Xe | Số Lượng Cont | Tải Chứng Từ Nhập Khẩu Đính Kèm -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 pt-1">
                         <!-- Loại Cont / Xe (col 3) -->

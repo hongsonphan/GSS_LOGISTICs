@@ -427,6 +427,9 @@ Lưu ý: nhật ký chỉ đọc, không sửa hay xóa được; thay đổi h�
 1. Mở Tab **2. Booking / Đơn Đặt Hàng** ➔ bấm **`Tạo Booking`**.
 2. Nhập phân loại dịch vụ (Kéo cont nhập / xuất / nội địa), số B/L (Master Bill / House Bill), hãng tàu, lộ trình 3 điểm (Nơi lấy vỏ ➔ Kho đóng hàng ➔ Nơi hạ vỏ/cảng), hạn cắt máng CY Cut-off.
 3. Nhập số ngày miễn phí Free DEM (lưu bãi) và Free DET (lưu vỏ).
+   - Form đầy đủ còn có các ô **Giá trị lô hàng**, **ETD**, **ETA** (không được trước ETD) và **Invoice**.
+   - Ô **Số tờ khai hải quan** nhận nhiều số, ngăn bằng dấu phẩy, chấm phẩy, khoảng trắng hoặc xuống dòng; hệ thống tự in hoa, bỏ số trùng và lưu lại.
+   - Khi hủy gán xe hoặc hủy chuyến, booking tự trở về *Chờ điều xe* (hết xe) hoặc *Đang điều xe* (còn một phần).
 4. **Nạp danh sách container:** mở chi tiết đơn hàng ➔ bấm **`Nhập Cont (Dán / Excel)`**.
    - Dán trực tiếp danh sách cont từ thông báo của hãng tàu hoặc tải file Excel mẫu.
    - Hệ thống tự động kiểm tra định dạng công te nơ quốc tế theo thuật toán **ISO 6346 (4 chữ cái + 7 chữ số, tính số kiểm tra Check Digit)**. Nếu số cont bị gõ sai ký tự, hệ thống đánh dấu cảnh báo ngay.

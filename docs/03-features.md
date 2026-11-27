@@ -237,6 +237,9 @@ Cho phép người dùng tự do phân tích dữ liệu đa chiều theo nhu c�
 - **Theo dõi tiến độ phát lệnh:** Tổng cont cần điều / Số cont đã phát lệnh / Còn lại
 - **Trạng thái:** `Chờ điều xe` → `Đang điều xe` → `Đã điều đủ xe` / `Hủy`
 - **Đính kèm đa file:** Upload nhiều file booking (ảnh/PDF) vào `BookingDocument`
+- **Giá trị lô hàng, ETD, ETA, Invoice (27/11):** form booking trang đầy đủ có 4 ô này; ETA không được trước ETD (server trả 400).
+- **Số tờ khai hải quan (27/11):** nhập nhiều số (ngăn bằng phẩy, chấm phẩy, khoảng trắng, xuống dòng), tự in hoa, bỏ trùng, lưu thật; sửa booking thì đồng bộ.
+- **Trạng thái booking tự về đúng (27/11):** hủy gán, xóa mềm chuyến hoặc hủy chuyến thì booking về `Chờ điều xe` khi còn 0 xe, `Đang điều xe` khi còn một phần.
 
 ### 4.2 Booking chờ điều xe (Active Bookings)
 - API riêng `GET /api/bookings/active/` để điều vận xem nhanh các booking cần phát lệnh

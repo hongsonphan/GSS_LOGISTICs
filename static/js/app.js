@@ -25232,6 +25232,15 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
         if (customsEl) customsEl.value = b.customs_declaration_number || '';
 
+        const cargoValEl = document.getElementById('fullpage-booking-cargo-value');
+        if (cargoValEl) cargoValEl.value = b.cargo_value ? formatNumberVN(b.cargo_value) : '';
+        const etdEl = document.getElementById('fullpage-booking-etd');
+        if (etdEl) etdEl.value = b.etd || '';
+        const etaEl = document.getElementById('fullpage-booking-eta');
+        if (etaEl) etaEl.value = b.eta || '';
+        const invoiceEl = document.getElementById('fullpage-booking-invoice-no');
+        if (invoiceEl) invoiceEl.value = b.invoice_no || '';
+
 
 
         const supEl = document.getElementById('fullpage-booking-supplier');
@@ -25896,6 +25905,12 @@ async function saveFullpageBooking(e) {
 
     const price = parseNumberVN(document.getElementById('fullpage-booking-price')?.value) || 0;
 
+    const cargoValueRaw = document.getElementById('fullpage-booking-cargo-value')?.value?.trim() || '';
+    const cargoValue = cargoValueRaw ? parseNumberVN(cargoValueRaw) : '';
+    const etdVal = document.getElementById('fullpage-booking-etd')?.value || '';
+    const etaVal = document.getElementById('fullpage-booking-eta')?.value || '';
+    const invoiceNo = document.getElementById('fullpage-booking-invoice-no')?.value?.trim() || '';
+
 
 
     const statusVal = document.getElementById('fullpage-booking-status')?.value || 'PENDING_DISPATCH';
@@ -26018,6 +26033,13 @@ async function saveFullpageBooking(e) {
     }
 
 
+
+    if (etdVal && etaVal && etaVal < etdVal) {
+        showToast('warning', 'ETA (ngày tàu đến) phải sau hoặc bằng ETD (ngày tàu chạy)!', 'Ngày Không Hợp Lệ');
+        const etaInp = document.getElementById('fullpage-booking-eta');
+        if (etaInp) { etaInp.classList.add('border-rose-500', 'bg-rose-50'); etaInp.focus(); etaInp.addEventListener('input', () => etaInp.classList.remove('border-rose-500', 'bg-rose-50'), { once: true }); }
+        return;
+    }
 
     if (!bookingNumber) {
 
@@ -26260,6 +26282,11 @@ async function saveFullpageBooking(e) {
 
 
         formData.append('customs_declaration_number', document.getElementById('fullpage-booking-customs-decl')?.value?.trim() || '');
+
+        formData.append('cargo_value', cargoValue || '');
+        formData.append('etd', etdVal || '');
+        formData.append('eta', etaVal || '');
+        formData.append('invoice_no', invoiceNo || '');
 
 
 

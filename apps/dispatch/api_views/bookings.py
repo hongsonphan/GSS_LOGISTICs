@@ -1,4 +1,5 @@
 """Chi tiết & trạng thái booking, xoá tài liệu booking."""
+from apps.dispatch import gss_bookings
 from ._common import *  # noqa: F401,F403
 
 def _parse_optional_date(value):
@@ -103,6 +104,7 @@ class BookingOrderDetailAPIView(APIView):
                 'created_at': timezone.localtime(b.created_at).strftime('%H:%M %d/%m/%Y') if b.created_at else ''
             })
 
+        customs_nums = gss_bookings.customs_numbers(b)
         return Response({
             'id': b.id,
             'booking_code': b.booking_code,
@@ -124,6 +126,12 @@ class BookingOrderDetailAPIView(APIView):
             'port_of_loading': b.port_of_loading or '',
             'port_of_discharge': b.port_of_discharge or '',
             'hs_code': b.hs_code,
+            'etd': b.etd.isoformat() if b.etd else '',
+            'eta': b.eta.isoformat() if b.eta else '',
+            'cargo_value': gss_bookings._money(b.cargo_value),
+            'invoice_no': b.invoice_no or '',
+            'customs_numbers': customs_nums,
+            'customs_declaration_number': ', '.join(customs_nums),
             'pickup_location': b.pickup_location,
             'delivery_location': b.delivery_location,
             'dropoff_location': b.dropoff_location,
@@ -254,6 +262,22 @@ class BookingOrderDetailAPIView(APIView):
                     setattr(b, fld, _parse_optional_date(data[fld]))
                 except ValueError:
                     return Response({'error': f'Ngày không hợp lệ ở trường {fld} (định dạng YYYY-MM-DD).'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            for fld in ('etd', 'eta'):
+                if fld in data:
+                    setattr(b, fld, gss_bookings._date(data[fld], fld.upper()))
+            if 'cargo_value' in data:
+                b.cargo_value = gss_bookings.parse_cargo_value(data['cargo_value'])
+            if 'invoice_no' in data:
+                inv = str(data['invoice_no'] or '').strip()
+                if len(inv) > 100:
+                    raise DjangoValidationError('Số Invoice quá dài (tối đa 100 ký tự).')
+                b.invoice_no = inv
+            gss_bookings.check_etd_eta(b.etd, b.eta)
+            if 'customs_declaration_number' in data:
+                gss_bookings.split_customs_numbers(data['customs_declaration_number'])
+        except DjangoValidationError as ve:
+            return Response({'error': ' '.join(ve.messages)}, status=status.HTTP_400_BAD_REQUEST)
         if 'destination_notes' in data:
             b.destination_notes = str(data['destination_notes'] or '').strip()
         if 'road_restrictions' in data:
@@ -282,6 +306,8 @@ class BookingOrderDetailAPIView(APIView):
             b.notes = data['notes']
 
         b.save()
+        if 'customs_declaration_number' in data:
+            gss_bookings.sync_customs_numbers(b, data['customs_declaration_number'])
         return Response({
             'success': True,
             'message': f'Cập nhật đơn hàng / booking {b.booking_code} thành công!',

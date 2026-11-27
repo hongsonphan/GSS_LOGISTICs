@@ -491,7 +491,11 @@ class SalesAPIView(APIView):
                 'container_size': b.container_size,
                 'commodity': b.commodity,
                 'hs_code': b.hs_code,
-                'progress': f"{b.dispatched_containers}/{b.total_containers}",
+                'etd': b.etd.isoformat() if b.etd else '',
+                'eta': b.eta.isoformat() if b.eta else '',
+                'cargo_value': '' if b.cargo_value is None else f'{b.cargo_value:.2f}',
+                'invoice_no': b.invoice_no or '',
+                'progress':f"{b.dispatched_containers}/{b.total_containers}",
                 'progress_percent': int((b.dispatched_containers / b.total_containers) * 100) if b.total_containers else 0,
                 'has_drop_hook': has_drop_hook,
                 'drop_hook_count': drop_hook_count,
@@ -764,8 +768,22 @@ class SalesAPIView(APIView):
                 else:
                     selling_freight_price = 0  # Cho phép để trống / nhập sau
 
+            from apps.dispatch import gss_bookings
+            try:
+                etd_d = gss_bookings._date(data.get('etd'), 'ETD')
+                eta_d = gss_bookings._date(data.get('eta'), 'ETA')
+                gss_bookings.check_etd_eta(etd_d, eta_d)
+                cargo_value_d = gss_bookings.parse_cargo_value(data.get('cargo_value'))
+                invoice_no_s = str(data.get('invoice_no') or '').strip()
+                if len(invoice_no_s) > 100:
+                    raise DjangoValidationError('Số Invoice quá dài (tối đa 100 ký tự).')
+                gss_bookings.split_customs_numbers(data.get('customs_declaration_number'))
+            except DjangoValidationError as ve:
+                return Response({'error': ' '.join(ve.messages)}, status=status.HTTP_400_BAD_REQUEST)
+
             curr_emp = getattr(request.user, 'employee', None)
             booking = BookingOrder.objects.create(
+                etd=etd_d, eta=eta_d, cargo_value=cargo_value_d, invoice_no=invoice_no_s,
                 booking_code=booking_code,
                 customer=customer,
                 created_by=curr_emp,
@@ -806,6 +824,9 @@ class SalesAPIView(APIView):
                 status=data.get('status', BookingStatus.PENDING_DISPATCH),
                 notes=data.get('notes', '')
             )
+
+            if data.get('customs_declaration_number'):
+                gss_bookings.sync_customs_numbers(booking, data.get('customs_declaration_number'))
 
             _tid = str(data.get('pod_template_id') or '').strip()
             if _tid.isdigit():

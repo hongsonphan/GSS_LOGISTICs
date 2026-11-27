@@ -1,6 +1,7 @@
 """Booking cho GSS: tạo/sửa/hủy, DEM/DET kế thừa xuống các chuyến, tiến độ chia cont. Thay logic Booking 700 dòng của SPA cũ."""
 import datetime
 import re
+from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -16,8 +17,8 @@ from core.sequences import next_code
 BOOKING_TYPES = ['EXPORT_FCL', 'IMPORT_FCL', 'DOMESTIC']
 MAX_CONTAINERS = 500
 MAX_DOCS = 10
-_DATE_FIELDS = ('loading_date', 'dem_start_date', 'det_start_date', 'dem_expiry_override', 'det_expiry_override', 'eta', 'discharge_date', 'do_expiry')
-_TEXT_FIELDS = {'booking_number': 50, 'shipping_line': 50, 'vessel_voyage': 100, 'container_size': 150, 'commodity': 255, 'hs_code': 50,
+_DATE_FIELDS = ('loading_date', 'dem_start_date', 'det_start_date', 'dem_expiry_override', 'det_expiry_override', 'eta', 'etd', 'discharge_date', 'do_expiry')
+_TEXT_FIELDS = {'invoice_no': 100, 'booking_number': 50, 'shipping_line': 50, 'vessel_voyage': 100, 'container_size': 150, 'commodity': 255, 'hs_code': 50,
                 'si_cutoff': 100, 'vgm_cutoff': 100, 'closing_time': 100, 'loading_time': 20, 'destination_notes': 4000,
                 'road_restrictions': 4000, 'notes': 4000, 'mbl_number': 40, 'hbl_number': 40, 'port_of_loading': 100,
                 'port_of_discharge': 100, 'supplier_name': 150}
@@ -32,6 +33,61 @@ def _date(value, label):
         return datetime.date.fromisoformat(str(value).strip())
     except ValueError:
         raise ValidationError(f'{label} không hợp lệ (định dạng YYYY-MM-DD).')
+
+
+def parse_cargo_value(value):
+    """'' / None -> None; số >= 0 (tối đa 16 chữ số nguyên, 2 lẻ) -> Decimal; sai -> ValidationError."""
+    if value in (None, ''):
+        return None
+    try:
+        d = Decimal(str(value).strip().replace(',', ''))
+    except (InvalidOperation, ValueError):
+        raise ValidationError('Giá trị lô hàng không hợp lệ.')
+    if not d.is_finite() or d < 0:
+        raise ValidationError('Giá trị lô hàng không được âm.')
+    if d >= Decimal(10) ** 16:
+        raise ValidationError('Giá trị lô hàng quá lớn.')
+    return d.quantize(Decimal('0.01'))
+
+
+def check_etd_eta(etd, eta):
+    """ETA (ngày tàu đến) phải cùng hoặc sau ETD (ngày tàu đi) khi nhập cả hai."""
+    if etd and eta and eta < etd:
+        raise ValidationError('ETA (ngày tàu đến) không được trước ETD (ngày tàu khởi hành).')
+
+
+def split_customs_numbers(raw):
+    """Tách chuỗi nhiều số tờ khai (ngăn bởi dấu phẩy, chấm phẩy, xuống dòng hoặc khoảng trắng); in hoa, bỏ trùng, giữ thứ tự."""
+    out = []
+    for part in re.split(r'[,;\s]+', str(raw or '')):
+        num = part.strip().upper()
+        if not num:
+            continue
+        if len(num) > 30:
+            raise ValidationError(f'Số tờ khai "{num[:12]}..." quá dài (tối đa 30 ký tự).')
+        if num not in out:
+            out.append(num)
+    return out
+
+
+def customs_numbers(booking):
+    """Danh sách số tờ khai còn hiệu lực của booking (theo thứ tự nhập)."""
+    return [c.number for c in booking.customs_refs.filter(is_deleted=False).order_by('id')]
+
+
+def sync_customs_numbers(booking, raw):
+    """Đồng bộ ô "Số tờ khai" của form booking với gss.CustomsDeclarationRef: thêm số mới, xóa mềm số bị bỏ khỏi ô nhập.
+    Tờ khai giữ nguyên (kể cả luồng/ngày/ghi chú) nếu số vẫn còn trong ô nhập."""
+    from apps.gss.models import CustomsDeclarationRef
+    wanted = split_customs_numbers(raw)
+    have = {c.number: c for c in booking.customs_refs.filter(is_deleted=False)}
+    for num, ref in have.items():
+        if num not in wanted:
+            ref.delete()  # xóa mềm
+    for num in wanted:
+        if num not in have:
+            CustomsDeclarationRef.objects.create(booking=booking, number=num, company=booking.company)
+    return wanted
 
 
 def _int(value, label, lo, hi, default=None):
@@ -71,7 +127,8 @@ def serialize(b, detail=False):
         'pickup_location': b.pickup_location, 'delivery_location': b.delivery_location, 'dropoff_location': b.dropoff_location,
         'dem': describe(b.dem_expiry, warn), 'det': describe(b.det_expiry, warn), **nums,
         'mbl_number': b.mbl_number, 'hbl_number': b.hbl_number, 'bl_number': b.hbl_number or b.mbl_number, 'cargo_mode': b.cargo_mode,
-        'eta': _iso(b.eta), 'container_mode': nums.get('containers', 0) > 0,
+        'eta': _iso(b.eta), 'etd': _iso(b.etd), 'invoice_no': b.invoice_no,
+        'cargo_value': _money(b.cargo_value), 'container_mode': nums.get('containers', 0) > 0,
     }
     if detail:
         row.update({
@@ -83,6 +140,7 @@ def serialize(b, detail=False):
             'selling_freight_price': float(b.selling_freight_price), 'pickup_loc_id': b.pickup_loc_id, 'delivery_loc_id': b.delivery_loc_id,
             'dropoff_loc_id': b.dropoff_loc_id, 'port_of_loading': b.port_of_loading, 'port_of_discharge': b.port_of_discharge,
             'supplier_name': b.supplier_name, 'discharge_date': _iso(b.discharge_date), 'do_expiry': _iso(b.do_expiry),
+            'customs_numbers': (nums_c := customs_numbers(b)), 'customs_declaration_number': ', '.join(nums_c),
             'pod_template_id': b.pod_template_id, 'pod_template': b.pod_template.name if b.pod_template_id else '',
             'documents': [{'id': d.id, 'name': d.file_name or d.file.name.rsplit('/', 1)[-1], 'url': d.file.url if d.file else ''} for d in b.documents.filter(is_deleted=False)],
         })
@@ -91,6 +149,11 @@ def serialize(b, detail=False):
 
 def _iso(d):
     return d.isoformat() if d else ''
+
+
+def _money(v):
+    """Decimal -> chuỗi '1234.50' (giữ đủ chính xác, không float); None -> ''."""
+    return '' if v is None else f'{v:.2f}'
 
 
 def listing(search='', status='', alert=''):
@@ -135,6 +198,9 @@ def save_booking(data, booking=None):
     for key in _DATE_FIELDS:
         if key in data:
             setattr(booking, key, _date(data[key], key))
+    if 'cargo_value' in data:
+        booking.cargo_value = parse_cargo_value(data['cargo_value'])
+    check_etd_eta(booking.etd, booking.eta)
     if creating and not booking.loading_date:
         booking.loading_date = timezone.localdate()
     if 'cargo_mode' in data:
@@ -182,7 +248,12 @@ def save_booking(data, booking=None):
         booking.status = st
     if creating:
         booking.booking_code = next_code(BookingOrder, 'booking_code', f'BK.{timezone.localdate():%y%m}.', 3)
+    customs_raw = data.get('customs_declaration_number') if 'customs_declaration_number' in data else None
+    if customs_raw is not None:
+        split_customs_numbers(customs_raw)  # kiểm tra trước khi lưu, lỗi thì không tạo booking dở
     booking.save()
+    if customs_raw is not None:
+        sync_customs_numbers(booking, customs_raw)
     if not creating:
         propagate_dem_det(booking)
         if has_list:

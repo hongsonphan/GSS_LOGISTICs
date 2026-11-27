@@ -293,7 +293,11 @@ class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     port_of_loading = models.CharField(max_length=100, blank=True, default='', help_text="Cảng xếp")
     port_of_discharge = models.CharField(max_length=100, blank=True, default='', help_text="Cảng dỡ")
     supplier_name = models.CharField(max_length=150, blank=True, default='', help_text="Nhà cung cấp / người gửi hàng")
+    etd = models.DateField(null=True, blank=True, help_text="Ngày tàu dự kiến khởi hành (ETD)")
     eta = models.DateField(null=True, blank=True, help_text="Ngày tàu dự kiến đến")
+    cargo_value = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True, verbose_name="Giá trị lô hàng",
+                                      help_text="Giá trị lô hàng (khai báo, VNĐ hoặc theo invoice)")
+    invoice_no = models.CharField(max_length=100, blank=True, default='', verbose_name="Invoice", help_text="Số Invoice")
     discharge_date = models.DateField(null=True, blank=True, help_text="Ngày dỡ hàng khỏi tàu")
     do_expiry = models.DateField(null=True, blank=True, help_text="Hạn lệnh giao hàng D/O")
     pod_template = models.ForeignKey('customers.PodTemplate', on_delete=models.SET_NULL, null=True, blank=True, related_name='+',

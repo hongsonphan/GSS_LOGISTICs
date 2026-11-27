@@ -550,6 +550,21 @@ Trả về danh sách Báo giá + Booking với KPI doanh số.
 
 Tạo báo giá mới từ phân hệ Sale.
 
+### Trường booking mới (27/11/2026)
+
+Áp dụng cho `POST /api/sales/` (tạo booking), `GET/PUT /api/bookings/<id>/` và `/api/gss/bookings/`:
+
+| Trường | Kiểu | Ghi chú |
+|---|---|---|
+| `etd` | `YYYY-MM-DD` hoặc null | Ngày tàu chạy dự kiến |
+| `eta` | `YYYY-MM-DD` hoặc null | Phải >= `etd`, sai trả 400 |
+| `cargo_value` | chuỗi 2 số lẻ (vd `"1500000.00"`) | Giá trị lô hàng, Decimal 18,2 |
+| `invoice_no` | chuỗi, tối đa 100 | Số invoice |
+| `customs_declaration_number` | chuỗi | Nhập: nhiều số ngăn bằng phẩy, chấm phẩy, khoảng trắng hoặc xuống dòng; mỗi số tối đa 30 ký tự, tự in hoa, bỏ trùng; sửa thì đồng bộ (số bỏ đi xóa mềm) |
+| `customs_numbers` | mảng chuỗi (chỉ trả về) | Danh sách số tờ khai đang hiệu lực (`gss.CustomsDeclarationRef`) |
+
+Chưa nhận: `discharge_date`, `do_expiry` qua `PUT /api/bookings/<id>/` và `POST /api/sales/`.
+
 ---
 
 ## 14. KẾ TOÁN — ĐỐI SOÁT

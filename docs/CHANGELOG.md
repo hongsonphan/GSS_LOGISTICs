@@ -8,6 +8,15 @@ Nhật ký của hệ thống trước đó không chuyển sang repo này.
 - **Test cập nhật theo hợp đồng mới:** tên đối tác/nhân sự/địa điểm tự viết HOA khi lưu (`core/test_audit_log_api.py`, `test_data_phase2.py`, `test_report_permissions.py`, `tests.py`); API `/api/customers/` luôn lọc theo công ty người đăng nhập kể cả khi `TENANT_ENFORCE=False`; thêm khẳng định `step_status` sau PATCH trong `test_simulation_dispatch_trip_and_editing`.
 - Kiểm thử: `manage.py test` toàn bộ (535 test) xanh trên PostgreSQL 16; ruff, migration, `build_app_js --check` xanh.
 
+## 2026-11-27 (Phiên 5) – Booking: Sửa Trạng Thái Kẹt, Thêm ETD/ETA/Giá Trị Lô Hàng/Invoice, Lưu Số Tờ Khai
+- **Lỗi trạng thái booking:** khi hủy gán, xóa mềm chuyến, hủy qua `gss_workflow.cancel` hoặc `reindex_allocation_lines`, booking tự trả về `Chờ điều xe` (`PENDING_DISPATCH`) khi còn 0 xe, một phần thì `Đang điều xe`. Mọi đường đều gọi `vendor_service.sync_booking_progress`. Lưu ý: hàm này cũng hạ booking `COMPLETED` nếu số chuyến tụt dưới tổng cont (chờ xác nhận nghiệp vụ, xem backlog).
+- **Field mới của `customers.BookingOrder`:** `etd` (DateField), `cargo_value` (Decimal 18,2, "Giá trị lô hàng"), `invoice_no` (CharField 100); `eta` đã có sẵn. Migration `apps/customers/migrations/0007_booking_cargo_value_etd_invoice.py`.
+- **API:** `POST /api/sales/`, `GET/PUT /api/bookings/<id>/`, `/api/gss/bookings/` nhận/trả `etd`, `eta`, `cargo_value` (chuỗi 2 số lẻ), `invoice_no`; ETA phải >= ETD, sai trả 400.
+- **Số tờ khai hải quan** trên form booking nay được lưu thật vào `gss.CustomsDeclarationRef` (`related_name` `customs_refs`, số tối đa 30 ký tự): nhiều số ngăn bằng phẩy, chấm phẩy, khoảng trắng hoặc xuống dòng; tự cắt khoảng trắng, in hoa, bỏ trùng; sửa booking thì đồng bộ (số bỏ đi bị xóa mềm). GET trả `customs_declaration_number` và `customs_numbers`.
+- **Giao diện:** form booking trang đầy đủ thêm 4 ô Giá trị lô hàng, ETD, ETA, Invoice.
+- File chính: `apps/dispatch/vendor_service.py`, `gss_workflow.py`, `gss_bookings.py`, `api_views/{bookings,sales,trips}.py`, `apps/gss/containers.py`, `apps/customers/models.py`, `static/js/src/app/sales/booking-page/page.js`, `templates/views/view_booking_detail.html`; test `apps/dispatch/test_booking_extra_fields.py`.
+- **Giữ nguyên:** máy trạng thái 7 bước, tên field và khóa JSON cũ, URL; modal tạo nhanh `modal_booking.html` chưa đổi.
+
 ## 2026-11-27 (Phiên 3) – Chuẩn Hóa Hiển Thị Hạn DEM / DET Thuần Số (Bỏ Ký Tự 'd')
 - **Yêu cầu người dùng:** Chỗ DEM DET trên màn hình điều vận và các bảng biểu lấy số thuần túy (ví dụ: `3`, `7`), không hiển thị thêm chữ `d` (ví dụ `3d`, `7d`).
 - **Thực hiện:**
