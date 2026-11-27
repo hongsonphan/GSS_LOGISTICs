@@ -54,6 +54,25 @@ def _opt_date(value):
         return None
 
 
+def _booking_extra_fields(b):
+    """Các trường thông tin bổ sung của Booking dùng chung cho danh sách Sales và Điều vận."""
+    return {
+        'hs_code': b.hs_code,
+        'etd': b.etd.isoformat() if b.etd else '',
+        'eta': b.eta.isoformat() if b.eta else '',
+        'cargo_value': '' if b.cargo_value is None else f'{b.cargo_value:.2f}',
+        'invoice_no': b.invoice_no or '',
+        'customs_declaration_number': ', '.join(
+            b.customs_refs.filter(is_deleted=False).order_by('id').values_list('number', flat=True)
+        ),
+        'mbl_number': b.mbl_number or '',
+        'hbl_number': b.hbl_number or '',
+        'supplier_name': b.supplier_name or '',
+        'port_of_loading': b.port_of_loading or '',
+        'port_of_discharge': b.port_of_discharge or '',
+    }
+
+
 class BookingActiveAPIView(APIView):
     """API lấy danh sách các Booking đang hoạt động để Điều độ viên chọn kế thừa khi tạo lệnh và quản lý trên tab Lệnh điều độ."""
     permission_classes = [any_module_view('sales', 'dispatch', 'finance')]
@@ -124,7 +143,8 @@ class BookingActiveAPIView(APIView):
                 'dispatched_containers': b.dispatched_containers,
                 'remaining_containers': max(0, (b.total_containers or 0) - alloc_cnt),
                 'commodity': b.commodity,
-                'hs_code': b.hs_code,
+                **_booking_extra_fields(b),
+                'created_at': timezone.localtime(b.created_at).strftime('%d/%m/%Y %H:%M') if b.created_at else '',
                 'pickup_location': b.pickup_location,
                 'delivery_location': b.delivery_location,
                 'dropoff_location': b.dropoff_location,
@@ -490,19 +510,7 @@ class SalesAPIView(APIView):
                 'vessel_voyage': b.vessel_voyage,
                 'container_size': b.container_size,
                 'commodity': b.commodity,
-                'hs_code': b.hs_code,
-                'etd': b.etd.isoformat() if b.etd else '',
-                'eta': b.eta.isoformat() if b.eta else '',
-                'cargo_value': '' if b.cargo_value is None else f'{b.cargo_value:.2f}',
-                'invoice_no': b.invoice_no or '',
-                'customs_declaration_number': ', '.join(
-                    b.customs_refs.filter(is_deleted=False).order_by('id').values_list('number', flat=True)
-                ),
-                'mbl_number': b.mbl_number or '',
-                'hbl_number': b.hbl_number or '',
-                'supplier_name': b.supplier_name or '',
-                'port_of_loading': b.port_of_loading or '',
-                'port_of_discharge': b.port_of_discharge or '',
+                **_booking_extra_fields(b),
                 'progress':f"{b.dispatched_containers}/{b.total_containers}",
                 'progress_percent': int((b.dispatched_containers / b.total_containers) * 100) if b.total_containers else 0,
                 'has_drop_hook': has_drop_hook,

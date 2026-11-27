@@ -1115,6 +1115,66 @@ function renderDispatchOrdersTable() {
             <td data-col-key="status" class="p-2.5 text-center">
                 ${statusBadgeHtml}
             </td>
+            <td data-col-key="loading_date" class="p-2.5 whitespace-nowrap" style="display:none">
+                ${typeof renderTableDateTimeCell === 'function' ? renderTableDateTimeCell(b.loading_date_display || '-', b.loading_time) : escapeHtml(b.loading_date_display || '-')}
+            </td>
+            <td data-col-key="etd" class="p-2.5 whitespace-nowrap" style="display:none">
+                ${typeof renderTableDateTimeCell === 'function' ? renderTableDateTimeCell(b.etd ? formatDateVN(b.etd) : '-') : escapeHtml(b.etd || '-')}
+            </td>
+            <td data-col-key="eta" class="p-2.5 whitespace-nowrap" style="display:none">
+                ${typeof renderTableDateTimeCell === 'function' ? renderTableDateTimeCell(b.eta ? formatDateVN(b.eta) : '-') : escapeHtml(b.eta || '-')}
+            </td>
+            <td data-col-key="customs_declaration_number" class="p-2.5 text-xs font-mono font-bold text-indigo-800 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.customs_declaration_number || '-')}
+            </td>
+            <td data-col-key="cargo_value" class="p-2.5 text-right font-bold text-slate-900 text-sm tabular-nums whitespace-nowrap" style="display:none">
+                ${b.cargo_value ? `${new Intl.NumberFormat('vi-VN').format(Number(b.cargo_value))}` : '-'}
+            </td>
+            <td data-col-key="invoice_no" class="p-2.5 text-xs font-mono font-semibold text-slate-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.invoice_no || '-')}
+            </td>
+            <td data-col-key="mbl_number" class="p-2.5 text-xs font-mono font-semibold text-slate-800 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.mbl_number || '-')}
+            </td>
+            <td data-col-key="hbl_number" class="p-2.5 text-xs font-mono font-semibold text-slate-800 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.hbl_number || '-')}
+            </td>
+            <td data-col-key="supplier_name" class="p-2.5 text-xs font-semibold text-slate-800 truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.supplier_name || '-')}">
+                ${escapeHtml(b.supplier_name || '-')}
+            </td>
+            <td data-col-key="port_of_loading" class="p-2.5 text-xs font-semibold text-teal-800 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.port_of_loading || '-')}
+            </td>
+            <td data-col-key="port_of_discharge" class="p-2.5 text-xs font-semibold text-blue-800 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.port_of_discharge || '-')}
+            </td>
+            <td data-col-key="shipping_line" class="p-2.5 text-xs font-bold text-blue-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.shipping_line || '-')}
+            </td>
+            <td data-col-key="vessel_voyage" class="p-2.5 text-xs font-mono text-slate-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.vessel_voyage || '-')}
+            </td>
+            <td data-col-key="commodity" class="p-2.5 text-xs text-slate-700 truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.commodity || '-')}">
+                ${escapeHtml(b.commodity || '-')}
+            </td>
+            <td data-col-key="hs_code" class="p-2.5 text-xs font-mono text-slate-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.hs_code || '-')}
+            </td>
+            <td data-col-key="closing_time" class="p-2.5 text-xs font-mono text-rose-700 font-bold whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.closing_time || '-')}
+            </td>
+            <td data-col-key="si_cutoff" class="p-2.5 text-xs font-mono text-rose-600 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.si_cutoff || '-')}
+            </td>
+            <td data-col-key="vgm_cutoff" class="p-2.5 text-xs font-mono text-rose-600 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.vgm_cutoff || '-')}
+            </td>
+            <td data-col-key="notes" class="p-2.5 text-xs text-slate-600 truncate max-w-[200px]" style="display:none" title="${escapeHtml(b.notes || '-')}">
+                ${escapeHtml(b.notes || '-')}
+            </td>
+            <td data-col-key="created_at" class="p-2.5 whitespace-nowrap" style="display:none">
+                ${typeof renderTableDateTimeCell === 'function' ? renderTableDateTimeCell(b.created_at || '-') : escapeHtml(b.created_at || '-')}
+            </td>
             <td data-col-key="actions" class="p-2.5 text-center">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <button type="button" onclick="openDispatchOrderPage(${b.id})" 

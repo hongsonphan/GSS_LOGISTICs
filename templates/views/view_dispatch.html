@@ -299,7 +299,7 @@
             <div class="flex items-center gap-2 flex-wrap">
                 <div class="relative min-w-[240px]">
                     <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-2 text-slate-400"></i>
-                    <input type="text" id="dispatch-orders-search" placeholder="Tìm Số B/L, Cont, Seal, Mã lệnh, KH, Tuyến..." 
+                    <input type="text" id="dispatch-orders-search" placeholder="Tìm Số B/L, Cont, Seal, Số phiếu, KH, Tuyến..." 
                            class="w-full h-8 pl-8 pr-7 text-xs bg-white border border-slate-200 rounded-lg focus:border-teal-600 focus:outline-none"
                            oninput="if(typeof onDispatchOrdersSearch==='function')onDispatchOrdersSearch(this.value)">
                 </div>
@@ -335,8 +335,8 @@
                             <i id="sort-icon-orders-id" class="ph-bold ph-caret-down text-teal-700 text-xs ml-1 inline-block"></i>
                         </th>
 
-                        <th data-col-key="dispatch_code" class="p-2.5 min-w-[140px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('booking_code')" title="Sắp xếp theo Phiếu Điều Độ">
-                            <span>Phiếu Điều Độ</span>
+                        <th data-col-key="dispatch_code" class="p-2.5 min-w-[140px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortDispatchOrders('booking_code')" title="Sắp xếp theo Số Phiếu">
+                            <span>Số Phiếu</span>
                             <i id="sort-icon-orders-booking_code" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
 
@@ -383,6 +383,27 @@
                             <span>Trạng Thái</span>
                             <i id="sort-icon-orders-status" class="ph-bold ph-caret-up-down text-slate-400 text-xs ml-1 inline-block opacity-60"></i>
                         </th>
+
+                        <th data-col-key="loading_date" data-col-name="Lịch Đóng" data-col-default-hidden="true" style="display:none">Lịch Đóng</th>
+                        <th data-col-key="etd" data-col-name="ETD (Ngày Tàu Chạy)" data-col-default-hidden="true" style="display:none">ETD</th>
+                        <th data-col-key="eta" data-col-name="ETA (Ngày Tàu Đến)" data-col-default-hidden="true" style="display:none">ETA</th>
+                        <th data-col-key="customs_declaration_number" data-col-name="Số Tờ Khai Hải Quan" data-col-default-hidden="true" style="display:none">Số Tờ Khai HQ</th>
+                        <th data-col-key="cargo_value" data-col-name="Trị Giá Đơn Hàng" data-col-default-hidden="true" style="display:none" class="text-right">Trị Giá Đơn Hàng</th>
+                        <th data-col-key="invoice_no" data-col-name="Số Hóa Đơn (Invoice)" data-col-default-hidden="true" style="display:none">Số Invoice</th>
+                        <th data-col-key="mbl_number" data-col-name="Số MBL (Master B/L)" data-col-default-hidden="true" style="display:none">Số MBL</th>
+                        <th data-col-key="hbl_number" data-col-name="Số HBL (House B/L)" data-col-default-hidden="true" style="display:none">Số HBL</th>
+                        <th data-col-key="supplier_name" data-col-name="Nhà Cung Cấp / Shipper" data-col-default-hidden="true" style="display:none">Shipper / NCC</th>
+                        <th data-col-key="port_of_loading" data-col-name="Cảng Xếp Hàng (POL)" data-col-default-hidden="true" style="display:none">Cảng Xếp (POL)</th>
+                        <th data-col-key="port_of_discharge" data-col-name="Cảng Dỡ Hàng (POD)" data-col-default-hidden="true" style="display:none">Cảng Dỡ (POD)</th>
+                        <th data-col-key="shipping_line" data-col-name="Hãng Tàu Biển" data-col-default-hidden="true" style="display:none">Hãng Tàu</th>
+                        <th data-col-key="vessel_voyage" data-col-name="Tên Tàu / Chuyến" data-col-default-hidden="true" style="display:none">Tàu / Chuyến</th>
+                        <th data-col-key="commodity" data-col-name="Tên Hàng Hóa" data-col-default-hidden="true" style="display:none">Hàng Hóa</th>
+                        <th data-col-key="hs_code" data-col-name="Mã HS Code" data-col-default-hidden="true" style="display:none">HS Code</th>
+                        <th data-col-key="closing_time" data-col-name="Hạn Cắt Máng (CY)" data-col-default-hidden="true" style="display:none">Hạn Cắt Máng</th>
+                        <th data-col-key="si_cutoff" data-col-name="Hạn Nộp SI" data-col-default-hidden="true" style="display:none">Hạn Nộp SI</th>
+                        <th data-col-key="vgm_cutoff" data-col-name="Hạn VGM" data-col-default-hidden="true" style="display:none">Hạn VGM</th>
+                        <th data-col-key="notes" data-col-name="Ghi Chú Đơn Hàng" data-col-default-hidden="true" style="display:none">Ghi Chú</th>
+                        <th data-col-key="created_at" data-col-name="Ngày Giờ Tạo Đơn" data-col-default-hidden="true" style="display:none">Ngày Tạo Đơn</th>
 
                         <th data-col-key="actions" class="p-2.5 w-44 text-center">Thao Tác</th>
 
@@ -442,6 +463,26 @@
                                 <option value="COMPLETED">Đã hoàn thành</option>
                             </select>
                         </th>
+                        <th data-col-key="loading_date" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="etd" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="eta" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="customs_declaration_number" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="cargo_value" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="invoice_no" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="mbl_number" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="hbl_number" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="supplier_name" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="port_of_loading" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="port_of_discharge" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="shipping_line" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="vessel_voyage" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="commodity" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="hs_code" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="closing_time" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="si_cutoff" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="vgm_cutoff" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="notes" data-col-default-hidden="true" style="display:none"></th>
+                        <th data-col-key="created_at" data-col-default-hidden="true" style="display:none"></th>
                         <th data-col-key="actions" class="p-1 font-normal text-center">
                             <span id="dispatch-orders-filtered-count" class="text-[10px] text-slate-500 font-bold"></span>
                         </th>
@@ -867,9 +908,9 @@
 
                         <option value="">Sắp xếp: Mới nhất</option>
 
-                        <option value="trip_id_asc">Mã chuyến (A ➔ Z)</option>
+                        <option value="trip_id_asc">Số phiếu (A ➔ Z)</option>
 
-                        <option value="trip_id_desc">Mã chuyến (Z ➔ A)</option>
+                        <option value="trip_id_desc">Số phiếu (Z ➔ A)</option>
 
                         <option value="vehicle_asc">Biển số xe (A ➔ Z)</option>
 
@@ -891,7 +932,7 @@
 
                         <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
 
-                        <input type="text" id="filter-dispatch-search" oninput="applyDispatchFilters()" placeholder="Tìm số xe, số chuyến, khách hàng, vendor, số cont..." 
+                        <input type="text" id="filter-dispatch-search" oninput="applyDispatchFilters()" placeholder="Tìm số xe, số phiếu, khách hàng, vendor, số cont..." 
 
                             class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
 
@@ -927,13 +968,13 @@
 
 
 
-                        <!-- 1. Mã Chuyến (Có sắp xếp) -->
+                        <!-- 1. Số Phiếu Chuyến (Có sắp xếp) -->
 
-                        <th data-col-key="trip_id" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleDispatchSort('trip_id')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-32" title="Click để sắp xếp theo Mã Chuyến">
+                        <th data-col-key="trip_id" data-col-name="Số Phiếu" data-col-locked="true" onclick="toggleDispatchSort('trip_id')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-32" title="Click để sắp xếp theo Số Phiếu">
 
                             <div class="flex items-center gap-1.5">
 
-                                <span>Mã Phiếu VC</span>
+                                <span>Số Phiếu</span>
 
                                 <i id="sort-icon-dispatch-trip_id" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
 

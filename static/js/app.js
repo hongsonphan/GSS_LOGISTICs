@@ -8769,7 +8769,7 @@ async function dashRunLookup() {
                 <td class="px-2 py-1.5">${escapeHtml(t.vendor || '')}</td><td class="px-2 py-1.5 font-mono">${escapeHtml(t.plate || '')}</td>
                 <td class="px-2 py-1.5">${escapeHtml(t.step_label || '')}</td><td class="px-2 py-1.5 text-right">${escapeHtml(String(t.docs ?? ''))}</td></tr>`).join('');
             return `<div class="border border-slate-200 rounded-lg mb-2 overflow-hidden"><div class="px-3 py-2 bg-slate-50"><p class="text-xs font-bold text-slate-800">${escapeHtml(b.booking_code)} · ${escapeHtml(b.customer || '')}${b.hbl ? ' · HBL ' + escapeHtml(b.hbl) : ''}${b.mbl ? ' · MBL ' + escapeHtml(b.mbl) : ''}</p>${pr}</div>
-                <table class="w-full text-xs"><thead><tr class="text-[11px] uppercase text-slate-500"><th class="px-2 py-1 text-left">Số cont</th><th class="px-2 py-1 text-left">Mã chuyến</th><th class="px-2 py-1 text-left">Nhà xe</th><th class="px-2 py-1 text-left">Xe</th><th class="px-2 py-1 text-left">Bước</th><th class="px-2 py-1 text-right">Chứng từ</th></tr></thead>
+                <table class="w-full text-xs"><thead><tr class="text-[11px] uppercase text-slate-500"><th class="px-2 py-1 text-left">Số cont</th><th class="px-2 py-1 text-left">Số phiếu</th><th class="px-2 py-1 text-left">Nhà xe</th><th class="px-2 py-1 text-left">Xe</th><th class="px-2 py-1 text-left">Bước</th><th class="px-2 py-1 text-right">Chứng từ</th></tr></thead>
                 <tbody>${rows || '<tr><td colspan="6" class="px-2 py-2 text-slate-400">Chưa có chuyến xe.</td></tr>'}</tbody></table></div>`;
         }).join('');
     } catch (err) {
@@ -12570,6 +12570,66 @@ function renderDispatchOrdersTable() {
             <td data-col-key="status" class="p-2.5 text-center">
                 ${statusBadgeHtml}
             </td>
+            <td data-col-key="loading_date" class="p-2.5 whitespace-nowrap" style="display:none">
+                ${typeof renderTableDateTimeCell === 'function' ? renderTableDateTimeCell(b.loading_date_display || '-', b.loading_time) : escapeHtml(b.loading_date_display || '-')}
+            </td>
+            <td data-col-key="etd" class="p-2.5 whitespace-nowrap" style="display:none">
+                ${typeof renderTableDateTimeCell === 'function' ? renderTableDateTimeCell(b.etd ? formatDateVN(b.etd) : '-') : escapeHtml(b.etd || '-')}
+            </td>
+            <td data-col-key="eta" class="p-2.5 whitespace-nowrap" style="display:none">
+                ${typeof renderTableDateTimeCell === 'function' ? renderTableDateTimeCell(b.eta ? formatDateVN(b.eta) : '-') : escapeHtml(b.eta || '-')}
+            </td>
+            <td data-col-key="customs_declaration_number" class="p-2.5 text-xs font-mono font-bold text-indigo-800 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.customs_declaration_number || '-')}
+            </td>
+            <td data-col-key="cargo_value" class="p-2.5 text-right font-bold text-slate-900 text-sm tabular-nums whitespace-nowrap" style="display:none">
+                ${b.cargo_value ? `${new Intl.NumberFormat('vi-VN').format(Number(b.cargo_value))}` : '-'}
+            </td>
+            <td data-col-key="invoice_no" class="p-2.5 text-xs font-mono font-semibold text-slate-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.invoice_no || '-')}
+            </td>
+            <td data-col-key="mbl_number" class="p-2.5 text-xs font-mono font-semibold text-slate-800 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.mbl_number || '-')}
+            </td>
+            <td data-col-key="hbl_number" class="p-2.5 text-xs font-mono font-semibold text-slate-800 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.hbl_number || '-')}
+            </td>
+            <td data-col-key="supplier_name" class="p-2.5 text-xs font-semibold text-slate-800 truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.supplier_name || '-')}">
+                ${escapeHtml(b.supplier_name || '-')}
+            </td>
+            <td data-col-key="port_of_loading" class="p-2.5 text-xs font-semibold text-teal-800 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.port_of_loading || '-')}
+            </td>
+            <td data-col-key="port_of_discharge" class="p-2.5 text-xs font-semibold text-blue-800 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.port_of_discharge || '-')}
+            </td>
+            <td data-col-key="shipping_line" class="p-2.5 text-xs font-bold text-blue-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.shipping_line || '-')}
+            </td>
+            <td data-col-key="vessel_voyage" class="p-2.5 text-xs font-mono text-slate-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.vessel_voyage || '-')}
+            </td>
+            <td data-col-key="commodity" class="p-2.5 text-xs text-slate-700 truncate max-w-[180px]" style="display:none" title="${escapeHtml(b.commodity || '-')}">
+                ${escapeHtml(b.commodity || '-')}
+            </td>
+            <td data-col-key="hs_code" class="p-2.5 text-xs font-mono text-slate-700 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.hs_code || '-')}
+            </td>
+            <td data-col-key="closing_time" class="p-2.5 text-xs font-mono text-rose-700 font-bold whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.closing_time || '-')}
+            </td>
+            <td data-col-key="si_cutoff" class="p-2.5 text-xs font-mono text-rose-600 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.si_cutoff || '-')}
+            </td>
+            <td data-col-key="vgm_cutoff" class="p-2.5 text-xs font-mono text-rose-600 whitespace-nowrap" style="display:none">
+                ${escapeHtml(b.vgm_cutoff || '-')}
+            </td>
+            <td data-col-key="notes" class="p-2.5 text-xs text-slate-600 truncate max-w-[200px]" style="display:none" title="${escapeHtml(b.notes || '-')}">
+                ${escapeHtml(b.notes || '-')}
+            </td>
+            <td data-col-key="created_at" class="p-2.5 whitespace-nowrap" style="display:none">
+                ${typeof renderTableDateTimeCell === 'function' ? renderTableDateTimeCell(b.created_at || '-') : escapeHtml(b.created_at || '-')}
+            </td>
             <td data-col-key="actions" class="p-2.5 text-center">
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <button type="button" onclick="openDispatchOrderPage(${b.id})" 
@@ -16042,7 +16102,7 @@ function vaViewVehicleTrips(plate, vendorId) {
                 <table class="w-full text-xs text-left">
                     <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
                         <tr>
-                            <th class="p-2.5">Mã Chuyến</th>
+                            <th class="p-2.5">Số Phiếu</th>
                             <th class="p-2.5">Số Container</th>
                             <th class="p-2.5">Khách Hàng</th>
                             <th class="p-2.5">Bác Tài Lái</th>
@@ -16272,7 +16332,7 @@ async function vaViewUnallocatedContainersModal(allocId) {
                             <th class="p-3">Số Container & Seal</th>
                             <th class="p-3">Tình Trạng Phân Bổ</th>
                             <th class="p-3">Xe & Bác Tài Phụ Trách</th>
-                            <th class="p-3">Mã Chuyến</th>
+                            <th class="p-3">Số Phiếu</th>
                             <th class="p-3 text-center w-28">Thao Tác</th>
                         </tr>
                     </thead>
@@ -34195,7 +34255,7 @@ const SETTLE_TH = 'border border-slate-300 px-2 py-1.5 bg-slate-100 text-slate-8
 
 function settleHeadCols(party, anySplit) {
     const th = (t, o = {}) => `<th class="${SETTLE_TH}" ${o.cs ? `colspan="${o.cs}"` : ''} ${o.rs ? `rowspan="${o.rs}"` : ''}>${t}</th>`;
-    const lead = th('STT', { rs: 2 }) + th('Mã chuyến', { rs: 2 }) + th('Số cont / Loại', { rs: 2 }) + th('Tuyến', { rs: 2 });
+    const lead = th('STT', { rs: 2 }) + th('Số Phiếu', { rs: 2 }) + th('Số cont / Loại', { rs: 2 }) + th('Tuyến', { rs: 2 });
     if (party === 'DRIVER') {
         return `<tr>${lead}${th('Tài xế / Xe', { rs: 2 })}${th('Tạm ứng', { cs: 3 })}${th('Chi phí phát sinh', { cs: 5 })}
             ${th('Tổng tạm ứng', { rs: 2 })}${th('Thực chi', { rs: 2 })}${th('Trừ lương TX', { rs: 2 })}${th('Phát sinh KT', { rs: 2 })}${th('Lý do phát sinh', { rs: 2 })}${anySplit ? th('Tỷ lệ thù lao cắt kéo', { rs: 2 }) : ''}${th('Chênh lệch', { rs: 2 })}</tr>
@@ -34814,7 +34874,7 @@ async function openSettlementVoucherList(partyType = '') {
             <button type="button" onclick="document.getElementById('settle-voucher-list-modal').remove()"><i class="ph-bold ph-x text-lg"></i></button></div>
         <div class="flex gap-2 px-4 py-2">${tab('', 'Tất cả')}${tab('DRIVER', 'Tài xế')}${tab('PARTNER', 'Đối tác 3PL')}${tab('CUSTOMER', 'Khách hàng')}</div>
         <div class="overflow-auto px-4 pb-4"><table class="w-full text-xs" data-no-col-manager data-no-toolbar><thead class="bg-slate-50 font-bold"><tr>
-            <th class="px-2 py-2 text-left">Số phiếu</th><th class="px-2 py-2 text-left">Đối tượng</th><th class="px-2 py-2 text-left">Tên</th>
+            <th class="px-2 py-2 text-left">Số Phiếu</th><th class="px-2 py-2 text-left">Đối tượng</th><th class="px-2 py-2 text-left">Tên</th>
             <th class="px-2 py-2">Số chuyến</th><th class="px-2 py-2 text-right">Số tiền</th><th class="px-2 py-2 text-left">Tình trạng</th><th class="px-2 py-2 text-left">Ngày lập</th>
         </tr></thead><tbody>${rows}</tbody></table></div></div>`;
     document.body.appendChild(modal);
@@ -47193,7 +47253,7 @@ function renderReport4Thead() {
         thead.innerHTML = `
             <tr class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-xs uppercase tracking-wider font-heading">
                 <th class="text-center w-12 font-bold py-2.5">STT</th>
-                <th onclick="toggleReport4Sort('trip_code')" class="cursor-pointer hover:bg-slate-100 py-2.5"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                <th onclick="toggleReport4Sort('trip_code')" class="cursor-pointer hover:bg-slate-100 py-2.5"><div class="flex items-center gap-1"><span>Số Phiếu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                 <th onclick="toggleReport4Sort('customer_name')" class="cursor-pointer hover:bg-slate-100 py-2.5"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                 <th onclick="toggleReport4Sort('expense_name')" class="cursor-pointer hover:bg-slate-100 py-2.5"><div class="flex items-center gap-1"><span>Khoản Mục Chi Hộ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                 <th onclick="toggleReport4Sort('expense_type')" class="cursor-pointer hover:bg-slate-100 py-2.5"><div class="flex items-center gap-1"><span>Phân Loại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -47684,7 +47744,7 @@ function exportReport4ToExcel() {
             csv += `${i + 1},"${(item.customer_name || '').replace(/"/g, '""')}","${item.customer_code || ''}","${(item.top_route || '').replace(/"/g, '""')}",${item.trips_count || 0},${item.revenue || 0},${item.direct_expense || 0},${item.reimbursable_fee || 0},${item.gross_profit || 0},${item.margin_percent || 0}\n`;
         });
     } else if (rep4ActivePerspective === 'reimbursable') {
-        csv += 'STT,Mã Chuyến,Khách Hàng,Khoản Mục Chi Hộ,Phân Loại,Số Tiền (VNĐ),Số Hóa Đơn,Ngày Phát Sinh,Tình Trạng Thu Hồi\n';
+        csv += 'STT,Số Phiếu,Khách Hàng,Khoản Mục Chi Hộ,Phân Loại,Số Tiền (VNĐ),Số Hóa Đơn,Ngày Phát Sinh,Tình Trạng Thu Hồi\n';
         list.forEach((item, i) => {
             csv += `${i + 1},"${item.trip_code || ''}","${(item.customer_name || '').replace(/"/g, '""')}","${(item.expense_name || '').replace(/"/g, '""')}","${item.expense_type || ''}",${item.amount || 0},"${item.invoice_number || ''}","${item.date || ''}","${item.is_settled ? 'Đã thu hồi' : 'Chờ khách trả'}"\n`;
         });
@@ -49917,7 +49977,7 @@ function exportFullviewToExcel() {
     const title = `Bao_Cao_Chi_Tiet_Van_Don_${cleanName}`;
 
     let csv = '\uFEFF';
-    csv += 'STT,Mã Chuyến,Ngày Chạy,Khách Hàng,Mã KH,Biển Số Xe,Tài Xế,Số Cont,Loại Vỏ,Tuyến Đường,Trạng Thái,Doanh Thu (VNĐ),Chi Phí Phát Sinh (VNĐ)\n';
+    csv += 'STT,Số Phiếu,Ngày Chạy,Khách Hàng,Mã KH,Biển Số Xe,Tài Xế,Số Cont,Loại Vỏ,Tuyến Đường,Trạng Thái,Doanh Thu (VNĐ),Chi Phí Phát Sinh (VNĐ)\n';
     trips.forEach((t, i) => {
         const row = [
             i + 1,
@@ -50032,7 +50092,7 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
                     <thead class="sticky top-0 bg-slate-100/95 backdrop-blur-xs text-slate-700 font-bold border-b border-slate-200 uppercase text-[11px] tracking-wider z-10 font-heading">
                         <tr>
                             <th class="py-2 px-2.5 text-center w-10">STT</th>
-                            <th class="py-2 px-2.5">Mã Chuyến</th>
+                            <th class="py-2 px-2.5">Số Phiếu</th>
                             <th class="py-2 px-2.5 text-center">Ngày Chạy</th>
                             <th class="py-2 px-2.5">${partnerHeader}</th>
                             <th class="py-2 px-2.5">Số Cont & Loại Vỏ</th>
@@ -50574,7 +50634,7 @@ function exportCustomerStatementExcel() {
     csv += `Tổng cước vận tải:,"${cust.freight_revenue}",Tiền chi hộ:,"${cust.reimbursable_amount}",Tổng phải thu:,"${cust.total_receivable}"\n`;
     csv += `Đã thu hồi:,"${cust.collected_amount}",Còn phải thu:,"${cust.remaining_balance}"\n\n`;
     
-    csv += `STT,Mã Chuyến,Ngày Chạy,Đầu Xe,Tài Xế,Số Container,Tuyến Đường,Cước Vận Tải,Tiền Chi Hộ,Tổng Phải Thu,POD,Quyết Toán\n`;
+    csv += `STT,Số Phiếu,Ngày Chạy,Đầu Xe,Tài Xế,Số Container,Tuyến Đường,Cước Vận Tải,Tiền Chi Hộ,Tổng Phải Thu,POD,Quyết Toán\n`;
     trips.forEach((t, i) => {
         csv += `${i + 1},"${t.trip_code}","${t.loading_date}","${t.vehicle_plate}","${t.driver_name || ''}","${t.container_number || ''}","${t.route}",${t.revenue || 0},${t.reimbursable || 0},${t.total_receivable || 0},"${t.has_pod ? 'Đã Nộp' : 'Thiếu'}","${t.is_settled ? 'Đã Chốt' : 'Chưa Chốt'}"\n`;
     });
@@ -50658,7 +50718,7 @@ function printCustomerARStatement(customerId) {
         theadEl.innerHTML = `
             <tr>
                 <th class="border border-slate-400 p-2 text-center text-slate-900 font-bold bg-slate-100">STT</th>
-                <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Mã Chuyến</th>
+                <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Số Phiếu</th>
                 <th class="border border-slate-400 p-2 text-center text-slate-900 font-bold bg-slate-100">Ngày Chạy</th>
                 <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Xe Kéo & Tài Xế</th>
                 <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Số Cont</th>
