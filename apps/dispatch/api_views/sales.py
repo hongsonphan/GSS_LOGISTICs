@@ -495,6 +495,14 @@ class SalesAPIView(APIView):
                 'eta': b.eta.isoformat() if b.eta else '',
                 'cargo_value': '' if b.cargo_value is None else f'{b.cargo_value:.2f}',
                 'invoice_no': b.invoice_no or '',
+                'customs_declaration_number': ', '.join(
+                    b.customs_refs.filter(is_deleted=False).order_by('id').values_list('number', flat=True)
+                ),
+                'mbl_number': b.mbl_number or '',
+                'hbl_number': b.hbl_number or '',
+                'supplier_name': b.supplier_name or '',
+                'port_of_loading': b.port_of_loading or '',
+                'port_of_discharge': b.port_of_discharge or '',
                 'progress':f"{b.dispatched_containers}/{b.total_containers}",
                 'progress_percent': int((b.dispatched_containers / b.total_containers) * 100) if b.total_containers else 0,
                 'has_drop_hook': has_drop_hook,
@@ -510,7 +518,7 @@ class SalesAPIView(APIView):
                 'loading_date': b.loading_date.strftime('%d/%m/%Y') if b.loading_date else '-',
                 'loading_date_iso': b.loading_date.strftime('%Y-%m-%d') if b.loading_date else '',
                 'loading_time': b.loading_time,
-                'free_time': f"{b.free_time_detention}DET",
+                'free_time': f"{b.free_time_demurrage}DEM / {b.free_time_detention}DET",
                 'price': float(b.selling_freight_price),
                 'status': b.status,
                 'status_label': b.get_status_display(),
