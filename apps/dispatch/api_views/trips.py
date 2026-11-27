@@ -1076,10 +1076,18 @@ class TripDetailAPIView(APIView):
                     actor_name = request.user.get_full_name() or request.user.username if request.user and request.user.is_authenticated else 'Hệ thống'
                     reason = str(data.get('status_description') or data.get('reason') or 'Điều chỉnh trạng thái qua API quản trị')
                     try:
+                        # wf.advance/cancel tự tải và lưu một bản chuyến riêng; chụp trạng thái DB trước đó để
+                        # sau đó chỉ đồng bộ các trường workflow vừa đổi vào bản `trip` của view. Nếu không,
+                        # trip.save() ở cuối sẽ ghi đè step_status/status về giá trị cũ (đổi bước bị mất).
+                        db_before = DispatchTrip.objects.get(pk=trip.pk)
                         if target_step == 'CANCELLED':
                             wf.cancel(trip, user=request.user, reason=reason)
                         else:
                             wf.advance(trip, target_step, user=request.user, actor_label=actor_name, reason=reason, force=True)
+                        db_after = DispatchTrip.objects.get(pk=trip.pk)
+                        for _f in trip._meta.concrete_fields:
+                            if getattr(db_after, _f.attname) != getattr(db_before, _f.attname):
+                                setattr(trip, _f.attname, getattr(db_after, _f.attname))
                     except (DjValidationError, DrfValidationError) as wf_val_err:
                         err_msg = wf_val_err.messages if hasattr(wf_val_err, 'messages') else str(wf_val_err)
                         logger.warning(f"[TripDetailPatch] gss_workflow.advance validation rejected: {err_msg}")

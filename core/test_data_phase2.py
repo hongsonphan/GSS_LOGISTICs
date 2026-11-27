@@ -39,7 +39,7 @@ class CompanyTenantTestCase(TestCase):
         c.name = "Khách 2 sửa"
         c.save(update_fields=["name"])
         c.refresh_from_db()
-        self.assertEqual(c.name, "Khách 2 sửa")
+        self.assertEqual(c.name, "KHÁCH 2 SỬA")   # tên đối tác tự viết HOA khi lưu
         self.assertIsNotNone(c.company_id)
 
 class AuditLogTestCase(TestCase):
@@ -53,7 +53,7 @@ class AuditLogTestCase(TestCase):
         c.name = "Khách Audit Sửa"
         c.save()
         log = AuditLog.objects.filter(object_id=str(c.pk), action="update").first()
-        self.assertEqual(log.changes["name"], ["Khách Audit", "Khách Audit Sửa"])
+        self.assertEqual(log.changes["name"], ["KHÁCH AUDIT", "KHÁCH AUDIT SỬA"])
         c.delete()  # xoá mềm
         self.assertTrue(AuditLog.objects.filter(object_id=str(c.pk), action="delete").exists())
         # Thao tác qua API có ghi tên người dùng
@@ -122,6 +122,9 @@ class TenantContextTests(TestCase):
             # ngoài request (lệnh quản trị) vẫn thấy đủ
             self.assertEqual(Customer.objects.filter(code__in=['KH_A', 'KH_B']).count(), 2)
         with self.settings(TENANT_ENFORCE=False):
+            # API danh sách khách luôn lọc theo công ty của người đăng nhập, kể cả khi tắt TENANT_ENFORCE
             data = self.client.get('/api/customers/').json()
             rows = data.get('results', data) if isinstance(data, dict) else data
-            self.assertIn('KH_A', {r.get('code') for r in rows})
+            codes = {r.get('code') for r in rows}
+            self.assertIn('KH_B', codes)
+            self.assertNotIn('KH_A', codes)

@@ -973,6 +973,8 @@ class GssLogisticsCoreTestCase(TestCase):
             'status': 'ACCEPTED'
         }), content_type='application/json')
         self.assertEqual(res_accept.status_code, 200)
+        trip.refresh_from_db()
+        self.assertEqual(trip.step_status, 'ARRIVED_AT_PICKUP')   # đổi bước qua PATCH phải được lưu (không bị ghi đè)
 
         # Tài xế lấy cont (PATCH status: CONTAINER_PICKED)
         res_picked = self.client.patch(f'/api/trips/{trip_code}/', data=json.dumps({
@@ -2403,7 +2405,7 @@ class CurrentUserProfileAPITestCase(TestCase):
         self.assertEqual(data['username'], 'test_profile_user')
         self.assertEqual(data['email'], 'test_initial@gss-logistics.example.com')
         self.assertIsNotNone(data['employee'])
-        self.assertEqual(data['employee']['full_name'], 'Nguyễn Văn Ban Đầu')
+        self.assertEqual(data['employee']['full_name'], 'NGUYỄN VĂN BAN ĐẦU')
 
     def test_patch_profile_name_and_email(self):
         self.client.force_login(self.user)
@@ -2415,14 +2417,14 @@ class CurrentUserProfileAPITestCase(TestCase):
         res = self.client.patch('/api/auth/me/', data=json.dumps(payload), content_type='application/json')
         self.assertEqual(res.status_code, 200)
         data = res.json()
-        self.assertEqual(data['user']['full_name'], 'Nguyễn Văn Cập Nhật')
+        self.assertEqual(data['user']['full_name'], 'NGUYỄN VĂN CẬP NHẬT')
         self.assertEqual(data['user']['email'], 'updated_email@gss-logistics.example.com')
         self.assertEqual(data['user']['phone_number'], '0988777666')
 
         # Kiểm tra database cập nhật
         self.employee.refresh_from_db()
         self.user.refresh_from_db()
-        self.assertEqual(self.employee.full_name, 'Nguyễn Văn Cập Nhật')
+        self.assertEqual(self.employee.full_name, 'NGUYỄN VĂN CẬP NHẬT')
         self.assertEqual(self.user.email, 'updated_email@gss-logistics.example.com')
         self.assertEqual(self.employee.phone_number, '0988777666')
 

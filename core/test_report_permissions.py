@@ -233,7 +233,7 @@ class CatalogReadAndRevisionTests(TestCase):
         after = watcher.get('/api/master-data/version/').json()['version']
         self.assertNotEqual(before, after)
         names = [x['name'] for x in watcher.get('/api/master-data/form-options/').json()['locations']['all']]
-        self.assertIn('Kho mới', names)   # người dùng khác thấy ngay trong ô chọn
+        self.assertIn('KHO MỚI', names)   # người dùng khác thấy ngay trong ô chọn
 
     def test_version_requires_login(self):
         self.assertIn(APIClient().get('/api/master-data/version/').status_code, (401, 403))

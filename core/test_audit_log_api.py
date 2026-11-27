@@ -67,7 +67,7 @@ class AuditLogApiTests(TestCase):
         row = data['results'][0]                       # mới nhất: lần sửa tên
         self.assertEqual(row['kind'], 'update')
         self.assertEqual(row['model_name'].lower(), str(Customer._meta.verbose_name).lower())
-        self.assertTrue(any(c['new'] == 'KH Nhật ký 2' for c in row['changes']))
+        self.assertTrue(any(c['new'] == 'KH NHẬT KÝ 2' for c in row['changes']))
         self.assertTrue(any(m['key'] == 'customers.Customer' for m in data['filters']['models']))
         only_create = self.get(self.director, '/api/audit/logs/?kind=create&model=customers.Customer').json()
         self.assertTrue(all(r['kind'] == 'create' for r in only_create['results']))
@@ -111,7 +111,7 @@ class AuditLogApiTests(TestCase):
         self.assertIn('text/csv', res['Content-Type'])
         text = res.content.decode('utf-8-sig')
         self.assertIn('Thời gian', text.splitlines()[0])
-        self.assertIn('KH Nhật ký', text)
+        self.assertIn('KH NHẬT KÝ', text)   # tên đối tác tự viết HOA khi lưu
 
     def test_login_events(self):
         LoginEvent.objects.create(user=self.dispatcher, username='dieuvan2', kind='login', ip_address='1.2.3.4')
@@ -119,7 +119,7 @@ class AuditLogApiTests(TestCase):
         data = self.get(self.director, '/api/audit/logins/?kind=login&with_filters=1').json()
         self.assertEqual(data['count'], 1)
         self.assertEqual(data['results'][0]['username'], 'dieuvan2')
-        self.assertEqual(data['results'][0]['name'], 'NV dieuvan2')
+        self.assertEqual(data['results'][0]['name'], 'NV DIEUVAN2')
         self.assertEqual(self.get(self.director, '/api/audit/logins/?q=9.9.9').json()['count'], 1)
         self.assertEqual(self.get(self.director, '/api/audit/logins/?export=csv').status_code, 200)
 

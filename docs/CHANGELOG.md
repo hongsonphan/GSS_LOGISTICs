@@ -3,6 +3,11 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-27 (Phiên 4) – Sửa CI đỏ: đổi bước điều vận qua PATCH bị ghi đè + cập nhật test theo tên tự viết HOA
+- **Lỗi thật (`apps/dispatch/api_views/trips.py`, `TripDetailAPIView.patch`):** `gss_workflow.advance/cancel` tải và lưu một bản chuyến riêng, nhưng view vẫn giữ bản cũ rồi `trip.save()` ở cuối nên `step_status`/`status` (và các mốc thời gian workflow vừa ghi) bị ghi đè về giá trị cũ, dù API trả 200. Đã đồng bộ các trường workflow vừa đổi vào bản của view trước khi lưu.
+- **Test cập nhật theo hợp đồng mới:** tên đối tác/nhân sự/địa điểm tự viết HOA khi lưu (`core/test_audit_log_api.py`, `test_data_phase2.py`, `test_report_permissions.py`, `tests.py`); API `/api/customers/` luôn lọc theo công ty người đăng nhập kể cả khi `TENANT_ENFORCE=False`; thêm khẳng định `step_status` sau PATCH trong `test_simulation_dispatch_trip_and_editing`.
+- Kiểm thử: `manage.py test` toàn bộ (535 test) xanh trên PostgreSQL 16; ruff, migration, `build_app_js --check` xanh.
+
 ## 2026-11-27 (Phiên 3) – Chuẩn Hóa Hiển Thị Hạn DEM / DET Thuần Số (Bỏ Ký Tự 'd')
 - **Yêu cầu người dùng:** Chỗ DEM DET trên màn hình điều vận và các bảng biểu lấy số thuần túy (ví dụ: `3`, `7`), không hiển thị thêm chữ `d` (ví dụ `3d`, `7d`).
 - **Thực hiện:**
