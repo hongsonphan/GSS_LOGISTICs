@@ -186,7 +186,7 @@
                         </div>
                     </div>
 
-                    <!-- Hàng 3 (3 Cột): Loại Cont/Xe | Số Lượng Cont | Tải Chứng Từ Nhập Khẩu Đính Kèm -->
+                    <!-- Hàng 3 (4 Cột): Loại Cont/Xe | Số Lượng Cont | Cược Cont | Tải Chứng Từ Đính Kèm -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 pt-1">
                         <!-- Loại Cont / Xe (col 3) -->
                         <div class="lg:col-span-3 sm:col-span-6 relative" id="wrapper-fullpage-booking-container-size">
@@ -274,7 +274,7 @@
                         </div>
 
                         <!-- Số Lượng Cont (col 2) -->
-                        <div class="lg:col-span-2 sm:col-span-6">
+                        <div class="lg:col-span-2 sm:col-span-3">
                             <div class="h-6 flex items-center mb-1.5">
                                 <label id="fullpage-label-booking-total-containers" class="block font-bold text-slate-700 text-xs truncate">
                                     Số Lượng Cont <span class="text-rose-500">*</span>
@@ -287,13 +287,28 @@
                             </div>
                         </div>
 
-                        <!-- Tải Toàn Bộ Chứng Từ Nhập Khẩu Đính Kèm (col 7) -->
-                        <div class="lg:col-span-7 sm:col-span-12">
+                        <!-- Cược Cont (col 2) -->
+                        <div class="lg:col-span-2 sm:col-span-3">
+                            <div class="h-6 flex items-center justify-between mb-1.5">
+                                <label for="fullpage-booking-container-deposit" class="block font-bold text-slate-700 text-xs truncate" title="Số tiền chuyển cược vỏ container để rút cont (nếu có)">
+                                    Cược Cont
+                                </label>
+                            </div>
+                            <div class="relative h-10">
+                                <input type="text" inputmode="numeric" id="fullpage-booking-container-deposit" value="" placeholder="0"
+                                    class="input-number-vn w-full h-10 pl-3 pr-10 bg-amber-50/40 border border-amber-300 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs text-right tabular-nums"
+                                    title="Nhập số tiền chuyển cược cont để rút cont (VNĐ)">
+                                <span class="absolute right-3 top-2.5 text-amber-700 font-bold text-xs pointer-events-none">đ</span>
+                            </div>
+                        </div>
+
+                        <!-- Tải Toàn Bộ Chứng Từ Nhập Khẩu Đính Kèm (col 5) -->
+                        <div class="lg:col-span-5 sm:col-span-12">
                             <div class="h-6 flex items-center justify-between mb-1.5">
                                 <span id="fullpage-title-booking-file" class="text-xs font-bold text-slate-700 truncate flex items-center gap-1">
                                     <i class="ph-bold ph-files text-teal-700"></i> Đính Kèm Bộ Chứng Từ Nhập Khẩu (Hợp đồng, Invoice, Packing List, B/L...)
                                 </span>
-                                <span class="text-[10.5px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">PDF, Ảnh</span>
+                                <span class="text-[10.5px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 shrink-0">PDF, Ảnh · ≤10MB</span>
                             </div>
                             <div class="flex items-center gap-2 h-10">
                                 <label class="cursor-pointer flex-1 h-10 border border-dashed border-teal-400 hover:border-teal-600 bg-teal-50/40 hover:bg-teal-50 rounded-xl px-3 flex items-center justify-center transition-colors">

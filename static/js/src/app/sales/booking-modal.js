@@ -10,9 +10,11 @@ function handleSaleBookingFilesSelect(input) {
 
         const file = input.files[i];
 
-        if (file.size > 5 * 1024 * 1024) {
+        const currentTotal = saleBookingFilesList.reduce((sum, f) => sum + (f.size || 0), 0);
 
-            showToast('warning', `File "${file.name}" vượt quá 5MB. Vui lòng chọn file nhẹ hơn.`, 'File Quá Dung Lượng');
+        if (currentTotal + (file.size || 0) > 10 * 1024 * 1024) {
+
+            showToast('warning', `Không thể thêm "${file.name}". Tổng dung lượng tài liệu đính kèm vượt quá 10MB.`, 'Vượt Hạn Mức 10MB');
 
             continue;
 

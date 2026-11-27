@@ -128,10 +128,17 @@ function attachPastedImage(file, targetType) {
             const fullpageFileInp = document.getElementById('fullpage-booking-order-file');
             const isFullpage = fullpageFileInp && fullpageFileInp.offsetParent !== null;
             if (isFullpage && typeof fullpageBookingFilesList !== 'undefined') {
-                fullpageBookingFilesList.push(file);
+                const added = typeof addFullpageBookingFile === 'function'
+                    ? addFullpageBookingFile(file)
+                    : (fullpageBookingFilesList.push(file), true);
                 if (typeof renderFullpageBookingFilesList === 'function') renderFullpageBookingFilesList();
-                showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
+                if (added) showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
             } else if (typeof saleBookingFilesList !== 'undefined') {
+                const totalBytes = saleBookingFilesList.reduce((s, f) => s + (f.size || 0), 0);
+                if (totalBytes + (file.size || 0) > 10 * 1024 * 1024) {
+                    showToast('warning', `Tổng dung lượng tài liệu đính kèm vượt quá 10MB.`, 'Vượt Hạn Mức 10MB');
+                    break;
+                }
                 saleBookingFilesList.push(file);
                 if (typeof renderSaleBookingFilesList === 'function') renderSaleBookingFilesList();
                 showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');

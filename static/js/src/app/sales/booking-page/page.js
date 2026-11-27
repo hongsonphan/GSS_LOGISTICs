@@ -364,6 +364,8 @@ async function openCreateBookingPage(updateHistory = true) {
 
 
         if (totalInput) totalInput.value = formatNumberVN(1);
+        const depositInput = document.getElementById('fullpage-booking-container-deposit');
+        if (depositInput) depositInput.value = '';
         if (detInput) detInput.value = formatNumberVN(7);
         if (demInput) demInput.value = formatNumberVN(7);
         if (priceInput) priceInput.value = formatNumberVN(4000000);
@@ -856,6 +858,9 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
         if (totalEl) totalEl.value = formatNumberVN(b.total_containers || 1);
+
+        const depositEl = document.getElementById('fullpage-booking-container-deposit');
+        if (depositEl) depositEl.value = (b.container_deposit && Number(b.container_deposit) > 0) ? formatNumberVN(b.container_deposit) : '';
 
 
 
@@ -1677,6 +1682,7 @@ async function saveFullpageBooking(e) {
 
 
     const price = parseNumberVN(document.getElementById('fullpage-booking-price')?.value) || 0;
+    const containerDeposit = Math.max(0, parseNumberVN(document.getElementById('fullpage-booking-container-deposit')?.value) || 0);
 
     const cargoValueRaw = document.getElementById('fullpage-booking-cargo-value')?.value?.trim() || '';
     const cargoValue = cargoValueRaw ? parseNumberVN(cargoValueRaw) : '';
@@ -2035,6 +2041,7 @@ async function saveFullpageBooking(e) {
 
 
         formData.append('selling_freight_price', price);
+        formData.append('container_deposit', containerDeposit);
 
 
 

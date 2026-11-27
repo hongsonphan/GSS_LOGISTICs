@@ -351,6 +351,7 @@ class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     # Thương mại
     selling_freight_price = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Đơn giá cước thỏa thuận với khách (VNĐ)")
+    container_deposit = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tiền cược vỏ container (VNĐ) cần chuyển để rút cont")
     booking_file = models.FileField(
         upload_to='booking_files/%Y/%m/', 
         null=True, 

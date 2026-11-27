@@ -157,6 +157,7 @@ class BookingActiveAPIView(APIView):
                 'free_time_demurrage': getattr(b, 'free_time_demurrage', 7) or 7,
                 'free_time_detention': b.free_time_detention or 7,
                 'selling_freight_price': float(b.selling_freight_price or 0),
+                'container_deposit': float(b.container_deposit or 0),
                 'notes': b.notes,
                 'status': b.status,
                 'status_label': b.get_status_display(),
@@ -735,6 +736,10 @@ class SalesAPIView(APIView):
                 if single_f:
                     uploaded_bk_files = [single_f]
 
+            total_upload_bytes = sum(getattr(bf, 'size', 0) or 0 for bf in uploaded_bk_files)
+            if total_upload_bytes > 10 * 1024 * 1024:
+                return Response({'error': 'Tổng dung lượng tài liệu đính kèm không được vượt quá 10MB.'}, status=status.HTTP_400_BAD_REQUEST)
+
             for bf in uploaded_bk_files:
                 try:
                     validate_uploaded_document(bf)
@@ -836,6 +841,7 @@ class SalesAPIView(APIView):
                 destination_notes=str(data.get('destination_notes') or '').strip(),
                 road_restrictions=str(data.get('road_restrictions') or '').strip(),
                 selling_freight_price=selling_freight_price,
+                container_deposit=max(0, float(data.get('container_deposit') or 0)),
                 booking_file=uploaded_bk_file,
                 status=data.get('status', BookingStatus.PENDING_DISPATCH),
                 notes=data.get('notes', '')

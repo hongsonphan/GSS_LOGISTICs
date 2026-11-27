@@ -4,20 +4,38 @@
 let fullpageBookingFilesList = [];
 let fullpageBookingExistingDocs = [];
 let currentActiveFullpageBooking = null;
+const MAX_BOOKING_TOTAL_BYTES = 10 * 1024 * 1024; // 10MB tổng cho tất cả tài liệu đính kèm
+
+function getFullpageBookingTotalBytes() {
+    const existingBytes = fullpageBookingExistingDocs.reduce((sum, d) => sum + (Number(d.size) || 0), 0);
+    const newBytes = fullpageBookingFilesList.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
+    return existingBytes + newBytes;
+}
+
+function addFullpageBookingFile(file) {
+    if (!file) return false;
+    const isDuplicate = fullpageBookingFilesList.some(f => f.name === file.name && f.size === file.size);
+    if (isDuplicate) return false;
+
+    const currentTotal = getFullpageBookingTotalBytes();
+    if (currentTotal + (file.size || 0) > MAX_BOOKING_TOTAL_BYTES) {
+        const currentMb = (currentTotal / (1024 * 1024)).toFixed(2);
+        showToast(
+            'warning',
+            `Không thể thêm "${file.name}". Tổng dung lượng tài liệu đính kèm vượt quá 10MB (đang dùng ${currentMb} MB / 10 MB).`,
+            'Vượt Hạn Mức 10MB'
+        );
+        return false;
+    }
+    fullpageBookingFilesList.push(file);
+    return true;
+}
 
 function handleFullpageBookingFilesSelect(input) {
     if (!input || !input.files || input.files.length === 0) return;
 
     for (let i = 0; i < input.files.length; i++) {
-        const file = input.files[i];
-        if (file.size > 10 * 1024 * 1024) {
-            showToast('warning', `File "${file.name}" vượt quá 10MB. Vui lòng chọn file nhẹ hơn.`, 'File Quá Dung Lượng');
-            continue;
-        }
-        const isDuplicate = fullpageBookingFilesList.some(f => f.name === file.name && f.size === file.size);
-        if (!isDuplicate) {
-            fullpageBookingFilesList.push(file);
-        }
+        addFullpageBookingFile(input.files[i]);
     }
     input.value = '';
     renderFullpageBookingFilesList();
@@ -162,7 +180,8 @@ function renderFullpageBookingFilesList() {
             summary.innerHTML = '<i class="ph ph-info text-teal-600"></i> Chưa có tệp nào được đính kèm';
             summary.className = 'text-xs text-slate-500 italic mb-2';
         } else {
-            summary.innerHTML = `<i class="ph-bold ph-check-circle text-teal-600"></i> Đã chọn <strong>${totalCount}</strong> tệp đính kèm (${fullpageBookingExistingDocs.length} tệp đã lưu, ${fullpageBookingFilesList.length} tệp mới)`;
+            const totalMb = (getFullpageBookingTotalBytes() / (1024 * 1024)).toFixed(2);
+            summary.innerHTML = `<i class="ph-bold ph-check-circle text-teal-600"></i> Đã chọn <strong>${totalCount}</strong> tệp (${fullpageBookingExistingDocs.length} đã lưu, ${fullpageBookingFilesList.length} mới) · Tổng: <strong>${totalMb} / 10 MB</strong>`;
             summary.className = 'text-xs text-teal-800 font-medium mb-2';
         }
     }

@@ -2529,10 +2529,17 @@ function attachPastedImage(file, targetType) {
             const fullpageFileInp = document.getElementById('fullpage-booking-order-file');
             const isFullpage = fullpageFileInp && fullpageFileInp.offsetParent !== null;
             if (isFullpage && typeof fullpageBookingFilesList !== 'undefined') {
-                fullpageBookingFilesList.push(file);
+                const added = typeof addFullpageBookingFile === 'function'
+                    ? addFullpageBookingFile(file)
+                    : (fullpageBookingFilesList.push(file), true);
                 if (typeof renderFullpageBookingFilesList === 'function') renderFullpageBookingFilesList();
-                showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
+                if (added) showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
             } else if (typeof saleBookingFilesList !== 'undefined') {
+                const totalBytes = saleBookingFilesList.reduce((s, f) => s + (f.size || 0), 0);
+                if (totalBytes + (file.size || 0) > 10 * 1024 * 1024) {
+                    showToast('warning', `Tổng dung lượng tài liệu đính kèm vượt quá 10MB.`, 'Vượt Hạn Mức 10MB');
+                    break;
+                }
                 saleBookingFilesList.push(file);
                 if (typeof renderSaleBookingFilesList === 'function') renderSaleBookingFilesList();
                 showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
@@ -22863,9 +22870,11 @@ function handleSaleBookingFilesSelect(input) {
 
         const file = input.files[i];
 
-        if (file.size > 5 * 1024 * 1024) {
+        const currentTotal = saleBookingFilesList.reduce((sum, f) => sum + (f.size || 0), 0);
 
-            showToast('warning', `File "${file.name}" vượt quá 5MB. Vui lòng chọn file nhẹ hơn.`, 'File Quá Dung Lượng');
+        if (currentTotal + (file.size || 0) > 10 * 1024 * 1024) {
+
+            showToast('warning', `Không thể thêm "${file.name}". Tổng dung lượng tài liệu đính kèm vượt quá 10MB.`, 'Vượt Hạn Mức 10MB');
 
             continue;
 
@@ -23587,20 +23596,38 @@ async function deleteBooking(bookingId) {
 let fullpageBookingFilesList = [];
 let fullpageBookingExistingDocs = [];
 let currentActiveFullpageBooking = null;
+const MAX_BOOKING_TOTAL_BYTES = 10 * 1024 * 1024; // 10MB tổng cho tất cả tài liệu đính kèm
+
+function getFullpageBookingTotalBytes() {
+    const existingBytes = fullpageBookingExistingDocs.reduce((sum, d) => sum + (Number(d.size) || 0), 0);
+    const newBytes = fullpageBookingFilesList.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
+    return existingBytes + newBytes;
+}
+
+function addFullpageBookingFile(file) {
+    if (!file) return false;
+    const isDuplicate = fullpageBookingFilesList.some(f => f.name === file.name && f.size === file.size);
+    if (isDuplicate) return false;
+
+    const currentTotal = getFullpageBookingTotalBytes();
+    if (currentTotal + (file.size || 0) > MAX_BOOKING_TOTAL_BYTES) {
+        const currentMb = (currentTotal / (1024 * 1024)).toFixed(2);
+        showToast(
+            'warning',
+            `Không thể thêm "${file.name}". Tổng dung lượng tài liệu đính kèm vượt quá 10MB (đang dùng ${currentMb} MB / 10 MB).`,
+            'Vượt Hạn Mức 10MB'
+        );
+        return false;
+    }
+    fullpageBookingFilesList.push(file);
+    return true;
+}
 
 function handleFullpageBookingFilesSelect(input) {
     if (!input || !input.files || input.files.length === 0) return;
 
     for (let i = 0; i < input.files.length; i++) {
-        const file = input.files[i];
-        if (file.size > 10 * 1024 * 1024) {
-            showToast('warning', `File "${file.name}" vượt quá 10MB. Vui lòng chọn file nhẹ hơn.`, 'File Quá Dung Lượng');
-            continue;
-        }
-        const isDuplicate = fullpageBookingFilesList.some(f => f.name === file.name && f.size === file.size);
-        if (!isDuplicate) {
-            fullpageBookingFilesList.push(file);
-        }
+        addFullpageBookingFile(input.files[i]);
     }
     input.value = '';
     renderFullpageBookingFilesList();
@@ -23745,7 +23772,8 @@ function renderFullpageBookingFilesList() {
             summary.innerHTML = '<i class="ph ph-info text-teal-600"></i> Chưa có tệp nào được đính kèm';
             summary.className = 'text-xs text-slate-500 italic mb-2';
         } else {
-            summary.innerHTML = `<i class="ph-bold ph-check-circle text-teal-600"></i> Đã chọn <strong>${totalCount}</strong> tệp đính kèm (${fullpageBookingExistingDocs.length} tệp đã lưu, ${fullpageBookingFilesList.length} tệp mới)`;
+            const totalMb = (getFullpageBookingTotalBytes() / (1024 * 1024)).toFixed(2);
+            summary.innerHTML = `<i class="ph-bold ph-check-circle text-teal-600"></i> Đã chọn <strong>${totalCount}</strong> tệp (${fullpageBookingExistingDocs.length} đã lưu, ${fullpageBookingFilesList.length} mới) · Tổng: <strong>${totalMb} / 10 MB</strong>`;
             summary.className = 'text-xs text-teal-800 font-medium mb-2';
         }
     }
@@ -24714,6 +24742,8 @@ async function openCreateBookingPage(updateHistory = true) {
 
 
         if (totalInput) totalInput.value = formatNumberVN(1);
+        const depositInput = document.getElementById('fullpage-booking-container-deposit');
+        if (depositInput) depositInput.value = '';
         if (detInput) detInput.value = formatNumberVN(7);
         if (demInput) demInput.value = formatNumberVN(7);
         if (priceInput) priceInput.value = formatNumberVN(4000000);
@@ -25206,6 +25236,9 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
         if (totalEl) totalEl.value = formatNumberVN(b.total_containers || 1);
+
+        const depositEl = document.getElementById('fullpage-booking-container-deposit');
+        if (depositEl) depositEl.value = (b.container_deposit && Number(b.container_deposit) > 0) ? formatNumberVN(b.container_deposit) : '';
 
 
 
@@ -26027,6 +26060,7 @@ async function saveFullpageBooking(e) {
 
 
     const price = parseNumberVN(document.getElementById('fullpage-booking-price')?.value) || 0;
+    const containerDeposit = Math.max(0, parseNumberVN(document.getElementById('fullpage-booking-container-deposit')?.value) || 0);
 
     const cargoValueRaw = document.getElementById('fullpage-booking-cargo-value')?.value?.trim() || '';
     const cargoValue = cargoValueRaw ? parseNumberVN(cargoValueRaw) : '';
@@ -26385,6 +26419,7 @@ async function saveFullpageBooking(e) {
 
 
         formData.append('selling_freight_price', price);
+        formData.append('container_deposit', containerDeposit);
 
 
 

@@ -150,6 +150,7 @@ class BookingOrderDetailAPIView(APIView):
             'destination_notes': b.destination_notes, 'road_restrictions': b.road_restrictions,
             'pod_template_id': b.pod_template_id or '',
             'selling_freight_price': float(b.selling_freight_price),
+            'container_deposit': float(b.container_deposit or 0),
             'status': b.status,
             'status_label': b.get_status_display(),
             'trips': trips_data,
@@ -183,6 +184,14 @@ class BookingOrderDetailAPIView(APIView):
                 uploaded_bk_files = [single_f]
 
         if uploaded_bk_files:
+            existing_bytes = sum(
+                (d.file_size or (d.file.size if d.file else 0) or 0)
+                for d in b.documents.filter(is_deleted=False)
+            )
+            new_bytes = sum(getattr(bf, 'size', 0) or 0 for bf in uploaded_bk_files)
+            if existing_bytes + new_bytes > 10 * 1024 * 1024:
+                return Response({'error': 'Tổng dung lượng tài liệu đính kèm không được vượt quá 10MB.'}, status=status.HTTP_400_BAD_REQUEST)
+
             for bf in uploaded_bk_files:
                 try:
                     validate_uploaded_document(bf)
@@ -300,6 +309,11 @@ class BookingOrderDetailAPIView(APIView):
                 b.selling_freight_price = price_val
             except (ValueError, TypeError):
                 return Response({'error': 'Đơn giá cước không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
+        if 'container_deposit' in data:
+            try:
+                b.container_deposit = max(0, float(data.get('container_deposit') or 0))
+            except (ValueError, TypeError):
+                return Response({'error': 'Tiền cược cont không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
         if 'status' in data and data['status']:
             b.status = data['status']
         if 'notes' in data:
