@@ -3,6 +3,14 @@
 Repo khởi tạo ngày 09/11/2026 từ mã nguồn GSS_LOGISTICs (master `1d7884c`), không mang lịch sử git cũ.
 Nhật ký của hệ thống trước đó không chuyển sang repo này.
 
+## 2026-11-27 (Phiên 3) – Chuẩn Hóa Hiển Thị Hạn DEM / DET Thuần Số (Bỏ Ký Tự 'd')
+- **Yêu cầu người dùng:** Chỗ DEM DET trên màn hình điều vận và các bảng biểu lấy số thuần túy (ví dụ: `3`, `7`), không hiển thị thêm chữ `d` (ví dụ `3d`, `7d`).
+- **Thực hiện:**
+  - `dispatch-order-modal.js`: Loại bỏ ký tự `d` ở cột `HẠN DEM (BÃI)` và `HẠN DET (VỎ)` tại Bảng Lệnh Điều Động (`${b.free_time_demurrage || 7}` và `${b.free_time_detention || 7}`).
+  - `dispatch-order-modal.js`: Loại bỏ ký tự `d` ở khối Hạn Free tại Bảng Vendor Phân Bổ Container (`DEM: ${r.dem_free_days || 7}`, `DET: ${r.det_free_days || 7}`).
+  - `master-options.js`: Bỏ chữ `d` ở datalist gợi ý Hãng Tàu (`DEM: ${sl.free_dem_days} / DET: ${sl.free_det_days}`).
+  - Biên dịch lại `static/js/app.js` và kiểm thử verify xanh 100%.
+
 ## 2026-11-27 – Khắc Phục Lỗi Hiển Thị Đơn Hàng Booking Mới Tạo Trên Màn Hình Sales & Shipments
 - **Bối cảnh & Vấn đề:**
   - Người dùng tạo booking mới (mã `BK.2611.008`, số B/L `ZIMUIAH993543` của khách hàng `LỘC THIÊN PHÚ`, ngày đóng hàng `01/12/2026`).

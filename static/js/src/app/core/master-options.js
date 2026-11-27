@@ -184,11 +184,11 @@ function populateMasterDataDropdowns() {
     // Datalist Hãng Tàu cho Booking (Modal & Fullpage)
     const slDatalist = document.getElementById('shipping-lines-datalist');
     if (slDatalist && Array.isArray(shipping_lines)) {
-        slDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days}d / DET: ${sl.free_det_days}d)</option>`).join('');
+        slDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days} / DET: ${sl.free_det_days})</option>`).join('');
     }
     const fullpageSlDatalist = document.getElementById('fullpage-shipping-lines-datalist');
     if (fullpageSlDatalist && Array.isArray(shipping_lines)) {
-        fullpageSlDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days}d / DET: ${sl.free_det_days}d)</option>`).join('');
+        fullpageSlDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days} / DET: ${sl.free_det_days})</option>`).join('');
     }
 
     // Modal Hải Quan & Fullpage Hải Quan
@@ -199,6 +199,11 @@ function populateMasterDataDropdowns() {
     if (quotePreset && Array.isArray(routes)) {
         quotePreset.innerHTML = '<option value="">-- Hoặc Chọn Tuyến Mẫu Danh Mục --</option>' +
             routes.map(r => `<option value="${r.route_name}" data-salary="${r.salary_rate}">${r.label || r.route_name}</option>`).join('');
+    }
+
+    // Nạp danh mục Quy cách Container chuẩn cho Dropdown Booking
+    if (typeof populateBookingContainerSizeOptions === 'function' && Array.isArray(masterDataFormOptionsCache?.container_types)) {
+        populateBookingContainerSizeOptions(masterDataFormOptionsCache.container_types);
     }
 }
 

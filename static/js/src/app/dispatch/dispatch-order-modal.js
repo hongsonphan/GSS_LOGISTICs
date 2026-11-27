@@ -1105,8 +1105,8 @@ function renderDispatchOrdersTable() {
             <td data-col-key="route" class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
             <td data-col-key="conts" class="p-2.5 text-center">${conts}</td>
             <td data-col-key="vendor" class="p-2.5">${vendorDisplay}</td>
-            <td data-col-key="dem" class="p-2.5 text-center font-mono text-[11px] font-bold text-amber-700">${b.free_time_demurrage || 7}d</td>
-            <td data-col-key="det" class="p-2.5 text-center font-mono text-[11px] font-bold text-sky-700">${b.free_time_detention || 7}d</td>
+            <td data-col-key="dem" class="p-2.5 text-center font-mono text-[11px] font-bold text-amber-700">${b.free_time_demurrage || 7}</td>
+            <td data-col-key="det" class="p-2.5 text-center font-mono text-[11px] font-bold text-sky-700">${b.free_time_detention || 7}</td>
             <td data-col-key="status" class="p-2.5 text-center">
                 ${statusBadgeHtml}
             </td>
@@ -1362,8 +1362,8 @@ async function loadVendorContainersTab() {
 
             const freeTime = `
                 <div class="text-center text-[11px] text-slate-600">
-                    <div>DEM: <strong class="text-slate-800">${r.dem_free_days || 7}d</strong></div>
-                    <div>DET: <strong class="text-teal-700">${r.det_free_days || 7}d</strong></div>
+                    <div>DEM: <strong class="text-slate-800">${r.dem_free_days || 7}</strong></div>
+                    <div>DET: <strong class="text-teal-700">${r.det_free_days || 7}</strong></div>
                 </div>
             `;
 

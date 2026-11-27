@@ -1683,6 +1683,43 @@ function formatCurrencyInput(el) {
 }
 window.formatCurrencyInput = formatCurrencyInput;
 
+/**
+ * Chuẩn hóa định dạng biển số xe quốc gia theo Thông tư 24/2023/TT-BCA:
+ * - Đầu kéo & Xe tải: XX[A-Z]-XXX.XX (VD: 50H-145.61, 60H-142.36, 61C-393.29)
+ * - Rơ-moóc: XXRM-XXX.XX hoặc XXR-XXX.XX (VD: 50RM-080.80, 51R-007.22)
+ * Hỗ trợ Smart Input UX: gõ liền không cần gõ dấu gạch hoặc dấu chấm.
+ */
+function formatLicensePlateString(val) {
+    if (!val) return '';
+    const cleaned = String(val).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (!cleaned) return '';
+
+    // Rơ-moóc: XXRM + 5 số (VD: 50RM08080 -> 50RM-080.80)
+    const mRM = cleaned.match(/^(\d{2})(RM)(\d{3})(\d{2})$/);
+    if (mRM) return `${mRM[1]}RM-${mRM[3]}.${mRM[4]}`;
+
+    // Rơ-moóc: XXR + 5 số (VD: 51R00722 -> 51R-007.22)
+    const mR = cleaned.match(/^(\d{2})(R)(\d{3})(\d{2})$/);
+    if (mR) return `${mR[1]}R-${mR[3]}.${mR[4]}`;
+
+    // Đầu kéo & Xe tải: XX + 1 chữ cái + 5 số (VD: 50H14561 -> 50H-145.61)
+    const mTruck5 = cleaned.match(/^(\d{2})([A-Z])(\d{3})(\d{2})$/);
+    if (mTruck5) return `${mTruck5[1]}${mTruck5[2]}-${mTruck5[3]}.${mTruck5[4]}`;
+
+    // Biển số 4 chữ số cũ: XX + 1 chữ cái + 4 số (VD: 51C1234 -> 51C-1234)
+    const mTruck4 = cleaned.match(/^(\d{2})([A-Z])(\d{4})$/);
+    if (mTruck4) return `${mTruck4[1]}${mTruck4[2]}-${mTruck4[3]}`;
+
+    return cleaned;
+}
+
+function formatLicensePlateInput(el) {
+    if (!el) return;
+    el.value = formatLicensePlateString(el.value);
+}
+window.formatLicensePlateString = formatLicensePlateString;
+window.formatLicensePlateInput = formatLicensePlateInput;
+
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     return String(text)
@@ -3471,11 +3508,11 @@ function populateMasterDataDropdowns() {
     // Datalist Hãng Tàu cho Booking (Modal & Fullpage)
     const slDatalist = document.getElementById('shipping-lines-datalist');
     if (slDatalist && Array.isArray(shipping_lines)) {
-        slDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days}d / DET: ${sl.free_det_days}d)</option>`).join('');
+        slDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days} / DET: ${sl.free_det_days})</option>`).join('');
     }
     const fullpageSlDatalist = document.getElementById('fullpage-shipping-lines-datalist');
     if (fullpageSlDatalist && Array.isArray(shipping_lines)) {
-        fullpageSlDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days}d / DET: ${sl.free_det_days}d)</option>`).join('');
+        fullpageSlDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days} / DET: ${sl.free_det_days})</option>`).join('');
     }
 
     // Modal Hải Quan & Fullpage Hải Quan
@@ -3486,6 +3523,11 @@ function populateMasterDataDropdowns() {
     if (quotePreset && Array.isArray(routes)) {
         quotePreset.innerHTML = '<option value="">-- Hoặc Chọn Tuyến Mẫu Danh Mục --</option>' +
             routes.map(r => `<option value="${r.route_name}" data-salary="${r.salary_rate}">${r.label || r.route_name}</option>`).join('');
+    }
+
+    // Nạp danh mục Quy cách Container chuẩn cho Dropdown Booking
+    if (typeof populateBookingContainerSizeOptions === 'function' && Array.isArray(masterDataFormOptionsCache?.container_types)) {
+        populateBookingContainerSizeOptions(masterDataFormOptionsCache.container_types);
     }
 }
 
@@ -9736,19 +9778,19 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             const ds = trip.det_status;
             if (detBadgeEl) {
                 if (ds.status === 'OVERDUE') {
-                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-heading bg-rose-100 text-rose-800 border border-rose-300 animate-pulse';
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-black uppercase font-heading bg-rose-100 text-rose-800 border border-rose-300 animate-pulse';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-warning-circle mr-1"></i> Quá Hạn Phạt Tiền (${Math.abs(ds.days_remaining)} ngày)`;
                 } else if (ds.status === 'TODAY') {
-                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-heading bg-rose-50 text-rose-700 border border-rose-300';
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-black uppercase font-heading bg-rose-50 text-rose-700 border border-rose-300';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-clock mr-1"></i> Hạn Chót Hôm Nay`;
                 } else if (ds.status === 'WARNING') {
-                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase font-heading bg-amber-100 text-amber-800 border border-amber-300';
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold uppercase font-heading bg-amber-100 text-amber-800 border border-amber-300';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-hourglass mr-1"></i> Sắp Hết Hạn (1 ngày)`;
                 } else if (ds.status === 'ATTENTION') {
-                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase font-heading bg-amber-50 text-amber-700 border border-amber-200';
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold uppercase font-heading bg-amber-50 text-amber-700 border border-amber-200';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-hourglass-low mr-1"></i> Còn 2 ngày Free DET`;
                 } else {
-                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase font-heading bg-emerald-100 text-emerald-800 border border-emerald-200';
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold uppercase font-heading bg-emerald-100 text-emerald-800 border border-emerald-200';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-check-circle mr-1"></i> Trong Hạn Free-time (${ds.days_remaining} ngày)`;
                 }
             }
@@ -9904,7 +9946,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const statusCls = STATUS_STYLE_MAP[trip.status] || 'bg-slate-100 text-slate-700 border-slate-300';
         const badge = document.getElementById('detail-status-badge');
         if (badge) {
-            badge.className = `px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${statusCls}`;
+            badge.className = `px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading ${statusCls}`;
             badge.innerText = trip.status_label || trip.status_display || STATUS_NAME_MAP[trip.status] || trip.status || 'Chưa xác định';
         }
 
@@ -10339,7 +10381,7 @@ function renderCostSheetTable(trip) {
                         <td class="py-2 px-3 border-r border-slate-200/70">
                             <div class="flex items-center space-x-2">
                                 <span class="font-bold text-slate-900 text-[13px]">${item.title}</span>
-                                <span class="inline-flex items-center space-x-1 px-2 py-0.2 rounded-full bg-teal-100 text-teal-900 text-[10.5px] font-bold font-heading hover:bg-teal-200 transition-colors">
+                                <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold font-heading hover:bg-teal-100 transition-colors">
                                     <i class="ph-bold ph-list-numbers"></i>
                                     <span>${matchedExps.length} khoản chi</span>
                                     <i id="icon-toggle-${item.code}" class="ph ph-caret-down text-xs transition-transform duration-200"></i>
@@ -12514,8 +12556,8 @@ function renderDispatchOrdersTable() {
             <td data-col-key="route" class="p-2.5 min-w-[440px] whitespace-nowrap">${route}</td>
             <td data-col-key="conts" class="p-2.5 text-center">${conts}</td>
             <td data-col-key="vendor" class="p-2.5">${vendorDisplay}</td>
-            <td data-col-key="dem" class="p-2.5 text-center font-mono text-[11px] font-bold text-amber-700">${b.free_time_demurrage || 7}d</td>
-            <td data-col-key="det" class="p-2.5 text-center font-mono text-[11px] font-bold text-sky-700">${b.free_time_detention || 7}d</td>
+            <td data-col-key="dem" class="p-2.5 text-center font-mono text-[11px] font-bold text-amber-700">${b.free_time_demurrage || 7}</td>
+            <td data-col-key="det" class="p-2.5 text-center font-mono text-[11px] font-bold text-sky-700">${b.free_time_detention || 7}</td>
             <td data-col-key="status" class="p-2.5 text-center">
                 ${statusBadgeHtml}
             </td>
@@ -12771,8 +12813,8 @@ async function loadVendorContainersTab() {
 
             const freeTime = `
                 <div class="text-center text-[11px] text-slate-600">
-                    <div>DEM: <strong class="text-slate-800">${r.dem_free_days || 7}d</strong></div>
-                    <div>DET: <strong class="text-teal-700">${r.det_free_days || 7}d</strong></div>
+                    <div>DEM: <strong class="text-slate-800">${r.dem_free_days || 7}</strong></div>
+                    <div>DET: <strong class="text-teal-700">${r.det_free_days || 7}</strong></div>
                 </div>
             `;
 
@@ -15422,13 +15464,13 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
     const stBadge = document.getElementById('vd-header-status-badge');
     if (stBadge) {
         if (!hasAccount) {
-            stBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-amber-50 text-amber-800 border-amber-200';
+            stBadge.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-amber-50 text-amber-800 border-amber-200';
             stBadge.innerText = 'Chưa cấp tài khoản';
         } else if (isLocked) {
-            stBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-rose-50 text-rose-800 border-rose-200';
+            stBadge.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-rose-50 text-rose-800 border-rose-200';
             stBadge.innerText = 'Đang bị khóa';
         } else {
-            stBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-200';
+            stBadge.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-200';
             stBadge.innerText = 'Đang hoạt động';
         }
     }
@@ -16451,13 +16493,13 @@ function renderTransportOrderView(data) {
     const badgeEl = document.getElementById('to-header-status-badge');
     if (badgeEl) {
         if (remaining <= 0) {
-            badgeEl.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-300';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-300';
             badgeEl.innerText = `Đã gán đủ (${filled}/${total} xe)`;
         } else if (filled === 0) {
-            badgeEl.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-rose-50 text-rose-800 border-rose-300';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-rose-50 text-rose-800 border-rose-300';
             badgeEl.innerText = `Chưa gán xe (còn ${remaining}/${total})`;
         } else {
-            badgeEl.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-amber-50 text-amber-800 border-amber-300';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-amber-50 text-amber-800 border-amber-300';
             badgeEl.innerText = `Gán chưa hết (còn ${remaining}/${total})`;
         }
     }
@@ -16833,8 +16875,6 @@ window.toPrintTransportOrder = toPrintTransportOrder;
 
 // ---- src/app/dispatch/trip-expenses.js ----
 async function toggleSubcontractorTypePanels(typeVal) {
-
-
     const isCarrier = (typeVal === 'CARRIER');
     const vehSec = document.getElementById('section-subcontractor-vehicles-mgmt');
     const drvSec = document.getElementById('section-subcontractor-drivers-mgmt');
@@ -16844,23 +16884,37 @@ async function toggleSubcontractorTypePanels(typeVal) {
     // Tự động cập nhật mã đối tác mới theo bảng mã quy định: 3PL[STT], GAR[STT], SPL[STT]
     const editId = document.getElementById('md-edit-id')?.value;
     const codeInp = document.getElementById('mdf-sc-code');
-    if (!editId && codeInp) {
-        const curCode = (codeInp.value || '').trim();
-        // Nếu mã đang trống hoặc thuộc 1 trong 3 tiền tố auto-generated
-        if (!curCode || /^(3PL|GAR|SPL)\d+$/i.test(curCode)) {
-            try {
-                const res = await fetchWithAuth(`/api/master-data/subcontractors/next-code/?partner_type=${encodeURIComponent(typeVal || 'CARRIER')}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.code) {
+    const alertBox = document.getElementById('mdf-sc-partner-type-alert');
+    const alertText = document.getElementById('mdf-sc-partner-type-alert-text');
+    if (!codeInp) return;
+
+    const initialCode = codeInp.dataset.initialCode || '';
+    const initialType = codeInp.dataset.initialType || 'CARRIER';
+
+    try {
+        const res = await fetchWithAuth(`/api/master-data/subcontractors/next-code/?partner_type=${encodeURIComponent(typeVal || 'CARRIER')}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.code) {
+                if (!editId) {
+                    codeInp.value = data.code;
+                    codeInp.dataset.autoGenerated = 'true';
+                } else {
+                    if (typeVal !== initialType) {
                         codeInp.value = data.code;
-                        codeInp.dataset.autoGenerated = 'true';
+                        if (alertBox && alertText) {
+                            alertText.innerHTML = `Đổi phân loại đối tác sẽ tự động đổi mã: <strong class="underline">${escapeHtml(initialCode)}</strong> ➔ <strong class="underline text-teal-900">${escapeHtml(data.code)}</strong>. Toàn bộ chuyến xe & dữ liệu liên kết vẫn được bảo toàn.`;
+                            alertBox.classList.remove('hidden');
+                        }
+                    } else {
+                        codeInp.value = initialCode;
+                        if (alertBox) alertBox.classList.add('hidden');
                     }
                 }
-            } catch (err) {
-                console.error('[Subcontractor] Lỗi tự động sinh mã:', err);
             }
         }
+    } catch (err) {
+        console.error('[Subcontractor] Lỗi tự động sinh mã:', err);
     }
 }
 window.toggleSubcontractorTypePanels = toggleSubcontractorTypePanels;
@@ -16898,21 +16952,21 @@ function selectExpensePayer(payerType) {
     if (payerType === 'COMPANY_COST') {
         if (btnCost) btnCost.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
         if (badge) {
-            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-teal-100 text-teal-800 border border-teal-200 font-heading";
             badge.innerText = "🏢 Chi phí của Giải Pháp Xanh";
         }
         if (guide) guide.innerHTML = "🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.";
     } else if (payerType === 'COMPANY_OBH') {
         if (btnCompanyObh) btnCompanyObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
         if (badge) {
-            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 border border-sky-300 font-heading";
             badge.innerText = "↗ Giải Pháp Xanh chi hộ Khách hàng";
         }
         if (guide) guide.innerHTML = "↗ <strong>Công ty chi hộ:</strong> Giải Pháp Xanh ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
     } else if (payerType === 'SUB_OBH') {
         if (btnSubObh) btnSubObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-amber-600 text-white cursor-pointer touch-btn";
         if (badge) {
-            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-heading";
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-heading";
             badge.innerText = "🔄 3PL chi hộ Khách hàng";
         }
         if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ Giải Pháp Xanh hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
@@ -16942,21 +16996,21 @@ function selectEditExpensePayer(payerType) {
     if (payerType === 'COMPANY_COST') {
         if (btnCost) btnCost.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
         if (badge) {
-            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-teal-100 text-teal-800 border border-teal-200 font-heading";
             badge.innerText = "🏢 Chi phí của Giải Pháp Xanh";
         }
         if (guide) guide.innerHTML = "🏢 <strong>Chi phí công ty:</strong> Đưa vào chi phí vận hành chuyến xe của GSS.";
     } else if (payerType === 'COMPANY_OBH') {
         if (btnCompanyObh) btnCompanyObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
         if (badge) {
-            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 border border-sky-300 font-heading";
             badge.innerText = "↗ Giải Pháp Xanh chi hộ Khách hàng";
         }
         if (guide) guide.innerHTML = "↗ <strong>Công ty chi hộ:</strong> Giải Pháp Xanh ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
     } else if (payerType === 'SUB_OBH') {
         if (btnSubObh) btnSubObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-amber-600 text-white cursor-pointer touch-btn";
         if (badge) {
-            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-heading";
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-heading";
             badge.innerText = "🔄 3PL chi hộ Khách hàng";
         }
         if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ Giải Pháp Xanh hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
@@ -21777,7 +21831,7 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
             } else if (['REJECTED', 'EXPIRED'].includes(st)) {
                 badgeCls = 'bg-rose-50 text-rose-800 border-rose-200';
             }
-            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ' + badgeCls;
+            statusBadge.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading ' + badgeCls;
         }
         const pricingBadge = document.getElementById('fullpage-quote-pricing-badge');
         if (pricingBadge) {
@@ -23173,9 +23227,9 @@ async function saveBooking(e) {
 
 
 
-    if (!customer || !bookingNumber || !pickup || !delivery || (bookingType !== 'DOMESTIC' && !dropoff)) {
+    if (!customer || !bookingNumber || !pickup) {
 
-        showToast('warning', 'Vui lòng điền đủ: Khách hàng, Số đơn/booking và Lộ trình vận chuyển', 'Thiếu Thông Tin');
+        showToast('warning', 'Vui lòng điền đủ: Khách hàng, Số đơn/booking và Điểm lấy cont (Điểm 1)', 'Thiếu Thông Tin');
 
         return;
 
@@ -23696,12 +23750,13 @@ function applyBookingFormTypeAdapters(prefix = '') {
         }
     }
 
-    // 4. Tên Tàu & Chuyến (Vessel / Voyage)
+    // 4. Tên Tàu & Chuyến (Vessel / Voyage) - Đã bỏ theo yêu cầu, giữ input hidden tương thích
     const labelVessel = document.getElementById(prefix + 'label-booking-vessel');
     const inputVessel = document.getElementById(prefix + 'booking-vessel');
     if (type === 'DOMESTIC') {
         setFieldState('wrapper-vessel', ['booking-vessel'], true, '');
         if (labelVessel) labelVessel.innerHTML = 'Tàu & Chuyến <span class="text-slate-400 font-normal lowercase">(không áp dụng)</span>';
+        if (inputVessel) inputVessel.value = '';
     } else {
         setFieldState('wrapper-vessel', ['booking-vessel'], false);
         if (labelVessel) {
@@ -23709,7 +23764,7 @@ function applyBookingFormTypeAdapters(prefix = '') {
                 ? 'Tên Tàu & Chuyến Cập <span class="text-[10px] text-slate-400 font-normal lowercase">(Vessel/Voy)</span>' 
                 : 'Tên Tàu & Chuyến <span class="text-[10px] text-slate-400 font-normal lowercase">(Vessel/Voy)</span>';
         }
-        if (inputVessel) {
+        if (inputVessel && !inputVessel.hidden) {
             inputVessel.placeholder = type === 'IMPORT_FCL' ? 'VD: CMA CGM CHENNAI / 002S' : 'VD: CAP SAN LAZARO / 001N';
         }
     }
@@ -23731,19 +23786,19 @@ function applyBookingFormTypeAdapters(prefix = '') {
 
     if (type === 'DOMESTIC') {
         if (labelPickup) labelPickup.innerHTML = '1. Điểm Bốc Hàng (Nơi đi) <span class="text-rose-500">*</span>';
-        if (labelDelivery) labelDelivery.innerHTML = '2. Điểm Giao Hàng (Nơi đến) <span class="text-rose-500">*</span>';
+        if (labelDelivery) labelDelivery.innerHTML = '2. Điểm Giao Hàng (Nơi đến)';
         setFieldState('wrapper-booking-dropoff', ['booking-dropoff'], true, '');
         if (labelDropoff) labelDropoff.innerHTML = '3. Điểm Hạ / Trả Cont <span class="text-slate-400 font-normal lowercase">(không áp dụng)</span>';
     } else if (type === 'IMPORT_FCL') {
         if (labelPickup) labelPickup.innerHTML = '1. Cảng Lấy Cont Hàng <span class="text-rose-500">*</span>';
-        if (labelDelivery) labelDelivery.innerHTML = '2. Kho Rút Hàng <span class="text-rose-500">*</span>';
+        if (labelDelivery) labelDelivery.innerHTML = '2. Kho Rút Hàng';
         setFieldState('wrapper-booking-dropoff', ['booking-dropoff'], false);
-        if (labelDropoff) labelDropoff.innerHTML = '3. Depot Trả Rỗng <span class="text-rose-500">*</span>';
+        if (labelDropoff) labelDropoff.innerHTML = '3. Depot Trả Rỗng';
     } else {
         if (labelPickup) labelPickup.innerHTML = '1. Depot Cấp Rỗng <span class="text-rose-500">*</span>';
-        if (labelDelivery) labelDelivery.innerHTML = '2. Kho Đóng Hàng <span class="text-rose-500">*</span>';
+        if (labelDelivery) labelDelivery.innerHTML = '2. Kho Đóng Hàng';
         setFieldState('wrapper-booking-dropoff', ['booking-dropoff'], false);
-        if (labelDropoff) labelDropoff.innerHTML = '3. Cảng Hạ CY <span class="text-rose-500">*</span>';
+        if (labelDropoff) labelDropoff.innerHTML = '3. Cảng Hạ CY';
     }
 
     // 7. Ngày hẹn đóng/dỡ/bốc
@@ -23950,15 +24005,65 @@ window.autoLookupBookingPrice = autoLookupBookingPrice;
  * Quản lý Dropdown Checkbox Chọn Nhiều Loại Cont / Xe
  * ==========================================================================
  */
-const BOOKING_CONTAINER_SIZE_OPTIONS = [
-    { value: '20GP', label: 'Cont 20GP', desc: '(Thường)' },
-    { value: '40HC', label: 'Cont 40HC', desc: '(Cao 9ft6)' },
-    { value: '45G1', label: 'Cont 45 Feet', desc: '' },
-    { value: '40GP', label: 'Cont 40GP', desc: '(Thường)' },
-    { value: 'XE_TAI_15T', label: 'Xe Tải 15 Tấn', desc: '' },
-    { value: 'XE_TAI_8T', label: 'Xe Tải 8 Tấn', desc: '' },
-    { value: 'XE_TAI_5T', label: 'Xe Tải 5 Tấn', desc: '' }
+let BOOKING_CONTAINER_SIZE_OPTIONS = [
+    { value: '20GP', label: 'Cont 20GP', desc: '(20ft Thường)' },
+    { value: '40GP', label: 'Cont 40GP', desc: '(40ft Thường)' },
+    { value: '40HC', label: 'Cont 40HC', desc: '(40ft Cao 9ft6)' },
+    { value: '45HQ', label: 'Cont 45HQ', desc: '(45ft Cao)' },
+    { value: '20RF', label: 'Cont 20RF', desc: '(20ft Lạnh)' },
+    { value: '40RF', label: 'Cont 40RF', desc: '(40ft Lạnh)' },
+    { value: '20FR', label: 'Cont 20FR', desc: '(20ft Flat Rack)' },
+    { value: '40FR', label: 'Cont 40FR', desc: '(40ft Flat Rack)' },
+    { value: '20OT', label: 'Cont 20OT', desc: '(20ft Open Top)' },
+    { value: '40OT', label: 'Cont 40OT', desc: '(40ft Open Top)' }
 ];
+
+function populateBookingContainerSizeOptions(containerTypes) {
+    if (!Array.isArray(containerTypes) || containerTypes.length === 0) return;
+    BOOKING_CONTAINER_SIZE_OPTIONS = containerTypes.map(item => {
+        const code = item.code || '';
+        const name = item.name || '';
+        let desc = '';
+        if (name) {
+            const shortName = name.replace(/^Container\s+/i, '');
+            desc = `(${shortName})`;
+        }
+        return {
+            value: code,
+            label: `Cont ${code}`,
+            desc: desc
+        };
+    });
+    renderBookingContainerSizeDropdownList('fullpage-');
+    renderBookingContainerSizeDropdownList('');
+}
+window.populateBookingContainerSizeOptions = populateBookingContainerSizeOptions;
+
+function renderBookingContainerSizeDropdownList(prefix = '') {
+    const listEl = document.getElementById(prefix + 'booking-container-size-list');
+    if (!listEl) return;
+    const cbName = prefix === 'fullpage-' ? 'fullpage-cont-size-cb' : 'cont-size-cb';
+    const currentValues = Array.from(document.querySelectorAll(`input[name="${cbName}"]:checked`)).map(cb => cb.value);
+    const effectiveValues = currentValues.length > 0 ? currentValues : ['20GP'];
+
+    const padCls = prefix === 'fullpage-' ? 'px-2 py-1.5' : 'px-2 py-1';
+    const cbSize = prefix === 'fullpage-' ? 'w-4 h-4' : 'w-3.5 h-3.5';
+    const descSize = prefix === 'fullpage-' ? 'text-[11px]' : 'text-[10.5px]';
+
+    listEl.innerHTML = BOOKING_CONTAINER_SIZE_OPTIONS.map(opt => {
+        const isChecked = effectiveValues.includes(opt.value) ? 'checked' : '';
+        return `
+            <label class="flex items-center gap-2.5 ${padCls} hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                <input type="checkbox" name="${cbName}" value="${opt.value}" ${isChecked} onchange="onBookingContainerSizeChange('${prefix}')"
+                    class="${cbSize} text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                <span class="font-bold">${opt.label}</span> ${opt.desc ? `<span class="text-slate-500 ${descSize}">${opt.desc}</span>` : ''}
+            </label>
+        `;
+    }).join('');
+
+    onBookingContainerSizeChange(prefix);
+}
+window.renderBookingContainerSizeDropdownList = renderBookingContainerSizeDropdownList;
 
 function toggleBookingContainerSizeDropdown(prefix = '') {
     const dropdown = document.getElementById(prefix + 'booking-container-size-dropdown');
@@ -24777,7 +24882,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
 
-            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ' +
+            statusBadge.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading ' +
 
 
 
@@ -25275,7 +25380,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
 
-                    const statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10.5px] font-bold border ${t.status_badge_class || 'bg-slate-100 text-slate-700'}">${t.status_display || t.status}</span>`;
+                    const statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${t.status_badge_class || 'bg-slate-100 text-slate-700'}">${t.status_display || t.status}</span>`;
 
 
 
@@ -26009,25 +26114,7 @@ async function saveFullpageBooking(e) {
 
 
 
-    if (price <= 0) {
-
-        const priceInput = document.getElementById('fullpage-booking-price');
-
-        if (priceInput) {
-
-            priceInput.focus();
-
-            priceInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-200');
-
-            setTimeout(() => priceInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-200'), 3000);
-
-        }
-
-        showToast('warning', 'Đơn giá cước vận chuyển là bắt buộc và phải lớn hơn 0! Vui lòng nhập giá cước bán.', 'Giá Cước Bắt Buộc');
-
-        return;
-
-    }
+    // Đơn giá cước cho phép nhập sau (mặc định 0 nếu chưa nhập)
 
 
 
@@ -30082,7 +30169,15 @@ function openCreateEmployeePage(updateHistory = true) {
     document.getElementById('emp-edit-id').value = '';
 
     const el = id => document.getElementById(id);
-    if (el('emp-code')) el('emp-code').value = '';
+    if (el('emp-code')) {
+        el('emp-code').value = 'Đang tải...';
+        fetchWithAuth('/api/personnel/employees/next-code/')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data && data.code && el('emp-code')) el('emp-code').value = data.code;
+            })
+            .catch(() => { if (el('emp-code')) el('emp-code').value = ''; });
+    }
     if (el('emp-full-name')) el('emp-full-name').value = '';
     if (el('emp-nickname')) el('emp-nickname').value = '';
     if (el('emp-phone')) el('emp-phone').value = '';
@@ -34530,7 +34625,7 @@ function renderVoucherTab() {
         <td data-col-key="trips" class="text-center">${v.trips_count}</td>
         <td data-col-key="amount" class="text-right font-mono font-bold">${formatMoneyVND(v.amount)}</td>
         <td data-col-key="direction">${v.direction === 'RECEIVE' ? '<span class="text-blue-700 font-bold">Thu</span>' : '<span class="text-rose-700 font-bold">Chi</span>'}</td>
-        <td data-col-key="status"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : (v.status === 'APPROVED' ? 'bg-sky-50 text-sky-800 border border-sky-200' : 'bg-amber-50 text-amber-800 border border-amber-200')}">${escapeHtml(v.status_label)}</span></td>
+        <td data-col-key="status" class="text-xs font-bold ${v.status === 'SETTLED' ? 'text-emerald-700' : (v.status === 'APPROVED' ? 'text-sky-700' : 'text-amber-700')}"><i class="ph-bold ${v.status === 'SETTLED' ? 'ph-check-circle' : (v.status === 'APPROVED' ? 'ph-seal-check' : 'ph-clock')} mr-1"></i>${escapeHtml(v.status_label)}</td>
         <td data-col-key="date">${escapeHtml(v.created_at)}</td></tr>`).join('')
         || '<tr><td colspan="8" class="p-8 text-center text-slate-400 font-medium">Chưa có phiếu quyết toán</td></tr>';
 }
@@ -38244,7 +38339,7 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
                             <td class="py-3 px-3.5 font-mono text-slate-700">${escapeHtml(e.invoice_number || '-')}</td>
                             <td class="py-3 px-3.5 text-center">${isReimbBadge}</td>
                             <td class="py-3 px-3.5 text-center">
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">${escapeHtml(e.status_display)}</span>
+                                <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700"><i class="ph-bold ph-check-circle"></i><span>${escapeHtml(e.status_display)}</span></span>
                             </td>
                             <td class="py-3 px-3.5 text-center text-slate-500">${e.created_at}</td>
                         </tr>
@@ -39849,7 +39944,66 @@ async function openCreateMasterDataModal() {
 
     injectMasterDataModalFields(null);
     document.getElementById('modal-master-data').classList.remove('hidden');
+
+    // Nạp sẵn mã kế tiếp cho người dùng xem trước theo chuẩn BIM LOGISTICS
+    if (currentMasterDataTab === 'customers') {
+        fetchWithAuth('/api/master-data/customers/next-code/').then(r => r.ok ? r.json() : null).then(data => {
+            const codeInp = document.getElementById('mdf-code');
+            if (codeInp && data && data.code) codeInp.value = data.code;
+        }).catch(() => {});
+    } else if (currentMasterDataTab === 'locations') {
+        const typeSelect = document.getElementById('mdf-location-type');
+        const locType = typeSelect ? typeSelect.value : 'PORT';
+        fetchWithAuth(`/api/master-data/locations/next-code/?location_type=${encodeURIComponent(locType)}`).then(r => r.ok ? r.json() : null).then(data => {
+            const codeInp = document.getElementById('mdf-code');
+            if (codeInp && data && data.code) codeInp.value = data.code;
+        }).catch(() => {});
+    } else if (currentMasterDataTab === 'subcontractors') {
+        const typeSelect = document.getElementById('mdf-sc-partner-type');
+        const pType = typeSelect ? typeSelect.value : 'CARRIER';
+        fetchWithAuth(`/api/master-data/subcontractors/next-code/?partner_type=${encodeURIComponent(pType)}`).then(r => r.ok ? r.json() : null).then(data => {
+            const codeInp = document.getElementById('mdf-sc-code');
+            if (codeInp && data && data.code) codeInp.value = data.code;
+        }).catch(() => {});
+    }
 }
+
+// Xử lý đổi phân loại Địa điểm & xem trước mã mới (Phương án 1)
+async function onMasterLocationTypeChange(newType) {
+    const codeInp = document.getElementById('mdf-code');
+    if (!codeInp) return;
+    const editId = document.getElementById('md-edit-id')?.value;
+    const initialCode = codeInp.dataset.initialCode || '';
+    const initialType = codeInp.dataset.initialType || 'PORT';
+    const alertBox = document.getElementById('mdf-location-type-alert');
+    const alertText = document.getElementById('mdf-location-type-alert-text');
+
+    try {
+        const res = await fetchWithAuth(`/api/master-data/locations/next-code/?location_type=${encodeURIComponent(newType || 'PORT')}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.code) {
+                if (!editId) {
+                    codeInp.value = data.code;
+                } else {
+                    if (newType !== initialType) {
+                        codeInp.value = data.code;
+                        if (alertBox && alertText) {
+                            alertText.innerHTML = `Đổi phân loại sẽ tự động đổi mã: <strong class="underline">${escapeHtml(initialCode)}</strong> ➔ <strong class="underline text-teal-900">${escapeHtml(data.code)}</strong>. Toàn bộ chuyến xe & bảng giá liên kết vẫn được giữ nguyên vẹn.`;
+                            alertBox.classList.remove('hidden');
+                        }
+                    } else {
+                        codeInp.value = initialCode;
+                        if (alertBox) alertBox.classList.add('hidden');
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[Location] Lỗi nạp mã kế tiếp:', err);
+    }
+}
+window.onMasterLocationTypeChange = onMasterLocationTypeChange;
 
 // Open Edit Modal with Current Data
 async function openEditMasterDataModal(id) {
@@ -40257,21 +40411,25 @@ function injectMasterDataModalFields(data) {
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Địa Điểm <span class="text-rose-500">*</span></label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Địa Điểm <span class="text-slate-400 font-normal">(Tự động sinh)</span></label>
                     </div>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CAT_LAI, KHO_WCA..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" required ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Hệ thống tự động cấp..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full bg-slate-100 text-slate-600 cursor-not-allowed select-none" readonly title="Mã được hệ thống tự động sinh theo chuẩn, không cho phép sửa tay" data-initial-code="${d.code || ''}" data-initial-type="${d.location_type || 'PORT'}">
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Phân Loại</label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Phân Loại <span class="text-rose-500">*</span></label>
                     </div>
-                    <select id="mdf-location-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
-                        <option value="PORT" ${d.location_type === 'PORT' ? 'selected' : ''}>Cảng Biển</option>
+                    <select id="mdf-location-type" onchange="onMasterLocationTypeChange(this.value)" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
+                        <option value="PORT" ${d.location_type === 'PORT' ? 'selected' : ''}>Cảng Biển (PRT)</option>
                         <option value="ICD" ${d.location_type === 'ICD' ? 'selected' : ''}>Cảng Cạn (ICD)</option>
-                        <option value="DEPOT" ${d.location_type === 'DEPOT' ? 'selected' : ''}>Bãi Rỗng / Depot</option>
-                        <option value="WAREHOUSE" ${d.location_type === 'WAREHOUSE' ? 'selected' : ''}>Kho Hàng / Nhà Máy</option>
-                        <option value="YARD" ${d.location_type === 'YARD' ? 'selected' : ''}>Bãi Đỗ Xe Công Ty</option>
+                        <option value="DEPOT" ${d.location_type === 'DEPOT' ? 'selected' : ''}>Bãi Rỗng / Depot (DPT)</option>
+                        <option value="WAREHOUSE" ${d.location_type === 'WAREHOUSE' ? 'selected' : ''}>Kho Hàng / Nhà Máy (WHS)</option>
+                        <option value="YARD" ${d.location_type === 'YARD' ? 'selected' : ''}>Bãi Đỗ Xe Công Ty (PKG)</option>
                     </select>
+                </div>
+                <div id="mdf-location-type-alert" class="hidden md:col-span-12 p-2 bg-amber-50 border border-amber-300 rounded text-xs text-amber-900 flex items-center gap-2">
+                    <i class="ph-bold ph-warning text-amber-600 text-base shrink-0"></i>
+                    <span id="mdf-location-type-alert-text"></span>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -40337,9 +40495,9 @@ function injectMasterDataModalFields(data) {
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Khách Hàng</label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Khách Hàng <span class="text-slate-400 font-normal">(Tự động sinh)</span></label>
                     </div>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Hệ thống tự động cấp..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full bg-slate-100 text-slate-600 cursor-not-allowed select-none" readonly title="Mã được hệ thống tự động sinh theo chuẩn, không cho phép sửa tay">
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -40696,7 +40854,7 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Biển Số Xe <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-license-plate" value="${d.license_plate || ''}" placeholder="VD: 51H-123.45..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.license_plate ? 'readonly' : ''}>
+                    <input type="text" id="mdf-license-plate" value="${d.license_plate || ''}" placeholder="VD: 50H14561 -> 50H-145.61" oninput="formatLicensePlateInput(this)" onblur="formatLicensePlateInput(this)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.license_plate ? 'readonly' : ''}>
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -40846,7 +41004,7 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Biển Số Rơ-Moóc <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-trailer-plate" value="${d.license_plate || ''}" placeholder="VD: 51R-123.45" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.license_plate ? 'readonly' : ''}>
+                    <input type="text" id="mdf-trailer-plate" value="${d.license_plate || ''}" placeholder="VD: 50RM08080 -> 50RM-080.80" oninput="formatLicensePlateInput(this)" onblur="formatLicensePlateInput(this)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.license_plate ? 'readonly' : ''}>
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -40983,9 +41141,13 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tác / Nhà Xe</label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tác / Nhà Xe <span class="text-slate-400 font-normal">(Tự động sinh)</span></label>
                     </div>
-                    <input type="text" id="mdf-sc-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh theo loại: 3PL001, GAR001, SPL001..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-sc-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh: 3PL001, GAR001, SPL001..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full bg-slate-100 text-slate-600 cursor-not-allowed select-none" readonly title="Mã được hệ thống tự động sinh theo chuẩn, không cho phép sửa tay" data-initial-code="${escapeHtml(d.code || '')}" data-initial-type="${partnerTypeVal}">
+                </div>
+                <div id="mdf-sc-partner-type-alert" class="hidden md:col-span-12 p-2 bg-amber-50 border border-amber-300 rounded text-xs text-amber-900 flex items-center gap-2">
+                    <i class="ph-bold ph-warning text-amber-600 text-base shrink-0"></i>
+                    <span id="mdf-sc-partner-type-alert-text"></span>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -41719,6 +41881,39 @@ async function submitMasterDataForm(e) {
             notes: document.getElementById('mdf-pol-notes')?.value?.trim() || '',
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
+    }
+
+    // Cảnh báo xác nhận khi đổi phân loại Master Data (Phương án 1 - BIM LOGISTICS)
+    if (isEdit && tabKey === 'locations') {
+        const oldType = document.getElementById('mdf-code')?.dataset.initialType;
+        const oldCode = document.getElementById('mdf-code')?.dataset.initialCode;
+        const newType = payload.location_type;
+        const newCode = document.getElementById('mdf-code')?.value;
+        if (oldType && newType && oldType !== newType) {
+            const confirmed = window.confirm(
+                `CẢNH BÁO THAY ĐỔI PHÂN LOẠI ĐỊA ĐIỂM:\n` +
+                `- Phân loại: ${oldType} ➔ ${newType}\n` +
+                `- Mã địa điểm: ${oldCode} ➔ ${newCode}\n\n` +
+                `Toàn bộ chuyến xe, đơn hàng và biểu cước liên kết trước đây vẫn được giữ nguyên vẹn.\n` +
+                `Bạn có chắc chắn muốn lưu thay đổi?`
+            );
+            if (!confirmed) return;
+        }
+    } else if (isEdit && tabKey === 'subcontractors') {
+        const oldType = document.getElementById('mdf-sc-code')?.dataset.initialType;
+        const oldCode = document.getElementById('mdf-sc-code')?.dataset.initialCode;
+        const newType = payload.partner_type;
+        const newCode = document.getElementById('mdf-sc-code')?.value;
+        if (oldType && newType && oldType !== newType) {
+            const confirmed = window.confirm(
+                `CẢNH BÁO THAY ĐỔI PHÂN LOẠI ĐỐI TÁC:\n` +
+                `- Phân loại: ${oldType} ➔ ${newType}\n` +
+                `- Mã đối tác: ${oldCode} ➔ ${newCode}\n\n` +
+                `Toàn bộ chuyến xe, đơn hàng và bảng giá liên kết trước đây vẫn được giữ nguyên vẹn.\n` +
+                `Bạn có chắc chắn muốn lưu thay đổi?`
+            );
+            if (!confirmed) return;
+        }
     }
 
     try {
@@ -43954,10 +44149,8 @@ function renderOpeningBalanceView() {
                                 <td class="p-3 font-semibold text-slate-800">
                                     ${item.account_name || item.category_display || '-'}
                                 </td>
-                                <td class="p-3 text-center">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-black border bg-slate-100 text-slate-800 border-slate-300">
-                                        ${item.account_code || '1111'}
-                                    </span>
+                                <td class="p-3 text-center font-mono font-bold text-xs text-slate-700">
+                                    ${item.account_code || '1111'}
                                 </td>
                                 <td class="p-3 font-mono font-bold text-blue-900">
                                     ${item.bank_account_number ? (item.bank_account_number + (item.bank_name ? ' (' + item.bank_name + ')' : '')) : '<span class="text-slate-300">—</span>'}
@@ -49161,7 +49354,7 @@ function renderReport18() {
         <td data-col-key="trips" class="text-center">${v.trips_count}</td>
         <td data-col-key="amount" class="text-right font-mono font-bold">${formatMoneyVND(v.amount)}</td>
         <td data-col-key="direction">${v.direction === 'RECEIVE' ? '<span class="text-blue-700 font-bold">Thu</span>' : '<span class="text-rose-700 font-bold">Chi</span>'}</td>
-        <td data-col-key="status"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}">${escapeHtml(v.status_label)}</span></td>
+        <td data-col-key="status" class="text-xs font-bold ${v.status === 'APPROVED' ? 'text-emerald-700' : 'text-amber-700'}"><i class="ph-bold ${v.status === 'APPROVED' ? 'ph-check-circle' : 'ph-clock'} mr-1"></i>${escapeHtml(v.status_label)}</td>
         <td data-col-key="cash" class="font-mono">${escapeHtml(v.cash_transaction_code || '-')}</td>
         <td data-col-key="date">${escapeHtml(v.created_at)}</td><td data-col-key="approved">${escapeHtml(v.approved_at || '-')}</td></tr>`).join('')
         || '<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Chưa có bảng kê quyết toán trong điều kiện lọc</td></tr>';
@@ -53221,8 +53414,9 @@ function renderTasksListTable(tasks) {
                 </div>
             </td>
             <td class="py-3 px-4">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${getStatusBadgeClass(t.status)}">
-                    ${getStatusText(t.status)}
+                <span class="inline-flex items-center gap-1 text-xs font-bold ${t.status === 'DONE' ? 'text-emerald-700' : (t.status === 'REVIEW' ? 'text-amber-700' : (t.status === 'IN_PROGRESS' ? 'text-sky-700' : 'text-slate-600'))}">
+                    <i class="ph-bold ${t.status === 'DONE' ? 'ph-check-circle' : (t.status === 'REVIEW' ? 'ph-hourglass-medium' : (t.status === 'IN_PROGRESS' ? 'ph-play-circle' : 'ph-circle'))}"></i>
+                    <span>${getStatusText(t.status)}</span>
                 </span>
             </td>
             <td class="py-3 px-4 text-center">
