@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from apps.customers.models import Customer
-from apps.master_data.models import Party, PartnerType, ShippingLine, Subcontractor
+from apps.master_data.models import Party, PartnerType, ShippingLine, Subcontractor, Supplier
 
 
 class PartySingleTableTestCase(TestCase):
@@ -35,3 +35,12 @@ class PartySingleTableTestCase(TestCase):
         self.assertTrue(g.code.startswith('GAR'))
         p = Party.objects.get(pk=g.pk)
         self.assertTrue(p.is_supplier and not p.is_carrier)
+
+    def test_shipper_uses_shp_and_excluded_from_subcontractors(self):
+        shp = Supplier.objects.create(name="Shipper Z")
+        self.assertTrue(shp.code.startswith('SHP'))
+        p = Party.objects.get(pk=shp.pk)
+        self.assertTrue(p.is_shipper and not p.is_supplier and not p.is_carrier)
+        self.assertFalse(Subcontractor.objects.filter(pk=shp.pk).exists())
+        car = Subcontractor.objects.create(name="Nhà xe C", partner_type=PartnerType.CARRIER)
+        self.assertFalse(Supplier.objects.filter(pk=car.pk).exists())

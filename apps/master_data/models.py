@@ -225,7 +225,8 @@ class Party(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel)
     # Vai trò
     is_customer = models.BooleanField(default=False, db_index=True)
     is_carrier = models.BooleanField(default=False, db_index=True, help_text='Nhà xe / vendor vận tải')
-    is_supplier = models.BooleanField(default=False, db_index=True, help_text='Gara, nhà cung cấp')
+    is_supplier = models.BooleanField(default=False, db_index=True, help_text='Gara, nhà cung cấp của công ty')
+    is_shipper = models.BooleanField(default=False, db_index=True, help_text='Nhà cung cấp của khách hàng / Shipper')
     is_shipping_line = models.BooleanField(default=False, db_index=True)
     is_depot = models.BooleanField(default=False, db_index=True)
     partner_type = models.CharField(max_length=20, choices=PartnerType.choices, default=PartnerType.CARRIER, db_index=True,
@@ -303,7 +304,7 @@ class Party(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel)
 
     @property
     def roles(self):
-        return [r for r in ('customer', 'carrier', 'supplier', 'shipping_line', 'depot') if getattr(self, 'is_' + r)]
+        return [r for r in ('customer', 'carrier', 'supplier', 'shipper', 'shipping_line', 'depot') if getattr(self, 'is_' + r)]
 
     @property
     def canonical(self):
@@ -365,10 +366,10 @@ class ShippingLine(Party):
 
 class Supplier(Party):
     """
-    Nhà cung cấp hàng hóa / Người gửi hàng (Shipper / Supplier).
-    Proxy của Party với vai trò is_supplier = True.
+    Nhà cung cấp hàng hóa của khách hàng / Người gửi hàng (Shipper).
+    Proxy của Party với vai trò is_shipper = True (mã SHP001, tách biệt với SPL/GAR/3PL của đối tác vận tải).
     """
-    objects, all_objects = role_managers('is_supplier')
+    objects, all_objects = role_managers('is_shipper')
 
     class Meta:
         proxy = True
@@ -379,9 +380,9 @@ class Supplier(Party):
     @classmethod
     def generate_next_code(cls):
         import re
-        codes = cls.all_objects.filter(code__startswith='SPL').values_list('code', flat=True)
+        codes = cls.all_objects.filter(code__startswith='SHP').values_list('code', flat=True)
         max_num = 0
-        pattern = re.compile(r"^SPL(\d+)$")
+        pattern = re.compile(r"^SHP(\d+)$")
         for c in codes:
             match = pattern.match(c or '')
             if match:
@@ -391,10 +392,10 @@ class Supplier(Party):
                         max_num = num
                 except ValueError:
                     pass
-        return f"SPL{max_num + 1:03d}"
+        return f"SHP{max_num + 1:03d}"
 
     def save(self, *args, **kwargs):
-        self.is_supplier = True
+        self.is_shipper = True
         if self.name:
             self.name = self.name.strip().upper()
         if not self.code or not str(self.code).strip():

@@ -1420,7 +1420,7 @@ class SupplierListCreateAPIView(MasterDataBaseAPIView):
             contact_person=data.get('contact_person', '').strip(),
             contact_email=data.get('contact_email', '').strip(),
             notes=data.get('notes', '').strip(),
-            is_supplier=True,
+            is_shipper=True,
             is_active=bool(data.get('is_active', True)),
         )
         resp_data = {

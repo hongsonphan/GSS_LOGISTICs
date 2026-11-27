@@ -145,20 +145,20 @@ for ptype, prefix in PARTNER_PREFIX_MAP.items():
                 sc.save()
         seq += 1
 
-# Rà soát Supplier riêng nếu có
+# Rà soát Nhà cung cấp của khách hàng / Shipper (SHP)
 suppliers = Supplier.all_objects.all().order_by('id')
-spl_seq = 1
+shp_seq = 1
 for spl in suppliers:
-    expected_code = f"SPL{spl_seq:03d}"
+    expected_code = f"SHP{shp_seq:03d}"
     expected_name = clean_str(spl.name)
     if spl.code != expected_code or spl.name != expected_name:
-        print(f"  [Supplier #{spl.id}] Mã: '{spl.code}' ➔ '{expected_code}' | Tên: '{spl.name}' ➔ '{expected_name}'")
+        print(f"  [Shipper #{spl.id}] Mã: '{spl.code}' ➔ '{expected_code}' | Tên: '{spl.name}' ➔ '{expected_name}'")
         total_changes += 1
         if not DRY_RUN:
             spl.code = expected_code
             spl.name = expected_name
             spl.save()
-        spl_seq += 1
+    shp_seq += 1
 
 # ---------------------------------------------------------
 # 4. NHÂN SỰ & TÀI XẾ (EMPLOYEE)
