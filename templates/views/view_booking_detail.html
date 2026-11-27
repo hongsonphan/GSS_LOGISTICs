@@ -85,7 +85,7 @@
                         </div>
                     </div>
 
-                    <!-- Hàng 2 (5 Cột): Nhà Cung Cấp (NCC) | Hãng Tàu | Tên Tàu & Chuyến | Cảng Xuất | Cảng Nhận -->
+                    <!-- Hàng 2 (4 Cột Đều Nhau 3-3-3-3): Nhà Cung Cấp (NCC) | Hãng Tàu | Cảng Xuất (POL) | Cảng Nhận (POD) (Tên Tàu đã bỏ theo yêu cầu) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 pt-1">
                         <!-- Nhà Cung Cấp (NCC / Shipper) (col 3) -->
                         <div class="lg:col-span-3 sm:col-span-6">
@@ -102,8 +102,8 @@
                             </select>
                         </div>
 
-                        <!-- Hãng Tàu (col 2) -->
-                        <div id="fullpage-wrapper-shipping-line" class="lg:col-span-2 sm:col-span-6 transition-all duration-200">
+                        <!-- Hãng Tàu (col 3 - giữ lại theo yêu cầu) -->
+                        <div id="fullpage-wrapper-shipping-line" class="lg:col-span-3 sm:col-span-6 transition-all duration-200">
                             <div class="h-6 flex items-center justify-between mb-1.5">
                                 <label id="fullpage-label-booking-shipping-line" class="block font-bold text-slate-700 text-xs truncate">Hãng Tàu</label>
                                 <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('shipping_lines', 'fullpage-booking-shipping-line')" 
@@ -117,23 +117,11 @@
                             </select>
                         </div>
 
-                        <!-- Tên Tàu & Chuyến (vessel/voy) (col 3) -->
-                        <div class="lg:col-span-3 sm:col-span-6">
-                            <div class="h-6 flex items-center justify-between mb-1.5">
-                                <label class="block font-bold text-slate-700 text-xs truncate">Tên Tàu &amp; Chuyến (vessel/voy)</label>
-                                <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('vessels', 'fullpage-booking-vessel')" 
-                                    class="h-5 px-1.5 text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 rounded border border-teal-200 flex items-center gap-0.5 transition-colors cursor-pointer" title="Thêm Tàu vào Danh Mục">
-                                    + Tạo mới
-                                </button>
-                            </div>
-                            <select id="fullpage-booking-vessel" data-allow-custom="true" data-searchable="true"
-                                class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-medium text-slate-800 text-xs uppercase transition-all">
-                                <option value="">-- Chọn Tàu &amp; Chuyến --</option>
-                            </select>
-                        </div>
+                        <!-- Tên Tàu & Chuyến đã bỏ, ẩn input giữ tương thích JS -->
+                        <input type="hidden" id="fullpage-booking-vessel" value="">
 
-                        <!-- Cảng Xuất (Nước ngoài / POL) (col 2) -->
-                        <div class="lg:col-span-2 sm:col-span-6">
+                        <!-- Cảng Xuất (Nước ngoài / POL) (col 3) -->
+                        <div class="lg:col-span-3 sm:col-span-6">
                             <div class="h-6 flex items-center justify-between mb-1.5">
                                 <label class="block font-bold text-slate-700 text-xs truncate">Cảng Xuất (POL)</label>
                                 <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('pol_ports', 'fullpage-booking-port-loading')" 
@@ -147,8 +135,8 @@
                             </select>
                         </div>
 
-                        <!-- Cảng Nhận Hàng (Cảng Nhập / POD) (col 2) -->
-                        <div class="lg:col-span-2 sm:col-span-6">
+                        <!-- Cảng Nhận Hàng (Cảng Nhập / POD) (col 3) -->
+                        <div class="lg:col-span-3 sm:col-span-6">
                             <div class="h-6 flex items-center justify-between mb-1.5">
                                 <label class="block font-bold text-slate-700 text-xs truncate">Cảng Nhận Hàng (POD)</label>
                                 <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('locations', 'fullpage-booking-port-discharge')" 
@@ -187,41 +175,56 @@
                                             <button type="button" onclick="selectAllBookingContainerSizes('fullpage-', false)" class="text-rose-500 hover:text-rose-700 font-bold cursor-pointer">Xóa hết</button>
                                         </div>
                                     </div>
-                                    <div class="max-h-56 overflow-y-auto space-y-1 py-0.5 custom-scrollbar">
+                                    <div id="fullpage-booking-container-size-list" class="max-h-56 overflow-y-auto space-y-1 py-0.5 custom-scrollbar">
                                         <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
                                             <input type="checkbox" name="fullpage-cont-size-cb" value="20GP" checked onchange="onBookingContainerSizeChange('fullpage-')"
                                                 class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                            <span class="font-bold">Cont 20GP</span> <span class="text-slate-500 text-[11px]">(Thường)</span>
-                                        </label>
-                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
-                                            <input type="checkbox" name="fullpage-cont-size-cb" value="40HC" onchange="onBookingContainerSizeChange('fullpage-')"
-                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                            <span class="font-bold">Cont 40HC</span> <span class="text-slate-500 text-[11px]">(Cao 9ft6)</span>
-                                        </label>
-                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
-                                            <input type="checkbox" name="fullpage-cont-size-cb" value="45G1" onchange="onBookingContainerSizeChange('fullpage-')"
-                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                            <span class="font-bold">Cont 45 Feet</span>
+                                            <span class="font-bold">Cont 20GP</span> <span class="text-slate-500 text-[11px]">(20ft Thường)</span>
                                         </label>
                                         <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
                                             <input type="checkbox" name="fullpage-cont-size-cb" value="40GP" onchange="onBookingContainerSizeChange('fullpage-')"
                                                 class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                            <span class="font-bold">Cont 40GP</span> <span class="text-slate-500 text-[11px]">(Thường)</span>
+                                            <span class="font-bold">Cont 40GP</span> <span class="text-slate-500 text-[11px]">(40ft Thường)</span>
                                         </label>
                                         <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
-                                            <input type="checkbox" name="fullpage-cont-size-cb" value="XE_TAI_15T" onchange="onBookingContainerSizeChange('fullpage-')"
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="40HC" onchange="onBookingContainerSizeChange('fullpage-')"
                                                 class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                            <span class="font-bold">Xe Tải 15 Tấn</span>
+                                            <span class="font-bold">Cont 40HC</span> <span class="text-slate-500 text-[11px]">(40ft Cao 9ft6)</span>
                                         </label>
                                         <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
-                                            <input type="checkbox" name="fullpage-cont-size-cb" value="XE_TAI_8T" onchange="onBookingContainerSizeChange('fullpage-')"
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="45HQ" onchange="onBookingContainerSizeChange('fullpage-')"
                                                 class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                            <span class="font-bold">Xe Tải 8 Tấn</span>
+                                            <span class="font-bold">Cont 45HQ</span> <span class="text-slate-500 text-[11px]">(45ft Cao)</span>
                                         </label>
                                         <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
-                                            <input type="checkbox" name="fullpage-cont-size-cb" value="XE_TAI_5T" onchange="onBookingContainerSizeChange('fullpage-')"
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="20RF" onchange="onBookingContainerSizeChange('fullpage-')"
                                                 class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                            <span class="font-bold">Xe Tải 5 Tấn</span>
+                                            <span class="font-bold">Cont 20RF</span> <span class="text-slate-500 text-[11px]">(20ft Lạnh)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="40RF" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Cont 40RF</span> <span class="text-slate-500 text-[11px]">(40ft Lạnh)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="20FR" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Cont 20FR</span> <span class="text-slate-500 text-[11px]">(20ft Flat Rack)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="40FR" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Cont 40FR</span> <span class="text-slate-500 text-[11px]">(40ft Flat Rack)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="20OT" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Cont 20OT</span> <span class="text-slate-500 text-[11px]">(20ft Open Top)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2.5 px-2 py-1.5 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                            <input type="checkbox" name="fullpage-cont-size-cb" value="40OT" onchange="onBookingContainerSizeChange('fullpage-')"
+                                                class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                            <span class="font-bold">Cont 40OT</span> <span class="text-slate-500 text-[11px]">(40ft Open Top)</span>
                                         </label>
                                     </div>
                                     <div class="pt-2 border-t border-slate-100 flex justify-end">
@@ -317,13 +320,13 @@
                         <!-- 2. Kho Rút Hàng -->
                         <div id="fullpage-wrapper-booking-delivery">
                             <div class="h-6 flex items-center justify-between mb-1.5">
-                                <label id="fullpage-label-booking-delivery" class="block font-bold text-amber-900 text-xs truncate">2. Điểm Đóng / Rút Hàng (Kho Khách) <span class="text-rose-500">*</span></label>
+                                <label id="fullpage-label-booking-delivery" class="block font-bold text-amber-900 text-xs truncate">2. Điểm Đóng / Rút Hàng (Kho Khách)</label>
                                 <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('locations', 'fullpage-booking-delivery')" 
                                     class="h-5 px-2 text-[10.5px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 rounded border border-amber-200 transition-colors cursor-pointer">
                                     + Tạo mới
                                 </button>
                             </div>
-                            <select id="fullpage-booking-delivery" required 
+                            <select id="fullpage-booking-delivery" 
                                 class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
                                 <option value="">-- CHỌN KHO KHÁCH HÀNG --</option>
                             </select>
@@ -332,13 +335,13 @@
                         <!-- 3. Depot Trả Rỗng -->
                         <div id="fullpage-wrapper-booking-dropoff">
                             <div class="h-6 flex items-center justify-between mb-1.5">
-                                <label id="fullpage-label-booking-dropoff" class="block font-bold text-emerald-900 text-xs truncate">3. Điểm Hạ / Trả Rỗng (Depot) <span class="text-rose-500">*</span></label>
+                                <label id="fullpage-label-booking-dropoff" class="block font-bold text-emerald-900 text-xs truncate">3. Điểm Hạ / Trả Rỗng (Depot)</label>
                                 <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('locations', 'fullpage-booking-dropoff')" 
                                     class="h-5 px-2 text-[10.5px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 rounded border border-emerald-200 transition-colors cursor-pointer">
                                     + Tạo mới
                                 </button>
                             </div>
-                            <select id="fullpage-booking-dropoff" required 
+                            <select id="fullpage-booking-dropoff" 
                                 class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
                                 <option value="">-- CHỌN NƠI HẠ CONT / TRẢ RỖNG --</option>
                             </select>
@@ -359,10 +362,10 @@
                         <!-- Đơn Giá Cước Vận Chuyển -->
                         <div>
                             <div class="h-6 flex items-center mb-1.5">
-                                <label id="fullpage-label-booking-price" class="block font-bold text-slate-700 text-xs truncate">Đơn Giá Cước Vận Chuyển <span class="text-rose-500">*</span></label>
+                                <label id="fullpage-label-booking-price" class="block font-bold text-slate-700 text-xs truncate">Đơn Giá Cước Vận Chuyển</label>
                             </div>
                             <div class="relative h-10">
-                                <input type="text" inputmode="numeric" id="fullpage-booking-price" required value="4.000.000" placeholder="VD: 4.000.000"
+                                <input type="text" inputmode="numeric" id="fullpage-booking-price" value="4.000.000" placeholder="VD: 4.000.000"
                                     oninput="this.classList.remove('border-rose-500', 'bg-rose-50'); const h = document.getElementById('fullpage-booking-price-hint'); if(h) h.classList.add('hidden');"
                                     class="input-number-vn w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white font-mono font-bold text-teal-800 text-xs tabular-nums pr-12">
                                 <span class="absolute right-3 top-2.5 text-slate-400 font-bold text-[11px] pointer-events-none">VNĐ</span>
@@ -643,8 +646,11 @@
                                     <th class="p-2.5 min-w-[125px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortContTableBy('dropoff_loc')" title="Nhấn để sắp xếp theo Nơi Trả Rỗng">
                                         <span class="inline-flex items-center gap-1">NƠI TRẢ RỖNG <i id="sort-icon-dropoff_loc" class="ph-bold ph-arrows-down-up text-[10px] text-slate-400"></i></span>
                                     </th>
-                                    <th class="p-3 min-w-[130px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortContTableBy('dem_expiry')" title="Nhấn để sắp xếp theo Hạn DEM/DET">
-                                        <span class="inline-flex items-center gap-1">HẠN LỆNH DEM/DET <i id="sort-icon-dem_expiry" class="ph-bold ph-arrows-down-up text-[10px] text-slate-400"></i></span>
+                                    <th class="p-3 min-w-[140px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortContTableBy('dem_expiry')" title="Nhấn để sắp xếp theo Hạn DEM">
+                                        <span class="inline-flex items-center gap-1">HẠN DEM <i id="sort-icon-dem_expiry" class="ph-bold ph-arrows-down-up text-[10px] text-slate-400"></i></span>
+                                    </th>
+                                    <th class="p-3 min-w-[140px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortContTableBy('det_expiry')" title="Nhấn để sắp xếp theo Hạn DET">
+                                        <span class="inline-flex items-center gap-1">HẠN DET <i id="sort-icon-det_expiry" class="ph-bold ph-arrows-down-up text-[10px] text-slate-400"></i></span>
                                     </th>
                                     <th class="p-2.5 min-w-[130px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortContTableBy('vendor')" title="Nhấn để sắp xếp theo Nhà Xe (Vendor)">
                                         <span class="inline-flex items-center gap-1">NHÀ XE (DỰ KIẾN) <i id="sort-icon-vendor" class="ph-bold ph-arrows-down-up text-[10px] text-slate-400"></i></span>
@@ -655,6 +661,10 @@
                                     <th class="p-2.5 min-w-[130px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortContTableBy('driver_name')" title="Nhấn để sắp xếp theo Tài Xế">
                                         <span class="inline-flex items-center gap-1">TÀI XẾ <i id="sort-icon-driver_name" class="ph-bold ph-arrows-down-up text-[10px] text-slate-400"></i></span>
                                     </th>
+                                    <th class="p-2.5 min-w-[120px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortContTableBy('invoice_to')" title="Nhấn để sắp xếp theo bên nhận hóa đơn">
+                                        <span class="inline-flex items-center gap-1">HÓA ĐƠN CHO <i id="sort-icon-invoice_to" class="ph-bold ph-arrows-down-up text-[10px] text-slate-400"></i></span>
+                                    </th>
+                                    <th class="p-2.5 min-w-[170px]" title="Ghi chú riêng cho tài xế (vd. cổng vào), đưa vào tin nhắn lệnh điều xe">GHI CHÚ TÀI XẾ</th>
                                     <th class="p-3 min-w-[130px] cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortContTableBy('status')" title="Nhấn để sắp xếp theo Trạng Thái">
                                         <span class="inline-flex items-center gap-1">TRẠNG THÁI <i id="sort-icon-status" class="ph-bold ph-arrows-down-up text-[10px] text-slate-400"></i></span>
                                     </th>
@@ -663,7 +673,7 @@
                             </thead>
                             <tbody id="fullpage-booking-containers-tbody" class="divide-y divide-slate-100 bg-white">
                                 <tr>
-                                    <td colspan="14" class="p-10 text-center text-slate-400 italic">
+                                    <td colspan="17" class="p-10 text-center text-slate-400 italic">
                                         <i class="ph-bold ph-tray text-4xl mb-2 block text-slate-300"></i>
                                         Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Excel"</strong> ở trên để nạp danh sách container.
                                     </td>

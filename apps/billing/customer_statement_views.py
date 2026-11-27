@@ -33,9 +33,14 @@ class CustomerMonthlyStatementAPIView(APIView):
         trip_status = request.GET.get('status', 'ALL')
         vat_rate = request.GET.get('vat_rate', 10)
 
+        cust_qs = Customer.objects.filter(is_deleted=False)
+        company = getattr(request, 'company', None)
+        if company:
+            cust_qs = cust_qs.filter(company=company)
+
         if not customer_id:
             # Fallback lấy khách hàng đầu tiên có phát sinh chuyến
-            first_cust = Customer.objects.filter(is_deleted=False).first()
+            first_cust = cust_qs.first()
             if first_cust:
                 customer_id = first_cust.id
             else:
@@ -43,6 +48,14 @@ class CustomerMonthlyStatementAPIView(APIView):
                     'success': False,
                     'error': 'Vui lòng cung cấp mã hoặc ID khách hàng để lập bảng kê.'
                 }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            cust = cust_qs.filter(id=customer_id).first() if str(customer_id).isdigit() else cust_qs.filter(code=customer_id).first()
+            if not cust:
+                return Response({
+                    'success': False,
+                    'error': 'Khách hàng không tồn tại hoặc không thuộc quyền quản lý của doanh nghiệp.'
+                }, status=status.HTTP_404_NOT_FOUND)
+            customer_id = cust.id
 
         try:
             data = get_customer_monthly_statement_data(
@@ -52,7 +65,8 @@ class CustomerMonthlyStatementAPIView(APIView):
                 from_date=from_date,
                 to_date=to_date,
                 status=trip_status,
-                vat_rate=vat_rate
+                vat_rate=vat_rate,
+                company=company
             )
             return Response({
                 'success': True,
@@ -83,12 +97,22 @@ class CustomerMonthlyStatementExportExcelAPIView(APIView):
         trip_status = request.GET.get('status', 'ALL')
         vat_rate = request.GET.get('vat_rate', 10)
 
+        cust_qs = Customer.objects.filter(is_deleted=False)
+        company = getattr(request, 'company', None)
+        if company:
+            cust_qs = cust_qs.filter(company=company)
+
         if not customer_id:
-            first_cust = Customer.objects.filter(is_deleted=False).first()
+            first_cust = cust_qs.first()
             if first_cust:
                 customer_id = first_cust.id
             else:
                 return Response({'error': 'Chưa chọn khách hàng.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            cust = cust_qs.filter(id=customer_id).first() if str(customer_id).isdigit() else cust_qs.filter(code=customer_id).first()
+            if not cust:
+                return Response({'error': 'Khách hàng không tồn tại hoặc không thuộc quyền quản lý của doanh nghiệp.'}, status=status.HTTP_404_NOT_FOUND)
+            customer_id = cust.id
 
         try:
             statement_data = get_customer_monthly_statement_data(
@@ -98,7 +122,8 @@ class CustomerMonthlyStatementExportExcelAPIView(APIView):
                 from_date=from_date,
                 to_date=to_date,
                 status=trip_status,
-                vat_rate=vat_rate
+                vat_rate=vat_rate,
+                company=company
             )
 
             excel_buffer = export_customer_monthly_statement_excel(statement_data)

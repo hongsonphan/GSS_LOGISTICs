@@ -259,8 +259,9 @@ function renderTasksListTable(tasks) {
                 </div>
             </td>
             <td class="py-3 px-4">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${getStatusBadgeClass(t.status)}">
-                    ${getStatusText(t.status)}
+                <span class="inline-flex items-center gap-1 text-xs font-bold ${t.status === 'DONE' ? 'text-emerald-700' : (t.status === 'REVIEW' ? 'text-amber-700' : (t.status === 'IN_PROGRESS' ? 'text-sky-700' : 'text-slate-600'))}">
+                    <i class="ph-bold ${t.status === 'DONE' ? 'ph-check-circle' : (t.status === 'REVIEW' ? 'ph-hourglass-medium' : (t.status === 'IN_PROGRESS' ? 'ph-play-circle' : 'ph-circle'))}"></i>
+                    <span>${getStatusText(t.status)}</span>
                 </span>
             </td>
             <td class="py-3 px-4 text-center">

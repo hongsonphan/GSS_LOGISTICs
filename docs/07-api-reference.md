@@ -1,8 +1,8 @@
 # GSS LOGISTICS — API REFERENCE (Tài liệu REST API Đầy Đủ)
 ## Interface Architecture & RESTful API Specification
 
-> **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 01/11/2026  
-> **Base URL:** `http://localhost:8085`  
+> **Phiên bản:** v4.8.0 | **Cập nhật lần cuối:** 26/11/2026  
+> **Base URL:** `http://localhost:8086`  
 > **Data Format:** JSON / Multipart Form-Data (Tải tệp $\le 5$MB)  
 > **Kiến trúc:** RESTful API • JWT & Session Authentication • Django REST Framework  
 > **Tiêu chuẩn:** OpenAPI 3.0 / Arc42 Section 6 (Runtime & Interface Architecture)

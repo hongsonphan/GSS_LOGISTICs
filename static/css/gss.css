@@ -200,9 +200,9 @@ body.gss-scope>.topbar img.brand{height:34px;width:auto;flex:0 1 auto;min-width:
 body.gss-scope>main{max-width:720px;margin:0 auto;padding:14px 12px 80px}
 .drawer-bg .drawer,.drawer-bg{font-size:13px}
 @media(max-width:900px){
-  .gss-scope .btn{min-height:42px}
-.gss-scope .btn.sm{min-height:34px}
-  .gss-scope .in{height:42px;font-size:14px}
+  .gss-scope .btn{min-height:44px}
+  .gss-scope .btn.sm{min-height:44px}
+  .gss-scope .in{height:44px;font-size:14px}
   .gss-scope .kpi .v{font-size:24px}
   .gss-subnav{padding:0 8px}
 }

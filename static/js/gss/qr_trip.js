@@ -31,9 +31,13 @@
       var twinMsg = 'Chuyến xe kéo 2 Container (2x20ft): ' + (s.container_number || 'Cont 1') + ' và ' + (s.container_number_2 || 'Cont 2') + '. Bác tài lưu ý chụp đủ chứng từ giao nhận riêng biệt cho từng container tương ứng.';
       frag.append(note('LƯU Ý XE KÉO 2 CONT (2x20ft)', twinMsg));
     }
-    if (s.special_notes) frag.append(note('Ghi chú Điều vận', s.special_notes));
+    var contNote = [s.driver_note, s.vendor_note].filter(Boolean).join(' · ');
+    var hasNote = !!(contNote || s.special_notes || s.destination_notes || s.road_restrictions);
+    if (contNote) { var vn = note('Ghi chú cho cont này', contNote); vn.id = 'ghi-chu'; frag.append(vn); }
+    if (s.special_notes) { var sn = note('Ghi chú Điều vận', s.special_notes); if (!contNote) sn.id = 'ghi-chu'; frag.append(sn); }
     if (s.destination_notes) frag.append(note('Lưu ý điểm đến', s.destination_notes));
     if (s.road_restrictions) frag.append(note('Cấm đường / giờ cấm tải', s.road_restrictions));
+    if (hasNote && !frag.querySelector('#ghi-chu')) { var firstNote = frag.querySelector('.note'); if (firstNote) firstNote.id = 'ghi-chu'; }
     if (s.delivery_opening_hours) frag.append(note('Giờ nhận hàng tại nơi giao', s.delivery_opening_hours));
 
     // 2. Thông tin chuyến
@@ -47,6 +51,15 @@
      ['Seal', s.seal_number], ['Loại cont', s.container_type]].forEach(function (p) { g.append(kv(p[0], p[1])); });
     info.append(g, el('div', 'row'));
     info.lastChild.append(G.demdetPill('DEM', s.dem), G.demdetPill('DET', s.det));
+    if (hasNote) {
+      var jump = el('button', 'btn', 'Xem ghi chú');
+      jump.type = 'button';
+      jump.addEventListener('click', function () {
+        var n = document.getElementById('ghi-chu');
+        if (n) { n.scrollIntoView({ behavior: 'smooth', block: 'center' }); n.style.outline = '3px solid #f59e0b'; setTimeout(function () { n.style.outline = ''; }, 1800); }
+      });
+      info.lastChild.append(jump);
+    }
     frag.append(info);
 
     // 3. Tiến độ

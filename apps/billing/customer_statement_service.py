@@ -113,7 +113,7 @@ def get_system_company_info():
     }
 
 
-def get_customer_monthly_statement_data(customer_id, month=None, year=None, from_date=None, to_date=None, status='ALL', vat_rate=10):
+def get_customer_monthly_statement_data(customer_id, month=None, year=None, from_date=None, to_date=None, status='ALL', vat_rate=10, company=None):
     """
     Trích xuất toàn bộ dữ liệu bảng kê vận chuyển tháng cho khách hàng.
     Trả về cấu trúc 26 cột đúng chuẩn file Excel thực tế của Triển Võ Logistics.
@@ -123,9 +123,13 @@ def get_customer_monthly_statement_data(customer_id, month=None, year=None, from
     except (ValueError, TypeError):
         vat_rate = 10.0
 
-    customer = Customer.objects.filter(id=customer_id, is_deleted=False).first()
+    cust_qs = Customer.objects.filter(is_deleted=False)
+    if company:
+        cust_qs = cust_qs.filter(company=company)
+
+    customer = cust_qs.filter(id=customer_id).first()
     if not customer:
-        customer = Customer.objects.filter(code=customer_id, is_deleted=False).first()
+        customer = cust_qs.filter(code=customer_id).first()
 
     customer_info = {
         'id': customer.id if customer else None,
@@ -181,6 +185,8 @@ def get_customer_monthly_statement_data(customer_id, month=None, year=None, from
 
     # Query chuyến xe
     qs = DispatchTrip.objects.filter(is_deleted=False)
+    if company:
+        qs = qs.filter(company=company)
     if customer:
         qs = qs.filter(customer=customer)
     elif customer_id:

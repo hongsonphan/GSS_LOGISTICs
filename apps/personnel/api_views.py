@@ -402,3 +402,12 @@ class AvailableUsersAPIView(APIView):
                 'assigned_to_name': emp.full_name if is_active_emp else None,
             })
         return Response({'results': data})
+
+
+class EmployeeNextCodeAPIView(APIView):
+    """API lấy mã nhân viên kế tiếp xem trước trên form tạo mới (chuẩn EMP001, EMP002...)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        code = Employee.generate_next_code()
+        return Response({'code': code})

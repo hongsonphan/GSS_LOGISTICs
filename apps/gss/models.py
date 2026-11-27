@@ -79,6 +79,9 @@ class BookingContainer(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     alloc_line_no = models.PositiveIntegerField(null=True, blank=True, help_text='Số dòng trong phiếu nhà xe')
     trip = models.OneToOneField('dispatch.DispatchTrip', on_delete=models.SET_NULL, null=True, blank=True, related_name='booking_container')
     notes = models.CharField(max_length=255, blank=True, default='')
+    INVOICE_TO = [('GPX', 'GPX'), ('CUSTOMER', 'KH'), ('VENDOR', 'Vendor')]
+    invoice_to = models.CharField(max_length=10, choices=INVOICE_TO, blank=True, default='', help_text='Bên nhận hóa đơn của cont này (trống = chưa chọn)')
+    driver_note = models.CharField(max_length=255, blank=True, default='', help_text='Ghi chú riêng cho tài xế (vd. cổng vào); đưa vào tin nhắn lệnh điều xe')
 
     class Meta:
         ordering = ['booking_id', 'line_no']
@@ -201,6 +204,9 @@ class JobCharge(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['trip_id', 'side', 'id']
+        indexes = [
+            models.Index(fields=['trip', 'side']),
+        ]
 
     @property
     def is_reimbursable(self):
@@ -267,7 +273,7 @@ class EInvoice(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         return f'{self.series}/{self.number} – {self.seller_tax_code}'
 
 
-class CostClaim(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+class CostClaim(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Tài xế / nhà xe khai chi phí chi hộ (nâng, hạ...) hoặc phát sinh, kèm ảnh hoá đơn. Kế toán duyệt."""
     PAYERS = [('VENDOR', 'Nhà xe / tài xế nhà xe ứng'), ('COMPANY', 'GSS chi trực tiếp')]
     STATUSES = [('PENDING', 'Chờ duyệt'), ('APPROVED', 'Đã duyệt'), ('REJECTED', 'Từ chối')]
@@ -291,10 +297,10 @@ class CostClaim(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
 
 # ------------------------------------------------------------------ bảng kê đối soát
-class Statement(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+class Statement(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     SIDES = [('CUSTOMER', 'Bảng kê khách hàng'), ('VENDOR', 'Bảng kê nhà xe')]
     STATUSES = [('DRAFT', 'Nháp'), ('LOCKED', 'Đã chốt'), ('CANCELLED', 'Đã huỷ')]
-    code = models.CharField(max_length=30, unique=True)
+    code = models.CharField(max_length=30)
     side = models.CharField(max_length=8, choices=SIDES)
     customer = models.ForeignKey('customers.Customer', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
     subcontractor = models.ForeignKey('master_data.Subcontractor', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
@@ -310,6 +316,9 @@ class Statement(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['company', 'code'], condition=models.Q(is_deleted=False), name='uniq_statement_company_code'),
+        ]
 
     @property
     def party_name(self):
@@ -338,9 +347,9 @@ StatementLine.tenant_path = 'statement__company'
 
 
 # ------------------------------------------------------------------ phiếu giao hàng theo điểm giao
-class DeliveryNote(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
+class DeliveryNote(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Phiếu giao hàng cho một điểm giao (Stop) của B/L: chụp lại nội dung đã in (mẫu + dữ liệu) và bản scan có chữ ký."""
-    code = models.CharField(max_length=30, unique=True)
+    code = models.CharField(max_length=30)
     booking = models.ForeignKey('customers.BookingOrder', on_delete=models.PROTECT, related_name='delivery_notes')
     stop_label = models.CharField(max_length=255)
     delivery_loc = models.ForeignKey('master_data.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
@@ -353,6 +362,9 @@ class DeliveryNote(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['company', 'code'], condition=models.Q(is_deleted=False), name='uniq_deliverynote_company_code'),
+        ]
 
 
 # ------------------------------------------------------------------ hành trình nhiều chặng (đặc tả §4: Leg, TruckRun, RouteTemplate)
@@ -372,7 +384,7 @@ class RouteTemplate(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['code']
-        constraints = [models.UniqueConstraint(fields=['company', 'code'], name='uniq_route_template_code')]
+        constraints = [models.UniqueConstraint(fields=['company', 'code'], condition=models.Q(is_deleted=False), name='uniq_route_template_code')]
 
     def __str__(self):
         return f'{self.code} - {self.name}'
@@ -381,7 +393,7 @@ class RouteTemplate(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 class TruckRun(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     """Một lượt xe (đầu kéo + rơ-moóc + tài xế) chạy một hoặc nhiều chặng; tổng TEU không vượt sức chở rơ-moóc."""
     STATUSES = [('PLANNED', 'Kế hoạch'), ('RUNNING', 'Đang chạy'), ('DONE', 'Hoàn tất'), ('CANCELLED', 'Huỷ')]
-    code = models.CharField(max_length=30, unique=True)
+    code = models.CharField(max_length=30)
     subcontractor = models.ForeignKey('master_data.Party', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
     vehicle = models.ForeignKey('fleet.Vehicle', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
     tractor_plate = models.CharField(max_length=20, blank=True, default='')
@@ -396,6 +408,9 @@ class TruckRun(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteMod
 
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['company', 'code'], condition=models.Q(is_deleted=False), name='uniq_truckrun_company_code'),
+        ]
 
     def __str__(self):
         return self.code

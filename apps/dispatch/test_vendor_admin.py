@@ -113,7 +113,7 @@ class VendorAdminTests(GssBase):
         Subcontractor.objects.create(name='Nhà xe mới', is_carrier=True)
         self.login()
         names = [v['name'] for v in self.client.get(OVERVIEW).json()['data']['vendors']]
-        self.assertIn('Nhà xe mới', names)
+        self.assertIn('NHÀ XE MỚI', names)
 
     def test_vendor_containers_active_filter(self):
         from apps.gss.models import BookingContainer

@@ -331,6 +331,14 @@ class MasterDataFormOptionsAPIView(APIView):
 # ==============================================================================
 # 1. DANH MỤC ĐỊA ĐIỂM / CẢNG / DEPOT / KHO BÃI
 # ==============================================================================
+class LocationNextCodeAPIView(MasterDataBaseAPIView):
+    """API lấy mã địa điểm kế tiếp xem trước (PRT001, ICD001, DPT001, PKG001, WHS001...)."""
+    def get(self, request):
+        location_type = request.GET.get('location_type', LocationType.PORT).strip()
+        code = Location.generate_next_code(location_type)
+        return Response({'code': code, 'location_type': location_type})
+
+
 class LocationListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
@@ -362,18 +370,21 @@ class LocationListCreateAPIView(MasterDataBaseAPIView):
 
     def post(self, request):
         data = request.data
-        code = data.get('code', '').strip().upper()
-        name = data.get('name', '').strip()
-        if not code or not name:
-            return Response({'error': 'Mã và Tên địa điểm không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
+        name = data.get('name', '').strip().upper()
+        if not name:
+            return Response({'error': 'Tên địa điểm không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if Location.objects.filter(code=code).exists():
-            return Response({'error': f'Mã địa điểm [{code}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
+        location_type = data.get('location_type', LocationType.PORT)
+        if location_type not in Location.PREFIX_MAP:
+            location_type = LocationType.PORT
+
+        # Backend Zero-Trust: Bỏ qua code do client gửi lên, luôn tự động sinh theo phân loại
+        code = Location.generate_next_code(location_type)
 
         location = Location.objects.create(
             code=code,
             name=name,
-            location_type=data.get('location_type', LocationType.PORT),
+            location_type=location_type,
             address=data.get('address', '').strip(),
             province=data.get('province', 'TP. Hồ Chí Minh').strip(),
             contact_person=data.get('contact_person', '').strip(),
@@ -386,7 +397,8 @@ class LocationListCreateAPIView(MasterDataBaseAPIView):
         return Response({
             'success': True,
             'message': f'Đã thêm mới địa điểm [{location.name}] thành công!',
-            'id': location.id
+            'id': location.id,
+            'code': location.code
         }, status=status.HTTP_201_CREATED)
 
 class LocationDetailAPIView(MasterDataBaseAPIView):
@@ -396,8 +408,19 @@ class LocationDetailAPIView(MasterDataBaseAPIView):
             return Response({'error': 'Không tìm thấy địa điểm!'}, status=status.HTTP_404_NOT_FOUND)
 
         data = request.data
-        if 'name' in data: location.name = data['name'].strip()
-        if 'location_type' in data: location.location_type = data['location_type']
+        old_type = location.location_type
+        old_code = location.code
+        new_code_generated = False
+
+        # Cơ chế sửa phân loại Master Data & sinh lại mã (Phương án 1)
+        if 'location_type' in data and data['location_type']:
+            new_type = str(data['location_type']).strip()
+            if new_type in Location.PREFIX_MAP and new_type != old_type:
+                location.location_type = new_type
+                location.code = Location.generate_next_code(new_type)
+                new_code_generated = True
+
+        if 'name' in data: location.name = data['name'].strip().upper()
         if 'address' in data: location.address = data['address'].strip()
         if 'province' in data: location.province = data['province'].strip()
         if 'contact_person' in data: location.contact_person = data['contact_person'].strip()
@@ -408,7 +431,20 @@ class LocationDetailAPIView(MasterDataBaseAPIView):
         if 'is_active' in data: location.is_active = bool(data['is_active'])
         location.save()
 
-        return Response({'success': True, 'message': f'Đã cập nhật địa điểm [{location.name}] thành công!'})
+        msg = f'Đã cập nhật địa điểm [{location.name}] thành công!'
+        if new_code_generated:
+            msg += f' (Đã tự động chuyển đổi mã: {old_code} ➔ {location.code})'
+
+        return Response({
+            'success': True,
+            'message': msg,
+            'data': {
+                'id': location.id,
+                'code': location.code,
+                'name': location.name,
+                'location_type': location.location_type
+            }
+        })
 
     def delete(self, request, pk):
         location = Location.objects.filter(id=pk).first()
@@ -589,11 +625,20 @@ class ExpenseItemDetailAPIView(MasterDataBaseAPIView):
 # ==============================================================================
 # 4. DANH MỤC KHÁCH HÀNG (CRUD TẬP TRUNG)
 # ==============================================================================
+class CustomerNextCodeAPIView(MasterDataBaseAPIView):
+    """API lấy mã khách hàng kế tiếp xem trước (chuẩn CUS001, CUS135...)."""
+    def get(self, request):
+        code = Customer.generate_next_code()
+        return Response({'code': code})
+
+
 class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         group_filter = request.GET.get('customer_group', '').strip()
-        qs = Customer.objects.all()
+        qs = Customer.objects.filter(is_deleted=False)
+        if hasattr(request, 'company') and request.company:
+            qs = qs.filter(company=request.company)
         if q:
             qs = qs.filter(
                 Q(code__icontains=q) | 
@@ -637,52 +682,63 @@ class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
 
     def post(self, request):
         data = request.data
-        name = data.get('name', '').strip()
-        short_name = data.get('short_name', '').strip()
-        code = data.get('code', '').strip().upper()
+        name = data.get('name', '').strip().upper()
+        short_name = data.get('short_name', '').strip().upper()
         if not name:
             return Response({'error': 'Tên khách hàng không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
-        if not code:
-            code = f"KH_{Customer.objects.count() + 1:03d}"
 
-        if Customer.objects.filter(code=code).exists():
-            return Response({'error': f'Mã khách hàng [{code}] đã tồn tại!'}, status=status.HTTP_400_BAD_REQUEST)
+        # Backend Zero-Trust: Tự động cấp mã CUSxxx tuần tự, bỏ qua mã client gửi lên
+        code = Customer.generate_next_code()
 
         tax_code = data.get('tax_code', '').strip()
         warning = None
+        company = getattr(request, 'company', None)
         if tax_code:
-            dup_cust = Customer.objects.filter(tax_code__iexact=tax_code).first()
+            dup_qs = Customer.objects.filter(tax_code__iexact=tax_code)
+            if company:
+                dup_qs = dup_qs.filter(company=company)
+            dup_cust = dup_qs.first()
             if dup_cust:
                 warning = f"Cảnh báo: Mã số thuế [{tax_code}] đã được sử dụng cho khách hàng [{dup_cust.name}] ({dup_cust.code})."
 
-        cust = Customer.objects.create(
-            code=code,
-            name=name,
-            short_name=short_name,
-            customer_group=data.get('customer_group', 'COMMERCIAL_TRADING') or 'COMMERCIAL_TRADING',
-            tax_code=tax_code,
-            address=data.get('address', '').strip(),
-            company_email=data.get('company_email', '').strip(),
-            contact_person=data.get('contact_person', '').strip(),
-            contact_title=data.get('contact_title', '').strip(),
-            contact_email=data.get('contact_email', '').strip(),
-            phone=data.get('phone', '').strip(),
-            bank_account_number=data.get('bank_account_number', '').strip(),
-            bank_name=data.get('bank_name', '').strip(),
-            bank_branch=data.get('bank_branch', '').strip(),
-            bank_account_holder=data.get('bank_account_holder', '').strip(),
-            payment_term_days=int(data.get('payment_term_days', 30) or 30),
-            credit_limit=float(data.get('credit_limit', 0) or 0),
-            notes=data.get('notes', '').strip(),
-        )
-        resp_data = {'success': True, 'message': f'Đã thêm khách hàng [{cust.name}] thành công!', 'id': cust.id}
+        create_kwargs = {
+            'code': code,
+            'name': name,
+            'short_name': short_name,
+            'customer_group': data.get('customer_group', 'COMMERCIAL_TRADING') or 'COMMERCIAL_TRADING',
+            'tax_code': tax_code,
+            'address': data.get('address', '').strip(),
+            'company_email': data.get('company_email', '').strip(),
+            'contact_person': data.get('contact_person', '').strip(),
+            'contact_title': data.get('contact_title', '').strip(),
+            'contact_email': data.get('contact_email', '').strip(),
+            'phone': data.get('phone', '').strip(),
+            'bank_account_number': data.get('bank_account_number', '').strip(),
+            'bank_name': data.get('bank_name', '').strip(),
+            'bank_branch': data.get('bank_branch', '').strip(),
+            'bank_account_holder': data.get('bank_account_holder', '').strip(),
+            'payment_term_days': int(data.get('payment_term_days', 30) or 30),
+            'credit_limit': float(data.get('credit_limit', 0) or 0),
+            'notes': data.get('notes', '').strip(),
+        }
+        if company:
+            create_kwargs['company'] = company
+        cust = Customer.objects.create(**create_kwargs)
+
+        resp_data = {'success': True, 'message': f'Đã thêm khách hàng [{cust.name}] thành công!', 'id': cust.id, 'code': cust.code}
         if warning:
             resp_data['warning'] = warning
         return Response(resp_data, status=status.HTTP_201_CREATED)
 
 class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
+    def _get_customer(self, pk, request):
+        qs = Customer.objects.filter(id=pk, is_deleted=False)
+        if hasattr(request, 'company') and request.company:
+            qs = qs.filter(company=request.company)
+        return qs.first()
+
     def get(self, request, pk):
-        cust = Customer.objects.filter(id=pk).first()
+        cust = self._get_customer(pk, request)
         if not cust:
             return Response({'error': 'Không tìm thấy khách hàng!'}, status=status.HTTP_404_NOT_FOUND)
         return Response({
@@ -710,18 +766,22 @@ class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
         })
 
     def put(self, request, pk):
-        cust = Customer.objects.filter(id=pk).first()
+        cust = self._get_customer(pk, request)
         if not cust:
             return Response({'error': 'Không tìm thấy khách hàng!'}, status=status.HTTP_404_NOT_FOUND)
         data = request.data
-        if 'name' in data: cust.name = data['name'].strip()
-        if 'short_name' in data: cust.short_name = data['short_name'].strip()
+        if 'name' in data: cust.name = data['name'].strip().upper()
+        if 'short_name' in data: cust.short_name = data['short_name'].strip().upper()
         if 'customer_group' in data: cust.customer_group = data['customer_group']
         warning = None
+        company = getattr(request, 'company', None)
         if 'tax_code' in data:
             new_tax = data['tax_code'].strip()
             if new_tax:
-                dup_cust = Customer.objects.filter(tax_code__iexact=new_tax).exclude(id=cust.id).first()
+                dup_qs = Customer.objects.filter(tax_code__iexact=new_tax).exclude(id=cust.id)
+                if company:
+                    dup_qs = dup_qs.filter(company=company)
+                dup_cust = dup_qs.first()
                 if dup_cust:
                     warning = f"Cảnh báo: Mã số thuế [{new_tax}] đã được sử dụng cho khách hàng [{dup_cust.name}] ({dup_cust.code})."
             cust.tax_code = new_tax
@@ -753,7 +813,7 @@ class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
         return Response(resp_data)
 
     def delete(self, request, pk):
-        cust = Customer.objects.filter(id=pk).first()
+        cust = self._get_customer(pk, request)
         if not cust:
             return Response({'error': 'Không tìm thấy khách hàng!'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -1751,7 +1811,9 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         partner_type_filter = request.GET.get('partner_type', '').strip()
-        qs = Subcontractor.objects.all()
+        qs = Subcontractor.objects.filter(is_deleted=False)
+        if hasattr(request, 'company') and request.company:
+            qs = qs.filter(company=request.company)
         if partner_type_filter:
             qs = qs.filter(partner_type=partner_type_filter)
         if q:
@@ -1804,25 +1866,32 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
         if not short_name:
             short_name = code
 
-        if Subcontractor.all_objects.filter(code=code).exists():
+        company = getattr(request, 'company', None)
+        chk = Subcontractor.all_objects.filter(code=code)
+        if company:
+            chk = chk.filter(company=company)
+        if chk.exists():
             return Response({'error': f'Mã đối tác [{code}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        sc = Subcontractor.objects.create(
-            partner_type=partner_type,
-            code=code,
-            short_name=short_name,
-            name=name,
-            tax_code=data.get('tax_code', '').strip(),
-            contact_person=data.get('contact_person', '').strip(),
-            phone=data.get('phone', '').strip(),
-            address=data.get('address', '').strip(),
-            yard_address=data.get('yard_address', '').strip(),
-            bank_account_number=data.get('bank_account_number', '').strip(),
-            bank_name=data.get('bank_name', '').strip(),
-            bank_account_holder=data.get('bank_account_holder', '').strip(),
-            notes=data.get('notes', '').strip(),
-            is_active=bool(data.get('is_active', True)),
-        )
+        create_kwargs = {
+            'partner_type': partner_type,
+            'code': code,
+            'short_name': short_name,
+            'name': name,
+            'tax_code': data.get('tax_code', '').strip(),
+            'contact_person': data.get('contact_person', '').strip(),
+            'phone': data.get('phone', '').strip(),
+            'address': data.get('address', '').strip(),
+            'yard_address': data.get('yard_address', '').strip(),
+            'bank_account_number': data.get('bank_account_number', '').strip(),
+            'bank_name': data.get('bank_name', '').strip(),
+            'bank_account_holder': data.get('bank_account_holder', '').strip(),
+            'notes': data.get('notes', '').strip(),
+            'is_active': bool(data.get('is_active', True)),
+        }
+        if company:
+            create_kwargs['company'] = company
+        sc = Subcontractor.objects.create(**create_kwargs)
         return Response({
             'success': True,
             'message': f'Đã thêm đối tác [{sc.name}] thành công!',
@@ -1846,9 +1915,18 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
             }
         }, status=status.HTTP_201_CREATED)
 
+def _get_subcontractor(pk, request):
+    qs = Subcontractor.objects.filter(id=pk, is_deleted=False)
+    if hasattr(request, 'company') and request.company:
+        qs = qs.filter(company=request.company)
+    return qs.first()
+
 class SubcontractorDetailAPIView(MasterDataBaseAPIView):
+    def _get_sc(self, pk, request):
+        return _get_subcontractor(pk, request)
+
     def get(self, request, pk):
-        sc = Subcontractor.objects.filter(id=pk).first()
+        sc = self._get_sc(pk, request)
         if not sc:
             return Response({'error': 'Không tìm thấy đối tác!'}, status=status.HTTP_404_NOT_FOUND)
         return Response({
@@ -1870,14 +1948,24 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
         })
 
     def put(self, request, pk):
-        sc = Subcontractor.objects.filter(id=pk).first()
+        sc = self._get_sc(pk, request)
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
 
         data = request.data
-        if 'partner_type' in data and data['partner_type']: sc.partner_type = str(data['partner_type']).strip()
-        if 'name' in data: sc.name = data['name'].strip()
-        if 'short_name' in data: sc.short_name = data['short_name'].strip()
+        old_type = sc.partner_type
+        old_code = sc.code
+        new_code_generated = False
+
+        if 'partner_type' in data and data['partner_type']:
+            new_type = str(data['partner_type']).strip()
+            if new_type in Subcontractor.PREFIX_MAP and new_type != old_type:
+                sc.partner_type = new_type
+                sc.code = Subcontractor.generate_next_code(new_type)
+                new_code_generated = True
+
+        if 'name' in data: sc.name = data['name'].strip().upper()
+        if 'short_name' in data: sc.short_name = data['short_name'].strip().upper()
         if 'tax_code' in data: sc.tax_code = data['tax_code'].strip()
         if 'contact_person' in data: sc.contact_person = data['contact_person'].strip()
         if 'phone' in data: sc.phone = data['phone'].strip()
@@ -1890,9 +1978,13 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
         if 'is_active' in data: sc.is_active = bool(data['is_active'])
         sc.save()
 
+        msg = f'Đã cập nhật đối tác [{sc.name}] thành công!'
+        if new_code_generated:
+            msg += f' (Đã tự động chuyển đổi mã: {old_code} ➔ {sc.code})'
+
         return Response({
             'success': True,
-            'message': f'Đã cập nhật đối tác [{sc.name}] thành công!',
+            'message': msg,
             'data': {
                 'id': sc.id,
                 'partner_type': sc.partner_type,
@@ -1913,7 +2005,7 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
         })
 
     def delete(self, request, pk):
-        sc = Subcontractor.objects.filter(id=pk).first()
+        sc = self._get_sc(pk, request)
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -1948,7 +2040,7 @@ class SubcontractorFleetAPIView(MasterDataBaseAPIView):
     Dành cho màn hình Điều Vận: Khi chọn 1 Đối tác 3PL, tự động tải xe và tài xế của đối tác đó.
     """
     def get(self, request, pk):
-        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        sc = _get_subcontractor(pk, request)
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -2005,7 +2097,7 @@ class SubcontractorVehicleListCreateAPIView(MasterDataBaseAPIView):
     API Danh sách & Thêm mới Phương tiện thuộc Nhà xe Thầu phụ (Xe Bạn).
     """
     def get(self, request, pk):
-        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        sc = _get_subcontractor(pk, request)
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
         vehicles = Vehicle.objects.filter(subcontractor=sc, is_deleted=False).order_by('license_plate')
@@ -2029,7 +2121,7 @@ class SubcontractorVehicleListCreateAPIView(MasterDataBaseAPIView):
         })
 
     def post(self, request, pk):
-        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        sc = _get_subcontractor(pk, request)
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
         data = request.data
@@ -2085,7 +2177,7 @@ class SubcontractorVehicleDetailAPIView(MasterDataBaseAPIView):
     API Sửa / Gỡ phương tiện khỏi Nhà xe Thầu phụ.
     """
     def put(self, request, pk, vehicle_id):
-        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        sc = _get_subcontractor(pk, request)
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
         veh = Vehicle.objects.filter(id=vehicle_id, subcontractor=sc, is_deleted=False).first()
@@ -2131,7 +2223,7 @@ class SubcontractorVehicleDetailAPIView(MasterDataBaseAPIView):
         return self.put(request, pk, vehicle_id)
 
     def delete(self, request, pk, vehicle_id):
-        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        sc = _get_subcontractor(pk, request)
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
         veh = Vehicle.objects.filter(id=vehicle_id, subcontractor=sc).first()
@@ -2147,7 +2239,7 @@ class SubcontractorDriverListCreateAPIView(MasterDataBaseAPIView):
     API Danh sách & Thêm mới Tài xế trực thuộc một Đơn vị 3PL / Nhà xe Thầu phụ.
     """
     def get(self, request, pk):
-        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        sc = _get_subcontractor(pk, request)
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -2171,7 +2263,7 @@ class SubcontractorDriverListCreateAPIView(MasterDataBaseAPIView):
         })
 
     def post(self, request, pk):
-        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        sc = _get_subcontractor(pk, request)
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -2205,8 +2297,44 @@ class SubcontractorDriverDetailAPIView(MasterDataBaseAPIView):
     """
     API Sửa / Xóa Tài xế Thầu phụ.
     """
+    def _get_driver(self, pk, request):
+        qs = SubcontractorDriver.objects.filter(id=pk, is_deleted=False)
+        if hasattr(request, 'company') and request.company:
+            qs = qs.filter(subcontractor__company=request.company)
+        return qs.first()
+
     def put(self, request, pk):
-        driver = SubcontractorDriver.objects.filter(id=pk, is_deleted=False).first()
+        driver = self._get_driver(pk, request)
+        if not driver:
+            return Response({'error': 'Không tìm thấy tài xế thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'full_name' in data and data['full_name'].strip():
+            driver.full_name = data['full_name'].strip()
+        if 'phone' in data:
+            driver.phone = data['phone'].strip()
+        if 'license_number' in data:
+            driver.license_number = data['license_number'].strip()
+        if 'notes' in data:
+            driver.notes = data['notes'].strip()
+        if 'is_active' in data:
+            driver.is_active = bool(data['is_active'])
+
+        driver.save()
+        return Response({
+            'success': True,
+            'message': f'Đã cập nhật thông tin tài xế [{driver.full_name}]!',
+            'driver': {
+                'id': driver.id,
+                'full_name': driver.full_name,
+                'phone': driver.phone,
+                'license_number': driver.license_number,
+                'is_active': driver.is_active
+            }
+        })
+
+    def delete(self, request, pk):
+        driver = self._get_driver(pk, request)
         if not driver:
             return Response({'error': 'Không tìm thấy tài xế thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
 

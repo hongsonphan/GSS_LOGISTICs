@@ -75,7 +75,7 @@ class RowLevelSecurityTests(TestCase):
 
         res = self._run_as(self.user_b, view)
         self.assertEqual(res.content, b'{"rows": 0}')  # dòng của công ty A không nhìn thấy -> không sửa được
-        self.assertEqual(Customer.all_objects.get(code='RLS_A1').name, 'Khách A')
+        self.assertEqual(Customer.all_objects.get(code='RLS_A1').name, 'KHÁCH A')
 
     def test_disabled_with_tenant_enforce_off(self):
         seen = {}

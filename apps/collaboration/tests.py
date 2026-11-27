@@ -230,7 +230,7 @@ class CollaborationTestSuite(TestCase):
         self.assertEqual(res_create.status_code, 201)
         task_info = res_create.json()['data']
         task_id = task_info['id']
-        self.assertTrue(task_info['code'].startswith('TSK.'))
+        self.assertTrue(task_info['code'].startswith('TK.'))
         self.assertEqual(len(task_info['checklists']), 3)
 
         # 2. Lấy danh sách Kanban

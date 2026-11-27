@@ -22,7 +22,7 @@
 | 9 | Viền trái thẻ KPI | `border-l-4`, màu theo ngữ nghĩa |
 | 10 | Focus ring | `border-teal-600 ring-2 ring-teal-500/20` |
 | 11 | Dropzone hover | `hover:border-teal-500` |
-| 12 | Timeline | 11 bước |
+| 12 | Timeline | 7 bước tập trung GSS (Nhận - Giao - Hạ rỗng) |
 | 13 | Nhãn trạng thái chuyến | Dùng nhãn tiếng Việt ở 3.1 |
 | 14 | Sidebar | **8 mục** theo mục 12.2 (chốt 15/11/2026; không có Hải quan); Bản tin/Giao việc gỡ khỏi Sidebar |
 | 18 | Cỡ chữ `gss.css` | Đã nâng mọi cỡ <12px lên 12px (15/11/2026) |
@@ -447,7 +447,7 @@ Ngân sách đề xuất: JS ban đầu ≤ 600 KB nén, CSS ≤ 100 KB nén, LC
 - Sửa nguồn trong `static/js/src/app/**` rồi chạy `python scripts/build_app_js.py`; sửa class Tailwind thì `python scripts/build_css.py`; kiểm tra bằng `--check` trước khi commit. `static/js/app.js` và `static/css/tailwind*.css` là file tự sinh, không sửa tay.
 - File JS mới phải khai báo trong `static/js/src/app/manifest.txt`.
 - Trước khi đổi/xóa hàm JS, class CSS, component, endpoint: rà soát mọi phân hệ phụ thuộc; giữ nguyên ID DOM và binding JS.
-- Cân bằng thẻ HTML, kiểm tra `node -c static/js/app.js`, chạy test (`python manage.py test apps.dispatch --keepdb`).
+- Cân bằng thẻ HTML, kiểm tra `node -c static/js/app.js`, chạy test (`python scripts/qa.py verify --fast` hoặc `python scripts/qa.py verify`).
 - Xác minh bằng ảnh trên viewport 1440×900 và 1920×1080.
 
 ---

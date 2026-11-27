@@ -148,7 +148,7 @@ function renderCostSheetTable(trip) {
                         <td class="py-2 px-3 border-r border-slate-200/70">
                             <div class="flex items-center space-x-2">
                                 <span class="font-bold text-slate-900 text-[13px]">${item.title}</span>
-                                <span class="inline-flex items-center space-x-1 px-2 py-0.2 rounded-full bg-teal-100 text-teal-900 text-[10.5px] font-bold font-heading hover:bg-teal-200 transition-colors">
+                                <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold font-heading hover:bg-teal-100 transition-colors">
                                     <i class="ph-bold ph-list-numbers"></i>
                                     <span>${matchedExps.length} khoản chi</span>
                                     <i id="icon-toggle-${item.code}" class="ph ph-caret-down text-xs transition-transform duration-200"></i>

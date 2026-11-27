@@ -15,6 +15,8 @@ def _parse_date_safe(val):
     if isinstance(val, (datetime.date, datetime.datetime)):
         return val if isinstance(val, datetime.date) else val.date()
     val_str = str(val).strip()
+    # Nhận "23:59 21/11/2026", "21/11/2026 23:59" hoặc chỉ ngày: bỏ phần giờ (hạn luôn tính đến cuối ngày)
+    val_str = re.sub(r'\b\d{1,2}:\d{2}(:\d{2})?\b', '', val_str).strip()
     for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%Y/%m/%d'):
         try:
             return datetime.datetime.strptime(val_str.split()[0], fmt).date()
@@ -31,6 +33,7 @@ Quy ước phân bổ theo cont (khi B/L có danh sách cont):
 """
 import datetime
 import re
+import secrets
 from collections import OrderedDict
 
 from django.core.exceptions import ValidationError
@@ -198,6 +201,14 @@ def parse_xlsx(fileobj):
     return rows
 
 
+_INVOICE_TO_ALIASES = {'GPX': 'GPX', 'KH': 'CUSTOMER', 'CUSTOMER': 'CUSTOMER', 'VENDOR': 'VENDOR', 'NHAXE': 'VENDOR', 'NHÀXE': 'VENDOR'}
+
+
+def normalize_invoice_to(value):
+    """Bên nhận hóa đơn: GPX | KH (CUSTOMER) | Vendor. Giá trị lạ hoặc trống = chưa chọn."""
+    return _INVOICE_TO_ALIASES.get(re.sub(r'[\s_-]+', '', str(value or '')).upper(), '')
+
+
 def validate_rows(booking, rows):
     """Trả danh sách kết quả từng dòng: {source_line, container_number, ok, errors, warnings, action}."""
     existing = {c.container_number: c for c in BookingContainer.objects.filter(booking=booking, is_deleted=False)}
@@ -216,6 +227,9 @@ def validate_rows(booking, rows):
                'dem_det': str(r.get('dem_det') or '').strip(),
                'dem_expiry': str(r.get('dem_expiry') or r.get('dem_det') or '').strip(),
                'det_expiry': str(r.get('det_expiry') or '').strip(),
+               'separate_deadlines': bool(r.get('separate_deadlines')),
+               'invoice_to': normalize_invoice_to(r.get('invoice_to')),
+               'driver_note': str(r.get('driver_note') or '').strip()[:255],
                'errors': [], 'warnings': [], 'action': 'CREATE'}
         if not _CONT_TOKEN.match(cn):
             res['errors'].append('Số cont phải đúng chuẩn 4 chữ cái + 7 chữ số (VD: MSCU1234565).')
@@ -284,6 +298,11 @@ def import_containers(booking, rows, *, user=None, commit=True, skip_invalid=Fal
         if r.get('delivery_address'):
             c.delivery_address = r['delivery_address']
 
+        if r.get('invoice_to'):
+            c.invoice_to = r['invoice_to']
+        if r.get('driver_note'):
+            c.driver_note = r['driver_note']
+
         # 2. Hạn lệnh DEM / DET (Tách biệt 2 trường độc lập)
         dem_raw = r.get('dem_expiry') or r.get('dem_det')
         det_raw = r.get('det_expiry')
@@ -291,7 +310,7 @@ def import_containers(booking, rows, *, user=None, commit=True, skip_invalid=Fal
         parsed_det = _parse_date_safe(det_raw)
         if parsed_dem:
             c.dem_expiry_override = parsed_dem
-            if not parsed_det and not det_raw:
+            if not parsed_det and not det_raw and not r.get('separate_deadlines'):
                 c.det_expiry_override = parsed_dem
         if parsed_det:
             c.det_expiry_override = parsed_det
@@ -545,8 +564,14 @@ def reindex_allocation_lines(alloc):
 
     alloc.allocated_containers = count
     alloc.draft_rows = new_drafts
-    alloc.save(update_fields=['allocated_containers', 'draft_rows', 'updated_at'])
-    vs.refresh_status(alloc)
+    if count == 0 and not alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').exists():
+        alloc.status = vs.AllocationStatus.REVOKED
+        alloc.draft_rows = {}
+        alloc.token_hash = vs.hash_token(secrets.token_urlsafe(32))
+        alloc.save(update_fields=['status', 'allocated_containers', 'draft_rows', 'token_hash', 'updated_at'])
+    else:
+        alloc.save(update_fields=['allocated_containers', 'draft_rows', 'updated_at'])
+        vs.refresh_status(alloc)
 
 
 def _resize_to_lines(alloc):
@@ -616,6 +641,8 @@ def serialize(c):
         'driver_phone': (t.assigned_driver_phone if t else (_extract_note(c.notes, 'SĐT:') or _extract_note(c.notes, 'SDT:') or '')),
         'driver_cccd': driver_cccd,
         'locked': bool(_container_locked_reason(c)), 'notes': c.notes,
+        'invoice_to': c.invoice_to, 'invoice_to_label': c.get_invoice_to_display() if c.invoice_to else '',
+        'driver_note': c.driver_note,
     }
 
 

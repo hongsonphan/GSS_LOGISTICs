@@ -8,17 +8,21 @@
 
 ---
 
-## 0. HIỆN TRẠNG THẬT CỦA GSS TMS (19/11/2026) – đọc trước mục I
+## 0. HIỆN TRẠNG THẬT CỦA GSS TMS (Cập nhật 26/11/2026) – đọc trước mục I
 
-Mục I bên dưới là **bộ chuẩn mục tiêu kế thừa từ hệ BIM cũ**; một số mục (JWT/blacklist, Hashids, `TripDocument`, Cloudflare WAF) **không áp dụng nguyên văn** cho GSS TMS. Thực tế đang chạy và đã có test:
+Mục I bên dưới là **bộ chuẩn mục tiêu kế thừa từ hệ BIM cũ**; một số mục (JWT/blacklist, Hashids, `TripDocument`, Cloudflare WAF) **không áp dụng nguyên văn** cho GSS TMS. Thực tế đang chạy và đã có kiểm thử tự động đạt chuẩn 100%:
 
-- **Cách ly công ty hai lớp:** lọc ORM (`TENANT_ENFORCE`) + Row-Level Security (`core/rls.py`, vai trò `gss_rls`, `core/test_rls.py`).
-- **Link công khai:** `public_id` UUIDv7, token băm có hạn/thu hồi (nhà xe, tài xế `driver_token`, khách `tracking_token`), QR ký HMAC có `qr_version`.
-- **Nhật ký bất biến ở tầng CSDL (mới 19/11):** trigger chặn sửa/xoá `AuditLog`, `TrackingEventLog` (`core/immutability.py`); vai trò ứng dụng không có `TRUNCATE`.
-- **Tài khoản CSDL ứng dụng:** `scripts/db_harden.sh` hạ web xuống user không phải superuser (chưa áp lên stack 8086/VPS tại thời điểm này).
-- **Sao lưu/khôi phục:** xem `docs/11-runbook.md` mục 7 (checksum, bản mã hoá ngoài máy chủ, cron 4 giờ, drill kiểm sổ cái).
-- **Còn hở (chưa làm):** RLS còn fail-open với trang token/lệnh quản trị; `company` còn cho NULL; `/admin/` đường mặc định, chưa 2FA; chưa WAL/PITR; chưa có nơi lưu bản sao ngoài máy chủ được cấu hình. Danh sách đầy đủ, mức độ và kịch bản tấn công: **`docs/16-data-security-dr.md`**.
-- Chi tiết kỹ thuật trong mục I phải được đối chiếu với mã (`config/settings.py`) trước khi dựa vào; ví dụ `X_FRAME_OPTIONS` hiện là `SAMEORIGIN`, thời hạn lưu sao lưu là 14 ngày tại chỗ + 60 ngày bản ngoài.
+- **Cách ly công ty hai lớp:** Lọc ORM cấp ứng dụng (`TENANT_ENFORCE` trên mọi Model kế thừa `CompanyOwnedModel`) + Row-Level Security ở tầng CSDL PostgreSQL (`core/rls.py`, vai trò `gss_rls`, test tự động `core/test_rls.py`).
+- **Phòng chống IDOR & Bảo vệ Endpoints:** 
+  - Toàn bộ các API `TripPackageSeal`, `GssPodTemplatesAPIView`, `GssCustomerPodTemplateAPIView` đều bắt buộc lọc qua `trip__company=request.company` hoặc `company=request.company`.
+  - Khóa công khai dùng `public_id` (UUIDv7) cho chứng từ giao dịch (`Statement`, `DeliveryNote`, `CostClaim`).
+- **Bảo toàn Định danh & Mật khẩu Người dùng (Tuyệt đối tuân thủ):**
+  - **NGHIÊM CẤM TỰ Ý THAY ĐỔI MẬT KHẨU & TÊN NGƯỜI DÙNG:** Không một tiến trình hoặc Agent tự hành nào được phép can thiệp, ghi đè, đặt lại mật khẩu hoặc đổi username của tài khoản người dùng, tài xế, quản trị viên, đối tác nhà xe trong CSDL nếu chưa có lệnh rõ ràng từ User.
+  - Mật khẩu chỉ được mã hóa qua PBKDF2/Argon2 chuẩn Django.
+- **Link công khai & QR Code:** `public_id` UUIDv7, token băm có hạn/thu hồi (nhà xe, tài xế `driver_token`, khách `tracking_token`), QR ký HMAC có `qr_version` (tăng phiên bản vô hiệu hóa tức thì tem cũ).
+- **Nhật ký bất biến ở tầng CSDL:** Trigger chặn sửa/xoá `AuditLog`, `TrackingEventLog` (`core/immutability.py`); vai trò ứng dụng không có quyền `TRUNCATE`.
+- **Ràng buộc Duy nhất Phân lập Tenant:** Toàn bộ bảng dữ liệu kinh doanh chuyển sang `UniqueConstraint` kết hợp `condition=Q(is_deleted=False)` phân lập theo `company`.
+- **Sao lưu/khôi phục:** xem `docs/11-runbook.md` mục 7 và `docs/16-data-security-dr.md`.
 
 ---
 

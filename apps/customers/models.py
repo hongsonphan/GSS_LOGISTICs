@@ -10,8 +10,21 @@ class Customer(Party):
         proxy = True
         ordering = ['name']
 
+    @classmethod
+    def generate_next_code(cls):
+        """Sinh mã khách hàng tự động theo chuẩn BIM LOGISTICS: CUS001, CUS135..."""
+        return Party.generate_next_code('CUS')
+
     def save(self, *args, **kwargs):
         self.is_customer = True
+        if self.name:
+            self.name = self.name.strip().upper()
+        if self.short_name:
+            self.short_name = self.short_name.strip().upper()
+        if not self.code or not str(self.code).strip():
+            self.code = self.generate_next_code()
+        else:
+            self.code = str(self.code).strip().upper()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -299,7 +312,7 @@ class BookingOrder(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     # Lộ trình 3 điểm
     pickup_location = models.CharField(max_length=150, help_text="1. Nơi cấp rỗng / bãi lấy cont")
-    delivery_location = models.CharField(max_length=150, help_text="2. Nơi đóng / dỡ hàng (Kho khách)")
+    delivery_location = models.CharField(max_length=150, blank=True, default='', help_text="2. Nơi đóng / dỡ hàng (Kho khách)")
     dropoff_location = models.CharField(max_length=150, blank=True, help_text="3. Nơi hạ bãi / cảng xuất / trả rỗng")
     
     # FK chuẩn hoá quan hệ tới Master Data Location (Sprint 1)

@@ -18,9 +18,9 @@
 | 3 | Đổi `DispatchTrip` → `TransportJob`, bỏ máy 11 bước cũ (`core.workflows`, `TripStatus`) sau khi report/sổ cái chuyển sang máy 7 bước | `apps/dispatch/models.py`, `gss_workflow.py` (`LEGACY_STATUS`), `reports_api.py`, `apps/ledger/posting.py` | dispatch-ops → billing → report-designer | Vừa |
 | 4 | `StoredFile`/`DocumentLink` tách bảng; `CargoItem`/`Stop`/`DeliveryDrop` (GĐ4) | `apps/documents`, `apps/gss` | backend, dispatch-ops | Nhẹ |
 | 6 | Phân loại 51 chỗ `.delete()` ngoài test: bảng phụ thì ghi chú, bảng pháp lý thì chuyển sang xóa mềm | `qa.py audit` mục bảo mật (vd. `apps/billing/settlement_voucher_views.py:509`) | security (rà) → backend/billing (sửa) | Vừa |
-| 7 | Template lệch thẻ `<div>` (mở 363/đóng 362) – kiểm có phải lỗi thật | `templates/views/view_trip_detail.html` | ui-ux | Vừa |
-| 8 | Badge/pill trong bảng – đổi sang chữ màu + icon | `reports-center.js:603`, `settlement-voucher.js:665`, `tasks-board.js:261`, `trip-cost-sheet.js:148`, `opening-balance.js:323`, `reports/finance/report-18.js:47` | ui-ux | Nhẹ |
-| 9 | Tài liệu kế thừa còn mô tả hệ thống cũ (v4.7.x, máy 11 bước, lệnh test `apps.dispatch --keepdb`, tiêu đề "BIM LOGISTICS"): `docs/14-ai-team.md`, `docs/README.md`, `docs/02-operational-workflow.md`, `docs/03-features.md`, `docs/10-ui-ux-guidelines.md`. Quy tắc làm việc hiện hành nằm ở `CLAUDE.md` + `14-ai-team.md` | `docs/` | docs | Nhẹ |
+| 7 | [ĐÃ XONG 26/11] Template lệch thẻ `<div>` (mở 363/đóng 362) – đã sửa thiếu ký tự đóng `>` ở thẻ `</div>` dòng 1477 modal reassign driver | `templates/views/view_trip_detail.html` | ui-ux | Đã xong |
+| 8 | [ĐÃ XONG 26/11] Badge/pill trong bảng – đã đổi sang chữ màu + icon phẳng theo chuẩn ERP | `reports-center.js:603`, `settlement-voucher.js:665`, `tasks-board.js:261`, `opening-balance.js:323`, `reports/finance/report-18.js:47` | ui-ux | Đã xong |
+| 9 | [ĐÃ XONG 27/11] Chuẩn hóa toàn diện 16 tệp tài liệu kế thừa (docs/01 đến docs/16) sang chuẩn máy 7 bước GSS, PostgreSQL 16 (loại bỏ hoàn toàn SQLite3, cổng 8000/8085 cũ và lệnh test --keepdb), cập nhật Single Source of Truth | `docs/` | docs | Đã xong |
 | 10 | Chạy `bandit`, `pip-audit` cục bộ (máy hiện chưa cài → `qa.py` báo SKIP; CI có chạy) | `pip install bandit pip-audit` | qa-tester | Nhẹ |
 | 11 | Chạy thử đội AI với 2–3 lệnh thật, chỉnh prompt agent theo kết quả | `.claude/agents/*.md` | Team Leader | Nhẹ |
 | 12 | Xem trình duyệt bằng tài khoản HẠN CHẾ (chỉ Sổ quỹ, chỉ một tab Cài đặt) ở 375px / 768px / desktop: mới kiểm bằng tài khoản quản trị (cây ma trận, tab Nhật ký) và test API | `templates/views/view_accounting.html`, `static/js/src/app/core/access.js` | qa-tester + ui-ux | Vừa |
@@ -33,6 +33,13 @@
 
 ## 3. Nhật ký phiên
 
+- **26/11/2026** – Rà soát toàn diện codebase, cấu trúc dữ liệu, tài liệu docs và thiết lập kiến trúc Sub-Agent tuần tự qua 5 Quality Gates chuẩn quốc tế (`.agents/rules/agentic-pipeline-rules.md`, `docs/14-ai-team.md`). Khởi chạy và hoàn tất kiểm thử thực chiến 5 Sub-Agents chuyên trách:
+  1. Cổng 1 (DB): Chuyển unique toàn bảng sang scoped tenant `UniqueConstraint`, thêm `PublicIdModel` (UUIDv7) cho `Statement`, `DeliveryNote`, `CostClaim`, composite index `JobCharge` (migration `0004`).
+  2. Cổng 2 (Feature): Chặn bypass trạng thái tại `TripDetailAPIView.patch()`, ép 100% qua `gss_workflow.advance()`, đồng bộ `step_status` tại `TripDriverMilestoneAPIView`.
+  3. Cổng 3 (UI/UX): Cắt bỏ 537 dòng code trùng lặp cụm Modal và sửa lỗi thẻ `<div>>` trong `view_trip_detail.html` (285 mở = 285 đóng), phẳng hóa ô bảng ERP trong `trip-cost-sheet.js`, `tasks-board.js`, `settlement-voucher.js`.
+  4. Cổng 4 (Security): Vá 2 lỗ hổng IDOR trên API kiện hàng, lọc tenant mẫu in POD, gắn tenant scope vào `get_trip(code, request)`.
+  5. Cổng 5 (Docs): Cập nhật `02-operational-workflow.md`, `05-architecture.md`, `06-database.md` sang chuẩn máy 7 bước GSS, PostgreSQL 16 (cấm SQLite), chuẩn hóa `CHANGELOG.md` theo Keep a Changelog.
+  6. Verify toàn diện: `scripts/qa.py verify` đạt PASS 7/7 bước XANH TUYỆT ĐỐI trên PostgreSQL QA 5438.
 - **09/11/2026** – Đã làm: dựng đội AI GSS (9 agent, 10 skill) theo mẫu BIM Logistics; thêm `scripts/qa.py` (Postgres tạm 5438); `qa.py audit` trên bản sao mã: test toàn bộ đạt, FAIL còn 1 (mục 2.1), WARN ghi ở mục 2. Đang làm: —. Chưa làm: các mục trên.
 
 ## 4. Rà soát tính năng 09/11/2026 (đối chiếu `01-spec-brd.md`, `13-architecture-decisions.md` §0.0 với mã và bản chạy 8086)

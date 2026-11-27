@@ -9,21 +9,23 @@
 
 ---
 
-## 0. HIỆN TRẠNG SO VỚI MÃ NGUỒN (cập nhật 05/11/2026)
+## 0. HIỆN TRẠNG SO VỚI MÃ NGUỒN (cập nhật 26/11/2026)
 
-Các giai đoạn 0–5 của BRD đã được lập trình. Khi mã nguồn khác BRD, **ưu tiên** [`13-architecture-decisions.md`](13-architecture-decisions.md) §0 (quyết định đã chốt) và [`11-runbook.md`](11-runbook.md). Các điều chỉnh chính so với BRD:
+Các giai đoạn 0–5 của BRD đã được lập trình và chuẩn hóa toàn diện theo các tiêu chuẩn quốc tế. Khi mã nguồn khác BRD, **ưu tiên** [`13-architecture-decisions.md`](13-architecture-decisions.md) §0 (quyết định đã chốt) và [`11-runbook.md`](11-runbook.md). Các điều chỉnh chính so với BRD:
 
 | Nội dung BRD | Thực tế trong mã |
 |:---|:---|
 | `TripPackageSeal`, `DepotContainerMovement`, `DriverNotificationLog` | ✅ Có (apps `qr_tracking`, `depot_yard`, `dispatch`); QR chỉ chứa token ký HMAC, không nhúng dữ liệu |
-| Trạng thái tài xế | `DispatchTrip.step_status` (máy trạng thái riêng, chỉ đi tiến), đồng bộ một chiều sang `TripStatus` cũ |
-| Mở rộng `DispatchTrip` hay tạo mới | Mở rộng `DispatchTrip` (1 dòng điều vận = 1 cont); không tạo `ContainerLeg` |
-| Hạn DEM/DET | Nhập mốc bắt đầu + số ngày miễn phí, hạn tự tính (cho phép ghi đè có lý do) |
-| Vendor Link | Token chỉ lưu băm SHA-256; chuyến chỉ sinh khi nhà xe nhập biển số đầu kéo (dòng chưa đủ lưu nháp) |
-| Gửi tin tài xế | Soạn tin + sao chép + mở Zalo; **chưa** có ZNS/SMS |
-| POD theo khách hàng | Model `PodTemplate` + `Customer.pod_template` |
-| Giao diện GSS | Trang độc lập mobile-first `/gss/`, `/vendor/`, `/q/` (`static/css/gss.css`, `static/js/gss/*`) |
-| Ẩn module theo loại hình | Chặn ở API (`FeatureGateMiddleware`), không chỉ ẩn menu |
+| Trạng thái điều vận & tài xế | ✅ `DispatchTrip.step_status` (máy 7 bước GSS), đồng bộ 2 chiều sang `TripStatus`; chặn 100% bypass qua API |
+| Định danh công khai chứng từ | ✅ `PublicIdModel` (UUIDv7) áp dụng trên `Statement`, `DeliveryNote`, `CostClaim` chống lộ số thứ tự tuần tự |
+| Ràng buộc duy nhất & Xóa mềm | ✅ `UniqueConstraint` kết hợp `condition=Q(is_deleted=False)` phân lập theo `company`, không còn unique toàn bảng |
+| Mở rộng `DispatchTrip` hay tạo mới | ✅ Mở rộng `DispatchTrip` (1 dòng điều vận = 1 cont); không tạo `ContainerLeg` |
+| Hạn DEM/DET | ✅ Nhập mốc bắt đầu + số ngày miễn phí, hạn tự tính (cho phép ghi đè có lý do) |
+| Vendor Link | ✅ Token chỉ lưu băm SHA-256; chuyến chỉ sinh khi nhà xe nhập biển số đầu kéo (dòng chưa đủ lưu nháp) |
+| Gửi tin tài xế | ✅ Soạn tin + sao chép + mở Zalo; sẵn sàng lớp cổng `core/messaging.py` kết nối ZNS/SMS |
+| POD theo khách hàng | ✅ Model `PodTemplate` + `Customer.pod_template`, kiểm soát phân quyền tenant |
+| Giao diện ERP phẳng & Tối ưu | ✅ Chuẩn hóa badge ERP phẳng (`rounded-md`), loại bỏ hoàn toàn 537 dòng code HTML nhân đôi modal |
+| Ẩn module theo loại hình | ✅ Chặn ở API (`FeatureGateMiddleware`), không chỉ ẩn menu |
 
 Chưa làm: xem `13-architecture-decisions.md` mục 0.6.
 
@@ -272,7 +274,7 @@ Dự án sử dụng kiến trúc **Modular Monolith trên nền tảng Django 5
 | **Core Backend** | **Python 3.12 & Django 5.2 LTS** | Xử lý logic nghiệp vụ, ORM, phân quyền RBAC, State Machine, Audit Log và quản lý cấu hình gói SaaS (`CompanyProfile`). |
 | **RESTful API** | **Django REST Framework (DRF)** | Cung cấp API tốc độ cao cho Web SPA, Cổng Vendor Magic Link, Cổng Tài xế và Trình quét QR trên di động. |
 | **Authentication** | **SimpleJWT + Session + Magic Token** | Đăng nhập nội bộ bằng JWT/Session; truy cập không mật khẩu (Passwordless) an toàn cho Vendor và Tài xế qua chuỗi băm `token` có kiểm soát thời hạn. |
-| **Database** | **PostgreSQL 16** *(Prod)* / **SQLite3** *(Dev)* | Lưu trữ dữ liệu quan hệ bền vững, hỗ trợ `JSONField` cho cấu hình động `enabled_features` và metadata sự kiện QR. |
+| **Database** | **PostgreSQL 16** *(Dev, Test & Prod)* | Lưu trữ dữ liệu quan hệ bền vững, hỗ trợ Row-Level Security (RLS), `JSONField` cho cấu hình động `enabled_features` và metadata sự kiện QR. Tuyệt đối không dùng SQLite. |
 | **Frontend SPA** | **Modular Vanilla JS (ES6+) + Tailwind CSS** | Chia nhỏ mã nguồn theo từng phân hệ trong `static/js/src/app/`, đóng gói tự động thành `app.js` giúp phản hồi tức thì không cần tải lại trang. |
 | **QR Code Engine** | **`qrcode` (Python) + `html5-qrcode` & `qrcodejs` (JS)** | Sinh mã QR sắc nét (SVG/PNG) để in tem Cont/Kiện hàng lẻ; quét mã QR trực tiếp bằng Camera điện thoại ngay trên trình duyệt Web (không cần cài App). |
 | **Xử lý File & Ảnh** | **Pillow + Client-side Image Compression** | Xử lý upload đa file (tối đa 10 file/bước), kiểm tra định dạng an toàn (Magic Bytes), tự động nén ảnh chụp từ điện thoại tài xế. |

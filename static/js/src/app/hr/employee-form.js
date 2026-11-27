@@ -126,7 +126,15 @@ function openCreateEmployeePage(updateHistory = true) {
     document.getElementById('emp-edit-id').value = '';
 
     const el = id => document.getElementById(id);
-    if (el('emp-code')) el('emp-code').value = '';
+    if (el('emp-code')) {
+        el('emp-code').value = 'Đang tải...';
+        fetchWithAuth('/api/personnel/employees/next-code/')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data && data.code && el('emp-code')) el('emp-code').value = data.code;
+            })
+            .catch(() => { if (el('emp-code')) el('emp-code').value = ''; });
+    }
     if (el('emp-full-name')) el('emp-full-name').value = '';
     if (el('emp-nickname')) el('emp-nickname').value = '';
     if (el('emp-phone')) el('emp-phone').value = '';

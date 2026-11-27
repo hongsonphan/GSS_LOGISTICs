@@ -1,7 +1,7 @@
 # CƠ SỞ DỮ LIỆU GSS TMS
 
-> Gộp từ `06-database.md` (sơ đồ hiện hành sau GĐ0) và `06-database.md` (danh mục bảng kế thừa, **chưa rà soát lại cho GSS** – còn nhắc SQLite, mô hình cũ).
-> Phần A là nguồn đúng; phần B chỉ để tra cứu lịch sử, sửa dần khi rà soát từng phân hệ.
+> Gộp từ sơ đồ hiện hành sau GĐ0 (Phần A) và danh mục bảng chuẩn hóa của GSS TMS (Phần B) trên nền tảng PostgreSQL 16 (Port 5436 Local / Port 5438 QA Test). Tuyệt đối cấm SQLite.
+> Phần A là nguồn đúng; phần B mô tả chi tiết danh mục bảng đã rà soát đồng bộ cho GSS.
 
 ## A. Sơ đồ dữ liệu hiện hành
 
@@ -72,13 +72,13 @@ erDiagram
 
 ---
 
-## B. Phụ lục – danh mục bảng kế thừa (chưa rà soát)
+## B. Phụ lục – danh mục bảng chuẩn hóa GSS TMS
 
 ### Data Layer Architecture & Relational Entity-Relationship Specification
 
-> **Phiên bản:** v4.7.18 | **Cập nhật lần cuối:** 01/11/2026  
-> **Hệ quản trị CSDL:** PostgreSQL 16 (Production) / SQLite3 (Development)  
-> **Mô hình ORM:** Django 4.x ORM • Modular Monolith Architecture  
+> **Phiên bản:** v4.8.0 | **Cập nhật lần cuối:** 26/11/2026  
+> **Hệ quản trị CSDL:** PostgreSQL 16 (Port 5436 Local / Port 5438 QA Test)  
+> **Mô hình ORM:** Django 5.2 ORM • Modular Monolith Architecture • RLS Multi-Tenant  
 > **Tiêu chuẩn:** ISO/IEC/IEEE 42010 & Arc42 Section 8 (Data & Persistence Concept)
 
 ---

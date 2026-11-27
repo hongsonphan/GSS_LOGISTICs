@@ -52,20 +52,22 @@ class BookingAndSettlementEnhancementTestCase(TestCase):
         self.assertEqual(data['price'], 4800000)
         self.assertIn('BG-TEST-2610', data['source'])
 
-    def test_booking_order_requires_price_when_no_quote(self):
-        # Khách hàng mới chưa có báo giá và không gửi selling_freight_price -> HTTP 400
+    def test_booking_order_allows_zero_price_when_no_quote(self):
+        # Đơn giá cho phép nhập sau: khi chưa có báo giá và để trống giá -> vẫn tạo booking thành công với giá 0
         new_cust = Customer.objects.create(name='Khách Hàng Chưa Có Báo Giá', code='KH-NO-QUOTE')
         res = self.client.post('/api/sales/', data={
             'action': 'create_booking',
             'customer': new_cust.name,
-            'booking_number': 'BL-TEST-ERR-PRICE',
+            'booking_number': 'BL-TEST-ZERO-PRICE',
             'total_containers': 1,
             'pickup_location': 'CÁT LÁI',
             'delivery_location': 'ĐỊA ĐIỂM LẠ',
             'selling_freight_price': 0
         })
-        self.assertEqual(res.status_code, 400)
-        self.assertIn('bắt buộc', res.json().get('error', '').lower())
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.json().get('success'))
+        booking = BookingOrder.objects.get(pk=res.json()['booking_id'])
+        self.assertEqual(booking.selling_freight_price, 0)
 
     def test_active_bookings_ordered_by_newest_first(self):
         # Tạo booking 1

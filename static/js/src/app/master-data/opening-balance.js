@@ -320,10 +320,8 @@ function renderOpeningBalanceView() {
                                 <td class="p-3 font-semibold text-slate-800">
                                     ${item.account_name || item.category_display || '-'}
                                 </td>
-                                <td class="p-3 text-center">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-black border bg-slate-100 text-slate-800 border-slate-300">
-                                        ${item.account_code || '1111'}
-                                    </span>
+                                <td class="p-3 text-center font-mono font-bold text-xs text-slate-700">
+                                    ${item.account_code || '1111'}
                                 </td>
                                 <td class="p-3 font-mono font-bold text-blue-900">
                                     ${item.bank_account_number ? (item.bank_account_number + (item.bank_name ? ' (' + item.bank_name + ')' : '')) : '<span class="text-slate-300">—</span>'}

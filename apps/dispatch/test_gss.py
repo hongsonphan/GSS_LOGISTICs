@@ -50,7 +50,7 @@ class GssBase(TestCase):
         self.booking = BookingOrder.objects.create(
             booking_code='BK.1', customer=self.customer, booking_number='BKG1', total_containers=5, pickup_location='CAT LAI',
             delivery_location='KHO A', delivery_loc=self.loc, dem_start_date=datetime.date.today(), free_time_demurrage=7,
-            det_start_date=datetime.date.today(), free_time_detention=7)
+            det_start_date=datetime.date.today(), free_time_detention=7, container_size='40HC')
         self.sub = Subcontractor.objects.create(name='Nhà xe A')
         self.alloc, self.raw = vsvc.create_allocation(self.booking, self.sub, 3)
 
@@ -228,7 +228,7 @@ class MessageAndPodTests(GssBase):
         self.assertNotIn('<h1 onclick', html)
         self.assertNotIn('alert(1)', html)
         self.assertNotIn('javascript:', html)
-        self.assertIn('Khách &lt;b&gt;1&lt;/b&gt;', html)  # dữ liệu khách bị escape
+        self.assertIn('KHÁCH &lt;B&gt;1&lt;/B&gt;', html)  # dữ liệu khách bị escape
         self.assertIn('CSQU3054383', html)
 
     def test_pod_falls_back_to_default_and_includes_swap(self):
@@ -443,6 +443,20 @@ class ApiTests(GssBase):
         r = self.client.post(self.token_url(t, 'step/'), {'to': 'READY', 'force': True, 'reason': 'xxxxxxx'}, content_type='application/json')
         self.assertEqual(r.status_code, 400)
 
+    def test_driver_note_message_and_driver_page(self):
+        from apps.gss.models import BookingContainer
+        t = self.trip()
+        bc = BookingContainer.objects.create(booking=self.booking, company=self.booking.company, line_no=1, container_number=t.container_number,
+                                             driver_note='Vào cổng số 3\ngặp anh Nam', invoice_to='GPX', trip=t)
+        t.vendor_note = 'Xuất HD hạ rỗng'
+        t.save()
+        text = msg.compose_message(t, 'http://x/')
+        self.assertIn('\nGhi chú chung: Cổng 3 · Cấm 6-9h\n', text)  # điểm đến + giờ cấm tải: 1 dòng
+        self.assertIn('\nGhi chú cont: Vào cổng số 3 gặp anh Nam · Xuất HD hạ rỗng\n', text)  # riêng từng cont: 1 dòng
+        info = self.client.get(self.token_url(t)).json()['data']
+        self.assertEqual(info['driver_note'], bc.driver_note)
+        self.assertEqual(info['vendor_note'], 'Xuất HD hạ rỗng')
+
     def test_bad_token_404_and_revoked_by_version(self):
         t = self.trip()
         self.assertEqual(self.client.get('/api/qr/t/T1.AAAAAAAAAAAAAAAA/').status_code, 404)
@@ -590,7 +604,8 @@ class PodTemplateApiTests(GssBase):
         t = self.trip()
         self.assertIn('CSQU3054383', self.client.get(f'/api/gss/trips/{t.trip_code}/pod/').content.decode())
         listing = self.client.get('/api/gss/pod-templates/').json()
-        self.assertEqual(listing['customers'][0]['pod_template_id'], tid)
+        cust_item = next(c for c in listing['customers'] if c['id'] == self.customer.pk)
+        self.assertEqual(cust_item['pod_template_id'], tid)
 
     def test_booking_can_choose_template_via_booking_api(self):
         self.client.force_login(self.staff)

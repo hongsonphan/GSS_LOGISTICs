@@ -487,7 +487,7 @@ class Subcontractor3PLDispatchTestCase(TestCase):
         self.assertEqual(trip.subcontractor_driver, self.drv1)
         self.assertEqual(trip.assigned_driver_name, "Nguyễn Văn A")
         self.assertEqual(trip.assigned_driver_phone, "0901111001")
-        self.assertEqual(trip.carrier_name, "Công ty Vận tải An Phú")
+        self.assertEqual(trip.carrier_name, self.subcontractor.name)
         self.assertEqual(float(trip.subcontractor_cost), 3500000.0)
         self.assertEqual(float(trip.subcontractor_advance), 500000.0)
 
@@ -496,10 +496,10 @@ class Subcontractor3PLDispatchTestCase(TestCase):
         self.assertEqual(res_detail.status_code, 200)
         detail_data = res_detail.json()
         self.assertEqual(detail_data['subcontractor_id'], self.subcontractor.id)
-        self.assertEqual(detail_data['subcontractor_name'], "Công ty Vận tải An Phú")
+        self.assertEqual(detail_data['subcontractor_name'], self.subcontractor.name)
         self.assertEqual(detail_data['subcontractor_driver_name'], "Nguyễn Văn A")
         self.assertEqual(detail_data['subcontractor_driver_phone'], "0901111001")
-        self.assertEqual(detail_data['carrier_name'], "Công ty Vận tải An Phú")
+        self.assertEqual(detail_data['carrier_name'], self.subcontractor.name)
         self.assertEqual(detail_data['subcontractor_cost'], 3500000.0)
 
         # 5. Kiểm tra Báo cáo Công nợ Thầu Phụ (Subcontractor Payables API)
@@ -509,7 +509,7 @@ class Subcontractor3PLDispatchTestCase(TestCase):
         sub_keys = [p['partner_key'] for p in pay_data['by_partner']]
         self.assertIn(f'sub_{self.subcontractor.id}', sub_keys)
         sub_stat = next(p for p in pay_data['by_partner'] if p['partner_key'] == f'sub_{self.subcontractor.id}')
-        self.assertEqual(sub_stat['subcontractor_name'], "Công ty Vận tải An Phú")
+        self.assertEqual(sub_stat['subcontractor_name'], self.subcontractor.name)
         self.assertEqual(sub_stat['total_cost'], 3500000)
         self.assertEqual(sub_stat['total_advance'], 500000)
         self.assertEqual(sub_stat['remaining_payable'], 3000000)

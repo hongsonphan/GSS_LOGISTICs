@@ -660,7 +660,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
 
-            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ' +
+            statusBadge.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading ' +
 
 
 
@@ -1158,7 +1158,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
 
 
 
-                    const statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10.5px] font-bold border ${t.status_badge_class || 'bg-slate-100 text-slate-700'}">${t.status_display || t.status}</span>`;
+                    const statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${t.status_badge_class || 'bg-slate-100 text-slate-700'}">${t.status_display || t.status}</span>`;
 
 
 
@@ -1892,25 +1892,7 @@ async function saveFullpageBooking(e) {
 
 
 
-    if (price <= 0) {
-
-        const priceInput = document.getElementById('fullpage-booking-price');
-
-        if (priceInput) {
-
-            priceInput.focus();
-
-            priceInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-200');
-
-            setTimeout(() => priceInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-200'), 3000);
-
-        }
-
-        showToast('warning', 'Đơn giá cước vận chuyển là bắt buộc và phải lớn hơn 0! Vui lòng nhập giá cước bán.', 'Giá Cước Bắt Buộc');
-
-        return;
-
-    }
+    // Đơn giá cước cho phép nhập sau (mặc định 0 nếu chưa nhập)
 
 
 
@@ -2211,9 +2193,13 @@ async function saveFullpageBooking(e) {
                         gross_weight_kg: c.gross_weight_kg || null,
                         delivery_address: c.delivery_loc || '',
                         dropoff_loc: c.dropoff_loc || '',
-                        dem_det: c.dem_det || '',
+                        dem_expiry: c.dem_expiry || c.dem_det || '',
+                        det_expiry: c.det_expiry || '',
+                        separate_deadlines: true,
                         tractor_plate: c.tractor_plate || '',
-                        driver_name: c.driver_name || ''
+                        driver_name: c.driver_name || '',
+                        invoice_to: c.invoice_to || '',
+                        driver_note: c.driver_note || ''
                     }));
 
                     const cRes = await fetchWithAuth(`/api/gss/bookings/${savedId}/containers/`, {

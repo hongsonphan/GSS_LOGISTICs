@@ -18,6 +18,7 @@
 | | [`08-security.md`](08-security.md) | Chuẩn an ninh và bảo vệ dữ liệu cá nhân | Kế thừa, cần rà lại |
 | | [`09-coding-standards.md`](09-coding-standards.md) | Quy chuẩn lập trình và kiến trúc mã | Kế thừa, cần rà lại |
 | | [`10-ui-ux-guidelines.md`](10-ui-ux-guidelines.md) | Nguyên tắc giao diện; mục 12 là quy định riêng của GSS (ưu tiên hơn khi mâu thuẫn) | Hiện hành |
+| | [`16-data-security-dr.md`](16-data-security-dr.md) | Đánh giá cấu trúc dữ liệu, an ninh & phương án khôi phục thảm họa | Hiện hành |
 | **Vận hành** | [`11-runbook.md`](11-runbook.md) | Chạy local, triển khai, sao lưu, giới hạn đã biết | Hiện hành |
 | | [`15-deployment-guide.md`](15-deployment-guide.md) | Hướng dẫn chi tiết đưa dự án lên GitHub & triển khai VPS | Hiện hành |
 | **Kế hoạch** | [`12-backlog.md`](12-backlog.md) | Việc tồn đọng và câu hỏi chờ quyết (Team Leader đọc đầu mỗi phiên) | Hiện hành |
@@ -25,6 +26,8 @@
 | **Đội AI** | [`14-ai-team.md`](14-ai-team.md) | Sơ đồ đội AI, quy trình phối hợp, nguyên tắc hành vi | Hiện hành |
 | **Rules** | [`.agents/rules/backend-rules.md`](../.agents/rules/backend-rules.md) | Bộ quy tắc lập trình Backend tách biệt (chuẩn bị cho Skill) | Hiện hành |
 | | [`.agents/rules/uiux-rules.md`](../.agents/rules/uiux-rules.md) | Bộ quy tắc thiết kế & kiểm thử UI/UX tách biệt (chuẩn bị cho Skill) | Hiện hành |
+| | [`.agents/rules/agentic-pipeline-rules.md`](../.agents/rules/agentic-pipeline-rules.md) | Quy chuẩn chuỗi Sub-Agent tuần tự qua 5 Cổng Chất Lượng (Quality Gates) | Hiện hành |
+| **Kho tri thức AI** | [`zalo_bot_knowledge/`](zalo_bot_knowledge/) | 15 tệp Markdown tri thức khách hàng phục vụ Zalo Bot / RAG CSKH | Hiện hành |
 | **archive/** | [`archive/`](archive/) | Báo cáo và kế hoạch đã hoàn tất, chỉ để tra cứu | Không sửa nữa |
 
 Bất biến kiến trúc (không xóa cứng, máy trạng thái tập trung, số liệu tài chính khớp tuyệt đối…) ghi ở [`05-architecture.md`](05-architecture.md) và [`../CLAUDE.md`](../CLAUDE.md).

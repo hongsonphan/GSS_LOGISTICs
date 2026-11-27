@@ -11773,8 +11773,13 @@ async function mdoRemoveAllocationRow(btn) {
             const out = await res.json();
             if (res.ok && out.success) {
                 showToast('success', 'Đã thu hồi phân bổ thành công!');
-                tr.remove();
-                mdoRecalcAllocations();
+                if (mdoCurrentBooking && typeof onDispatchOrderBookingChanged === 'function') {
+                    await onDispatchOrderBookingChanged(mdoCurrentBooking.id);
+                } else {
+                    tr.remove();
+                    mdoRecalcAllocations();
+                }
+                if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
             } else {
                 showToast('danger', out.message || 'Không thể thu hồi phân bổ.');
             }
@@ -12535,13 +12540,13 @@ function renderDispatchOrdersTable() {
 
         let statusBadgeHtml = '';
         if (isCompleted) {
-            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200"><i class="ph-bold ph-seal-check"></i> Đã hoàn thành</span>`;
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200"><i class="ph-bold ph-seal-check"></i> Đã hoàn thành</span>`;
         } else if (isDispatched) {
-            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"><i class="ph-bold ph-check-circle"></i> Đã phân bổ đủ</span>`;
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200"><i class="ph-bold ph-check-circle"></i> Đã phân bổ đủ</span>`;
         } else if (allocated > 0) {
-            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"><i class="ph-bold ph-arrows-split"></i> Đang phân bổ</span>`;
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200"><i class="ph-bold ph-arrows-split"></i> Đang phân bổ</span>`;
         } else {
-            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200"><i class="ph-bold ph-clock"></i> Chờ phân bổ</span>`;
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200"><i class="ph-bold ph-clock"></i> Chờ phân bổ</span>`;
         }
 
         html += `
@@ -15706,7 +15711,7 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
                             ` : '<span class="text-slate-400 text-xs">Chưa có chuyến</span>'}
                         </td>
                         <td class="p-3">
-                            <span class="px-2.5 py-1 rounded-full border text-[11px] font-bold ${stCls}">${vaEsc(status)}</span>
+                            <span class="px-2.5 py-1 rounded-md border text-xs font-bold ${stCls}">${vaEsc(status)}</span>
                         </td>
                         <td class="p-3 text-center">
                             <div class="inline-flex items-center gap-1.5 justify-center">
@@ -26415,9 +26420,13 @@ async function saveFullpageBooking(e) {
                         gross_weight_kg: c.gross_weight_kg || null,
                         delivery_address: c.delivery_loc || '',
                         dropoff_loc: c.dropoff_loc || '',
-                        dem_det: c.dem_det || '',
+                        dem_expiry: c.dem_expiry || c.dem_det || '',
+                        det_expiry: c.det_expiry || '',
+                        separate_deadlines: true,
                         tractor_plate: c.tractor_plate || '',
-                        driver_name: c.driver_name || ''
+                        driver_name: c.driver_name || '',
+                        invoice_to: c.invoice_to || '',
+                        driver_note: c.driver_note || ''
                     }));
 
                     const cRes = await fetchWithAuth(`/api/gss/bookings/${savedId}/containers/`, {
@@ -27140,7 +27149,7 @@ function handleContExcelSelected(input) {
                     gross_weight_kg: vgmVal,
                     delivery_loc: delivVal,
                     dropoff_loc: dropVal,
-                    dem_det: demVal,
+                    dem_expiry: demVal,
                     tractor_plate: truckVal,
                     driver_name: driverVal,
                     vendor_id: '',
@@ -27185,10 +27194,13 @@ function collectContainersFromTable() {
         const vgmInp = tr.querySelector('input[data-field="gross_weight_kg"]') || tr.querySelector('input.cont-vgm-input');
         const delivInp = tr.querySelector('input[data-field="delivery_loc"]') || tr.querySelector('input.cont-delivery-input');
         const dropInp = tr.querySelector('input[data-field="dropoff_loc"]') || tr.querySelector('input.cont-dropoff-input');
-        const demInp = tr.querySelector('input[data-field="dem_det"]') || tr.querySelector('input.cont-demdet-input');
+        const demInp = tr.querySelector('input[data-field="dem_expiry"]');
+        const detInp = tr.querySelector('input[data-field="det_expiry"]');
         const vendorSel = tr.querySelector('select[data-field="vendor_id"]') || tr.querySelector('select.cont-vendor-select');
         const truckInp = tr.querySelector('input[data-field="tractor_plate"]') || tr.querySelector('input.cont-truck-input');
         const driverInp = tr.querySelector('input[data-field="driver_name"]') || tr.querySelector('input.cont-driver-input');
+        const invoiceSel = tr.querySelector('select[data-field="invoice_to"]');
+        const driverNoteInp = tr.querySelector('input[data-field="driver_note"]');
 
         if (contInp) {
             const num = (contInp.value || '').trim().toUpperCase();
@@ -27200,10 +27212,13 @@ function collectContainersFromTable() {
                     gross_weight_kg: vgmInp && vgmInp.value ? Number(vgmInp.value) : null,
                     delivery_loc: delivInp ? delivInp.value.trim() : '',
                     dropoff_loc: dropInp ? dropInp.value.trim() : '',
-                    dem_det: demInp ? demInp.value.trim() : '',
+                    dem_expiry: demInp ? demInp.value.trim() : '',
+                    det_expiry: detInp ? detInp.value.trim() : '',
                     vendor_id: vendorSel ? vendorSel.value : '',
                     tractor_plate: truckInp ? (truckInp.value || '').trim().toUpperCase() : '',
                     driver_name: driverInp ? (driverInp.value || '').trim() : '',
+                    invoice_to: invoiceSel ? invoiceSel.value : '',
+                    driver_note: driverNoteInp ? (driverNoteInp.value || '').trim() : '',
                     is_inline_input: true
                 });
             }
@@ -27247,8 +27262,11 @@ function addNewContainerRow() {
         gross_weight_kg: null,
         delivery_loc: deliveryLocText,
         dropoff_loc: dropoffLocText,
-        dem_det: '',
+        dem_expiry: '',
+        det_expiry: '',
         vendor_id: '',
+        invoice_to: '',
+        driver_note: '',
         is_inline_input: true
     });
 
@@ -27264,6 +27282,19 @@ function addNewContainerRow() {
     }, 60);
 }
 window.addNewContainerRow = addNewContainerRow;
+
+// Hạn DEM/DET hiển thị "HH:MM DD/MM/YYYY" (hạn cuối ngày 23:59); ISO yyyy-mm-dd -> 23:59 dd/mm/yyyy
+function formatDeadline(v) {
+    const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `23:59 ${m[3]}/${m[2]}/${m[1]}` : '';
+}
+window.formatDeadline = formatDeadline;
+
+function invoiceToOptions(current) {
+    return [['', '-- Chọn --'], ['GPX', 'GPX'], ['CUSTOMER', 'KH'], ['VENDOR', 'Vendor']]
+        .map(([v, l]) => `<option value="${v}" ${(current || '') === v ? 'selected' : ''}>${l}</option>`).join('');
+}
+window.invoiceToOptions = invoiceToOptions;
 
 function renderStagedBookingContainers() {
     const tbody = document.getElementById('fullpage-booking-containers-tbody');
@@ -27286,7 +27317,7 @@ function renderStagedBookingContainers() {
     if (total === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="13" class="p-8 text-center text-slate-400 italic">
+                <td colspan="16" class="p-8 text-center text-slate-400 italic">
                     <i class="ph-bold ph-tray text-2xl mb-1 block"></i>
                     Chưa có danh sách container cho B/L này. Bấm nút <strong>"+ Thêm Dòng"</strong> hoặc <strong>"Nhập Excel"</strong> để nạp danh sách container.
                 </td>
@@ -27310,7 +27341,6 @@ function renderStagedBookingContainers() {
     tbody.innerHTML = stagedBookingContainers.map((c, idx) => {
         const delivVal = c.delivery_loc !== undefined && c.delivery_loc !== '' ? c.delivery_loc : deliveryLocDefault;
         const dropVal = c.dropoff_loc !== undefined && c.dropoff_loc !== '' ? c.dropoff_loc : dropoffLocDefault;
-        const demVal = c.dem_det || 'Theo B/L';
 
         return `
             <tr class="bg-teal-50/40 hover:bg-teal-50/80 transition-colors">
@@ -27378,13 +27408,20 @@ function renderStagedBookingContainers() {
                         class="cont-dropoff-input w-full h-8 px-2 text-slate-700 font-medium border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
                 </td>
 
-                <!-- 7. Hạn Lệnh DEM/DET (Cho phép gõ) -->
-                <td class="p-1.5 min-w-[130px]">
-                    <input type="text" data-field="dem_det" 
-                        placeholder="Hạn DEM/DET" 
-                        value="${escapeHtml(demVal)}" 
-                        oninput="updateStagedContField(${idx}, 'dem_det', this.value);"
-                        class="cont-demdet-input w-full h-8 px-2 text-slate-700 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                                <!-- 7. Hạn DEM và Hạn DET (2 cột riêng; gõ "23:59 21/11/2026" hoặc "21/11/2026"; trống = theo B/L) -->
+                <td class="p-1.5 min-w-[140px]">
+                    <input type="text" data-field="dem_expiry"
+                        placeholder="Theo B/L (23:59 dd/mm/yyyy)"
+                        value="${escapeHtml(c.dem_expiry || '')}"
+                        oninput="updateStagedContField(${idx}, 'dem_expiry', this.value);"
+                        class="w-full h-8 px-2 text-slate-700 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                </td>
+                <td class="p-1.5 min-w-[140px]">
+                    <input type="text" data-field="det_expiry"
+                        placeholder="Theo B/L (23:59 dd/mm/yyyy)"
+                        value="${escapeHtml(c.det_expiry || '')}"
+                        oninput="updateStagedContField(${idx}, 'det_expiry', this.value);"
+                        class="w-full h-8 px-2 text-slate-700 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
                 </td>
 
                 <!-- 8. Nhà Xe / Vendor (Dropdown) -->
@@ -27412,6 +27449,24 @@ function renderStagedBookingContainers() {
                         value="${escapeHtml(c.driver_name || '')}" 
                         oninput="updateStagedContField(${idx}, 'driver_name', this.value);"
                         class="cont-driver-input w-full h-8 px-2 text-slate-800 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                </td>
+
+                <!-- 11a. Hóa đơn cho (GPX | KH | Vendor) -->
+                <td class="p-1.5 min-w-[110px]">
+                    <select data-field="invoice_to"
+                        onchange="updateStagedContField(${idx}, 'invoice_to', this.value);"
+                        class="w-full h-8 px-1.5 text-slate-700 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
+                        ${invoiceToOptions(c.invoice_to)}
+                    </select>
+                </td>
+
+                <!-- 11b. Ghi chú riêng cho tài xế -->
+                <td class="p-1.5 min-w-[170px]">
+                    <input type="text" data-field="driver_note" maxlength="255"
+                        placeholder="VD: vào cổng số 3"
+                        value="${escapeHtml(c.driver_note || '')}"
+                        oninput="updateStagedContField(${idx}, 'driver_note', this.value);"
+                        class="w-full h-8 px-2 text-slate-800 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
                 </td>
 
                 <!-- 11. Trạng Thái -->
@@ -27503,9 +27558,13 @@ async function submitImportContainers() {
             gross_weight_kg: c.gross_weight_kg || null,
             delivery_address: c.delivery_loc || '',
             dropoff_loc: c.dropoff_loc || '',
-            dem_det: c.dem_det || '',
+            dem_expiry: c.dem_expiry || c.dem_det || '',
+            det_expiry: c.det_expiry || '',
+            separate_deadlines: true,
             tractor_plate: c.tractor_plate || '',
-            driver_name: c.driver_name || ''
+            driver_name: c.driver_name || '',
+            invoice_to: c.invoice_to || '',
+            driver_note: c.driver_note || ''
         }));
 
         const res = await fetchWithAuth(`/api/gss/bookings/${bookingId}/containers/`, {
@@ -27660,7 +27719,7 @@ function renderSavedBookingContainers() {
     if (totalConts === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="14" class="p-10 text-center text-slate-400 italic">
+                <td colspan="17" class="p-10 text-center text-slate-400 italic">
                     <i class="ph-bold ph-tray text-3xl mb-2 block text-slate-300"></i>
                     Chưa có danh sách container cho B/L này. Bấm nút <strong>"Nhập Excel"</strong> hoặc <strong>"+ Thêm Dòng"</strong> ở trên để nạp danh sách container.
                 </td>
@@ -27672,7 +27731,7 @@ function renderSavedBookingContainers() {
     if (filteredBookingContainers.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="14" class="p-10 text-center text-slate-400 italic">
+                <td colspan="17" class="p-10 text-center text-slate-400 italic">
                     <i class="ph-bold ph-funnel-x text-3xl mb-2 block text-slate-300"></i>
                     Không tìm thấy container nào phù hợp với bộ lọc tìm kiếm.
                     <button type="button" onclick="resetContTableFilters()" class="ml-2 text-teal-700 hover:text-teal-900 underline font-bold cursor-pointer">
@@ -27712,23 +27771,8 @@ function renderSavedBookingContainers() {
             }
         }
         
-        let demDet = '-';
-        if (c.dem_expiry || c.det_expiry) {
-            const demStr = c.dem_expiry ? formatDateVN(c.dem_expiry) : '';
-            const detStr = c.det_expiry ? formatDateVN(c.det_expiry) : '';
-            if (demStr && detStr && demStr === detStr) {
-                demDet = `<span class="font-medium text-slate-700">${demStr}</span>`;
-            } else if (demStr && detStr) {
-                demDet = `<span class="font-medium text-slate-700">DEM: ${demStr}</span> · <span class="font-medium text-slate-700">DET: ${detStr}</span>`;
-            } else {
-                demDet = `<span class="font-medium text-slate-700">${demStr || detStr}</span>`;
-            }
-        } else if (c.dem_expiry_override) {
-            demDet = `<span class="font-medium text-slate-700">${formatDateVN(c.dem_expiry_override)}</span>`;
-        } else if (c.notes && c.notes.toLowerCase().includes('hạn:')) {
-            const match = c.notes.match(/hạn:\s*([^|]+)/i);
-            if (match) demDet = `<span class="font-medium text-slate-700">${escapeHtml(match[1].trim())}</span>`;
-        }
+        const demCell = formatDeadline(c.dem_expiry || c.dem_expiry_override) || '-';
+        const detCell = formatDeadline(c.det_expiry || c.det_expiry_override) || '-';
 
         const deliveryCol = c.delivery_address || c.delivery_loc || c.delivery_loc_name || deliveryLocName || '-';
         const dropoffCol = c.dropoff_loc || c.dropoff_loc_name || dropoffLocName || '-';
@@ -27780,8 +27824,13 @@ function renderSavedBookingContainers() {
                         ${escapeHtml(dropoffCol)}
                     </td>
                     <td class="p-1 min-w-[130px]">
-                        <input type="date" id="inline-edit-dem-${c.id}" 
+                        <input type="date" id="inline-edit-dem-${c.id}" title="Hạn DEM (23:59 ngày chọn)"
                             value="${c.dem_expiry ? c.dem_expiry.slice(0, 10) : ''}" 
+                            class="w-full h-8 px-1.5 text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
+                    </td>
+                    <td class="p-1 min-w-[130px]">
+                        <input type="date" id="inline-edit-det-${c.id}" title="Hạn DET (23:59 ngày chọn)"
+                            value="${c.det_expiry ? c.det_expiry.slice(0, 10) : ''}" 
                             class="w-full h-8 px-1.5 text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
                     </td>
                     <td class="p-2 text-slate-700 text-xs">${vendorName}</td>
@@ -27796,6 +27845,18 @@ function renderSavedBookingContainers() {
                         <input type="text" id="inline-edit-driver-${c.id}" 
                             value="${escapeHtml(c.driver_name || '')}" 
                             placeholder="Tài xế & SĐT"
+                            class="w-full h-8 px-2 text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
+                    </td>
+                    <td class="p-1 min-w-[110px]">
+                        <select id="inline-edit-invoice-${c.id}"
+                            class="w-full h-8 px-1.5 text-slate-700 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
+                            ${invoiceToOptions(c.invoice_to)}
+                        </select>
+                    </td>
+                    <td class="p-1 min-w-[170px]">
+                        <input type="text" id="inline-edit-driver-note-${c.id}" maxlength="255"
+                            value="${escapeHtml(c.driver_note || '')}"
+                            placeholder="Ghi chú cho tài xế"
                             class="w-full h-8 px-2 text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
                     </td>
                     <td class="p-2">
@@ -27832,10 +27893,13 @@ function renderSavedBookingContainers() {
                 <td class="p-2.5 text-right font-mono font-bold text-slate-800">${c.gross_weight_kg ? formatVgmKg(c.gross_weight_kg) : '-'}</td>
                 <td class="p-2.5 text-slate-700 font-medium truncate max-w-[120px]" title="${escapeHtml(deliveryCol)}">${escapeHtml(deliveryCol)}</td>
                 <td class="p-2.5 text-slate-700 font-medium truncate max-w-[120px]" title="${escapeHtml(dropoffCol)}">${escapeHtml(dropoffCol)}</td>
-                <td class="p-2.5 text-[11px]">${demDet}</td>
+                <td class="p-2.5 text-[11px] font-medium text-slate-700 whitespace-nowrap">${demCell}</td>
+                <td class="p-2.5 text-[11px] font-medium text-slate-700 whitespace-nowrap">${detCell}</td>
                 <td class="p-2.5 font-bold text-slate-800">${vendorName}</td>
                 <td class="p-2.5 font-mono text-slate-800 font-bold text-xs">${escapeHtml(c.tractor_plate || c.truck_plate || '-')}</td>
                 <td class="p-2.5 text-slate-700 text-xs">${escapeHtml(c.driver_name || '-')}</td>
+                <td class="p-2.5 text-slate-700 text-xs font-bold">${escapeHtml(c.invoice_to_label || '-')}</td>
+                <td class="p-2.5 text-slate-700 text-xs truncate max-w-[170px]" title="${escapeHtml(c.driver_note || '')}">${escapeHtml(c.driver_note || '-')}</td>
                 <td class="p-2.5">${tripDisplay}</td>
                 <td class="p-2.5 text-center whitespace-nowrap">
                     <div class="flex items-center justify-center gap-1">
@@ -28210,6 +28274,14 @@ async function saveSavedContainerRow(contId) {
         payload.gross_weight_kg = Number(vgmInp.value);
     }
     if (delivInp) payload.delivery_address = delivInp.value.trim();
+    const invoiceSel = document.getElementById(`inline-edit-invoice-${contId}`);
+    const driverNoteInp = document.getElementById(`inline-edit-driver-note-${contId}`);
+    if (invoiceSel) payload.invoice_to = invoiceSel.value;
+    if (driverNoteInp) payload.driver_note = driverNoteInp.value.trim();
+    const detInp = document.getElementById(`inline-edit-det-${contId}`);
+    if (detInp && detInp.value) {
+        payload.det_expiry_override = detInp.value;
+    }
     if (demInp && demInp.value) {
         payload.dem_expiry_override = demInp.value;
     }
@@ -31012,10 +31084,10 @@ function renderAccountingTable(list) {
             : (isSettled ? 'hover:bg-slate-50 transition-colors' : 'hover:bg-amber-50/50 bg-amber-50/10 transition-colors');
 
         const settleBadge = isSettled
-            ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1 font-heading">
+            ? `<span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1 font-heading">
                 <i class="ph-bold ph-lock-key"></i> Đã Chốt Sổ
                </span>`
-            : `<span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1 font-heading">
+            : `<span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1 font-heading">
                 <i class="ph-bold ph-clock-countdown"></i> Chờ Chốt Sổ
                </span>`;
 
@@ -42707,12 +42779,12 @@ function renderRolesPermissionsView(data) {
                         <tbody class="divide-y divide-slate-100 font-medium">
                             ${users.map(u => {
                                 const activeBadge = u.is_active 
-                                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoạt động</span>'
-                                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">Đã khóa</span>';
+                                    ? '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoạt động</span>'
+                                    : '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200">Đã khóa</span>';
                                 
                                 const staffBadge = u.is_staff 
-                                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Admin</span>'
-                                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-400">Người dùng</span>';
+                                    ? '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">Admin</span>'
+                                    : '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-50 text-slate-400">Người dùng</span>';
 
                                 return `
                                     <tr class="hover:bg-slate-50/80 transition-colors">
@@ -44656,11 +44728,11 @@ function paintAccountRows() {
         const lvl = a.code.length;
         const chips = biz.map(b => {
             const moved = b.default !== a.code;
-            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold ${moved ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-teal-50 border-teal-200 text-teal-800'}"
+            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-bold ${moved ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-teal-50 border-teal-200 text-teal-800'}"
                 title="${moved ? 'Đã chuyển về đây, mặc định là TK ' + _acctEsc(b.default) : 'Nghiệp vụ mặc định của tài khoản này'}">${_acctEsc(b.label)}${
                 moved && canEdit ? `<button type="button" onclick="removeAccountBiz('${_acctEsc(b.key)}')" class="hover:text-rose-600" title="Trả về tài khoản mặc định ${_acctEsc(b.default)}"><i class="ph-bold ph-x text-[10px]"></i></button>` : ''}</span>`;
         }).join(' ');
-        const addBtn = (isActive && canEdit) ? `<button type="button" onclick="startAddAccountBiz('${_acctEsc(a.code)}', this)" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed border-slate-300 text-[11px] font-bold text-slate-500 hover:border-teal-500 hover:text-teal-700" title="Gắn thêm nghiệp vụ vào tài khoản này"><i class="ph-bold ph-plus text-[10px]"></i> Nghiệp vụ</button>` : '';
+        const addBtn = (isActive && canEdit) ? `<button type="button" onclick="startAddAccountBiz('${_acctEsc(a.code)}', this)" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-dashed border-slate-300 text-xs font-bold text-slate-500 hover:border-teal-500 hover:text-teal-700" title="Gắn thêm nghiệp vụ vào tài khoản này"><i class="ph-bold ph-plus text-[10px]"></i> Nghiệp vụ</button>` : '';
         const canToggle = canEdit && !locked.has(a.code);
         const toggle = `<label class="inline-flex items-center ${canToggle ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}" title="${canToggle ? (isActive ? 'Tắt nếu không dùng' : 'Bật để sử dụng') : 'Đang được dùng (gắn nghiệp vụ hoặc đã có bút toán) nên không tắt được'}">
             <input type="checkbox" class="sr-only peer" ${isActive ? 'checked' : ''} ${canToggle ? '' : 'disabled'} onchange="toggleAccountActive('${_acctEsc(a.code)}', this.checked)">
@@ -51329,9 +51401,9 @@ function renderCustomsTable(list) {
     }
 
     const laneBadges = {
-        'GREEN': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>Luồng Xanh</span>',
-        'YELLOW': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>Luồng Vàng</span>',
-        'RED': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300 inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>Luồng Đỏ</span>',
+        'GREEN': '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>Luồng Xanh</span>',
+        'YELLOW': '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>Luồng Vàng</span>',
+        'RED': '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>Luồng Đỏ</span>',
     };
 
     const statusBadges = {

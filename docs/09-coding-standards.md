@@ -19,7 +19,7 @@ GSS_LOGISTICs/
 ├── core/                  # Nền tảng dùng chung
 │   ├── models/            # BaseModel, TimeStampedModel, SoftDeleteModel
 │   ├── audit/             # ActivityLog, TrackingEventLog
-│   ├── security/          # HashID IDOR prevention, JWT Helper
+│   ├── security/          # Public ID UUIDv7 IDOR prevention, HMAC tokens, JWT Helper
 │   └── workflows/         # State Machine Engine cho đơn vận và chuyến xe
 ├── apps/ (hoặc modules/)
 │   ├── fleet/             # Quản lý phương tiện, thiết bị, bảo dưỡng, tài xế
@@ -197,7 +197,7 @@ Toàn bộ các Form tạo mới, chỉnh sửa (Modal Popup, Full Page Form, Dr
 - Nếu có tác động liên đới, phải cập nhật đồng bộ 100% các điểm phụ thuộc ngay trong cùng một lượt thực thi.
 
 ### 3. Quy Trình Kiểm Thử Hồi Quy Bắt Buộc (Mandatory Regression Testing)
-- **Kiểm thử tự động 100% Passed:** Sau mỗi đợt chỉnh sửa mã nguồn, bắt buộc chạy `python manage.py test --keepdb` để bảo đảm toàn bộ unit test của tất cả các phân hệ đều vượt qua (100% PASS).
+- **Kiểm thử tự động 100% Passed:** Sau mỗi đợt chỉnh sửa mã nguồn, bắt buộc chạy `python scripts/qa.py verify` (hoặc `python manage.py test` với PostgreSQL tạm cổng 5438) để bảo đảm toàn bộ unit test của tất cả các phân hệ đều vượt qua (100% PASS trên PostgreSQL 16).
 - **Kiểm tra cú pháp & Console:** Rà soát kỹ các khối lệnh JavaScript (dấu ngoặc nhọn `{}`, dấu phẩy, cú pháp template Django) để không làm phát sinh lỗi `SyntaxError` làm tê liệt giao diện người dùng.
 
 ---

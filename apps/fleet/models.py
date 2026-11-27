@@ -3,6 +3,38 @@ from django.db import models
 from django.utils import timezone
 from core.models import CompanyOwnedModel, TimeStampedModel, SoftDeleteModel
 
+def normalize_license_plate(plate, is_trailer=False):
+    """
+    Chuẩn hóa biển số xe đầu kéo, xe tải và rơ-moóc theo Thông tư 24/2023/TT-BCA:
+    - Đầu kéo & Xe tải: XX[A-Z]-XXX.XX (VD: 50H-145.61, 60H-142.36, 61C-393.29)
+    - Rơ-moóc: XXRM-XXX.XX hoặc XXR-XXX.XX (VD: 50RM-080.80, 51R-007.22)
+    """
+    if not plate:
+        return ''
+    cleaned = re.sub(r'[^A-Za-z0-9]', '', str(plate)).upper()
+    if not cleaned:
+        return ''
+
+    # Trường hợp Rơ-moóc: XXRM + 5 số hoặc XXR + 5 số
+    match_rm = re.match(r'^(\d{2})(RM)(\d{3})(\d{2})$', cleaned)
+    if match_rm:
+        return f"{match_rm.group(1)}RM-{match_rm.group(3)}.{match_rm.group(4)}"
+    match_r = re.match(r'^(\d{2})(R)(\d{3})(\d{2})$', cleaned)
+    if match_r:
+        return f"{match_r.group(1)}R-{match_r.group(3)}.{match_r.group(4)}"
+
+    # Trường hợp Đầu kéo / Xe tải: XX + 1 chữ cái + 5 số
+    match_truck5 = re.match(r'^(\d{2})([A-Z])(\d{3})(\d{2})$', cleaned)
+    if match_truck5:
+        return f"{match_truck5.group(1)}{match_truck5.group(2)}-{match_truck5.group(3)}.{match_truck5.group(4)}"
+
+    # Trường hợp biển số 4 chữ số cũ: XX + [A-Z] + 4 số
+    match_truck4 = re.match(r'^(\d{2})([A-Z])(\d{4})$', cleaned)
+    if match_truck4:
+        return f"{match_truck4.group(1)}{match_truck4.group(2)}-{match_truck4.group(3)}"
+
+    return str(plate).strip().upper()
+
 def parse_payload_input(val):
     """
     Chuẩn hóa tải trọng theo Sổ Đăng Kiểm Việt Nam (Design / Authorized payload).
@@ -107,6 +139,11 @@ class Vehicle(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     class Meta:
         ordering = ['license_plate']
 
+    def save(self, *args, **kwargs):
+        if self.license_plate:
+            self.license_plate = normalize_license_plate(self.license_plate, is_trailer=False)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.license_plate} ({self.get_vehicle_type_display()})"
 
@@ -149,6 +186,11 @@ class Trailer(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['license_plate']
+
+    def save(self, *args, **kwargs):
+        if self.license_plate:
+            self.license_plate = normalize_license_plate(self.license_plate, is_trailer=True)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Rơ-moóc {self.license_plate} ({self.trailer_type})"

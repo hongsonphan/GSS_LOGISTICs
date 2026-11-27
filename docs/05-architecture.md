@@ -29,7 +29,7 @@ Nền tảng đóng vai trò hạt nhân vận hành của **GSS**, kết nối 
 ### 1.2 Bảng Mục Tiêu Kiến Trúc & Nghiệp Vụ
 | Phân hệ / Bounded Context | Trách nhiệm Kiến trúc cốt lõi | Các chỉ số vận hành chính (KPIs) |
 |---|---|---|
-| **Điều Vận & Chuyến Xe (`dispatch`)** | Máy trạng thái 11 bước, Lộ trình 3 điểm, Cắt kéo (Drop & Hook), Ghép đôi 2 cont 20ft, Cảnh báo Free-time DEM/DET. | Vòng quay đầu xe, Tỷ lệ đúng giờ (OTP $\ge 95\%$), Tỷ lệ xe nhà khai thác ($\ge 80\%$). |
+| **Điều Vận & Chuyến Xe (`dispatch`)** | Máy trạng thái 7 bước tập trung (gss_workflow), Lộ trình chặng/lượt xe, Cắt kéo (Drop & Hook), Ghép đôi 2 cont 20ft, Cảnh báo Free-time DEM/DET. | Vòng quay đầu xe, Tỷ lệ đúng giờ (OTP $\ge 95\%$), Tỷ lệ xe khai thác ($\ge 80\%$). |
 | **Tài Chính & Kế Toán (`billing`)** | Hạch toán Sổ Quỹ Thu - Chi (Mẫu S03a-DN), Bảng kê 8 khoản chi phí phát sinh, Tạm ứng 2 cấp (Quỹ điều vận & Ứng chuyến), Bảng kê AR/AP. | Zero Variance P&L (Sai số 0đ), Thời gian chốt sổ chuyến xe $\le 24$h sau hoàn tất POD. |
 | **Kinh Doanh & CRM (`customers`)** | Báo giá đa phương thức (theo chuyến, bậc thang, điều chỉnh giá dầu DO), Quản lý Booking đơn hàng, Phễu khách hàng. | Tỷ lệ chuyển đổi báo giá thành booking, Doanh thu kế hoạch vs. thực tế. |
 | **Đội Xe & Thiết Bị (`fleet`)** | Quản trị hồ sơ Đầu kéo, Rơ-moóc, kiểm soát hạn đăng kiểm, bảo trì định kỳ, tỷ lệ xe nhà vs. xe thầu phụ 3PL. | Tỷ lệ xe sẵn sàng hoạt động ($\ge 90\%$), Tỷ lệ chạy rỗng một chiều ($\le 25\%$). |
@@ -83,11 +83,11 @@ flowchart TD
         ReverseProxy["🌐 Reverse Proxy (Nginx / Cloudflare)<br/>SSL Termination, Rate Limiting, Security Headers"]
         DjangoApp["⚙️ Django 5.2 Modular Monolith Backend<br/>(Django REST Framework, JWT & Session Auth)<br/>Port: 8086"]
         OCREngine["👁️ OCR AI Vision Subsystem<br/>(Trích xuất số Cont, số Chì từ ảnh chứng từ)"]
-        WorkflowEngine["🔄 State Machine Engine<br/>(core.workflows — Kiểm soát 11 bước bất biến)"]
+        WorkflowEngine["🔄 State Machine Engine<br/>(apps.dispatch.gss_workflow — Máy 7 bước tập trung & chứng từ)"]
     end
 
     subgraph DataLayer["LỚP DỮ LIỆU & LƯU TRỮ (DATA LAYER)"]
-        PostgreSQL[("🐘 PostgreSQL 16 (Docker) / SQLite3 (Dev)<br/>Port: 5436<br/>Relational DB, Soft-Delete, Indexes")]
+        PostgreSQL[("🐘 PostgreSQL 16 (Docker)<br/>Port: 5436 (Local) / 5438 (QA Test)<br/>RLS, Multi-Tenant, Soft-Delete, Indexes")]
         FileStorage["📁 Static & Media File Storage<br/>(Chứng từ PDF/Ảnh POD/EIR $\le 5$MB)"]
     end
 
@@ -134,7 +134,7 @@ e:/GSS_LOGISTICs/
 │   ├── 03-features.md                     # Đặc tả 22 phân hệ tính năng & 25 Django models
 │   ├── 07-api-reference.md                # Tài liệu hợp đồng RESTful API đầy đủ
 │   ├── 06-database.md              # Sơ đồ CSDL, ORM, Core ERD & chiến lược Indexing
-│   ├── 02-operational-workflow.md         # Quy trình điều vận 11 bước, State Machine & Vòng đời chi phí
+│   ├── 02-operational-workflow.md         # Quy trình điều vận 7 bước GSS, State Machine & Vòng đời chi phí
 │   ├── 10-ui-ux-guidelines.md             # Design Tokens GSS & Thang đo Typography 7 bậc
 │   ├── 13-architecture-decisions.md             # Lộ trình TMS nâng cao, ADRs & On-Premise
 │   ├── CHANGELOG.md                    # Nhật ký phát hành phiên bản (SemVer)
@@ -165,7 +165,7 @@ e:/GSS_LOGISTICs/
 2. **Zero Variance Financial Accounting (Chính xác tuyệt đối tài chính):**
    Số liệu P&L chuyến xe và đối soát sổ quỹ luôn bằng tổng đại số chi tiết của từng khoản mục chi phí được duyệt. Mọi thay đổi về chi phí đều tự động cập nhật cache tài chính trên bảng `DispatchTrip` qua Django Signals.
 3. **Deterministic State Machine (Máy trạng thái đơn định):**
-   Vòng đời chuyến xe trải qua 11 bước vận hành được quản lý tập trung qua `core.workflows`, ngăn chặn mọi hành vi nhảy cóc trạng thái trái quy luật vận tải.
+   Vòng đời chuyến xe trải qua 7 bước vận hành GSS được quản lý tập trung qua `apps/dispatch/gss_workflow.py` (READY ➔ ARRIVED_AT_PICKUP ➔ LOADED_ON_VEHICLE ➔ ARRIVED_AT_DELIVERY ➔ UNLOADED ➔ RETURNING_EMPTY ➔ EMPTY_RETURNED), kiểm soát chặt chẽ chứng từ bắt buộc tại các chặng và chặn hoàn toàn bypass ở tầng API. Đồng thời tự động đồng bộ sang trường `status` cũ để bảo toàn tương thích ngược.
 
 ---
 

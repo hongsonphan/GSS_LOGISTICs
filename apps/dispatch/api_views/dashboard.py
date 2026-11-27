@@ -1078,9 +1078,9 @@ class DashboardBGDAPIView(APIView):
         def _format_task_code_3digits(c):
             if not c:
                 return ''
-            m = re.match(r'^TSK[-.](\d{6})[-.]0*(\d+)$', str(c))
+            m = re.match(r'^(TK|TSK)[-.](\d{4,6})[-.]0*(\d+)$', str(c))
             if m:
-                return f"TSK.{m.group(1)}.{int(m.group(2)):03d}"
+                return f"TK.{m.group(2)}.{int(m.group(3)):03d}"
             return str(c)
 
         tasks_list = []

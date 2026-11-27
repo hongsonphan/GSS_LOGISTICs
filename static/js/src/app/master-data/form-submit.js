@@ -248,6 +248,39 @@ async function submitMasterDataForm(e) {
         };
     }
 
+    // Cảnh báo xác nhận khi đổi phân loại Master Data (Phương án 1 - BIM LOGISTICS)
+    if (isEdit && tabKey === 'locations') {
+        const oldType = document.getElementById('mdf-code')?.dataset.initialType;
+        const oldCode = document.getElementById('mdf-code')?.dataset.initialCode;
+        const newType = payload.location_type;
+        const newCode = document.getElementById('mdf-code')?.value;
+        if (oldType && newType && oldType !== newType) {
+            const confirmed = window.confirm(
+                `CẢNH BÁO THAY ĐỔI PHÂN LOẠI ĐỊA ĐIỂM:\n` +
+                `- Phân loại: ${oldType} ➔ ${newType}\n` +
+                `- Mã địa điểm: ${oldCode} ➔ ${newCode}\n\n` +
+                `Toàn bộ chuyến xe, đơn hàng và biểu cước liên kết trước đây vẫn được giữ nguyên vẹn.\n` +
+                `Bạn có chắc chắn muốn lưu thay đổi?`
+            );
+            if (!confirmed) return;
+        }
+    } else if (isEdit && tabKey === 'subcontractors') {
+        const oldType = document.getElementById('mdf-sc-code')?.dataset.initialType;
+        const oldCode = document.getElementById('mdf-sc-code')?.dataset.initialCode;
+        const newType = payload.partner_type;
+        const newCode = document.getElementById('mdf-sc-code')?.value;
+        if (oldType && newType && oldType !== newType) {
+            const confirmed = window.confirm(
+                `CẢNH BÁO THAY ĐỔI PHÂN LOẠI ĐỐI TÁC:\n` +
+                `- Phân loại: ${oldType} ➔ ${newType}\n` +
+                `- Mã đối tác: ${oldCode} ➔ ${newCode}\n\n` +
+                `Toàn bộ chuyến xe, đơn hàng và bảng giá liên kết trước đây vẫn được giữ nguyên vẹn.\n` +
+                `Bạn có chắc chắn muốn lưu thay đổi?`
+            );
+            if (!confirmed) return;
+        }
+    }
+
     try {
         const res = await fetchWithAuth(endpoints[tabKey], {
             method: isEdit ? 'PUT' : 'POST',

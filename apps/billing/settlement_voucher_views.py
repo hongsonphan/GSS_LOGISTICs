@@ -26,7 +26,7 @@ from core.security import GracefulJWTAuthentication
 from core.sequences import next_code
 
 SETTLEMENT_CASH_SUFFIX = '.ĐS'
-PARTY_PREFIX = {'DRIVER': 'QTTX', 'PARTNER': 'QT3PL', 'CUSTOMER': 'QTKH'}
+PARTY_PREFIX = {'DRIVER': 'QTTX', 'PARTNER': 'QT3PL', 'CUSTOMER': 'QTKH', 'DISPATCHER': 'QTDV'}
 CASH_PARTNER = {'DRIVER': 'DRIVER', 'PARTNER': 'SUBCONTRACTOR', 'CUSTOMER': 'CUSTOMER'}
 # Trường trạng thái quyết toán trên chuyến theo từng đối tượng: PENDING -> RECONCILING (Đối soát) -> APPROVED (Duyệt) -> SETTLED (Quyết toán)
 STAGE_FIELD = {'DRIVER': 'driver_settlement_status', 'PARTNER': 'subcontractor_settlement_status', 'CUSTOMER': 'customer_settlement_status'}

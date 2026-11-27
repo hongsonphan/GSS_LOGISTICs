@@ -109,33 +109,13 @@ class Employee(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     @classmethod
     def generate_next_code(cls, role=None, department=None):
         """
-        Quy tắc sinh mã nhân viên tự động:
-        - Tài xế (DRIVER) hoặc Đội xe (FLEET): TX[STT]
-        - Điều độ (DISPATCHER) hoặc Điều vận (DISPATCH): DD[STT]
-        - Kế toán (ACCOUNTANT) hoặc Kế toán tài chính (ACCOUNTING): KT[STT]
-        - Kinh doanh (SALESMAN) hoặc Kinh doanh (SALES): KD[STT]
-        - Kỹ thuật / Cơ khí (MECHANIC): CK[STT]
-        - Ban Giám Đốc (DIRECTOR / MANAGEMENT): BGD[STT]
-        - Khác: NV[STT]
+        Quy tắc sinh mã nhân viên tự động chuẩn hóa BIM LOGISTICS:
+        - Toàn bộ CBNV (kể cả BGĐ, VP, TX) đều dùng chung dải mã EMP001, EMP002...
+        - Định dạng [EMP][STT_3_CHỮ_SỐ] (tăng dần liên tục n+1, không có dấu gạch).
+        - Phân định chức danh Tài xế qua trường thuộc tính role = EmployeeRole.DRIVER.
         """
         import re
-        if role == EmployeeRole.DRIVER or (department in [Department.DISPATCH, Department.FLEET] and role == EmployeeRole.DRIVER):
-            prefix = 'TX'
-        elif role in [EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH, EmployeeRole.DISPATCH_ASST] or department == Department.DISPATCH:
-            prefix = 'DD'
-        elif role in [EmployeeRole.LEAD_ADMIN_ACC, EmployeeRole.STAFF_ADMIN_ACC, EmployeeRole.ACCOUNTANT] or department in [Department.ADMIN_ACC, Department.ACCOUNTING, Department.HR]:
-            prefix = 'KT'
-        elif role in [EmployeeRole.SALESMAN, EmployeeRole.LEAD_SALES, EmployeeRole.CSKH] or department == Department.SALES:
-            prefix = 'KD'
-        elif role in [EmployeeRole.MECHANIC, EmployeeRole.LEAD_MAINT] or department in [Department.MAINTENANCE, Department.FLEET]:
-            prefix = 'BT'
-        elif role in [EmployeeRole.CUSTOMS_STAFF, EmployeeRole.LEAD_CUSTOMS] or department == Department.CUSTOMS:
-            prefix = 'HQ'
-        elif role == EmployeeRole.DIRECTOR or department == Department.MANAGEMENT:
-            prefix = 'BGD'
-        else:
-            prefix = 'NV'
-
+        prefix = 'EMP'
         codes = cls.all_objects.filter(code__startswith=prefix).values_list('code', flat=True)
         max_num = 0
         pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$", re.IGNORECASE)
@@ -152,8 +132,14 @@ class Employee(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         return f"{prefix}{next_num:03d}"
 
     def save(self, *args, **kwargs):
+        if self.full_name:
+            self.full_name = self.full_name.strip().upper()
+        if self.nickname:
+            self.nickname = self.nickname.strip().upper()
         if not self.code or not str(self.code).strip():
             self.code = self.generate_next_code(self.role, self.department)
+        else:
+            self.code = str(self.code).strip().upper()
         super().save(*args, **kwargs)
 
     def delete(self, using=None, keep_parents=False):

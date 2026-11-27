@@ -31,6 +31,43 @@ function formatCurrencyInput(el) {
 }
 window.formatCurrencyInput = formatCurrencyInput;
 
+/**
+ * Chuẩn hóa định dạng biển số xe quốc gia theo Thông tư 24/2023/TT-BCA:
+ * - Đầu kéo & Xe tải: XX[A-Z]-XXX.XX (VD: 50H-145.61, 60H-142.36, 61C-393.29)
+ * - Rơ-moóc: XXRM-XXX.XX hoặc XXR-XXX.XX (VD: 50RM-080.80, 51R-007.22)
+ * Hỗ trợ Smart Input UX: gõ liền không cần gõ dấu gạch hoặc dấu chấm.
+ */
+function formatLicensePlateString(val) {
+    if (!val) return '';
+    const cleaned = String(val).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (!cleaned) return '';
+
+    // Rơ-moóc: XXRM + 5 số (VD: 50RM08080 -> 50RM-080.80)
+    const mRM = cleaned.match(/^(\d{2})(RM)(\d{3})(\d{2})$/);
+    if (mRM) return `${mRM[1]}RM-${mRM[3]}.${mRM[4]}`;
+
+    // Rơ-moóc: XXR + 5 số (VD: 51R00722 -> 51R-007.22)
+    const mR = cleaned.match(/^(\d{2})(R)(\d{3})(\d{2})$/);
+    if (mR) return `${mR[1]}R-${mR[3]}.${mR[4]}`;
+
+    // Đầu kéo & Xe tải: XX + 1 chữ cái + 5 số (VD: 50H14561 -> 50H-145.61)
+    const mTruck5 = cleaned.match(/^(\d{2})([A-Z])(\d{3})(\d{2})$/);
+    if (mTruck5) return `${mTruck5[1]}${mTruck5[2]}-${mTruck5[3]}.${mTruck5[4]}`;
+
+    // Biển số 4 chữ số cũ: XX + 1 chữ cái + 4 số (VD: 51C1234 -> 51C-1234)
+    const mTruck4 = cleaned.match(/^(\d{2})([A-Z])(\d{4})$/);
+    if (mTruck4) return `${mTruck4[1]}${mTruck4[2]}-${mTruck4[3]}`;
+
+    return cleaned;
+}
+
+function formatLicensePlateInput(el) {
+    if (!el) return;
+    el.value = formatLicensePlateString(el.value);
+}
+window.formatLicensePlateString = formatLicensePlateString;
+window.formatLicensePlateInput = formatLicensePlateInput;
+
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     return String(text)

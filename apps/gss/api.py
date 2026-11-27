@@ -213,6 +213,12 @@ class ContainerDetailAPI(Base):
         if 'notes' in d:
             c.notes = str(d.get('notes') or '')[:255]
             fields.append('notes')
+        if 'invoice_to' in d:
+            c.invoice_to = cs.normalize_invoice_to(d.get('invoice_to'))
+            fields.append('invoice_to')
+        if 'driver_note' in d:
+            c.driver_note = str(d.get('driver_note') or '').strip()[:255]
+            fields.append('driver_note')
         if not fields:
             return err('Không có trường nào để cập nhật.')
         c.save(update_fields=fields + ['updated_at'])

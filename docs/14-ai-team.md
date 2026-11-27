@@ -158,6 +158,40 @@ TỒN ĐỌNG / RỦI RO: <việc ngoài phạm vi, lỗi có sẵn, chưa kiể
 | Ép làm Team Leader | `claude --agent team-leader` | Muốn giới hạn chỉ gọi đúng 8 subagent |
 | Mặc định cho repo | Thêm `"agent": "team-leader"` vào `.claude/settings.json` | Khi đã tin cậy cách điều phối |
 | Gọi trực tiếp 1 người | "Dùng subagent `dispatch-ops` để ..." | Việc chắc chắn thuộc một chuyên môn |
+
+## 10. Hệ Thống Sub-Agent Tuần Tự Chuẩn Quốc Tế (Sequential Quality Gates Architecture)
+
+Nhằm đảm bảo quy trình Refactor và Phát triển phần mềm đạt chuẩn công nghiệp quốc tế (ISO/IEC 25010 & Zero Regression), toàn bộ các tác vụ biến đổi lớn trên codebase phải được thực thi tuần tự qua **5 Cổng Chất Lượng (Quality Gates)**:
+
+```mermaid
+flowchart LR
+    G1["Gate 1: Data & Schema<br/>(subagent-db)"] --> G2["Gate 2: Domain Logic<br/>(subagent-feature)"]
+    G2 --> G3["Gate 3: UI/UX & Field<br/>(subagent-uiux)"]
+    G3 --> G4["Gate 4: Security & QA<br/>(subagent-security-qa)"]
+    G4 --> G5["Gate 5: Docs-as-Code<br/>(subagent-docs)"]
+```
+
+### Tiêu chuẩn chi tiết cho từng Cổng:
+1. **Gate 1 - Database & Data Structure (`subagent-db`):**
+   - Đảm bảo tính toàn vẹn schema, 100% bảng nghiệp vụ kế thừa `TenantModel` và `SoftDeleteModel`.
+   - Tuyệt đối không xóa cứng (hard delete) dữ liệu pháp lý; chuyển đổi sang `is_deleted = True`.
+   - Migration phải chạy sạch `makemigrations --check` mà không phát sinh conflict.
+2. **Gate 2 - Core Feature & Domain Logic (`subagent-feature`):**
+   - Vận hành máy 7 bước điều vận (`gss_workflow.py`); cấm gán trạng thái trực tiếp trong view/API.
+   - Hạch toán tài chính Zero Variance: Bảng kê, chi hộ và sổ cái kép cân đối 100%.
+   - Loại bỏ triệt để mã nguồn lỗi thời / mồ côi (tạm ứng nội bộ, quyết toán chuyến kiểu cũ).
+3. **Gate 3 - UI/UX & Field Usability (`subagent-uiux`):**
+   - Tuân thủ nghiêm ngặt `uiux-rules.md`: Bảng ERP phẳng (cấm badge bo tròn trong `<td>`), Fitts's Law, bảng màu Teal/Slate.
+   - Hiện trường tài xế & kho bãi: Nút bấm cảm ứng $\ge 44\text{px}$, thao tác $\le 2$ chạm, responsive hoàn hảo trên 375px / 768px / desktop.
+   - Tự động biên dịch `build_app_js.py` và `build_css.py` đạt chuẩn pre-commit hook.
+4. **Gate 4 - Security & QA Gatekeeper (`subagent-security-qa`):**
+   - Kiểm tra đa doanh nghiệp: RLS PostgreSQL ngăn cách tuyệt đối giữa các công ty.
+   - Quét chống lộ lọt PII và IDOR: API/Link công khai dùng `public_id` UUIDv7 hoặc token an toàn.
+   - Cổng nghiệm thu cuối cùng: `python scripts/qa.py verify` (hoặc `--full`) phải XANH 100%.
+5. **Gate 5 - Documentation-as-Code & Rule/Skill Sync (`subagent-docs`):**
+   - Mọi thay đổi về schema, API hay giao diện phải đồng bộ vào `docs/01-16` và `CHANGELOG.md`.
+   - Cập nhật nhật ký công việc vào `docs/12-backlog.md` (xóa việc đã xong, ghi việc phát sinh).
+
 | Skill | `/ui-review`, `/audit`, `/tenant-check`, `/ship`... | Chạy quy trình lẻ không cần cả đội |
 
 ## 10. Thêm hoặc sửa thành viên
@@ -204,6 +238,6 @@ TỒN ĐỌNG / RỦI RO: <việc ngoài phạm vi, lỗi có sẵn, chưa kiể
 - Mọi tính năng và sửa đổi phải được kiểm chứng bằng kịch bản thực tế:
   * **Frontend Source of Truth:** `static/js/app.js` là file tự sinh. Chỉ sửa mã trong `static/js/src/app/<phân hệ>/`, sau đó chạy `python scripts/build_app_js.py` và commit cả nguồn lẫn `app.js`.
   * **Frontend Verification:** Bắt buộc chạy `node -c static/js/app.js` trước mỗi lần xác nhận tác vụ để đảm bảo 100% cú pháp JS chuẩn mực.
-  * **Backend Verification:** Chạy kiểm thử tự động của dự án (`python manage.py test apps.dispatch --keepdb`) để xác nhận không phát sinh lỗi hồi quy.
+  * **Backend Verification:** Chạy kiểm thử tự động của dự án qua `python scripts/qa.py verify` (hoặc `python scripts/qa.py verify --fast`) để xác nhận không phát sinh lỗi hồi quy trên môi trường PostgreSQL.
 
 ---

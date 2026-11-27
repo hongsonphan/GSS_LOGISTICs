@@ -1,6 +1,7 @@
 """Kinh doanh: báo giá, tra giá booking, danh sách booking đang chạy."""
 from ._common import *  # noqa: F401,F403
 
+from apps.dispatch.models import AllocationStatus
 from core.permissions import any_module_view  # noqa: E402
 
 
@@ -75,16 +76,20 @@ class BookingActiveAPIView(APIView):
         bookings = qs.order_by('-created_at', '-id')
         results = []
         for b in bookings:
-            alloc_cnt = b.containers.filter(allocation__isnull=False, is_deleted=False).count()
+            alloc_cnt = b.containers.filter(
+                allocation__isnull=False,
+                allocation__is_deleted=False,
+                is_deleted=False
+            ).exclude(allocation__status=AllocationStatus.REVOKED).count()
             if alloc_cnt == 0:
-                alloc_cnt = b.vendor_allocations.filter(is_deleted=False).exclude(status='REVOKED').aggregate(t=Sum('allocated_containers'))['t'] or 0
+                alloc_cnt = b.vendor_allocations.filter(is_deleted=False).exclude(status=AllocationStatus.REVOKED).aggregate(t=Sum('allocated_containers'))['t'] or 0
             is_dispatched = (b.total_containers or 0) > 0 and (alloc_cnt >= (b.total_containers or 0))
 
             # Danh sách nhà xe đã phân bổ
-            allocations = b.vendor_allocations.filter(is_deleted=False).exclude(status='REVOKED').select_related('subcontractor')
+            allocations = b.vendor_allocations.filter(is_deleted=False).exclude(status=AllocationStatus.REVOKED).select_related('subcontractor')
             vendor_items = []
             for a in allocations:
-                if a.subcontractor:
+                if a.subcontractor and a.allocated_containers > 0:
                     v_name = a.subcontractor.short_name or a.subcontractor.company_name
                     vendor_items.append(f"{v_name} ({a.allocated_containers})")
             vendor_summary = ", ".join(vendor_items) if vendor_items else ""

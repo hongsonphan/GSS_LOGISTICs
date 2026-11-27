@@ -92,13 +92,13 @@ function renderTransportOrderView(data) {
     const badgeEl = document.getElementById('to-header-status-badge');
     if (badgeEl) {
         if (remaining <= 0) {
-            badgeEl.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-300';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-300';
             badgeEl.innerText = `Đã gán đủ (${filled}/${total} xe)`;
         } else if (filled === 0) {
-            badgeEl.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-rose-50 text-rose-800 border-rose-300';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-rose-50 text-rose-800 border-rose-300';
             badgeEl.innerText = `Chưa gán xe (còn ${remaining}/${total})`;
         } else {
-            badgeEl.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-amber-50 text-amber-800 border-amber-300';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-amber-50 text-amber-800 border-amber-300';
             badgeEl.innerText = `Gán chưa hết (còn ${remaining}/${total})`;
         }
     }

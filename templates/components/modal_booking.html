@@ -76,8 +76,8 @@
 
                 <!-- Row 2: 4 Cột Cân Đối (3-3-3-3) - Khớp thẳng trục với Row 1 -->
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
-                    <!-- Hãng Tàu (col 3) -->
-                    <div id="wrapper-shipping-line" class="md:col-span-3 transition-all duration-200">
+                    <!-- Hãng Tàu (col 6 - giữ lại theo yêu cầu) -->
+                    <div id="wrapper-shipping-line" class="md:col-span-6 transition-all duration-200">
                         <div class="flex items-center justify-between h-5 mb-1">
                             <label id="label-booking-shipping-line" class="block font-bold text-slate-700 text-xs truncate">Hãng Tàu</label>
                             <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('shipping_lines', 'booking-shipping-line')" 
@@ -90,19 +90,11 @@
                         <datalist id="shipping-lines-datalist"></datalist>
                     </div>
 
-                    <!-- Tàu / Chuyến (col 3) -->
-                    <div id="wrapper-vessel" class="md:col-span-3 transition-all duration-200">
-                        <div class="flex items-center justify-between h-5 mb-1">
-                            <label id="label-booking-vessel" class="block font-bold text-slate-700 text-xs truncate">
-                                Tên Tàu & Chuyến <span class="text-[10px] text-slate-400 font-normal lowercase">(Vessel/Voy)</span>
-                            </label>
-                        </div>
-                        <input type="text" id="booking-vessel" placeholder="VD: CAP SAN LAZARO / 001N" 
-                            class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-medium text-slate-800 text-xs">
-                    </div>
+                    <!-- Tàu / Chuyến đã bỏ, ẩn input giữ tương thích JS -->
+                    <input type="hidden" id="booking-vessel" value="">
 
-                    <!-- Loại Phương Tiện / Cont (col 3) -->
-                    <div class="md:col-span-3 relative" id="wrapper-booking-container-size">
+                    <!-- Loại Phương Tiện / Cont (col 6) -->
+                    <div class="md:col-span-6 relative" id="wrapper-booking-container-size">
                         <div class="flex items-center justify-between h-5 mb-1">
                             <label id="label-booking-container-size" class="block font-bold text-slate-700 text-xs truncate">
                                 Loại Cont / Xe <span class="text-rose-500">*</span>
@@ -125,41 +117,56 @@
                                         <button type="button" onclick="selectAllBookingContainerSizes('', false)" class="text-rose-500 hover:text-rose-700 font-bold cursor-pointer">Xóa hết</button>
                                     </div>
                                 </div>
-                                <div class="max-h-48 overflow-y-auto space-y-1 py-0.5 custom-scrollbar">
+                                <div id="booking-container-size-list" class="max-h-48 overflow-y-auto space-y-1 py-0.5 custom-scrollbar">
                                     <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
                                         <input type="checkbox" name="cont-size-cb" value="20GP" checked onchange="onBookingContainerSizeChange('')"
                                             class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                        <span class="font-bold">Cont 20GP</span> <span class="text-slate-500 text-[10.5px]">(Thường)</span>
-                                    </label>
-                                    <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
-                                        <input type="checkbox" name="cont-size-cb" value="40HC" onchange="onBookingContainerSizeChange('')"
-                                            class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                        <span class="font-bold">Cont 40HC</span> <span class="text-slate-500 text-[10.5px]">(Cao 9ft6)</span>
-                                    </label>
-                                    <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
-                                        <input type="checkbox" name="cont-size-cb" value="45G1" onchange="onBookingContainerSizeChange('')"
-                                            class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                        <span class="font-bold">Cont 45 Feet</span>
+                                        <span class="font-bold">Cont 20GP</span> <span class="text-slate-500 text-[10.5px]">(20ft Thường)</span>
                                     </label>
                                     <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
                                         <input type="checkbox" name="cont-size-cb" value="40GP" onchange="onBookingContainerSizeChange('')"
                                             class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                        <span class="font-bold">Cont 40GP</span> <span class="text-slate-500 text-[10.5px]">(Thường)</span>
+                                        <span class="font-bold">Cont 40GP</span> <span class="text-slate-500 text-[10.5px]">(40ft Thường)</span>
                                     </label>
                                     <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
-                                        <input type="checkbox" name="cont-size-cb" value="XE_TAI_15T" onchange="onBookingContainerSizeChange('')"
+                                        <input type="checkbox" name="cont-size-cb" value="40HC" onchange="onBookingContainerSizeChange('')"
                                             class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                        <span class="font-bold">Xe Tải 15 Tấn</span>
+                                        <span class="font-bold">Cont 40HC</span> <span class="text-slate-500 text-[10.5px]">(40ft Cao 9ft6)</span>
                                     </label>
                                     <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
-                                        <input type="checkbox" name="cont-size-cb" value="XE_TAI_8T" onchange="onBookingContainerSizeChange('')"
+                                        <input type="checkbox" name="cont-size-cb" value="45HQ" onchange="onBookingContainerSizeChange('')"
                                             class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                        <span class="font-bold">Xe Tải 8 Tấn</span>
+                                        <span class="font-bold">Cont 45HQ</span> <span class="text-slate-500 text-[10.5px]">(45ft Cao)</span>
                                     </label>
                                     <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
-                                        <input type="checkbox" name="cont-size-cb" value="XE_TAI_5T" onchange="onBookingContainerSizeChange('')"
+                                        <input type="checkbox" name="cont-size-cb" value="20RF" onchange="onBookingContainerSizeChange('')"
                                             class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
-                                        <span class="font-bold">Xe Tải 5 Tấn</span>
+                                        <span class="font-bold">Cont 20RF</span> <span class="text-slate-500 text-[10.5px]">(20ft Lạnh)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                        <input type="checkbox" name="cont-size-cb" value="40RF" onchange="onBookingContainerSizeChange('')"
+                                            class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                        <span class="font-bold">Cont 40RF</span> <span class="text-slate-500 text-[10.5px]">(40ft Lạnh)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                        <input type="checkbox" name="cont-size-cb" value="20FR" onchange="onBookingContainerSizeChange('')"
+                                            class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                        <span class="font-bold">Cont 20FR</span> <span class="text-slate-500 text-[10.5px]">(20ft Flat Rack)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                        <input type="checkbox" name="cont-size-cb" value="40FR" onchange="onBookingContainerSizeChange('')"
+                                            class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                        <span class="font-bold">Cont 40FR</span> <span class="text-slate-500 text-[10.5px]">(40ft Flat Rack)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                        <input type="checkbox" name="cont-size-cb" value="20OT" onchange="onBookingContainerSizeChange('')"
+                                            class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                        <span class="font-bold">Cont 20OT</span> <span class="text-slate-500 text-[10.5px]">(20ft Open Top)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 px-2 py-1 hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                                        <input type="checkbox" name="cont-size-cb" value="40OT" onchange="onBookingContainerSizeChange('')"
+                                            class="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                                        <span class="font-bold">Cont 40OT</span> <span class="text-slate-500 text-[10.5px]">(40ft Open Top)</span>
                                     </label>
                                 </div>
                                 <div class="pt-1.5 border-t border-slate-100 flex justify-end">
@@ -229,13 +236,13 @@
 
                     <div id="wrapper-booking-delivery" class="md:col-span-4 transition-all duration-200">
                         <div class="flex items-center justify-between h-5 mb-1">
-                            <label id="label-booking-delivery" class="block font-bold text-amber-900 text-xs truncate">2. Kho Đóng / Dỡ <span class="text-rose-500">*</span></label>
+                            <label id="label-booking-delivery" class="block font-bold text-amber-900 text-xs truncate">2. Kho Đóng / Dỡ</label>
                             <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('locations', 'booking-delivery')" 
                                 class="text-[10px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
                                 Tạo mới
                             </button>
                         </div>
-                        <select id="booking-delivery" required onchange="if(typeof lookupBookingPrice==='function')lookupBookingPrice();" 
+                        <select id="booking-delivery" onchange="if(typeof lookupBookingPrice==='function')lookupBookingPrice();" 
                             class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
                             <option value="">-- Chọn Kho Khách --</option>
                         </select>
@@ -243,13 +250,13 @@
 
                     <div id="wrapper-booking-dropoff" class="md:col-span-4 transition-all duration-200">
                         <div class="flex items-center justify-between h-5 mb-1">
-                            <label id="label-booking-dropoff" class="block font-bold text-emerald-900 text-xs truncate">3. Điểm Hạ / Trả Cont <span class="text-rose-500">*</span></label>
+                            <label id="label-booking-dropoff" class="block font-bold text-emerald-900 text-xs truncate">3. Điểm Hạ / Trả Cont</label>
                             <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('locations', 'booking-dropoff')" 
                                 class="text-[10px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
                                 Tạo mới
                             </button>
                         </div>
-                        <select id="booking-dropoff" required 
+                        <select id="booking-dropoff" 
                             class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
                             <option value="">-- Chọn Điểm Hạ --</option>
                         </select>
@@ -374,10 +381,10 @@
 
                     <div class="md:col-span-3">
                         <div class="flex items-center justify-between h-5 mb-1">
-                            <label id="label-booking-price" class="block font-bold text-slate-700 text-xs truncate">Cước Vận Chuyển <span class="text-rose-500">*</span></label>
+                            <label id="label-booking-price" class="block font-bold text-slate-700 text-xs truncate">Cước Vận Chuyển</label>
                         </div>
                         <div class="relative">
-                            <input type="text" inputmode="numeric" id="booking-price" required value="" placeholder="VD: 4.000.000" oninput="if(typeof onBookingPriceManualInput==='function')onBookingPriceManualInput();"
+                            <input type="text" inputmode="numeric" id="booking-price" value="" placeholder="VD: 4.000.000" oninput="if(typeof onBookingPriceManualInput==='function')onBookingPriceManualInput();"
                                 class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-mono font-bold text-teal-800 text-xs tabular-nums pr-10">
                             <span class="absolute right-2 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">VNĐ</span>
                         </div>

@@ -44,10 +44,10 @@
 
 | Lớp | Công nghệ | Ghi chú |
 |---|---|---|
-| **Backend** | Django 4.x (Python) | Modular Monolith — tách biệt `core/` và `apps/` |
-| **Database** | SQLite3 (dev) / PostgreSQL (prod) | Kế thừa `TimeStampedModel` + `SoftDeleteModel` |
-| **REST API** | Django REST Framework | JWT Auth + Session Auth, Base URL `localhost:8085` |
-| **Frontend** | Vanilla JS SPA (`app.js` ~1MB) | Không reload trang, 14 view, quản lý cột động |
+| **Backend** | Django 5.2 (Python 3.12) | Modular Monolith — tách biệt `core/` và `apps/` |
+| **Database** | PostgreSQL 16 (RLS + Tenant ORM) | Port `5436` (Local), Port `5438` (QA Test tạm thời). Tuyệt đối không dùng SQLite |
+| **REST API** | Django REST Framework | JWT Auth + Session Auth, Port `8086` chuẩn GSS TMS |
+| **Frontend** | Modular ES6 SPA (`static/js/src/app/**`) | Biên dịch tự động ra `app.js`, Tailwind CSS, Phosphor Icons |
 | **Styling** | Tailwind CSS | Design Tokens GSS: Teal/Emerald/Amber/Rose |
 | **Charts** | Chart.js | Revenue/expense bar chart, trend lines |
 | **Auth** | `simplejwt` + Django Sessions | JWT (4h access, 7d refresh) + Token Blacklist |
@@ -284,17 +284,16 @@ Cho phép người dùng tự do phân tích dữ liệu đa chiều theo nhu c�
 - Khai báo: Số ngày DEM miễn phí, Số ngày DET miễn phí
 - Lưu ngày hết hạn (`det_expiry_date`, `dem_expiry_date`) — indexed để cảnh báo trước deadline
 
-### 5.5 State Machine 11 Bước Điều vận
+### 5.5 Máy Trạng Thái Điều Vận 7 Bước GSS (`apps/dispatch/gss_workflow.py`)
 
 ```
-DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
-     → AT_WAREHOUSE → UNLOADING → DELIVERED → RETURNING_EMPTY
-     → COMPLETED → (CANCELLED)
+READY → ARRIVED_AT_PICKUP → LOADED_ON_VEHICLE → ARRIVED_AT_DELIVERY
+      → UNLOADED → RETURNING_EMPTY → EMPTY_RETURNED (hoặc CANCELLED)
 ```
 
-- Mỗi chuyển trạng thái ghi timestamp tự động (`dispatched_at`, `accepted_at`...)
-- API chuyển trạng thái: `POST /api/trips/{trip_code}/transition/`
-- Chặn nhảy cóc trạng thái sai thứ tự qua `TripWorkflowTransitionAPIView`
+- Quản lý tập trung qua `apps/dispatch/gss_workflow.py`, kiểm soát bắt buộc chứng từ đính kèm (Bước 3: EIR lấy cont; Bước 5: E-POD giao hàng; Bước 7: Phiếu hạ rỗng).
+- Tự động đồng bộ một chiều sang trường `status` 11 bước kế thừa để bảo toàn tương thích ngược cho báo cáo và kế toán.
+- Chặn nhảy cóc trạng thái và chặn hoàn toàn bypass ở tầng API (`TripDetailAPIView.patch()`).
 
 ### 5.6 Driver Portal (Token-based)
 - Tự động sinh `driver_token` (URL-safe, 16 bytes) cho mỗi chuyến
@@ -322,10 +321,11 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 - Phân công: Tài xế, Xe, Rơ-moóc, Điều độ viên
 - Số container, Seal, Booking/B/L, Hãng tàu, Tàu/Chuyến
 
-### 6.2 Timeline 11 Bước (`TripTimelineItem`)
-- Hiển thị trực quan 11 mốc vận hành theo chiều dọc
-- Mỗi bước: Trạng thái (Done ✅ / Active 🔵 / Pending ⬜), Tiêu đề, Thời gian thực tế
-- Tự động cập nhật khi chuyển trạng thái
+### 6.2 Timeline Điều Vận & Mốc Tiến Độ
+
+- Hiển thị trực quan 7 mốc vận hành chuẩn hóa theo chiều dọc kết nối với chứng từ thực địa.
+- Mỗi bước: Trạng thái (Done ✅ / Active 🔵 / Pending ⬜), Tiêu đề, Thời gian thực tế.
+- Tự động cập nhật đồng bộ khi chuyển trạng thái qua `gss_workflow`.
 
 ### 6.3 5 Mốc Thời gian tại Kho Khách hàng
 | Mốc | Nội dung |
@@ -586,7 +586,7 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 ### 14.2 Signals & Automation
 - Tự động cập nhật P&L khi thêm/sửa/xóa `TripExpense`
 - Tự động cập nhật `advance_settlement_status` trên `DispatchTrip`
-- `resync_timelines` management command: Đồng bộ lại toàn bộ timeline 11 bước
+- Quản lý đồng bộ tiến độ qua `apps/dispatch/gss_workflow.py`
 
 ### 14.3 Frontend SPA (Single Page Application)
 - **`static/js/app.js` (~1MB):** Engine SPA trung tâm, quản lý routing 14 view không reload trang
@@ -594,18 +594,18 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 - **14 View:** dashboard, dispatch, trip-detail, sales, booking-detail, accounting, settlement, fleet, personnel, reports, master-data, customs, quotation-detail, create-trip
 
 ### 14.4 Tracking & Traceability
-- `TripTimelineItem`: 11 mốc vận hành chuẩn hóa, tự động tạo khi phát lệnh
+- `TripTimelineItem`: Các mốc vận hành chuẩn hóa, tự động tạo khi phát lệnh
 - `tracking_hashid`: Token Capability riêng cho Customer Tracking Portal
 - `driver_token`: Token Capability riêng cho Driver App (auto-rotate khi đổi tài xế)
 
 ### 14.5 Management Commands
-- `python manage.py resync_timelines` — Đồng bộ lại timeline 11 bước cho tất cả chuyến
-- `python manage.py seed_sample_data` — Tạo dữ liệu mẫu cho demo/dev
+- `python manage.py resync_timelines` — Đồng bộ lại timeline các mốc cho chuyến
+- `python manage.py seed_gss_demo` — Tạo dữ liệu mẫu GSS TMS cho demo/dev (chỉ chạy khi `DEBUG=True`)
 
 ### 14.6 Kiểm thử Tự động
-- **86 Test cases** (tính đến v2.9.13) — 100% passed
+- **230 Test cases** — 100% passed trên PostgreSQL 16
 - `FrontendSyntaxIntegrityTestCase`: Tự động kiểm tra cú pháp JS mỗi lần test
-- Chạy: `python manage.py test --keepdb`
+- Chạy kiểm thử: `python scripts/qa.py verify` (hoặc `verify --fast`, `--full`)
 - Kiểm tra JS: `python scripts/build_app_js.py --check && node -c static/js/app.js`
 
 ---
@@ -844,6 +844,22 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 - **Component:** `chat_bubble.html` | **API:** `/api/collaboration/chat/`
 - **Models:** `ChatRoom`, `ChatParticipant`, `ChatMessage`, `ChatAttachment`
 - **Chức năng:** Nút nổi Chat Bubble góc phải, đếm số tin chưa đọc, kênh toàn công ty (`COMPANY`), kênh phòng ban (`DEPARTMENT`), kênh chat riêng 1-1 (`DIRECT`). Tối ưu Cache Polling qua `after_id` và tự động hết hạn file đính kèm sau 30 ngày để tiết kiệm dung lượng.
+
+---
+
+## 24. Kho Tri Thức AI & Zalo Bot Chăm Sóc Khách Hàng (Customer Care AI Knowledge Base)
+- **Thư mục tài liệu tri thức:** `docs/zalo_bot_knowledge/` (Hệ thống các modules `.md` chuẩn hóa).
+- **Mục tiêu:** Cung cấp kho dữ liệu RAG (Retrieval-Augmented Generation) và kịch bản tương tác để tích hợp vào Zalo Official Account (Zalo OA), Chatbot AI (Dify, FastGPT, Ragflow, Coze), giúp bot chủ động phục vụ, hướng dẫn quy trình và giải đáp khách hàng 24/7.
+- **Bộ 6 tệp tài liệu tác nghiệp trực tiếp trong nhóm Zalo khách hàng:**
+  1. `quy_trinh.md`: Các bước từ đặt xe/booking đến giao nhận, bảng phân công "ai làm bước nào", các mốc giờ chốt (cut-off) và hướng dẫn "việc này làm thế nào, bước này xử lý sao".
+  2. `lich_tuyen.md`: Tuyến chạy, cự ly km, thời gian xe chạy tiêu chuẩn các tuyến Tây Nguyên - Cát Lái/Cái Mép, giờ cấm xe container tại TP.HCM và lịch cẩu cảng/depot 24/7.
+  3. `chung_tu.md`: Bộ chứng từ theo từng loại hàng (nông sản xuất khẩu, hàng nhập, hàng nội địa), biểu mẫu chuẩn copy-paste đặt xe trên Zalo, luân chuyển E-POD và EIR.
+  4. `xu_ly_su_co.md`: Quy trình xử lý hàng trễ, xe hỏng, trễ Cut-off tàu (xin Late Gate), vỏ cont rách/thủng dột (đổi vỏ tại Depot Đắk Nông), đứt seal, móp méo hàng (chỉ ghi quy trình, không ghi mức đền bù).
+  5. `faq.md`: Bộ 42 câu hỏi - trả lời thực tế hay gặp nhất trong nhóm Zalo (file giá trị nhất) chia thành 7 phần logic.
+  6. `thong_tin_nhom.md`: Hồ sơ ngữ cảnh nhóm Zalo (nhận diện khách hàng, danh sách đầu mối hai bên, quy ước an toàn kho và tuyến đường).
+- **Bộ tệp tài liệu bổ trợ chuyên sâu:** `README.md`, `00_TONG_QUAN_VA_KICH_BAN_BOT.md`, `01_GIOI_THIEU_DICH_VU_GSS.md`, `02_BAO_GIA_VA_QUY_TRINH_BOOKING.md`, `03_TRA_CUU_DON_HANG_VA_TRACKING.md`, `04_QUY_TRINH_GIAO_NHAN_VA_CHUNG_TU_POD.md`, `05_CHINH_SACH_DEM_DET_VA_CHI_PHI.md`, `06_THU_TUC_HAI_QUAN_VA_XUAT_NHAP_KHAU.md`, `07_HOI_DAP_SU_CO_VA_HOTLINE_KHAN_CAP.md`.
+
+---
 
 ---
 

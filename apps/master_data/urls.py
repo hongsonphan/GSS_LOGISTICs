@@ -4,10 +4,10 @@ from apps.master_data.api_views import (
     MasterDataFormOptionsAPIView,
     MasterDataVersionAPIView,
     LiveSyncVersionsAPIView,
-    LocationListCreateAPIView, LocationDetailAPIView,
+    LocationListCreateAPIView, LocationDetailAPIView, LocationNextCodeAPIView,
     ContainerTypeListCreateAPIView, ContainerTypeDetailAPIView,
     ExpenseItemListCreateAPIView, ExpenseItemDetailAPIView,
-    CustomerMasterListCreateAPIView, CustomerMasterDetailAPIView,
+    CustomerMasterListCreateAPIView, CustomerMasterDetailAPIView, CustomerNextCodeAPIView,
     TariffMasterListCreateAPIView, TariffMasterDetailAPIView,
     VehicleMasterListCreateAPIView, VehicleMasterDetailAPIView,
     DriverSalaryTariffListCreateAPIView, DriverSalaryTariffDetailAPIView,
@@ -48,6 +48,7 @@ urlpatterns = [
 
     # 1. Địa điểm / Cảng bãi
     path('locations/', LocationListCreateAPIView.as_view(), name='master-locations'),
+    path('locations/next-code/', LocationNextCodeAPIView.as_view(), name='master-location-next-code'),
     path('locations/<int:pk>/', LocationDetailAPIView.as_view(), name='master-location-detail'),
     
     # 2. Quy cách Cont & Xe
@@ -60,6 +61,7 @@ urlpatterns = [
     
     # 4. Khách hàng
     path('customers/', CustomerMasterListCreateAPIView.as_view(), name='master-customers'),
+    path('customers/next-code/', CustomerNextCodeAPIView.as_view(), name='master-customer-next-code'),
     path('customers/<int:pk>/', CustomerMasterDetailAPIView.as_view(), name='master-customer-detail'),
     
     # 5. Biểu cước

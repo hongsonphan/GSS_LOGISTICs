@@ -175,10 +175,42 @@ class TripDriverMilestoneAPIView(APIView):
                 'time': now_str
             })
 
-        # ── Chuyển trạng thái qua State Machine (gọi sync_trip_10_step_timeline bên trong) ──
+        # ── Chuyển trạng thái qua máy trạng thái tập trung gss_workflow ──
         target_status = info['status']
         actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.driver
-        if trip.status != target_status:
+        actor_name = request.user.get_full_name() or request.user.username if request.user and request.user.is_authenticated else (trip.assigned_driver_name or 'Tài xế')
+
+        from apps.dispatch import gss_workflow as wf
+        from django.core.exceptions import ValidationError as DjValidationError
+        from rest_framework.exceptions import ValidationError as DrfValidationError
+
+        # Tìm bước GSS tương ứng với target_status
+        target_gss_step = None
+        if milestone_code == 'DEPARTED':
+            target_gss_step = 'ARRIVED_AT_PICKUP'
+        else:
+            for step, leg_status in wf.LEGACY_STATUS.items():
+                if leg_status == target_status:
+                    target_gss_step = step
+                    break
+
+        if target_gss_step and trip.step_status != target_gss_step:
+            try:
+                # Gọi gss_workflow advance chuẩn tắc
+                wf.advance(
+                    trip,
+                    target_gss_step,
+                    user=request.user if request.user and request.user.is_authenticated else None,
+                    actor_label=actor_name,
+                    reason=notes or info['title']
+                )
+            except (DjValidationError, DrfValidationError) as ve:
+                err_msg = ve.messages if hasattr(ve, 'messages') else str(ve)
+                return Response({'error': err_msg}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as ex:
+                logger.warning(f"[TripDriverMilestone] gss_workflow.advance error: {ex}")
+                return Response({'error': f'Không thể chuyển mốc trạng thái: {str(ex)}'}, status=status.HTTP_400_BAD_REQUEST)
+        elif trip.status != target_status:
             try:
                 transition_trip(trip, target_status, actor=actor, description=notes or info['title'])
             except ValidationError as ve:

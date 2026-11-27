@@ -209,6 +209,10 @@
     .vfleet-row { flex-direction: column; align-items: stretch; gap: 6px; }
     .vfleet-who { width: auto; border-right: 0; padding-right: 0; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
     .vfleet-wrap { margin: 0 46px 0 14px; }
+    /* Chuẩn diện tích cảm ứng Fitts\'s Law mobile/hiện trường >= 44x44px */
+    #row-view-footer button, #sticky-bar button, #modal-quick-add button, #modal-vendor-excel button, #modal-driver-qr-dispatch button {
+      min-height: 44px;
+    }
   }
 </style>
 </head>
@@ -286,7 +290,7 @@
             <i class="ph-bold ph-key absolute left-3 top-2.5 text-slate-400 text-base"></i>
             <input type="password" id="login-password" required autocomplete="current-password" placeholder="Nhập mật khẩu Portal"
               class="w-full h-10 pl-9 pr-10 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white text-sm font-semibold focus:border-teal-600 focus:ring-1 focus:ring-teal-600 outline-none">
-            <button type="button" onclick="toggleLoginPassword()" title="Hiện/Ẩn mật khẩu" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 p-1 cursor-pointer">
+            <button type="button" onclick="toggleLoginPassword()" title="Hiện/Ẩn mật khẩu" class="absolute right-0 top-0 w-11 h-10 text-slate-400 hover:text-slate-700 flex items-center justify-center cursor-pointer">
               <i class="ph-bold ph-eye text-base" id="login-pw-eye"></i>
             </button>
           </div>
@@ -534,14 +538,14 @@
             <label class="block font-bold text-slate-700 mb-1">Hãng / Nhãn Hiệu Xe</label>
             <input type="text" id="quick-input-tractor-brand" placeholder="Freightliner, Howo, Hino..." list="list-tractor-brands" class="w-full h-9 px-3 font-semibold rounded-xl border border-slate-300 text-xs focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
             <datalist id="list-tractor-brands">
-              <option value="Freightliner">
-              <option value="Howo">
-              <option value="Chenglong">
-              <option value="International">
-              <option value="Hino">
-              <option value="Hyundai">
-              <option value="Isuzu">
-              <option value="Shacman">
+              <option value="Freightliner"></option>
+              <option value="Howo"></option>
+              <option value="Chenglong"></option>
+              <option value="International"></option>
+              <option value="Hino"></option>
+              <option value="Hyundai"></option>
+              <option value="Isuzu"></option>
+              <option value="Shacman"></option>
             </datalist>
           </div>
         </div>
@@ -590,12 +594,12 @@
             <label class="block font-bold text-slate-700 mb-1">Quy Cách / Loại Rơ-moóc</label>
             <input type="text" id="quick-input-trailer-type" placeholder="Moóc Xương 40ft, Sàn 40ft..." list="list-trailer-types" class="w-full h-9 px-3 font-semibold rounded-xl border border-slate-300 text-xs focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
             <datalist id="list-trailer-types">
-              <option value="Moóc Xương 40ft (3 trục)">
-              <option value="Moóc Xương 20ft (3 trục)">
-              <option value="Moóc Sàn 40ft">
-              <option value="Moóc Cổ Cò 40ft">
-              <option value="Moóc Xương 45ft">
-              <option value="Moóc Lồng / Ben">
+              <option value="Moóc Xương 40ft (3 trục)"></option>
+              <option value="Moóc Xương 20ft (3 trục)"></option>
+              <option value="Moóc Sàn 40ft"></option>
+              <option value="Moóc Cổ Cò 40ft"></option>
+              <option value="Moóc Xương 45ft"></option>
+              <option value="Moóc Lồng / Ben"></option>
             </datalist>
           </div>
         </div>
@@ -605,11 +609,11 @@
             <label class="block font-bold text-slate-700 mb-1">Hãng Sản Xuất</label>
             <input type="text" id="quick-input-trailer-brand" placeholder="Tân Thanh, Doosung, CIMC..." list="list-trailer-brands" class="w-full h-9 px-3 font-semibold rounded-xl border border-slate-300 text-xs focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
             <datalist id="list-trailer-brands">
-              <option value="Tân Thanh">
-              <option value="Doosung">
-              <option value="CIMC">
-              <option value="Kaile">
-              <option value="Khác">
+              <option value="Tân Thanh"></option>
+              <option value="Doosung"></option>
+              <option value="CIMC"></option>
+              <option value="Kaile"></option>
+              <option value="Khác"></option>
             </datalist>
           </div>
           <div>
@@ -3243,6 +3247,11 @@
     const dropoff = row.dropoff || b.dropoff_location || '--';
     const dem = row.dem_expiry || '--';
     const det = row.det_expiry || '--';
+    const oneLine = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+    // Ghi chú chung của booking (điểm đến, giờ cấm tải) – 1 dòng; ghi chú riêng của dòng cont (+ ghi chú nhà xe) – 1 dòng
+    const generalNote = [oneLine(b.destination_notes), oneLine(b.road_restrictions)].filter(Boolean).join(' · ');
+    const vendorNote = oneLine(String(row.vendor_note || '').replace(/\s*\|\s*Kẹp cùng dòng #\d+/g, '').replace(/^Kẹp cùng dòng #\d+\s*\|?\s*/g, ''));
+    const contNote = [oneLine(row.driver_note), vendorNote].filter(Boolean).join(' · ');
 
     return [
       `🚚 GIẢI PHÁP XANH - LỆNH ĐIỀU XE ${tripCode}`,
@@ -3253,6 +3262,8 @@
       `🏭 2. Giao hàng: ${delivery}`,
       `⚓ 3. Hạ rỗng: ${dropoff}`,
       `⏳ Hạn DEM: ${dem} | Hạn DET: ${det}`,
+      ...(generalNote ? [`📝 Ghi chú chung: ${generalNote}`] : []),
+      ...(contNote ? [`📌 Ghi chú cont: ${contNote}`] : []),
       `👉 Bấm link mở lệnh điều xe, cập nhật 7 mốc và gửi chứng từ:`,
       `${fullDriverUrl}`
     ].join('\n');

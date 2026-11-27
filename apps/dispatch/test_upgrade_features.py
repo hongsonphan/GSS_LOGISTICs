@@ -40,10 +40,10 @@ class UpgradeFeaturesTests(GssBase):
         res = self.client.get("/api/master-data/form-options/")
         self.assertEqual(res.status_code, 200)
         vehicles = res.json().get("vehicles", [])
-        matched = [t for t in vehicles if t.get("plate") == "50H-88888"]
+        matched = [t for t in vehicles if t.get("plate") == vehicle.license_plate]
         self.assertTrue(len(matched) > 0)
         self.assertEqual(matched[0].get("default_trailer_id"), trailer.id)
-        self.assertEqual(matched[0].get("default_trailer_plate"), "51R-99999")
+        self.assertEqual(matched[0].get("default_trailer_plate"), trailer.license_plate)
 
     def test_dynamic_step_labels_by_shipment_type(self):
         """Mục 4: 7 bước cốt lõi ánh xạ nhãn hiển thị theo loại hàng (Nhập, Xuất, Nội địa)."""

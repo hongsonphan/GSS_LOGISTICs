@@ -173,19 +173,19 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             const ds = trip.det_status;
             if (detBadgeEl) {
                 if (ds.status === 'OVERDUE') {
-                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-heading bg-rose-100 text-rose-800 border border-rose-300 animate-pulse';
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-black uppercase font-heading bg-rose-100 text-rose-800 border border-rose-300 animate-pulse';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-warning-circle mr-1"></i> Quá Hạn Phạt Tiền (${Math.abs(ds.days_remaining)} ngày)`;
                 } else if (ds.status === 'TODAY') {
-                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-heading bg-rose-50 text-rose-700 border border-rose-300';
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-black uppercase font-heading bg-rose-50 text-rose-700 border border-rose-300';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-clock mr-1"></i> Hạn Chót Hôm Nay`;
                 } else if (ds.status === 'WARNING') {
-                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase font-heading bg-amber-100 text-amber-800 border border-amber-300';
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold uppercase font-heading bg-amber-100 text-amber-800 border border-amber-300';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-hourglass mr-1"></i> Sắp Hết Hạn (1 ngày)`;
                 } else if (ds.status === 'ATTENTION') {
-                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase font-heading bg-amber-50 text-amber-700 border border-amber-200';
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold uppercase font-heading bg-amber-50 text-amber-700 border border-amber-200';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-hourglass-low mr-1"></i> Còn 2 ngày Free DET`;
                 } else {
-                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase font-heading bg-emerald-100 text-emerald-800 border border-emerald-200';
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold uppercase font-heading bg-emerald-100 text-emerald-800 border border-emerald-200';
                     detBadgeEl.innerHTML = `<i class="ph-bold ph-check-circle mr-1"></i> Trong Hạn Free-time (${ds.days_remaining} ngày)`;
                 }
             }
@@ -341,7 +341,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const statusCls = STATUS_STYLE_MAP[trip.status] || 'bg-slate-100 text-slate-700 border-slate-300';
         const badge = document.getElementById('detail-status-badge');
         if (badge) {
-            badge.className = `px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${statusCls}`;
+            badge.className = `px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading ${statusCls}`;
             badge.innerText = trip.status_label || trip.status_display || STATUS_NAME_MAP[trip.status] || trip.status || 'Chưa xác định';
         }
 

@@ -79,6 +79,34 @@ class Base(GssBase):
 
 
 class ContainerListTests(Base):
+    def test_invoice_to_and_driver_note_import_and_patch(self):
+        rows = [{'source_line': 1, 'raw': C1, 'container_type': '40HC', 'invoice_to': 'KH', 'driver_note': 'Vào cổng số 3'},
+                {'source_line': 2, 'raw': C2, 'invoice_to': 'xyz'}]
+        r = self.api('post', f'/api/gss/bookings/{self.booking.id}/containers/', {'rows': rows})
+        self.assertEqual(r.status_code, 200, r.content)
+        c = {x.container_number: x for x in BookingContainer.objects.filter(booking=self.booking)}
+        self.assertEqual((c[C1].invoice_to, c[C1].driver_note), ('CUSTOMER', 'Vào cổng số 3'))
+        self.assertEqual(c[C2].invoice_to, '')  # giá trị lạ = chưa chọn
+        got = {x['container_number']: x for x in self.api('get', f'/api/gss/bookings/{self.booking.id}/containers/').json()['data']['containers']}
+        self.assertEqual((got[C1]['invoice_to'], got[C1]['invoice_to_label'], got[C1]['driver_note']), ('CUSTOMER', 'KH', 'Vào cổng số 3'))
+        r = self.api('patch', f'/api/gss/containers/{c[C2].id}/', {'invoice_to': 'VENDOR', 'driver_note': 'Gọi bảo vệ'})
+        self.assertEqual(r.status_code, 200, r.content)
+        c[C2].refresh_from_db()
+        self.assertEqual((c[C2].invoice_to, c[C2].driver_note), ('VENDOR', 'Gọi bảo vệ'))
+        # nhập lại dòng không có 2 trường này không xoá giá trị cũ
+        self.api('post', f'/api/gss/bookings/{self.booking.id}/containers/', {'rows': [{'source_line': 1, 'raw': C1}]})
+        c[C1].refresh_from_db()
+        self.assertEqual((c[C1].invoice_to, c[C1].driver_note), ('CUSTOMER', 'Vào cổng số 3'))
+
+    def test_dem_det_separate_columns_accept_time_prefix(self):
+        rows = [{'source_line': 1, 'raw': C1, 'dem_expiry': '23:59 21/11/2026', 'det_expiry': '', 'separate_deadlines': True},
+                {'source_line': 2, 'raw': C2, 'dem_expiry': '21/11/2026', 'det_expiry': '23:59 25/11/2026', 'separate_deadlines': True}]
+        self.assertEqual(self.api('post', f'/api/gss/bookings/{self.booking.id}/containers/', {'rows': rows}).status_code, 200)
+        c = {x.container_number: x for x in BookingContainer.objects.filter(booking=self.booking)}
+        self.assertEqual(c[C1].dem_expiry_override, datetime.date(2026, 11, 21))
+        self.assertIsNone(c[C1].det_expiry_override)  # 2 cột riêng: không tự chép DEM sang DET
+        self.assertEqual(c[C2].det_expiry_override, datetime.date(2026, 11, 25))
+
     def test_paste_validates_each_row_and_two_phase(self):
         bad = 'MSCU1234560\n' + C1 + '\n' + C1 + '\nABC123'
         r = self.api('post', f'/api/gss/bookings/{self.booking.id}/containers/', {'text': bad, 'commit': '0'}).json()['data']

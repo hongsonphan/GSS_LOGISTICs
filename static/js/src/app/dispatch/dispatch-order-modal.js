@@ -322,8 +322,13 @@ async function mdoRemoveAllocationRow(btn) {
             const out = await res.json();
             if (res.ok && out.success) {
                 showToast('success', 'Đã thu hồi phân bổ thành công!');
-                tr.remove();
-                mdoRecalcAllocations();
+                if (mdoCurrentBooking && typeof onDispatchOrderBookingChanged === 'function') {
+                    await onDispatchOrderBookingChanged(mdoCurrentBooking.id);
+                } else {
+                    tr.remove();
+                    mdoRecalcAllocations();
+                }
+                if (typeof loadDispatchOrdersTab === 'function') loadDispatchOrdersTab();
             } else {
                 showToast('danger', out.message || 'Không thể thu hồi phân bổ.');
             }
@@ -1084,13 +1089,13 @@ function renderDispatchOrdersTable() {
 
         let statusBadgeHtml = '';
         if (isCompleted) {
-            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200"><i class="ph-bold ph-seal-check"></i> Đã hoàn thành</span>`;
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200"><i class="ph-bold ph-seal-check"></i> Đã hoàn thành</span>`;
         } else if (isDispatched) {
-            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"><i class="ph-bold ph-check-circle"></i> Đã phân bổ đủ</span>`;
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200"><i class="ph-bold ph-check-circle"></i> Đã phân bổ đủ</span>`;
         } else if (allocated > 0) {
-            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"><i class="ph-bold ph-arrows-split"></i> Đang phân bổ</span>`;
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200"><i class="ph-bold ph-arrows-split"></i> Đang phân bổ</span>`;
         } else {
-            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200"><i class="ph-bold ph-clock"></i> Chờ phân bổ</span>`;
+            statusBadgeHtml = `<span class="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200"><i class="ph-bold ph-clock"></i> Chờ phân bổ</span>`;
         }
 
         html += `

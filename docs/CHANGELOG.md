@@ -26,11 +26,6 @@ Nhật ký của hệ thống trước đó không chuyển sang repo này.
     3. Đơn hàng đang ở trạng thái hoạt động chưa hoàn tất (`PENDING_DISPATCH` hoặc `PARTIALLY_DISPATCHED`).
   - Đảm bảo mọi đơn hàng mới tạo và các đơn đang chờ điều vận luôn luôn hiển thị trực quan và thống nhất trên cả 2 màn hình Sales & Shipments và Điều vận & Vendor.
 
-## 2026-11-22 – Khôi Phục Mặc Định Loại Cont 40HC Của Booking (Sửa CI #100 Đỏ)
-- **Vấn đề:** commit `402fb2b` (chọn nhiều loại cont) đổi mặc định `BookingOrder.container_size` từ `40HC` sang `20GP`. Mọi nơi khác (nhập Excel, API, chuyến, tin nhắn nhà xe) vẫn mặc định `40HC`, nên booking tạo không kèm loại cont âm thầm thành 20GP, làm sai TEU (1 thay vì 2) và sai đơn giá. Hai test đỏ: `apps.gss.test_model4.LegAndTruckRunTests.test_legs_api` và `apps.gss.tests.PricingTests.test_auto_apply_on_completion_and_snapshot`.
-- **Xử lý:** `apps/customers/models.py` trả mặc định về `40HC` (giữ `max_length=150`, `blank=True`); thêm migration `customers/0005_restore_booking_container_size_default`. Form Booking vẫn tự chọn 20GP ở giao diện nên không đổi hành vi người dùng.
-
-## 2026-11-21 – Nâng Cấp Ô "Loại Cont / Xe" Thành Multi-Select Checkbox (Cho Phép Chọn Nhiều Loại) & Kiểm Thử Toàn Diện
 ## 2026-11-27 (Phiên 2) – Tinh Chỉnh Form Booking: Bỏ Tên Tàu, Chuẩn Hóa Dropdown Quy Cách Cont Theo Danh Mục & Cho Phép Nhập Sau Đơn Giá/Lộ Trình
 - **Bỏ trường Tên Tàu & Chuyến, giữ Hãng Tàu:**
   - Trên màn hình Chi tiết / Tạo mới Đơn Hàng Booking (`templates/views/view_booking_detail.html`): Loại bỏ ô chọn "Tên Tàu & Chuyến (vessel/voy)", giữ lại "Hãng Tàu", tái cơ cấu Hàng 2 thành 4 cột đều nhau (`lg:col-span-3`: Nhà Cung Cấp, Hãng Tàu, Cảng Xuất POL, Cảng Nhận POD).
@@ -47,7 +42,7 @@ Nhật ký của hệ thống trước đó không chuyển sang repo này.
   - Rebuild `static/js/app.js` và `static/css/tailwind.css`.
   - Kiểm thử `scripts/qa.py verify`: Đạt 7/7 bước PASS 100% (230 test cases).
 
-
+## 2026-11-27 – Rà Soát & Chuẩn Hóa Toàn Diện Dữ Liệu Lịch Sử (Data Migration & Cleanup) Theo Chuẩn GSS TMS
 - **Mục tiêu & Thực thi:**
   - Xây dựng công cụ chuyên dụng [scripts/standardize_existing_data.py](file:///e:/Bim_Logisstic_GSS/scripts/standardize_existing_data.py) hỗ trợ hai chế độ: `--dry-run` (kiểm tra an toàn) và `--apply` (thực thi ghi DB).
   - Rà soát toàn bộ các bảng Master Data, Fleet và Dispatch trên CSDL thực tế (`gss_logistics_db`), sửa đổi toàn bộ các mã cũ và dữ liệu chưa đạt chuẩn:
@@ -156,6 +151,10 @@ Nhật ký của hệ thống trước đó không chuyển sang repo này.
   13. `05_CHINH_SACH_DEM_DET_VA_CHI_PHI.md`: Phân biệt chi tiết Free DEM (lưu bãi) và Free DET (lưu vỏ), cơ chế cảnh báo đếm ngược của GSS TMS, kinh nghiệm tránh phí phạt hãng tàu, chính sách hóa đơn VAT điện tử và đối soát công nợ cuối tháng.
   14. `06_THU_TUC_HAI_QUAN_VA_XUAT_NHAP_KHAU.md`: Dịch vụ đại lý hải quan trọn gói, hồ sơ khai báo, giải nghĩa 3 luồng (Xanh/Vàng/Đỏ), hỗ trợ kiểm hóa hiện trường, đổi Lệnh Giao Hàng Điện Tử eDO và kiểm dịch thực vật nông sản Tây Nguyên.
   15. `07_HOI_DAP_SU_CO_VA_HOTLINE_KHAN_CAP.md`: Bảng hỏi đáp FAQ tổng hợp 13+ câu hỏi thường gặp nhất, quy trình 4 bước phản ứng nhanh với sự cố và danh bạ hotline các phòng ban GSS 24/7.
+
+## 2026-11-22 – Khôi Phục Mặc Định Loại Cont 40HC Của Booking (Sửa CI #100 Đỏ)
+- **Vấn đề:** commit `402fb2b` (chọn nhiều loại cont) đổi mặc định `BookingOrder.container_size` từ `40HC` sang `20GP`. Mọi nơi khác (nhập Excel, API, chuyến, tin nhắn nhà xe) vẫn mặc định `40HC`, nên booking tạo không kèm loại cont âm thầm thành 20GP, làm sai TEU (1 thay vì 2) và sai đơn giá. Hai test đỏ: `apps.gss.test_model4.LegAndTruckRunTests.test_legs_api` và `apps.gss.tests.PricingTests.test_auto_apply_on_completion_and_snapshot`.
+- **Xử lý:** `apps/customers/models.py` trả mặc định về `40HC` (giữ `max_length=150`, `blank=True`); thêm migration `customers/0005_restore_booking_container_size_default`. Form Booking vẫn tự chọn 20GP ở giao diện nên không đổi hành vi người dùng.
 
 ## 2026-11-21 – Nâng Cấp Ô "Loại Cont / Xe" Thành Multi-Select Checkbox (Cho Phép Chọn Nhiều Loại) & Kiểm Thử Toàn Diện
   - Trên màn hình Chi tiết / Tạo mới Booking (`view_booking_detail.html` và modal `modal_booking.html`), ô "Loại Cont / Xe" trước đây là `<select>` đơn chỉ cho chọn 1 loại duy nhất (vd: `Cont 20GP (Thường)`).

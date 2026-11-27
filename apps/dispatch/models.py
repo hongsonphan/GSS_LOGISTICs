@@ -516,6 +516,11 @@ class DispatchTrip(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDelet
         return self.subcontractor_driver_name or "Tài xế xe bạn"
 
     @property
+    def driver_name(self):
+        """Tên tài xế phụ trách (alias tương thích ngược cho assigned_driver_name)."""
+        return self.assigned_driver_name
+
+    @property
     def assigned_driver_phone(self):
         """Số điện thoại tài xế nhận lệnh."""
         if self.driver:

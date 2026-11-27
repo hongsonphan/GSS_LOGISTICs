@@ -13,32 +13,16 @@ from apps.collaboration.serializers import (
     TaskChecklistSerializer, TaskCommentSerializer, TaskAttachmentSerializer
 )
 from apps.personnel.models import Department, Employee
+from core.sequences import next_code
 
 User = get_user_model()
 
 
 def generate_task_code():
-    """Tự động sinh mã công việc dạng TSK.YYYYMM.XXX (chuẩn dấu chấm, 3 chữ số)."""
+    """Tự động sinh mã công việc dạng TK.YYMM.xxx theo quy chuẩn BIM LOGISTICS."""
     today = date.today()
-    ym = today.strftime('%Y%m')
-    prefix = f"TSK.{ym}."
-    max_num = 0
-    task_codes = OfficeTask.all_objects.filter(
-        Q(code__startswith=prefix) | Q(code__startswith=f"TSK-{ym}-")
-    ).values_list('code', flat=True)
-
-    for c in task_codes:
-        try:
-            parts = c.replace('-', '.').split('.')
-            if len(parts) >= 3 and parts[-1].isdigit():
-                num = int(parts[-1])
-                if num > max_num:
-                    max_num = num
-        except Exception:
-            pass
-
-    new_num = max_num + 1
-    return f"{prefix}{new_num:03d}"
+    prefix = f"TK.{today.strftime('%y%m')}."
+    return next_code(OfficeTask, 'code', prefix, 3)
 
 
 class OfficeTaskListCreateAPIView(views.APIView):

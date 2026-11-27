@@ -457,7 +457,7 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
             } else if (['REJECTED', 'EXPIRED'].includes(st)) {
                 badgeCls = 'bg-rose-50 text-rose-800 border-rose-200';
             }
-            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ' + badgeCls;
+            statusBadge.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading ' + badgeCls;
         }
         const pricingBadge = document.getElementById('fullpage-quote-pricing-badge');
         if (pricingBadge) {

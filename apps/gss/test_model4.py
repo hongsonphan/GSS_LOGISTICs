@@ -75,7 +75,7 @@ class LegAndTruckRunTests(GssBase):
         t = self.trip()
         legs = lg.ensure_legs(t, tpl, rebuild=True)
         self.assertEqual([(x.from_text, x.to_text, x.kind) for x in legs],
-                         [('Cảng Cát Lái', 'KHO A', 'DELIVERY'), ('KHO A', 'Trạm cân', 'TRANSFER'), ('Trạm cân', 'Depot', 'EMPTY_RETURN')])
+                         [('CẢNG CÁT LÁI', 'KHO A', 'DELIVERY'), ('KHO A', 'Trạm cân', 'TRANSFER'), ('Trạm cân', 'Depot', 'EMPTY_RETURN')])
 
     def test_truck_run_capacity_two_teu(self):
         t20a = self.trip(1, cont='CSQU3054383')

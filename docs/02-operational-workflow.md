@@ -1,30 +1,30 @@
 # GSS LOGISTICS — OPERATIONAL WORKFLOW & EXPENSE LIFECYCLE ARCHITECTURE
-## Quy Trình Điều Vận 11 Bước, Máy Trạng Thái Chuyến Xe & Vòng Đời Chi Phí Kế Toán
+## Quy Trình Điều Vận 7 Bước GSS, Máy Trạng Thái Tập Trung & Vòng Đời Chi Phí Kế Toán
 
-> **Hệ thống:** GSS Logistics Platform (TMS, WMS & Financial Subsystem)  
-> **Phiên bản:** v4.7.19 | **Cập nhật lần cuối:** 01/11/2026  
-> **Áp dụng:** Phòng Điều vận, Đội ngũ Lái xe, Phòng Kế toán - Tài chính & Ban Giám Đốc GSS  
-> **Tiêu chuẩn:** ISO/IEC/IEEE 42010, Mẫu S03a-DN (Bộ Tài Chính) & Arc42 Section 6 (Runtime Architecture)
+> **Hệ thống:** GSS TMS Platform (Container Transportation Management System)  
+> **Phiên bản:** v4.8.0 | **Cập nhật lần cuối:** 26/11/2026  
+> **Áp dụng:** Phòng Điều vận, Đối tác Nhà xe (Vendor 3PL), Lái xe Hiện trường & Phòng Tài chính - Kế toán GSS  
+> **Tiêu chuẩn:** Máy trạng thái tập trung bất biến (`apps/dispatch/gss_workflow.py`), Zero Variance P&L
 
 ---
 
-## 1. QUY TRÌNH ĐIỀU VẬN 11 BƯỚC THỰC TẾ (11-STEP LOGISTICS WORKFLOW)
+## 1. QUY TRÌNH ĐIỀU VẬN 7 BƯỚC TẬP TRUNG GSS (7-STEP GSS WORKFLOW)
+
+Vòng đời điều phối và vận chuyển container của GSS TMS được kiểm soát nghiêm ngặt qua **Máy trạng thái 7 bước tập trung** (`apps/dispatch/gss_workflow.py`), gắn liền với chốt chặn kiểm soát chứng từ pháp lý thực địa (EIR / POD / Hạ rỗng):
 
 ```mermaid
 flowchart TD
-    B1["B1. Tiếp Nhận Booking<br/>(Kinh doanh chốt đơn & Lệnh cấp cont rỗng)"]
-    B2["B2. Phát Lệnh Điều Vận<br/>(Điều xe đầu kéo, rơ-moóc & tài xế)"]
-    B3["B3. Xác Nhận Nhận Lệnh<br/>(Tài xế bấm chấp nhận chuyến trên Mobile App)"]
-    B4["B4. Xuất Phát & Lấy Cont<br/>(Tài xế di chuyển đến Cảng/Depot lấy vỏ cont)"]
-    B5["B5. Check-in Cổng Kho<br/>(Đến cổng bảo vệ kho khách hàng, báo trước 30p)"]
-    B6["B6. Bắt Đầu Bốc/Dỡ Hàng<br/>(Xe vào vị trí Dock, tháo niêm phong chì)"]
-    B7["B7. Hoàn Tất Đóng/Xuống Hàng<br/>(Kết thúc bốc dỡ tại dock, đóng cửa cont & kẹp chì)"]
-    B8["B8. Ký Biên Bản Giao Nhận<br/>(Khách hàng ký POD, chụp ảnh tải lên hệ thống)"]
-    B9["B9. Vận Chuyển Về Bãi Hạ<br/>(Kéo cont rời kho về Cảng xuất / Bãi rỗng hạ vỏ)"]
-    B10["B10. Hạ Cont & Nhận Phiếu EIR<br/>(Cẩu hạ bãi, lấy phiếu EIR hạ & ảnh vỏ cont)"]
-    B11["B11. Tổng Hợp Chi Phí & Chốt Sổ<br/>(Kế toán đối soát chứng từ, chi phí & khóa sổ)"]
+    S1["1. READY<br/>(Đã phát lệnh điều độ / Nhà xe gán xe)"]
+    S2["2. ARRIVED_AT_PICKUP<br/>(Đã đến nơi nhận cont / kho xuất)"]
+    S3["3. LOADED_ON_VEHICLE*<br/>(Đã lên xe / Đã nhận cont hàng)"]
+    S4["4. ARRIVED_AT_DELIVERY<br/>(Đã đến nơi giao / Kho khách hàng)"]
+    S5["5. UNLOADED*<br/>(Đã hạ xe / Giao xong hàng)"]
+    S6["6. RETURNING_EMPTY<br/>(Đang đi hạ rỗng / Trả vỏ bãi)"]
+    S7["7. EMPTY_RETURNED*<br/>(Đã hạ rỗng / Hoàn tất chuyến)"]
 
-    B1 --> B2 --> B3 --> B4 --> B5 --> B6 --> B7 --> B8 --> B9 --> B10 --> B11
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+
+    note["* Bắt buộc có chứng từ đính kèm (1–10 file/chặng):<br/>- Bước 3: Chứng từ Lấy cont (EIR bãi / Cảng)<br/>- Bước 5: Biên bản giao hàng (E-POD có chữ ký)<br/>- Bước 7: Phiếu hạ rỗng có xác nhận của bãi cont"]
 ```
 
 ---
@@ -56,51 +56,43 @@ flowchart TD
 
 ---
 
-## 2. MÁY TRẠNG THÁI CHUYẾN XE (TRIP STATE MACHINE)
+## 2. MÁY TRẠNG THÁI ĐIỀU VẬN 7 BƯỚC TẬP TRUNG (`apps/dispatch/gss_workflow.py`)
 
-Vòng đời chuyến xe được kiểm soát bằng máy trạng thái đơn định (Deterministic State Machine) tại `core.workflows`, đảm bảo **không có tình trạng nhảy cóc trạng thái trái quy luật vận tải**:
+Vòng đời chuyến xe được kiểm soát bằng máy trạng thái đơn định (Deterministic Finite State Machine) tại `apps/dispatch/gss_workflow.py`, đảm bảo **không bao giờ nhảy cóc trạng thái trái quy luật vận tải** và đồng bộ một chiều sang `TripStatus` cũ để phục vụ báo cáo/kế toán:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> DRAFT : Khởi tạo lệnh điều động
-    DRAFT --> DISPATCHED : Điều độ gửi lệnh (Zalo/App)
-    DRAFT --> CANCELLED : Hủy lệnh trước khi chạy
+    [*] --> READY : Đã gán xe & Phát lệnh điều độ
+    READY --> ARRIVED_AT_PICKUP : Xe đến bãi / cảng nhận cont
+    READY --> CANCELLED : Điều độ hủy lệnh
     
-    DISPATCHED --> ACCEPTED : Tài xế bấm nhận chuyến
-    DISPATCHED --> CANCELLED : Điều độ thu hồi lệnh
+    ARRIVED_AT_PICKUP --> LOADED_ON_VEHICLE : Đã nhận cont/hàng (Cần ≥1 chứng từ PICKUP)
+    ARRIVED_AT_PICKUP --> CANCELLED : Hủy do sự cố
     
-    ACCEPTED --> CONTAINER_PICKED : Đã lấy cont tại Cảng/Depot
-    ACCEPTED --> CANCELLED : Hủy do sự cố phương tiện
+    LOADED_ON_VEHICLE --> ARRIVED_AT_DELIVERY : Xe đến kho khách hàng giao hàng
+    ARRIVED_AT_DELIVERY --> UNLOADED : Giao xong hàng (Cần ≥1 chứng từ POD DELIVERY)
     
-    CONTAINER_PICKED --> IN_TRANSIT : Rời bãi cont di chuyển đến kho
-    IN_TRANSIT --> AT_WAREHOUSE : Check-in cổng kho khách hàng
-    AT_WAREHOUSE --> UNLOADING : Xe vào dock bốc/dỡ hàng
-    UNLOADING --> DELIVERED : Hoàn tất hàng hóa & Ký POD
+    UNLOADED --> RETURNING_EMPTY : Xe kéo vỏ cont đi hạ bãi
+    RETURNING_EMPTY --> EMPTY_RETURNED : Đã hạ rỗng (Cần ≥1 chứng từ EMPTY_RETURN)
     
-    DELIVERED --> RETURNING_EMPTY : Kéo cont rời kho đi hạ bãi
-    DELIVERED --> COMPLETED : (Hàng nội địa / không cần hạ bãi)
-    
-    RETURNING_EMPTY --> COMPLETED : Cẩu hạ cont & Có phiếu EIR hạ
-    
-    COMPLETED --> [*] : Chuyển Kế toán chốt sổ
+    EMPTY_RETURNED --> [*] : Hoàn tất chuyến & Chốt kế toán
     CANCELLED --> [*] : Lưu vết hủy chuyến
 ```
 
-### Bảng Ma Trận Chuyển Trạng Thái & Phân Quyền (RBAC Transitions):
+### Bảng Ma Trận Chuyển Trạng Thái 7 Bước & Ràng Buộc Chứng Từ:
 
-| Trạng thái Hiện tại | Trạng thái Cho phép | Tác nhân kích hoạt | Điều kiện tiên quyết bắt buộc (Guard Conditions) |
-|---|---|---|---|
-| `DRAFT` | `DISPATCHED` | Điều Phối Viên | Đã gán Xe (`vehicle`), Tài xế (`driver` hoặc `subcontractor`) và Lộ trình. |
-| `DRAFT` | `CANCELLED` | Điều Phối Viên | Nhập lý do hủy lệnh điều động. |
-| `DISPATCHED` | `ACCEPTED` | Tài Xế Hiện Trường | Tài xế bấm "Xác nhận nhận chuyến" trên ứng dụng di động. |
-| `ACCEPTED` | `CONTAINER_PICKED` | Tài Xế / Điều Độ | Đã cập nhật số Container, số Seal và chụp ảnh phiếu EIR lấy cont. |
-| `CONTAINER_PICKED` | `IN_TRANSIT` | Tài Xế | Bắt đầu lăn bánh di chuyển theo tuyến đường quy định. |
-| `IN_TRANSIT` | `AT_WAREHOUSE` | Tài Xế | GPS xác thực gần kho khách hàng hoặc bấm "Đã đến cổng kho". |
-| `AT_WAREHOUSE` | `UNLOADING` | Tài Xế | Xe đã vào Dock, bắt đầu bấm giờ xếp dỡ hàng hóa. |
-| `UNLOADING` | `DELIVERED` | Tài Xế | Đã hoàn tất bốc dỡ, tải ảnh biên bản bàn giao POD có chữ ký khách hàng. |
-| `DELIVERED` | `RETURNING_EMPTY` | Tài Xế | Kéo vỏ cont rỗng rời kho về bãi hạ quy định. |
-| `RETURNING_EMPTY` | `COMPLETED` | Tài Xế / Điều Độ | Tải lên phiếu EIR hạ vỏ cont hoặc chứng từ bàn giao cảng xuất. |
-| Bất kỳ (trừ `COMPLETED`) | `CANCELLED` | Ban Giám Đốc / Điều Độ | Bắt buộc ghi rõ lý do hủy và cập nhật nhật ký Audit Trail. |
+| Bước | Mã trạng thái | Tên hiển thị | Tác nhân kích hoạt | Ràng buộc chứng từ & Điều kiện kiểm soát |
+|:---:|---|---|---|---|
+| **1** | `READY` | Đã Phát Lệnh Điều Độ | Điều độ / Nhà xe | Đã gán Nhà xe (`subcontractor`), Đầu kéo và Tài xế. |
+| **2** | `ARRIVED_AT_PICKUP` | Đã đến nơi nhận | Tài xế (QR) / Điều độ | Xe đến cổng Cảng/Depot hoặc kho xuất hàng. |
+| **3** | `LOADED_ON_VEHICLE` | Đã lên xe / Đã nhận cont | Tài xế (QR) / Điều độ | **Bắt buộc:** Có số Container + ≥ 1 chứng từ chặng `PICKUP` (Phiếu EIR lấy cont). |
+| **4** | `ARRIVED_AT_DELIVERY` | Đã đến nơi giao | Tài xế (QR) / Điều độ | Xe đến cổng kho / nhà máy người nhận. |
+| **5** | `UNLOADED` | Đã hạ xe / Giao xong | Tài xế (QR) / Điều độ | **Bắt buộc:** ≥ 1 chứng từ chặng `DELIVERY` (Biên bản E-POD có ký nhận). |
+| **6** | `RETURNING_EMPTY` | Đang đi hạ rỗng | Tài xế (QR) / Điều độ | Xe kéo cont rỗng rời kho di chuyển về bãi hạ. |
+| **7** | `EMPTY_RETURNED` | Đã hạ rỗng (Hoàn tất) | Tài xế (QR) / Điều độ | **Bắt buộc:** ≥ 1 chứng từ chặng `EMPTY_RETURN` (Phiếu hạ rỗng bãi/cảng). Hỗ trợ đổi vỏ hoặc street-turn. |
+| **-** | `CANCELLED` | Đã hủy | Điều độ / Ban Giám Đốc | Bắt buộc nhập lý do hủy (≥ 5 ký tự) và ghi nhật ký Audit Trail. |
+
+> **Bất biến Invariant 2:** Trạng thái điều vận **chỉ được phép thay đổi qua `apps/dispatch/gss_workflow.advance()`**, tuyệt đối không cập nhật trực tiếp trường `status` hay `step_status` trong view/template.
 
 ---
 

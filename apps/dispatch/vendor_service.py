@@ -166,11 +166,23 @@ def regenerate_link(alloc, expires_days=DEFAULT_LINK_DAYS, user=None):
 
 
 def revoke_allocation(alloc, user=None):
-    if alloc.trips.filter(is_deleted=False).exists():
+    if alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').exists():
         raise ValidationError('Phiếu đã sinh chuyến xe, không thể thu hồi. Hãy khóa phiếu thay vì thu hồi.')
+    # 1. Gỡ bỏ liên kết từ các BookingContainer thuộc phiếu này
+    alloc.containers.filter(is_deleted=False).update(
+        allocation=None,
+        alloc_line_no=None,
+        updated_at=timezone.now()
+    )
+    # 2. Reset phiếu về trạng thái REVOKED và 0 container
     alloc.status = AllocationStatus.REVOKED
+    alloc.allocated_containers = 0
+    alloc.draft_rows = {}
     alloc.token_hash = hash_token(secrets.token_urlsafe(32))  # vô hiệu hóa link cũ
-    alloc.save(update_fields=['status', 'token_hash', 'updated_at'])
+    alloc.save(update_fields=['status', 'allocated_containers', 'draft_rows', 'token_hash', 'updated_at'])
+    # 3. Đồng bộ lại trạng thái và tiến độ của Booking
+    if alloc.booking:
+        sync_booking_progress(alloc.booking)
     audit_allocation(alloc, 'REVOKE', user)
 
 
@@ -187,11 +199,12 @@ def refresh_status(alloc):
     filled = alloc.trips.filter(is_deleted=False).exclude(step_status='CANCELLED').count()
     is_cmode = container_mode(alloc.booking)
     target = alloc.containers.filter(is_deleted=False).count() if is_cmode else alloc.allocated_containers
+    has_draft = any(str(k).isdigit() for k in (alloc.draft_rows or {}).keys())
     if alloc.locked_at:
         new = AllocationStatus.LOCKED
     elif target > 0 and filled >= target:
         new = AllocationStatus.SUBMITTED
-    elif filled or alloc.draft_rows:
+    elif filled or has_draft:
         new = AllocationStatus.PARTIAL
     else:
         new = AllocationStatus.PENDING
@@ -366,6 +379,7 @@ def rows_for(alloc, for_vendor=True):
             'container_locked': bool(bc is not None), 'moved': moved,
             'container_type': (bc.container_type if bc else '') or alloc.booking.container_size,
             'delivery': ((bc.delivery_loc.name if bc.delivery_loc_id else bc.delivery_address) if bc else '') or '',
+            'driver_note': (bc.driver_note if bc else '') or '',
         })
     # Bổ sung các container đã chuyển đi (cancelled trip) nếu chưa có trong out
     seen_cnums = {r.get('container_number') for r in out if r.get('container_number')}

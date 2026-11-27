@@ -126,7 +126,7 @@ class SubmitRowsTests(VendorBase):
         out = svc.submit_rows(self.alloc, [self.row(9), self.row(1, driver_phone='abc')])
         self.assertFalse(out['results'][0]['ok'])
         self.assertFalse(out['results'][1]['ok'])
-        self.assertEqual(DispatchTrip.objects.count(), 0)
+        self.assertEqual(DispatchTrip.objects.filter(vendor_allocation=self.alloc).count(), 0)
 
     def test_duplicate_container_rejected_across_rows_and_trips(self):
         out = svc.submit_rows(self.alloc, [self.row(1, container_number='CSQU3054383'), self.row(2, container_number='CSQU3054383')])
@@ -267,7 +267,7 @@ class VendorApiTests(VendorBase):
         res = self.client.put(f'/api/vendor/{token}/', {'rows': [{'line_no': 1, 'tractor_plate': '51C-222.22'}]}, content_type='application/json')
         self.assertEqual(res.status_code, 200, res.content)
         self.assertTrue(res.json()['results'][0]['ok'])
-        self.assertEqual(DispatchTrip.objects.count(), 1)
+        self.assertEqual(DispatchTrip.objects.filter(booking_order=self.booking).count(), 1)
         from core.models import AuditLog
         self.assertFalse(AuditLog.objects.filter(actor_label='khách (chưa đăng nhập)').exists())
 
@@ -348,7 +348,68 @@ class VendorApiTests(VendorBase):
 
         # 4. Kiểm tra chuyến xe được tạo với SĐT chuẩn hoá có số 0
         from apps.dispatch.models import DispatchTrip
-        trip = DispatchTrip.objects.filter(vendor_line_no=1, vehicle__license_plate='59C-99999').first()
+        trip = DispatchTrip.objects.filter(vendor_line_no=1, vehicle__license_plate='59C-999.99').first()
         self.assertIsNotNone(trip)
         self.assertEqual(trip.subcontractor_driver_phone, '0987654321')
         self.assertEqual(trip.subcontractor_driver_name, 'Bác Tài GSS')
+
+    def test_revoke_and_unassign_restores_initial_state(self):
+        from apps.customers.models import BookingStatus
+        from apps.gss.models import BookingContainer
+        from apps.gss import containers as cs
+
+        # 1. Tạo 2 containers cho booking
+        c1 = BookingContainer.objects.create(booking=self.booking, container_number='TCLU1234567', line_no=1)
+        c2 = BookingContainer.objects.create(booking=self.booking, container_number='TCLU7654321', line_no=2)
+        self.booking.total_containers = 2
+        self.booking.status = BookingStatus.PENDING_DISPATCH
+        self.booking.dispatched_containers = 0
+        self.booking.save()
+
+        # Phân bổ 2 cont cho subcontractor
+        out = cs.assign(self.booking, [c1.id, c2.id], self.sub_a, user=self.user)
+        alloc = out['allocation']
+        self.assertIsNotNone(alloc)
+        self.assertEqual(alloc.allocated_containers, 2)
+        c1.refresh_from_db()
+        c2.refresh_from_db()
+        self.assertEqual(c1.allocation_id, alloc.id)
+        self.assertEqual(c2.allocation_id, alloc.id)
+
+        # Kiểm tra API active bookings trước khi revoke
+        res = self.client.get('/api/bookings/active/')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        item = next(b for b in (data if isinstance(data, list) else data.get('data', [])) if b['id'] == self.booking.id)
+        self.assertEqual(item['allocated_containers'], 2)
+        self.assertTrue(item['is_fully_dispatched'])
+        self.assertIn(self.sub_a.short_name or self.sub_a.name, item['vendor_summary'])
+
+        # 2. Thu hồi phân bổ (Revoke allocation)
+        patch_res = self.client.patch(f'/api/vendor-allocations/{alloc.id}/', {'action': 'revoke'}, content_type='application/json')
+        self.assertEqual(patch_res.status_code, 200)
+
+        # 3. Kiểm tra trạng thái đã được hoàn trả nguyên vẹn 100%
+        alloc.refresh_from_db()
+        self.assertEqual(alloc.status, AllocationStatus.REVOKED)
+        self.assertEqual(alloc.allocated_containers, 0)
+
+        c1.refresh_from_db()
+        c2.refresh_from_db()
+        self.assertIsNone(c1.allocation)
+        self.assertIsNone(c1.alloc_line_no)
+        self.assertIsNone(c2.allocation)
+        self.assertIsNone(c2.alloc_line_no)
+
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.status, BookingStatus.PENDING_DISPATCH)
+        self.assertEqual(self.booking.dispatched_containers, 0)
+
+        # Kiểm tra lại qua API /api/bookings/active/
+        res2 = self.client.get('/api/bookings/active/')
+        self.assertEqual(res2.status_code, 200)
+        data2 = res2.json()
+        item2 = next(b for b in (data2 if isinstance(data2, list) else data2.get('data', [])) if b['id'] == self.booking.id)
+        self.assertEqual(item2['allocated_containers'], 0)
+        self.assertFalse(item2['is_fully_dispatched'])
+        self.assertEqual(item2['vendor_summary'], '')

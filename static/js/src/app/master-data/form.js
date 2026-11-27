@@ -58,7 +58,66 @@ async function openCreateMasterDataModal() {
 
     injectMasterDataModalFields(null);
     document.getElementById('modal-master-data').classList.remove('hidden');
+
+    // Nạp sẵn mã kế tiếp cho người dùng xem trước theo chuẩn BIM LOGISTICS
+    if (currentMasterDataTab === 'customers') {
+        fetchWithAuth('/api/master-data/customers/next-code/').then(r => r.ok ? r.json() : null).then(data => {
+            const codeInp = document.getElementById('mdf-code');
+            if (codeInp && data && data.code) codeInp.value = data.code;
+        }).catch(() => {});
+    } else if (currentMasterDataTab === 'locations') {
+        const typeSelect = document.getElementById('mdf-location-type');
+        const locType = typeSelect ? typeSelect.value : 'PORT';
+        fetchWithAuth(`/api/master-data/locations/next-code/?location_type=${encodeURIComponent(locType)}`).then(r => r.ok ? r.json() : null).then(data => {
+            const codeInp = document.getElementById('mdf-code');
+            if (codeInp && data && data.code) codeInp.value = data.code;
+        }).catch(() => {});
+    } else if (currentMasterDataTab === 'subcontractors') {
+        const typeSelect = document.getElementById('mdf-sc-partner-type');
+        const pType = typeSelect ? typeSelect.value : 'CARRIER';
+        fetchWithAuth(`/api/master-data/subcontractors/next-code/?partner_type=${encodeURIComponent(pType)}`).then(r => r.ok ? r.json() : null).then(data => {
+            const codeInp = document.getElementById('mdf-sc-code');
+            if (codeInp && data && data.code) codeInp.value = data.code;
+        }).catch(() => {});
+    }
 }
+
+// Xử lý đổi phân loại Địa điểm & xem trước mã mới (Phương án 1)
+async function onMasterLocationTypeChange(newType) {
+    const codeInp = document.getElementById('mdf-code');
+    if (!codeInp) return;
+    const editId = document.getElementById('md-edit-id')?.value;
+    const initialCode = codeInp.dataset.initialCode || '';
+    const initialType = codeInp.dataset.initialType || 'PORT';
+    const alertBox = document.getElementById('mdf-location-type-alert');
+    const alertText = document.getElementById('mdf-location-type-alert-text');
+
+    try {
+        const res = await fetchWithAuth(`/api/master-data/locations/next-code/?location_type=${encodeURIComponent(newType || 'PORT')}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.code) {
+                if (!editId) {
+                    codeInp.value = data.code;
+                } else {
+                    if (newType !== initialType) {
+                        codeInp.value = data.code;
+                        if (alertBox && alertText) {
+                            alertText.innerHTML = `Đổi phân loại sẽ tự động đổi mã: <strong class="underline">${escapeHtml(initialCode)}</strong> ➔ <strong class="underline text-teal-900">${escapeHtml(data.code)}</strong>. Toàn bộ chuyến xe & bảng giá liên kết vẫn được giữ nguyên vẹn.`;
+                            alertBox.classList.remove('hidden');
+                        }
+                    } else {
+                        codeInp.value = initialCode;
+                        if (alertBox) alertBox.classList.add('hidden');
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[Location] Lỗi nạp mã kế tiếp:', err);
+    }
+}
+window.onMasterLocationTypeChange = onMasterLocationTypeChange;
 
 // Open Edit Modal with Current Data
 async function openEditMasterDataModal(id) {

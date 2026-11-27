@@ -292,21 +292,25 @@ function injectMasterDataModalFields(data) {
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Địa Điểm <span class="text-rose-500">*</span></label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Địa Điểm <span class="text-slate-400 font-normal">(Tự động sinh)</span></label>
                     </div>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CAT_LAI, KHO_WCA..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" required ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Hệ thống tự động cấp..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full bg-slate-100 text-slate-600 cursor-not-allowed select-none" readonly title="Mã được hệ thống tự động sinh theo chuẩn, không cho phép sửa tay" data-initial-code="${d.code || ''}" data-initial-type="${d.location_type || 'PORT'}">
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Phân Loại</label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Phân Loại <span class="text-rose-500">*</span></label>
                     </div>
-                    <select id="mdf-location-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
-                        <option value="PORT" ${d.location_type === 'PORT' ? 'selected' : ''}>Cảng Biển</option>
+                    <select id="mdf-location-type" onchange="onMasterLocationTypeChange(this.value)" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
+                        <option value="PORT" ${d.location_type === 'PORT' ? 'selected' : ''}>Cảng Biển (PRT)</option>
                         <option value="ICD" ${d.location_type === 'ICD' ? 'selected' : ''}>Cảng Cạn (ICD)</option>
-                        <option value="DEPOT" ${d.location_type === 'DEPOT' ? 'selected' : ''}>Bãi Rỗng / Depot</option>
-                        <option value="WAREHOUSE" ${d.location_type === 'WAREHOUSE' ? 'selected' : ''}>Kho Hàng / Nhà Máy</option>
-                        <option value="YARD" ${d.location_type === 'YARD' ? 'selected' : ''}>Bãi Đỗ Xe Công Ty</option>
+                        <option value="DEPOT" ${d.location_type === 'DEPOT' ? 'selected' : ''}>Bãi Rỗng / Depot (DPT)</option>
+                        <option value="WAREHOUSE" ${d.location_type === 'WAREHOUSE' ? 'selected' : ''}>Kho Hàng / Nhà Máy (WHS)</option>
+                        <option value="YARD" ${d.location_type === 'YARD' ? 'selected' : ''}>Bãi Đỗ Xe Công Ty (PKG)</option>
                     </select>
+                </div>
+                <div id="mdf-location-type-alert" class="hidden md:col-span-12 p-2 bg-amber-50 border border-amber-300 rounded text-xs text-amber-900 flex items-center gap-2">
+                    <i class="ph-bold ph-warning text-amber-600 text-base shrink-0"></i>
+                    <span id="mdf-location-type-alert-text"></span>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -372,9 +376,9 @@ function injectMasterDataModalFields(data) {
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Khách Hàng</label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Khách Hàng <span class="text-slate-400 font-normal">(Tự động sinh)</span></label>
                     </div>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Hệ thống tự động cấp..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full bg-slate-100 text-slate-600 cursor-not-allowed select-none" readonly title="Mã được hệ thống tự động sinh theo chuẩn, không cho phép sửa tay">
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -731,7 +735,7 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Biển Số Xe <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-license-plate" value="${d.license_plate || ''}" placeholder="VD: 51H-123.45..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.license_plate ? 'readonly' : ''}>
+                    <input type="text" id="mdf-license-plate" value="${d.license_plate || ''}" placeholder="VD: 50H14561 -> 50H-145.61" oninput="formatLicensePlateInput(this)" onblur="formatLicensePlateInput(this)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.license_plate ? 'readonly' : ''}>
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -881,7 +885,7 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Biển Số Rơ-Moóc <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-trailer-plate" value="${d.license_plate || ''}" placeholder="VD: 51R-123.45" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.license_plate ? 'readonly' : ''}>
+                    <input type="text" id="mdf-trailer-plate" value="${d.license_plate || ''}" placeholder="VD: 50RM08080 -> 50RM-080.80" oninput="formatLicensePlateInput(this)" onblur="formatLicensePlateInput(this)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.license_plate ? 'readonly' : ''}>
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -1018,9 +1022,13 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tác / Nhà Xe</label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tác / Nhà Xe <span class="text-slate-400 font-normal">(Tự động sinh)</span></label>
                     </div>
-                    <input type="text" id="mdf-sc-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh theo loại: 3PL001, GAR001, SPL001..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-sc-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh: 3PL001, GAR001, SPL001..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full bg-slate-100 text-slate-600 cursor-not-allowed select-none" readonly title="Mã được hệ thống tự động sinh theo chuẩn, không cho phép sửa tay" data-initial-code="${escapeHtml(d.code || '')}" data-initial-type="${partnerTypeVal}">
+                </div>
+                <div id="mdf-sc-partner-type-alert" class="hidden md:col-span-12 p-2 bg-amber-50 border border-amber-300 rounded text-xs text-amber-900 flex items-center gap-2">
+                    <i class="ph-bold ph-warning text-amber-600 text-base shrink-0"></i>
+                    <span id="mdf-sc-partner-type-alert-text"></span>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">

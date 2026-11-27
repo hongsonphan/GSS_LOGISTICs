@@ -601,7 +601,7 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
                             <td class="py-3 px-3.5 font-mono text-slate-700">${escapeHtml(e.invoice_number || '-')}</td>
                             <td class="py-3 px-3.5 text-center">${isReimbBadge}</td>
                             <td class="py-3 px-3.5 text-center">
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">${escapeHtml(e.status_display)}</span>
+                                <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700"><i class="ph-bold ph-check-circle"></i><span>${escapeHtml(e.status_display)}</span></span>
                             </td>
                             <td class="py-3 px-3.5 text-center text-slate-500">${e.created_at}</td>
                         </tr>

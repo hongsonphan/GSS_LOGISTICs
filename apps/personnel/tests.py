@@ -134,7 +134,7 @@ class PersonnelHRMAPITestCase(TestCase):
         res = self.client.put(f'/api/personnel/employees/{self.driver_emp.id}/', payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.driver_emp.refresh_from_db()
-        self.assertEqual(self.driver_emp.full_name, 'Tài Xế Test A (Đã Sửa)')
+        self.assertEqual(self.driver_emp.full_name, 'TÀI XẾ TEST A (ĐÃ SỬA)')
         self.assertEqual(self.driver_emp.license_number, 'GPLX-NEW')
 
     def test_soft_delete_employee(self):
@@ -156,25 +156,33 @@ class PersonnelHRMAPITestCase(TestCase):
     # Test Dependent & Labor Contract
     # -------------------------------------------------------------
     def test_employee_auto_code_generation(self):
-        # Kiểm tra quy tắc sinh mã tự động theo vai trò và phòng ban
+        # Kiểm tra quy tắc sinh mã tự động chuẩn BIM LOGISTICS: dải mã chung EMP001, EMP002...
         code_driver = Employee.generate_next_code(role=EmployeeRole.DRIVER)
-        self.assertTrue(code_driver.startswith('TX'))
-        self.assertGreaterEqual(len(code_driver), 5) # TX001
+        self.assertTrue(code_driver.startswith('EMP'))
+        self.assertEqual(len(code_driver), 6) # EMP001
 
         code_disp = Employee.generate_next_code(role=EmployeeRole.DISPATCHER)
-        self.assertTrue(code_disp.startswith('DD'))
+        self.assertTrue(code_disp.startswith('EMP'))
 
         code_acc = Employee.generate_next_code(role=EmployeeRole.ACCOUNTANT)
-        self.assertTrue(code_acc.startswith('KT'))
+        self.assertTrue(code_acc.startswith('EMP'))
 
-        # Tạo nhân sự không truyền code -> tự sinh mã
+        # Test API GET next-code
+        res_next = self.client.get('/api/personnel/employees/next-code/')
+        self.assertEqual(res_next.status_code, status.HTTP_200_OK)
+        self.assertTrue(res_next.data['code'].startswith('EMP'))
+
+        # Tạo nhân sự không truyền code -> tự sinh mã EMPxxx & auto UPPERCASE
         emp1 = Employee.objects.create(
-            full_name='Lái xe Tự Sinh Mã 1',
+            full_name='nguyễn văn an',
+            nickname='an tài xế',
             phone_number='0988111222',
             role=EmployeeRole.DRIVER,
             department=Department.FLEET
         )
         self.assertEqual(emp1.code, code_driver)
+        self.assertEqual(emp1.full_name, 'NGUYỄN VĂN AN')
+        self.assertEqual(emp1.nickname, 'AN TÀI XẾ')
 
         # Tạo nhân sự thứ 2 cùng vai trò -> tăng STT
         emp2 = Employee.objects.create(
@@ -183,8 +191,8 @@ class PersonnelHRMAPITestCase(TestCase):
             role=EmployeeRole.DRIVER,
             department=Department.FLEET
         )
-        expected_stt = int(emp1.code.replace('TX', '')) + 1
-        self.assertEqual(emp2.code, f"TX{expected_stt:03d}")
+        expected_stt = int(emp1.code.replace('EMP', '')) + 1
+        self.assertEqual(emp2.code, f"EMP{expected_stt:03d}")
 
     def test_export_employee_template_and_data_api(self):
         # 1. Tải mẫu template
@@ -247,11 +255,11 @@ class PersonnelHRMAPITestCase(TestCase):
 
         # Kiểm tra database: 2 nhân viên đã được tạo
         emp_hoang = Employee.objects.get(phone_number='0937888999')
-        self.assertEqual(emp_hoang.full_name, 'Phan Minh Hoàng')
-        self.assertTrue(emp_hoang.code.startswith('TX'))
+        self.assertEqual(emp_hoang.full_name, 'PHAN MINH HOÀNG')
+        self.assertTrue(emp_hoang.code.startswith('EMP'))
 
         emp_thao = Employee.objects.get(code='KT901')
-        self.assertEqual(emp_thao.full_name, 'Vũ Thị Thanh Thảo')
+        self.assertEqual(emp_thao.full_name, 'VŨ THỊ THANH THẢO')
         self.assertEqual(emp_thao.role, EmployeeRole.STAFF_ADMIN_ACC)
 
         # Test xóa mềm (soft-delete) sau đó import lại có cờ update_existing=True -> khôi phục
@@ -299,14 +307,14 @@ class PersonnelHRMAPITestCase(TestCase):
         self.assertEqual(Department.MANAGEMENT, 'MANAGEMENT')
         self.assertEqual(EmployeeRole.DIRECTOR, 'DIRECTOR')
         code_dir = Employee.generate_next_code(role=EmployeeRole.DIRECTOR, department=Department.MANAGEMENT)
-        self.assertTrue(code_dir.startswith('BGD'))
+        self.assertTrue(code_dir.startswith('EMP'))
 
         # 2. Phòng Hành Chính & Kế Toán (2 vị trí)
         self.assertEqual(Department.ADMIN_ACC, 'ADMIN_ACC')
         self.assertEqual(EmployeeRole.LEAD_ADMIN_ACC, 'LEAD_ADMIN_ACC')
         self.assertEqual(EmployeeRole.STAFF_ADMIN_ACC, 'STAFF_ADMIN_ACC')
         code_lead_acc = Employee.generate_next_code(role=EmployeeRole.LEAD_ADMIN_ACC, department=Department.ADMIN_ACC)
-        self.assertTrue(code_lead_acc.startswith('KT'))
+        self.assertTrue(code_lead_acc.startswith('EMP'))
 
         # 3. Phòng Điều Vận (4 vị trí)
         self.assertEqual(Department.DISPATCH, 'DISPATCH')
@@ -315,9 +323,9 @@ class PersonnelHRMAPITestCase(TestCase):
         self.assertEqual(EmployeeRole.DISPATCH_ASST, 'DISPATCH_ASST')
         self.assertEqual(EmployeeRole.DRIVER, 'DRIVER')
         code_driver = Employee.generate_next_code(role=EmployeeRole.DRIVER, department=Department.DISPATCH)
-        self.assertTrue(code_driver.startswith('TX'))
+        self.assertTrue(code_driver.startswith('EMP'))
         code_lead_disp = Employee.generate_next_code(role=EmployeeRole.LEAD_DISPATCH, department=Department.DISPATCH)
-        self.assertTrue(code_lead_disp.startswith('DD'))
+        self.assertTrue(code_lead_disp.startswith('EMP'))
 
         # 4. Phòng Kinh Doanh (3 vị trí)
         self.assertEqual(Department.SALES, 'SALES')
@@ -325,23 +333,23 @@ class PersonnelHRMAPITestCase(TestCase):
         self.assertEqual(EmployeeRole.SALESMAN, 'SALESMAN')
         self.assertEqual(EmployeeRole.CSKH, 'CSKH')
         code_lead_sales = Employee.generate_next_code(role=EmployeeRole.LEAD_SALES, department=Department.SALES)
-        self.assertTrue(code_lead_sales.startswith('KD'))
+        self.assertTrue(code_lead_sales.startswith('EMP'))
         code_cskh = Employee.generate_next_code(role=EmployeeRole.CSKH, department=Department.SALES)
-        self.assertTrue(code_cskh.startswith('KD'))
+        self.assertTrue(code_cskh.startswith('EMP'))
 
         # 5. Phòng Bảo Trì Vận Hành (2 vị trí)
         self.assertEqual(Department.MAINTENANCE, 'MAINTENANCE')
         self.assertEqual(EmployeeRole.LEAD_MAINT, 'LEAD_MAINT')
         self.assertEqual(EmployeeRole.MECHANIC, 'MECHANIC')
         code_lead_maint = Employee.generate_next_code(role=EmployeeRole.LEAD_MAINT, department=Department.MAINTENANCE)
-        self.assertTrue(code_lead_maint.startswith('BT'))
+        self.assertTrue(code_lead_maint.startswith('EMP'))
 
         # 6. Phòng Dịch Vụ Hải Quan (2 vị trí)
         self.assertEqual(Department.CUSTOMS, 'CUSTOMS')
         self.assertEqual(EmployeeRole.LEAD_CUSTOMS, 'LEAD_CUSTOMS')
         self.assertEqual(EmployeeRole.CUSTOMS_STAFF, 'CUSTOMS_STAFF')
         code_lead_customs = Employee.generate_next_code(role=EmployeeRole.LEAD_CUSTOMS, department=Department.CUSTOMS)
-        self.assertTrue(code_lead_customs.startswith('HQ'))
+        self.assertTrue(code_lead_customs.startswith('EMP'))
 
     def test_user_to_employee_name_and_email_sync(self):
         """Kiểm thử khi cập nhật Họ Tên & Email của User trong Django Admin thì Employee tự động đồng bộ."""
@@ -352,5 +360,5 @@ class PersonnelHRMAPITestCase(TestCase):
 
         # Reload Employee và kiểm tra
         emp = Employee.objects.get(id=self.director_emp.id)
-        self.assertEqual(emp.full_name, "Nguyễn Minh Thuận")
+        self.assertEqual(emp.full_name, "NGUYỄN MINH THUẬN")
         self.assertEqual(emp.email, "user@gss-logistics.example.com")

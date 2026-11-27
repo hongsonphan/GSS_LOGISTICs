@@ -7,12 +7,14 @@ from apps.personnel.api_views import (
     EmployeeExportTemplateAPIView,
     EmployeeImportAPIView,
     EmployeeExportDataAPIView,
+    EmployeeNextCodeAPIView,
     AvailableUsersAPIView,
 )
 
 urlpatterns = [
     path('drivers/quick-create/', DriverQuickCreateAPIView.as_view(), name='api-driver-quick-create'),
     path('employees/', EmployeeListCreateAPIView.as_view(), name='api-employee-list-create'),
+    path('employees/next-code/', EmployeeNextCodeAPIView.as_view(), name='api-employee-next-code'),
     path('employees/export-template/', EmployeeExportTemplateAPIView.as_view(), name='api-employee-export-template'),
     path('employees/import/', EmployeeImportAPIView.as_view(), name='api-employee-import'),
     path('employees/export-data/', EmployeeExportDataAPIView.as_view(), name='api-employee-export-data'),

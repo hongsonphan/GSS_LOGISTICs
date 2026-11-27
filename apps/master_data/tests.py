@@ -111,7 +111,7 @@ class MasterDataAPITestCase(TestCase):
         self.assertEqual(update_res.status_code, status.HTTP_200_OK)
         sl = ShippingLine.objects.get(id=sl_id)
         self.assertEqual(sl.free_dem_days, 10)
-        self.assertEqual(sl.name, 'Evergreen Shipping Updated')
+        self.assertEqual(sl.name, 'EVERGREEN SHIPPING UPDATED')
 
         # Delete (soft delete)
         del_res = self.client.delete(f'/api/master-data/shipping-lines/{sl_id}/')
@@ -583,7 +583,7 @@ class OpeningBalanceAPITestCase(TestCase):
         self.assertTrue(res_update.data.get('success'))
         self.assertGreaterEqual(res_update.data.get('updated_count'), 1)
         loc = Location.objects.get(code='TEST_NEW_LOC')
-        self.assertEqual(loc.name, 'Cảng Mới Đã Cập Nhật Tên')
+        self.assertEqual(loc.name, 'CẢNG MỚI ĐÃ CẬP NHẬT TÊN')
 
     def test_import_master_data_customers_and_tariffs(self):
         import io
@@ -1019,3 +1019,98 @@ class ReferentialDeletionLocksTestCase(TestCase):
         v = Vehicle.objects.create(license_plate='51D-999.88', vehicle_type='TRACTOR')
         v3 = get_master_data_version()
         self.assertGreaterEqual(v3, v2)
+
+    def test_bim_standardized_master_data_and_license_plate(self):
+        """Kiểm tra toàn diện Quy chuẩn Chuẩn hóa Dữ liệu & Kiến trúc Sinh mã BIM LOGISTICS."""
+        from apps.customers.models import Customer
+        from apps.master_data.models import Location, LocationType, Subcontractor, PartnerType
+        from apps.fleet.models import Vehicle, Trailer, normalize_license_plate
+
+        # 1. Khách hàng: CUS00n & API next-code & Auto-Uppercase
+        res_cus_code = self.client.get('/api/master-data/customers/next-code/')
+        self.assertEqual(res_cus_code.status_code, status.HTTP_200_OK)
+        self.assertTrue(res_cus_code.data['code'].startswith('CUS'))
+
+        res_create_cus = self.client.post('/api/master-data/customers/', {
+            'name': 'công ty cổ phần xuất nhập khẩu bim test',
+            'short_name': 'bim test',
+            'code': 'FAKE_CODE_CLIENT'
+        }, format='json')
+        self.assertEqual(res_create_cus.status_code, status.HTTP_201_CREATED)
+        cus_data = res_create_cus.data
+        self.assertTrue(cus_data['code'].startswith('CUS'))
+        cus_obj = Customer.objects.get(id=cus_data['id'])
+        self.assertEqual(cus_obj.name, 'CÔNG TY CỔ PHẦN XUẤT NHẬP KHẨU BIM TEST')
+        self.assertEqual(cus_obj.short_name, 'BIM TEST')
+
+        # 2. Địa điểm: 5 loại PRT, ICD, DPT, PKG, WHS
+        for loc_type, prefix in [
+            (LocationType.PORT, 'PRT'),
+            (LocationType.ICD, 'ICD'),
+            (LocationType.DEPOT, 'DPT'),
+            (LocationType.YARD, 'PKG'),
+            (LocationType.WAREHOUSE, 'WHS')
+        ]:
+            res_loc_next = self.client.get(f'/api/master-data/locations/next-code/?location_type={loc_type}')
+            self.assertEqual(res_loc_next.status_code, status.HTTP_200_OK)
+            self.assertTrue(res_loc_next.data['code'].startswith(prefix))
+
+        # Tạo mới Location Depot
+        res_loc_create = self.client.post('/api/master-data/locations/', {
+            'name': 'depot tân vạn gss test',
+            'location_type': LocationType.DEPOT,
+            'code': 'CUSTOM_CODE_CLIENT'
+        }, format='json')
+        self.assertEqual(res_loc_create.status_code, status.HTTP_201_CREATED)
+        loc_id = res_loc_create.data['id']
+        loc_obj = Location.objects.get(id=loc_id)
+        self.assertTrue(loc_obj.code.startswith('DPT'))
+        self.assertEqual(loc_obj.name, 'DEPOT TÂN VẠN GSS TEST')
+
+        # Cơ chế đổi phân loại (Phương án 1): Đổi từ DEPOT sang WAREHOUSE -> tự cấp WHSxxx giữ nguyên ID
+        old_loc_code = loc_obj.code
+        res_loc_edit = self.client.put(f'/api/master-data/locations/{loc_id}/', {
+            'location_type': LocationType.WAREHOUSE,
+            'name': 'KHO NHÀ MÁY TÂN VẠN GSS'
+        }, format='json')
+        self.assertEqual(res_loc_edit.status_code, status.HTTP_200_OK)
+        loc_obj.refresh_from_db()
+        self.assertEqual(loc_obj.id, loc_id) # Surrogate Key ID bất biến
+        self.assertTrue(loc_obj.code.startswith('WHS'))
+        self.assertNotEqual(loc_obj.code, old_loc_code)
+
+        # 3. Đối tác / Thầu phụ: Đổi từ CARRIER (3PL) sang GARAGE (GAR)
+        res_sc = self.client.post('/api/master-data/subcontractors/', {
+            'name': 'nhà xe đối tác thử nghiệm',
+            'short_name': 'đối tác test',
+            'partner_type': PartnerType.CARRIER
+        }, format='json')
+        self.assertEqual(res_sc.status_code, status.HTTP_201_CREATED)
+        sc_id = res_sc.data['id']
+        sc_obj = Subcontractor.objects.get(id=sc_id)
+        self.assertTrue(sc_obj.code.startswith('3PL'))
+        self.assertEqual(sc_obj.name, 'NHÀ XE ĐỐI TÁC THỬ NGHIỆM')
+
+        # Đổi phân loại sang GARAGE
+        res_sc_edit = self.client.put(f'/api/master-data/subcontractors/{sc_id}/', {
+            'partner_type': PartnerType.GARAGE,
+            'name': 'GARA SỬA CHỮA THỬ NGHIỆM'
+        }, format='json')
+        self.assertEqual(res_sc_edit.status_code, status.HTTP_200_OK)
+        sc_obj.refresh_from_db()
+        self.assertEqual(sc_obj.id, sc_id) # Surrogate key ID bất biến
+        self.assertTrue(sc_obj.code.startswith('GAR'))
+
+        # 4. Biển số xe Smart Input & Thông tư 24/2023/TT-BCA
+        self.assertEqual(normalize_license_plate('50h14561'), '50H-145.61')
+        self.assertEqual(normalize_license_plate('60H14236'), '60H-142.36')
+        self.assertEqual(normalize_license_plate('61c39329'), '61C-393.29')
+        self.assertEqual(normalize_license_plate('50rm08080'), '50RM-080.80')
+        self.assertEqual(normalize_license_plate('51r00722'), '51R-007.22')
+
+        # Lưu vào model Vehicle và Trailer tự chuẩn hóa
+        v_test = Vehicle.objects.create(license_plate='50h99988', vehicle_type='TRACTOR')
+        self.assertEqual(v_test.license_plate, '50H-999.88')
+
+        tr_test = Trailer.objects.create(license_plate='51rm12345')
+        self.assertEqual(tr_test.license_plate, '51RM-123.45')

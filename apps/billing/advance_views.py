@@ -256,10 +256,10 @@ class DispatcherFundCreateAPIView(APIView):
             except ValueError:
                 pass
 
-        # Sinh mã phiếu TUDV-YYYYMM-XXXX
-        today = timezone.now().date()
-        date_prefix = f"TUDV-{today.strftime('%Y%m')}"
-        code = next_code(DispatcherAdvanceFund, 'code', f"{date_prefix}-", 4)  # mã tuần tự an toàn, không trùng
+        # Sinh mã phiếu TUNV.YYMM.xxx theo quy chuẩn BIM LOGISTICS
+        today = timezone.localtime().date()
+        date_prefix = f"TUNV.{today.strftime('%y%m')}."
+        code = next_code(DispatcherAdvanceFund, 'code', date_prefix, 3)  # mã tuần tự an toàn, không trùng
         # Mặc định tạo phiếu là PENDING (chờ duyệt xuất quỹ), trừ khi có cờ auto_approve
         auto_approve = request.data.get('auto_approve', False)
         curr_emp = getattr(request.user, 'employee', None)
@@ -364,10 +364,10 @@ class DriverAdvanceCreateAPIView(APIView):
             except ValueError:
                 pass
 
-        # Sinh mã phiếu TUTX-YYYYMM-XXXX
-        today = timezone.now().date()
-        date_prefix = f"TUTX-{today.strftime('%Y%m')}"
-        code = next_code(DriverTripAdvance, 'code', f"{date_prefix}-", 4)  # mã tuần tự an toàn, không trùng
+        # Sinh mã phiếu TUTX.YYMM.xxx theo quy chuẩn BIM LOGISTICS
+        today = timezone.localtime().date()
+        date_prefix = f"TUTX.{today.strftime('%y%m')}."
+        code = next_code(DriverTripAdvance, 'code', date_prefix, 3)  # mã tuần tự an toàn, không trùng
 
         with transaction.atomic():
             trip = DispatchTrip.objects.select_for_update().filter(id=trip_id, is_deleted=False).first()

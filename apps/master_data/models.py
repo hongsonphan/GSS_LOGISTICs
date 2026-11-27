@@ -15,6 +15,14 @@ class Location(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
     Danh mục Địa điểm, Cảng, ICD, Depot cont rỗng và Kho khách hàng.
     Chuẩn hóa lộ trình 3 điểm (Nơi lấy -> Kho giao -> Nơi hạ).
     """
+    PREFIX_MAP = {
+        LocationType.PORT: 'PRT',
+        LocationType.ICD: 'ICD',
+        LocationType.DEPOT: 'DPT',
+        LocationType.YARD: 'PKG',
+        LocationType.WAREHOUSE: 'WHS',
+    }
+
     code = models.CharField(max_length=50, unique=True, db_index=True)
     name = models.CharField(max_length=150)
     location_type = models.CharField(max_length=20, choices=LocationType.choices, default=LocationType.PORT)
@@ -35,6 +43,43 @@ class Location(CompanyOwnedModel, TimeStampedModel, SoftDeleteModel):
         ordering = ['location_type', 'name']
         verbose_name = 'Địa điểm / Cảng bãi'
         verbose_name_plural = 'Danh mục Địa điểm / Cảng bãi'
+
+    @classmethod
+    def generate_next_code(cls, location_type=None):
+        """
+        Quy tắc sinh mã tự động cho Mạng lưới Địa điểm:
+        - Bãi rỗng / Depot container (DEPOT) -> DPT00n (VD: DPT001, DPT019)
+        - Cảng cạn (ICD) -> ICD00n (VD: ICD001, ICD009)
+        - Cảng biển (PORT) -> PRT00n (VD: PRT001, PRT008)
+        - Bãi đỗ xe nội bộ (YARD) -> PKG00n (VD: PKG001, PKG003)
+        - Kho hàng / Nhà máy (WAREHOUSE) -> WHS00n (VD: WHS001, WHS061)
+        """
+        import re
+        if not location_type or location_type not in cls.PREFIX_MAP:
+            location_type = LocationType.PORT
+        prefix = cls.PREFIX_MAP.get(location_type, 'PRT')
+        codes = cls.all_objects.filter(code__startswith=prefix).values_list('code', flat=True)
+        max_num = 0
+        pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
+        for c in codes:
+            match = pattern.match(c or '')
+            if match:
+                try:
+                    num = int(match.group(1))
+                    if num > max_num:
+                        max_num = num
+                except ValueError:
+                    pass
+        return f"{prefix}{max_num + 1:03d}"
+
+    def save(self, *args, **kwargs):
+        if self.name:
+            self.name = self.name.strip().upper()
+        if not self.code or not str(self.code).strip():
+            self.code = self.generate_next_code(self.location_type)
+        else:
+            self.code = str(self.code).strip().upper()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"[{self.get_location_type_display()}] {self.name} ({self.code})"
@@ -225,6 +270,37 @@ class Party(PublicIdModel, CompanyOwnedModel, TimeStampedModel, SoftDeleteModel)
     def __str__(self):
         return f"{self.name} ({self.code})"
 
+    @classmethod
+    def generate_next_code(cls, prefix='CUS'):
+        """Sinh mã tự động theo quy chuẩn: [PREFIX_3_KÝ_TỰ][STT_3_CHỮ_SỐ] (VD: CUS001, CUS135)."""
+        import re
+        prefix = str(prefix).strip().upper() or 'CUS'
+        codes = cls.all_objects.filter(code__startswith=prefix).values_list('code', flat=True)
+        max_num = 0
+        pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
+        for c in codes:
+            match = pattern.match(c or '')
+            if match:
+                try:
+                    num = int(match.group(1))
+                    if num > max_num:
+                        max_num = num
+                except ValueError:
+                    pass
+        return f"{prefix}{max_num + 1:03d}"
+
+    def save(self, *args, **kwargs):
+        if self.name:
+            self.name = self.name.strip().upper()
+        if self.short_name:
+            self.short_name = self.short_name.strip().upper()
+        if not self.code or not str(self.code).strip():
+            prefix = 'CUS' if self.is_customer else 'PAR'
+            self.code = self.generate_next_code(prefix)
+        else:
+            self.code = str(self.code).strip().upper()
+        super().save(*args, **kwargs)
+
     @property
     def roles(self):
         return [r for r in ('customer', 'carrier', 'supplier', 'shipping_line', 'depot') if getattr(self, 'is_' + r)]
@@ -303,9 +379,9 @@ class Supplier(Party):
     @classmethod
     def generate_next_code(cls):
         import re
-        codes = cls.all_objects.filter(code__startswith='NCC').values_list('code', flat=True)
+        codes = cls.all_objects.filter(code__startswith='SPL').values_list('code', flat=True)
         max_num = 0
-        pattern = re.compile(r"^NCC(\d+)$")
+        pattern = re.compile(r"^SPL(\d+)$")
         for c in codes:
             match = pattern.match(c or '')
             if match:
@@ -315,14 +391,20 @@ class Supplier(Party):
                         max_num = num
                 except ValueError:
                     pass
-        return f"NCC{max_num + 1:03d}"
+        return f"SPL{max_num + 1:03d}"
 
     def save(self, *args, **kwargs):
         self.is_supplier = True
+        if self.name:
+            self.name = self.name.strip().upper()
         if not self.code or not str(self.code).strip():
             self.code = self.generate_next_code()
+        else:
+            self.code = str(self.code).strip().upper()
         if not self.short_name or not str(self.short_name).strip():
             self.short_name = self.name[:50] if self.name else self.code
+        else:
+            self.short_name = self.short_name.strip().upper()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -378,10 +460,16 @@ class Subcontractor(Party):
         return f"{prefix}{next_num:03d}"
 
     def save(self, *args, **kwargs):
+        if self.name:
+            self.name = self.name.strip().upper()
         if not self.code or not str(self.code).strip():
             self.code = self.generate_next_code(self.partner_type)
+        else:
+            self.code = str(self.code).strip().upper()
         if not self.short_name or not str(self.short_name).strip():
             self.short_name = self.code
+        else:
+            self.short_name = self.short_name.strip().upper()
         if self.partner_type == PartnerType.CARRIER:
             self.is_carrier = True
         else:

@@ -38,7 +38,7 @@ Hook `.githooks/pre-commit` (bật bằng `git config core.hooksPath .githooks`)
 
 ### Bước A3: Tạo repository trên GitHub & liên kết Remote
 1. Truy cập [GitHub](https://github.com/new), tạo một repository mới:
-   - **Tên repo:** `Bim_Logisstic_GSS` (hoặc tên theo tổ chức).
+   - **Tên repo:** `GSS_LOGISTICs` (hoặc tên theo tổ chức).
    - **Chế độ:** **Private** (bắt buộc cho dự án doanh nghiệp).
    - **Không** tích chọn khởi tạo README, .gitignore hay license (vì dự án local đã có sẵn).
 2. Thêm remote origin và push nhánh `master`:

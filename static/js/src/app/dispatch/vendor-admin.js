@@ -1785,13 +1785,13 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
     const stBadge = document.getElementById('vd-header-status-badge');
     if (stBadge) {
         if (!hasAccount) {
-            stBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-amber-50 text-amber-800 border-amber-200';
+            stBadge.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-amber-50 text-amber-800 border-amber-200';
             stBadge.innerText = 'Chưa cấp tài khoản';
         } else if (isLocked) {
-            stBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-rose-50 text-rose-800 border-rose-200';
+            stBadge.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-rose-50 text-rose-800 border-rose-200';
             stBadge.innerText = 'Đang bị khóa';
         } else {
-            stBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-200';
+            stBadge.className = 'px-2.5 py-0.5 rounded-md text-xs font-bold border uppercase tracking-wider font-heading whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-200';
             stBadge.innerText = 'Đang hoạt động';
         }
     }
@@ -2027,7 +2027,7 @@ async function openVendorDetailPage(vendorId, updateHistory = true) {
                             ` : '<span class="text-slate-400 text-xs">Chưa có chuyến</span>'}
                         </td>
                         <td class="p-3">
-                            <span class="px-2.5 py-1 rounded-full border text-[11px] font-bold ${stCls}">${vaEsc(status)}</span>
+                            <span class="px-2.5 py-1 rounded-md border text-xs font-bold ${stCls}">${vaEsc(status)}</span>
                         </td>
                         <td class="p-3 text-center">
                             <div class="inline-flex items-center gap-1.5 justify-center">

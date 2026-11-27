@@ -27,9 +27,11 @@ def vmsg(exc):
     return ' '.join(exc.messages)
 
 
-def get_trip(code):
-    trip = DispatchTrip.objects.select_related('customer', 'vehicle', 'trailer', 'subcontractor', 'booking_order', 'driver', 'vendor_allocation') \
-        .filter(trip_code=code, is_deleted=False).first()
+def get_trip(code, request=None):
+    qs = DispatchTrip.objects.select_related('customer', 'vehicle', 'trailer', 'subcontractor', 'booking_order', 'driver', 'vendor_allocation')
+    if request and hasattr(request, 'company') and request.company:
+        qs = qs.filter(company=request.company)
+    trip = qs.filter(trip_code=code, is_deleted=False).first()
     if not trip:
         raise Http404
     return trip
@@ -85,7 +87,7 @@ class GssTripListAPIView(APIView):
         metric = request.query_params.get('metric', 'all')
         vendor = request.query_params.get('vendor')
         if metric == 'pending':
-            return self._pending(vendor)
+            return self._pending(vendor, request=request)
         if metric != 'all' and metric not in dash.METRICS:
             return err('Chỉ số không hợp lệ.')
         try:
@@ -94,14 +96,18 @@ class GssTripListAPIView(APIView):
             return err('Nhà xe không hợp lệ.')
         qs = annotated(dash.trips_for(vendor_id, metric, search=(request.query_params.get('q') or '').strip(),
                                       step=request.query_params.get('step', ''))).order_by('-created_at')
+        if hasattr(request, 'company') and request.company:
+            qs = qs.filter(company=request.company)
         total = qs.count()
         warn = CompanyProfile.get_default_company().warn_days
         return Response({'success': True, 'total': total, 'truncated': total > self.LIMIT,
                          'results': [trip_row(t, warn) for t in qs[:self.LIMIT]]})
 
-    def _pending(self, vendor):
+    def _pending(self, vendor, request=None):
         from apps.dispatch.models import AllocationStatus, BookingVendorAllocation
         qs = BookingVendorAllocation.objects.filter(is_deleted=False).exclude(status=AllocationStatus.REVOKED).select_related('booking', 'subcontractor')
+        if request and hasattr(request, 'company') and request.company:
+            qs = qs.filter(company=request.company)
         if vendor:
             qs = qs.filter(subcontractor_id=vendor)
         rows = []
@@ -117,7 +123,7 @@ class GssTripDetailAPIView(APIView):
     permission_classes = [IsDispatcher]
 
     def get(self, request, code):
-        t = get_trip(code)
+        t = get_trip(code, request)
         row = trip_row(t)
         return Response({'success': True, 'data': {
             **row, 'steps': [{'key': s, 'label': wf.STEP_LABELS[s], 'at': (getattr(t, wf.TIMESTAMP_FIELD[s]).isoformat() if s in wf.TIMESTAMP_FIELD and getattr(t, wf.TIMESTAMP_FIELD[s]) else None)} for s in wf.STEPS],
@@ -139,7 +145,7 @@ class GssTripStepAPIView(APIView):
     permission_classes = [IsDispatcher]
 
     def post(self, request, code):
-        t = get_trip(code)
+        t = get_trip(code, request)
         d = request.data
         try:
             if d.get('cancel'):
@@ -149,7 +155,7 @@ class GssTripStepAPIView(APIView):
                                swap=d.get('swap') or None, force=bool(d.get('force')))
         except ValidationError as exc:
             return err(vmsg(exc))
-        t = get_trip(code)
+        t = get_trip(code, request)
         return Response({'success': True, 'message': f'Đã chuyển sang: {wf.STEP_LABELS[t.step_status]}.',
                          'data': trip_row(t), 'action': wf.available_action(t), 'warning': getattr(t, '_swap_warning', None)})
 
@@ -159,11 +165,11 @@ class GssTripAttachmentsAPIView(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def get(self, request, code):
-        t = get_trip(code)
+        t = get_trip(code, request)
         return Response({'success': True, 'attachments': att.list_attachments(t), 'counts': att.counts(t), 'max_files': wf.MAX_FILES_PER_STAGE})
 
     def post(self, request, code):
-        t = get_trip(code)
+        t = get_trip(code, request)
         try:
             docs = att.add_attachments(t, request.data.get('stage'), request.FILES.getlist('files'), label=request.user.get_username(), staff=True)
         except ValidationError as exc:
@@ -176,7 +182,7 @@ class GssTripAttachmentDetailAPIView(APIView):
     permission_classes = [IsDispatcher]
 
     def delete(self, request, code, doc_id):
-        t = get_trip(code)
+        t = get_trip(code, request)
         try:
             att.remove_attachment(t, doc_id, user=request.user, reason=request.data.get('reason'))
         except ValidationError as exc:
@@ -189,12 +195,12 @@ class GssTripMessageAPIView(APIView):
     permission_classes = [IsDispatcher]
 
     def get(self, request, code):
-        t = get_trip(code)
+        t = get_trip(code, request)
         return Response({'success': True, 'content': msg.compose_message(t, base_url(request)), 'zalo_url': msg.zalo_url(t.subcontractor_driver_phone),
                          'phone': t.subcontractor_driver_phone, 'can_send': messaging.is_enabled(), 'history': [msg.serialize_log(m) for m in t.driver_messages.all()[:20]]})
 
     def post(self, request, code):
-        t = get_trip(code)
+        t = get_trip(code, request)
         channel = request.data.get('channel')
         if channel not in ('ZALO', 'SMS', 'PORTAL_LINK', 'COPY'):
             return err('Kênh gửi không hợp lệ.')
@@ -219,7 +225,7 @@ class GssTripPodAPIView(APIView):
     permission_classes = [IsDispatcher]
 
     def get(self, request, code):
-        resp = HttpResponse(msg.render_pod(get_trip(code)), content_type='text/html; charset=utf-8')
+        resp = HttpResponse(msg.render_pod(get_trip(code, request)), content_type='text/html; charset=utf-8')
         resp['Cache-Control'] = 'no-store'
         return resp
 
@@ -229,7 +235,7 @@ class GssTripQrAPIView(APIView):
     permission_classes = [IsDispatcher]
 
     def get(self, request, code):
-        t = get_trip(code)
+        t = get_trip(code, request)
         return HttpResponse(qr_tokens.qr_svg(msg.trip_link(t, base_url(request))), content_type='image/svg+xml')
 
 
@@ -237,7 +243,7 @@ class GssPackagesAPIView(APIView):
     permission_classes = [IsDispatcher]
 
     def post(self, request, code):
-        t = get_trip(code)
+        t = get_trip(code, request)
         data = request.data
         items = data.get('items')
         if items is None and data.get('count'):  # tạo nhanh N kiện, seal điền sau theo dãy
@@ -263,7 +269,10 @@ class GssPackageDetailAPIView(APIView):
 
     def delete(self, request, pk):
         from apps.qr_tracking.models import TripPackageSeal
-        pkg = TripPackageSeal.objects.select_related('trip').filter(pk=pk, is_deleted=False).first()
+        qs = TripPackageSeal.objects.select_related('trip')
+        if hasattr(request, 'company') and request.company:
+            qs = qs.filter(trip__company=request.company)
+        pkg = qs.filter(pk=pk, is_deleted=False).first()
         if not pkg:
             raise Http404
         try:
@@ -278,7 +287,7 @@ class GssLabelsAPIView(APIView):
     permission_classes = [IsDispatcher]
 
     def get(self, request, code):
-        t = get_trip(code)
+        t = get_trip(code, request)
         base = base_url(request).rstrip('/')
         cells = [(f'LỆNH {t.trip_code}', t.container_number or 'chưa có số cont', qr_tokens.qr_svg(msg.trip_link(t, base), 5))]
         for p in t.packages.filter(is_deleted=False):
@@ -316,7 +325,10 @@ class GssPackageScanAPIView(APIView):
 
     def post(self, request, pk):
         from apps.qr_tracking.models import TripPackageSeal
-        pkg = TripPackageSeal.objects.select_related('trip').filter(pk=pk, is_deleted=False).first()
+        qs = TripPackageSeal.objects.select_related('trip')
+        if hasattr(request, 'company') and request.company:
+            qs = qs.filter(trip__company=request.company)
+        pkg = qs.filter(pk=pk, is_deleted=False).first()
         if not pkg:
             raise Http404
         try:
@@ -346,8 +358,13 @@ class GssPodTemplatesAPIView(APIView):
 
     def get(self, request):
         from apps.customers.models import Customer, PodTemplate
-        tpls = PodTemplate.objects.filter(is_deleted=False)
-        custs = Customer.objects.filter(is_deleted=False).order_by('name')[:1000]
+        tpl_qs = PodTemplate.objects.filter(is_deleted=False)
+        cust_qs = Customer.objects.filter(is_deleted=False)
+        if hasattr(request, 'company') and request.company:
+            tpl_qs = tpl_qs.filter(company=request.company)
+            cust_qs = cust_qs.filter(company=request.company)
+        tpls = tpl_qs
+        custs = cust_qs.order_by('name')[:1000]
         return Response({'success': True, 'placeholders': sorted(msg.SAMPLE_CONTEXT), 'default_template': msg.DEFAULT_POD,
                          'templates': [_tpl_json(t) for t in tpls],
                          'customers': [{'id': c.id, 'name': c.name, 'pod_template_id': c.pod_template_id} for c in custs]})
@@ -362,9 +379,14 @@ def _save_tpl(request, tpl):
     code, name = str(d.get('code') or (tpl.code if tpl else '')).strip().upper()[:40], str(d.get('name') or '').strip()[:150]
     if not code or not name or not str(d.get('body_html') or '').strip():
         return err('Cần nhập mã, tên và nội dung biên bản.')
-    if PodTemplate.all_objects.filter(code=code).exclude(pk=tpl.pk if tpl else None).exists():
+    qs = PodTemplate.all_objects.filter(code=code)
+    if hasattr(request, 'company') and request.company:
+        qs = qs.filter(company=request.company)
+    if qs.exclude(pk=tpl.pk if tpl else None).exists():
         return err('Mã mẫu đã tồn tại.')
     tpl = tpl or PodTemplate()
+    if hasattr(request, 'company') and request.company and not tpl.company_id:
+        tpl.company = request.company
     tpl.code, tpl.name = code, name
     # Lọc ngay khi lưu: dữ liệu trong DB luôn sạch, và lọc lại lần nữa lúc in
     tpl.header_html = msg.sanitize_template_html(d.get('header_html') or '')
@@ -375,25 +397,31 @@ def _save_tpl(request, tpl):
     tpl.is_default = make_default
     tpl.save()
     if make_default:
-        PodTemplate.objects.exclude(pk=tpl.pk).filter(is_default=True).update(is_default=False)
+        def_qs = PodTemplate.objects.exclude(pk=tpl.pk).filter(is_default=True)
+        if hasattr(request, 'company') and request.company:
+            def_qs = def_qs.filter(company=request.company)
+        def_qs.update(is_default=False)
     return Response({'success': True, 'message': 'Đã lưu mẫu biên bản.', 'data': _tpl_json(tpl)})
 
 
 class GssPodTemplateDetailAPIView(APIView):
     permission_classes = [IsAdminOrDirector]
 
-    def _get(self, pk):
+    def _get(self, pk, request=None):
         from apps.customers.models import PodTemplate
-        t = PodTemplate.objects.filter(pk=pk, is_deleted=False).first()
+        qs = PodTemplate.objects.filter(pk=pk, is_deleted=False)
+        if request and hasattr(request, 'company') and request.company:
+            qs = qs.filter(company=request.company)
+        t = qs.first()
         if not t:
             raise Http404
         return t
 
     def put(self, request, pk):
-        return _save_tpl(request, self._get(pk))
+        return _save_tpl(request, self._get(pk, request))
 
     def delete(self, request, pk):
-        t = self._get(pk)
+        t = self._get(pk, request)
         if t.customers.filter(is_deleted=False).exists():
             return err('Mẫu đang được gán cho khách hàng, hãy gỡ gán trước khi xóa.')
         t.delete()
@@ -405,7 +433,10 @@ class GssPodTemplatePreviewAPIView(APIView):
 
     def get(self, request, pk):
         from apps.customers.models import PodTemplate
-        t = PodTemplate.objects.filter(pk=pk, is_deleted=False).first()
+        qs = PodTemplate.objects.filter(pk=pk, is_deleted=False)
+        if hasattr(request, 'company') and request.company:
+            qs = qs.filter(company=request.company)
+        t = qs.first()
         if not t:
             raise Http404
         resp = HttpResponse(msg.render_pod_preview(t), content_type='text/html; charset=utf-8')
@@ -418,13 +449,18 @@ class GssCustomerPodTemplateAPIView(APIView):
 
     def put(self, request, pk):
         from apps.customers.models import Customer, PodTemplate
-        c = Customer.objects.filter(pk=pk, is_deleted=False).first()
+        cust_qs = Customer.objects.filter(is_deleted=False)
+        tpl_qs = PodTemplate.objects.filter(is_deleted=False, is_active=True)
+        if hasattr(request, 'company') and request.company:
+            cust_qs = cust_qs.filter(company=request.company)
+            tpl_qs = tpl_qs.filter(company=request.company)
+        c = cust_qs.filter(pk=pk).first()
         if not c:
             raise Http404
         tid = request.data.get('template_id')
         tpl = None
         if tid:
-            tpl = PodTemplate.objects.filter(pk=tid, is_deleted=False, is_active=True).first()
+            tpl = tpl_qs.filter(pk=tid).first()
             if not tpl:
                 return err('Mẫu không tồn tại hoặc đã tắt.')
         c.pod_template = tpl

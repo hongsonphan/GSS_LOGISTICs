@@ -96,10 +96,10 @@ function renderAccountingTable(list) {
             : (isSettled ? 'hover:bg-slate-50 transition-colors' : 'hover:bg-amber-50/50 bg-amber-50/10 transition-colors');
 
         const settleBadge = isSettled
-            ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1 font-heading">
+            ? `<span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1 font-heading">
                 <i class="ph-bold ph-lock-key"></i> Đã Chốt Sổ
                </span>`
-            : `<span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1 font-heading">
+            : `<span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1 font-heading">
                 <i class="ph-bold ph-clock-countdown"></i> Chờ Chốt Sổ
                </span>`;
 

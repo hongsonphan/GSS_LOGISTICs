@@ -662,7 +662,7 @@ function renderVoucherTab() {
         <td data-col-key="trips" class="text-center">${v.trips_count}</td>
         <td data-col-key="amount" class="text-right font-mono font-bold">${formatMoneyVND(v.amount)}</td>
         <td data-col-key="direction">${v.direction === 'RECEIVE' ? '<span class="text-blue-700 font-bold">Thu</span>' : '<span class="text-rose-700 font-bold">Chi</span>'}</td>
-        <td data-col-key="status"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : (v.status === 'APPROVED' ? 'bg-sky-50 text-sky-800 border border-sky-200' : 'bg-amber-50 text-amber-800 border border-amber-200')}">${escapeHtml(v.status_label)}</span></td>
+        <td data-col-key="status" class="text-xs font-bold ${v.status === 'SETTLED' ? 'text-emerald-700' : (v.status === 'APPROVED' ? 'text-sky-700' : 'text-amber-700')}"><i class="ph-bold ${v.status === 'SETTLED' ? 'ph-check-circle' : (v.status === 'APPROVED' ? 'ph-seal-check' : 'ph-clock')} mr-1"></i>${escapeHtml(v.status_label)}</td>
         <td data-col-key="date">${escapeHtml(v.created_at)}</td></tr>`).join('')
         || '<tr><td colspan="8" class="p-8 text-center text-slate-400 font-medium">Chưa có phiếu quyết toán</td></tr>';
 }

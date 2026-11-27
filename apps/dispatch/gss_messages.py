@@ -22,6 +22,21 @@ def _fmt_date(d):
     return d.strftime('%d/%m/%Y') if d else '—'
 
 
+def _one_line(text):
+    return ' '.join(str(text or '').split())
+
+
+def driver_note_lines(trip):
+    """(ghi chú chung, ghi chú riêng của cont) – mỗi cái một dòng.
+    Chung: lưu ý điểm đến + cấm đường/giờ cấm tải của booking. Riêng: ghi chú tài xế của dòng cont (+ ghi chú nhà xe nếu có)."""
+    b = trip.booking_order
+    eff = effective_notes(b) if b else {}
+    general = ' · '.join(x for x in (_one_line(eff.get('destination_notes')), _one_line(eff.get('road_restrictions'))) if x)
+    bc = getattr(trip, 'booking_container', None)
+    cont = ' · '.join(x for x in (_one_line(bc.driver_note if bc else ''), _one_line(trip.vendor_note)) if x)
+    return general, cont
+
+
 def compose_message(trip, base_url):
     """Bản tin chuẩn GIẢI PHÁP XANH gửi tài xế: VC, Số B/L - Cont - Seal, SDT KHO, Ghi chú, Lộ trình, Link."""
     b = trip.booking_order
@@ -50,11 +65,11 @@ def compose_message(trip, base_url):
     if notes:
         lines.append(f'Ghi chú: {notes}')
 
-    eff_notes = effective_notes(b) if b else {'destination_notes': '', 'road_restrictions': ''}
-    if eff_notes.get('destination_notes'):
-        lines.append(f'Lưu ý điểm đến: {eff_notes["destination_notes"]}')
-    if eff_notes.get('road_restrictions'):
-        lines.append(f'Cấm đường: {eff_notes["road_restrictions"]}')
+    general, cont_note = driver_note_lines(trip)
+    if general:
+        lines.append(f'Ghi chú chung: {general}')
+    if cont_note:
+        lines.append(f'Ghi chú cont: {cont_note}')
 
     lines.append(f'Lộ trình: {trip.pickup_location or "—"} -> {trip.warehouse_location or "—"} -> {trip.dropoff_location or "—"}')
     if trip.dem_expiry_date or trip.det_expiry_date:

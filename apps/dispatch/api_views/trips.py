@@ -1058,15 +1058,35 @@ class TripDetailAPIView(APIView):
             except Exception:
                 pass
 
-        # Cập nhật trạng thái chuyến xe (nếu có yêu cầu)
-        if 'status' in data and data['status']:
-            target_status = str(data['status']).strip()
-            actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.dispatcher or trip.driver
-            try:
-                transition_trip(trip, target_status, actor=actor, description=str(data.get('status_description') or 'Cập nhật trạng thái chuyến'))
-            except Exception:
-                trip.status = target_status
-                trip.save(update_fields=['status'])
+        # Cập nhật trạng thái chuyến xe qua máy trạng thái tập trung gss_workflow
+        if 'step_status' in data or 'status' in data:
+            raw_target = str(data.get('step_status') or data.get('status') or '').strip()
+            if raw_target:
+                from apps.dispatch import gss_workflow as wf
+                from django.core.exceptions import ValidationError as DjValidationError
+                from rest_framework.exceptions import ValidationError as DrfValidationError
+
+                target_step = raw_target if raw_target in wf.STEPS or raw_target == 'CANCELLED' else None
+                if not target_step:
+                    for step, legacy in wf.LEGACY_STATUS.items():
+                        if legacy == raw_target:
+                            target_step = step
+                            break
+                if target_step and target_step != trip.step_status:
+                    actor_name = request.user.get_full_name() or request.user.username if request.user and request.user.is_authenticated else 'Hệ thống'
+                    reason = str(data.get('status_description') or data.get('reason') or 'Điều chỉnh trạng thái qua API quản trị')
+                    try:
+                        if target_step == 'CANCELLED':
+                            wf.cancel(trip, user=request.user, reason=reason)
+                        else:
+                            wf.advance(trip, target_step, user=request.user, actor_label=actor_name, reason=reason, force=True)
+                    except (DjValidationError, DrfValidationError) as wf_val_err:
+                        err_msg = wf_val_err.messages if hasattr(wf_val_err, 'messages') else str(wf_val_err)
+                        logger.warning(f"[TripDetailPatch] gss_workflow.advance validation rejected: {err_msg}")
+                        return Response({'error': err_msg}, status=status.HTTP_400_BAD_REQUEST)
+                    except Exception as wf_err:
+                        logger.warning(f"[TripDetailPatch] gss_workflow.advance error: {wf_err}")
+                        return Response({'error': f"Không thể cập nhật trạng thái chuyến: {str(wf_err)}"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Cập nhật thông tin Lệnh Điều Động (Sửa Lệnh Điều Động)
         if 'customer_id' in data and data['customer_id']:

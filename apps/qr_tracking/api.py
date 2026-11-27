@@ -151,6 +151,8 @@ def _driver_extras(trip):
     places = [y.name for y in Yard.objects.filter(is_deleted=False, is_active=True).order_by('name')]
     loc = trip.warehouse_loc
     return {'claim_codes': [], 'claims': [], 'checkpoint_places': places,
+            'vendor_note': (trip.vendor_note or '').strip(),
+            'driver_note': ((trip.booking_container.driver_note if getattr(trip, 'booking_container', None) else '') or '').strip(), 'special_notes': (trip.special_notes or '').strip(),
             'delivery_opening_hours': (loc.opening_hours if loc else '') or '',
             'street_turn': bool(trip.is_street_turn)}
 

@@ -116,12 +116,13 @@ function applyBookingFormTypeAdapters(prefix = '') {
         }
     }
 
-    // 4. Tên Tàu & Chuyến (Vessel / Voyage)
+    // 4. Tên Tàu & Chuyến (Vessel / Voyage) - Đã bỏ theo yêu cầu, giữ input hidden tương thích
     const labelVessel = document.getElementById(prefix + 'label-booking-vessel');
     const inputVessel = document.getElementById(prefix + 'booking-vessel');
     if (type === 'DOMESTIC') {
         setFieldState('wrapper-vessel', ['booking-vessel'], true, '');
         if (labelVessel) labelVessel.innerHTML = 'Tàu & Chuyến <span class="text-slate-400 font-normal lowercase">(không áp dụng)</span>';
+        if (inputVessel) inputVessel.value = '';
     } else {
         setFieldState('wrapper-vessel', ['booking-vessel'], false);
         if (labelVessel) {
@@ -129,7 +130,7 @@ function applyBookingFormTypeAdapters(prefix = '') {
                 ? 'Tên Tàu & Chuyến Cập <span class="text-[10px] text-slate-400 font-normal lowercase">(Vessel/Voy)</span>' 
                 : 'Tên Tàu & Chuyến <span class="text-[10px] text-slate-400 font-normal lowercase">(Vessel/Voy)</span>';
         }
-        if (inputVessel) {
+        if (inputVessel && !inputVessel.hidden) {
             inputVessel.placeholder = type === 'IMPORT_FCL' ? 'VD: CMA CGM CHENNAI / 002S' : 'VD: CAP SAN LAZARO / 001N';
         }
     }
@@ -151,19 +152,19 @@ function applyBookingFormTypeAdapters(prefix = '') {
 
     if (type === 'DOMESTIC') {
         if (labelPickup) labelPickup.innerHTML = '1. Điểm Bốc Hàng (Nơi đi) <span class="text-rose-500">*</span>';
-        if (labelDelivery) labelDelivery.innerHTML = '2. Điểm Giao Hàng (Nơi đến) <span class="text-rose-500">*</span>';
+        if (labelDelivery) labelDelivery.innerHTML = '2. Điểm Giao Hàng (Nơi đến)';
         setFieldState('wrapper-booking-dropoff', ['booking-dropoff'], true, '');
         if (labelDropoff) labelDropoff.innerHTML = '3. Điểm Hạ / Trả Cont <span class="text-slate-400 font-normal lowercase">(không áp dụng)</span>';
     } else if (type === 'IMPORT_FCL') {
         if (labelPickup) labelPickup.innerHTML = '1. Cảng Lấy Cont Hàng <span class="text-rose-500">*</span>';
-        if (labelDelivery) labelDelivery.innerHTML = '2. Kho Rút Hàng <span class="text-rose-500">*</span>';
+        if (labelDelivery) labelDelivery.innerHTML = '2. Kho Rút Hàng';
         setFieldState('wrapper-booking-dropoff', ['booking-dropoff'], false);
-        if (labelDropoff) labelDropoff.innerHTML = '3. Depot Trả Rỗng <span class="text-rose-500">*</span>';
+        if (labelDropoff) labelDropoff.innerHTML = '3. Depot Trả Rỗng';
     } else {
         if (labelPickup) labelPickup.innerHTML = '1. Depot Cấp Rỗng <span class="text-rose-500">*</span>';
-        if (labelDelivery) labelDelivery.innerHTML = '2. Kho Đóng Hàng <span class="text-rose-500">*</span>';
+        if (labelDelivery) labelDelivery.innerHTML = '2. Kho Đóng Hàng';
         setFieldState('wrapper-booking-dropoff', ['booking-dropoff'], false);
-        if (labelDropoff) labelDropoff.innerHTML = '3. Cảng Hạ CY <span class="text-rose-500">*</span>';
+        if (labelDropoff) labelDropoff.innerHTML = '3. Cảng Hạ CY';
     }
 
     // 7. Ngày hẹn đóng/dỡ/bốc
@@ -370,15 +371,65 @@ window.autoLookupBookingPrice = autoLookupBookingPrice;
  * Quản lý Dropdown Checkbox Chọn Nhiều Loại Cont / Xe
  * ==========================================================================
  */
-const BOOKING_CONTAINER_SIZE_OPTIONS = [
-    { value: '20GP', label: 'Cont 20GP', desc: '(Thường)' },
-    { value: '40HC', label: 'Cont 40HC', desc: '(Cao 9ft6)' },
-    { value: '45G1', label: 'Cont 45 Feet', desc: '' },
-    { value: '40GP', label: 'Cont 40GP', desc: '(Thường)' },
-    { value: 'XE_TAI_15T', label: 'Xe Tải 15 Tấn', desc: '' },
-    { value: 'XE_TAI_8T', label: 'Xe Tải 8 Tấn', desc: '' },
-    { value: 'XE_TAI_5T', label: 'Xe Tải 5 Tấn', desc: '' }
+let BOOKING_CONTAINER_SIZE_OPTIONS = [
+    { value: '20GP', label: 'Cont 20GP', desc: '(20ft Thường)' },
+    { value: '40GP', label: 'Cont 40GP', desc: '(40ft Thường)' },
+    { value: '40HC', label: 'Cont 40HC', desc: '(40ft Cao 9ft6)' },
+    { value: '45HQ', label: 'Cont 45HQ', desc: '(45ft Cao)' },
+    { value: '20RF', label: 'Cont 20RF', desc: '(20ft Lạnh)' },
+    { value: '40RF', label: 'Cont 40RF', desc: '(40ft Lạnh)' },
+    { value: '20FR', label: 'Cont 20FR', desc: '(20ft Flat Rack)' },
+    { value: '40FR', label: 'Cont 40FR', desc: '(40ft Flat Rack)' },
+    { value: '20OT', label: 'Cont 20OT', desc: '(20ft Open Top)' },
+    { value: '40OT', label: 'Cont 40OT', desc: '(40ft Open Top)' }
 ];
+
+function populateBookingContainerSizeOptions(containerTypes) {
+    if (!Array.isArray(containerTypes) || containerTypes.length === 0) return;
+    BOOKING_CONTAINER_SIZE_OPTIONS = containerTypes.map(item => {
+        const code = item.code || '';
+        const name = item.name || '';
+        let desc = '';
+        if (name) {
+            const shortName = name.replace(/^Container\s+/i, '');
+            desc = `(${shortName})`;
+        }
+        return {
+            value: code,
+            label: `Cont ${code}`,
+            desc: desc
+        };
+    });
+    renderBookingContainerSizeDropdownList('fullpage-');
+    renderBookingContainerSizeDropdownList('');
+}
+window.populateBookingContainerSizeOptions = populateBookingContainerSizeOptions;
+
+function renderBookingContainerSizeDropdownList(prefix = '') {
+    const listEl = document.getElementById(prefix + 'booking-container-size-list');
+    if (!listEl) return;
+    const cbName = prefix === 'fullpage-' ? 'fullpage-cont-size-cb' : 'cont-size-cb';
+    const currentValues = Array.from(document.querySelectorAll(`input[name="${cbName}"]:checked`)).map(cb => cb.value);
+    const effectiveValues = currentValues.length > 0 ? currentValues : ['20GP'];
+
+    const padCls = prefix === 'fullpage-' ? 'px-2 py-1.5' : 'px-2 py-1';
+    const cbSize = prefix === 'fullpage-' ? 'w-4 h-4' : 'w-3.5 h-3.5';
+    const descSize = prefix === 'fullpage-' ? 'text-[11px]' : 'text-[10.5px]';
+
+    listEl.innerHTML = BOOKING_CONTAINER_SIZE_OPTIONS.map(opt => {
+        const isChecked = effectiveValues.includes(opt.value) ? 'checked' : '';
+        return `
+            <label class="flex items-center gap-2.5 ${padCls} hover:bg-teal-50/70 rounded-lg cursor-pointer transition-colors text-xs text-slate-800 select-none">
+                <input type="checkbox" name="${cbName}" value="${opt.value}" ${isChecked} onchange="onBookingContainerSizeChange('${prefix}')"
+                    class="${cbSize} text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer">
+                <span class="font-bold">${opt.label}</span> ${opt.desc ? `<span class="text-slate-500 ${descSize}">${opt.desc}</span>` : ''}
+            </label>
+        `;
+    }).join('');
+
+    onBookingContainerSizeChange(prefix);
+}
+window.renderBookingContainerSizeDropdownList = renderBookingContainerSizeDropdownList;
 
 function toggleBookingContainerSizeDropdown(prefix = '') {
     const dropdown = document.getElementById(prefix + 'booking-container-size-dropdown');

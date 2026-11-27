@@ -124,11 +124,11 @@ function paintAccountRows() {
         const lvl = a.code.length;
         const chips = biz.map(b => {
             const moved = b.default !== a.code;
-            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold ${moved ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-teal-50 border-teal-200 text-teal-800'}"
+            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-bold ${moved ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-teal-50 border-teal-200 text-teal-800'}"
                 title="${moved ? 'Đã chuyển về đây, mặc định là TK ' + _acctEsc(b.default) : 'Nghiệp vụ mặc định của tài khoản này'}">${_acctEsc(b.label)}${
                 moved && canEdit ? `<button type="button" onclick="removeAccountBiz('${_acctEsc(b.key)}')" class="hover:text-rose-600" title="Trả về tài khoản mặc định ${_acctEsc(b.default)}"><i class="ph-bold ph-x text-[10px]"></i></button>` : ''}</span>`;
         }).join(' ');
-        const addBtn = (isActive && canEdit) ? `<button type="button" onclick="startAddAccountBiz('${_acctEsc(a.code)}', this)" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed border-slate-300 text-[11px] font-bold text-slate-500 hover:border-teal-500 hover:text-teal-700" title="Gắn thêm nghiệp vụ vào tài khoản này"><i class="ph-bold ph-plus text-[10px]"></i> Nghiệp vụ</button>` : '';
+        const addBtn = (isActive && canEdit) ? `<button type="button" onclick="startAddAccountBiz('${_acctEsc(a.code)}', this)" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-dashed border-slate-300 text-xs font-bold text-slate-500 hover:border-teal-500 hover:text-teal-700" title="Gắn thêm nghiệp vụ vào tài khoản này"><i class="ph-bold ph-plus text-[10px]"></i> Nghiệp vụ</button>` : '';
         const canToggle = canEdit && !locked.has(a.code);
         const toggle = `<label class="inline-flex items-center ${canToggle ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}" title="${canToggle ? (isActive ? 'Tắt nếu không dùng' : 'Bật để sử dụng') : 'Đang được dùng (gắn nghiệp vụ hoặc đã có bút toán) nên không tắt được'}">
             <input type="checkbox" class="sr-only peer" ${isActive ? 'checked' : ''} ${canToggle ? '' : 'disabled'} onchange="toggleAccountActive('${_acctEsc(a.code)}', this.checked)">

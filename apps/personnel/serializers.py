@@ -26,9 +26,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def validate_code(self, value):
-        code = value.strip().upper()
-        if not code:
-            raise serializers.ValidationError("Mã nhân viên không được để trống.")
+        if not value or not str(value).strip():
+            return Employee.generate_next_code()
+        code = str(value).strip().upper()
         qs = Employee.all_objects.filter(code=code)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)

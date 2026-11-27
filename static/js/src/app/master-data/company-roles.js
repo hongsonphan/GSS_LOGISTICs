@@ -670,12 +670,12 @@ function renderRolesPermissionsView(data) {
                         <tbody class="divide-y divide-slate-100 font-medium">
                             ${users.map(u => {
                                 const activeBadge = u.is_active 
-                                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoạt động</span>'
-                                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">Đã khóa</span>';
+                                    ? '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoạt động</span>'
+                                    : '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200">Đã khóa</span>';
                                 
                                 const staffBadge = u.is_staff 
-                                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Admin</span>'
-                                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-400">Người dùng</span>';
+                                    ? '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">Admin</span>'
+                                    : '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-50 text-slate-400">Người dùng</span>';
 
                                 return `
                                     <tr class="hover:bg-slate-50/80 transition-colors">

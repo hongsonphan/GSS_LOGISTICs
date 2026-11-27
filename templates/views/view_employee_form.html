@@ -22,9 +22,9 @@
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
                         <!-- Mã NV -->
                         <div class="md:col-span-3">
-                            <label class="block font-bold text-slate-700 text-xs mb-1">Mã Nhân Viên <span class="text-rose-500">*</span></label>
-                            <input type="text" id="emp-code" required placeholder="VD: TX012, DD002..."
-                                   class="w-full h-10 px-3 text-xs font-mono font-bold uppercase border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Mã Nhân Viên <span class="text-slate-400 font-normal">(Tự động sinh)</span></label>
+                            <input type="text" id="emp-code" readonly placeholder="Hệ thống tự cấp (EMP...)" title="Mã được hệ thống tự động sinh theo chuẩn, không cho phép sửa tay"
+                                   class="w-full h-10 px-3 text-xs font-mono font-bold uppercase border border-slate-200 rounded-xl bg-slate-100 text-slate-600 cursor-not-allowed select-none focus:outline-hidden transition-all">
                         </div>
 
                         <!-- Họ và tên -->
