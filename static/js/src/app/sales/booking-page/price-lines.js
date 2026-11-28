@@ -8,10 +8,14 @@ function bookingPriceTypes() {
 }
 
 function _priceTypeOptions(selected) {
-    const types = bookingPriceTypes();
-    if (selected && !types.includes(selected)) types.push(selected);
-    return '<option value="">-- Loại cont --</option>' + types.map(t =>
-        `<option value="${escapeHtml(t)}"${t === selected ? ' selected' : ''}>${escapeHtml(t)}</option>`).join('');
+    // Đủ danh mục Quy cách Cont; loại đã tick ở ô Size lên đầu cho dễ chọn
+    const ticked = bookingPriceTypes();
+    const sel = String(selected || '').toUpperCase();
+    const all = (typeof contTypeList === 'function' ? contTypeList() : []).map(t => t.code);
+    const ordered = [...ticked.filter(t => all.includes(t)), ...all.filter(t => !ticked.includes(t))];
+    if (sel && !ordered.includes(sel)) ordered.push(sel);
+    return '<option value="">-- Loại cont --</option>' + ordered.map(t =>
+        `<option value="${escapeHtml(t)}"${t === sel ? ' selected' : ''}>${escapeHtml(t)}</option>`).join('');
 }
 
 function _priceLineRow(i, line) {
@@ -46,7 +50,9 @@ function renderBookingPriceLines(lines) {
     const box = document.getElementById('fullpage-booking-price-lines');
     if (!box) return;
     const list = (lines && lines.length ? lines : [{}]).slice(0, BOOKING_PRICE_MAX_LINES);
-    box.innerHTML = list.map((l, i) => _priceLineRow(i, l)).join('');
+    const head = '<div class="grid grid-cols-12 gap-2 px-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">'
+        + '<span class="col-span-3">Loại Cont</span><span class="col-span-4">Đơn giá (VNĐ)</span><span class="col-span-4">Ghi chú giá</span><span class="col-span-1"></span></div>';
+    box.innerHTML = head + list.map((l, i) => _priceLineRow(i, l)).join('');
     if (typeof initAllNumberInputs === 'function') initAllNumberInputs();
     const add = document.getElementById('fullpage-booking-price-add');
     if (add) add.classList.toggle('hidden', list.length >= BOOKING_PRICE_MAX_LINES);

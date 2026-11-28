@@ -1057,14 +1057,17 @@ class TripLegsAPI(Base):
         return ok(self._payload(t), f'Đã gán vào lượt xe {run.code}.')
 
 class ContainerSampleExcelAPI(Base):
-    """Tải file Excel mẫu danh sách 10 cột chuẩn: tiêu đề Teal #0F766E, font Calibri 12px, tách riêng cột Đầu Kéo và Tài Xế."""
-    permission_classes = []
+    """Excel mẫu nhập danh sách cont: tiêu đề Teal, có Hóa đơn cho / Ghi chú tài xế, Hạn DEM và Hạn DET riêng.
+    Loại cont, Nơi giao, Nơi trả rỗng lấy ĐÚNG tên trong danh mục hệ thống (sheet DanhMuc kèm mã) và có ô chọn sẵn."""
+    permission_classes = [IsBookingStaff]
 
     def get(self, request):
         import io
         from openpyxl import Workbook
         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
         from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.datavalidation import DataValidation
+        from apps.master_data.models import ContainerType, Location, LocationType
 
         wb = Workbook()
         ws = wb.active
@@ -1072,16 +1075,9 @@ class ContainerSampleExcelAPI(Base):
         ws.views.sheetView[0].showGridLines = True
 
         headers = [
-            'STT',
-            'Số Container',
-            'Loại Cont',
-            'Số Chì (Seal)',
-            'Trọng Lượng VGM (kg)',
-            'Nơi Giao Hàng',
-            'Nơi Trả Rỗng',
-            'Hạn Lệnh DEM/DET',
-            'Số Đầu Kéo',
-            'Tài Xế'
+            'STT', 'Số Container', 'Loại Cont', 'Số Chì (Seal)', 'Trọng Lượng VGM (kg)',
+            'Nơi Giao Hàng', 'Nơi Trả Rỗng', 'Hạn DEM', 'Hạn DET', 'Số Đầu Kéo', 'Tài Xế',
+            'Hóa Đơn Cho', 'Ghi Chú Tài Xế',
         ]
 
         teal_fill = PatternFill(start_color='0F766E', end_color='0F766E', fill_type='solid')
@@ -1091,13 +1087,19 @@ class ContainerSampleExcelAPI(Base):
         left_align = Alignment(horizontal='left', vertical='center')
         right_align = Alignment(horizontal='right', vertical='center')
         header_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
-
         thin_side = Side(border_style='thin', color='CBD5E1')
         thin_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
 
+        # ---- Danh mục lấy từ hệ thống (đúng mã + tên gốc) ----
+        types = list(ContainerType.objects.filter(is_active=True, category='CONTAINER').order_by('code').values_list('code', 'name'))
+        locs = list(Location.objects.filter(is_active=True, is_deleted=False).order_by('location_type', 'name'))
+        deliveries = [l for l in locs if l.location_type == LocationType.WAREHOUSE]
+        # giống danh sách "Nơi hạ cont" trên form Booking: Depot/Bãi + Cảng + ICD
+        dropoffs = [l for l in locs if l.location_type in (LocationType.DEPOT, LocationType.YARD, LocationType.PORT, LocationType.ICD)]
+        invoice_choices = ['GPX', 'KH', 'Vendor']
+
         ws.append(headers)
         ws.row_dimensions[1].height = 28
-
         for col_num in range(1, len(headers) + 1):
             cell = ws.cell(row=1, column=col_num)
             cell.font = header_font
@@ -1105,28 +1107,22 @@ class ContainerSampleExcelAPI(Base):
             cell.alignment = header_align
             cell.border = thin_border
 
+        t_codes = [c for c, _ in types] or ['40HC', '20GP']
+        d_name = deliveries[0].name if deliveries else 'KHO NHÀ MÁY ĐẮK NÔNG'
+        p_name = dropoffs[0].name if dropoffs else 'CẢNG CÁT LÁI'
         sample_rows = [
-            [1, 'MSCU1234565', '40HC', 'MLVN98765', 24500, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '20/11/2026', '51C-123.45', 'Nguyễn Văn An (0901234567)'],
-            [2, 'TCNU1234567', '40HC', 'MLVN98766', 26000, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '20/11/2026', '51C-234.56', 'Trần Văn Bình (0902345678)'],
-            [3, 'ONEU9988776', '40HC', 'MLVN98767', 25200, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '21/11/2026', '51C-345.67', 'Lê Văn Cường (0903456789)'],
-            [4, 'CMAU1122334', '20GP', 'MLVN98768', 18000, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '21/11/2026', '51C-456.78', 'Phạm Văn Dũng (0904567890)'],
-            [5, 'EMCU5566778', '40HC', 'MLVN98769', 24800, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '22/11/2026', '51C-567.89', 'Hoàng Văn Em (0905678901)'],
-            [6, 'SUDU7890123', '40HC', 'MLVN98770', 25500, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '22/11/2026', '51C-678.90', 'Đỗ Văn Phúc (0906789012)'],
-            [7, 'TEMU3456789', '20GP', 'MLVN98771', 19500, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '23/11/2026', '51C-789.01', 'Vũ Văn Giáp (0907890123)'],
-            [8, 'YMLU4567890', '40HC', 'MLVN98772', 26200, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '23/11/2026', '51C-890.12', 'Bùi Văn Hùng (0908901234)'],
-            [9, 'OOCU5678901', '40HC', 'MLVN98773', 25000, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '24/11/2026', '51C-901.23', 'Ngô Văn Khang (0909012345)'],
-            [10, 'WHLU6789012', '40HC', 'MLVN98774', 24700, 'KHO NHÀ MÁY ĐẮK NÔNG', 'CẢNG CÁT LÁI', '24/11/2026', '51C-012.34', 'Lý Văn Long (0909123456)']
+            [1, 'MSCU1234565', t_codes[-1] if '40HC' not in t_codes else '40HC', 'MLVN98765', 24500, d_name, p_name, '23:59 20/11/2026', '23:59 25/11/2026',
+             '51C-123.45', 'Nguyễn Văn An (0901234567)', 'GPX', 'Vào cổng số 3, gọi bảo vệ trước 30 phút'],
+            [2, 'TCNU1234567', '20GP' if '20GP' in t_codes else t_codes[0], 'MLVN98766', 18000, d_name, p_name, '23:59 20/11/2026', '23:59 25/11/2026',
+             '51C-234.56', 'Trần Văn Bình (0902345678)', 'KH', ''],
+            [3, 'ONEU9988776', '40HC' if '40HC' in t_codes else t_codes[0], 'MLVN98767', 25200, d_name, p_name, '23:59 21/11/2026', '23:59 26/11/2026',
+             '51C-345.67', 'Lê Văn Cường (0903456789)', 'Vendor', 'Cont lạnh, giữ nhiệt độ'],
         ]
-
-        col_alignments = [
-            center_align, center_align, center_align, center_align, right_align,
-            left_align, left_align, center_align, center_align, left_align
-        ]
-
-        col_widths = [8, 18, 14, 16, 22, 32, 28, 20, 18, 26]
+        col_alignments = [center_align, center_align, center_align, center_align, right_align, left_align, left_align,
+                          center_align, center_align, center_align, left_align, center_align, left_align]
+        col_widths = [8, 18, 14, 16, 22, 34, 30, 20, 20, 18, 28, 16, 38]
         for col_idx, width in enumerate(col_widths, start=1):
             ws.column_dimensions[get_column_letter(col_idx)].width = width
-
         for r_idx, r_data in enumerate(sample_rows, start=2):
             ws.row_dimensions[r_idx].height = 22
             for c_idx, val in enumerate(r_data, start=1):
@@ -1136,8 +1132,50 @@ class ContainerSampleExcelAPI(Base):
                 cell.alignment = col_alignments[c_idx - 1]
                 if c_idx == 5:
                     cell.number_format = '#,##0'
+        ws.freeze_panes = 'C2'
+
+        # ---- Sheet DanhMuc: tra mã/tên chuẩn, và là nguồn cho ô chọn sẵn ----
+        ref = wb.create_sheet('DanhMuc')
+        ref_headers = ['Loại Cont (Mã)', 'Quy cách', '', 'Nơi Giao (Tên chuẩn)', 'Mã', '', 'Nơi Trả Rỗng (Tên chuẩn)', 'Mã', 'Loại', '', 'Hóa Đơn Cho']
+        ref.append(ref_headers)
+        for col_num, h in enumerate(ref_headers, start=1):
+            cell = ref.cell(row=1, column=col_num)
+            if h:
+                cell.font = header_font
+                cell.fill = teal_fill
+                cell.alignment = header_align
+        n = max(len(types), len(deliveries), len(dropoffs), len(invoice_choices))
+        type_label = dict(LocationType.choices)
+        for i in range(n):
+            row = i + 2
+            if i < len(types):
+                ref.cell(row=row, column=1, value=types[i][0])
+                ref.cell(row=row, column=2, value=types[i][1])
+            if i < len(deliveries):
+                ref.cell(row=row, column=4, value=deliveries[i].name)
+                ref.cell(row=row, column=5, value=deliveries[i].code)
+            if i < len(dropoffs):
+                ref.cell(row=row, column=7, value=dropoffs[i].name)
+                ref.cell(row=row, column=8, value=dropoffs[i].code)
+                ref.cell(row=row, column=9, value=str(type_label.get(dropoffs[i].location_type, '')))
+            if i < len(invoice_choices):
+                ref.cell(row=row, column=11, value=invoice_choices[i])
+        for col_idx, width in {1: 16, 2: 40, 4: 38, 5: 12, 7: 38, 8: 12, 9: 22, 11: 14}.items():
+            ref.column_dimensions[get_column_letter(col_idx)].width = width
+
+        def add_list(col_letter, ref_col, count):
+            if not count:
+                return
+            dv = DataValidation(type='list', formula1=f"=DanhMuc!${ref_col}$2:${ref_col}${count + 1}", allow_blank=True, showErrorMessage=False)
+            ws.add_data_validation(dv)
+            dv.add(f'{col_letter}2:{col_letter}1000')
+
+        add_list('C', 'A', len(types))
+        add_list('F', 'D', len(deliveries))
+        add_list('G', 'G', len(dropoffs))
+        add_list('L', 'K', len(invoice_choices))
 
         bio = io.BytesIO()
         wb.save(bio)
         bio.seek(0)
-        return xlsx(bio.getvalue(), 'Mau_Danh_Sach_Container_10_Cot_Chuan_GSS.xlsx')
+        return xlsx(bio.getvalue(), 'Mau_Danh_Sach_Container_GSS.xlsx')

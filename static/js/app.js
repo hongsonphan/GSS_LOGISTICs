@@ -23661,10 +23661,14 @@ function bookingPriceTypes() {
 }
 
 function _priceTypeOptions(selected) {
-    const types = bookingPriceTypes();
-    if (selected && !types.includes(selected)) types.push(selected);
-    return '<option value="">-- Loại cont --</option>' + types.map(t =>
-        `<option value="${escapeHtml(t)}"${t === selected ? ' selected' : ''}>${escapeHtml(t)}</option>`).join('');
+    // Đủ danh mục Quy cách Cont; loại đã tick ở ô Size lên đầu cho dễ chọn
+    const ticked = bookingPriceTypes();
+    const sel = String(selected || '').toUpperCase();
+    const all = (typeof contTypeList === 'function' ? contTypeList() : []).map(t => t.code);
+    const ordered = [...ticked.filter(t => all.includes(t)), ...all.filter(t => !ticked.includes(t))];
+    if (sel && !ordered.includes(sel)) ordered.push(sel);
+    return '<option value="">-- Loại cont --</option>' + ordered.map(t =>
+        `<option value="${escapeHtml(t)}"${t === sel ? ' selected' : ''}>${escapeHtml(t)}</option>`).join('');
 }
 
 function _priceLineRow(i, line) {
@@ -23699,7 +23703,9 @@ function renderBookingPriceLines(lines) {
     const box = document.getElementById('fullpage-booking-price-lines');
     if (!box) return;
     const list = (lines && lines.length ? lines : [{}]).slice(0, BOOKING_PRICE_MAX_LINES);
-    box.innerHTML = list.map((l, i) => _priceLineRow(i, l)).join('');
+    const head = '<div class="grid grid-cols-12 gap-2 px-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">'
+        + '<span class="col-span-3">Loại Cont</span><span class="col-span-4">Đơn giá (VNĐ)</span><span class="col-span-4">Ghi chú giá</span><span class="col-span-1"></span></div>';
+    box.innerHTML = head + list.map((l, i) => _priceLineRow(i, l)).join('');
     if (typeof initAllNumberInputs === 'function') initAllNumberInputs();
     const add = document.getElementById('fullpage-booking-price-add');
     if (add) add.classList.toggle('hidden', list.length >= BOOKING_PRICE_MAX_LINES);
@@ -26612,14 +26618,18 @@ function handleContExcelSelected(input) {
 
             // Tìm hàng tiêu đề để nhận dạng cột thông minh
             let headerIdx = -1;
-            let colCont = -1, colType = -1, colSeal = -1, colVGM = -1, colDeliv = -1, colDrop = -1, colDem = -1, colTruck = -1, colDriver = -1, colNotes = -1;
+            let colCont = -1, colType = -1, colSeal = -1, colVGM = -1, colDeliv = -1, colDrop = -1, colDem = -1, colDet = -1, colTruck = -1, colDriver = -1, colNotes = -1, colInvoice = -1;
 
             for (let r = 0; r < Math.min(rows.length, 5); r++) {
                 const row = rows[r].map(c => String(c).toLowerCase().trim());
                 let foundCont = false;
                 for (let c = 0; c < row.length; c++) {
                     const val = row[c];
-                    if (val.includes('container') || val.includes('số cont') || val.includes('so cont') || val === 'cont') {
+                    if (val.includes('hóa đơn') || val.includes('hoá đơn') || val.includes('hoa don') || val.includes('invoice')) {
+                        colInvoice = c;
+                    } else if (val.includes('ghi chú') || val.includes('ghi chu') || val.includes('note')) {
+                        colNotes = c; // "Ghi chú tài xế": xét trước cột Tài xế để không nhận nhầm
+                    } else if (val.includes('container') || val.includes('số cont') || val.includes('so cont') || val === 'cont') {
                         colCont = c;
                         foundCont = true;
                     } else if (val.includes('loại') || val.includes('loai') || val.includes('size') || val.includes('type')) {
@@ -26632,14 +26642,16 @@ function handleContExcelSelected(input) {
                         colDeliv = c;
                     } else if (val.includes('trả') || val.includes('tra') || val.includes('rỗng') || val.includes('rong') || val.includes('depot')) {
                         colDrop = c;
+                    } else if (val.includes('dem') && !val.includes('det')) {
+                        colDem = c;
+                    } else if (val.includes('det') && !val.includes('dem')) {
+                        colDet = c;
                     } else if (val.includes('dem') || val.includes('det') || val.includes('hạn') || val.includes('han')) {
                         colDem = c;
                     } else if (val.includes('đầu kéo') || val.includes('dau keo') || val.includes('biển số') || val.includes('bien so') || val.includes('số xe') || val.includes('so xe') || val.includes('truck') || val.includes('plate')) {
                         colTruck = c;
                     } else if (val.includes('tài xế') || val.includes('tai xe') || val.includes('lái xe') || val.includes('lai xe') || val.includes('driver') || val === 'tài' || val === 'tai') {
                         colDriver = c;
-                    } else if (val.includes('ghi chú') || val.includes('ghi chu') || val.includes('note')) {
-                        colNotes = c;
                     }
                 }
                 if (foundCont || colCont !== -1) {
@@ -26679,6 +26691,12 @@ function handleContExcelSelected(input) {
 
                 let delivVal = colDeliv !== -1 ? String(row[colDeliv] || '').trim() : '';
                 let dropVal = colDrop !== -1 ? String(row[colDrop] || '').trim() : '';
+                const fmtCellDate = (raw) => {
+                    if (raw instanceof Date) {
+                        return `${String(raw.getDate()).padStart(2, '0')}/${String(raw.getMonth() + 1).padStart(2, '0')}/${raw.getFullYear()}`;
+                    }
+                    return raw ? String(raw).trim() : '';
+                };
                 let rawDem = colDem !== -1 ? row[colDem] : '';
                 let demVal = '';
                 if (rawDem instanceof Date) {
@@ -26689,6 +26707,9 @@ function handleContExcelSelected(input) {
                 } else if (rawDem) {
                     demVal = String(rawDem).trim();
                 }
+                const detVal = colDet !== -1 ? fmtCellDate(row[colDet]) : '';
+                const invoiceVal = colInvoice !== -1 ? String(row[colInvoice] || '').trim() : '';
+                const noteVal = colNotes !== -1 ? String(row[colNotes] || '').trim() : '';
                 let truckVal = colTruck !== -1 ? String(row[colTruck] || '').trim().toUpperCase() : '';
                 let driverVal = colDriver !== -1 ? String(row[colDriver] || '').trim() : '';
 
@@ -26700,6 +26721,9 @@ function handleContExcelSelected(input) {
                     delivery_loc: delivVal,
                     dropoff_loc: dropVal,
                     dem_expiry: demVal,
+                    det_expiry: detVal,
+                    invoice_to: invoiceVal,
+                    driver_note: noteVal,
                     tractor_plate: truckVal,
                     driver_name: driverVal,
                     vendor_id: '',
@@ -26846,6 +26870,23 @@ function formatDeadline(v) {
 }
 window.formatDeadline = formatDeadline;
 
+// Loại cont = đúng danh mục Quy cách Cont (master_data.ContainerType); chưa nạp danh mục thì dùng 10 mã ISO chuẩn
+const FALLBACK_CONT_TYPES = ['20FR', '20GP', '20OT', '20RF', '40FR', '40GP', '40HC', '40OT', '40RF', '45HQ'];
+function contTypeList() {
+    const src = (typeof masterDataFormOptionsCache !== 'undefined' && masterDataFormOptionsCache && masterDataFormOptionsCache.container_types) || [];
+    const list = src.filter(t => t && t.code && (!t.category || t.category === 'CONTAINER')).map(t => ({ code: t.code, name: t.name || '' }));
+    return list.length ? list : FALLBACK_CONT_TYPES.map(code => ({ code, name: '' }));
+}
+function contTypeOptions(selected, withBlank) {
+    const list = contTypeList();
+    const cur = String(selected || '').toUpperCase();
+    if (cur && !list.some(t => t.code === cur)) list.push({ code: cur, name: '(ngoài danh mục)' });
+    return (withBlank ? '<option value="">-- Loại cont --</option>' : '') + list.map(t =>
+        `<option value="${escapeHtml(t.code)}" title="${escapeHtml(t.name)}"${t.code === cur ? ' selected' : ''}>${escapeHtml(t.code)}</option>`).join('');
+}
+window.contTypeList = contTypeList;
+window.contTypeOptions = contTypeOptions;
+
 function invoiceToOptions(current) {
     return [['', '-- Chọn --'], ['GPX', 'GPX'], ['CUSTOMER', 'KH'], ['VENDOR', 'Vendor']]
         .map(([v, l]) => `<option value="${v}" ${(current || '') === v ? 'selected' : ''}>${l}</option>`).join('');
@@ -26919,12 +26960,7 @@ function renderStagedBookingContainers() {
                     <select data-field="container_type" 
                         onchange="updateStagedContField(${idx}, 'container_type', this.value);" 
                         class="cont-type-select w-full h-8 px-1.5 font-bold text-slate-700 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
-                        <option value="40HC" ${(!c.container_type || c.container_type === '40HC') ? 'selected' : ''}>40HC</option>
-                        <option value="20GP" ${c.container_type === '20GP' ? 'selected' : ''}>20GP</option>
-                        <option value="45HC" ${c.container_type === '45HC' ? 'selected' : ''}>45HC</option>
-                        <option value="40GP" ${c.container_type === '40GP' ? 'selected' : ''}>40GP</option>
-                        <option value="20RF" ${c.container_type === '20RF' ? 'selected' : ''}>20RF</option>
-                        <option value="40RF" ${c.container_type === '40RF' ? 'selected' : ''}>40RF</option>
+                        ${contTypeOptions(c.container_type || '40HC')}
                     </select>
                 </td>
 
@@ -27349,13 +27385,8 @@ function renderSavedBookingContainers() {
                     <td class="p-1 min-w-[95px]">
                         <select id="inline-edit-cont-type-${c.id}" 
                             class="w-full h-8 px-1.5 font-bold text-slate-700 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
-                            <option value="40HC" ${(!c.container_type || c.container_type === '40HC') ? 'selected' : ''}>40HC</option>
-                            <option value="20GP" ${c.container_type === '20GP' ? 'selected' : ''}>20GP</option>
-                            <option value="45HC" ${c.container_type === '45HC' ? 'selected' : ''}>45HC</option>
-                            <option value="40GP" ${c.container_type === '40GP' ? 'selected' : ''}>40GP</option>
-                            <option value="20RF" ${c.container_type === '20RF' ? 'selected' : ''}>20RF</option>
-                            <option value="40RF" ${c.container_type === '40RF' ? 'selected' : ''}>40RF</option>
-                        </select>
+                        ${contTypeOptions(c.container_type || '40HC')}
+                    </select>
                     </td>
                     <td class="p-1 min-w-[110px]">
                         <input type="text" id="inline-edit-seal-${c.id}" 

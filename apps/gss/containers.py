@@ -116,12 +116,17 @@ def parse_xlsx(fileobj):
     col_truck = -1
     col_driver = -1
     col_notes = -1
+    col_invoice = -1
 
     for r_idx, row in enumerate(all_rows[:5]):
         row_str = [str(c or '').lower().strip() for c in (row or [])]
         found_cont = False
         for c_idx, cell in enumerate(row_str):
-            if any(k in cell for k in ['container', 'số cont', 'so cont', 'so container', 'số container']) or cell == 'cont':
+            if any(k in cell for k in ['hóa đơn', 'hoá đơn', 'hoa don', 'invoice']):
+                col_invoice = c_idx
+            elif any(k in cell for k in ['ghi chú', 'ghi chu', 'note']):
+                col_notes = c_idx  # "Ghi chú tài xế": xét trước cột Tài xế để không bị nhận nhầm
+            elif any(k in cell for k in ['container', 'số cont', 'so cont', 'so container', 'số container']) or cell == 'cont':
                 col_cont = c_idx
                 found_cont = True
             elif any(k in cell for k in ['loại', 'loai', 'size', 'type']):
@@ -144,8 +149,6 @@ def parse_xlsx(fileobj):
                 col_truck = c_idx
             elif any(k in cell for k in ['tài xế', 'tai xe', 'lái xe', 'lai xe', 'driver']) or cell in ('tài', 'tai'):
                 col_driver = c_idx
-            elif any(k in cell for k in ['ghi chú', 'ghi chu', 'note']):
-                col_notes = c_idx
 
         if found_cont or col_cont != -1:
             header_idx = r_idx
@@ -183,6 +186,8 @@ def parse_xlsx(fileobj):
         raw_drop = str(vals[col_drop] if col_drop != -1 and col_drop < len(vals) and vals[col_drop] is not None else '').strip()
         raw_dem = str(vals[col_dem] if col_dem != -1 and col_dem < len(vals) and vals[col_dem] is not None else '').strip()
         raw_det = str(vals[col_det] if col_det != -1 and col_det < len(vals) and vals[col_det] is not None else '').strip()
+        raw_invoice = str(vals[col_invoice] if col_invoice != -1 and col_invoice < len(vals) and vals[col_invoice] is not None else '').strip()
+        raw_note = str(vals[col_notes] if col_notes != -1 and col_notes < len(vals) and vals[col_notes] is not None else '').strip()
 
         rows.append({
             'source_line': i + 1,
@@ -197,6 +202,9 @@ def parse_xlsx(fileobj):
             'dem_det': raw_dem,
             'dem_expiry': raw_dem,
             'det_expiry': raw_det,
+            'separate_deadlines': col_det != -1,
+            'invoice_to': raw_invoice,
+            'driver_note': raw_note,
         })
 
     return rows
@@ -210,12 +218,45 @@ def normalize_invoice_to(value):
     return _INVOICE_TO_ALIASES.get(re.sub(r'[\s_-]+', '', str(value or '')).upper(), '')
 
 
+def _fold(text):
+    """Chuẩn so khớp tên/mã: bỏ dấu, hoa, gộp khoảng trắng (để 'Cảng Cát Lái' khớp 'CANG CAT LAI')."""
+    import unicodedata
+    t = unicodedata.normalize('NFD', str(text or '')).replace('đ', 'd').replace('Đ', 'D')
+    t = ''.join(ch for ch in t if unicodedata.category(ch) != 'Mn')
+    return ' '.join(t.upper().split())
+
+
+def _location_index():
+    """Danh mục Địa điểm đang dùng: {mã hoặc tên (đã chuẩn hoá): Location}. Mã được ưu tiên khi trùng."""
+    from apps.master_data.models import Location
+    idx = {}
+    for loc in Location.objects.filter(is_active=True, is_deleted=False).order_by('-id'):
+        idx[_fold(loc.name)] = loc
+    for loc in Location.objects.filter(is_active=True, is_deleted=False).order_by('-id'):
+        idx[_fold(loc.code)] = loc
+    return idx
+
+
+def _resolve_location(idx, text):
+    """Nhận 'WHS001', 'KHO A' hoặc 'WHS001 - KHO A' -> Location trong danh mục, không thấy thì None."""
+    raw = str(text or '').strip()
+    if not raw:
+        return None
+    hit = idx.get(_fold(raw))
+    if hit is None and ' - ' in raw:
+        hit = idx.get(_fold(raw.split(' - ', 1)[0])) or idx.get(_fold(raw.split(' - ', 1)[1]))
+    return hit
+
+
 def validate_rows(booking, rows):
     """Trả danh sách kết quả từng dòng: {source_line, container_number, ok, errors, warnings, action}."""
     existing = {c.container_number: c for c in BookingContainer.objects.filter(booking=booking, is_deleted=False)}
     seen, out = {}, []
     if len(rows) > MAX_ROWS:
         raise ValidationError(f'Tối đa {MAX_ROWS} cont mỗi lần nhập.')
+    from apps.master_data.models import ContainerType
+    cont_catalog = set(ContainerType.objects.filter(is_active=True).values_list('code', flat=True))
+    loc_idx = _location_index()
     for r in rows:
         cn = normalize_container(r.get('raw'))
         res = {'source_line': r.get('source_line'), 'raw': r.get('raw', ''), 'container_number': cn,
@@ -264,6 +305,20 @@ def validate_rows(booking, rows):
                 res['container_type'] = types[0]
             elif len(types) > 1:
                 res['errors'].append(f"Booking có nhiều loại cont ({', '.join(types)}): dòng này phải ghi rõ loại cont.")
+        if res['container_type'] and res['container_type'] not in cont_catalog:
+            res['warnings'].append(f"Loại cont {res['container_type']} không có trong danh mục Quy cách Cont.")
+        # Nơi giao / nơi trả rỗng: đối chiếu danh mục Địa điểm theo MÃ hoặc TÊN; khớp thì chuẩn hoá về đúng tên trong hệ thống
+        dloc = _resolve_location(loc_idx, res['delivery_address'])
+        if dloc is not None:
+            res['delivery_address'] = dloc.name
+            res['delivery_loc_id'] = dloc.id
+        elif res['delivery_address']:
+            res['warnings'].append(f"Nơi giao \"{res['delivery_address']}\" chưa có trong danh mục Địa điểm (giữ nguyên chữ đã nhập).")
+        ploc = _resolve_location(loc_idx, res['dropoff_loc'])
+        if ploc is not None:
+            res['dropoff_loc'] = ploc.name
+        elif res['dropoff_loc']:
+            res['warnings'].append(f"Nơi trả rỗng \"{res['dropoff_loc']}\" chưa có trong danh mục Địa điểm.")
         if cn in existing:
             res['action'] = 'UPDATE'
         res['ok'] = not res['errors']
@@ -305,6 +360,9 @@ def import_containers(booking, rows, *, user=None, commit=True, skip_invalid=Fal
         # 1. Nơi giao hàng
         if r.get('delivery_address'):
             c.delivery_address = r['delivery_address']
+            # Khớp danh mục và khác nơi giao của B/L thì gắn Địa điểm riêng cho cont (giao nhiều điểm)
+            if r.get('delivery_loc_id') and r['delivery_loc_id'] != booking.delivery_loc_id:
+                c.delivery_loc_id = r['delivery_loc_id']
 
         if r.get('invoice_to'):
             c.invoice_to = r['invoice_to']

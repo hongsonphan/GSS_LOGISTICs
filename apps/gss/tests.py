@@ -98,6 +98,43 @@ class ContainerListTests(Base):
         c[C1].refresh_from_db()
         self.assertEqual((c[C1].invoice_to, c[C1].driver_note), ('CUSTOMER', 'Vào cổng số 3'))
 
+    def test_sample_excel_has_new_columns_and_catalog_roundtrip(self):
+        from apps.master_data.models import Location
+        Location.objects.create(code='WHS900', name='KHO MAU 900', location_type='WAREHOUSE')
+        Location.objects.create(code='DPT900', name='DEPOT MAU 900', location_type='DEPOT')
+        r = self.client.get('/api/gss/containers/sample-excel/')
+        self.assertEqual(r.status_code, 200)
+        wb = load_workbook(io.BytesIO(r.content))
+        head = [c.value for c in wb['DanhSachContainer'][1]]
+        for h in ('Hạn DEM', 'Hạn DET', 'Hóa Đơn Cho', 'Ghi Chú Tài Xế', 'Nơi Giao Hàng', 'Nơi Trả Rỗng'):
+            self.assertIn(h, head)
+        ref = [c.value for row in wb['DanhMuc'].iter_rows() for c in row]
+        self.assertIn('KHO MAU 900', ref)   # tên chuẩn
+        self.assertIn('WHS900', ref)        # kèm mã
+        self.assertIn('DEPOT MAU 900', ref)
+        self.assertIn('45HQ', ref)          # danh mục Quy cách Cont
+        # file mẫu nhập ngược lại được: đủ các cột mới
+        rows = cs.parse_xlsx(io.BytesIO(r.content))
+        self.assertEqual(rows[0]['invoice_to'], 'GPX')
+        self.assertTrue(rows[0]['driver_note'])
+        self.assertEqual(rows[0]['dem_expiry'], '23:59 20/11/2026')
+        self.assertEqual(rows[0]['det_expiry'], '23:59 25/11/2026')
+        self.assertTrue(rows[0]['separate_deadlines'])
+
+    def test_delivery_and_dropoff_resolve_to_catalog_name(self):
+        from apps.master_data.models import Location
+        loc = Location.objects.create(code='WHS901', name='KHO MAU 901', location_type='WAREHOUSE')
+        Location.objects.create(code='DPT901', name='DEPOT MAU 901', location_type='DEPOT')
+        rows = [{'source_line': 1, 'raw': C1, 'delivery_address': 'whs901', 'dropoff_loc': 'Depot Mau 901'},
+                {'source_line': 2, 'raw': C2, 'delivery_address': 'Kho không có', 'dropoff_loc': 'Bãi lạ'}]
+        out = self.api('post', f'/api/gss/bookings/{self.booking.id}/containers/', {'rows': rows}).json()['data']
+        c = {x.container_number: x for x in BookingContainer.objects.filter(booking=self.booking)}
+        self.assertEqual(c[C1].delivery_address, 'KHO MAU 901')   # mã -> đúng tên trong hệ thống
+        self.assertEqual(c[C1].delivery_loc_id, loc.id)
+        self.assertEqual(c[C2].delivery_address, 'Kho không có')  # không khớp: giữ nguyên chữ
+        warns = ' '.join(w for r in out['results'] for w in r['warnings'])
+        self.assertIn('chưa có trong danh mục', warns)
+
     def test_dem_det_separate_columns_accept_time_prefix(self):
         rows = [{'source_line': 1, 'raw': C1, 'dem_expiry': '23:59 21/11/2026', 'det_expiry': '', 'separate_deadlines': True},
                 {'source_line': 2, 'raw': C2, 'dem_expiry': '21/11/2026', 'det_expiry': '23:59 25/11/2026', 'separate_deadlines': True}]
