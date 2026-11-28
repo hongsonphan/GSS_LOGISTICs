@@ -121,6 +121,35 @@ class ContainerListTests(Base):
         self.assertEqual(rows[0]['det_expiry'], '23:59 25/11/2026')
         self.assertTrue(rows[0]['separate_deadlines'])
 
+    def test_sample_excel_lists_vendor_and_driver_names_only(self):
+        from apps.master_data.models import SubcontractorDriver
+        SubcontractorDriver.objects.create(subcontractor=self.sub2, full_name='Lê Văn Tài', phone='0911000111')
+        r = self.client.get('/api/gss/containers/sample-excel/')
+        wb = load_workbook(io.BytesIO(r.content))
+        ref = [c.value for row in wb['DanhMuc'].iter_rows() for c in row]
+        self.sub2.refresh_from_db()
+        self.assertIn(self.sub2.name, ref)      # danh mục Vendor (tên + mã)
+        self.assertIn('VND02', ref)
+        self.assertIn('Lê Văn Tài', ref)    # danh mục Tài xế: chỉ TÊN
+        self.assertNotIn('0911000111', ref)
+        ws = wb['DanhSachContainer']
+        head = [c.value for c in ws[1]]
+        col = head.index('Tên Tài Xế')
+        for row in ws.iter_rows(min_row=2):
+            self.assertNotRegex(str(row[col].value or ''), r'\d{6,}')   # mẫu không kèm SĐT
+
+    def test_driver_name_strips_phone_on_import_and_patch(self):
+        rows = [{'source_line': 1, 'raw': C1, 'tractor_plate': '51C-111.11', 'driver_name': 'Nguyễn Văn An (0901234567)'},
+                {'source_line': 2, 'raw': C2, 'driver_name': 'Trần Bình - 0902345678'}]
+        self.assertEqual(self.api('post', f'/api/gss/bookings/{self.booking.id}/containers/', {'rows': rows}).status_code, 200)
+        got = {x['container_number']: x for x in self.api('get', f'/api/gss/bookings/{self.booking.id}/containers/').json()['data']['containers']}
+        self.assertEqual(got[C1]['driver_name'], 'Nguyễn Văn An')
+        self.assertEqual(got[C2]['driver_name'], 'Trần Bình')
+        cid = BookingContainer.objects.get(booking=self.booking, container_number=C1).id
+        self.assertEqual(self.api('patch', f'/api/gss/containers/{cid}/', {'driver_name': 'Lê Cường 0903456789'}).status_code, 200)
+        got = {x['container_number']: x for x in self.api('get', f'/api/gss/bookings/{self.booking.id}/containers/').json()['data']['containers']}
+        self.assertEqual(got[C1]['driver_name'], 'Lê Cường')
+
     def test_delivery_and_dropoff_resolve_to_catalog_name(self):
         from apps.master_data.models import Location
         loc = Location.objects.create(code='WHS901', name='KHO MAU 901', location_type='WAREHOUSE')
@@ -589,6 +618,35 @@ class VendorPortalTests(Base):
         st_after = self.client.get('/api/vendor/auth/status/').json()
         self.assertFalse(st_after['authenticated'])
         self.assertTrue(SubcontractorPortalAccount.objects.filter(subcontractor=self.sub2).exists())
+
+    def test_warehouse_tracking_only_after_vendor_confirms(self):
+        self.client.force_login(self.staff)
+        url = f'/api/gss/bookings/{self.booking.id}/warehouse-dispatch-export/'
+        # xe/tài chỉ gán tạm (chưa Vendor chốt) -> chưa cho gửi Kho
+        self.assertEqual(self.client.get(url + '?as=json').status_code, 400)
+        rows = {r['container_number']: r for r in self.api('get', f'/api/gss/bookings/{self.booking.id}/containers/').json()['data']['containers']}
+        self.assertFalse(any(r['vc_confirmed'] for r in rows.values()))
+        # Vendor nhập xe + tài xế (Đã lập VC)
+        self.client.logout()
+        wb = load_workbook(io.BytesIO(self.client.get(f'/api/vendor/{self.token}/excel/').content))
+        for row in wb.active.iter_rows(min_row=2):
+            row[5].value = f'51C-99{row[0].value}.00'
+            row[7].value = 'Tài B'
+            row[8].value = f'09012345{row[0].value}0'
+        buf = io.BytesIO()
+        wb.save(buf)
+        self.assertEqual(self.client.post(f'/api/vendor/{self.token}/excel/', {'file': SimpleUploadedFile('x.xlsx', buf.getvalue())}).status_code, 200)
+        self.client.force_login(self.staff)
+        rows = self.api('get', f'/api/gss/bookings/{self.booking.id}/containers/').json()['data']['containers']
+        self.assertTrue(all(r['vc_confirmed'] for r in rows))
+        js = self.client.get(url + '?as=json').json()
+        self.assertEqual(len(js['rows']), 2)
+        self.assertEqual(js['booking']['order_number'], 'HBL987654')
+        page = self.client.get(url + '?as=print')
+        self.assertEqual(page.status_code, 200)
+        self.assertIn(C1, page.content.decode())
+        self.assertIn('window.print()', page.content.decode())
+        self.assertEqual(self.client.get(url).status_code, 200)   # Excel
 
     def test_vendor_portal_tracking_7_stages_and_sanitized_fields(self):
         # Cấp tài khoản và đăng nhập bằng link token của chính nhà xe

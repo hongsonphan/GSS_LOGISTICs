@@ -341,7 +341,7 @@ def warehouse_dispatch_excel(booking):
         cell.alignment = Alignment(horizontal='center', vertical='center')
 
     # 4. Đổ dữ liệu các container đã phân bổ
-    rows_data = cs.list_for(booking)
+    rows_data = cs.confirmed_rows(booking)  # chỉ cont Vendor đã chốt (Đã lập VC)
     data_font = Font(name='Calibri', size=11, bold=False, color='0F172A')
 
     current_row = 7

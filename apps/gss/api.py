@@ -150,7 +150,7 @@ class ContainerDetailAPI(Base):
         fields = []
         if 'tractor_plate' in d or 'driver_name' in d:
             plate = str(d.get('tractor_plate') or '').strip().upper()
-            driver = str(d.get('driver_name') or '').strip()
+            driver = cs.clean_driver_name(d.get('driver_name'))
             if c.trip_id:
                 t = c.trip
                 if plate:
@@ -257,28 +257,28 @@ class AssignContainersAPI(Base):
 
 
 class WarehouseDispatchExportAPI(Base):
-    """Xuất file Excel hoặc lấy dữ liệu Bảng phân bổ gửi kho."""
+    """Bảng xe & tài xế gửi Kho theo dõi. CHỈ gồm cont Vendor đã chốt (Đã lập VC: có chuyến, đầu kéo, tài xế).
+    ?as=json (xem trước) · ?as=print (trang in → PDF) · mặc định xlsx."""
     permission_classes = [IsBookingStaff]
 
     def get(self, request, pk):
         from apps.gss import vendor_excel
-        from apps.gss import containers as cs
         b = booking_or_404(pk)
         if not cs.has_container_list(b):
             return err('Đơn hàng / Booking chưa có danh sách container.')
-
+        rows = cs.confirmed_rows(b)
+        if not rows:
+            return err('Chưa có cont nào được Vendor chốt (Đã lập VC). Chỉ gửi Kho khi Vendor đã phân công đầu kéo và tài xế.')
         as_fmt = request.query_params.get('as', 'xlsx')
         if as_fmt == 'json':
-            rows = cs.list_for(b)
-            return ok({
-                'booking_id': b.id,
-                'booking_code': b.booking_code,
-                'customer_name': b.customer.name if b.customer else '',
-                'delivery_location': b.delivery_location or (b.delivery_loc.name if b.delivery_loc else ''),
-                'loading_date': b.loading_date.strftime('%d/%m/%Y') if b.loading_date else (b.discharge_date.strftime('%d/%m/%Y') if b.discharge_date else ''),
-                'bl_number': b.hbl_number or b.mbl_number or b.booking_number or '',
-                'containers': rows
-            })
+            place = b.delivery_location or (b.delivery_loc.name if b.delivery_loc_id else '')
+            d = b.loading_date or b.discharge_date
+            booking = {'id': b.id, 'booking_code': b.booking_code, 'order_number': b.hbl_number or b.mbl_number or b.booking_number or b.booking_code,
+                       'customer_name': b.customer.name if b.customer_id else '', 'warehouse_name': place,
+                       'delivery_date': d.strftime('%d/%m/%Y') if d else ''}
+            return ok({'containers': rows}, booking=booking, rows=rows, total=len(cs.list_for(b)))
+        if as_fmt == 'print':
+            return html(jr.warehouse_tracking_html(b, rows))
         return vendor_excel.warehouse_dispatch_excel(b)
 
 
@@ -1076,7 +1076,7 @@ class ContainerSampleExcelAPI(Base):
 
         headers = [
             'STT', 'Số Container', 'Loại Cont', 'Số Chì (Seal)', 'Trọng Lượng VGM (kg)',
-            'Nơi Giao Hàng', 'Nơi Trả Rỗng', 'Hạn DEM', 'Hạn DET', 'Số Đầu Kéo', 'Tài Xế',
+            'Nơi Giao Hàng', 'Nơi Trả Rỗng', 'Hạn DEM', 'Hạn DET', 'Số Đầu Kéo', 'Tên Tài Xế',
             'Hóa Đơn Cho', 'Ghi Chú Tài Xế',
         ]
 
@@ -1097,6 +1097,10 @@ class ContainerSampleExcelAPI(Base):
         # giống danh sách "Nơi hạ cont" trên form Booking: Depot/Bãi + Cảng + ICD
         dropoffs = [l for l in locs if l.location_type in (LocationType.DEPOT, LocationType.YARD, LocationType.PORT, LocationType.ICD)]
         invoice_choices = ['GPX', 'KH', 'Vendor']
+        from apps.master_data.models import Subcontractor, SubcontractorDriver
+        vendors = list(Subcontractor.objects.filter(is_active=True, is_deleted=False).order_by('name'))
+        drivers = list(SubcontractorDriver.objects.filter(is_active=True, is_deleted=False, subcontractor__is_deleted=False)
+                       .select_related('subcontractor').order_by('subcontractor__name', 'full_name'))
 
         ws.append(headers)
         ws.row_dimensions[1].height = 28
@@ -1112,11 +1116,11 @@ class ContainerSampleExcelAPI(Base):
         p_name = dropoffs[0].name if dropoffs else 'CẢNG CÁT LÁI'
         sample_rows = [
             [1, 'MSCU1234565', t_codes[-1] if '40HC' not in t_codes else '40HC', 'MLVN98765', 24500, d_name, p_name, '23:59 20/11/2026', '23:59 25/11/2026',
-             '51C-123.45', 'Nguyễn Văn An (0901234567)', 'GPX', 'Vào cổng số 3, gọi bảo vệ trước 30 phút'],
+             '51C-123.45', 'Nguyễn Văn An', 'GPX', 'Vào cổng số 3, gọi bảo vệ trước 30 phút'],
             [2, 'TCNU1234567', '20GP' if '20GP' in t_codes else t_codes[0], 'MLVN98766', 18000, d_name, p_name, '23:59 20/11/2026', '23:59 25/11/2026',
-             '51C-234.56', 'Trần Văn Bình (0902345678)', 'KH', ''],
+             '51C-234.56', 'Trần Văn Bình', 'KH', ''],
             [3, 'ONEU9988776', '40HC' if '40HC' in t_codes else t_codes[0], 'MLVN98767', 25200, d_name, p_name, '23:59 21/11/2026', '23:59 26/11/2026',
-             '51C-345.67', 'Lê Văn Cường (0903456789)', 'Vendor', 'Cont lạnh, giữ nhiệt độ'],
+             '51C-345.67', 'Lê Văn Cường', 'Vendor', 'Cont lạnh, giữ nhiệt độ'],
         ]
         col_alignments = [center_align, center_align, center_align, center_align, right_align, left_align, left_align,
                           center_align, center_align, center_align, left_align, center_align, left_align]
@@ -1136,7 +1140,7 @@ class ContainerSampleExcelAPI(Base):
 
         # ---- Sheet DanhMuc: tra mã/tên chuẩn, và là nguồn cho ô chọn sẵn ----
         ref = wb.create_sheet('DanhMuc')
-        ref_headers = ['Loại Cont (Mã)', 'Quy cách', '', 'Nơi Giao (Tên chuẩn)', 'Mã', '', 'Nơi Trả Rỗng (Tên chuẩn)', 'Mã', 'Loại', '', 'Hóa Đơn Cho']
+        ref_headers = ['Loại Cont (Mã)', 'Quy cách', '', 'Nơi Giao (Tên chuẩn)', 'Mã', '', 'Nơi Trả Rỗng (Tên chuẩn)', 'Mã', 'Loại', '', 'Hóa Đơn Cho', '', 'Vendor (Nhà xe)', 'Mã Vendor', '', 'Tên Tài Xế', 'Vendor quản lý']
         ref.append(ref_headers)
         for col_num, h in enumerate(ref_headers, start=1):
             cell = ref.cell(row=1, column=col_num)
@@ -1144,7 +1148,7 @@ class ContainerSampleExcelAPI(Base):
                 cell.font = header_font
                 cell.fill = teal_fill
                 cell.alignment = header_align
-        n = max(len(types), len(deliveries), len(dropoffs), len(invoice_choices))
+        n = max(len(types), len(deliveries), len(dropoffs), len(invoice_choices), len(vendors), len(drivers))
         type_label = dict(LocationType.choices)
         for i in range(n):
             row = i + 2
@@ -1160,7 +1164,13 @@ class ContainerSampleExcelAPI(Base):
                 ref.cell(row=row, column=9, value=str(type_label.get(dropoffs[i].location_type, '')))
             if i < len(invoice_choices):
                 ref.cell(row=row, column=11, value=invoice_choices[i])
-        for col_idx, width in {1: 16, 2: 40, 4: 38, 5: 12, 7: 38, 8: 12, 9: 22, 11: 14}.items():
+            if i < len(vendors):
+                ref.cell(row=row, column=13, value=vendors[i].name)
+                ref.cell(row=row, column=14, value=vendors[i].code)
+            if i < len(drivers):
+                ref.cell(row=row, column=16, value=drivers[i].full_name)   # chỉ TÊN, không kèm SĐT
+                ref.cell(row=row, column=17, value=drivers[i].subcontractor.short_name or drivers[i].subcontractor.name)
+        for col_idx, width in {1: 16, 2: 40, 4: 38, 5: 12, 7: 38, 8: 12, 9: 22, 11: 14, 13: 38, 14: 14, 16: 28, 17: 28}.items():
             ref.column_dimensions[get_column_letter(col_idx)].width = width
 
         def add_list(col_letter, ref_col, count):
@@ -1174,6 +1184,7 @@ class ContainerSampleExcelAPI(Base):
         add_list('F', 'D', len(deliveries))
         add_list('G', 'G', len(dropoffs))
         add_list('L', 'K', len(invoice_choices))
+        add_list('K', 'P', len(drivers))
 
         bio = io.BytesIO()
         wb.save(bio)

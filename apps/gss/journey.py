@@ -174,3 +174,35 @@ def dispatch_order_html(booking, vendor=None):
             'table{width:100%;border-collapse:collapse;margin:6px 0}th,td{border:1px solid #555;padding:4px 6px;text-align:left}'
             'th{background:#eee}.kv th{width:12%}</style></head><body>' + head + summ + detail
             + '<p style="margin-top:28px">Điều vận Giải Pháp Xanh (ký, ghi rõ họ tên)</p></body></html>')
+
+
+def warehouse_tracking_html(booking, rows):
+    """Bảng xe & tài xế gửi Kho theo dõi (chỉ cont Vendor đã chốt). In ra PDF bằng hộp thoại in của trình duyệt."""
+    from apps.master_data.models import CompanyProfile
+    e = escape
+    co = CompanyProfile.get_default_company()
+    bl = booking.hbl_number or booking.mbl_number or booking.booking_number or booking.booking_code
+    place = booking.delivery_location or (booking.delivery_loc.name if booking.delivery_loc_id else '')
+    d = booking.loading_date or booking.discharge_date
+    ds = d.strftime('%d/%m/%Y') if d else ''
+    cust = booking.customer.name if booking.customer_id else ''
+    head = ('<h1>BẢNG PHÂN BỔ PHƯƠNG TIỆN &amp; TÀI XẾ GIAO NHẬN CONTAINER (GỬI KHO)</h1>'
+            f'<p>{e(co.company_name)} · In lúc {timezone.localtime():%d/%m/%Y %H:%M}</p>'
+            '<table class="kv">'
+            f'<tr><th>Khách hàng</th><td>{e(cust)}</td><th>Số B/L</th><td>{e(bl)}</td></tr>'
+            f'<tr><th>Kho nhận hàng</th><td>{e(place)}</td><th>Ngày giao dự kiến</th><td>{e(ds)}</td></tr></table>')
+    body = ''.join(
+        f'<tr><td>{i}</td><td>{e(r["container_number"])}</td><td>{e(r["tractor_plate"])}</td><td>{e(r["driver_name"])}</td>'
+        f'<td>{e(r["driver_cccd"])}</td><td>{e(r["driver_phone"])}</td>'
+        f'<td>{e(" | ".join(x for x in ("Seal: " + r["seal_number"] if r["seal_number"] else "", r["container_type"], r["driver_note"]) if x))}</td></tr>'
+        for i, r in enumerate(rows, 1))
+    table = ('<table class="grid"><tr><th>STT</th><th>Số Cont</th><th>Số Xe</th><th>Tên Tài Xế</th><th>CCCD</th><th>Số Điện Thoại</th><th>Ghi Chú</th></tr>'
+             + body + '</table>')
+    return ('<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Bảng gửi kho ' + e(booking.booking_code) + '</title>'
+            '<style>@page{size:A4 landscape;margin:12mm}body{font:13px/1.45 Arial,sans-serif;color:#000}h1{font-size:17px;margin:0 0 4px}'
+            'table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #555;padding:5px 7px;text-align:left}'
+            'th{background:#0f766e;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.kv th{width:16%;background:#eee;color:#000}'
+            '@media print{.noprint{display:none}}</style></head><body>'
+            '<p class="noprint"><button onclick="window.print()">In / Lưu PDF</button></p>'
+            + head + table + '<p style="margin-top:26px">Điều vận Giải Pháp Xanh (ký, ghi rõ họ tên)</p>'
+            '<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},300)})</script></body></html>')

@@ -196,7 +196,7 @@ def parse_xlsx(fileobj):
             'seal_number': raw_seal,
             'gross_weight_kg': raw_vgm,
             'tractor_plate': raw_truck,
-            'driver_name': raw_driver,
+            'driver_name': clean_driver_name(raw_driver),
             'delivery_address': raw_deliv,
             'dropoff_loc': raw_drop,
             'dem_det': raw_dem,
@@ -211,6 +211,15 @@ def parse_xlsx(fileobj):
 
 
 _INVOICE_TO_ALIASES = {'GPX': 'GPX', 'KH': 'CUSTOMER', 'CUSTOMER': 'CUSTOMER', 'VENDOR': 'VENDOR', 'NHAXE': 'VENDOR', 'NHÀXE': 'VENDOR'}
+
+
+def clean_driver_name(value):
+    """Cột Tài xế chỉ là TÊN: bỏ số điện thoại / CCCD ghi kèm (vd. "Nguyễn Văn An (0901234567)") để khỏi tham chiếu sai."""
+    t = str(value or '')
+    t = re.sub(r'[\(\[][^\)\]]*\d[\d .\-]{6,}[^\)\]]*[\)\]]', ' ', t)   # (0901234567) / [090 123 4567]
+    t = re.sub(r'(?i)(?:s[đd]t|đt|tel|phone|cccd)\s*[:.\-]?\s*[\d .\-]{6,}', ' ', t)
+    t = re.sub(r'[\s\-–,/|]*\+?\d[\d .\-]{7,}\s*$', ' ', t)               # số ở cuối tên
+    return re.sub(r'\s+', ' ', t).strip(' -–,/|')
 
 
 def normalize_invoice_to(value):
@@ -263,7 +272,7 @@ def validate_rows(booking, rows):
                'container_type': (r.get('container_type') or '').upper()[:10], 'seal_number': (r.get('seal_number') or '')[:50],
                'gross_weight_kg': None,
                'tractor_plate': str(r.get('tractor_plate') or '').strip().upper(),
-               'driver_name': str(r.get('driver_name') or '').strip(),
+               'driver_name': clean_driver_name(r.get('driver_name')),
                'delivery_address': str(r.get('delivery_address') or r.get('delivery_loc') or '').strip(),
                'dropoff_loc': str(r.get('dropoff_loc') or '').strip(),
                'dem_det': str(r.get('dem_det') or '').strip(),
@@ -705,7 +714,8 @@ def serialize(c):
         'container_number_2': (t.container_number_2 or '') if t else '',
         'step_label': wf.STEP_LABELS.get(t.step_status, t.get_step_status_display()) if t else '', 'dispatch_status': (t.step_status if t else ('ASSIGNED' if alloc else 'UNASSIGNED')), 'dispatch_status_label': (wf.STEP_LABELS.get(t.step_status, t.get_step_status_display()) if t else ('Đã giao cho Nhà xe' if alloc else 'Chưa phân bổ')),
         'tractor_plate': (t.vehicle.license_plate if t and t.vehicle_id else (t.subcontractor_truck if t and t.subcontractor_truck else (_extract_note(c.notes, 'Xe:') or ''))),
-        'driver_name': (t.assigned_driver_name if t else (_extract_note(c.notes, 'Tài:') or _extract_note(c.notes, 'Tai:') or '')),
+        'driver_name': clean_driver_name(t.assigned_driver_name if t else (_extract_note(c.notes, 'Tài:') or _extract_note(c.notes, 'Tai:') or '')),
+        'vc_confirmed': bool(t and t.step_status != 'CANCELLED' and (t.vehicle_id or t.subcontractor_truck) and (t.driver_id or t.subcontractor_driver_id or t.subcontractor_driver_name)),
         'driver_phone': (t.assigned_driver_phone if t else (_extract_note(c.notes, 'SĐT:') or _extract_note(c.notes, 'SDT:') or '')),
         'driver_cccd': driver_cccd,
         'locked': bool(_container_locked_reason(c)), 'notes': c.notes,
@@ -718,6 +728,11 @@ def list_for(booking):
     qs = BookingContainer.objects.filter(booking=booking, is_deleted=False) \
         .select_related('delivery_loc', 'allocation', 'allocation__subcontractor', 'trip', 'trip__vehicle', 'trip__driver', 'booking')
     return [serialize(c) for c in qs]
+
+
+def confirmed_rows(booking):
+    """Cont mà Vendor đã chốt (Đã lập VC): có chuyến, có đầu kéo và tài xế. Xe/tài ở bước gán tạm chưa tính."""
+    return [r for r in list_for(booking) if r.get('vc_confirmed')]
 
 
 def progress(booking):

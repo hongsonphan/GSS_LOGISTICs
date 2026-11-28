@@ -529,7 +529,7 @@ function handleContExcelSelected(input) {
                 const invoiceVal = colInvoice !== -1 ? String(row[colInvoice] || '').trim() : '';
                 const noteVal = colNotes !== -1 ? String(row[colNotes] || '').trim() : '';
                 let truckVal = colTruck !== -1 ? String(row[colTruck] || '').trim().toUpperCase() : '';
-                let driverVal = colDriver !== -1 ? String(row[colDriver] || '').trim() : '';
+                let driverVal = colDriver !== -1 ? cleanDriverName(row[colDriver]) : '';
 
                 parsed.push({
                     container_number: contVal,
@@ -687,6 +687,27 @@ function formatDeadline(v) {
     return m ? `23:59 ${m[3]}/${m[2]}/${m[1]}` : '';
 }
 window.formatDeadline = formatDeadline;
+
+// Cột Tài xế chỉ là TÊN: bỏ số điện thoại ghi kèm (vd. "Nguyễn Văn An (0901234567)") để khỏi tham chiếu sai
+function cleanDriverName(v) {
+    let t = String(v || '');
+    t = t.replace(/[(\[][^)\]]*\d[\d .\-]{6,}[^)\]]*[)\]]/g, ' ');
+    t = t.replace(/(?:s?[đd]t|tel|phone|cccd)\s*[:.\-]?\s*[\d .\-]{6,}/gi, ' ');
+    t = t.replace(/[\s\-–,/|]*\+?\d[\d .\-]{7,}\s*$/, ' ');
+    return t.replace(/\s+/g, ' ').replace(/^[\s\-–,/|]+|[\s\-–,/|]+$/g, '');
+}
+window.cleanDriverName = cleanDriverName;
+
+// "Gửi Kho Theo Dõi" chỉ hiện khi Vendor đã chốt (Đã lập VC: có chuyến + đầu kéo + tài xế)
+function syncWarehouseDispatchButton(list) {
+    const btn = document.getElementById('btn-warehouse-dispatch');
+    if (!btn) return;
+    const n = (list || []).filter(c => c.vc_confirmed).length;
+    btn.classList.toggle('hidden', n === 0);
+    const lbl = btn.querySelector('span');
+    if (lbl) lbl.textContent = n ? `Gửi Kho Theo Dõi (${n})` : 'Gửi Kho Theo Dõi';
+}
+window.syncWarehouseDispatchButton = syncWarehouseDispatchButton;
 
 // Loại cont = đúng danh mục Quy cách Cont (master_data.ContainerType); chưa nạp danh mục thì dùng 10 mã ISO chuẩn
 const FALLBACK_CONT_TYPES = ['20FR', '20GP', '20OT', '20RF', '40FR', '40GP', '40HC', '40OT', '40RF', '45HQ'];
@@ -855,7 +876,7 @@ function renderStagedBookingContainers() {
                 <!-- 10. Tài Xế (Tách riêng cho dễ xem & sửa) -->
                 <td class="p-1.5 min-w-[150px]">
                     <input type="text" data-field="driver_name" 
-                        placeholder="Tên tài xế & SĐT" 
+                        placeholder="Tên tài xế" 
                         value="${escapeHtml(c.driver_name || '')}" 
                         oninput="updateStagedContField(${idx}, 'driver_name', this.value);"
                         class="cont-driver-input w-full h-8 px-2 text-slate-800 border border-slate-300 rounded-lg text-xs bg-white focus:border-teal-600 shadow-2xs">
@@ -1108,6 +1129,7 @@ function renderSavedBookingContainers() {
     const totalConts = (currentBookingContainers || []).length;
 
     filteredBookingContainers = getFilteredAndSortedContainers(currentBookingContainers || []);
+    syncWarehouseDispatchButton(currentBookingContainers || []);
 
     if (countBadge) {
         countBadge.innerText = `Hiển thị: ${filteredBookingContainers.length}/${totalConts}`;
@@ -1249,7 +1271,7 @@ function renderSavedBookingContainers() {
                     <td class="p-1 min-w-[150px]">
                         <input type="text" id="inline-edit-driver-${c.id}" 
                             value="${escapeHtml(c.driver_name || '')}" 
-                            placeholder="Tài xế & SĐT"
+                            placeholder="Tên tài xế"
                             class="w-full h-8 px-2 text-slate-800 border border-amber-500 rounded-lg text-xs bg-white shadow-2xs">
                     </td>
                     <td class="p-1 min-w-[110px]">
@@ -1668,7 +1690,7 @@ async function saveSavedContainerRow(contId) {
         payload.tractor_plate = truckInp.value.trim().toUpperCase();
     }
     if (driverInp) {
-        payload.driver_name = driverInp.value.trim();
+        payload.driver_name = cleanDriverName(driverInp.value);
     }
     if (contNumInp && contNumInp.value) {
         payload.container_number = contNumInp.value.trim().toUpperCase();
@@ -1851,6 +1873,17 @@ function downloadWarehouseDispatchExcel(bookingId = null) {
     window.location.href = `/api/gss/bookings/${bId}/warehouse-dispatch-export/?as=xlsx`;
 }
 window.downloadWarehouseDispatchExcel = downloadWarehouseDispatchExcel;
+
+function printWarehouseDispatchPdf(bookingId = null) {
+    const bId = bookingId || currentWarehouseDispatchBookingId || document.getElementById('fullpage-booking-id')?.value;
+    if (!bId) {
+        showToast('warning', 'Không xác định được đơn hàng để in!');
+        return;
+    }
+    // Trang in chuẩn: chọn "Lưu dạng PDF" trong hộp thoại in để gửi Kho (gửi email sẽ cấu hình sau)
+    window.open(`/api/gss/bookings/${bId}/warehouse-dispatch-export/?as=print`, '_blank', 'noopener');
+}
+window.printWarehouseDispatchPdf = printWarehouseDispatchPdf;
 window.exportWarehouseAllocatedContainers = (bId) => openWarehouseDispatchModal(bId);
 
 function copyWarehouseDispatchZaloText() {
